@@ -1,0 +1,57 @@
+<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
+<qgis styleCategories="AllStyleCategories" hasScaleBasedVisibilityFlag="0" maxScale="0" version="3.16.4-Hannover" minScale="1e+08">
+  <flags>
+    <Identifiable>1</Identifiable>
+    <Removable>1</Removable>
+    <Searchable>1</Searchable>
+  </flags>
+  <temporal mode="0" fetchMode="0" enabled="0">
+    <fixedRange>
+      <start></start>
+      <end></end>
+    </fixedRange>
+  </temporal>
+  <customproperties>
+    <property value="false" key="WMSBackgroundLayer"/>
+    <property value="false" key="WMSPublishDataSourceUrl"/>
+    <property value="0" key="embeddedWidgets/count"/>
+    <property value="Value" key="identify/format"/>
+  </customproperties>
+  <pipe>
+    <provider>
+      <resampling maxOversampling="2" enabled="false" zoomedOutResamplingMethod="nearestNeighbour" zoomedInResamplingMethod="nearestNeighbour"/>
+    </provider>
+    <rasterrenderer band="1" alphaBand="-1" classificationMin="4.724" classificationMax="36.6744995" opacity="1" nodataColor="" type="singlebandpseudocolor">
+      <rasterTransparency/>
+      <minMaxOrigin>
+        <limits>MinMax</limits>
+        <extent>WholeRaster</extent>
+        <statAccuracy>Estimated</statAccuracy>
+        <cumulativeCutLower>0.02</cumulativeCutLower>
+        <cumulativeCutUpper>0.98</cumulativeCutUpper>
+        <stdDevFactor>2</stdDevFactor>
+      </minMaxOrigin>
+      <rastershader>
+        <colorrampshader clip="0" colorRampType="INTERPOLATED" classificationMode="1" maximumValue="36.6744995" minimumValue="4.724" labelPrecision="4">
+          <colorramp name="[source]" type="gradient">
+            <prop k="color1" v="1,133,113,255"/>
+            <prop k="color2" v="166,97,26,255"/>
+            <prop k="discrete" v="0"/>
+            <prop k="rampType" v="gradient"/>
+            <prop k="stops" v="0.25;128,205,193,255:0.5;245,245,245,255:0.75;223,194,125,255"/>
+          </colorramp>
+          <item label="4.7240" value="4.724" color="#018571" alpha="255"/>
+          <item label="12.7116" value="12.711624875000002" color="#80cdc1" alpha="255"/>
+          <item label="20.6992" value="20.69924975" color="#f5f5f5" alpha="255"/>
+          <item label="28.6869" value="28.686874625" color="#dfc27d" alpha="255"/>
+          <item label="36.6745" value="36.6744995" color="#a6611a" alpha="255"/>
+        </colorrampshader>
+      </rastershader>
+    </rasterrenderer>
+    <brightnesscontrast contrast="0" brightness="0" gamma="1"/>
+    <huesaturation colorizeBlue="128" grayscaleMode="0" saturation="0" colorizeGreen="128" colorizeOn="0" colorizeRed="255" colorizeStrength="100"/>
+    <rasterresampler maxOversampling="2"/>
+    <resamplingStage>resamplingFilter</resamplingStage>
+  </pipe>
+  <blendMode>0</blendMode>
+</qgis>

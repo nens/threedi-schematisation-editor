@@ -82,9 +82,9 @@ def create_empty_model(export_sqlite_path):
     shutil.copy(empty_sqlite, export_sqlite_path)
 
 
-def get_qml_style_path(annotated_cls):
-    qml_filename = f"{annotated_cls.__tablename__}.qml"
-    filepath = os.path.join(os.path.dirname(__file__), "styles", qml_filename)
+def get_qml_style_path(style_name, *subfolders):
+    qml_filename = f"{style_name}.qml"
+    filepath = os.path.join(os.path.dirname(__file__), "styles", *subfolders, qml_filename)
     if os.path.isfile(filepath):
         return filepath
     return None
@@ -160,7 +160,7 @@ def load_user_layers(gpkg_path):
         get_tree_group(group_name)
         for model_cls in group_models:
             vlayer = gpkg_layer(gpkg_path, model_cls.__tablename__, model_cls.__layername__)
-            qml_path = get_qml_style_path(model_cls)
+            qml_path = get_qml_style_path(model_cls.__tablename__)
             if qml_path is not None:
                 vlayer.loadNamedStyle(qml_path)
             add_layer_to_group(group_name, vlayer, bottom=True)
@@ -187,6 +187,9 @@ def load_model_raster_layers(gpkg_path):
             if not os.path.isfile(raster_filepath):
                 continue
             rlayer = QgsRasterLayer(raster_filepath, raster_layer_name)
+            qml_path = get_qml_style_path(raster_file_field, "raster")
+            if qml_path is not None:
+                rlayer.loadNamedStyle(qml_path)
             add_layer_to_group(group_name, rlayer, bottom=True)
 
 
