@@ -1,0 +1,11 @@
+[general]
+name=3Di Model Builder
+qgisMinimumVersion=3.4
+qgisMaximumVersion=3.99
+description=3Di Model Builder for QGIS
+version=1.0.0
+author=Lutra Consulting
+email=info@lutraconsulting.co.uk
+about=3Di model building prototype
+tracker=https://gitlab.cloud.lutraconsulting.co.uk/nelen-schuurmans/model-builder-prototyping/-/issues
+repository=https://gitlab.cloud.lutraconsulting.co.uk/nelen-schuurmans/model-builder-prototyping
