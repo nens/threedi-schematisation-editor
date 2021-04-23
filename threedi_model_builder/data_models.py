@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from collections import OrderedDict
 from types import MappingProxyType
-from threedi_model_builder.user_layers.enumerators import (
+from threedi_model_builder.enumerators import (
     AggregationMethod,
     BoundaryType,
     CalculationType,
@@ -840,7 +839,7 @@ class Timeseries(ModelObject):
     value: float
 
 
-MODEL_1D_ELEMENTS = [
+MODEL_1D_ELEMENTS = (
     ConnectionNode,
     BoundaryCondition1D,
     Lateral1D,
@@ -854,9 +853,9 @@ MODEL_1D_ELEMENTS = [
     CrossSectionLocation,
     Channel,
     CrossSectionDefinition,
-]
+)
 
-MODEL_2D_ELEMENTS = [
+MODEL_2D_ELEMENTS = (
     BoundaryCondition2D,
     Lateral2D,
     LinearObstacle,
@@ -864,25 +863,26 @@ MODEL_2D_ELEMENTS = [
     GridRefinementArea,
     DEMAverageArea,
     Windshielding,
-]
+)
 
-INFLOW_ELEMENTS = [
+INFLOW_ELEMENTS = (
     ImperviousSurface,
     Surface,
     ImperviousSurfaceMap,
     SurfaceMap,
     SurfaceParameter,
-]
+)
 
-SETTINGS_ELEMENTS = [
+SETTINGS_ELEMENTS = (
     GlobalSettings,
     AggregationSettings,
     SimpleInfiltrationSettings,
     GroundWaterSettings,
     InterflowSettings,
     NumericalSettings,
-]
+)
 
 
-ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS + [Timeseries]
-ELEMENTS_WITH_TIMESERIES = [BoundaryCondition1D, Lateral1D, BoundaryCondition2D, Lateral2D]
+ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS + (Timeseries,)
+ELEMENTS_WITH_TIMESERIES = (BoundaryCondition1D, Lateral1D, BoundaryCondition2D, Lateral2D)
+ELEMENTS_WITH_RASTERS = tuple(model_cls for model_cls in SETTINGS_ELEMENTS if model_cls.RELATED_RASTERS)

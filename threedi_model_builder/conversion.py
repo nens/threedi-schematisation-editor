@@ -1,6 +1,6 @@
-import threedi_model_builder.user_layers.data_models as dm
-import threedi_model_builder.user_layers.enumerators as en
-from threedi_model_builder.user_layers.utils import sqlite_layer, gpkg_layer, layer_to_gpkg, vector_layer_factory
+import threedi_model_builder.data_models as dm
+import threedi_model_builder.enumerators as en
+from threedi_model_builder.utils import sqlite_layer, gpkg_layer, layer_to_gpkg, vector_layer_factory
 from operator import itemgetter
 from collections import OrderedDict, defaultdict
 from qgis.core import (

@@ -1,6 +1,6 @@
 import os
 import shutil
-import threedi_model_builder.user_layers.data_models as dm
+import threedi_model_builder.data_models as dm
 from enum import Enum
 from collections import OrderedDict
 from qgis.PyQt.QtCore import QSettings, QVariant
@@ -109,13 +109,6 @@ def add_layer_to_group(name, layer, bottom=False):
 
 def remove_layer(layer):
     QgsProject.instance().removeMapLayer(layer)
-
-
-def remove_group_from_layer_tree(name):
-    grp = QgsProject.instance().layerTreeRoot().findGroup(name)
-    if grp:
-        grp.removeAllChildren()
-        QgsProject.instance().layerTreeRoot().removeChildNode(grp)
 
 
 def remove_group_with_children(name):
