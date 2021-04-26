@@ -15,6 +15,7 @@ from qgis.core import (
     QgsField,
     QgsVectorFileWriter,
 )
+from qgis.utils import plugins
 
 field_types_mapping = {
     bool: QVariant.Bool,
@@ -85,6 +86,14 @@ def create_empty_model(export_sqlite_path):
 def get_qml_style_path(style_name, *subfolders):
     qml_filename = f"{style_name}.qml"
     filepath = os.path.join(os.path.dirname(__file__), "styles", *subfolders, qml_filename)
+    if os.path.isfile(filepath):
+        return filepath
+    return None
+
+
+def get_form_ui_path(table_name):
+    ui_filename = f"{table_name}.ui"
+    filepath = os.path.join(os.path.dirname(__file__), "forms", "ui", ui_filename)
     if os.path.isfile(filepath):
         return filepath
     return None
@@ -190,3 +199,12 @@ def remove_user_layers():
     groups = ["1D", "2D", "Inflow", "Settings", "Model rasters"]
     for group_name in groups:
         remove_group_with_children(group_name)
+
+
+def open_edit_form(dialog, layer, feature):
+    """Open location custom feature edit form."""
+    try:
+        plugin = plugins["threedi_model_builder"]
+    except AttributeError:
+        return
+    plugin.populate_edit_form(dialog, layer, feature)

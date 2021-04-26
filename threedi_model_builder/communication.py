@@ -1,7 +1,7 @@
 # Copyright (C) 2021 by Lutra Consulting
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QMessageBox, QInputDialog
-from qgis.core import Qgis
+from qgis.core import Qgis, QgsMessageLog
 
 
 class UICommunication(object):
@@ -83,3 +83,16 @@ class UICommunication(object):
         if accept is False:
             return None
         return item
+
+    def log_msg(self, msg, level=Qgis.Info):
+        """Log the message to QGIS log with a given level."""
+        QgsMessageLog.logMessage(msg, self.context, level)
+
+    def log_warn(self, msg):
+        """Log the warning to QGIS logs."""
+        self.log_msg(msg, level=Qgis.Warning)
+
+    def log_info(self, msg):
+        """Log the info message to QGIS logs."""
+        self.log_msg(msg, level=Qgis.Info)
+
