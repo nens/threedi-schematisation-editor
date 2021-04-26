@@ -1,9 +1,11 @@
 from types import MappingProxyType
 from .forms.manhole_form import ManholeEditForm
+from .forms.pipe_form import PipeEditForm
 
 
 ALL_FORMS = (
     ManholeEditForm,
+    PipeEditForm,
 )
 
 MODEL_FORMS = MappingProxyType({form.MODEL: form for form in ALL_FORMS})
@@ -20,6 +22,3 @@ class LayerEditFormFactory(object):
         for form_model, form in MODEL_FORMS.items():
             if layer_data_model == form_model:
                 form = MODEL_FORMS[form_model](self.layer_manager, dialog, layer, feature)
-
-
-

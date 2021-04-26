@@ -1,8 +1,19 @@
+from collections import defaultdict
+from enum import Enum
+
 from qgis.PyQt.QtCore import QObject
 from qgis.PyQt.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLineEdit, QSpinBox, QWidget
 
 from qgis.core import NULL
 from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
+
+
+field_types_widgets = {
+    bool: QCheckBox,
+    int: QgsSpinBox,
+    float: QgsDoubleSpinBox,
+    str: QLineEdit,
+}
 
 
 class BaseEditForm(QObject):
@@ -18,27 +29,37 @@ class BaseEditForm(QObject):
         self.dialog = dialog
         self.layer = layer
         self.feature = feature
-        self.widgets = None  # Form's widgets map {widget_name: widget}
+        self.widgets = defaultdict(list)  # {data_model: list of tuples (widget, layer field name)}
 
-        self.get_form_widgets()
         self.populate_widgets()
+        self.populate_extra_widgets()
+        self.dialog.setEnabled(self.layer.isEditable())
+        # TODO - editingStarted signal should turn the dialog enabled
 
-        self.btn_save.clicked.connect(self.save_changes)
-
-    def get_form_widgets(self):
-        """Make some references to form's widgets."""
-        self.widgets = dict()
-        for widget_name in self.WIDGET_NAMES:
-            widget = self.dialog.findChild(QWidget, widget_name)
+    def populate_widgets(self, data_model=None, feature=None):
+        """Populate form's widgets - widgets are named after their attributes in the data model."""
+        field_name_prefix = ""
+        if data_model is not None:
+            field_name_prefix = data_model.__tablename__ + "_"
+        else:
+            data_model = self.MODEL
+            feature = self.feature
+        if feature.id() < 0:
+            return  # form open for an invalid feature
+        for field_name, field_type in data_model.__annotations__.items():
+            widget = self.dialog.findChild(QObject, field_name_prefix + field_name)
             if widget is None:
-                self.uc.log_warn(f"Can't find widget {widget_name} for layer {self.layer.name()}")
+                # the filed might not be shown in the form
                 continue
-            setattr(self, widget_name, widget)
-            self.widgets[widget_name] = widget
+            if issubclass(field_type, Enum):
+                cbo_items = {t.name: t.value for t in field_type}
+                self.populate_combo(widget, cbo_items)
+            self.set_widget_value(widget, feature[field_name])
+            self.widgets[data_model].append((widget, field_name))
 
     @staticmethod
     def populate_combo(combo_widget, value_map):
-        """Populates combo box with value map's items (map key = displayed text, map value = data)."""
+        """Populates combo box with value map items (map key = displayed text, map value = data)."""
         combo_widget.clear()
         combo_widget.addItem("", None)
         for text, data in value_map.items():
@@ -78,7 +99,3 @@ class BaseEditForm(QObject):
             self.uc.log_warn(f"Unknown widget type: {widget.__class__.__name__}")
             value = None
         return value
-
-    def save_changes(self):
-        """Get modified attributes values and save them."""
-        raise Exception("Not implemented")
