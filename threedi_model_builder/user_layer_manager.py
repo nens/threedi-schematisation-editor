@@ -1,10 +1,11 @@
 # Copyright (C) 2021 by Lutra Consulting
 import os
-from qgis.core import QgsRasterLayer
+from qgis.core import QgsExpression, QgsFeatureRequest, QgsRasterLayer
 import threedi_model_builder.data_models as dm
 from threedi_model_builder.user_layer_handlers import MODEL_HANDLERS
 from threedi_model_builder.utils import (
     gpkg_layer,
+    get_form_ui_path,
     get_qml_style_path,
     get_tree_group,
     add_layer_to_group,
@@ -44,11 +45,23 @@ class LayersManager:
                 data_model_groups[model_cls] = group_name
         return data_model_groups
 
+    def get_layer_data_model(self, layer):
+        """Return data model class for given layer."""
+        for model_cls, handler in self.loaded_models.items():
+            if handler.layer == layer:
+                return model_cls
+        return None
+
     def initialize_data_model_layer(self, model_cls):
         layer = gpkg_layer(self.model_gpkg_path, model_cls.__tablename__, model_cls.__layername__)
         qml_path = get_qml_style_path(model_cls.__tablename__)
         if qml_path is not None:
             layer.loadNamedStyle(qml_path)
+        form_ui_path = get_form_ui_path(model_cls.__tablename__)
+        if form_ui_path:
+            form_config = layer.editFormConfig()
+            form_config.setUiForm(form_ui_path)
+            layer.setEditFormConfig(form_config)
         dm_groups = self.data_model_groups
         group_name = dm_groups[model_cls]
         add_layer_to_group(group_name, layer, bottom=True)
@@ -109,3 +122,12 @@ class LayersManager:
             layer = layer_handler.layer
             remove_layer(layer)
             del self.loaded_models[model_cls]
+
+    def get_layer_features(self, model_cls, filter_exp=None):
+        """
+        Get features from layer defined by the model class.
+        If the filter_exp expression is defined, filter the feature list.
+        """
+        expr = QgsExpression(filter_exp) if filter_exp else None
+        req = QgsFeatureRequest(expr) if expr is not None else QgsFeatureRequest()
+        return self.loaded_models[model_cls].layer.getFeatures(req)
