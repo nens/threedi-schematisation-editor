@@ -6,28 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>594</width>
-    <height>343</height>
+    <width>555</width>
+    <height>377</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Manhole Edit Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="5" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <property name="bottomMargin">
-      <number>0</number>
-     </property>
-     <item>
-      <widget class="QPushButton" name="btn_save">
-       <property name="text">
-        <string>Save changes</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
    <item row="1" column="0">
     <widget class="QGroupBox" name="grp_characteristics">
      <property name="title">
@@ -37,7 +23,7 @@
       <item row="2" column="0">
        <widget class="QLabel" name="label_9">
         <property name="text">
-         <string>length</string>
+         <string>Length</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -47,7 +33,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label_5">
         <property name="text">
-         <string>shape</string>
+         <string>Shape</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -57,7 +43,7 @@
       <item row="1" column="0">
        <widget class="QLabel" name="label_6">
         <property name="text">
-         <string>width</string>
+         <string>Width</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -67,7 +53,7 @@
       <item row="0" column="2">
        <widget class="QLabel" name="label_10">
         <property name="text">
-         <string>bottom level</string>
+         <string>Bottom level</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -77,7 +63,7 @@
       <item row="1" column="2">
        <widget class="QLabel" name="label_11">
         <property name="text">
-         <string>surface level</string>
+         <string>Surface level</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -87,28 +73,15 @@
       <item row="2" column="2">
        <widget class="QLabel" name="label_12">
         <property name="text">
-         <string>drain level</string>
+         <string>Drain level</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="edit_shape">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="clearButtonEnabled">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="1">
-       <widget class="QgsDoubleSpinBox" name="sbox_width">
+       <widget class="QgsDoubleSpinBox" name="width">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -133,7 +106,7 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QgsDoubleSpinBox" name="sbox_length">
+       <widget class="QgsDoubleSpinBox" name="length">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -158,7 +131,7 @@
        </widget>
       </item>
       <item row="0" column="3">
-       <widget class="QgsDoubleSpinBox" name="sbox_bottom_level">
+       <widget class="QgsDoubleSpinBox" name="bottom_level">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -183,7 +156,7 @@
        </widget>
       </item>
       <item row="1" column="3">
-       <widget class="QgsDoubleSpinBox" name="sbox_surface_level">
+       <widget class="QgsDoubleSpinBox" name="surface_level">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -208,7 +181,7 @@
        </widget>
       </item>
       <item row="2" column="3">
-       <widget class="QgsDoubleSpinBox" name="sbox_drain_level">
+       <widget class="QgsDoubleSpinBox" name="drain_level">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -232,13 +205,29 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="shape"/>
+      </item>
      </layout>
     </widget>
    </item>
-   <item row="2" column="0">
+   <item row="5" column="0">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="3" column="0">
     <widget class="QGroupBox" name="grp_conn_node">
      <property name="title">
-      <string>Connection Node</string>
+      <string>Connection node</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="0" column="2">
@@ -272,7 +261,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QLineEdit" name="edit_conn_node_code">
+       <widget class="QLineEdit" name="connection_node_code">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -295,7 +284,7 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QgsSpinBox" name="sbox_conn_node_id">
+       <widget class="QgsSpinBox" name="connection_node_id">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -317,7 +306,7 @@
        </widget>
       </item>
       <item row="0" column="3">
-       <widget class="QgsDoubleSpinBox" name="sbox_conn_node_init_waterlevel">
+       <widget class="QgsDoubleSpinBox" name="connection_node_initial_waterlevel">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -345,7 +334,7 @@
        </widget>
       </item>
       <item row="1" column="3">
-       <widget class="QgsDoubleSpinBox" name="sbox_conn_node_storage_area">
+       <widget class="QgsDoubleSpinBox" name="connection_node_storage_area">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -375,7 +364,7 @@
       <item row="0" column="2">
        <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>display name</string>
+         <string>Display name</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -383,7 +372,7 @@
        </widget>
       </item>
       <item row="0" column="3">
-       <widget class="QLineEdit" name="edit_display_name">
+       <widget class="QLineEdit" name="display_name">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -398,7 +387,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>id</string>
+         <string>Id</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -408,7 +397,7 @@
       <item row="1" column="0">
        <widget class="QLabel" name="label_3">
         <property name="text">
-         <string>code</string>
+         <string>Code</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -416,7 +405,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QLineEdit" name="edit_code">
+       <widget class="QLineEdit" name="code">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -431,7 +420,7 @@
       <item row="1" column="2">
        <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>calculation type</string>
+         <string>Calculation type</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -439,7 +428,7 @@
        </widget>
       </item>
       <item row="1" column="3">
-       <widget class="QComboBox" name="cbo_calculation_type">
+       <widget class="QComboBox" name="calculation_type">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -449,7 +438,7 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QgsSpinBox" name="sbox_id">
+       <widget class="QgsSpinBox" name="id">
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
         </property>
@@ -470,18 +459,63 @@
      </layout>
     </widget>
    </item>
-   <item row="4" column="0">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+   <item row="2" column="0">
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>Visualisation</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="0" column="3">
+       <widget class="QComboBox" name="zoom_category">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_15">
+        <property name="text">
+         <string>Manhole indicator</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="label_16">
+        <property name="text">
+         <string>Zoom category</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QgsSpinBox" name="manhole_indicator">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="buttonSymbols">
+         <enum>QAbstractSpinBox::NoButtons</enum>
+        </property>
+        <property name="maximum">
+         <number>9999999</number>
+        </property>
+        <property name="clearValue">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>
