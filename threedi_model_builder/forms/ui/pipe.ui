@@ -15,7 +15,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="3" column="0">
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QGroupBox" name="grp_visualisation">
      <property name="title">
       <string>Visualisation</string>
      </property>
@@ -64,7 +64,7 @@
     </widget>
    </item>
    <item row="0" column="0">
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="grp_general">
      <property name="title">
       <string>General</string>
      </property>
@@ -104,19 +104,22 @@
       </item>
       <item row="0" column="2">
        <widget class="QgsSpinBox" name="id">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
         </property>
         <property name="maximum">
          <number>99999999</number>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>false</bool>
         </property>
        </widget>
@@ -217,13 +220,13 @@
         <property name="maximum">
          <double>1000000.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -252,13 +255,13 @@
         <property name="maximum">
          <double>1000000.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -287,13 +290,13 @@
         <property name="maximum">
          <double>1000000.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -321,16 +324,19 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
         </property>
         <property name="maximum">
          <number>999999999</number>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>false</bool>
         </property>
        </widget>
@@ -353,16 +359,19 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
         </property>
         <property name="maximum">
          <number>999999999</number>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>false</bool>
         </property>
        </widget>
@@ -394,7 +403,7 @@
     </spacer>
    </item>
    <item row="4" column="0">
-    <widget class="QGroupBox" name="grp_characteristics_2">
+    <widget class="QGroupBox" name="grp_characteristics_def">
      <property name="title">
       <string>Cross section definition</string>
      </property>
@@ -448,6 +457,9 @@
       </item>
       <item row="0" column="1">
        <widget class="QgsSpinBox" name="cross_section_definition_id">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
         </property>

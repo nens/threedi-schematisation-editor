@@ -14,4 +14,5 @@ class ConnectionNodeEditForm(BaseEditForm):
 
     def populate_widgets(self, connection_node):
         """Get data from all the layers needed and populate the form widgets."""
+        pass
 

@@ -16,6 +16,9 @@
   <layout class="QGridLayout" name="gridLayout">
    <item row="1" column="0">
     <widget class="QGroupBox" name="grp_characteristics">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="title">
       <string>Characteristics</string>
      </property>
@@ -94,13 +97,13 @@
         <property name="maximum">
          <double>1000000.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -119,13 +122,13 @@
         <property name="maximum">
          <double>1000000.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -144,13 +147,13 @@
         <property name="maximum">
          <double>1000000.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -169,13 +172,13 @@
         <property name="maximum">
          <double>1000000.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -194,13 +197,13 @@
         <property name="maximum">
          <double>1000000.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -226,6 +229,9 @@
    </item>
    <item row="3" column="0">
     <widget class="QGroupBox" name="grp_conn_node">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="title">
       <string>Connection node</string>
      </property>
@@ -291,16 +297,19 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
         </property>
         <property name="maximum">
          <number>999999999</number>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>false</bool>
         </property>
        </widget>
@@ -322,13 +331,13 @@
         <property name="maximum">
          <double>1000000.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -347,7 +356,7 @@
         <property name="maximum">
          <double>999999999.000000000000000</double>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -357,6 +366,9 @@
    </item>
    <item row="0" column="0">
     <widget class="QGroupBox" name="grp_general">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="title">
       <string>General</string>
      </property>
@@ -439,19 +451,22 @@
       </item>
       <item row="0" column="1">
        <widget class="QgsSpinBox" name="id">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
         </property>
         <property name="maximum">
          <number>99999999</number>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>false</bool>
         </property>
        </widget>
@@ -460,7 +475,10 @@
     </widget>
    </item>
    <item row="2" column="0">
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QGroupBox" name="grp_visualisation">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="title">
       <string>Visualisation</string>
      </property>
@@ -509,7 +527,7 @@
         <property name="maximum">
          <number>9999999</number>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
