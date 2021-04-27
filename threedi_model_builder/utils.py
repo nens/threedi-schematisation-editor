@@ -207,4 +207,12 @@ def open_edit_form(dialog, layer, feature):
         plugin = plugins["threedi_model_builder"]
     except AttributeError:
         return
-    plugin.populate_edit_form(dialog, layer, feature)
+    plugin.layer_manager.populate_edit_form(dialog, layer, feature)
+
+
+def connect_signal(signal, slot):
+    signal.connect(slot)
+
+
+def disconnect_signal(signal, slot):
+    signal.disconnect(slot)

@@ -3,6 +3,7 @@ import os
 from qgis.core import QgsExpression, QgsFeatureRequest, QgsRasterLayer
 import threedi_model_builder.data_models as dm
 from threedi_model_builder.user_layer_handlers import MODEL_HANDLERS
+from threedi_model_builder.user_layer_forms import LayerEditFormFactory
 from threedi_model_builder.utils import (
     gpkg_layer,
     get_form_ui_path,
@@ -29,7 +30,9 @@ class LayersManager:
         self.iface = iface
         self.uc = user_communication
         self.model_gpkg_path = model_gpkg_path
+        self.form_factory = LayerEditFormFactory(self)
         self.loaded_models = {}
+        self.layer_handlers = {}
         self.loaded_rasters = {}
 
     @property
@@ -44,6 +47,18 @@ class LayersManager:
             for model_cls in model_elements:
                 data_model_groups[model_cls] = group_name
         return data_model_groups
+
+    def create_groups(self):
+        self.remove_groups()
+        for group_name in self.group_names:
+            get_tree_group(group_name, create=True)
+
+    def remove_groups(self):
+        self.remove_loaded_layers()
+        for group_name in self.group_names:
+            grp = get_tree_group(group_name, create=False)
+            if grp:
+                remove_group_with_children(group_name)
 
     def get_layer_data_model(self, layer):
         """Return data model class for given layer."""
@@ -66,15 +81,10 @@ class LayersManager:
         group_name = dm_groups[model_cls]
         add_layer_to_group(group_name, layer, bottom=True)
         handler_cls = MODEL_HANDLERS[model_cls]
-        handler = handler_cls(layer, self.uc)
-        # TODO: This should be turned on after handler methods implementation
-        # handler.connect_handler_signals()
+        handler = handler_cls(self, layer)
+        handler.connect_handler_signals()
         self.loaded_models[model_cls] = handler
-
-    def load_all_layers(self):
-        self.create_groups()
-        self.load_vector_layers()
-        self.load_raster_layers()
+        self.layer_handlers[layer.id()] = handler
 
     def load_vector_layers(self):
         for group_name, group_models in self.VECTOR_GROUPS:
@@ -103,22 +113,14 @@ class LayersManager:
                         rlayer.loadNamedStyle(qml_path)
                     add_layer_to_group(group_name, rlayer, bottom=True)
 
-    def create_groups(self):
-        self.remove_groups()
-        for group_name in self.group_names:
-            get_tree_group(group_name, create=True)
-
-    def remove_groups(self):
-        self.remove_loaded_layers()
-        for group_name in self.group_names:
-            grp = get_tree_group(group_name, create=False)
-            if grp:
-                remove_group_with_children(group_name)
+    def load_all_layers(self):
+        self.create_groups()
+        self.load_vector_layers()
+        self.load_raster_layers()
 
     def remove_loaded_layers(self):
         for model_cls, layer_handler in list(self.loaded_models.items()):
-            # TODO: This should be turned on after handler methods implementation
-            # layer_handler.disconnect_handler_signals()
+            layer_handler.disconnect_handler_signals()
             layer = layer_handler.layer
             remove_layer(layer)
             del self.loaded_models[model_cls]
@@ -131,3 +133,7 @@ class LayersManager:
         expr = QgsExpression(filter_exp) if filter_exp else None
         req = QgsFeatureRequest(expr) if expr is not None else QgsFeatureRequest()
         return self.loaded_models[model_cls].layer.getFeatures(req)
+
+    def populate_edit_form(self, dialog, layer, feature):
+        """Add extra logic to custom edit form of the layer."""
+        self.form_factory.set_layer_form_logic(dialog, layer, feature)

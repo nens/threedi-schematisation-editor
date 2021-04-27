@@ -1,42 +1,139 @@
 # Copyright (C) 2021 by Lutra Consulting
-from types import MappingProxyType
 import threedi_model_builder.data_models as dm
+from threedi_model_builder.utils import connect_signal, disconnect_signal
+from types import MappingProxyType
+from qgis.core import (
+    QgsProject,
+    QgsSnappingConfig,
+    QgsTolerance,
+)
 
 
 class UserLayerHandler:
     MODEL = dm.ModelObject
 
-    def __init__(self, layer, user_communication):
+    def __init__(self, layer_manager, layer):
+        self.layer_manager = layer_manager
+        self.form_factory = self.layer_manager.form_factory
         self.layer = layer
-        self.uc = user_communication
+        self.snapped_models = tuple()
 
     def connect_handler_signals(self):
-        self.layer.committedFeaturesAdded.connect(self._on_added_features)
-        self.layer.committedFeaturesRemoved.connect(self._on_removed_features)
-        self.layer.committedGeometriesChanges.connect(self._on_changed_geometries)
-        self.layer.committedAttributeValuesChanges.connect(self._on_changed_attributes)
+        self.layer.editingStarted.connect(self.on_editing_started)
+        self.layer.beforeRollBack.connect(self.on_rollback)
+        self.layer.beforeCommitChanges.connect(self.on_commit_changes)
+        # self.layer.featureAdded.connect(self.on_add_feature)
+        # self.layer.committedFeaturesAdded.connect(self.on_added_features)
+        # self.layer.committedFeaturesRemoved.connect(self.on_removed_features)
+        # self.layer.committedGeometriesChanges.connect(self.on_changed_geometries)
+        # self.layer.committedAttributeValuesChanges.connect(self.on_changed_attributes)
 
     def disconnect_handler_signals(self):
-        self.layer.committedFeaturesAdded.disconnect(self._on_added_features)
-        self.layer.committedFeaturesRemoved.disconnect(self._on_removed_features)
-        self.layer.committedGeometriesChanges.disconnect(self._on_changed_geometries)
-        self.layer.committedAttributeValuesChanges.disconnect(self._on_changed_attributes)
+        self.layer.editingStarted.disconnect(self.on_editing_started)
+        self.layer.beforeRollBack.connect(self.on_rollback)
+        self.layer.beforeCommitChanges.connect(self.on_commit_changes)
+        # self.layer.featureAdded.disconnect(self.on_add_feature)
+        # self.layer.committedFeaturesAdded.disconnect(self.on_added_features)
+        # self.layer.committedFeaturesRemoved.disconnect(self.on_removed_features)
+        # self.layer.committedGeometriesChanges.disconnect(self.on_changed_geometries)
+        # self.layer.committedAttributeValuesChanges.disconnect(self.on_changed_attributes)
 
-    def _on_added_features(self, layer_id, added_features):
-        raise Exception("Have to be reimplemented")
+    @property
+    def snapped_handlers(self):
+        snapped_handlers = [self.layer_manager.loaded_models[model_cls] for model_cls in self.snapped_models]
+        return snapped_handlers
 
-    def _on_removed_features(self, layer_id, feature_ids):
-        raise Exception("Have to be reimplemented")
+    def set_layer_snapping(self, enable=True):
+        if not self.snapped_models:
+            return
+        project = QgsProject.instance()
+        project.setTopologicalEditing(True)
+        snap_config = project.snappingConfig()
+        snap_config.setMode(QgsSnappingConfig.AdvancedConfiguration)
+        snap_config.setIntersectionSnapping(True)
+        individual_configs = snap_config.individualLayerSettings()
+        snapped_layers = [handler.layer for handler in self.snapped_handlers] + [self.layer]
+        for layer_handler in self.snapped_handlers:
+            layer = layer_handler.layer
+            disconnect_signal(layer.editingStarted, layer_handler.on_editing_started)
+            layer.startEditing()
+        for layer in snapped_layers:
+            iconf = individual_configs[layer]
+            iconf.setTolerance(10)
+            iconf.setTypeFlag(QgsSnappingConfig.VertexFlag)
+            iconf.setUnits(QgsTolerance.Pixels)
+            iconf.setEnabled(enable)
+            snap_config.setIndividualLayerSettings(layer, iconf)
+        if snap_config.enabled() is False:
+            snap_config.setEnabled(True)
+        project.setSnappingConfig(snap_config)
+        for layer_handler in self.snapped_handlers:
+            layer = layer_handler.layer
+            connect_signal(layer.editingStarted, layer_handler.on_editing_started)
 
-    def _on_changed_geometries(self, layer_id, changed_geometry_map):
-        raise Exception("Have to be reimplemented")
+    @staticmethod
+    def reset_snapping():
+        project = QgsProject.instance()
+        project.setTopologicalEditing(True)
+        snap_config = project.snappingConfig()
+        snap_config.setMode(QgsSnappingConfig.AllLayers)
+        snap_config.setIntersectionSnapping(True)
+        if snap_config.enabled() is False:
+            snap_config.setEnabled(True)
+        project.setSnappingConfig(snap_config)
 
-    def _on_changed_attributes(self, layer_id, changed_attribute_map):
-        raise Exception("Have to be reimplemented")
+    def validate_feature(self):
+        raise Exception("Not implemented")
+
+    def on_editing_started(self):
+        self.set_layer_snapping(enable=True)
+
+    def on_rollback(self):
+        self.reset_snapping()
+        if not self.snapped_models:
+            return
+        for layer_handler in self.snapped_handlers:
+            layer = layer_handler.layer
+            disconnect_signal(layer.beforeRollBack, layer_handler.on_rollback)
+            layer.rollBack()
+        for layer_handler in self.snapped_handlers:
+            layer = layer_handler.layer
+            connect_signal(layer.beforeRollBack, layer_handler.on_rollback)
+
+    def on_commit_changes(self):
+        self.reset_snapping()
+        if not self.snapped_models:
+            return
+        for layer_handler in self.snapped_handlers:
+            layer = layer_handler.layer
+            disconnect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
+            layer.commitChanges(stopEditing=False)
+        for layer_handler in self.snapped_handlers:
+            layer = layer_handler.layer
+            connect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
+
+    def on_add_feature(self, fid):
+        raise Exception("Not implemented")
+
+    def on_added_features(self, layer_id, added_features):
+        raise Exception("Not implemented")
+
+    def on_removed_features(self, layer_id, feature_ids):
+        raise Exception("Not implemented")
+
+    def on_changed_geometries(self, layer_id, changed_geometry_map):
+        raise Exception("Not implemented")
+
+    def on_changed_attributes(self, layer_id, changed_attribute_map):
+        raise Exception("Not implemented")
 
 
 class ConnectionNodeHandler(UserLayerHandler):
     MODEL = dm.ConnectionNode
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.snapped_models = (dm.Manhole, dm.Pipe)
 
 
 class BoundaryCondition1DHandler(UserLayerHandler):
@@ -49,6 +146,10 @@ class Lateral1DHandler(UserLayerHandler):
 
 class ManholeHandler(UserLayerHandler):
     MODEL = dm.Manhole
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.snapped_models = (dm.ConnectionNode, dm.Pipe)
 
 
 class PumpstationHandler(UserLayerHandler):
@@ -73,6 +174,10 @@ class OrificeHandler(UserLayerHandler):
 
 class PipeHandler(UserLayerHandler):
     MODEL = dm.Pipe
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.snapped_models = (dm.ConnectionNode, dm.Manhole)
 
 
 class CrossSectionLocationHandler(UserLayerHandler):

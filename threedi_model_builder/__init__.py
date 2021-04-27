@@ -3,7 +3,6 @@ from qgis.PyQt.QtWidgets import QAction
 from threedi_model_builder.communication import UICommunication
 from threedi_model_builder.user_layer_manager import LayersManager
 from threedi_model_builder.conversion import ModelDataConverter
-from threedi_model_builder.user_layer_forms import LayerEditFormFactory
 from threedi_model_builder.utils import (
     load_user_layers,
     create_empty_model,
@@ -72,8 +71,7 @@ class ThreediModelBuilderPlugin:
         self.model_gpkg = model_gpkg
         self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
         self.layer_manager.load_all_layers()
-        self.form_factory = LayerEditFormFactory(self.layer_manager)
-        self.uc.show_info("3Di User Layers registered!")
+        self.uc.bar_info("3Di User Layers registered!")
 
     def import_from_spatialite(self):
         src_sqlite = self.select_import_database()
@@ -88,7 +86,6 @@ class ThreediModelBuilderPlugin:
             self.layer_manager.remove_groups()
         self.layer_manager = LayersManager(self.iface, self.uc,  self.model_gpkg)
         self.layer_manager.load_all_layers()
-        self.form_factory = LayerEditFormFactory(self.layer_manager)
         self.uc.show_info("Import finished!")
 
     def export_to_spatialite(self):
@@ -101,7 +98,3 @@ class ThreediModelBuilderPlugin:
         converter = ModelDataConverter(dst_sqlite, self.model_gpkg)
         converter.export_all_model_data()
         self.uc.show_info("Export finished!")
-
-    def populate_edit_form(self, dialog, layer, feature):
-        """Add extra logic to custom edit form of the layer."""
-        self.form_factory.set_layer_form_logic(dialog, layer, feature)
