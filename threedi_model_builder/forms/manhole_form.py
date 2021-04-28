@@ -1,5 +1,5 @@
 from qgis.PyQt.QtCore import NULL
-
+from types import MappingProxyType
 from .base_edit_form import BaseEditForm
 import threedi_model_builder.data_models as dm
 
@@ -7,6 +7,16 @@ import threedi_model_builder.data_models as dm
 class ManholeEditForm(BaseEditForm):
     """Manhole user layer edit form logic."""
     MODEL = dm.Manhole
+    FOREIGN_MODEL_FIELDS = MappingProxyType(
+        {
+            "connection_node_initial_waterlevel": dm.ConnectionNode,
+            "connection_node_storage_area": dm.ConnectionNode,
+            "connection_node_code": dm.ConnectionNode,
+        }
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
 
     def populate_extra_widgets(self):
         """Populate widgets for other layers attributes."""

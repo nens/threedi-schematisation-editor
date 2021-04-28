@@ -1,8 +1,8 @@
 from collections import defaultdict
 from enum import Enum
-
+from types import MappingProxyType
 from qgis.PyQt.QtCore import QObject
-from qgis.PyQt.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLineEdit, QSpinBox, QGroupBox
+from qgis.PyQt.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLineEdit, QSpinBox
 
 from qgis.core import NULL
 from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
@@ -19,7 +19,7 @@ field_types_widgets = {
 class BaseEditForm(QObject):
     """Base edit form for user layers edit form logic."""
     MODEL = None
-    WIDGET_NAMES = None
+    FOREIGN_MODEL_FIELDS = MappingProxyType({})
 
     def __init__(self, layer_manager, dialog, layer, feature, parent=None):
         super(BaseEditForm, self).__init__(parent)
@@ -27,11 +27,19 @@ class BaseEditForm(QObject):
         self.iface = layer_manager.iface
         self.uc = layer_manager.uc
         self.dialog = dialog
+
         self.layer = layer
         self.feature = feature
         self.model_widgets = defaultdict(list)  # {data_model_cls: list of tuples (widget, layer field name)}
-        self.layer.editingStarted.connect(self.toggle_edit_mode)
-        self.layer.editingStopped.connect(self.toggle_edit_mode)
+        self.foreign_widgets = {}
+        self.set_foreign_widgets()
+        # self.layer.editingStarted.connect(self.toggle_edit_mode)
+        # self.layer.editingStopped.connect(self.toggle_edit_mode)
+
+    def set_foreign_widgets(self):
+        for foreign_widget_name in self.FOREIGN_MODEL_FIELDS.keys():
+            foreign_widget = self.dialog.findChild(QObject, foreign_widget_name)
+            self.foreign_widgets[foreign_widget_name] = foreign_widget
 
     def setup_form_widgets(self):
         self.populate_widgets()
@@ -41,9 +49,9 @@ class BaseEditForm(QObject):
     def toggle_edit_mode(self):
         editing_active = self.layer.isEditable()
         print(editing_active)
-        for widget in self.dialog.children():
-            if isinstance(widget, QGroupBox):
-                widget.setEnabled(editing_active)
+        for widget in self.foreign_widgets.values():
+            print(widget.objectName())
+            widget.setEnabled(editing_active)
 
     def populate_widgets(self, data_model_cls=None, feature=None):
         """Populate form's widgets - widgets are named after their attributes in the data model."""
