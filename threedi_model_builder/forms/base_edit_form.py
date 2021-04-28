@@ -21,8 +21,8 @@ class BaseEditForm(QObject):
     MODEL = None
     FOREIGN_MODEL_FIELDS = MappingProxyType({})
 
-    def __init__(self, layer_manager, dialog, layer, feature, parent=None):
-        super(BaseEditForm, self).__init__(parent)
+    def __init__(self, layer_manager, dialog, layer, feature):
+        super(BaseEditForm, self).__init__(dialog)
         self.layer_manager = layer_manager
         self.iface = layer_manager.iface
         self.uc = layer_manager.uc
@@ -33,8 +33,8 @@ class BaseEditForm(QObject):
         self.model_widgets = defaultdict(list)  # {data_model_cls: list of tuples (widget, layer field name)}
         self.foreign_widgets = {}
         self.set_foreign_widgets()
-        # self.layer.editingStarted.connect(self.toggle_edit_mode)
-        # self.layer.editingStopped.connect(self.toggle_edit_mode)
+        self.layer.editingStarted.connect(self.toggle_edit_mode)
+        self.layer.editingStopped.connect(self.toggle_edit_mode)
 
     def set_foreign_widgets(self):
         for foreign_widget_name in self.FOREIGN_MODEL_FIELDS.keys():

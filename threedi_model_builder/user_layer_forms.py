@@ -14,8 +14,8 @@ class LayerEditFormFactory:
         layer_handler = self.layer_manager.layer_handlers[layer.id()]
         layer_form = MODEL_FORMS[layer_handler.MODEL]
         # Form initializing
-        layer_form_instance = layer_form(self.layer_manager, dialog, layer, feature)
-        layer_form_instance.setup_form_widgets()
+        current_instance = layer_form(self.layer_manager, dialog, layer, feature)
+        current_instance.setup_form_widgets()
 
 
 ALL_FORMS = (
