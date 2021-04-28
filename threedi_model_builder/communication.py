@@ -95,4 +95,3 @@ class UICommunication(object):
     def log_info(self, msg):
         """Log the info message to QGIS logs."""
         self.log_msg(msg, level=Qgis.Info)
-

@@ -22,9 +22,7 @@ class LayersManager:
         ("Inflow", dm.INFLOW_ELEMENTS),
         ("Settings", dm.SETTINGS_ELEMENTS),
     )
-    RASTER_GROUPS = (
-        ("Model rasters", dm.ELEMENTS_WITH_RASTERS),
-    )
+    RASTER_GROUPS = (("Model rasters", dm.ELEMENTS_WITH_RASTERS),)
 
     def __init__(self, iface, user_communication, model_gpkg_path):
         self.iface = iface

@@ -1,6 +1,7 @@
 from types import MappingProxyType
 from .forms.manhole_form import ManholeEditForm
 from .forms.pipe_form import PipeEditForm
+from .forms.conn_node_form import ConnectionNodeEditForm
 
 
 class LayerEditFormFactory:
@@ -19,6 +20,7 @@ class LayerEditFormFactory:
 
 
 ALL_FORMS = (
+    ConnectionNodeEditForm,
     ManholeEditForm,
     PipeEditForm,
 )

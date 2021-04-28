@@ -84,7 +84,7 @@ class ThreediModelBuilderPlugin:
         self.model_gpkg = dst_gpkg
         if self.layer_manager is not None:
             self.layer_manager.remove_groups()
-        self.layer_manager = LayersManager(self.iface, self.uc,  self.model_gpkg)
+        self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
         self.layer_manager.load_all_layers()
         self.uc.show_info("Import finished!")
 
