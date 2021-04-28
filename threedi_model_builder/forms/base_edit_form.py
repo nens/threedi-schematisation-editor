@@ -1,7 +1,7 @@
 from collections import defaultdict
 from enum import Enum
 from types import MappingProxyType
-from qgis.PyQt.QtCore import QObject
+from qgis.PyQt.QtCore import QObject, QVariant
 from qgis.PyQt.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -84,7 +84,7 @@ class BaseEditForm(QObject):
             if issubclass(field_type, Enum):
                 cbo_items = {t.name: t.value for t in field_type}
                 self.populate_combo(widget, cbo_items)
-            self.set_widget_value(widget, feature[field_name])
+            self.set_widget_value(widget, feature[field_name], var_type=field_type)
             self.model_widgets[data_model_cls].append((widget, field_name))
 
     def populate_extra_widgets(self):
@@ -104,7 +104,7 @@ class BaseEditForm(QObject):
             widget.setCursorPosition(0)
         elif isinstance(widget, QCheckBox):
             widget.setChecked(bool(value))
-        elif isinstance(widget, (QgsSpinBox, QgsDoubleSpinBox, QDoubleSpinBox, QSpinBox)):
+        elif isinstance(widget, (QgsSpinBox, QSpinBox, QgsDoubleSpinBox, QDoubleSpinBox)):
             if value not in (None, NULL):
                 value = var_type(value) if var_type is not None else value
                 widget.setValue(value)

@@ -19,12 +19,18 @@
      <property name="enabled">
       <bool>true</bool>
      </property>
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
      <property name="title">
       <string>Characteristics</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="2" column="0">
        <widget class="QLabel" name="label_9">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Length</string>
         </property>
@@ -35,6 +41,9 @@
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_5">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Shape</string>
         </property>
@@ -45,6 +54,9 @@
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_6">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Width</string>
         </property>
@@ -55,6 +67,9 @@
       </item>
       <item row="0" column="2">
        <widget class="QLabel" name="label_10">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Bottom level</string>
         </property>
@@ -65,6 +80,9 @@
       </item>
       <item row="1" column="2">
        <widget class="QLabel" name="label_11">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Surface level</string>
         </property>
@@ -75,6 +93,9 @@
       </item>
       <item row="2" column="2">
        <widget class="QLabel" name="label_12">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Drain level</string>
         </property>
@@ -91,8 +112,14 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
+        </property>
+        <property name="decimals">
+         <number>3</number>
         </property>
         <property name="maximum">
          <double>1000000.000000000000000</double>
@@ -116,8 +143,14 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
+        </property>
+        <property name="decimals">
+         <number>3</number>
         </property>
         <property name="maximum">
          <double>1000000.000000000000000</double>
@@ -141,11 +174,23 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhNone</set>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
         </property>
+        <property name="decimals">
+         <number>3</number>
+        </property>
+        <property name="minimum">
+         <double>-9999999999.000000000000000</double>
+        </property>
         <property name="maximum">
-         <double>1000000.000000000000000</double>
+         <double>9999999999.000000000000000</double>
         </property>
         <property name="showClearButton">
          <bool>true</bool>
@@ -166,11 +211,23 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhNone</set>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
         </property>
+        <property name="decimals">
+         <number>3</number>
+        </property>
+        <property name="minimum">
+         <double>-9999999999.000000000000000</double>
+        </property>
         <property name="maximum">
-         <double>1000000.000000000000000</double>
+         <double>9999999999.000000000000000</double>
         </property>
         <property name="showClearButton">
          <bool>true</bool>
@@ -191,11 +248,23 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhNone</set>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
         </property>
+        <property name="decimals">
+         <number>3</number>
+        </property>
+        <property name="minimum">
+         <double>-9999999999.000000000000000</double>
+        </property>
         <property name="maximum">
-         <double>1000000.000000000000000</double>
+         <double>9999999999.000000000000000</double>
         </property>
         <property name="showClearButton">
          <bool>true</bool>
@@ -209,13 +278,20 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QComboBox" name="shape"/>
+       <widget class="QComboBox" name="shape">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
    </item>
    <item row="5" column="0">
     <spacer name="verticalSpacer">
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
@@ -232,12 +308,18 @@
      <property name="enabled">
       <bool>true</bool>
      </property>
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
      <property name="title">
       <string>Connection node</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="0" column="2">
        <widget class="QLabel" name="label_13">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Node initial water level</string>
         </property>
@@ -248,6 +330,9 @@
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_7">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Connection node id</string>
         </property>
@@ -258,6 +343,9 @@
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_8">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Node code</string>
         </property>
@@ -274,6 +362,9 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="clearButtonEnabled">
          <bool>true</bool>
         </property>
@@ -281,6 +372,9 @@
       </item>
       <item row="1" column="2">
        <widget class="QLabel" name="label_14">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Node storage area</string>
         </property>
@@ -296,6 +390,9 @@
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
         </property>
         <property name="readOnly">
          <bool>true</bool>
@@ -325,8 +422,17 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhNone</set>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
+        </property>
+        <property name="decimals">
+         <number>3</number>
         </property>
         <property name="minimum">
          <double>-1000.000000000000000</double>
@@ -353,8 +459,17 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhNone</set>
+        </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
+        </property>
+        <property name="decimals">
+         <number>3</number>
         </property>
         <property name="maximum">
          <double>999999999.000000000000000</double>
@@ -372,12 +487,18 @@
      <property name="enabled">
       <bool>true</bool>
      </property>
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
      <property name="title">
       <string>General</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="2">
        <widget class="QLabel" name="label_2">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Display name</string>
         </property>
@@ -394,6 +515,9 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="clearButtonEnabled">
          <bool>true</bool>
         </property>
@@ -401,6 +525,9 @@
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Id</string>
         </property>
@@ -411,6 +538,9 @@
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_3">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Code</string>
         </property>
@@ -427,6 +557,9 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="clearButtonEnabled">
          <bool>true</bool>
         </property>
@@ -434,6 +567,9 @@
       </item>
       <item row="1" column="2">
        <widget class="QLabel" name="label_4">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Calculation type</string>
         </property>
@@ -450,10 +586,16 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="QgsSpinBox" name="id">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="readOnly">
          <bool>true</bool>
         </property>
@@ -482,6 +624,9 @@
      <property name="enabled">
       <bool>true</bool>
      </property>
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
      <property name="title">
       <string>Visualisation</string>
      </property>
@@ -494,10 +639,16 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
        </widget>
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_15">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Manhole indicator</string>
         </property>
@@ -508,6 +659,9 @@
       </item>
       <item row="0" column="2">
        <widget class="QLabel" name="label_16">
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
         <property name="text">
          <string>Zoom category</string>
         </property>
@@ -523,6 +677,9 @@
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
         </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
