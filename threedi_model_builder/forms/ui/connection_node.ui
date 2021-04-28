@@ -6,16 +6,22 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>792</width>
+    <width>462</width>
     <height>156</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="locale">
+   <locale language="English" country="UnitedStates"/>
+  </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
     <widget class="QLabel" name="label_7">
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
      <property name="text">
       <string>Id</string>
      </property>
@@ -26,6 +32,9 @@
    </item>
    <item row="1" column="2">
     <widget class="QLabel" name="label_14">
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
      <property name="text">
       <string>Storage area</string>
      </property>
@@ -42,12 +51,18 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
     </widget>
    </item>
    <item row="0" column="2">
     <widget class="QLabel" name="label_13">
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
      <property name="text">
-      <string>Initail water level</string>
+      <string>Initial water level</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -56,6 +71,9 @@
    </item>
    <item row="1" column="0">
     <widget class="QLabel" name="label_8">
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
      <property name="text">
       <string>Code</string>
      </property>
@@ -66,6 +84,9 @@
    </item>
    <item row="2" column="1">
     <spacer name="verticalSpacer">
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
@@ -85,6 +106,9 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
      <property name="readOnly">
       <bool>true</bool>
      </property>
@@ -96,13 +120,19 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="3">
-    <widget class="QgsDoubleSpinBox" name="initial_waterlevel">
+   <item row="1" column="3">
+    <widget class="QgsDoubleSpinBox" name="storage_area">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
+     </property>
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhNone</set>
      </property>
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::NoButtons</enum>
@@ -115,13 +145,19 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="3">
-    <widget class="QgsDoubleSpinBox" name="storage_area">
+   <item row="0" column="3">
+    <widget class="QDoubleSpinBox" name="initial_waterlevel">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
+     </property>
+     <property name="locale">
+      <locale language="English" country="UnitedStates"/>
+     </property>
+     <property name="inputMethodHints">
+      <set>Qt::ImhNone</set>
      </property>
      <property name="buttonSymbols">
       <enum>QAbstractSpinBox::NoButtons</enum>
