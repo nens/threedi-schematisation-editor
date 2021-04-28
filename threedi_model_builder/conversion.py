@@ -1,6 +1,11 @@
 import threedi_model_builder.data_models as dm
 import threedi_model_builder.enumerators as en
-from threedi_model_builder.utils import sqlite_layer, gpkg_layer, layer_to_gpkg, vector_layer_factory
+from threedi_model_builder.utils import (
+    sqlite_layer,
+    gpkg_layer,
+    layer_to_gpkg,
+    vector_layer_factory,
+)
 from operator import itemgetter
 from collections import OrderedDict, defaultdict
 from qgis.core import (
@@ -54,7 +59,11 @@ class ModelDataConverter:
         src_field_names = {f.name() for f in src_fields}
         dst_field_names = {f.name() for f in dst_fields}
         skip_geometry = dst_layer.geometryType() == QgsWkbTypes.GeometryType.NullGeometry
-        field_mappings = {dst_fld: src_fld for dst_fld, src_fld in field_mappings.items() if src_fld in src_field_names and dst_fld in dst_field_names}
+        field_mappings = {
+            dst_fld: src_fld
+            for dst_fld, src_fld in field_mappings.items()
+            if src_fld in src_field_names and dst_fld in dst_field_names
+        }
         new_feats = []
         for src_feat in src_layer.getFeatures() if request is None else src_layer.getFeatures(request):
             dst_feat = QgsFeature(dst_fields)

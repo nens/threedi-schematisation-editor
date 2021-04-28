@@ -2,7 +2,13 @@ from collections import defaultdict
 from enum import Enum
 from types import MappingProxyType
 from qgis.PyQt.QtCore import QObject
-from qgis.PyQt.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLineEdit, QSpinBox
+from qgis.PyQt.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QLineEdit,
+    QSpinBox,
+)
 
 from qgis.core import NULL
 from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
@@ -18,6 +24,7 @@ field_types_widgets = {
 
 class BaseEditForm(QObject):
     """Base edit form for user layers edit form logic."""
+
     MODEL = None
     FOREIGN_MODEL_FIELDS = MappingProxyType({})
 
@@ -48,20 +55,26 @@ class BaseEditForm(QObject):
 
     def toggle_edit_mode(self):
         editing_active = self.layer.isEditable()
-        print(editing_active)
         for widget in self.foreign_widgets.values():
-            print(widget.objectName())
             widget.setEnabled(editing_active)
 
-    def populate_widgets(self, data_model_cls=None, feature=None):
-        """Populate form's widgets - widgets are named after their attributes in the data model."""
-        field_name_prefix = ""
+    def populate_widgets(self, data_model_cls=None, feature=None, start_end_modifier=None):
+        """
+        Populate form's widgets - widgets are named after their attributes in the data model.
+        If data_model_cls is given, then populate widgets for this class and feature.
+        start_end_modifier is used when there are multiple features edited in the form, for example two manholes in
+        a pipe form. The modifier should be 1 for starting point and 2 for ending.
+        """
+
         if data_model_cls is not None:
             field_name_prefix = data_model_cls.__tablename__ + "_"
+            if start_end_modifier is not None:
+                field_name_prefix += str(start_end_modifier) + "_"
         else:
             data_model_cls = self.MODEL
             feature = self.feature
-        if feature.id() < 0:
+            field_name_prefix = ""
+        if feature is None or feature.id() < 0:
             return  # form open for an invalid feature
         for field_name, field_type in data_model_cls.__annotations__.items():
             widget = self.dialog.findChild(QObject, field_name_prefix + field_name)

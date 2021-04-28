@@ -3,6 +3,7 @@ import threedi_model_builder.data_models as dm
 from threedi_model_builder.utils import connect_signal, disconnect_signal
 from types import MappingProxyType
 from qgis.core import (
+    NULL,
     QgsProject,
     QgsSnappingConfig,
     QgsTolerance,
@@ -127,6 +128,16 @@ class UserLayerHandler:
     def on_changed_attributes(self, layer_id, changed_attribute_map):
         raise Exception("Not implemented")
 
+    def get_feat_by_id(self, object_id):
+        """Return layer feature with the given id."""
+        if object_id not in (None, NULL):
+            feats_iter = self.layer_manager.get_layer_features(self.MODEL, f'"id" = {object_id}')
+            if feats_iter.isValid():
+                feat = next(feats_iter)
+                if feat.isValid():
+                    return feat
+        return None
+
 
 class ConnectionNodeHandler(UserLayerHandler):
     MODEL = dm.ConnectionNode
@@ -134,6 +145,16 @@ class ConnectionNodeHandler(UserLayerHandler):
     def __init__(self, *args):
         super().__init__(*args)
         self.snapped_models = (dm.Manhole, dm.Pipe)
+
+    def get_manhole_feat_for_node_id(self, node_id):
+        """Check if there is a manhole feature defined for node of the given node_id and return it."""
+        if node_id not in (None, NULL):
+            manhole_feats = self.layer_manager.get_layer_features(dm.Manhole, f'"connection_node_id" = {node_id}')
+            if manhole_feats.isValid():
+                manhole_feat = next(manhole_feats)
+                if manhole_feat.isValid():
+                    return manhole_feat
+        return None
 
 
 class BoundaryCondition1DHandler(UserLayerHandler):

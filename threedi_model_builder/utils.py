@@ -22,7 +22,6 @@ field_types_mapping = {
     int: QVariant.Int,
     float: QVariant.Double,
     str: QVariant.String,
-
 }
 
 

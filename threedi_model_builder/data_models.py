@@ -85,22 +85,24 @@ class Manhole(ModelObject):
     SQLITE_SOURCES = ("v2_manhole_view",)
     SQLITE_TARGETS = ("v2_manhole",)
 
-    IMPORT_FIELD_MAPPINGS = MappingProxyType({
-        "id": "manh_id",
-        "code": "manh_code",
-        "display_name": "manh_display_name",
-        "calculation_type": "manh_calculation_type",
-        "shape": "manh_shape",
-        "width": "manh_width",
-        "length": "manh_length",
-        "bottom_level": "manh_bottom_level",
-        "surface_level": "manh_surface_level",
-        "drain_level": "manh_drain_level",
-        "sediment_level": "manh_sediment_level",
-        "manhole_indicator": "manh_manhole_indicator",
-        "zoom_category": "manh_zoom_category",
-        "connection_node_id": "manh_connection_node_id"
-    })
+    IMPORT_FIELD_MAPPINGS = MappingProxyType(
+        {
+            "id": "manh_id",
+            "code": "manh_code",
+            "display_name": "manh_display_name",
+            "calculation_type": "manh_calculation_type",
+            "shape": "manh_shape",
+            "width": "manh_width",
+            "length": "manh_length",
+            "bottom_level": "manh_bottom_level",
+            "surface_level": "manh_surface_level",
+            "drain_level": "manh_drain_level",
+            "sediment_level": "manh_sediment_level",
+            "manhole_indicator": "manh_manhole_indicator",
+            "zoom_category": "manh_zoom_category",
+            "connection_node_id": "manh_connection_node_id",
+        }
+    )
 
     id: int
     code: str
@@ -127,13 +129,17 @@ class Pumpstation(ModelObject):
     SQLITE_SOURCES = ("v2_pumpstation_point_view",)
     SQLITE_TARGETS = ("v2_pumpstation",)
 
-    IMPORT_FIELD_MAPPINGS = MappingProxyType({
-        "id": "pump_id",
-    })
+    IMPORT_FIELD_MAPPINGS = MappingProxyType(
+        {
+            "id": "pump_id",
+        }
+    )
 
-    EXPORT_FIELD_MAPPINGS = MappingProxyType({
-        "connection_node_id": "connection_node_start_id",
-    })
+    EXPORT_FIELD_MAPPINGS = MappingProxyType(
+        {
+            "connection_node_id": "connection_node_start_id",
+        }
+    )
 
     id: int
     code: str
@@ -157,13 +163,15 @@ class PumpstationMap(ModelObject):
     SQLITE_SOURCES = ("v2_pumpstation_view",)
     SQLITE_TARGETS = ("v2_pumpstation",)
 
-    IMPORT_FIELD_MAPPINGS = MappingProxyType({
-        "id": "pump_id",
-        "code": "pump_code",
-        "display_name": "pump_display_name",
-        "connection_node_start_id": "pump_connection_node_start_id",
-        "connection_node_end_id": "pump_connection_node_end_id",
-    })
+    IMPORT_FIELD_MAPPINGS = MappingProxyType(
+        {
+            "id": "pump_id",
+            "code": "pump_code",
+            "display_name": "pump_display_name",
+            "connection_node_start_id": "pump_connection_node_start_id",
+            "connection_node_end_id": "pump_connection_node_end_id",
+        }
+    )
 
     id: int
     code: str
@@ -181,23 +189,25 @@ class Weir(ModelObject):
     SQLITE_SOURCES = ("v2_weir_view",)
     SQLITE_TARGETS = ("v2_weir",)
 
-    IMPORT_FIELD_MAPPINGS = MappingProxyType({
-        "id": "weir_id",
-        "code": "weir_code",
-        "display_name": "weir_display_name",
-        "crest_level": "weir_crest_level",
-        "crest_type": "weir_crest_type",
-        "discharge_coefficient_positive": "weir_discharge_coefficient_positive",
-        "discharge_coefficient_negative": "weir_discharge_coefficient_negative",
-        "friction_value": "weir_friction_value",
-        "friction_type": "weir_friction_type",
-        "sewerage": "weir_sewerage",
-        "external": "weir_external",
-        "zoom_category": "weir_zoom_category",
-        "connection_node_start_id": "weir_connection_node_start_id",
-        "connection_node_end_id": "weir_connection_node_end_id",
-        "cross_section_definition_id": "weir_cross_section_definition_id",
-    })
+    IMPORT_FIELD_MAPPINGS = MappingProxyType(
+        {
+            "id": "weir_id",
+            "code": "weir_code",
+            "display_name": "weir_display_name",
+            "crest_level": "weir_crest_level",
+            "crest_type": "weir_crest_type",
+            "discharge_coefficient_positive": "weir_discharge_coefficient_positive",
+            "discharge_coefficient_negative": "weir_discharge_coefficient_negative",
+            "friction_value": "weir_friction_value",
+            "friction_type": "weir_friction_type",
+            "sewerage": "weir_sewerage",
+            "external": "weir_external",
+            "zoom_category": "weir_zoom_category",
+            "connection_node_start_id": "weir_connection_node_start_id",
+            "connection_node_end_id": "weir_connection_node_end_id",
+            "cross_section_definition_id": "weir_cross_section_definition_id",
+        }
+    )
 
     id: int
     code: str
@@ -225,23 +235,25 @@ class Culvert(ModelObject):
     SQLITE_SOURCES = ("v2_culvert_view",)
     SQLITE_TARGETS = ("v2_culvert",)
 
-    IMPORT_FIELD_MAPPINGS = MappingProxyType({
-        "id": "cul_id",
-        "code": "cul_code",
-        "display_name": "cul_display_name",
-        "calculation_type": "cul_calculation_type",
-        "dist_calc_points": "cul_dist_calc_points",
-        "invert_level_start_point": "cul_invert_level_start_point",
-        "invert_level_end_point": "cul_invert_level_end_point",
-        "discharge_coefficient_positive": "cul_discharge_coefficient_positive",
-        "discharge_coefficient_negative": "cul_discharge_coefficient_negative",
-        "friction_value": "cul_friction_value",
-        "friction_type": "cul_friction_type",
-        "zoom_category": "cul_zoom_category",
-        "connection_node_start_id": "cul_connection_node_start_id",
-        "connection_node_end_id": "cul_connection_node_end_id",
-        "cross_section_definition_id": "cul_cross_section_definition_id",
-    })
+    IMPORT_FIELD_MAPPINGS = MappingProxyType(
+        {
+            "id": "cul_id",
+            "code": "cul_code",
+            "display_name": "cul_display_name",
+            "calculation_type": "cul_calculation_type",
+            "dist_calc_points": "cul_dist_calc_points",
+            "invert_level_start_point": "cul_invert_level_start_point",
+            "invert_level_end_point": "cul_invert_level_end_point",
+            "discharge_coefficient_positive": "cul_discharge_coefficient_positive",
+            "discharge_coefficient_negative": "cul_discharge_coefficient_negative",
+            "friction_value": "cul_friction_value",
+            "friction_type": "cul_friction_type",
+            "zoom_category": "cul_zoom_category",
+            "connection_node_start_id": "cul_connection_node_start_id",
+            "connection_node_end_id": "cul_connection_node_end_id",
+            "cross_section_definition_id": "cul_cross_section_definition_id",
+        }
+    )
 
     id: int
     code: str
@@ -269,23 +281,25 @@ class Orifice(ModelObject):
     SQLITE_SOURCES = ("v2_orifice_view",)
     SQLITE_TARGETS = ("v2_orifice",)
 
-    IMPORT_FIELD_MAPPINGS = MappingProxyType({
-        "id": "orf_id",
-        "code": "orf_code",
-        "display_name": "orf_display_name",
-        "crest_level": "orf_crest_level",
-        "crest_type": "orf_crest_type",
-        "discharge_coefficient_positive": "orf_discharge_coefficient_positive",
-        "discharge_coefficient_negative": "orf_discharge_coefficient_negative",
-        "friction_value": "orf_friction_value",
-        "friction_type": "orf_friction_type",
-        "max_capacity": "orf_max_capacity",
-        "sewerage": "orf_sewerage",
-        "zoom_category": "orf_zoom_category",
-        "connection_node_start_id": "orf_connection_node_start_id",
-        "connection_node_end_id": "orf_connection_node_end_id",
-        "cross_section_definition_id": "orf_cross_section_definition_id",
-    })
+    IMPORT_FIELD_MAPPINGS = MappingProxyType(
+        {
+            "id": "orf_id",
+            "code": "orf_code",
+            "display_name": "orf_display_name",
+            "crest_level": "orf_crest_level",
+            "crest_type": "orf_crest_type",
+            "discharge_coefficient_positive": "orf_discharge_coefficient_positive",
+            "discharge_coefficient_negative": "orf_discharge_coefficient_negative",
+            "friction_value": "orf_friction_value",
+            "friction_type": "orf_friction_type",
+            "max_capacity": "orf_max_capacity",
+            "sewerage": "orf_sewerage",
+            "zoom_category": "orf_zoom_category",
+            "connection_node_start_id": "orf_connection_node_start_id",
+            "connection_node_end_id": "orf_connection_node_end_id",
+            "cross_section_definition_id": "orf_cross_section_definition_id",
+        }
+    )
 
     id: int
     code: str
@@ -313,25 +327,27 @@ class Pipe(ModelObject):
     SQLITE_SOURCES = ("v2_pipe_view",)
     SQLITE_TARGETS = ("v2_pipe",)
 
-    IMPORT_FIELD_MAPPINGS = MappingProxyType({
-        "id": "pipe_id",
-        "code": "pipe_code",
-        "display_name": "pipe_display_name",
-        "calculation_type": "pipe_calculation_type",
-        "dist_calc_points": "pipe_dist_calc_points",
-        "invert_level_start_point": "pipe_invert_level_start_point",
-        "invert_level_end_point": "pipe_invert_level_end_point",
-        "friction_value": "pipe_friction_value",
-        "friction_type": "pipe_friction_type",
-        "material": "pipe_material",
-        "sewerage_type": "pipe_sewerage_type",
-        "zoom_category": "pipe_zoom_category",
-        "profile_num": "pipe_profile_num",
-        "original_length": "pipe_original_length",
-        "connection_node_start_id": "pipe_connection_node_start_id",
-        "connection_node_end_id": "pipe_connection_node_end_id",
-        "cross_section_definition_id": "pipe_cross_section_definition_id",
-    })
+    IMPORT_FIELD_MAPPINGS = MappingProxyType(
+        {
+            "id": "pipe_id",
+            "code": "pipe_code",
+            "display_name": "pipe_display_name",
+            "calculation_type": "pipe_calculation_type",
+            "dist_calc_points": "pipe_dist_calc_points",
+            "invert_level_start_point": "pipe_invert_level_start_point",
+            "invert_level_end_point": "pipe_invert_level_end_point",
+            "friction_value": "pipe_friction_value",
+            "friction_type": "pipe_friction_type",
+            "material": "pipe_material",
+            "sewerage_type": "pipe_sewerage_type",
+            "zoom_category": "pipe_zoom_category",
+            "profile_num": "pipe_profile_num",
+            "original_length": "pipe_original_length",
+            "connection_node_start_id": "pipe_connection_node_start_id",
+            "connection_node_end_id": "pipe_connection_node_end_id",
+            "cross_section_definition_id": "pipe_cross_section_definition_id",
+        }
+    )
 
     id: int
     code: str
@@ -361,20 +377,24 @@ class CrossSectionLocation(ModelObject):
     SQLITE_SOURCES = ("v2_cross_section_location_view",)
     SQLITE_TARGETS = ("v2_cross_section_location",)
 
-    IMPORT_FIELD_MAPPINGS = MappingProxyType({
-        "id": "loc_id",
-        "code": "loc_code",
-        "reference_level": "loc_reference_level",
-        "friction_value": "loc_friction_value",
-        "friction_type": "loc_friction_type",
-        "bank_level": "loc_bank_level",
-        "channel_id": "loc_channel_id",
-        "cross_section_definition_id": "loc_definition_id",
-    })
+    IMPORT_FIELD_MAPPINGS = MappingProxyType(
+        {
+            "id": "loc_id",
+            "code": "loc_code",
+            "reference_level": "loc_reference_level",
+            "friction_value": "loc_friction_value",
+            "friction_type": "loc_friction_type",
+            "bank_level": "loc_bank_level",
+            "channel_id": "loc_channel_id",
+            "cross_section_definition_id": "loc_definition_id",
+        }
+    )
 
-    EXPORT_FIELD_MAPPINGS = MappingProxyType({
-        "cross_section_definition_id": "definition_id",
-    })
+    EXPORT_FIELD_MAPPINGS = MappingProxyType(
+        {
+            "cross_section_definition_id": "definition_id",
+        }
+    )
 
     id: int
     code: str
@@ -454,7 +474,10 @@ class LinearObstacle(ModelObject):
     __layername__ = "Linear Obstacle"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = ("v2_obstacle", "v2_levee",)
+    SQLITE_SOURCES = (
+        "v2_obstacle",
+        "v2_levee",
+    )
     SQLITE_TARGETS = SQLITE_SOURCES
 
     id: int
@@ -884,5 +907,10 @@ SETTINGS_ELEMENTS = (
 
 
 ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS + (Timeseries,)
-ELEMENTS_WITH_TIMESERIES = (BoundaryCondition1D, Lateral1D, BoundaryCondition2D, Lateral2D)
+ELEMENTS_WITH_TIMESERIES = (
+    BoundaryCondition1D,
+    Lateral1D,
+    BoundaryCondition2D,
+    Lateral2D,
+)
 ELEMENTS_WITH_RASTERS = tuple(model_cls for model_cls in SETTINGS_ELEMENTS if model_cls.RELATED_RASTERS)

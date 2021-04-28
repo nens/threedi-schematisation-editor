@@ -1,4 +1,3 @@
-from qgis.PyQt.QtCore import NULL
 from types import MappingProxyType
 from .base_edit_form import BaseEditForm
 import threedi_model_builder.data_models as dm
@@ -6,6 +5,7 @@ import threedi_model_builder.data_models as dm
 
 class ManholeEditForm(BaseEditForm):
     """Manhole user layer edit form logic."""
+
     MODEL = dm.Manhole
     FOREIGN_MODEL_FIELDS = MappingProxyType(
         {
@@ -22,10 +22,9 @@ class ManholeEditForm(BaseEditForm):
         """Populate widgets for other layers attributes."""
         if self.feature.id() < 0:
             return  # form open for an invalid feature
-        conn_node_id = self.feature["connection_node_id"]
-        if conn_node_id not in (None, NULL):
-            conn_node_feats = self.layer_manager.get_layer_features(dm.ConnectionNode, f'"id" = {conn_node_id}')
-            if conn_node_feats.isValid():
-                conn_node_feat = next(conn_node_feats)
-                if conn_node_feat.isValid():
-                    self.populate_widgets(dm.ConnectionNode, conn_node_feat)
+
+        # Connection node
+        connection_node_handler = self.layer_manager.loaded_models[dm.ConnectionNode]
+        connection_node_feat = connection_node_handler.get_feat_by_id(self.feature["connection_node_id"])
+        if connection_node_feat is not None:
+            self.populate_widgets(data_model_cls=dm.ConnectionNode, feature=connection_node_feat)
