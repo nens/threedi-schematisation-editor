@@ -4,6 +4,7 @@ from threedi_model_builder.enumerators import (
     AggregationMethod,
     BoundaryType,
     CalculationType,
+    CalculationTypeNode,
     CalculationTypeCulvert,
     CrestType,
     CrossSectionShape,
@@ -107,7 +108,7 @@ class Manhole(ModelObject):
     id: int
     code: str
     display_name: str
-    calculation_type: CalculationType
+    calculation_type: CalculationTypeNode
     shape: CrossSectionShape
     width: float
     length: float

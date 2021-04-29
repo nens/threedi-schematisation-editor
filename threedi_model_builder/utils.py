@@ -14,6 +14,7 @@ from qgis.core import (
     QgsProject,
     QgsField,
     QgsVectorFileWriter,
+    QgsPointLocator,
 )
 from qgis.utils import plugins
 
@@ -215,3 +216,34 @@ def connect_signal(signal, slot):
 
 def disconnect_signal(signal, slot):
     signal.disconnect(slot)
+
+
+def find_point_node(point, node_layer, locator=None):
+    if not locator:
+        locator = QgsPointLocator(node_layer)
+    connection_node_feat = None
+    match = locator.nearestVertex(point, tolerance=0.0)
+    match_layer = match.layer()
+    if match_layer:
+        node_fid = match.featureId()
+        connection_node_feat = match_layer.getFeature(node_fid)
+    return connection_node_feat
+
+
+def find_linestring_nodes(linestring, node_layer, locator=None):
+    if not locator:
+        locator = QgsPointLocator(node_layer)
+    connection_node_start_feat = None
+    connection_node_end_feat = None
+    start_point, end_point = linestring[0], linestring[-1]
+    start_match = locator.nearestVertex(start_point, tolerance=0.0)
+    end_match = locator.nearestVertex(end_point, tolerance=0.0)
+    start_match_layer = start_match.layer()
+    end_match_layer = end_match.layer()
+    if start_match_layer:
+        start_node_fid = start_match.featureId()
+        connection_node_start_feat = start_match_layer.getFeature(start_node_fid)
+    if end_match_layer:
+        end_node_fid = end_match.featureId()
+        connection_node_end_feat = end_match_layer.getFeature(end_node_fid)
+    return connection_node_start_feat, connection_node_end_feat
