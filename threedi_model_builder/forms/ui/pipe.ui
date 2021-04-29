@@ -186,16 +186,19 @@
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::NoButtons</enum>
             </property>
+            <property name="decimals">
+             <number>4</number>
+            </property>
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -239,13 +242,13 @@
             <property name="maximum">
              <double>99999999.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -289,13 +292,13 @@
             <property name="maximum">
              <double>99999999.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -403,13 +406,13 @@
             <property name="maximum">
              <number>99999999</number>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>false</bool>
             </property>
            </widget>
@@ -676,10 +679,10 @@
             <property name="maximum">
              <number>999999999</number>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>false</bool>
             </property>
            </widget>
@@ -723,10 +726,10 @@
             <property name="maximum">
              <number>999999999</number>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>false</bool>
             </property>
            </widget>
@@ -849,10 +852,10 @@
             <property name="maximum">
              <number>999999999</number>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>false</bool>
             </property>
            </widget>
@@ -874,13 +877,13 @@
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -899,7 +902,7 @@
             <property name="maximum">
              <double>999999999.000000000000000</double>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -960,7 +963,7 @@
             <property name="maximum">
              <number>9999999</number>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1051,13 +1054,13 @@
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1076,13 +1079,13 @@
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1101,13 +1104,13 @@
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1126,13 +1129,13 @@
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1151,13 +1154,13 @@
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1264,13 +1267,13 @@
             <property name="maximum">
              <number>99999999</number>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>false</bool>
             </property>
            </widget>
@@ -1394,13 +1397,13 @@
             <property name="maximum">
              <number>99999999</number>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>false</bool>
             </property>
            </widget>
@@ -1461,7 +1464,7 @@
             <property name="maximum">
              <number>9999999</number>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1552,13 +1555,13 @@
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1577,13 +1580,13 @@
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1602,13 +1605,13 @@
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1627,13 +1630,13 @@
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1652,13 +1655,13 @@
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1748,10 +1751,10 @@
             <property name="maximum">
              <number>999999999</number>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>false</bool>
             </property>
            </widget>
@@ -1773,13 +1776,13 @@
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
-            <property name="showClearButton">
+            <property name="showClearButton" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
-            <property name="expressionsEnabled">
+            <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1798,7 +1801,7 @@
             <property name="maximum">
              <double>999999999.000000000000000</double>
             </property>
-            <property name="clearValue">
+            <property name="clearValue" stdset="0">
              <bool>true</bool>
             </property>
            </widget>

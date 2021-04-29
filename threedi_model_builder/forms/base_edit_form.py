@@ -1,7 +1,7 @@
 from collections import defaultdict
 from enum import Enum
 from types import MappingProxyType
-from qgis.PyQt.QtCore import QObject, QVariant
+from qgis.PyQt.QtCore import QObject
 from qgis.PyQt.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -29,15 +29,16 @@ class BaseEditForm(QObject):
     FOREIGN_MODEL_FIELDS = MappingProxyType({})
 
     def __init__(self, layer_manager, dialog, layer, feature):
-        super(BaseEditForm, self).__init__(dialog)
+        super(BaseEditForm, self).__init__(parent=dialog)  # We need to set dialog as a parent to keep form alive
         self.layer_manager = layer_manager
         self.iface = layer_manager.iface
         self.uc = layer_manager.uc
         self.dialog = dialog
-
         self.layer = layer
         self.feature = feature
+        self.new_feature = False
         self.model_widgets = defaultdict(list)  # {data_model_cls: list of tuples (widget, layer field name)}
+        self.name_to_widget = {}
         self.foreign_widgets = {}
         self.set_foreign_widgets()
         self.layer.editingStarted.connect(self.toggle_edit_mode)
@@ -49,6 +50,14 @@ class BaseEditForm(QObject):
             self.foreign_widgets[foreign_widget_name] = foreign_widget
 
     def setup_form_widgets(self):
+        if self.feature is None:
+            return
+        if self.feature.id() < 0:
+            geometry = self.feature.geometry()
+            if not geometry:
+                return  # form open for an invalid feature
+            else:
+                self.new_feature = True
         self.populate_widgets()
         self.populate_extra_widgets()
         self.toggle_edit_mode()
@@ -74,10 +83,9 @@ class BaseEditForm(QObject):
             data_model_cls = self.MODEL
             feature = self.feature
             field_name_prefix = ""
-        if feature is None or feature.id() < 0:
-            return  # form open for an invalid feature
         for field_name, field_type in data_model_cls.__annotations__.items():
-            widget = self.dialog.findChild(QObject, field_name_prefix + field_name)
+            widget_name = field_name_prefix + field_name
+            widget = self.dialog.findChild(QObject, widget_name)
             if widget is None:
                 # the filed might not be shown in the form
                 continue
@@ -86,6 +94,7 @@ class BaseEditForm(QObject):
                 self.populate_combo(widget, cbo_items)
             self.set_widget_value(widget, feature[field_name], var_type=field_type)
             self.model_widgets[data_model_cls].append((widget, field_name))
+            self.name_to_widget[widget.objectName()] = widget
 
     def populate_extra_widgets(self):
         raise NotImplementedError()

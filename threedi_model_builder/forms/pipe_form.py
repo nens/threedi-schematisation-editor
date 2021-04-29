@@ -1,5 +1,6 @@
 from types import MappingProxyType
-from .base_edit_form import BaseEditForm
+from threedi_model_builder.forms.base_edit_form import BaseEditForm
+from threedi_model_builder.utils import find_linestring_nodes
 import threedi_model_builder.data_models as dm
 
 
@@ -50,23 +51,58 @@ class PipeEditForm(BaseEditForm):
 
     def populate_extra_widgets(self):
         """Populate widgets for other layers attributes."""
-        if self.feature.id() < 0:
-            return  # form open for an invalid feature
-
         # Cross section definition
+        self.populate_cross_section_definition()
+        # Manholes for start and end points
+        if self.new_feature is True:
+            self.populate_manholes_on_creation()
+        else:
+            self.populate_manholes_on_edit()
+
+    def populate_cross_section_definition(self):
         cross_section_def_handler = self.layer_manager.loaded_models[dm.CrossSectionDefinition]
         cross_section_def_feat = cross_section_def_handler.get_feat_by_id(self.feature["cross_section_definition_id"])
         if cross_section_def_feat is not None:
             self.populate_widgets(data_model_cls=dm.CrossSectionDefinition, feature=cross_section_def_feat)
 
-        # Manholes for start and end points
+    def populate_manholes_on_edit(self):
+        connection_node_handler = self.layer_manager.loaded_models[dm.ConnectionNode]
         for name, modifier in (("start", 1), ("end", 2)):
-            connection_node_handler = self.layer_manager.loaded_models[dm.ConnectionNode]
             connection_node_id = self.feature[f"connection_node_{name}_id"]
-            manhole_feat = connection_node_handler.get_manhole_feat_for_node_id(connection_node_id)
-            if manhole_feat is not None:
-                self.populate_widgets(
-                    data_model_cls=dm.Manhole,
-                    feature=manhole_feat,
-                    start_end_modifier=modifier,
+            if connection_node_id:
+                connection_node_feat = connection_node_handler.get_feat_for_node_id(connection_node_id)
+                manhole_feat = connection_node_handler.get_manhole_feat_for_node_id(connection_node_id)
+                if manhole_feat is not None:
+                    self.populate_widgets(
+                        data_model_cls=dm.ConnectionNode,
+                        feature=connection_node_feat,
+                        start_end_modifier=modifier,
+                    )
+                    self.populate_widgets(
+                        data_model_cls=dm.Manhole,
+                        feature=manhole_feat,
+                        start_end_modifier=modifier,
+                    )
+
+    def populate_manholes_on_creation(self):
+        connection_node_handler = self.layer_manager.loaded_models[dm.ConnectionNode]
+        manhole_handler = self.layer_manager.loaded_models[dm.Manhole]
+        linestring = self.feature.geometry().asPolyline()
+        start_manhole_feat, end_manhole_feat = find_linestring_nodes(linestring, manhole_handler.layer)
+        for name, modifier, manhole_feat in (("start", 1, start_manhole_feat), ("end", 2, end_manhole_feat)):
+            if manhole_feat is None:
+                continue
+            connection_node_id = manhole_feat["connection_node_id"]
+            connection_node_feat = connection_node_handler.get_feat_for_node_id(connection_node_id)
+            self.feature[f"connection_node_{name}_id"] = connection_node_id
+            self.populate_widgets(
+                data_model_cls=dm.ConnectionNode,
+                feature=connection_node_feat,
+                start_end_modifier=modifier,
+            )
+            self.populate_widgets(
+                data_model_cls=dm.Manhole,
+                feature=manhole_feat,
+                start_end_modifier=modifier,
                 )
+        self.populate_widgets()

@@ -146,15 +146,27 @@ class ConnectionNodeHandler(UserLayerHandler):
         super().__init__(*args)
         self.snapped_models = (dm.Manhole, dm.Pipe)
 
+    def get_feat_for_node_id(self, node_id):
+        """Get connection node with given id."""
+        node_feat = None
+        if node_id not in (None, NULL):
+            node_feats = self.layer_manager.get_layer_features(self.MODEL, f'"id" = {node_id}')
+            try:
+                node_feat = next(node_feats)
+            except StopIteration:
+                pass
+        return node_feat
+
     def get_manhole_feat_for_node_id(self, node_id):
         """Check if there is a manhole feature defined for node of the given node_id and return it."""
+        manhole_feat = None
         if node_id not in (None, NULL):
             manhole_feats = self.layer_manager.get_layer_features(dm.Manhole, f'"connection_node_id" = {node_id}')
-            if manhole_feats.isValid():
+            try:
                 manhole_feat = next(manhole_feats)
-                if manhole_feat.isValid():
-                    return manhole_feat
-        return None
+            except StopIteration:
+                pass
+        return manhole_feat
 
 
 class BoundaryCondition1DHandler(UserLayerHandler):
