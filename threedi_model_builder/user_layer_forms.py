@@ -1,7 +1,4 @@
-from types import MappingProxyType
-from .forms.conn_node_form import ConnectionNodeEditForm
-from .forms.manhole_form import ManholeEditForm
-from .forms.pipe_form import PipeEditForm
+from threedi_model_builder.forms.custom_forms import MODEL_FORMS
 
 
 class LayerEditFormFactory:
@@ -17,12 +14,3 @@ class LayerEditFormFactory:
         # Form initializing
         current_instance = layer_form(self.layer_manager, dialog, layer, feature)
         current_instance.setup_form_widgets()
-
-
-ALL_FORMS = (
-    ConnectionNodeEditForm,
-    ManholeEditForm,
-    PipeEditForm,
-)
-
-MODEL_FORMS = MappingProxyType({form.MODEL: form for form in ALL_FORMS})
