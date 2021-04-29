@@ -4,6 +4,7 @@ from threedi_model_builder.utils import connect_signal, disconnect_signal
 from types import MappingProxyType
 from qgis.core import (
     NULL,
+    QgsFeature,
     QgsProject,
     QgsSnappingConfig,
     QgsTolerance,
@@ -137,6 +138,25 @@ class UserLayerHandler:
                 if feat.isValid():
                     return feat
         return None
+
+    def create_new_feature(self, geometry=None):
+        """Create a new feature for the handler layer with the geometry, if given. Return the id of the feature."""
+        fields = self.layer.fields()
+        id_idx = fields.indexFromName("id")
+        try:
+            next_id = max(self.layer.uniqueValues(id_idx)) + 1
+        except ValueError:
+            # this is the first feature
+            next_id = 1
+        feat = QgsFeature(fields)
+        feat["id"] = next_id
+        if geometry is not None:
+            feat.setGeometry(geometry)
+        res = self.layer.addFeature(feat)
+        if res:
+            return next_id
+        else:
+            return None
 
 
 class ConnectionNodeHandler(UserLayerHandler):
