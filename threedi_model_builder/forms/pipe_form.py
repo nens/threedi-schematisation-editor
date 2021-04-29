@@ -70,7 +70,7 @@ class PipeEditForm(BaseEditForm):
         for name, modifier in (("start", 1), ("end", 2)):
             connection_node_id = self.feature[f"connection_node_{name}_id"]
             if connection_node_id:
-                connection_node_feat = connection_node_handler.get_feat_for_node_id(connection_node_id)
+                connection_node_feat = connection_node_handler.get_feat_by_id(connection_node_id)
                 manhole_feat = connection_node_handler.get_manhole_feat_for_node_id(connection_node_id)
                 if manhole_feat is not None:
                     self.populate_widgets(
@@ -93,7 +93,7 @@ class PipeEditForm(BaseEditForm):
             if manhole_feat is None:
                 continue
             connection_node_id = manhole_feat["connection_node_id"]
-            connection_node_feat = connection_node_handler.get_feat_for_node_id(connection_node_id)
+            connection_node_feat = connection_node_handler.get_feat_by_id(connection_node_id)
             self.feature[f"connection_node_{name}_id"] = connection_node_id
             self.populate_widgets(
                 data_model_cls=dm.ConnectionNode,

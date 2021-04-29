@@ -130,13 +130,14 @@ class UserLayerHandler:
 
     def get_feat_by_id(self, object_id):
         """Return layer feature with the given id."""
+        feat = None
         if object_id not in (None, NULL):
-            feats_iter = self.layer_manager.get_layer_features(self.MODEL, f'"id" = {object_id}')
-            if feats_iter.isValid():
-                feat = next(feats_iter)
-                if feat.isValid():
-                    return feat
-        return None
+            feats = self.layer_manager.get_layer_features(self.MODEL, f'"id" = {object_id}')
+            try:
+                feat = next(feats)
+            except StopIteration:
+                pass
+        return feat
 
 
 class ConnectionNodeHandler(UserLayerHandler):
@@ -145,17 +146,6 @@ class ConnectionNodeHandler(UserLayerHandler):
     def __init__(self, *args):
         super().__init__(*args)
         self.snapped_models = (dm.Manhole, dm.Pipe)
-
-    def get_feat_for_node_id(self, node_id):
-        """Get connection node with given id."""
-        node_feat = None
-        if node_id not in (None, NULL):
-            node_feats = self.layer_manager.get_layer_features(self.MODEL, f'"id" = {node_id}')
-            try:
-                node_feat = next(node_feats)
-            except StopIteration:
-                pass
-        return node_feat
 
     def get_manhole_feat_for_node_id(self, node_id):
         """Check if there is a manhole feature defined for node of the given node_id and return it."""
