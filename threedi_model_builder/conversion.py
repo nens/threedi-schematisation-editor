@@ -45,6 +45,16 @@ class ModelDataConverter:
             write_results[vl.id()] = writer
             overwrite = False
 
+    def trim_sqlite_targets(self):
+        for model_cls in self.all_models:
+            for src_table in model_cls.SQLITE_TARGETS or tuple():
+                src_layer = sqlite_layer(self.src_sqlite, src_table)
+                if not src_layer.isValid():
+                    src_layer = sqlite_layer(self.src_sqlite, src_table, geom_column=None)
+                fids = [f.id() for f in src_layer.getFeatures()]
+                src_layer_dp = src_layer.dataProvider()
+                src_layer_dp.deleteFeatures(fids)
+
     @staticmethod
     def copy_features(src_layer, dst_layer, request=None, **field_mappings):
         src_crs = src_layer.sourceCrs()

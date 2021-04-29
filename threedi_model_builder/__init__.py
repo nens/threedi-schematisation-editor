@@ -52,14 +52,9 @@ class ThreediModelBuilderPlugin:
         filename = get_filepath(self.iface.mainWindow(), filter=name_filter, save=False)
         return filename
 
-    def select_import_database(self):
+    def select_sqlite_database(self, title):
         name_filter = "Spatialite Database (*.sqlite)"
-        filename = get_filepath(self.iface.mainWindow(), filter=name_filter, save=False)
-        return filename
-
-    def select_export_database(self):
-        name_filter = "Spatialite Database (*.sqlite)"
-        filename = get_filepath(self.iface.mainWindow(), filter=name_filter, extension=".sqlite", save=True)
+        filename = get_filepath(self.iface.mainWindow(), filter=name_filter, save=False, dialog_title=title)
         return filename
 
     def open_model_from_geopackage(self):
@@ -74,7 +69,7 @@ class ThreediModelBuilderPlugin:
         self.uc.bar_info("3Di User Layers registered!")
 
     def import_from_spatialite(self):
-        src_sqlite = self.select_import_database()
+        src_sqlite = self.select_sqlite_database(title="Select database to import features from")
         if not src_sqlite:
             return
         dst_gpkg = src_sqlite.replace(".sqlite", ".gpkg")
@@ -91,10 +86,10 @@ class ThreediModelBuilderPlugin:
     def export_to_spatialite(self):
         if not self.model_gpkg:
             return
-        dst_sqlite = self.select_export_database()
+        dst_sqlite = self.select_sqlite_database(title="Select database to export features to")
         if not dst_sqlite:
             return
-        create_empty_model(dst_sqlite)
         converter = ModelDataConverter(dst_sqlite, self.model_gpkg)
+        converter.trim_sqlite_targets()
         converter.export_all_model_data()
         self.uc.show_info("Export finished!")
