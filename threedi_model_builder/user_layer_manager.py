@@ -29,7 +29,7 @@ class LayersManager:
         self.uc = user_communication
         self.model_gpkg_path = model_gpkg_path
         self.form_factory = LayerEditFormFactory(self)
-        self.loaded_models = {}
+        self.model_handlers = {}
         self.layer_handlers = {}
         self.loaded_rasters = {}
 
@@ -60,7 +60,7 @@ class LayersManager:
 
     def get_layer_data_model(self, layer):
         """Return data model class for given layer."""
-        for model_cls, handler in self.loaded_models.items():
+        for model_cls, handler in self.model_handlers.items():
             if handler.layer == layer:
                 return model_cls
         return None
@@ -81,7 +81,7 @@ class LayersManager:
         handler_cls = MODEL_HANDLERS[model_cls]
         handler = handler_cls(self, layer)
         handler.connect_handler_signals()
-        self.loaded_models[model_cls] = handler
+        self.model_handlers[model_cls] = handler
         self.layer_handlers[layer.id()] = handler
 
     def load_vector_layers(self):
@@ -117,11 +117,11 @@ class LayersManager:
         self.load_raster_layers()
 
     def remove_loaded_layers(self):
-        for model_cls, layer_handler in list(self.loaded_models.items()):
+        for model_cls, layer_handler in list(self.model_handlers.items()):
             layer_handler.disconnect_handler_signals()
             layer = layer_handler.layer
             remove_layer(layer)
-            del self.loaded_models[model_cls]
+            del self.model_handlers[model_cls]
 
     def get_layer_features(self, model_cls, filter_exp=None):
         """
@@ -130,7 +130,7 @@ class LayersManager:
         """
         expr = QgsExpression(filter_exp) if filter_exp else None
         req = QgsFeatureRequest(expr) if expr is not None else QgsFeatureRequest()
-        return self.loaded_models[model_cls].layer.getFeatures(req)
+        return self.model_handlers[model_cls].layer.getFeatures(req)
 
     def populate_edit_form(self, dialog, layer, feature):
         """Add extra logic to custom edit form of the layer."""

@@ -12,7 +12,7 @@ from qgis.PyQt.QtWidgets import (
     QSpinBox,
 )
 
-from qgis.core import NULL
+from qgis.core import NULL, QgsGeometry
 from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
 
 field_types_widgets = {
@@ -168,9 +168,15 @@ class ManholeEditForm(BaseEditForm):
 
     def populate_extra_widgets(self):
         """Populate widgets for other layers attributes."""
-        connection_node_handler = self.layer_manager.loaded_models[dm.ConnectionNode]
+        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        connection_node_layer = connection_node_handler.layer
         if self.new_feature is True:
-            connection_node_feat = find_point_node(self.feature.geometry().asPoint(), connection_node_handler.layer)
+            connection_node_feat = find_point_node(self.feature.geometry().asPoint(), connection_node_layer)
+            if connection_node_feat is None:
+                connection_node_feat = connection_node_handler.create_new_feature(self.feature.geometry())
+                self.feature["connection_node_id"] = connection_node_feat["id"]
+                connection_node_layer.addFeature(connection_node_feat)
+                self.populate_widgets()
         else:
             connection_node_feat = connection_node_handler.get_feat_by_id(self.feature["connection_node_id"])
 
@@ -225,23 +231,34 @@ class PipeEditForm(BaseEditForm):
 
     def populate_extra_widgets(self):
         """Populate widgets for other layers attributes."""
-        # Cross section definition
-        self.populate_cross_section_definition()
-        # Manholes for start and end points
         if self.new_feature is True:
+            self.populate_cross_section_definition_on_creation()
             self.populate_manholes_on_creation()
         else:
+            self.populate_cross_section_definition_on_edit()
             self.populate_manholes_on_edit()
 
-    def populate_cross_section_definition(self):
-        cross_section_def_handler = self.layer_manager.loaded_models[dm.CrossSectionDefinition]
+    def populate_cross_section_definition_on_edit(self):
+        cross_section_def_handler = self.layer_manager.model_handlers[dm.CrossSectionDefinition]
         cross_section_def_feat = cross_section_def_handler.get_feat_by_id(self.feature["cross_section_definition_id"])
         if cross_section_def_feat is not None:
             self.populate_widgets(data_model_cls=dm.CrossSectionDefinition, feature=cross_section_def_feat)
 
+    def populate_cross_section_definition_on_creation(self):
+        cross_section_def_handler = self.layer_manager.model_handlers[dm.CrossSectionDefinition]
+        cross_section_def_layer = cross_section_def_handler.layer
+        cross_section_def_feat = cross_section_def_handler.create_new_feature()
+        self.feature["cross_section_definition_id"] = cross_section_def_feat["id"]
+        if not cross_section_def_layer.isEditable():
+            # TODO: We need to add automatic saving of definition
+            cross_section_def_layer.startEditing()
+        cross_section_def_layer.addFeature(cross_section_def_feat)
+        self.populate_widgets(data_model_cls=dm.CrossSectionDefinition, feature=cross_section_def_feat)
+
     def populate_manholes_on_edit(self):
-        connection_node_handler = self.layer_manager.loaded_models[dm.ConnectionNode]
-        for name, modifier in (("start", 1), ("end", 2)):
+        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        pipe_iterable = (("start", 1), ("end", 2))
+        for name, modifier in pipe_iterable:
             connection_node_id = self.feature[f"connection_node_{name}_id"]
             if connection_node_id:
                 connection_node_feat = connection_node_handler.get_feat_by_id(connection_node_id)
@@ -259,15 +276,28 @@ class PipeEditForm(BaseEditForm):
                     )
 
     def populate_manholes_on_creation(self):
-        connection_node_handler = self.layer_manager.loaded_models[dm.ConnectionNode]
-        manhole_handler = self.layer_manager.loaded_models[dm.Manhole]
+        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
+        connection_node_layer = connection_node_handler.layer
+        manhole_layer = manhole_handler.layer
         linestring = self.feature.geometry().asPolyline()
-        start_manhole_feat, end_manhole_feat = find_linestring_nodes(linestring, manhole_handler.layer)
-        for name, modifier, manhole_feat in (("start", 1, start_manhole_feat), ("end", 2, end_manhole_feat)):
+        start_point, end_point = linestring[0], linestring[-1]
+        start_manhole_feat, end_manhole_feat = find_linestring_nodes(linestring, manhole_layer)
+        pipe_iterable = (
+            ("start", 1, start_point, start_manhole_feat),
+            ("end", 2, end_point, end_manhole_feat)
+        )
+        for name, modifier, manhole_point, manhole_feat in pipe_iterable:
             if manhole_feat is None:
-                continue
-            connection_node_id = manhole_feat["connection_node_id"]
-            connection_node_feat = connection_node_handler.get_feat_by_id(connection_node_id)
+                point_geom = QgsGeometry.fromPointXY(manhole_point)
+                manhole_feat, connection_node_feat = manhole_handler.create_manhole_with_connection_node(point_geom)
+                connection_node_id = connection_node_feat["id"]
+                connection_node_layer.addFeature(connection_node_feat)
+                manhole_layer.addFeature(manhole_feat)
+            else:
+                connection_node_id = manhole_feat["connection_node_id"]
+                connection_node_feat = connection_node_handler.get_feat_by_id(connection_node_id)
+
             self.feature[f"connection_node_{name}_id"] = connection_node_id
             self.populate_widgets(
                 data_model_cls=dm.ConnectionNode,
