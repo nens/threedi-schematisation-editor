@@ -8,6 +8,7 @@ from qgis.core import (
     QgsProject,
     QgsSnappingConfig,
     QgsTolerance,
+    QgsGeometry,
 )
 
 
@@ -19,6 +20,7 @@ class UserLayerHandler:
         self.form_factory = self.layer_manager.form_factory
         self.layer = layer
         self.snapped_models = tuple()
+        self.linked_table_models = tuple()
 
     def connect_handler_signals(self):
         self.layer.editingStarted.connect(self.on_editing_started)
@@ -42,8 +44,13 @@ class UserLayerHandler:
 
     @property
     def snapped_handlers(self):
-        snapped_handlers = [self.layer_manager.loaded_models[model_cls] for model_cls in self.snapped_models]
+        snapped_handlers = [self.layer_manager.model_handlers[model_cls] for model_cls in self.snapped_models]
         return snapped_handlers
+
+    @property
+    def linked_table_handlers(self):
+        table_handlers = [self.layer_manager.model_handlers[model_cls] for model_cls in self.linked_table_models]
+        return table_handlers
 
     def set_layer_snapping(self, enable=True):
         if not self.snapped_models:
@@ -153,11 +160,7 @@ class UserLayerHandler:
         feat["id"] = next_id
         if geometry is not None:
             feat.setGeometry(geometry)
-        res = self.layer.addFeature(feat)
-        if res:
-            return next_id
-        else:
-            return None
+        return feat
 
 
 class ConnectionNodeHandler(UserLayerHandler):
@@ -194,6 +197,13 @@ class ManholeHandler(UserLayerHandler):
         super().__init__(*args)
         self.snapped_models = (dm.ConnectionNode, dm.Pipe)
 
+    def create_manhole_with_connection_node(self, geometry):
+        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        connection_node_feat = connection_node_handler.create_new_feature(geometry=geometry)
+        manhole_feat = self.create_new_feature(geometry=geometry)
+        manhole_feat["connection_node_id"] = connection_node_feat["id"]
+        return manhole_feat, connection_node_feat
+
 
 class PumpstationHandler(UserLayerHandler):
     MODEL = dm.Pumpstation
@@ -221,6 +231,21 @@ class PipeHandler(UserLayerHandler):
     def __init__(self, *args):
         super().__init__(*args)
         self.snapped_models = (dm.ConnectionNode, dm.Manhole)
+        self.linked_table_models = (dm.CrossSectionDefinition,)
+
+    def create_endpoints_for_pipe(self, pipe_feat):
+        manhole_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        cs_definition_handler = self.layer_manager.model_handlers[dm.CrossSectionDefinition]
+        pipe_linestring = pipe_feat.geometry().asPolyline()
+        start_point, end_point = pipe_linestring[0], pipe_linestring[-1]
+        start_geom = QgsGeometry.fromPointXY(start_point)
+        end_geom = QgsGeometry.fromPointXY(end_point)
+        start_manhole, start_node = manhole_handler.create_manhole_with_connection_node(start_geom)
+        end_manhole, end_node = manhole_handler.create_manhole_with_connection_node(end_geom)
+        cross_section_def = cs_definition_handler.create_new_feature()
+        pipe_feat["connection_node_start_id"] = start_node["id"]
+        pipe_feat["connection_node_end_id"] = end_node["id"]
+        return start_node, start_manhole, end_node, end_manhole, cross_section_def
 
 
 class CrossSectionLocationHandler(UserLayerHandler):
