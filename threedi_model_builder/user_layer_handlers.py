@@ -1,5 +1,6 @@
 # Copyright (C) 2021 by Lutra Consulting
 import threedi_model_builder.data_models as dm
+from threedi_model_builder.enumerators import CalculationTypeNode, CrossSectionShape, FrictionType, PipeMaterial
 from threedi_model_builder.utils import connect_signal, disconnect_signal
 from types import MappingProxyType
 from qgis.core import (
@@ -14,6 +15,7 @@ from qgis.core import (
 
 class UserLayerHandler:
     MODEL = dm.ModelObject
+    DEFAULTS = None
 
     def __init__(self, layer_manager, layer):
         self.layer_manager = layer_manager
@@ -147,20 +149,40 @@ class UserLayerHandler:
                 pass
         return feat
 
-    def create_new_feature(self, geometry=None):
+    def create_new_feature(self, geometry=None, field_values=None, use_defaults=True):
         """Create a new feature for the handler layer with the geometry, if given. Return the id of the feature."""
         fields = self.layer.fields()
+        feat = QgsFeature(fields)
+        if use_defaults and self.DEFAULTS is not None:
+            for field in fields:
+                if field.name() in self.DEFAULTS:
+                    feat[field.name()] = self.DEFAULTS[field.name()]
+        if field_values is not None:
+            for field_name, field_value in field_values.items():
+                feat[field_name] = field_value
         id_idx = fields.indexFromName("id")
+        # Ensure the id attribute is unique
         try:
             next_id = max(self.layer.uniqueValues(id_idx)) + 1
         except ValueError:
             # this is the first feature
             next_id = 1
-        feat = QgsFeature(fields)
         feat["id"] = next_id
         if geometry is not None:
             feat.setGeometry(geometry)
         return feat
+
+    def create_new_feature_from_template(self, template_feat, geometry=None, fields_to_skip=None):
+        """
+        Take all attributes from the template feature and create a new feature with the given geometry.
+        Do not copy fields values listed in fields_to_skip.
+        """
+        field_values = dict()
+        for field in template_feat.fields():
+            if fields_to_skip is not None and field.name() in fields_to_skip:
+                continue
+            field_values[field.name()] = template_feat[field.name()]
+        self.create_new_feature(geometry=geometry, field_values=field_values)
 
 
 class ConnectionNodeHandler(UserLayerHandler):
@@ -192,6 +214,14 @@ class Lateral1DHandler(UserLayerHandler):
 
 class ManholeHandler(UserLayerHandler):
     MODEL = dm.Manhole
+    DEFAULTS = MappingProxyType(
+        {
+            "length": 0.8,
+            "width": 0.8,
+            "shape": CrossSectionShape.CIRCLE.value,
+            "manhole_indicator": 1,
+        }
+    )
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -227,6 +257,15 @@ class OrificeHandler(UserLayerHandler):
 
 class PipeHandler(UserLayerHandler):
     MODEL = dm.Pipe
+    DEFAULTS = MappingProxyType(
+        {
+            "dist_calc_points": 1000,
+            "friction_type": FrictionType.MANNING.value,
+            "calculation_type": CalculationTypeNode.ISOLATED.value,
+            "material": PipeMaterial.CONCRETE.value,
+            "friction_value": dm.TABLE_MANNING[PipeMaterial.CONCRETE]
+        }
+    )
 
     def __init__(self, *args):
         super().__init__(*args)

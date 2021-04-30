@@ -125,6 +125,8 @@ class PipeMaterial(Enum):
     HDPE = 6
     PLATE_IRON = 7
     STEEL = 8
+    STONEWARE = 9
+    SHEET_IRON = 10
 
 
 class CrestType(Enum):
