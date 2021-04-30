@@ -215,7 +215,10 @@ def connect_signal(signal, slot):
 
 
 def disconnect_signal(signal, slot):
-    signal.disconnect(slot)
+    try:
+        signal.disconnect(slot)
+    except TypeError:
+        pass
 
 
 def find_point_node(point, node_layer, locator=None):
