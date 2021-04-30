@@ -915,3 +915,18 @@ ELEMENTS_WITH_TIMESERIES = (
     Lateral2D,
 )
 ELEMENTS_WITH_RASTERS = tuple(model_cls for model_cls in SETTINGS_ELEMENTS if model_cls.RELATED_RASTERS)
+
+
+TABLE_MANNING = MappingProxyType(
+    {
+        PipeMaterial.CONCRETE: 0.0145,
+        PipeMaterial.PVC: 0.0110,
+        PipeMaterial.STONEWARE: 0.0115,
+        PipeMaterial.CAST_IRON: 0.0135,
+        PipeMaterial.BRICKWORK: 0.0160,
+        PipeMaterial.HPE: 0.0110,
+        PipeMaterial.HDPE: 0.0110,
+        PipeMaterial.SHEET_IRON: 0.0135,
+        PipeMaterial.STEEL: 0.0130,
+    }
+)

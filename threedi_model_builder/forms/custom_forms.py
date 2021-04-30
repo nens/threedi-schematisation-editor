@@ -59,6 +59,9 @@ class BaseEditForm(QObject):
                 return  # form open for an invalid feature
             else:
                 self.new_feature = True
+                handler = self.layer_manager.layer_handlers[self.layer.id()]
+                for field_name, default_value in handler.DEFAULTS.items():
+                    self.feature[field_name] = default_value
         self.populate_widgets()
         self.populate_extra_widgets()
         self.toggle_edit_mode()
