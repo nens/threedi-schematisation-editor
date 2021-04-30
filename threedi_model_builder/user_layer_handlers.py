@@ -15,7 +15,8 @@ from qgis.core import (
 
 class UserLayerHandler:
     MODEL = dm.ModelObject
-    DEFAULTS = None
+    RELATED_MODELS = MappingProxyType({})  # model_cls: number of model instances
+    DEFAULTS = MappingProxyType({})
 
     def __init__(self, layer_manager, layer):
         self.layer_manager = layer_manager
@@ -28,21 +29,11 @@ class UserLayerHandler:
         self.layer.editingStarted.connect(self.on_editing_started)
         self.layer.beforeRollBack.connect(self.on_rollback)
         self.layer.beforeCommitChanges.connect(self.on_commit_changes)
-        # self.layer.featureAdded.connect(self.on_add_feature)
-        # self.layer.committedFeaturesAdded.connect(self.on_added_features)
-        # self.layer.committedFeaturesRemoved.connect(self.on_removed_features)
-        # self.layer.committedGeometriesChanges.connect(self.on_changed_geometries)
-        # self.layer.committedAttributeValuesChanges.connect(self.on_changed_attributes)
 
     def disconnect_handler_signals(self):
         self.layer.editingStarted.disconnect(self.on_editing_started)
         self.layer.beforeRollBack.connect(self.on_rollback)
         self.layer.beforeCommitChanges.connect(self.on_commit_changes)
-        # self.layer.featureAdded.disconnect(self.on_add_feature)
-        # self.layer.committedFeaturesAdded.disconnect(self.on_added_features)
-        # self.layer.committedFeaturesRemoved.disconnect(self.on_removed_features)
-        # self.layer.committedGeometriesChanges.disconnect(self.on_changed_geometries)
-        # self.layer.committedAttributeValuesChanges.disconnect(self.on_changed_attributes)
 
     @property
     def snapped_handlers(self):
@@ -68,6 +59,8 @@ class UserLayerHandler:
             layer = layer_handler.layer
             disconnect_signal(layer.editingStarted, layer_handler.on_editing_started)
             layer.startEditing()
+            for link_table_handler in layer_handler.linked_table_handlers:
+                link_table_handler.layer.startEditing()
         for layer in snapped_layers:
             iconf = individual_configs[layer]
             iconf.setTolerance(10)
@@ -97,28 +90,38 @@ class UserLayerHandler:
         raise Exception("Not implemented")
 
     def on_editing_started(self):
+        for link_table_handler in self.linked_table_handlers:
+            link_table_handler.layer.startEditing()
         self.set_layer_snapping(enable=True)
 
     def on_rollback(self):
         self.reset_snapping()
+        for link_table_handler in self.linked_table_handlers:
+            link_table_handler.layer.rollBack()
         if not self.snapped_models:
             return
         for layer_handler in self.snapped_handlers:
             layer = layer_handler.layer
             disconnect_signal(layer.beforeRollBack, layer_handler.on_rollback)
             layer.rollBack()
+            for link_table_handler in layer_handler.linked_table_handlers:
+                link_table_handler.layer.rollBack()
         for layer_handler in self.snapped_handlers:
             layer = layer_handler.layer
             connect_signal(layer.beforeRollBack, layer_handler.on_rollback)
 
     def on_commit_changes(self):
         self.reset_snapping()
+        for link_table_handler in self.linked_table_handlers:
+            link_table_handler.layer.commitChanges(stopEditing=False)
         if not self.snapped_models:
             return
         for layer_handler in self.snapped_handlers:
             layer = layer_handler.layer
             disconnect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
             layer.commitChanges(stopEditing=False)
+            for link_table_handler in layer_handler.linked_table_handlers:
+                link_table_handler.layer.commitChanges(stopEditing=False)
         for layer_handler in self.snapped_handlers:
             layer = layer_handler.layer
             connect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
@@ -149,25 +152,36 @@ class UserLayerHandler:
                 pass
         return feat
 
-    def create_new_feature(self, geometry=None, field_values=None, use_defaults=True):
-        """Create a new feature for the handler layer with the geometry, if given. Return the id of the feature."""
-        fields = self.layer.fields()
-        feat = QgsFeature(fields)
-        if use_defaults and self.DEFAULTS is not None:
-            for field in fields:
-                if field.name() in self.DEFAULTS:
-                    feat[field.name()] = self.DEFAULTS[field.name()]
-        if field_values is not None:
-            for field_name, field_value in field_values.items():
-                feat[field_name] = field_value
-        id_idx = fields.indexFromName("id")
+    def get_next_id(self, layer=None):
+        if layer is None:
+            layer = self.layer
+        id_idx = layer.fields().indexFromName("id")
         # Ensure the id attribute is unique
         try:
-            next_id = max(self.layer.uniqueValues(id_idx)) + 1
+            next_id = max(layer.uniqueValues(id_idx)) + 1
         except ValueError:
             # this is the first feature
             next_id = 1
-        feat["id"] = next_id
+        return next_id
+
+    def set_feature_values(self, feat, set_id=True, **custom_values):
+        values_to_set = dict(self.DEFAULTS)
+        values_to_set.update(custom_values)
+        fields = self.layer.fields()
+        for field in fields:
+            field_name = field.name()
+            if field_name in values_to_set:
+                feat[field_name] = values_to_set[field_name]
+        if set_id:
+            next_id = self.get_next_id()
+            feat["id"] = next_id
+
+    def create_new_feature(self, geometry=None, use_defaults=True):
+        """Create a new feature for the handler layer with the geometry, if given. Return the id of the feature."""
+        fields = self.layer.fields()
+        feat = QgsFeature(fields)
+        if use_defaults:
+            self.set_feature_values(feat)
         if geometry is not None:
             feat.setGeometry(geometry)
         return feat
@@ -179,10 +193,13 @@ class UserLayerHandler:
         """
         field_values = dict()
         for field in template_feat.fields():
-            if fields_to_skip is not None and field.name() in fields_to_skip:
+            field_name = field.name()
+            if fields_to_skip is not None and field_name in fields_to_skip:
                 continue
-            field_values[field.name()] = template_feat[field.name()]
-        self.create_new_feature(geometry=geometry, field_values=field_values)
+            field_values[field_name] = template_feat[field_name]
+        new_feat = self.create_new_feature(geometry=geometry, use_defaults=False)
+        self.set_feature_values(new_feat, **field_values)
+        return new_feat
 
 
 class ConnectionNodeHandler(UserLayerHandler):
@@ -214,6 +231,11 @@ class Lateral1DHandler(UserLayerHandler):
 
 class ManholeHandler(UserLayerHandler):
     MODEL = dm.Manhole
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.ConnectionNode: 1,
+        }
+    )
     DEFAULTS = MappingProxyType(
         {
             "length": 0.8,
@@ -257,6 +279,13 @@ class OrificeHandler(UserLayerHandler):
 
 class PipeHandler(UserLayerHandler):
     MODEL = dm.Pipe
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.ConnectionNode: 2,
+            dm.Manhole: 2,
+            dm.CrossSectionDefinition: 1,
+        }
+    )
     DEFAULTS = MappingProxyType(
         {
             "dist_calc_points": 1000,

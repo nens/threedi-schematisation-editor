@@ -1,6 +1,7 @@
 import threedi_model_builder.data_models as dm
-from threedi_model_builder.utils import find_point_node, find_linestring_nodes
+from threedi_model_builder.utils import find_point_node, find_linestring_nodes, connect_signal
 from collections import defaultdict
+from functools import partial
 from enum import Enum
 from types import MappingProxyType
 from qgis.PyQt.QtCore import QObject
@@ -15,19 +16,20 @@ from qgis.PyQt.QtWidgets import (
 from qgis.core import NULL, QgsGeometry
 from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
 
-field_types_widgets = {
-    bool: QCheckBox,
-    int: QgsSpinBox,
-    float: QgsDoubleSpinBox,
-    str: QLineEdit,
-}
+field_types_widgets = MappingProxyType(
+    {
+        bool: QCheckBox,
+        int: QgsSpinBox,
+        float: QgsDoubleSpinBox,
+        str: QLineEdit,
+    }
+)
 
 
 class BaseEditForm(QObject):
     """Base edit form for user layers edit form logic."""
 
     MODEL = None
-    FOREIGN_MODEL_FIELDS = MappingProxyType({})
 
     def __init__(self, layer_manager, dialog, layer, feature):
         super(BaseEditForm, self).__init__(parent=dialog)  # We need to set dialog as a parent to keep form alive
@@ -36,19 +38,16 @@ class BaseEditForm(QObject):
         self.uc = layer_manager.uc
         self.dialog = dialog
         self.layer = layer
+        self.handler = self.layer_manager.model_handlers[self.MODEL]
         self.feature = feature
-        self.new_feature = False
+        self.creation = False
         self.model_widgets = defaultdict(list)  # {data_model_cls: list of tuples (widget, layer field name)}
         self.name_to_widget = {}
         self.foreign_widgets = {}
+        self.connected_signals = set()
         self.set_foreign_widgets()
         self.layer.editingStarted.connect(self.toggle_edit_mode)
         self.layer.editingStopped.connect(self.toggle_edit_mode)
-
-    def set_foreign_widgets(self):
-        for foreign_widget_name in self.FOREIGN_MODEL_FIELDS.keys():
-            foreign_widget = self.dialog.findChild(QObject, foreign_widget_name)
-            self.foreign_widgets[foreign_widget_name] = foreign_widget
 
     def setup_form_widgets(self):
         if self.feature is None:
@@ -58,17 +57,33 @@ class BaseEditForm(QObject):
             if not geometry:
                 return  # form open for an invalid feature
             else:
-                self.new_feature = True
-                handler = self.layer_manager.layer_handlers[self.layer.id()]
-                for field_name, default_value in handler.DEFAULTS.items():
-                    self.feature[field_name] = default_value
+                self.creation = True
+                self.handler.set_feature_values(self.feature)
         self.populate_widgets()
         self.populate_extra_widgets()
         self.toggle_edit_mode()
+        self.connect_foreign_widgets()
+
+    def set_foreign_widgets(self):
+        for related_cls, relations_number in self.handler.RELATED_MODELS.items():
+            table_name = related_cls.__tablename__
+            for related_number in range(1, relations_number + 1):
+                if relations_number > 1:
+                    numerical_modifier = related_number
+                    str_num_mod = f"_{related_number}"
+                else:
+                    numerical_modifier = None
+                    str_num_mod = f""
+                for field_name in related_cls.__annotations__.keys():
+                    widget_name = f"{table_name}{str_num_mod}_{field_name}"
+                    widget = self.dialog.findChild(QObject, widget_name)
+                    if widget is None:
+                        continue
+                    self.foreign_widgets[widget_name] = (widget, related_cls, numerical_modifier, field_name)
 
     def toggle_edit_mode(self):
         editing_active = self.layer.isEditable()
-        for widget in self.foreign_widgets.values():
+        for widget, related_cls, numerical_modifier, field_name in self.foreign_widgets.values():
             widget.setEnabled(editing_active)
 
     def populate_widgets(self, data_model_cls=None, feature=None, start_end_modifier=None):
@@ -110,7 +125,7 @@ class BaseEditForm(QObject):
 
     def set_widget_value(self, widget, value, var_type=None):
         if isinstance(widget, QLineEdit):
-            widget.setText(str(value))
+            widget.setText(str(value) if value is not None else "")
             widget.setCursorPosition(0)
         elif isinstance(widget, QCheckBox):
             widget.setChecked(bool(value))
@@ -129,13 +144,13 @@ class BaseEditForm(QObject):
         else:
             self.uc.log_warn(f"Unknown widget type: {widget.__class__.__name__}")
 
-    def get_widget_value(self, widget, var_type=None):
+    def get_widget_value(self, widget):
         if isinstance(widget, QLineEdit):
-            value = var_type(widget.text())
+            value = widget.text()
         elif isinstance(widget, QCheckBox):
-            value = var_type(widget.isChecked())
+            value = widget.isChecked()
         elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
-            value = var_type(widget.value()) if var_type is not None else widget.value()
+            value = widget.value()
         elif isinstance(widget, QComboBox):
             value = widget.currentData()
         else:
@@ -143,37 +158,62 @@ class BaseEditForm(QObject):
             value = None
         return value
 
+    def get_widget_editing_signal(self, widget):
+        if isinstance(widget, QLineEdit):
+            signal = widget.textChanged
+        elif isinstance(widget, QCheckBox):
+            signal = widget.stateChanged
+        elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
+            signal = widget.valueChanged
+        elif isinstance(widget, QComboBox):
+            signal = widget.currentIndexChanged
+        else:
+            self.uc.log_warn(f"Unknown widget type: {widget.__class__.__name__}")
+            signal = None
+        return signal
+
+    def set_value_from_widget(self, widget, feature, model_cls, field_name):
+        value = self.get_widget_value(widget)
+        handler = self.layer_manager.model_handlers[model_cls]
+        feature[field_name] = value
+        handler.layer.updateFeature(feature)
+
     def populate_extra_widgets(self):
-        raise NotImplementedError()
+        """Populate widgets for other layers attributes."""
+        pass
+
+    def connect_foreign_widgets(self):
+        """Connect widgets for other layers attributes."""
+        pass
 
 
 class ConnectionNodeEditForm(BaseEditForm):
     """Connection node edit form logic."""
     MODEL = dm.ConnectionNode
 
-    def populate_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
-
 
 class ManholeEditForm(BaseEditForm):
     """Manhole user layer edit form logic."""
     MODEL = dm.Manhole
-    FOREIGN_MODEL_FIELDS = MappingProxyType(
-        {
-            "connection_node_initial_waterlevel": dm.ConnectionNode,
-            "connection_node_storage_area": dm.ConnectionNode,
-            "connection_node_code": dm.ConnectionNode,
-        }
-    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
+        self.connection_node = None
+
+    def connect_foreign_widgets(self):
+        """Connect widgets for other layers attributes."""
+        for widget_name, (widget, model_cls, numerical_modifier, field_name) in self.foreign_widgets.items():
+            signal = self.get_widget_editing_signal(widget)
+            feature = self.connection_node
+            slot = partial(self.set_value_from_widget, widget, feature, model_cls, field_name)
+            connect_signal(signal, slot)
+            self.connected_signals.add((signal, slot))  # We need to store signals and slots to disconnect them later.
 
     def populate_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_layer = connection_node_handler.layer
-        if self.new_feature is True:
+        if self.creation is True:
             connection_node_feat = find_point_node(self.feature.geometry().asPoint(), connection_node_layer)
             if connection_node_feat is None:
                 connection_node_feat = connection_node_handler.create_new_feature(self.feature.geometry())
@@ -185,56 +225,43 @@ class ManholeEditForm(BaseEditForm):
 
         if connection_node_feat is not None:
             self.populate_widgets(data_model_cls=dm.ConnectionNode, feature=connection_node_feat)
+            self.connection_node = connection_node_feat
 
 
 class PipeEditForm(BaseEditForm):
     """Pipe user layer edit form logic."""
 
     MODEL = dm.Pipe
-    FOREIGN_MODEL_FIELDS = MappingProxyType(
-        {
-            "connection_node_1_id": dm.ConnectionNode,
-            "connection_node_1_initial_waterlevel": dm.ConnectionNode,
-            "connection_node_1_storage_area": dm.ConnectionNode,
-            "connection_node_1_code": dm.ConnectionNode,
-            "connection_node_2_id": dm.ConnectionNode,
-            "connection_node_2_initial_waterlevel": dm.ConnectionNode,
-            "connection_node_2_storage_area": dm.ConnectionNode,
-            "connection_node_2_code": dm.ConnectionNode,
-            "manhole_1_id": dm.Manhole,
-            "manhole_1_code": dm.Manhole,
-            "manhole_1_display_name": dm.Manhole,
-            "manhole_1_calculation_type": dm.Manhole,
-            "manhole_1_shape": dm.Manhole,
-            "manhole_1_width": dm.Manhole,
-            "manhole_1_length": dm.Manhole,
-            "manhole_1_bottom_level": dm.Manhole,
-            "manhole_1_surface_level": dm.Manhole,
-            "manhole_1_drain_level": dm.Manhole,
-            "manhole_1_manhole_indicator": dm.Manhole,
-            "manhole_1_zoom_category": dm.Manhole,
-            "manhole_2_id": dm.Manhole,
-            "manhole_2_code": dm.Manhole,
-            "manhole_2_display_name": dm.Manhole,
-            "manhole_2_calculation_type": dm.Manhole,
-            "manhole_2_shape": dm.Manhole,
-            "manhole_2_width": dm.Manhole,
-            "manhole_2_length": dm.Manhole,
-            "manhole_2_bottom_level": dm.Manhole,
-            "manhole_2_surface_level": dm.Manhole,
-            "manhole_2_drain_level": dm.Manhole,
-            "manhole_2_manhole_indicator": dm.Manhole,
-            "manhole_2_zoom_category": dm.Manhole,
-            "cross_section_definition_shape": dm.CrossSectionDefinition,
-            "cross_section_definition_width": dm.CrossSectionDefinition,
-            "cross_section_definition_height": dm.CrossSectionDefinition,
-            "cross_section_definition_code": dm.CrossSectionDefinition,
-        }
-    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.connection_node_start = None
+        self.connection_node_end = None
+        self.manhole_start = None
+        self.manhole_end = None
+        self.cross_section_definition = None
+
+    def connect_foreign_widgets(self):
+        """Connect widgets for other layers attributes."""
+        for widget_name, (widget, model_cls, numerical_modifier, field_name) in self.foreign_widgets.items():
+            signal = self.get_widget_editing_signal(widget)
+            if model_cls == dm.ConnectionNode and numerical_modifier == 1:
+                feature = self.connection_node_start
+            elif model_cls == dm.ConnectionNode and numerical_modifier == 2:
+                feature = self.connection_node_end
+            elif model_cls == dm.Manhole and numerical_modifier == 1:
+                feature = self.manhole_start
+            elif model_cls == dm.Manhole and numerical_modifier == 2:
+                feature = self.manhole_end
+            else:
+                feature = self.cross_section_definition
+            slot = partial(self.set_value_from_widget, widget, feature, model_cls, field_name)
+            connect_signal(signal, slot)
+            self.connected_signals.add((signal, slot))
 
     def populate_extra_widgets(self):
         """Populate widgets for other layers attributes."""
-        if self.new_feature is True:
+        if self.creation is True:
             self.populate_cross_section_definition_on_creation()
             self.populate_manholes_on_creation()
         else:
@@ -246,17 +273,16 @@ class PipeEditForm(BaseEditForm):
         cross_section_def_feat = cross_section_def_handler.get_feat_by_id(self.feature["cross_section_definition_id"])
         if cross_section_def_feat is not None:
             self.populate_widgets(data_model_cls=dm.CrossSectionDefinition, feature=cross_section_def_feat)
+            self.cross_section_definition = cross_section_def_feat
 
     def populate_cross_section_definition_on_creation(self):
         cross_section_def_handler = self.layer_manager.model_handlers[dm.CrossSectionDefinition]
         cross_section_def_layer = cross_section_def_handler.layer
         cross_section_def_feat = cross_section_def_handler.create_new_feature()
         self.feature["cross_section_definition_id"] = cross_section_def_feat["id"]
-        if not cross_section_def_layer.isEditable():
-            # TODO: We need to add automatic saving of definition
-            cross_section_def_layer.startEditing()
         cross_section_def_layer.addFeature(cross_section_def_feat)
         self.populate_widgets(data_model_cls=dm.CrossSectionDefinition, feature=cross_section_def_feat)
+        self.cross_section_definition = cross_section_def_feat
 
     def populate_manholes_on_edit(self):
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
@@ -266,6 +292,12 @@ class PipeEditForm(BaseEditForm):
             if connection_node_id:
                 connection_node_feat = connection_node_handler.get_feat_by_id(connection_node_id)
                 manhole_feat = connection_node_handler.get_manhole_feat_for_node_id(connection_node_id)
+                if modifier == 1:
+                    self.connection_node_start = connection_node_feat
+                    self.manhole_start = manhole_feat
+                else:
+                    self.connection_node_end = connection_node_feat
+                    self.manhole_end = manhole_feat
                 if manhole_feat is not None:
                     self.populate_widgets(
                         data_model_cls=dm.ConnectionNode,
@@ -302,6 +334,12 @@ class PipeEditForm(BaseEditForm):
                 connection_node_feat = connection_node_handler.get_feat_by_id(connection_node_id)
 
             self.feature[f"connection_node_{name}_id"] = connection_node_id
+            if modifier == 1:
+                self.connection_node_start = connection_node_feat
+                self.manhole_start = manhole_feat
+            else:
+                self.connection_node_end = connection_node_feat
+                self.manhole_end = manhole_feat
             self.populate_widgets(
                 data_model_cls=dm.ConnectionNode,
                 feature=connection_node_feat,
