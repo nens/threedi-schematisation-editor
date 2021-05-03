@@ -15,6 +15,8 @@ from threedi_model_builder.enumerators import (
     InterflowType,
     InitializationType,
     Later2DType,
+    ManholeIndicator,
+    ManholeShape,
     Material,
     ObstacleType,
     PipeCalculationType,
@@ -109,14 +111,14 @@ class Manhole(ModelObject):
     code: str
     display_name: str
     calculation_type: CalculationTypeNode
-    shape: CrossSectionShape
+    shape: ManholeShape
     width: float
     length: float
     bottom_level: float
     surface_level: float
     drain_level: float
     sediment_level: float
-    manhole_indicator: int
+    manhole_indicator: ManholeIndicator
     zoom_category: ZoomCategories
     connection_node_id: int
 

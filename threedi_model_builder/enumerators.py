@@ -77,6 +77,18 @@ class CrossSectionShape(Enum):
     TABULATED_TRAPEZIUM = 6
 
 
+class ManholeShape(Enum):
+    SQUARE = "00"
+    ROUND = "01"
+    RECTANGLE = "02"
+
+
+class ManholeIndicator(Enum):
+    INSPECTION = 0
+    OUTLET = 1
+    PUMP = 2
+
+
 class FrictionType(Enum):
     CHEZY = 1
     MANNING = 2

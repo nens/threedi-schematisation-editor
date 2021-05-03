@@ -1,6 +1,12 @@
 # Copyright (C) 2021 by Lutra Consulting
 import threedi_model_builder.data_models as dm
-from threedi_model_builder.enumerators import CalculationTypeNode, CrossSectionShape, FrictionType, PipeMaterial
+from threedi_model_builder.enumerators import (
+    CalculationTypeNode,
+    ManholeIndicator,
+    ManholeShape,
+    FrictionType,
+    PipeMaterial,
+)
 from threedi_model_builder.utils import connect_signal, disconnect_signal
 from types import MappingProxyType
 from qgis.core import (
@@ -204,6 +210,11 @@ class UserLayerHandler:
 
 class ConnectionNodeHandler(UserLayerHandler):
     MODEL = dm.ConnectionNode
+    DEFAULTS = MappingProxyType(
+        {
+            "code": "new",
+        }
+    )
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -238,10 +249,13 @@ class ManholeHandler(UserLayerHandler):
     )
     DEFAULTS = MappingProxyType(
         {
+            "display_name": "new",
+            "code": "new",
             "length": 0.8,
             "width": 0.8,
-            "shape": CrossSectionShape.CIRCLE.value,
-            "manhole_indicator": 1,
+            "shape": ManholeShape.ROUND.value,
+            "manhole_indicator": ManholeIndicator.OUTLET.value,
+            "bottom_level": -10.0,
         }
     )
 
@@ -288,11 +302,15 @@ class PipeHandler(UserLayerHandler):
     )
     DEFAULTS = MappingProxyType(
         {
+            "display_name": "new",
+            "code": "new",
             "dist_calc_points": 1000,
             "friction_type": FrictionType.MANNING.value,
             "calculation_type": CalculationTypeNode.ISOLATED.value,
             "material": PipeMaterial.CONCRETE.value,
-            "friction_value": dm.TABLE_MANNING[PipeMaterial.CONCRETE]
+            "friction_value": dm.TABLE_MANNING[PipeMaterial.CONCRETE],
+            "invert_level_start_point": -10.0,
+            "invert_level_end_point": -10.0,
         }
     )
 
@@ -326,6 +344,11 @@ class ChannelHandler(UserLayerHandler):
 
 class CrossSectionDefinitionHandler(UserLayerHandler):
     MODEL = dm.CrossSectionDefinition
+    DEFAULTS = MappingProxyType(
+        {
+            "code": "new",
+        }
+    )
 
 
 class BoundaryCondition2DHandler(UserLayerHandler):
