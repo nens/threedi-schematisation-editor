@@ -124,13 +124,13 @@
         <property name="maximum">
          <double>1000000.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -155,13 +155,13 @@
         <property name="maximum">
          <double>1000000.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -192,13 +192,13 @@
         <property name="maximum">
          <double>9999999999.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -229,13 +229,13 @@
         <property name="maximum">
          <double>9999999999.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -266,13 +266,13 @@
         <property name="maximum">
          <double>9999999999.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -403,13 +403,13 @@
         <property name="maximum">
          <number>999999999</number>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>false</bool>
         </property>
        </widget>
@@ -440,13 +440,13 @@
         <property name="maximum">
          <double>1000000.000000000000000</double>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -474,7 +474,7 @@
         <property name="maximum">
          <double>999999999.000000000000000</double>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -605,13 +605,13 @@
         <property name="maximum">
          <number>99999999</number>
         </property>
-        <property name="showClearButton">
+        <property name="showClearButton" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="clearValue">
+        <property name="clearValue" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="expressionsEnabled">
+        <property name="expressionsEnabled" stdset="0">
          <bool>false</bool>
         </property>
        </widget>
@@ -631,16 +631,16 @@
       <string>Visualisation</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_5">
-      <item row="0" column="3">
-       <widget class="QComboBox" name="zoom_category">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
+      <item row="0" column="2">
+       <widget class="QLabel" name="label_16">
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
+        </property>
+        <property name="text">
+         <string>Zoom category</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
@@ -657,21 +657,8 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QLabel" name="label_16">
-        <property name="locale">
-         <locale language="English" country="UnitedStates"/>
-        </property>
-        <property name="text">
-         <string>Zoom category</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QgsSpinBox" name="manhole_indicator">
+      <item row="0" column="3">
+       <widget class="QComboBox" name="zoom_category">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -681,14 +668,18 @@
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
         </property>
-        <property name="buttonSymbols">
-         <enum>QAbstractSpinBox::NoButtons</enum>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="manhole_indicator">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
-        <property name="maximum">
-         <number>9999999</number>
-        </property>
-        <property name="clearValue">
-         <bool>true</bool>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
         </property>
        </widget>
       </item>

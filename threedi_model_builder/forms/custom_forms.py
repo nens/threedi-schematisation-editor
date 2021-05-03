@@ -1,6 +1,5 @@
 import threedi_model_builder.data_models as dm
 from threedi_model_builder.utils import find_point_node, find_linestring_nodes, connect_signal
-from collections import defaultdict
 from functools import partial
 from enum import Enum
 from types import MappingProxyType
@@ -41,8 +40,7 @@ class BaseEditForm(QObject):
         self.handler = self.layer_manager.model_handlers[self.MODEL]
         self.feature = feature
         self.creation = False
-        self.model_widgets = defaultdict(list)  # {data_model_cls: list of tuples (widget, layer field name)}
-        self.name_to_widget = {}
+        self.main_widgets = {}
         self.foreign_widgets = {}
         self.connected_signals = set()
         self.set_foreign_widgets()
@@ -65,6 +63,7 @@ class BaseEditForm(QObject):
         self.connect_foreign_widgets()
 
     def set_foreign_widgets(self):
+        main_fields = set(self.MODEL.__annotations__.keys())
         for related_cls, relations_number in self.handler.RELATED_MODELS.items():
             table_name = related_cls.__tablename__
             for related_number in range(1, relations_number + 1):
@@ -73,9 +72,11 @@ class BaseEditForm(QObject):
                     str_num_mod = f"_{related_number}"
                 else:
                     numerical_modifier = None
-                    str_num_mod = f""
+                    str_num_mod = ""
                 for field_name in related_cls.__annotations__.keys():
                     widget_name = f"{table_name}{str_num_mod}_{field_name}"
+                    if widget_name in main_fields:
+                        continue
                     widget = self.dialog.findChild(QObject, widget_name)
                     if widget is None:
                         continue
@@ -109,11 +110,10 @@ class BaseEditForm(QObject):
                 # the filed might not be shown in the form
                 continue
             if issubclass(field_type, Enum):
-                cbo_items = {t.name: t.value for t in field_type}
+                cbo_items = {t.name.capitalize().replace("_", " "): t.value for t in field_type}
                 self.populate_combo(widget, cbo_items)
             self.set_widget_value(widget, feature[field_name], var_type=field_type)
-            self.model_widgets[data_model_cls].append((widget, field_name))
-            self.name_to_widget[widget.objectName()] = widget
+            self.main_widgets[widget.objectName()] = widget
 
     @staticmethod
     def populate_combo(combo_widget, value_map):
@@ -173,10 +173,11 @@ class BaseEditForm(QObject):
         return signal
 
     def set_value_from_widget(self, widget, feature, model_cls, field_name):
-        value = self.get_widget_value(widget)
-        handler = self.layer_manager.model_handlers[model_cls]
-        feature[field_name] = value
-        handler.layer.updateFeature(feature)
+        if feature:
+            value = self.get_widget_value(widget)
+            handler = self.layer_manager.model_handlers[model_cls]
+            feature[field_name] = value
+            handler.layer.updateFeature(feature)
 
     def populate_extra_widgets(self):
         """Populate widgets for other layers attributes."""
@@ -253,8 +254,10 @@ class PipeEditForm(BaseEditForm):
                 feature = self.manhole_start
             elif model_cls == dm.Manhole and numerical_modifier == 2:
                 feature = self.manhole_end
-            else:
+            elif model_cls == dm.CrossSectionDefinition:
                 feature = self.cross_section_definition
+            else:
+                continue
             slot = partial(self.set_value_from_widget, widget, feature, model_cls, field_name)
             connect_signal(signal, slot)
             self.connected_signals.add((signal, slot))
