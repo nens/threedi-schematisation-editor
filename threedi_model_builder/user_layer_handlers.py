@@ -7,8 +7,9 @@ from threedi_model_builder.enumerators import (
     FrictionType,
     PipeMaterial,
 )
-from threedi_model_builder.utils import connect_signal, disconnect_signal
+from threedi_model_builder.utils import connect_signal, disconnect_signal, count_vertices
 from types import MappingProxyType
+from functools import partial
 from qgis.core import (
     NULL,
     QgsFeature,
@@ -17,6 +18,7 @@ from qgis.core import (
     QgsTolerance,
     QgsGeometry,
 )
+from qgis.PyQt.QtCore import QTimer
 
 
 class UserLayerHandler:
@@ -35,11 +37,19 @@ class UserLayerHandler:
         self.layer.editingStarted.connect(self.on_editing_started)
         self.layer.beforeRollBack.connect(self.on_rollback)
         self.layer.beforeCommitChanges.connect(self.on_commit_changes)
+        self.connect_additional_signals()
 
     def disconnect_handler_signals(self):
         self.layer.editingStarted.disconnect(self.on_editing_started)
         self.layer.beforeRollBack.connect(self.on_rollback)
         self.layer.beforeCommitChanges.connect(self.on_commit_changes)
+        self.disconnect_additional_signals()
+
+    def connect_additional_signals(self):
+        pass
+
+    def disconnect_additional_signals(self):
+        pass
 
     @property
     def snapped_handlers(self):
@@ -200,7 +210,7 @@ class UserLayerHandler:
         field_values = dict()
         for field in template_feat.fields():
             field_name = field.name()
-            if fields_to_skip is not None and field_name in fields_to_skip:
+            if field_name == "fid" or (fields_to_skip is not None and field_name in fields_to_skip):
                 continue
             field_values[field_name] = template_feat[field_name]
         new_feat = self.create_new_feature(geometry=geometry, use_defaults=False)
@@ -263,12 +273,18 @@ class ManholeHandler(UserLayerHandler):
         super().__init__(*args)
         self.snapped_models = (dm.ConnectionNode, dm.Pipe)
 
-    def create_manhole_with_connection_node(self, geometry):
+    def create_manhole_with_connection_node(self, geometry, template_feat=None):
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        connection_node_feat = connection_node_handler.create_new_feature(geometry=geometry)
-        manhole_feat = self.create_new_feature(geometry=geometry)
-        manhole_feat["connection_node_id"] = connection_node_feat["id"]
-        return manhole_feat, connection_node_feat
+        if template_feat is not None:
+            template_connection_node_id = template_feat["connection_node_id"]
+            node_template = connection_node_handler.layer.getFeature(template_connection_node_id)
+            node_feat = connection_node_handler.create_new_feature_from_template(node_template, geometry=geometry)
+            manhole_feat = self.create_new_feature_from_template(template_feat, geometry=geometry)
+        else:
+            node_feat = connection_node_handler.create_new_feature(geometry=geometry)
+            manhole_feat = self.create_new_feature(geometry=geometry)
+        manhole_feat["connection_node_id"] = node_feat["id"]
+        return manhole_feat, node_feat
 
 
 class PumpstationHandler(UserLayerHandler):
@@ -319,8 +335,63 @@ class PipeHandler(UserLayerHandler):
         self.snapped_models = (dm.ConnectionNode, dm.Manhole)
         self.linked_table_models = (dm.CrossSectionDefinition,)
 
+    def connect_additional_signals(self):
+        self.layer.featureAdded.connect(self.trigger_segmentize_pipe)
+
+    def disconnect_additional_signals(self):
+        self.layer.featureAdded.disconnect(self.trigger_segmentize_pipe)
+
+    def trigger_segmentize_pipe(self, pipe_feat_id):
+        # We have to run pipe segmentation after QGIS will finish adding feature procedure.
+        segmentize_method = partial(self.segmentize_pipe, pipe_feat_id)
+        QTimer.singleShot(0, segmentize_method)
+
+    def segmentize_pipe(self, pipe_feat_id):
+        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
+        pipe_feat = self.layer.getFeature(pipe_feat_id)
+        pipe_geom = pipe_feat.geometry()
+        vertices_count = count_vertices(pipe_geom)
+        if vertices_count < 3:
+            return
+        start_vertex_idx, end_vertex_idx = 0, vertices_count - 1
+        points_connection_nodes = {}
+        pipe_polyline = pipe_geom.asPolyline()
+        manhole_template = None
+        for idx, point in enumerate(pipe_polyline):
+            if idx == start_vertex_idx:
+                connection_node_id = pipe_feat["connection_node_start_id"]
+                points_connection_nodes[point] = connection_node_id
+                manhole_template = connection_node_handler.get_manhole_feat_for_node_id(connection_node_id)
+            elif idx == end_vertex_idx:
+                connection_node_id = pipe_feat["connection_node_end_id"]
+                points_connection_nodes[point] = connection_node_id
+            else:
+                geom = QgsGeometry.fromPointXY(point)
+                extra_feats = manhole_handler.create_manhole_with_connection_node(geom, template_feat=manhole_template)
+                new_manhole_feat, new_node_feat = extra_feats
+                points_connection_nodes[point] = new_node_feat["id"]
+                connection_node_handler.layer.addFeature(new_node_feat)
+                manhole_handler.layer.addFeature(new_manhole_feat)
+        # Split pipe into segments
+        segments = zip(pipe_polyline, pipe_polyline[1:])
+        # Extract first segment first and update source pipe
+        first_seg_start_point, first_seg_end_point = next(segments)
+        new_source_pipe_geom = QgsGeometry.fromPolylineXY([first_seg_start_point, first_seg_end_point])
+        pipe_feat.setGeometry(new_source_pipe_geom)
+        pipe_feat["connection_node_end_id"] = points_connection_nodes[first_seg_end_point]
+        self.layer.updateFeature(pipe_feat)
+        # Let's add a new pipes
+        skip_fields = ["connection_node_start_id", "connection_node_end_id"]
+        for start_point, end_point in segments:
+            new_geom = QgsGeometry.fromPolylineXY([start_point, end_point])
+            new_feat = self.create_new_feature_from_template(pipe_feat, geometry=new_geom, fields_to_skip=skip_fields)
+            new_feat["connection_node_start_id"] = points_connection_nodes[start_point]
+            new_feat["connection_node_end_id"] = points_connection_nodes[end_point]
+            self.layer.addFeature(new_feat)
+
     def create_endpoints_for_pipe(self, pipe_feat):
-        manhole_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
         cs_definition_handler = self.layer_manager.model_handlers[dm.CrossSectionDefinition]
         pipe_linestring = pipe_feat.geometry().asPolyline()
         start_point, end_point = pipe_linestring[0], pipe_linestring[-1]
