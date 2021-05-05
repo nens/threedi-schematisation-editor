@@ -250,3 +250,8 @@ def find_linestring_nodes(linestring, node_layer, locator=None):
         end_node_fid = end_match.featureId()
         connection_node_end_feat = end_match_layer.getFeature(end_node_fid)
     return connection_node_start_feat, connection_node_end_feat
+
+
+def count_vertices(geometry):
+    c = sum(1 for _ in geometry.vertices())
+    return c
