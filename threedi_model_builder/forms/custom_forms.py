@@ -214,6 +214,8 @@ class ManholeEditForm(BaseEditForm):
         """Populate widgets for other layers attributes."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_layer = connection_node_handler.layer
+        if not connection_node_layer.isEditable():
+            connection_node_layer.startEditing()
         if self.creation is True:
             connection_node_feat = find_point_node(self.feature.geometry().asPoint(), connection_node_layer)
             if connection_node_feat is None:
@@ -283,6 +285,8 @@ class PipeEditForm(BaseEditForm):
         cross_section_def_layer = cross_section_def_handler.layer
         cross_section_def_feat = cross_section_def_handler.create_new_feature()
         self.feature["cross_section_definition_id"] = cross_section_def_feat["id"]
+        if not cross_section_def_layer.isEditable():
+            cross_section_def_layer.startEditing()
         cross_section_def_layer.addFeature(cross_section_def_feat)
         self.populate_widgets(data_model_cls=dm.CrossSectionDefinition, feature=cross_section_def_feat)
         self.cross_section_definition = cross_section_def_feat
@@ -318,31 +322,71 @@ class PipeEditForm(BaseEditForm):
         manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
         connection_node_layer = connection_node_handler.layer
         manhole_layer = manhole_handler.layer
+        if not connection_node_layer.isEditable():
+            connection_node_layer.startEditing()
+        if not manhole_layer.isEditable():
+            manhole_layer.startEditing()
         linestring = self.feature.geometry().asPolyline()
         start_point, end_point = linestring[0], linestring[-1]
         start_manhole_feat, end_manhole_feat = find_linestring_nodes(linestring, manhole_layer)
-        pipe_iterable = (
-            ("start", 1, start_point, start_manhole_feat),
-            ("end", 2, end_point, end_manhole_feat)
-        )
-        for name, modifier, manhole_point, manhole_feat in pipe_iterable:
-            if manhole_feat is None:
-                point_geom = QgsGeometry.fromPointXY(manhole_point)
-                manhole_feat, connection_node_feat = manhole_handler.create_manhole_with_connection_node(point_geom)
-                connection_node_id = connection_node_feat["id"]
-                connection_node_layer.addFeature(connection_node_feat)
-                manhole_layer.addFeature(manhole_feat)
-            else:
-                connection_node_id = manhole_feat["connection_node_id"]
-                connection_node_feat = connection_node_handler.get_feat_by_id(connection_node_id)
+        if start_manhole_feat is not None and end_manhole_feat is None:
+            start_connection_node_id = start_manhole_feat["connection_node_id"]
+            start_connection_node_feat = connection_node_handler.get_feat_by_id(start_connection_node_id)
+            # Create and add ending points
+            end_geom = QgsGeometry.fromPointXY(end_point)
+            end_manhole_feat, end_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
+                end_geom, template_feat=start_manhole_feat)
+            end_connection_node_id = end_connection_node_feat["id"]
+            connection_node_layer.addFeature(end_connection_node_feat)
+            manhole_layer.addFeature(end_manhole_feat)
+        elif start_manhole_feat is None and end_manhole_feat is not None:
+            end_connection_node_id = end_manhole_feat["connection_node_id"]
+            end_connection_node_feat = connection_node_handler.get_feat_by_id(end_connection_node_id)
+            # Create and add starting points
+            start_geom = QgsGeometry.fromPointXY(start_point)
+            start_manhole_feat, start_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
+                start_geom, template_feat=end_manhole_feat)
+            start_connection_node_id = start_connection_node_feat["id"]
+            connection_node_layer.addFeature(start_connection_node_feat)
+            manhole_layer.addFeature(start_manhole_feat)
+        elif start_manhole_feat is None and end_manhole_feat is None:
+            # Create and add starting points
+            start_geom = QgsGeometry.fromPointXY(start_point)
+            start_manhole_feat, start_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
+                start_geom)
+            start_connection_node_id = start_connection_node_feat["id"]
+            connection_node_layer.addFeature(start_connection_node_feat)
+            manhole_layer.addFeature(start_manhole_feat)
+            # Create and add ending points
+            end_geom = QgsGeometry.fromPointXY(end_point)
+            end_manhole_feat, end_connection_node_feat = manhole_handler.create_manhole_with_connection_node(end_geom)
+            end_connection_node_id = end_connection_node_feat["id"]
+            connection_node_layer.addFeature(end_connection_node_feat)
+            manhole_layer.addFeature(end_manhole_feat)
+        else:
+            start_connection_node_id = start_manhole_feat["connection_node_id"]
+            start_connection_node_feat = connection_node_handler.get_feat_by_id(start_connection_node_id)
+            end_connection_node_id = end_manhole_feat["connection_node_id"]
+            end_connection_node_feat = connection_node_handler.get_feat_by_id(end_connection_node_id)
 
-            self.feature[f"connection_node_{name}_id"] = connection_node_id
-            if modifier == 1:
-                self.connection_node_start = connection_node_feat
-                self.manhole_start = manhole_feat
-            else:
-                self.connection_node_end = connection_node_feat
-                self.manhole_end = manhole_feat
+        # Set pipe specific attributes
+        code_display_name = f"{start_manhole_feat['code']}-{end_manhole_feat['code']}"
+        self.feature["connection_node_start_id"] = start_connection_node_id
+        self.feature["connection_node_end_id"] = end_connection_node_id
+        self.feature["code"] = code_display_name
+        self.feature["display_name"] = code_display_name
+        # Assign features as an form instance attributes.
+        self.connection_node_start = start_connection_node_feat
+        self.connection_node_end = end_connection_node_feat
+        self.manhole_start = start_manhole_feat
+        self.manhole_end = end_manhole_feat
+
+        # Populate widgets based on features attributes
+        pipe_iterable = (
+            (1, start_connection_node_feat, start_manhole_feat),
+            (2, end_connection_node_feat, end_manhole_feat),
+        )
+        for modifier, connection_node_feat, manhole_feat in pipe_iterable:
             self.populate_widgets(
                 data_model_cls=dm.ConnectionNode,
                 feature=connection_node_feat,
