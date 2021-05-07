@@ -129,33 +129,18 @@ class UserLayerHandler:
     def on_commit_changes(self):
         self.reset_snapping()
         for link_table_handler in self.linked_table_handlers:
-            link_table_handler.layer.commitChanges(stopEditing=False)
+            link_table_handler.layer.commitChanges(stopEditing=True)
         if not self.snapped_models:
             return
         for layer_handler in self.snapped_handlers:
             layer = layer_handler.layer
             disconnect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
-            layer.commitChanges(stopEditing=False)
+            layer.commitChanges(stopEditing=True)
             for link_table_handler in layer_handler.linked_table_handlers:
-                link_table_handler.layer.commitChanges(stopEditing=False)
+                link_table_handler.layer.commitChanges(stopEditing=True)
         for layer_handler in self.snapped_handlers:
             layer = layer_handler.layer
             connect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
-
-    def on_add_feature(self, fid):
-        raise Exception("Not implemented")
-
-    def on_added_features(self, layer_id, added_features):
-        raise Exception("Not implemented")
-
-    def on_removed_features(self, layer_id, feature_ids):
-        raise Exception("Not implemented")
-
-    def on_changed_geometries(self, layer_id, changed_geometry_map):
-        raise Exception("Not implemented")
-
-    def on_changed_attributes(self, layer_id, changed_attribute_map):
-        raise Exception("Not implemented")
 
     def get_feat_by_id(self, object_id):
         """Return layer feature with the given id."""
@@ -264,7 +249,7 @@ class ManholeHandler(UserLayerHandler):
             "length": 0.8,
             "width": 0.8,
             "shape": ManholeShape.ROUND.value,
-            "manhole_indicator": ManholeIndicator.OUTLET.value,
+            "manhole_indicator": ManholeIndicator.INSPECTION.value,
             "bottom_level": -10.0,
         }
     )
@@ -342,7 +327,12 @@ class PipeHandler(UserLayerHandler):
         self.layer.featureAdded.disconnect(self.trigger_segmentize_pipe)
 
     def trigger_segmentize_pipe(self, pipe_feat_id):
-        # We have to run pipe segmentation after QGIS will finish adding feature procedure.
+        """
+        We have to run pipe segmentation after QGIS will finish adding feature procedure.
+        Pipe segmentation will be triggered in the next event loop after adding new pipe.
+        Editing added pipe directly by the slot connected to the `featureAdded` signal breaks adding feature tool.
+        That leads to the QGIS crash.
+        """
         segmentize_method = partial(self.segmentize_pipe, pipe_feat_id)
         QTimer.singleShot(0, segmentize_method)
 
