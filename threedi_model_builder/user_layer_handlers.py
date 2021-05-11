@@ -250,6 +250,7 @@ class ManholeHandler(UserLayerHandler):
             "width": 0.8,
             "shape": ManholeShape.ROUND.value,
             "manhole_indicator": ManholeIndicator.INSPECTION.value,
+            "calculation_type": CalculationTypeNode.ISOLATED.value,
             "bottom_level": -10.0,
         }
     )

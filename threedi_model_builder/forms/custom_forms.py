@@ -375,6 +375,8 @@ class PipeEditForm(BaseEditForm):
         self.feature["connection_node_end_id"] = end_connection_node_id
         self.feature["code"] = code_display_name
         self.feature["display_name"] = code_display_name
+        self.feature["invert_level_start_point"] = start_manhole_feat["bottom_level"]
+        self.feature["invert_level_end_point"] = end_manhole_feat["bottom_level"]
         # Assign features as an form instance attributes.
         self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat

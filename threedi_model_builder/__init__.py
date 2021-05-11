@@ -72,13 +72,13 @@ class ThreediModelBuilderPlugin:
         src_sqlite = self.select_sqlite_database(title="Select database to import features from")
         if not src_sqlite:
             return
+        if self.layer_manager is not None:
+            self.layer_manager.remove_groups()
         dst_gpkg = src_sqlite.replace(".sqlite", ".gpkg")
         converter = ModelDataConverter(src_sqlite, dst_gpkg)
         converter.create_empty_user_layers()
         converter.import_all_model_data()
         self.model_gpkg = dst_gpkg
-        if self.layer_manager is not None:
-            self.layer_manager.remove_groups()
         self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
         self.layer_manager.load_all_layers()
         self.uc.show_info("Import finished!")
