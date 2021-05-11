@@ -30,11 +30,11 @@ from threedi_model_builder.enumerators import (
 
 
 class ModelObject:
-    SQLITE_SOURCES = None
-    SQLITE_TARGETS = None
-    IMPORT_FIELD_MAPPINGS = None
-    EXPORT_FIELD_MAPPINGS = None
-    RELATED_RASTERS = None
+    SQLITE_SOURCES = tuple()
+    SQLITE_TARGETS = tuple()
+    IMPORT_FIELD_MAPPINGS = MappingProxyType({})
+    EXPORT_FIELD_MAPPINGS = MappingProxyType({})
+    RELATED_RASTERS = tuple()
 
 
 @dataclass
@@ -342,6 +342,7 @@ class Pipe(ModelObject):
             "friction_value": "pipe_friction_value",
             "friction_type": "pipe_friction_type",
             "material": "pipe_material",
+            "pipe_quality": "pipe_pipe_quality",
             "sewerage_type": "pipe_sewerage_type",
             "zoom_category": "pipe_zoom_category",
             "profile_num": "pipe_profile_num",
@@ -362,6 +363,7 @@ class Pipe(ModelObject):
     friction_value: float
     friction_type: FrictionType
     material: PipeMaterial
+    pipe_quality: float
     sewerage_type: SewerageType
     zoom_category: ZoomCategories
     profile_num: int
@@ -726,7 +728,7 @@ class AggregationSettings(ModelObject):
     var_name: str
     flow_variable: FlowVariable
     aggregation_method: AggregationMethod
-    aggregation_in_space: bool
+    aggregation_in_space: str  # This suppose to be boolean
     timestep: int
 
 
