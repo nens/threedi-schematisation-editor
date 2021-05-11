@@ -5,6 +5,7 @@ from threedi_model_builder.utils import (
     gpkg_layer,
     layer_to_gpkg,
     vector_layer_factory,
+    cast_if_bool,
 )
 from operator import itemgetter
 from collections import OrderedDict, defaultdict
@@ -20,12 +21,14 @@ from qgis.core import (
 
 
 class ModelDataConverter:
-    def __init__(self, src_sqlite, dst_gpkg):
+    def __init__(self, src_sqlite, dst_gpkg, use_source_epsg=True):
         self.src_sqlite = src_sqlite
         self.dst_gpkg = dst_gpkg
         self.epsg_code = 4326
         self.all_models = dm.ALL_MODELS[:]
         self.timeseries_rawdata = OrderedDict()
+        if use_source_epsg is True:
+            self.set_source_epsg()
 
     def set_source_epsg(self):
         settings_table = next(iter(dm.GlobalSettings.SQLITE_SOURCES))
@@ -36,7 +39,6 @@ class ModelDataConverter:
             self.epsg_code = epsg_from_settings
 
     def create_empty_user_layers(self, overwrite=True):
-        self.set_source_epsg()
         vector_layers = [vector_layer_factory(model_cls, epsg=self.epsg_code) for model_cls in self.all_models]
         overwrite = overwrite
         write_results = {}
@@ -85,7 +87,7 @@ class ModelDataConverter:
                 dst_feat.setGeometry(new_geom)
             for dst_field, src_field in field_mappings.items():
                 src_value = src_feat[src_field]
-                dst_feat[dst_field] = src_value
+                dst_feat[dst_field] = cast_if_bool(src_value)
             new_feats.append(dst_feat)
         return new_feats
 
@@ -185,7 +187,6 @@ class ModelDataConverter:
             dst_layer.commitChanges()
 
     def import_all_model_data(self):
-        self.set_source_epsg()
         self.timeseries_rawdata.clear()
         for data_model_cls in self.all_models:
             if data_model_cls == dm.Timeseries:

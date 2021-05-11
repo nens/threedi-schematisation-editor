@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import threedi_model_builder.data_models as dm
 from enum import Enum
@@ -24,6 +25,16 @@ field_types_mapping = {
     float: QVariant.Double,
     str: QVariant.String,
 }
+
+
+def cast_if_bool(value):
+    """We need to change True/False from GeoPackage layers to 0/1 integers used in Spatialite layers."""
+    if value is True:
+        return 1
+    elif value is False:
+        return 0
+    else:
+        return value
 
 
 def vector_layer_factory(annotated_model_cls, epsg=4326):
@@ -255,3 +266,20 @@ def find_linestring_nodes(linestring, node_layer, locator=None):
 def count_vertices(geometry):
     c = sum(1 for _ in geometry.vertices())
     return c
+
+
+def get_qgis(qgis_build_path="C:/OSGeo4W64/apps/qgis", qgis_proj_path="C:/OSGeo4W64/share/proj"):
+    qgis_python_path = os.path.join(qgis_build_path, "python")
+    qgis_plugins_path = os.path.join(qgis_python_path, "plugins")
+
+    os.putenv("QGIS_PREFIX_PATH", qgis_build_path)
+    os.putenv("QGIS_DEBUG", "-1")
+    os.putenv("PROJ_LIB", qgis_proj_path)
+
+    sys.path.insert(0, qgis_python_path)
+    sys.path.insert(1, qgis_plugins_path)
+
+    from qgis.core import QgsApplication
+    qgis_app = QgsApplication([b"test"], False)
+    qgis_app.initQgis()
+    return qgis_app
