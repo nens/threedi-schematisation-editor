@@ -1,6 +1,7 @@
 # Copyright (C) 2021 by Lutra Consulting
 import threedi_model_builder.data_models as dm
 from threedi_model_builder.enumerators import (
+    CalculationTypeCulvert,
     CalculationTypeNode,
     ManholeIndicator,
     ManholeShape,
@@ -283,14 +284,122 @@ class PumpstationMapHandler(UserLayerHandler):
 
 class WeirHandler(UserLayerHandler):
     MODEL = dm.Weir
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.ConnectionNode: 2,
+            dm.CrossSectionDefinition: 1,
+        }
+    )
+
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+            "friction_type": FrictionType.MANNING.value,
+            "friction_value": 0.02,
+        }
+    )
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.snapped_models = (dm.ConnectionNode,)
+        self.linked_table_models = (dm.CrossSectionDefinition,)
+
+    def connect_additional_signals(self):
+        self.layer.featureAdded.connect(self.trigger_simplify_weir)
+
+    def disconnect_additional_signals(self):
+        self.layer.featureAdded.disconnect(self.trigger_simplify_weir)
+
+    def trigger_simplify_weir(self, weir_feat_id):
+        simplify_method = partial(self.simplify_weir, weir_feat_id)
+        QTimer.singleShot(0, simplify_method)
+
+    def simplify_weir(self, weir_feat_id):
+        weir_feat = self.layer.getFeature(weir_feat_id)
+        weir_geom = weir_feat.geometry()
+        vertices_count = count_vertices(weir_geom)
+        if vertices_count < 3:
+            return
+        start_vertex_idx, end_vertex_idx = 0, vertices_count - 1
+        start_point, end_point = weir_geom.vertexAt(start_vertex_idx), weir_geom.vertexAt(end_vertex_idx)
+        new_source_weir_geom = QgsGeometry.fromPolyline([start_point, end_point])
+        weir_feat.setGeometry(new_source_weir_geom)
+        self.layer.updateFeature(weir_feat)
 
 
 class CulvertHandler(UserLayerHandler):
     MODEL = dm.Culvert
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.ConnectionNode: 2,
+            dm.CrossSectionDefinition: 1,
+        }
+    )
+
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+            "dist_calc_points": 1000,
+            "calculation_type": CalculationTypeCulvert.ISOLATED_NODE.value,
+            "friction_type": FrictionType.MANNING.value,
+            "friction_value": 0.02,
+            "invert_level_start_point": -10.0,
+            "invert_level_end_point": -10.0,
+        }
+    )
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.snapped_models = (dm.ConnectionNode,)
+        self.linked_table_models = (dm.CrossSectionDefinition,)
 
 
 class OrificeHandler(UserLayerHandler):
     MODEL = dm.Orifice
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.ConnectionNode: 2,
+            dm.CrossSectionDefinition: 1,
+        }
+    )
+
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+            "friction_type": FrictionType.MANNING.value,
+            "friction_value": 0.02,
+        }
+    )
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.snapped_models = (dm.ConnectionNode,)
+        self.linked_table_models = (dm.CrossSectionDefinition,)
+
+    def connect_additional_signals(self):
+        self.layer.featureAdded.connect(self.trigger_simplify_orifice)
+
+    def disconnect_additional_signals(self):
+        self.layer.featureAdded.disconnect(self.trigger_simplify_orifice)
+
+    def trigger_simplify_orifice(self, orifice_feat_id):
+        simplify_method = partial(self.simplify_orifice, orifice_feat_id)
+        QTimer.singleShot(0, simplify_method)
+
+    def simplify_orifice(self, orifice_feat_id):
+        orifice_feat = self.layer.getFeature(orifice_feat_id)
+        orifice_geom = orifice_feat.geometry()
+        vertices_count = count_vertices(orifice_geom)
+        if vertices_count < 3:
+            return
+        start_vertex_idx, end_vertex_idx = 0, vertices_count - 1
+        start_point, end_point = orifice_geom.vertexAt(start_vertex_idx), orifice_geom.vertexAt(end_vertex_idx)
+        new_source_orifice_geom = QgsGeometry.fromPolyline([start_point, end_point])
+        orifice_feat.setGeometry(new_source_orifice_geom)
+        self.layer.updateFeature(orifice_feat)
 
 
 class PipeHandler(UserLayerHandler):
@@ -380,20 +489,6 @@ class PipeHandler(UserLayerHandler):
             new_feat["connection_node_start_id"] = points_connection_nodes[start_point]
             new_feat["connection_node_end_id"] = points_connection_nodes[end_point]
             self.layer.addFeature(new_feat)
-
-    def create_endpoints_for_pipe(self, pipe_feat):
-        manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
-        cs_definition_handler = self.layer_manager.model_handlers[dm.CrossSectionDefinition]
-        pipe_linestring = pipe_feat.geometry().asPolyline()
-        start_point, end_point = pipe_linestring[0], pipe_linestring[-1]
-        start_geom = QgsGeometry.fromPointXY(start_point)
-        end_geom = QgsGeometry.fromPointXY(end_point)
-        start_manhole, start_node = manhole_handler.create_manhole_with_connection_node(start_geom)
-        end_manhole, end_node = manhole_handler.create_manhole_with_connection_node(end_geom)
-        cross_section_def = cs_definition_handler.create_new_feature()
-        pipe_feat["connection_node_start_id"] = start_node["id"]
-        pipe_feat["connection_node_end_id"] = end_node["id"]
-        return start_node, start_manhole, end_node, end_manhole, cross_section_def
 
 
 class CrossSectionLocationHandler(UserLayerHandler):
