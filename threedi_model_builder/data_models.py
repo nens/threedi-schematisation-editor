@@ -30,6 +30,10 @@ from threedi_model_builder.enumerators import (
 
 
 class ModelObject:
+    __tablename__ = None
+    __layername__ = None
+    __geometrytype__ = GeometryType.NoGeometry
+
     SQLITE_SOURCES = tuple()
     SQLITE_TARGETS = tuple()
     IMPORT_FIELD_MAPPINGS = MappingProxyType({})
@@ -126,7 +130,7 @@ class Manhole(ModelObject):
 @dataclass
 class Pumpstation(ModelObject):
     __tablename__ = "pumpstation"
-    __layername__ = "Pumpstation"
+    __layername__ = "Pumpstation (without end node)"
     __geometrytype__ = GeometryType.Point
 
     SQLITE_SOURCES = ("v2_pumpstation_point_view",)
@@ -160,7 +164,7 @@ class Pumpstation(ModelObject):
 @dataclass
 class PumpstationMap(ModelObject):
     __tablename__ = "pumpstation_map"
-    __layername__ = "Pumpstation (with end node)"
+    __layername__ = "Pumpstation map"
     __geometrytype__ = GeometryType.Linestring
 
     SQLITE_SOURCES = ("v2_pumpstation_view",)
@@ -171,6 +175,7 @@ class PumpstationMap(ModelObject):
             "id": "pump_id",
             "code": "pump_code",
             "display_name": "pump_display_name",
+            "pumpstation_id": "pump_id",
             "connection_node_start_id": "pump_connection_node_start_id",
             "connection_node_end_id": "pump_connection_node_end_id",
         }
@@ -179,6 +184,7 @@ class PumpstationMap(ModelObject):
     id: int
     code: str
     display_name: str
+    pumpstation_id: int
     connection_node_start_id: int
     connection_node_end_id: int
 

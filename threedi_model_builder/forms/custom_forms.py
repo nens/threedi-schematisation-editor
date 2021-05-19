@@ -1,6 +1,6 @@
 import threedi_model_builder.data_models as dm
 import threedi_model_builder.enumerators as en
-from threedi_model_builder.utils import find_point_node, find_linestring_nodes, connect_signal
+from threedi_model_builder.utils import find_point_nodes, find_linestring_nodes, connect_signal
 from functools import partial
 from enum import Enum
 from types import MappingProxyType
@@ -43,11 +43,14 @@ class BaseForm(QObject):
         self.creation = False
         self.main_widgets = {}
         self.foreign_widgets = {}
-        self.foreign_models_features = {}
-        self.connected_signals = set()
         self.set_foreign_widgets()
         self.layer.editingStarted.connect(self.toggle_edit_mode)
         self.layer.editingStopped.connect(self.toggle_edit_mode)
+
+    @property
+    def foreign_models_features(self):
+        fm_features = {}
+        return fm_features
 
     def setup_form_widgets(self):
         if self.feature is None:
@@ -57,12 +60,16 @@ class BaseForm(QObject):
             if not geometry:
                 return  # form open for an invalid feature
             else:
+                if self.feature["id"] is not None:
+                    # This is the case after accepting new feature
+                    return
                 self.creation = True
                 self.handler.set_feature_values(self.feature)
         self.populate_widgets()
         self.populate_extra_widgets()
         self.toggle_edit_mode()
         self.connect_foreign_widgets()
+        self.connect_custom_widgets()
 
     def set_foreign_widgets(self):
         main_fields = set(self.MODEL.__annotations__.keys())
@@ -117,11 +124,18 @@ class BaseForm(QObject):
             self.set_widget_value(widget, feature[field_name], var_type=field_type)
             self.main_widgets[widget.objectName()] = widget
 
+    def populate_foreign_widgets(self):
+        """Populating values within foreign layers widgets."""
+        for (data_model_cls, start_end_modifier), feature in self.foreign_models_features.items():
+            if feature is not None:
+                self.populate_widgets(data_model_cls, feature, start_end_modifier)
+
     @staticmethod
-    def populate_combo(combo_widget, value_map):
+    def populate_combo(combo_widget, value_map, add_empty_entry=True):
         """Populates combo box with value map items (map key = displayed text, map value = data)."""
         combo_widget.clear()
-        combo_widget.addItem("", None)
+        if add_empty_entry:
+            combo_widget.addItem("", None)
         for text, data in value_map.items():
             combo_widget.addItem(text, data)
 
@@ -191,7 +205,15 @@ class BaseForm(QObject):
                 continue
             slot = partial(self.set_value_from_widget, widget, feature, model_cls, field_name)
             connect_signal(signal, slot)
-            self.connected_signals.add((signal, slot))
+            self.dialog.active_form_signals.add((signal, slot))
+
+    def fill_related_attributes(self):
+        """Filling attributes referring to the other layers features."""
+        pass
+
+    def connect_custom_widgets(self):
+        """Connect other widgets."""
+        pass
 
     def populate_extra_widgets(self):
         """Populate widgets for other layers attributes."""
@@ -203,28 +225,45 @@ class FormWithNode(BaseForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
         self.connection_node = None
-        self.foreign_models_features = {
-            (dm.ConnectionNode, 1): self.connection_node,
-        }
 
-    def populate_connection_node(self):
+    @property
+    def foreign_models_features(self):
+        fm_features = {
+            (dm.ConnectionNode, None): self.connection_node,
+        }
+        return fm_features
+
+    def setup_connection_node_on_edit(self):
+        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        connection_node_feat = connection_node_handler.get_feat_by_id(self.feature["connection_node_id"])
+        self.connection_node = connection_node_feat
+
+    def setup_connection_node_on_creation(self):
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_layer = connection_node_handler.layer
         if not connection_node_layer.isEditable():
             connection_node_layer.startEditing()
-        if self.creation is True:
-            connection_node_feat = find_point_node(self.feature.geometry().asPoint(), connection_node_layer)
-            if connection_node_feat is None:
-                connection_node_feat = connection_node_handler.create_new_feature(self.feature.geometry())
-                self.feature["connection_node_id"] = connection_node_feat["id"]
-                connection_node_layer.addFeature(connection_node_feat)
-                self.populate_widgets()
-        else:
-            connection_node_feat = connection_node_handler.get_feat_by_id(self.feature["connection_node_id"])
+        connection_node_feat = find_point_nodes(self.feature.geometry().asPoint(), connection_node_layer)
+        if connection_node_feat is None:
+            connection_node_feat = connection_node_handler.create_new_feature(self.feature.geometry())
+            connection_node_layer.addFeature(connection_node_feat)
+        self.connection_node = connection_node_feat
 
-        if connection_node_feat is not None:
-            self.populate_widgets(data_model_cls=dm.ConnectionNode, feature=connection_node_feat)
-            self.connection_node = connection_node_feat
+    def fill_related_attributes(self):
+        super().fill_related_attributes()
+        self.feature["connection_node_id"] = self.connection_node["id"]
+
+    def populate_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.setup_connection_node_on_creation()
+            # Set feature specific attributes
+            self.fill_related_attributes()
+        else:
+            self.setup_connection_node_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
 
 
 class FormWithStartEndNode(BaseForm):
@@ -233,12 +272,23 @@ class FormWithStartEndNode(BaseForm):
         super().__init__(*args, *kwargs)
         self.connection_node_start = None
         self.connection_node_end = None
-        self.foreign_models_features = {
+
+    @property
+    def foreign_models_features(self):
+        fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
         }
+        return fm_features
 
-    def populate_connection_nodes_on_creation(self):
+    def setup_connection_nodes_on_edit(self):
+        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        connection_node_start_id = self.feature["connection_node_start_id"]
+        connection_node_end_id = self.feature["connection_node_end_id"]
+        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_start_id)
+        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_end_id)
+
+    def setup_connection_nodes_on_creation(self):
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_layer = connection_node_handler.layer
         if not connection_node_layer.isEditable():
@@ -268,55 +318,32 @@ class FormWithStartEndNode(BaseForm):
             end_connection_node_feat = connection_node_handler.create_new_feature(geometry=end_geom)
             connection_node_layer.addFeature(end_connection_node_feat)
 
-        # Set feature specific attributes
-        code_display_name = f"{start_connection_node_feat['code']}-{end_connection_node_feat['code']}"
-        self.feature["connection_node_start_id"] = start_connection_node_feat["id"]
-        self.feature["connection_node_end_id"] = end_connection_node_feat["id"]
-        self.feature["code"] = code_display_name
-        self.feature["display_name"] = code_display_name
         # Assign features as an form instance attributes.
         self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
 
-        # Populate widgets based on features attributes
-        node_iterable = (
-            (1, start_connection_node_feat),
-            (2, end_connection_node_feat),
-        )
-        for modifier, connection_node_feat in node_iterable:
-            self.populate_widgets(
-                data_model_cls=dm.ConnectionNode,
-                feature=connection_node_feat,
-                start_end_modifier=modifier,
-            )
-        self.populate_widgets()
-
-    def populate_connection_nodes_on_edit(self):
-        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        node_iterable = (("start", 1), ("end", 2))
-        for name, modifier in node_iterable:
-            connection_node_id = self.feature[f"connection_node_{name}_id"]
-            if connection_node_id:
-                connection_node_feat = connection_node_handler.get_feat_by_id(connection_node_id)
-                if modifier == 1:
-                    self.connection_node_start = connection_node_feat
-                else:
-                    self.connection_node_end = connection_node_feat
-                if connection_node_feat is not None:
-                    self.populate_widgets(
-                        data_model_cls=dm.ConnectionNode,
-                        feature=connection_node_feat,
-                        start_end_modifier=modifier,
-                    )
+    def fill_related_attributes(self):
+        super().fill_related_attributes()
+        self.feature["connection_node_start_id"] = self.connection_node_start["id"]
+        self.feature["connection_node_end_id"] = self.connection_node_end["id"]
+        code_display_name = f"{self.connection_node_start['code']}-{self.connection_node_end['code']}"
+        try:
+            self.feature["code"] = code_display_name
+            self.feature["display_name"] = code_display_name
+        except KeyError:
+            pass  # Some layers might not have code and display name
 
     def populate_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
-            self.populate_cross_section_definition_on_creation()
-            self.populate_connection_nodes_on_creation()
+            self.setup_connection_nodes_on_creation()
+            # Set feature specific attributes
+            self.fill_related_attributes()
         else:
-            self.populate_cross_section_definition_on_edit()
-            self.populate_connection_nodes_on_edit()
+            self.setup_connection_nodes_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
 
 
 class FormWithCSDefinition(BaseForm):
@@ -324,18 +351,20 @@ class FormWithCSDefinition(BaseForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
         self.cross_section_definition = None
-        self.foreign_models_features = {
-            (dm.CrossSectionDefinition, 1):  self.cross_section_definition,
-        }
 
-    def populate_cross_section_definition_on_edit(self):
+    @property
+    def foreign_models_features(self):
+        fm_features = {
+            (dm.CrossSectionDefinition, None):  self.cross_section_definition,
+        }
+        return fm_features
+
+    def setup_cross_section_definition_on_edit(self):
         cross_section_def_handler = self.layer_manager.model_handlers[dm.CrossSectionDefinition]
         cross_section_def_feat = cross_section_def_handler.get_feat_by_id(self.feature["cross_section_definition_id"])
-        if cross_section_def_feat is not None:
-            self.populate_widgets(data_model_cls=dm.CrossSectionDefinition, feature=cross_section_def_feat)
-            self.cross_section_definition = cross_section_def_feat
+        self.cross_section_definition = cross_section_def_feat
 
-    def populate_cross_section_definition_on_creation(self):
+    def setup_cross_section_definition_on_creation(self):
         cross_section_def_handler = self.layer_manager.model_handlers[dm.CrossSectionDefinition]
         cross_section_def_layer = cross_section_def_handler.layer
         cross_section_def_feat = cross_section_def_handler.create_new_feature()
@@ -344,9 +373,23 @@ class FormWithCSDefinition(BaseForm):
         if self.MODEL == dm.Weir:
             cross_section_def_feat["shape"] = en.CrossSectionShape.RECTANGLE.value
         cross_section_def_layer.addFeature(cross_section_def_feat)
-        self.feature["cross_section_definition_id"] = cross_section_def_feat["id"]
-        self.populate_widgets(data_model_cls=dm.CrossSectionDefinition, feature=cross_section_def_feat)
         self.cross_section_definition = cross_section_def_feat
+
+    def fill_related_attributes(self):
+        super().fill_related_attributes()
+        self.feature["cross_section_definition_id"] = self.cross_section_definition["id"]
+
+    def populate_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.setup_cross_section_definition_on_creation()
+            # Set feature specific attributes
+            self.fill_related_attributes()
+        else:
+            self.setup_cross_section_definition_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
 
 
 class ConnectionNodeForm(BaseForm):
@@ -358,10 +401,6 @@ class ManholeForm(FormWithNode):
     """Manhole user layer edit form logic."""
     MODEL = dm.Manhole
 
-    def populate_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
-        self.populate_connection_node()
-
 
 class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
     """Pipe user layer edit form logic."""
@@ -372,41 +411,28 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
         super().__init__(*args, *kwargs)
         self.manhole_start = None
         self.manhole_end = None
-        self.foreign_models_features = {
+
+    @property
+    def foreign_models_features(self):
+        fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
             (dm.Manhole, 1): self.manhole_start,
             (dm.Manhole, 2): self.manhole_end,
-            (dm.CrossSectionDefinition, 1): self.cross_section_definition,
+            (dm.CrossSectionDefinition, None): self.cross_section_definition,
         }
+        return fm_features
 
-    def populate_manholes_on_edit(self):
+    def setup_manholes_on_edit(self):
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        pipe_iterable = (("start", 1), ("end", 2))
-        for name, modifier in pipe_iterable:
-            connection_node_id = self.feature[f"connection_node_{name}_id"]
-            if connection_node_id:
-                connection_node_feat = connection_node_handler.get_feat_by_id(connection_node_id)
-                manhole_feat = connection_node_handler.get_manhole_feat_for_node_id(connection_node_id)
-                if modifier == 1:
-                    self.connection_node_start = connection_node_feat
-                    self.manhole_start = manhole_feat
-                else:
-                    self.connection_node_end = connection_node_feat
-                    self.manhole_end = manhole_feat
-                if manhole_feat is not None:
-                    self.populate_widgets(
-                        data_model_cls=dm.ConnectionNode,
-                        feature=connection_node_feat,
-                        start_end_modifier=modifier,
-                    )
-                    self.populate_widgets(
-                        data_model_cls=dm.Manhole,
-                        feature=manhole_feat,
-                        start_end_modifier=modifier,
-                    )
+        connection_node_start_id = self.feature["connection_node_start_id"]
+        connection_node_end_id = self.feature["connection_node_end_id"]
+        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_start_id)
+        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_end_id)
+        self.manhole_start = connection_node_handler.get_manhole_feat_for_node_id(connection_node_start_id)
+        self.manhole_end = connection_node_handler.get_manhole_feat_for_node_id(connection_node_end_id)
 
-    def populate_manholes_on_creation(self):
+    def setup_manholes_on_creation(self):
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
         connection_node_layer = connection_node_handler.layer
@@ -425,7 +451,6 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
             end_geom = QgsGeometry.fromPointXY(end_point)
             end_manhole_feat, end_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
                 end_geom, template_feat=start_manhole_feat)
-            end_connection_node_id = end_connection_node_feat["id"]
             connection_node_layer.addFeature(end_connection_node_feat)
             manhole_layer.addFeature(end_manhole_feat)
         elif start_manhole_feat is None and end_manhole_feat is not None:
@@ -435,7 +460,6 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
             start_geom = QgsGeometry.fromPointXY(start_point)
             start_manhole_feat, start_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
                 start_geom, template_feat=end_manhole_feat)
-            start_connection_node_id = start_connection_node_feat["id"]
             connection_node_layer.addFeature(start_connection_node_feat)
             manhole_layer.addFeature(start_manhole_feat)
         elif start_manhole_feat is None and end_manhole_feat is None:
@@ -443,13 +467,11 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
             start_geom = QgsGeometry.fromPointXY(start_point)
             start_manhole_feat, start_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
                 start_geom)
-            start_connection_node_id = start_connection_node_feat["id"]
             connection_node_layer.addFeature(start_connection_node_feat)
             manhole_layer.addFeature(start_manhole_feat)
             # Create and add ending points
             end_geom = QgsGeometry.fromPointXY(end_point)
             end_manhole_feat, end_connection_node_feat = manhole_handler.create_manhole_with_connection_node(end_geom)
-            end_connection_node_id = end_connection_node_feat["id"]
             connection_node_layer.addFeature(end_connection_node_feat)
             manhole_layer.addFeature(end_manhole_feat)
         else:
@@ -458,46 +480,32 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
             end_connection_node_id = end_manhole_feat["connection_node_id"]
             end_connection_node_feat = connection_node_handler.get_feat_by_id(end_connection_node_id)
 
-        # Set pipe specific attributes
-        code_display_name = f"{start_manhole_feat['code']}-{end_manhole_feat['code']}"
-        self.feature["connection_node_start_id"] = start_connection_node_id
-        self.feature["connection_node_end_id"] = end_connection_node_id
-        self.feature["code"] = code_display_name
-        self.feature["display_name"] = code_display_name
-        self.feature["invert_level_start_point"] = start_manhole_feat["bottom_level"]
-        self.feature["invert_level_end_point"] = end_manhole_feat["bottom_level"]
         # Assign features as an form instance attributes.
         self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
         self.manhole_start = start_manhole_feat
         self.manhole_end = end_manhole_feat
 
-        # Populate widgets based on features attributes
-        pipe_iterable = (
-            (1, start_connection_node_feat, start_manhole_feat),
-            (2, end_connection_node_feat, end_manhole_feat),
-        )
-        for modifier, connection_node_feat, manhole_feat in pipe_iterable:
-            self.populate_widgets(
-                data_model_cls=dm.ConnectionNode,
-                feature=connection_node_feat,
-                start_end_modifier=modifier,
-            )
-            self.populate_widgets(
-                data_model_cls=dm.Manhole,
-                feature=manhole_feat,
-                start_end_modifier=modifier,
-                )
-        self.populate_widgets()
+    def fill_related_attributes(self):
+        super().fill_related_attributes()
+        code_display_name = f"{self.manhole_start['code']}-{self.manhole_end['code']}"
+        self.feature["code"] = code_display_name
+        self.feature["display_name"] = code_display_name
+        self.feature["invert_level_start_point"] = self.manhole_start["bottom_level"]
+        self.feature["invert_level_end_point"] = self.manhole_end["bottom_level"]
 
     def populate_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
-            self.populate_cross_section_definition_on_creation()
-            self.populate_manholes_on_creation()
+            self.setup_cross_section_definition_on_creation()
+            self.setup_manholes_on_creation()
+            self.fill_related_attributes()
         else:
-            self.populate_cross_section_definition_on_edit()
-            self.populate_manholes_on_edit()
+            self.setup_cross_section_definition_on_edit()
+            self.setup_manholes_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
 
 
 class WeirForm(FormWithCSDefinition, FormWithStartEndNode):
@@ -507,42 +515,65 @@ class WeirForm(FormWithCSDefinition, FormWithStartEndNode):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.foreign_models_features = {
+
+    @property
+    def foreign_models_features(self):
+        fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
-            (dm.CrossSectionDefinition, 1): self.cross_section_definition,
+            (dm.CrossSectionDefinition, None): self.cross_section_definition,
         }
+        return fm_features
+
+    def fill_related_attributes(self):
+        super().fill_related_attributes()
 
     def populate_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
-            self.populate_cross_section_definition_on_creation()
-            self.populate_connection_nodes_on_creation()
+            self.setup_cross_section_definition_on_creation()
+            self.setup_connection_nodes_on_creation()
+            self.fill_related_attributes()
         else:
-            self.populate_cross_section_definition_on_edit()
-            self.populate_connection_nodes_on_edit()
+            self.setup_cross_section_definition_on_edit()
+            self.setup_connection_nodes_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
 
 
 class CulvertForm(FormWithCSDefinition, FormWithStartEndNode):
     """Culvert user layer edit form logic."""
+
     MODEL = dm.Culvert
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.foreign_models_features = {
+
+    @property
+    def foreign_models_features(self):
+        fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
-            (dm.CrossSectionDefinition, 1): self.cross_section_definition,
+            (dm.CrossSectionDefinition, None): self.cross_section_definition,
         }
+        return fm_features
+
+    def fill_related_attributes(self):
+        super().fill_related_attributes()
 
     def populate_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
-            self.populate_cross_section_definition_on_creation()
-            self.populate_connection_nodes_on_creation()
+            self.setup_cross_section_definition_on_creation()
+            self.setup_connection_nodes_on_creation()
+            self.fill_related_attributes()
         else:
-            self.populate_cross_section_definition_on_edit()
-            self.populate_connection_nodes_on_edit()
+            self.setup_cross_section_definition_on_edit()
+            self.setup_connection_nodes_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
 
 
 class OrificeForm(FormWithCSDefinition, FormWithStartEndNode):
@@ -552,20 +583,145 @@ class OrificeForm(FormWithCSDefinition, FormWithStartEndNode):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.foreign_models_features = {
+
+    @property
+    def foreign_models_features(self):
+        fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
-            (dm.CrossSectionDefinition, 1): self.cross_section_definition,
+            (dm.CrossSectionDefinition, None): self.cross_section_definition,
         }
+        return fm_features
+
+    def fill_related_attributes(self):
+        super().fill_related_attributes()
 
     def populate_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
-            self.populate_cross_section_definition_on_creation()
-            self.populate_connection_nodes_on_creation()
+            self.setup_cross_section_definition_on_creation()
+            self.setup_connection_nodes_on_creation()
+            self.fill_related_attributes()
         else:
-            self.populate_cross_section_definition_on_edit()
-            self.populate_connection_nodes_on_edit()
+            self.setup_cross_section_definition_on_edit()
+            self.setup_connection_nodes_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+
+
+class PumpstationForm(FormWithNode):
+    """Pumpstation without end node user layer edit form logic."""
+
+    MODEL = dm.Pumpstation
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+
+class PumpstationMapForm(FormWithStartEndNode):
+    """Pumpstation with end node user layer edit form logic."""
+
+    MODEL = dm.PumpstationMap
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.pumpstation = None
+
+    @property
+    def foreign_models_features(self):
+        fm_features = {
+            (dm.ConnectionNode, 1): self.connection_node_start,
+            (dm.ConnectionNode, 2): self.connection_node_end,
+            (dm.Pumpstation, None): self.pumpstation,
+        }
+        return fm_features
+
+    def setup_pumpstation_on_edit(self):
+        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        pumpstation_handler = self.layer_manager.model_handlers[dm.Pumpstation]
+        connection_node_start_id = self.feature["connection_node_start_id"]
+        connection_node_end_id = self.feature["connection_node_end_id"]
+        pumpstation_id = self.feature["pumpstation_id"]
+        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_start_id)
+        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_end_id)
+        self.pumpstation = pumpstation_handler.get_feat_by_id(pumpstation_id)
+
+    def setup_pumpstation_on_creation(self):
+        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        pumpstation_handler = self.layer_manager.model_handlers[dm.Pumpstation]
+        connection_node_layer = connection_node_handler.layer
+        pumpstation_layer = pumpstation_handler.layer
+        if not connection_node_layer.isEditable():
+            connection_node_layer.startEditing()
+        if not pumpstation_layer.isEditable():
+            pumpstation_layer.startEditing()
+        linestring = self.feature.geometry().asPolyline()
+        start_point, end_point = linestring[0], linestring[-1]
+        start_connection_node_feat, end_connection_node_feat = find_linestring_nodes(linestring, connection_node_layer)
+        start_pump_feat = self.pumpstation
+        if start_pump_feat is None:
+            start_geom = QgsGeometry.fromPointXY(start_point)
+            if start_connection_node_feat is None:
+                start_pump_feat, start_connection_node_feat = pumpstation_handler.create_pump_with_connection_node(
+                    start_geom)
+                connection_node_layer.addFeature(start_connection_node_feat)
+                pumpstation_layer.addFeature(start_pump_feat)
+            else:
+                start_pump_feat = pumpstation_handler.create_new_feature(start_geom)
+                start_pump_feat["connection_node_id"] = start_connection_node_feat["id"]
+            if end_connection_node_feat is None:
+                end_geom = QgsGeometry.fromPointXY(end_point)
+                end_connection_node_feat = connection_node_handler.create_new_feature_from_template(
+                    start_connection_node_feat, geometry=end_geom)
+        else:
+            if end_connection_node_feat is None:
+                end_geom = QgsGeometry.fromPointXY(end_point)
+                end_connection_node_feat = connection_node_handler.create_new_feature_from_template(
+                    start_connection_node_feat, geometry=end_geom)
+
+        # Assign features as an form instance attributes.
+        self.connection_node_start = start_connection_node_feat
+        self.connection_node_end = end_connection_node_feat
+        self.pumpstation = start_pump_feat
+
+    def fill_related_attributes(self):
+        super().fill_related_attributes()
+        self.feature["pumpstation_id"] = self.pumpstation["id"]
+
+    def populate_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.pumpstation = self.select_start_pumpstation()
+            self.setup_pumpstation_on_creation()
+            self.fill_related_attributes()
+        else:
+            self.setup_pumpstation_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+
+    def select_start_pumpstation(self):
+        """Selecting start pumpstation"""
+        title = "Select start pumpstation"
+        message = "Pumpstations at location"
+        linestring = self.feature.geometry().asPolyline()
+        start_point, end_point = linestring[0], linestring[-1]
+        pumpstation_handler = self.layer_manager.model_handlers[dm.Pumpstation]
+        pumpstation_layer = pumpstation_handler.layer
+        start_pump_feats = find_point_nodes(start_point, pumpstation_layer, allow_multiple=True)
+        pump_no = len(start_pump_feats)
+        if pump_no == 0:
+            pumpstation_feat = None
+        elif pump_no == 1:
+            pumpstation_feat = next(iter(start_pump_feats))
+        else:
+            pump_feats_by_id = {feat["id"]: feat for feat in start_pump_feats}
+            pump_entries = [f"{feat_id} ({feat['display_name']})" for feat_id, feat in pump_feats_by_id.items()]
+            pumpstation_entry = self.uc.pick_item(title, message, None, *pump_entries)
+            pumpstation_id = int(pumpstation_entry.split()[0]) if pumpstation_entry else None
+            pumpstation_feat = pump_feats_by_id[pumpstation_id] if pumpstation_id else None
+        return pumpstation_feat
 
 
 ALL_FORMS = (
@@ -575,6 +731,8 @@ ALL_FORMS = (
     WeirForm,
     CulvertForm,
     OrificeForm,
+    PumpstationForm,
+    PumpstationMapForm,
 )
 
 MODEL_FORMS = MappingProxyType({form.MODEL: form for form in ALL_FORMS})
