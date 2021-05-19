@@ -301,7 +301,11 @@ class PumpstationHandler(UserLayerHandler):
         {
             "display_name": "new",
             "code": "new",
-            "type": PumpType.SUCTION_SIDE.value
+            "sewerage": False,
+            "type": PumpType.SUCTION_SIDE.value,
+            "start_level": -10.0,
+            "lower_stop_level": -10.0,
+            "capacity": 10.0,
         }
     )
 

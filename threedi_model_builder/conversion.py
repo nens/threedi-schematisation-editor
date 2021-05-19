@@ -146,7 +146,7 @@ class ModelDataConverter:
         elif src_layer_name == dm.Pumpstation.__layername__:
             map_table = dm.PumpstationMap.__tablename__
             map_layer = gpkg_layer(self.dst_gpkg, map_table)
-            connections_ids = {feat["id"]: feat["connection_node_end_id"] for feat in map_layer.getFeatures()}
+            connections_ids = {feat["pumpstation_id"]: feat["connection_node_end_id"] for feat in map_layer.getFeatures()}
             for feat in new_feats:
                 feat_id = feat["id"]
                 try:
