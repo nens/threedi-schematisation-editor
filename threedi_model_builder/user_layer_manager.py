@@ -32,6 +32,7 @@ class LayersManager:
         self.model_handlers = {}
         self.layer_handlers = {}
         self.loaded_rasters = {}
+        self.active_form_signals = set()
 
     @property
     def group_names(self):

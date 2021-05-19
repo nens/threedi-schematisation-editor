@@ -3,10 +3,12 @@ import threedi_model_builder.data_models as dm
 from threedi_model_builder.enumerators import (
     CalculationTypeCulvert,
     CalculationTypeNode,
+    GeometryType,
     ManholeIndicator,
     ManholeShape,
     FrictionType,
     PipeMaterial,
+    PumpType,
 )
 from threedi_model_builder.utils import connect_signal, disconnect_signal, count_vertices
 from types import MappingProxyType
@@ -203,6 +205,20 @@ class UserLayerHandler:
         self.set_feature_values(new_feat, **field_values)
         return new_feat
 
+    def simplify_linear_feature(self, feat_id):
+        if self.MODEL.__geometrytype__ != GeometryType.Linestring:
+            return
+        feat = self.layer.getFeature(feat_id)
+        geom = feat.geometry()
+        vertices_count = count_vertices(geom)
+        if vertices_count < 3:
+            return
+        start_vertex_idx, end_vertex_idx = 0, vertices_count - 1
+        start_point, end_point = geom.vertexAt(start_vertex_idx), geom.vertexAt(end_vertex_idx)
+        new_source_geom = QgsGeometry.fromPolyline([start_point, end_point])
+        feat.setGeometry(new_source_geom)
+        self.layer.updateFeature(feat)
+
 
 class ConnectionNodeHandler(UserLayerHandler):
     MODEL = dm.ConnectionNode
@@ -276,10 +292,73 @@ class ManholeHandler(UserLayerHandler):
 
 class PumpstationHandler(UserLayerHandler):
     MODEL = dm.Pumpstation
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.ConnectionNode: 1,
+        }
+    )
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+            "type": PumpType.SUCTION_SIDE.value
+        }
+    )
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.snapped_models = (dm.ConnectionNode, dm.Manhole, dm.Pipe, dm.Channel, dm.Weir, dm.Orifice)
+
+    def get_pumpstation_feats_for_node_id(self, node_id):
+        """Check if there is a pumpstation features defined for node of the given node_id and return it."""
+        pump_feats = []
+        if node_id not in (None, NULL):
+            exp = f'"connection_node_id" = {node_id}'
+            pump_feats = list(self.layer_manager.get_layer_features(dm.Pumpstation, exp))
+        return pump_feats
+
+    def create_pump_with_connection_node(self, geometry, template_feat=None):
+        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        if template_feat is not None:
+            template_connection_node_id = template_feat["connection_node_id"]
+            node_template = connection_node_handler.layer.getFeature(template_connection_node_id)
+            node_feat = connection_node_handler.create_new_feature_from_template(node_template, geometry=geometry)
+            pumpstation_feat = self.create_new_feature_from_template(template_feat, geometry=geometry)
+        else:
+            node_feat = connection_node_handler.create_new_feature(geometry=geometry)
+            pumpstation_feat = self.create_new_feature(geometry=geometry)
+        pumpstation_feat["connection_node_id"] = node_feat["id"]
+        return pumpstation_feat, node_feat
 
 
 class PumpstationMapHandler(UserLayerHandler):
     MODEL = dm.PumpstationMap
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.ConnectionNode: 2,
+            dm.Pumpstation: 1,
+        }
+    )
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+        }
+    )
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.snapped_models = (dm.ConnectionNode, dm.Manhole, dm.Pipe, dm.Channel, dm.Weir, dm.Orifice, dm.Pumpstation)
+
+    def connect_additional_signals(self):
+        self.layer.featureAdded.connect(self.trigger_simplify_pumpstation_map)
+
+    def disconnect_additional_signals(self):
+        self.layer.featureAdded.disconnect(self.trigger_simplify_pumpstation_map)
+
+    def trigger_simplify_pumpstation_map(self, pumpstation_map_id):
+        simplify_method = partial(self.simplify_linear_feature, pumpstation_map_id)
+        QTimer.singleShot(0, simplify_method)
 
 
 class WeirHandler(UserLayerHandler):
@@ -312,20 +391,8 @@ class WeirHandler(UserLayerHandler):
         self.layer.featureAdded.disconnect(self.trigger_simplify_weir)
 
     def trigger_simplify_weir(self, weir_feat_id):
-        simplify_method = partial(self.simplify_weir, weir_feat_id)
+        simplify_method = partial(self.simplify_linear_feature, weir_feat_id)
         QTimer.singleShot(0, simplify_method)
-
-    def simplify_weir(self, weir_feat_id):
-        weir_feat = self.layer.getFeature(weir_feat_id)
-        weir_geom = weir_feat.geometry()
-        vertices_count = count_vertices(weir_geom)
-        if vertices_count < 3:
-            return
-        start_vertex_idx, end_vertex_idx = 0, vertices_count - 1
-        start_point, end_point = weir_geom.vertexAt(start_vertex_idx), weir_geom.vertexAt(end_vertex_idx)
-        new_source_weir_geom = QgsGeometry.fromPolyline([start_point, end_point])
-        weir_feat.setGeometry(new_source_weir_geom)
-        self.layer.updateFeature(weir_feat)
 
 
 class CulvertHandler(UserLayerHandler):
@@ -342,7 +409,7 @@ class CulvertHandler(UserLayerHandler):
             "display_name": "new",
             "code": "new",
             "dist_calc_points": 1000,
-            "calculation_type": CalculationTypeCulvert.ISOLATED_NODE.value,
+            "calculation_type": CalculationTypeCulvert.STANDALONE.value,
             "friction_type": FrictionType.MANNING.value,
             "friction_value": 0.02,
             "invert_level_start_point": -10.0,
@@ -371,6 +438,8 @@ class OrificeHandler(UserLayerHandler):
             "code": "new",
             "friction_type": FrictionType.MANNING.value,
             "friction_value": 0.02,
+            "discharge_coefficient_positive": 1.0,
+            "discharge_coefficient_negative": 1.0,
         }
     )
 
@@ -386,20 +455,8 @@ class OrificeHandler(UserLayerHandler):
         self.layer.featureAdded.disconnect(self.trigger_simplify_orifice)
 
     def trigger_simplify_orifice(self, orifice_feat_id):
-        simplify_method = partial(self.simplify_orifice, orifice_feat_id)
+        simplify_method = partial(self.simplify_linear_feature, orifice_feat_id)
         QTimer.singleShot(0, simplify_method)
-
-    def simplify_orifice(self, orifice_feat_id):
-        orifice_feat = self.layer.getFeature(orifice_feat_id)
-        orifice_geom = orifice_feat.geometry()
-        vertices_count = count_vertices(orifice_geom)
-        if vertices_count < 3:
-            return
-        start_vertex_idx, end_vertex_idx = 0, vertices_count - 1
-        start_point, end_point = orifice_geom.vertexAt(start_vertex_idx), orifice_geom.vertexAt(end_vertex_idx)
-        new_source_orifice_geom = QgsGeometry.fromPolyline([start_point, end_point])
-        orifice_feat.setGeometry(new_source_orifice_geom)
-        self.layer.updateFeature(orifice_feat)
 
 
 class PipeHandler(UserLayerHandler):
