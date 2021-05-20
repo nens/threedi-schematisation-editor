@@ -1,7 +1,8 @@
 # Copyright (C) 2021 by Lutra Consulting
 import os
-from qgis.core import QgsExpression, QgsFeatureRequest, QgsRasterLayer
 import threedi_model_builder.data_models as dm
+from types import MappingProxyType
+from qgis.core import QgsExpression, QgsFeatureRequest, QgsRasterLayer, QgsVectorLayerJoinInfo
 from threedi_model_builder.user_layer_handlers import MODEL_HANDLERS
 from threedi_model_builder.user_layer_forms import LayerEditFormFactory
 from threedi_model_builder.utils import (
@@ -23,6 +24,17 @@ class LayersManager:
         ("Settings", dm.SETTINGS_ELEMENTS),
     )
     RASTER_GROUPS = (("Model rasters", dm.ELEMENTS_WITH_RASTERS),)
+
+    LAYER_JOINS = MappingProxyType({
+        dm.CrossSectionLocation: {
+            dm.CrossSectionDefinition: {
+                "target_field_name": "cross_section_definition_id",
+                "join_field_name": "id",
+                "prefix": "cross_section_definition_",
+                "join_field_names_subset": ("code", "width", "height", "shape")
+            },
+        },
+    })
 
     def __init__(self, iface, user_communication, model_gpkg_path):
         self.iface = iface
@@ -116,6 +128,7 @@ class LayersManager:
         self.create_groups()
         self.load_vector_layers()
         self.load_raster_layers()
+        self.add_joins()
 
     def remove_loaded_layers(self):
         for model_cls, layer_handler in list(self.model_handlers.items()):
@@ -123,6 +136,30 @@ class LayersManager:
             layer = layer_handler.layer
             remove_layer(layer)
             del self.model_handlers[model_cls]
+
+    def add_joins(self):
+        """Setting joins between layers."""
+        for parent_model_cls, children_data_models in self.LAYER_JOINS.items():
+            try:
+                parent_handler = self.model_handlers[parent_model_cls]
+                parent_layer = parent_handler.layer
+            except KeyError:
+                continue
+            for child_model_cls, join_specs in children_data_models.items():
+                try:
+                    child_handler = self.model_handlers[child_model_cls]
+                    child_layer = child_handler.layer
+                except KeyError:
+                    continue
+                child_join = QgsVectorLayerJoinInfo()
+                child_join.setTargetFieldName(join_specs["target_field_name"])
+                child_join.setJoinLayer(child_layer)
+                child_join.setJoinFieldName(join_specs["join_field_name"])
+                child_join.setUsingMemoryCache(True)
+                child_join.setEditable(True)
+                child_join.setPrefix(join_specs["prefix"])
+                child_join.setJoinFieldNamesSubset(join_specs["join_field_names_subset"])
+                parent_layer.addJoin(child_join)
 
     def get_layer_features(self, model_cls, filter_exp=None):
         """

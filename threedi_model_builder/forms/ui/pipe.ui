@@ -442,7 +442,7 @@
              <set>Qt::ImhNone</set>
             </property>
             <property name="text">
-             <string>Definition id</string>
+             <string>Definition ID</string>
             </property>
            </widget>
           </item>
@@ -566,7 +566,7 @@
              <set>Qt::ImhNone</set>
             </property>
             <property name="text">
-             <string>Start connection node id</string>
+             <string>Start connection node ID</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -613,7 +613,7 @@
              <set>Qt::ImhNone</set>
             </property>
             <property name="text">
-             <string>End connection node id</string>
+             <string>End connection node ID</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -666,7 +666,7 @@
              <set>Qt::ImhNone</set>
             </property>
             <property name="text">
-             <string>Id</string>
+             <string>ID</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -875,7 +875,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="label_20">
             <property name="text">
-             <string>Connection node id</string>
+             <string>Connection node ID</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1298,7 +1298,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="label_24">
             <property name="text">
-             <string>Id</string>
+             <string>ID</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1434,7 +1434,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="label_44">
             <property name="text">
-             <string>Id</string>
+             <string>ID</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1804,7 +1804,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="label_48">
             <property name="text">
-             <string>Connection node id</string>
+             <string>Connection node ID</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
