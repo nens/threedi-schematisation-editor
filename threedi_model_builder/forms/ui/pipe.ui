@@ -1190,6 +1190,9 @@
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::NoButtons</enum>
             </property>
+            <property name="minimum">
+             <double>-99999999.000000000000000</double>
+            </property>
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
@@ -1215,6 +1218,9 @@
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::NoButtons</enum>
             </property>
+            <property name="minimum">
+             <double>-99999999.000000000000000</double>
+            </property>
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
@@ -1239,6 +1245,9 @@
             </property>
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="minimum">
+             <double>-99999999.000000000000000</double>
             </property>
             <property name="maximum">
              <double>1000000.000000000000000</double>
@@ -1709,6 +1718,9 @@
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::NoButtons</enum>
             </property>
+            <property name="minimum">
+             <double>-99999999.000000000000000</double>
+            </property>
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
@@ -1734,6 +1746,9 @@
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::NoButtons</enum>
             </property>
+            <property name="minimum">
+             <double>-99999999.000000000000000</double>
+            </property>
             <property name="maximum">
              <double>1000000.000000000000000</double>
             </property>
@@ -1758,6 +1773,9 @@
             </property>
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="minimum">
+             <double>-99999999.000000000000000</double>
             </property>
             <property name="maximum">
              <double>1000000.000000000000000</double>
