@@ -666,7 +666,6 @@ class PumpstationMapForm(FormWithStartEndNode):
                 start_pump_feat, start_connection_node_feat = pumpstation_handler.create_pump_with_connection_node(
                     start_geom)
                 connection_node_layer.addFeature(start_connection_node_feat)
-                pumpstation_layer.addFeature(start_pump_feat)
             else:
                 start_pump_feat = pumpstation_handler.create_new_feature(start_geom)
                 start_pump_feat["connection_node_id"] = start_connection_node_feat["id"]
@@ -675,6 +674,7 @@ class PumpstationMapForm(FormWithStartEndNode):
                 end_connection_node_feat = connection_node_handler.create_new_feature_from_template(
                     start_connection_node_feat, geometry=end_geom)
                 connection_node_layer.addFeature(end_connection_node_feat)
+            pumpstation_layer.addFeature(start_pump_feat)
         else:
             if end_connection_node_feat is None:
                 end_geom = QgsGeometry.fromPointXY(end_point)

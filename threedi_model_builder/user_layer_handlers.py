@@ -625,7 +625,7 @@ class SurfaceMapHandler(UserLayerHandler):
 
 
 class SurfaceParameterHandler(UserLayerHandler):
-    MODEL = dm.SurfaceParameter
+    MODEL = dm.SurfaceParameters
 
 
 class GlobalSettingsHandler(UserLayerHandler):

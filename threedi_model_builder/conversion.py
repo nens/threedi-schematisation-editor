@@ -193,8 +193,8 @@ class ModelDataConverter:
                 continue
             print(f"Processing data for {data_model_cls.__layername__}...")
             self.import_model_data(data_model_cls)
-        print(f"Processing Timeseries...")
-        self.process_timeseries_rawdata()
+        # TODO: Uncomment line below after finishing forms implementation
+        # self.process_timeseries_rawdata()
 
     def export_model_data(self, annotated_model_csl):
         src_table = annotated_model_csl.__tablename__
@@ -235,7 +235,8 @@ class ModelDataConverter:
             dst_layer.commitChanges()
 
     def export_all_model_data(self):
-        self.recreate_timeseries_rawdata()
+        # TODO: Uncomment line below after finishing forms implementation
+        # self.recreate_timeseries_rawdata()
         for data_model_cls in self.all_models:
             if data_model_cls == dm.Timeseries or data_model_cls == dm.PumpstationMap:
                 continue

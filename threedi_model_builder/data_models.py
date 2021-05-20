@@ -68,6 +68,7 @@ class BoundaryCondition1D(ModelObject):
     id: int
     boundary_type: BoundaryType
     connection_node_id: int
+    timeseries: str  # TODO: This is just temporary - remove after finishing Timeseries implementation
 
 
 @dataclass
@@ -81,6 +82,7 @@ class Lateral1D(ModelObject):
 
     id: int
     connection_node_id: int
+    timeseries: str  # TODO: This is just temporary - remove after finishing Timeseries implementation
 
 
 @dataclass
@@ -464,6 +466,7 @@ class BoundaryCondition2D(ModelObject):
     id: int
     display_name: str
     boundary_type: BoundaryType
+    timeseries: str  # TODO: This is just temporary - remove after finishing Timeseries implementation
 
 
 @dataclass
@@ -477,6 +480,7 @@ class Lateral2D(ModelObject):
 
     id: int
     type: Later2DType
+    timeseries: str  # TODO: This is just temporary - remove after finishing Timeseries implementation
 
 
 @dataclass
@@ -635,9 +639,9 @@ class SurfaceMap(ModelObject):
 
 
 @dataclass
-class SurfaceParameter(ModelObject):
-    __tablename__ = "surface_parameter"
-    __layername__ = "Surface parameter"
+class SurfaceParameters(ModelObject):
+    __tablename__ = "surface_parameters"
+    __layername__ = "Surface parameters"
     __geometrytype__ = GeometryType.NoGeometry
 
     SQLITE_SOURCES = ("v2_surface_parameters",)
@@ -904,7 +908,7 @@ INFLOW_ELEMENTS = (
     Surface,
     ImperviousSurfaceMap,
     SurfaceMap,
-    SurfaceParameter,
+    SurfaceParameters,
 )
 
 SETTINGS_ELEMENTS = (
