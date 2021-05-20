@@ -383,8 +383,8 @@ class WeirHandler(UserLayerHandler):
             "crest_type": CrestType.SHORT_CRESTED.value,
             "friction_type": FrictionType.MANNING.value,
             "friction_value": 0.02,
-            "discharge_coefficient_positive": 1.0,
-            "discharge_coefficient_negative": 1.0,
+            "discharge_coefficient_positive": 0.8,
+            "discharge_coefficient_negative": 0.8,
             "sewerage": False,
         }
     )
@@ -422,8 +422,8 @@ class CulvertHandler(UserLayerHandler):
             "calculation_type": CalculationTypeCulvert.STANDALONE.value,
             "friction_type": FrictionType.MANNING.value,
             "friction_value": 0.02,
-            "discharge_coefficient_positive": 1.0,
-            "discharge_coefficient_negative": 1.0,
+            "discharge_coefficient_positive": 0.8,
+            "discharge_coefficient_negative": 0.8,
             "invert_level_start_point": -10.0,
             "invert_level_end_point": -10.0,
         }
@@ -452,8 +452,8 @@ class OrificeHandler(UserLayerHandler):
             "crest_type": CrestType.SHORT_CRESTED.value,
             "friction_type": FrictionType.MANNING.value,
             "friction_value": 0.02,
-            "discharge_coefficient_positive": 1.0,
-            "discharge_coefficient_negative": 1.0,
+            "discharge_coefficient_positive": 0.8,
+            "discharge_coefficient_negative": 0.8,
             "sewerage": False,
         }
     )

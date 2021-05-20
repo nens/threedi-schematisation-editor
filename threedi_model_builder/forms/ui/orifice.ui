@@ -444,32 +444,6 @@
           <string>Visualisation</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
-          <item row="0" column="3">
-           <widget class="QComboBox" name="zoom_category">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_51">
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="text">
-             <string>Sewerage type</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="2">
            <widget class="QLabel" name="label_16">
             <property name="locale">
@@ -486,8 +460,8 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="1">
-           <widget class="QComboBox" name="sewerage_type">
+          <item row="0" column="3">
+           <widget class="QComboBox" name="zoom_category">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -497,10 +471,27 @@
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
-            <property name="inputMethodHints">
-             <set>Qt::ImhNone</set>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="sewerage">
+            <property name="text">
+             <string>Sewerage</string>
             </property>
            </widget>
+          </item>
+          <item row="0" column="1">
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
           </item>
          </layout>
         </widget>
