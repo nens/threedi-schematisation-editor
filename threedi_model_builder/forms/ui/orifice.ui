@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>545</width>
+    <width>500</width>
     <height>532</height>
    </rect>
   </property>
@@ -56,7 +56,7 @@
          </property>
          <layout class="QGridLayout" name="gridLayout_6">
           <item row="0" column="1">
-           <widget class="QgsSpinBox" name="connection_node_start_id">
+           <widget class="QSpinBox" name="connection_node_start_id">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -103,7 +103,7 @@
            </widget>
           </item>
           <item row="0" column="3">
-           <widget class="QgsSpinBox" name="connection_node_end_id">
+           <widget class="QSpinBox" name="connection_node_end_id">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -242,7 +242,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QgsSpinBox" name="id">
+           <widget class="QSpinBox" name="id">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
@@ -365,7 +365,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QgsSpinBox" name="cross_section_definition_id">
+           <widget class="QSpinBox" name="cross_section_definition_id">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
@@ -444,7 +444,7 @@
           <string>Visualisation</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
-          <item row="0" column="2">
+          <item row="0" column="0">
            <widget class="QLabel" name="label_16">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
@@ -456,11 +456,18 @@
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
             <property name="indent">
-             <number>10</number>
+             <number>-1</number>
             </property>
            </widget>
           </item>
-          <item row="0" column="3">
+          <item row="0" column="2">
+           <widget class="QCheckBox" name="sewerage">
+            <property name="text">
+             <string>Sewerage</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
            <widget class="QComboBox" name="zoom_category">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -472,26 +479,6 @@
              <locale language="English" country="UnitedStates"/>
             </property>
            </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QCheckBox" name="sewerage">
-            <property name="text">
-             <string>Sewerage</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
           </item>
          </layout>
         </widget>
@@ -560,7 +547,7 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QgsDoubleSpinBox" name="crest_level">
+           <widget class="QDoubleSpinBox" name="crest_level">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -591,7 +578,7 @@
            </widget>
           </item>
           <item row="4" column="1">
-           <widget class="QgsDoubleSpinBox" name="discharge_coefficient_positive">
+           <widget class="QDoubleSpinBox" name="discharge_coefficient_positive">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -655,7 +642,7 @@ coefficient positive</string>
            </widget>
           </item>
           <item row="1" column="3">
-           <widget class="QgsDoubleSpinBox" name="friction_value">
+           <widget class="QDoubleSpinBox" name="friction_value">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -737,7 +724,7 @@ coefficient positive</string>
            </widget>
           </item>
           <item row="4" column="3">
-           <widget class="QgsDoubleSpinBox" name="discharge_coefficient_negative">
+           <widget class="QDoubleSpinBox" name="discharge_coefficient_negative">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -781,7 +768,7 @@ coefficient positive</string>
            </widget>
           </item>
           <item row="5" column="1">
-           <widget class="QgsDoubleSpinBox" name="max_capacity">
+           <widget class="QDoubleSpinBox" name="max_capacity">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -796,6 +783,9 @@ coefficient positive</string>
             </property>
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="decimals">
+             <number>3</number>
             </property>
             <property name="minimum">
              <double>-99999999.000000000000000</double>
@@ -906,7 +896,7 @@ coefficient positive</string>
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QgsSpinBox" name="connection_node_2_id">
+           <widget class="QSpinBox" name="connection_node_2_id">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -931,7 +921,7 @@ coefficient positive</string>
            </widget>
           </item>
           <item row="0" column="3">
-           <widget class="QgsDoubleSpinBox" name="connection_node_2_initial_waterlevel">
+           <widget class="QDoubleSpinBox" name="connection_node_2_initial_waterlevel">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -940,6 +930,9 @@ coefficient positive</string>
             </property>
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="decimals">
+             <number>3</number>
             </property>
             <property name="minimum">
              <double>-1000.000000000000000</double>
@@ -959,7 +952,7 @@ coefficient positive</string>
            </widget>
           </item>
           <item row="1" column="3">
-           <widget class="QgsDoubleSpinBox" name="connection_node_2_storage_area">
+           <widget class="QDoubleSpinBox" name="connection_node_2_storage_area">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -968,6 +961,9 @@ coefficient positive</string>
             </property>
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="decimals">
+             <number>3</number>
             </property>
             <property name="maximum">
              <double>999999999.000000000000000</double>
@@ -1049,7 +1045,7 @@ coefficient positive</string>
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QgsSpinBox" name="connection_node_1_id">
+           <widget class="QSpinBox" name="connection_node_1_id">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -1074,7 +1070,7 @@ coefficient positive</string>
            </widget>
           </item>
           <item row="0" column="3">
-           <widget class="QgsDoubleSpinBox" name="connection_node_1_initial_waterlevel">
+           <widget class="QDoubleSpinBox" name="connection_node_1_initial_waterlevel">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -1083,6 +1079,9 @@ coefficient positive</string>
             </property>
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="decimals">
+             <number>3</number>
             </property>
             <property name="minimum">
              <double>-1000.000000000000000</double>
@@ -1102,7 +1101,7 @@ coefficient positive</string>
            </widget>
           </item>
           <item row="1" column="3">
-           <widget class="QgsDoubleSpinBox" name="connection_node_1_storage_area">
+           <widget class="QDoubleSpinBox" name="connection_node_1_storage_area">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -1111,6 +1110,9 @@ coefficient positive</string>
             </property>
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="decimals">
+             <number>3</number>
             </property>
             <property name="maximum">
              <double>999999999.000000000000000</double>
@@ -1129,18 +1131,36 @@ coefficient positive</string>
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>QgsDoubleSpinBox</class>
-   <extends>QDoubleSpinBox</extends>
-   <header>qgsdoublespinbox.h</header>
-  </customwidget>
-  <customwidget>
-   <class>QgsSpinBox</class>
-   <extends>QSpinBox</extends>
-   <header>qgsspinbox.h</header>
-  </customwidget>
- </customwidgets>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>id</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>display_name</tabstop>
+  <tabstop>crest_level</tabstop>
+  <tabstop>crest_type</tabstop>
+  <tabstop>discharge_coefficient_positive</tabstop>
+  <tabstop>max_capacity</tabstop>
+  <tabstop>friction_value</tabstop>
+  <tabstop>friction_type</tabstop>
+  <tabstop>discharge_coefficient_negative</tabstop>
+  <tabstop>zoom_category</tabstop>
+  <tabstop>sewerage</tabstop>
+  <tabstop>cross_section_definition_id</tabstop>
+  <tabstop>cross_section_definition_shape</tabstop>
+  <tabstop>cross_section_definition_width</tabstop>
+  <tabstop>cross_section_definition_height</tabstop>
+  <tabstop>cross_section_definition_code</tabstop>
+  <tabstop>connection_node_start_id</tabstop>
+  <tabstop>connection_node_end_id</tabstop>
+  <tabstop>connection_node_1_id</tabstop>
+  <tabstop>connection_node_1_code</tabstop>
+  <tabstop>connection_node_1_initial_waterlevel</tabstop>
+  <tabstop>connection_node_1_storage_area</tabstop>
+  <tabstop>connection_node_2_id</tabstop>
+  <tabstop>connection_node_2_code</tabstop>
+  <tabstop>connection_node_2_initial_waterlevel</tabstop>
+  <tabstop>connection_node_2_storage_area</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
