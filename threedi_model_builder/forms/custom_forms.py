@@ -192,8 +192,11 @@ class BaseForm(QObject):
         if feature:
             value = self.get_widget_value(widget)
             handler = self.layer_manager.model_handlers[model_cls]
+            layer = handler.layer
+            if not layer.isEditable():
+                layer.startEditing()
             feature[field_name] = value
-            handler.layer.updateFeature(feature)
+            layer.updateFeature(feature)
 
     def connect_foreign_widgets(self):
         """Connect widgets for other layers attributes."""
