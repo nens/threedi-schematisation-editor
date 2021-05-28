@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 from types import MappingProxyType
 from threedi_model_builder.enumerators import (
     AggregationMethod,
@@ -52,8 +53,8 @@ class ConnectionNode(ModelObject):
 
     id: int
     code: str
-    initial_waterlevel: float
-    storage_area: float
+    initial_waterlevel: Optional[float]
+    storage_area: Optional[float]
 
 
 @dataclass
@@ -116,16 +117,16 @@ class Manhole(ModelObject):
     id: int
     code: str
     display_name: str
-    calculation_type: CalculationTypeNode
-    shape: ManholeShape
-    width: float
-    length: float
+    calculation_type: Optional[CalculationTypeNode]
+    shape: Optional[ManholeShape]
+    width: Optional[float]
+    length: Optional[float]
     bottom_level: float
-    surface_level: float
-    drain_level: float
-    sediment_level: float
-    manhole_indicator: ManholeIndicator
-    zoom_category: ZoomCategories
+    surface_level: Optional[float]
+    drain_level: Optional[float]
+    sediment_level: Optional[float]
+    manhole_indicator: Optional[ManholeIndicator]
+    zoom_category: Optional[ZoomCategories]
     connection_node_id: int
 
 
@@ -155,11 +156,11 @@ class Pumpstation(ModelObject):
     display_name: str
     start_level: float
     lower_stop_level: float
-    upper_stop_level: float
+    upper_stop_level: Optional[float]
     capacity: float
     type: PumpType
     sewerage: bool
-    zoom_category: ZoomCategories
+    zoom_category: Optional[ZoomCategories]
     connection_node_id: int
 
 
@@ -225,13 +226,13 @@ class Weir(ModelObject):
     display_name: str
     crest_level: float
     crest_type: CrestType
-    discharge_coefficient_positive: float
-    discharge_coefficient_negative: float
+    discharge_coefficient_positive: Optional[float]
+    discharge_coefficient_negative: Optional[float]
     friction_value: float
     friction_type: FrictionType
     sewerage: bool
-    external: bool
-    zoom_category: ZoomCategories
+    external: Optional[bool]
+    zoom_category: Optional[ZoomCategories]
     connection_node_start_id: int
     connection_node_end_id: int
     cross_section_definition_id: int
@@ -269,15 +270,15 @@ class Culvert(ModelObject):
     id: int
     code: str
     display_name: str
-    calculation_type: CalculationTypeCulvert
-    dist_calc_points: float
+    calculation_type: Optional[CalculationTypeCulvert]
+    dist_calc_points: Optional[float]
     invert_level_start_point: float
     invert_level_end_point: float
     discharge_coefficient_positive: float
     discharge_coefficient_negative: float
     friction_value: float
     friction_type: FrictionType
-    zoom_category: ZoomCategories
+    zoom_category: Optional[ZoomCategories]
     connection_node_start_id: int
     connection_node_end_id: int
     cross_section_definition_id: int
@@ -317,13 +318,13 @@ class Orifice(ModelObject):
     display_name: str
     crest_level: float
     crest_type: CrestType
-    discharge_coefficient_positive: float
-    discharge_coefficient_negative: float
+    discharge_coefficient_positive: Optional[float]
+    discharge_coefficient_negative: Optional[float]
     friction_value: float
     friction_type: FrictionType
     max_capacity: float
     sewerage: bool
-    zoom_category: ZoomCategories
+    zoom_category: Optional[ZoomCategories]
     connection_node_start_id: int
     connection_node_end_id: int
     cross_section_definition_id: int
@@ -365,17 +366,17 @@ class Pipe(ModelObject):
     code: str
     display_name: str
     calculation_type: PipeCalculationType
-    dist_calc_points: float
+    dist_calc_points: Optional[float]
     invert_level_start_point: float
     invert_level_end_point: float
     friction_value: float
     friction_type: FrictionType
-    material: PipeMaterial
+    material: Optional[PipeMaterial]
     pipe_quality: float
-    sewerage_type: SewerageType
-    zoom_category: ZoomCategories
-    profile_num: int
-    original_length: float
+    sewerage_type: Optional[SewerageType]
+    zoom_category: Optional[ZoomCategories]
+    profile_num: Optional[int]
+    original_length: Optional[float]
     connection_node_start_id: int
     connection_node_end_id: int
     cross_section_definition_id: int
@@ -414,7 +415,7 @@ class CrossSectionLocation(ModelObject):
     reference_level: float
     friction_type: FrictionType
     friction_value: float
-    bank_level: float
+    bank_level: Optional[float]
     channel_id: int
     cross_section_definition_id: int
 
@@ -430,9 +431,9 @@ class CrossSectionDefinition(ModelObject):
 
     id: int
     code: str
-    width: str
-    height: str
-    shape: CrossSectionShape
+    width: Optional[str]
+    height: Optional[str]
+    shape: Optional[CrossSectionShape]
 
 
 @dataclass
@@ -448,10 +449,10 @@ class Channel(ModelObject):
     code: str
     display_name: str
     calculation_type: CalculationType
-    dist_calc_points: float
-    zoom_category: ZoomCategories
+    dist_calc_points: Optional[float]
+    zoom_category: Optional[ZoomCategories]
     connection_node_start_id: int
-    connection_node_end_id: int
+    connection_node_end_id: Optional[int]
 
 
 @dataclass
@@ -499,8 +500,8 @@ class LinearObstacle(ModelObject):
     code: str
     type: ObstacleType
     crest_level: float
-    material: Material
-    max_breach_depth: float
+    material: Optional[Material]
+    max_breach_depth: Optional[float]
 
 
 @dataclass
@@ -555,14 +556,14 @@ class Windshielding(ModelObject):
     SQLITE_TARGETS = SQLITE_SOURCES
 
     id: int
-    north: float
-    northeast: float
-    east: float
-    southeast: float
-    south: float
-    southwest: float
-    west: float
-    northwest: float
+    north: Optional[float]
+    northeast: Optional[float]
+    east: Optional[float]
+    southeast: Optional[float]
+    south: Optional[float]
+    southwest: Optional[float]
+    west: Optional[float]
+    northwest: Optional[float]
     channel_id: int
 
 
@@ -580,19 +581,19 @@ class ImperviousSurface(ModelObject):
     display_name: str
     surface_inclination: SurfaceInclinationType
     surface_class: SurfaceClass
-    surface_sub_class: str
-    zoom_category: ZoomCategories
-    nr_of_inhabitants: float
-    area: float
-    dry_weather_flow: float
-    function: str
+    surface_sub_class: Optional[str]
+    zoom_category: Optional[ZoomCategories]
+    nr_of_inhabitants: Optional[float]
+    area: Optional[float]
+    dry_weather_flow: Optional[float]
+    function: Optional[str]
 
 
 @dataclass
 class ImperviousSurfaceMap(ModelObject):
     __tablename__ = "impervious_surface_map"
     __layername__ = "Impervious surface map"
-    __geometrytype__ = GeometryType.NoGeometry
+    __geometrytype__ = GeometryType.Linestring
 
     SQLITE_SOURCES = ("v2_impervious_surface_map",)
     SQLITE_TARGETS = SQLITE_SOURCES
@@ -615,11 +616,11 @@ class Surface(ModelObject):
     id: int
     code: str
     display_name: str
-    zoom_category: ZoomCategories
-    nr_of_inhabitants: float
-    area: float
-    dry_weather_flow: float
-    function: str
+    zoom_category: Optional[ZoomCategories]
+    nr_of_inhabitants: Optional[float]
+    area: Optional[float]
+    dry_weather_flow: Optional[float]
+    function: Optional[str]
     surface_parameters_id: int
 
 
@@ -627,13 +628,13 @@ class Surface(ModelObject):
 class SurfaceMap(ModelObject):
     __tablename__ = "surface_map"
     __layername__ = "Surface map"
-    __geometrytype__ = GeometryType.NoGeometry
+    __geometrytype__ = GeometryType.Linestring
 
     SQLITE_SOURCES = ("v2_surface_map",)
     SQLITE_TARGETS = SQLITE_SOURCES
 
     id: int
-    percentage: float
+    percentage: Optional[float]
     surface_id: int
     connection_node_id: int
 
@@ -676,47 +677,47 @@ class GlobalSettings(ModelObject):
     id: int
     use_2d_flow: bool
     use_1d_flow: bool
-    manhole_storage_area: float
-    name: str
+    manhole_storage_area: Optional[float]
+    name: Optional[str]
     sim_time_step: float
-    output_time_step: float
+    output_time_step: Optional[float]
     nr_timesteps: int
-    start_time: str
+    start_time: Optional[str]
     start_date: str
     grid_space: float
     dist_calc_points: float
     kmax: int
-    guess_dams: int
+    guess_dams: Optional[int]
     table_step_size: float
     flooding_threshold: float
     advection_1d: int
     advection_2d: int
-    dem_file: str
-    frict_type: int
+    dem_file: Optional[str]
+    frict_type: Optional[int]
     frict_coef: float
-    frict_coef_file: str
-    water_level_ini_type: InitializationType
+    frict_coef_file: Optional[str]
+    water_level_ini_type: Optional[InitializationType]
     initial_waterlevel: float
-    initial_waterlevel_file: str
-    interception_global: float
-    interception_file: str
+    initial_waterlevel_file: Optional[str]
+    interception_global: Optional[float]
+    interception_file: Optional[str]
     dem_obstacle_detection: bool
-    dem_obstacle_height: float
-    embedded_cutoff_threshold: float
-    epsg_code: int
+    dem_obstacle_height: Optional[float]
+    embedded_cutoff_threshold: Optional[float]
+    epsg_code: Optional[int]
     timestep_plus: bool
-    max_angle_1d_advection: float
-    minimum_sim_time_step: float
-    maximum_sim_time_step: float
-    frict_avg: int
-    wind_shielding_file: str
+    max_angle_1d_advection: Optional[float]
+    minimum_sim_time_step: Optional[float]
+    maximum_sim_time_step: Optional[float]
+    frict_avg: Optional[int]
+    wind_shielding_file: Optional[str]
     use_0d_inflow: int
-    table_step_size_1d: float
-    table_step_size_volume_2d: float
+    table_step_size_1d: Optional[float]
+    table_step_size_volume_2d: Optional[float]
     use_2d_rain: int
-    initial_groundwater_level: float
-    initial_groundwater_level_file: str
-    initial_groundwater_level_type: InitializationType
+    initial_groundwater_level: Optional[float]
+    initial_groundwater_level_file: Optional[str]
+    initial_groundwater_level_type: Optional[InitializationType]
     numerical_settings_id: int
     interflow_settings_id: int
     control_group_id: int
@@ -737,7 +738,7 @@ class AggregationSettings(ModelObject):
     global_settings_id: int
     var_name: str
     flow_variable: FlowVariable
-    aggregation_method: AggregationMethod
+    aggregation_method: Optional[AggregationMethod]
     aggregation_in_space: str  # This suppose to be boolean
     timestep: int
 
@@ -757,9 +758,9 @@ class SimpleInfiltrationSettings(ModelObject):
 
     id: int
     infiltration_rate: float
-    infiltration_rate_file: str
-    infiltration_surface_option: InfiltrationSurfaceOption
-    max_infiltration_capacity_file: str
+    infiltration_rate_file: Optional[str]
+    infiltration_surface_option: Optional[InfiltrationSurfaceOption]
+    max_infiltration_capacity_file: Optional[str]
     display_name: str
 
 
@@ -782,27 +783,27 @@ class GroundWaterSettings(ModelObject):
     )
 
     id: int
-    groundwater_impervious_layer_level: float
-    groundwater_impervious_layer_level_file: str
-    groundwater_impervious_layer_level_type: InitializationType
-    phreatic_storage_capacity: float
-    phreatic_storage_capacity_file: str
-    phreatic_storage_capacity_type: InitializationType
-    equilibrium_infiltration_rate: float
-    equilibrium_infiltration_rate_file: str
-    equilibrium_infiltration_rate_type: InitializationType
-    initial_infiltration_rate: float
-    initial_infiltration_rate_file: str
-    initial_infiltration_rate_type: InitializationType
-    infiltration_decay_period: float
-    infiltration_decay_period_file: str
-    infiltration_decay_period_type: InitializationType
-    groundwater_hydro_connectivity: float
-    groundwater_hydro_connectivity_file: str
-    groundwater_hydro_connectivity_type: InitializationType
+    groundwater_impervious_layer_level: Optional[float]
+    groundwater_impervious_layer_level_file: Optional[str]
+    groundwater_impervious_layer_level_type: Optional[InitializationType]
+    phreatic_storage_capacity: Optional[float]
+    phreatic_storage_capacity_file: Optional[str]
+    phreatic_storage_capacity_type: Optional[InitializationType]
+    equilibrium_infiltration_rate: Optional[float]
+    equilibrium_infiltration_rate_file: Optional[str]
+    equilibrium_infiltration_rate_type: Optional[InitializationType]
+    initial_infiltration_rate: Optional[float]
+    initial_infiltration_rate_file: Optional[str]
+    initial_infiltration_rate_type: Optional[InitializationType]
+    infiltration_decay_period: Optional[float]
+    infiltration_decay_period_file: Optional[str]
+    infiltration_decay_period_type: Optional[InitializationType]
+    groundwater_hydro_connectivity: Optional[float]
+    groundwater_hydro_connectivity_file: Optional[str]
+    groundwater_hydro_connectivity_type: Optional[InitializationType]
     display_name: str
-    leakage: float
-    leakage_file: str
+    leakage: Optional[float]
+    leakage_file: Optional[str]
 
 
 @dataclass
@@ -820,12 +821,12 @@ class InterflowSettings(ModelObject):
 
     id: int
     interflow_type: InterflowType
-    porosity: float
-    porosity_file: str
-    porosity_layer_thickness: float
-    impervious_layer_elevation: float
-    hydraulic_conductivity: float
-    hydraulic_conductivity_file: str
+    porosity: Optional[float]
+    porosity_file: Optional[str]
+    porosity_layer_thickness: Optional[float]
+    impervious_layer_elevation: Optional[float]
+    hydraulic_conductivity: Optional[float]
+    hydraulic_conductivity_file: Optional[str]
     display_name: str
 
 
@@ -839,26 +840,26 @@ class NumericalSettings(ModelObject):
     SQLITE_TARGETS = SQLITE_SOURCES
 
     id: int
-    cfl_strictness_factor_1d: float
-    cfl_strictness_factor_2d: float
-    convergence_cg: float
-    convergence_eps: float
-    flow_direction_threshold: float
-    frict_shallow_water_correction: int
-    general_numerical_threshold: float
-    integration_method: int
-    limiter_grad_1d: int
-    limiter_grad_2d: int
-    limiter_slope_crossectional_area_2d: int
-    limiter_slope_friction_2d: int
-    max_nonlin_iterations: int
+    cfl_strictness_factor_1d: Optional[float]
+    cfl_strictness_factor_2d: Optional[float]
+    convergence_cg: Optional[float]
+    convergence_eps: Optional[float]
+    flow_direction_threshold: Optional[float]
+    frict_shallow_water_correction: Optional[int]
+    general_numerical_threshold: Optional[float]
+    integration_method: Optional[int]
+    limiter_grad_1d: Optional[int]
+    limiter_grad_2d: Optional[int]
+    limiter_slope_crossectional_area_2d: Optional[int]
+    limiter_slope_friction_2d: Optional[int]
+    max_nonlin_iterations: Optional[int]
     max_degree: int
-    minimum_friction_velocity: float
-    minimum_surface_area: float
-    precon_cg: int
-    preissmann_slot: float
-    pump_implicit_ratio: float
-    thin_water_layer_definition: float
+    minimum_friction_velocity: Optional[float]
+    minimum_surface_area: Optional[float]
+    precon_cg: Optional[int]
+    preissmann_slot: Optional[float]
+    pump_implicit_ratio: Optional[float]
+    thin_water_layer_definition: Optional[float]
     use_of_cg: int
     use_of_nested_newton: int
 
@@ -904,10 +905,10 @@ MODEL_2D_ELEMENTS = (
 )
 
 INFLOW_ELEMENTS = (
-    ImperviousSurface,
-    Surface,
     ImperviousSurfaceMap,
+    ImperviousSurface,
     SurfaceMap,
+    Surface,
     SurfaceParameters,
 )
 

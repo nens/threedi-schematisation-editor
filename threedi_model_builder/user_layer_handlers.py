@@ -26,6 +26,7 @@ from qgis.PyQt.QtCore import QTimer
 
 
 class UserLayerHandler:
+    """Base handler class for 3Di User Layer that adds extra logic to the standard QGIS layer actions."""
     MODEL = dm.ModelObject
     RELATED_MODELS = MappingProxyType({})  # model_cls: number of model instances
     DEFAULTS = MappingProxyType({})
@@ -34,39 +35,45 @@ class UserLayerHandler:
         self.layer_manager = layer_manager
         self.form_factory = self.layer_manager.form_factory
         self.layer = layer
-        self.snapped_models = tuple()
-        self.linked_table_models = tuple()
 
     def connect_handler_signals(self):
+        """Connecting layer signals."""
         self.layer.editingStarted.connect(self.on_editing_started)
         self.layer.beforeRollBack.connect(self.on_rollback)
         self.layer.beforeCommitChanges.connect(self.on_commit_changes)
         self.connect_additional_signals()
 
     def disconnect_handler_signals(self):
+        """Disconnecting layer signals."""
         self.layer.editingStarted.disconnect(self.on_editing_started)
         self.layer.beforeRollBack.connect(self.on_rollback)
         self.layer.beforeCommitChanges.connect(self.on_commit_changes)
         self.disconnect_additional_signals()
 
     def connect_additional_signals(self):
+        """Connecting signals to actions specific for the particular layers."""
         pass
 
     def disconnect_additional_signals(self):
+        """Disconnecting signals to actions specific for the particular layers."""
         pass
 
     @property
-    def snapped_handlers(self):
-        snapped_handlers = [self.layer_manager.model_handlers[model_cls] for model_cls in self.snapped_models]
-        return snapped_handlers
+    def other_1d_handlers(self):
+        """Getting other handlers within 1D group."""
+        other_1d_handlers = [self.layer_manager.model_handlers[model_cls] for model_cls in dm.MODEL_1D_ELEMENTS
+                             if model_cls != self.MODEL]
+        return other_1d_handlers
 
     @property
-    def linked_table_handlers(self):
-        table_handlers = [self.layer_manager.model_handlers[model_cls] for model_cls in self.linked_table_models]
-        return table_handlers
+    def other_1d_layers(self):
+        """Getting other layers within 1D group."""
+        other_1d_layers = [handler.layer for handler in self.other_1d_handlers]
+        return other_1d_layers
 
-    def set_layer_snapping(self, enable=True):
-        if not self.snapped_models:
+    def set_layers_snapping(self):
+        """Setting snapping rules."""
+        if self.MODEL not in dm.MODEL_1D_ELEMENTS:
             return
         project = QgsProject.instance()
         project.setTopologicalEditing(True)
@@ -74,29 +81,23 @@ class UserLayerHandler:
         snap_config.setMode(QgsSnappingConfig.AdvancedConfiguration)
         snap_config.setIntersectionSnapping(True)
         individual_configs = snap_config.individualLayerSettings()
-        snapped_layers = [handler.layer for handler in self.snapped_handlers] + [self.layer]
-        for layer_handler in self.snapped_handlers:
-            layer = layer_handler.layer
-            disconnect_signal(layer.editingStarted, layer_handler.on_editing_started)
-            layer.startEditing()
-            for link_table_handler in layer_handler.linked_table_handlers:
-                link_table_handler.layer.startEditing()
-        for layer in snapped_layers:
-            iconf = individual_configs[layer]
+        for layer in self.other_1d_layers + [self.layer]:
+            try:
+                iconf = individual_configs[layer]
+            except KeyError:
+                continue
             iconf.setTolerance(10)
             iconf.setTypeFlag(QgsSnappingConfig.VertexFlag)
             iconf.setUnits(QgsTolerance.Pixels)
-            iconf.setEnabled(enable)
+            iconf.setEnabled(True)
             snap_config.setIndividualLayerSettings(layer, iconf)
         if snap_config.enabled() is False:
             snap_config.setEnabled(True)
         project.setSnappingConfig(snap_config)
-        for layer_handler in self.snapped_handlers:
-            layer = layer_handler.layer
-            connect_signal(layer.editingStarted, layer_handler.on_editing_started)
 
     @staticmethod
     def reset_snapping():
+        """Method used to reset snapping options to the default state."""
         project = QgsProject.instance()
         project.setTopologicalEditing(True)
         snap_config = project.snappingConfig()
@@ -106,45 +107,68 @@ class UserLayerHandler:
             snap_config.setEnabled(True)
         project.setSnappingConfig(snap_config)
 
-    def validate_feature(self):
-        raise Exception("Not implemented")
-
-    def on_editing_started(self):
-        for link_table_handler in self.linked_table_handlers:
-            link_table_handler.layer.startEditing()
-        self.set_layer_snapping(enable=True)
-
-    def on_rollback(self):
-        self.reset_snapping()
-        for link_table_handler in self.linked_table_handlers:
-            link_table_handler.layer.rollBack()
-        if not self.snapped_models:
+    def multi_start_editing(self):
+        """Start editing for all layers with 1D group."""
+        if self.MODEL not in dm.MODEL_1D_ELEMENTS:
             return
-        for layer_handler in self.snapped_handlers:
+        other_1d_handlers = self.other_1d_handlers
+        for layer_handler in other_1d_handlers:
+            layer = layer_handler.layer
+            disconnect_signal(layer.editingStarted, layer_handler.on_editing_started)
+        for layer_handler in other_1d_handlers:
+            layer = layer_handler.layer
+            if not layer.isEditable():
+                layer.startEditing()
+        for layer_handler in self.other_1d_handlers:
+            layer = layer_handler.layer
+            connect_signal(layer.editingStarted, layer_handler.on_editing_started)
+
+    def multi_rollback(self):
+        """Rollback changes for all layers with 1D group."""
+        if self.MODEL not in dm.MODEL_1D_ELEMENTS:
+            return
+        other_1d_handlers = self.other_1d_handlers
+        for layer_handler in other_1d_handlers:
             layer = layer_handler.layer
             disconnect_signal(layer.beforeRollBack, layer_handler.on_rollback)
-            layer.rollBack()
-            for link_table_handler in layer_handler.linked_table_handlers:
-                link_table_handler.layer.rollBack()
-        for layer_handler in self.snapped_handlers:
+        for layer_handler in other_1d_handlers:
+            layer = layer_handler.layer
+            if layer.isEditable():
+                layer.rollBack()
+        for layer_handler in self.other_1d_handlers:
             layer = layer_handler.layer
             connect_signal(layer.beforeRollBack, layer_handler.on_rollback)
 
-    def on_commit_changes(self):
-        self.reset_snapping()
-        for link_table_handler in self.linked_table_handlers:
-            link_table_handler.layer.commitChanges(stopEditing=True)
-        if not self.snapped_models:
+    def multi_commit_changes(self):
+        """Commit changes for all layers with 1D group."""
+        if self.MODEL not in dm.MODEL_1D_ELEMENTS:
             return
-        for layer_handler in self.snapped_handlers:
+        other_1d_handlers = self.other_1d_handlers
+        for layer_handler in other_1d_handlers:
             layer = layer_handler.layer
             disconnect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
-            layer.commitChanges(stopEditing=True)
-            for link_table_handler in layer_handler.linked_table_handlers:
-                link_table_handler.layer.commitChanges(stopEditing=True)
-        for layer_handler in self.snapped_handlers:
+        for layer_handler in other_1d_handlers:
+            layer = layer_handler.layer
+            if layer.isEditable():
+                layer.commitChanges(stopEditing=True)
+        for layer_handler in self.other_1d_handlers:
             layer = layer_handler.layer
             connect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
+
+    def on_editing_started(self):
+        """Action on editing started signal."""
+        self.multi_start_editing()
+        self.set_layers_snapping()
+
+    def on_rollback(self):
+        """Action on rollback signal."""
+        self.multi_rollback()
+        self.reset_snapping()
+
+    def on_commit_changes(self):
+        """Action on commit changes signal."""
+        self.multi_commit_changes()
+        self.reset_snapping()
 
     def get_feat_by_id(self, object_id):
         """Return layer feature with the given id."""
@@ -158,6 +182,7 @@ class UserLayerHandler:
         return feat
 
     def get_next_id(self, layer=None):
+        """Return first available ID within layer features."""
         if layer is None:
             layer = self.layer
         id_idx = layer.fields().indexFromName("id")
@@ -170,6 +195,7 @@ class UserLayerHandler:
         return next_id
 
     def set_feature_values(self, feat, set_id=True, **custom_values):
+        """Setting values for feature."""
         values_to_set = dict(self.DEFAULTS)
         values_to_set.update(custom_values)
         fields = self.layer.fields()
@@ -207,6 +233,7 @@ class UserLayerHandler:
         return new_feat
 
     def simplify_linear_feature(self, feat_id):
+        """Simplifying feature geometry to the 2 vertices form."""
         if self.MODEL.__geometrytype__ != GeometryType.Linestring:
             return
         feat = self.layer.getFeature(feat_id)
@@ -228,10 +255,6 @@ class ConnectionNodeHandler(UserLayerHandler):
             "code": "new",
         }
     )
-
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.snapped_models = (dm.Manhole, dm.Pipe)
 
     def get_manhole_feat_for_node_id(self, node_id):
         """Check if there is a manhole feature defined for node of the given node_id and return it."""
@@ -273,11 +296,8 @@ class ManholeHandler(UserLayerHandler):
         }
     )
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.snapped_models = (dm.ConnectionNode, dm.Pipe)
-
     def create_manhole_with_connection_node(self, geometry, template_feat=None):
+        """Creating manhole with connection node at same location."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         if template_feat is not None:
             template_connection_node_id = template_feat["connection_node_id"]
@@ -304,15 +324,9 @@ class PumpstationHandler(UserLayerHandler):
             "code": "new",
             "sewerage": False,
             "type": PumpType.SUCTION_SIDE.value,
-            "start_level": -10.0,
-            "lower_stop_level": -10.0,
             "capacity": 10.0,
         }
     )
-
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.snapped_models = (dm.ConnectionNode, dm.Manhole, dm.Pipe, dm.Channel, dm.Weir, dm.Orifice)
 
     def get_pumpstation_feats_for_node_id(self, node_id):
         """Check if there is a pumpstation features defined for node of the given node_id and return it."""
@@ -323,6 +337,7 @@ class PumpstationHandler(UserLayerHandler):
         return pump_feats
 
     def create_pump_with_connection_node(self, geometry, template_feat=None):
+        """Creating pumpstation with connection node at same location."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         if template_feat is not None:
             template_connection_node_id = template_feat["connection_node_id"]
@@ -351,17 +366,16 @@ class PumpstationMapHandler(UserLayerHandler):
         }
     )
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.snapped_models = (dm.ConnectionNode, dm.Manhole, dm.Pipe, dm.Channel, dm.Weir, dm.Orifice, dm.Pumpstation)
-
     def connect_additional_signals(self):
+        """Connecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_pumpstation_map)
 
     def disconnect_additional_signals(self):
+        """Disconnecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_simplify_pumpstation_map)
 
     def trigger_simplify_pumpstation_map(self, pumpstation_map_id):
+        """Triggering geometry simplification on newly added feature."""
         simplify_method = partial(self.simplify_linear_feature, pumpstation_map_id)
         QTimer.singleShot(0, simplify_method)
 
@@ -389,18 +403,16 @@ class WeirHandler(UserLayerHandler):
         }
     )
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.snapped_models = (dm.ConnectionNode,)
-        self.linked_table_models = (dm.CrossSectionDefinition,)
-
     def connect_additional_signals(self):
+        """Connecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_weir)
 
     def disconnect_additional_signals(self):
+        """Disconnecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_simplify_weir)
 
     def trigger_simplify_weir(self, weir_feat_id):
+        """Triggering geometry simplification on newly added feature."""
         simplify_method = partial(self.simplify_linear_feature, weir_feat_id)
         QTimer.singleShot(0, simplify_method)
 
@@ -429,11 +441,6 @@ class CulvertHandler(UserLayerHandler):
         }
     )
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.snapped_models = (dm.ConnectionNode,)
-        self.linked_table_models = (dm.CrossSectionDefinition,)
-
 
 class OrificeHandler(UserLayerHandler):
     MODEL = dm.Orifice
@@ -458,18 +465,16 @@ class OrificeHandler(UserLayerHandler):
         }
     )
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.snapped_models = (dm.ConnectionNode,)
-        self.linked_table_models = (dm.CrossSectionDefinition,)
-
     def connect_additional_signals(self):
+        """Connecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_orifice)
 
     def disconnect_additional_signals(self):
+        """Disconnecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_simplify_orifice)
 
     def trigger_simplify_orifice(self, orifice_feat_id):
+        """Triggering geometry simplification on newly added feature."""
         simplify_method = partial(self.simplify_linear_feature, orifice_feat_id)
         QTimer.singleShot(0, simplify_method)
 
@@ -497,15 +502,12 @@ class PipeHandler(UserLayerHandler):
         }
     )
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.snapped_models = (dm.ConnectionNode, dm.Manhole)
-        self.linked_table_models = (dm.CrossSectionDefinition,)
-
     def connect_additional_signals(self):
+        """Connecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_segmentize_pipe)
 
     def disconnect_additional_signals(self):
+        """Disconnecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_segmentize_pipe)
 
     def trigger_segmentize_pipe(self, pipe_feat_id):
@@ -519,6 +521,7 @@ class PipeHandler(UserLayerHandler):
         QTimer.singleShot(0, segmentize_method)
 
     def segmentize_pipe(self, pipe_feat_id):
+        """Method to split single pipe into 2 vertices segments."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
         pipe_feat = self.layer.getFeature(pipe_feat_id)

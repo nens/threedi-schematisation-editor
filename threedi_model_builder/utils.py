@@ -3,6 +3,7 @@ import sys
 import shutil
 import threedi_model_builder.data_models as dm
 from enum import Enum
+from typing import Union
 from collections import OrderedDict
 from qgis.PyQt.QtCore import QSettings, QVariant
 from qgis.PyQt.QtWidgets import QFileDialog
@@ -28,7 +29,7 @@ field_types_mapping = {
 
 
 def cast_if_bool(value):
-    """We need to change True/False from GeoPackage layers to 0/1 integers used in Spatialite layers."""
+    """Function for changing True/False from GeoPackage layers to 0/1 integers used in Spatialite layers."""
     if value is True:
         return 1
     elif value is False:
@@ -38,14 +39,17 @@ def cast_if_bool(value):
 
 
 def vector_layer_factory(annotated_model_cls, epsg=4326):
+    """Function that creates memory layer based on annotated data model class."""
     fields = []
     geometry_type = annotated_model_cls.__geometrytype__.value
     layer_name = annotated_model_cls.__tablename__
     uri = f"{geometry_type}?crs=EPSG:{epsg}"
     layer = QgsVectorLayer(uri, layer_name, "memory")
     for field_name, field_type in annotated_model_cls.__annotations__.items():
+        if is_optional(field_type):
+            field_type = optional_type(field_type)
         if issubclass(field_type, Enum):
-            field_type = type(next(iter(field_type[i].value for i in field_type.__members__)))
+            field_type = enum_type(field_type)
         try:
             field_variant = field_types_mapping[field_type]
         except KeyError:
@@ -58,7 +62,35 @@ def vector_layer_factory(annotated_model_cls, epsg=4326):
     return layer
 
 
+def is_optional(field_type):
+    """Checking if field type is an Optional."""
+    try:
+        field_args = field_type.__args__
+        field_origin = field_type.__origin__
+    except AttributeError:
+        return False
+    if field_origin is Union:
+        real_field_type, default = field_args
+        none_type = type(None)
+        if real_field_type is not none_type and default is none_type:
+            return True
+    return False
+
+
+def optional_type(optional_field_type):
+    """Getting real type of an Optional field type."""
+    field_type = next(iter(optional_field_type.__args__))
+    return field_type
+
+
+def enum_type(enum_field_type):
+    """Getting real type of Enum field type."""
+    field_type = type(next(iter(enum_field_type[i].value for i in enum_field_type.__members__)))
+    return field_type
+
+
 def layer_to_gpkg(layer, gpkg_filename, overwrite=False, driver_name="GPKG"):
+    """Function which saves memory layer into GeoPackage file."""
     transform_context = QgsProject.instance().transformContext()
     options = QgsVectorFileWriter.SaveVectorOptions()
     options.actionOnExistingFile = (
@@ -74,6 +106,7 @@ def layer_to_gpkg(layer, gpkg_filename, overwrite=False, driver_name="GPKG"):
 
 
 def gpkg_layer(gpkg_path, table_name, layer_name=None):
+    """Creating vector layer out of GeoPackage source."""
     uri = f"{gpkg_path}|layername={table_name}"
     layer_name = table_name if layer_name is None else layer_name
     vlayer = QgsVectorLayer(uri, layer_name, "ogr")
@@ -81,6 +114,7 @@ def gpkg_layer(gpkg_path, table_name, layer_name=None):
 
 
 def sqlite_layer(sqlite_path, table_name, layer_name=None, geom_column="the_geom", schema=""):
+    """Creating vector layer out of Spatialite source."""
     uri = QgsDataSourceUri()
     uri.setDatabase(sqlite_path)
     uri.setDataSource(schema, table_name, geom_column)
@@ -90,11 +124,13 @@ def sqlite_layer(sqlite_path, table_name, layer_name=None, geom_column="the_geom
 
 
 def create_empty_model(export_sqlite_path):
+    """Copying Spatialite database template with 3Di model data structure."""
     empty_sqlite = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "empty.sqlite")
     shutil.copy(empty_sqlite, export_sqlite_path)
 
 
 def get_qml_style_path(style_name, *subfolders):
+    """Getting QML styles path."""
     qml_filename = f"{style_name}.qml"
     filepath = os.path.join(os.path.dirname(__file__), "styles", *subfolders, qml_filename)
     if os.path.isfile(filepath):
@@ -103,6 +139,7 @@ def get_qml_style_path(style_name, *subfolders):
 
 
 def get_form_ui_path(table_name):
+    """Getting UI form path for a given table name."""
     ui_filename = f"{table_name}.ui"
     filepath = os.path.join(os.path.dirname(__file__), "forms", "ui", ui_filename)
     if os.path.isfile(filepath):
@@ -111,6 +148,7 @@ def get_form_ui_path(table_name):
 
 
 def get_tree_group(name, create=True, insert_at_top=False):
+    """Getting layer tree group with given name."""
     root = QgsProject.instance().layerTreeRoot()
     grp = root.findGroup(name)
     if not grp and create:
@@ -120,6 +158,7 @@ def get_tree_group(name, create=True, insert_at_top=False):
 
 
 def add_layer_to_group(name, layer, bottom=False):
+    """Adding layer to the specific group."""
     grp = QgsProject.instance().layerTreeRoot().findGroup(name)
     if not grp:
         return
@@ -128,10 +167,12 @@ def add_layer_to_group(name, layer, bottom=False):
 
 
 def remove_layer(layer):
+    """Removing layer from the map canvas."""
     QgsProject.instance().removeMapLayer(layer)
 
 
 def remove_group_with_children(name):
+    """Removing group with all layers from the map canvas."""
     root = QgsProject.instance().layerTreeRoot()
     group = root.findGroup(name)
     if group is not None:
@@ -141,6 +182,7 @@ def remove_group_with_children(name):
 
 
 def get_filepath(parent, filter=None, extension=None, save=True, dialog_title=None):
+    """Opening dialog to get a filepath."""
     if filter is None:
         filter = "All Files (*.*)"
 
@@ -164,6 +206,7 @@ def get_filepath(parent, filter=None, extension=None, save=True, dialog_title=No
 
 
 def load_user_layers(gpkg_path):
+    """Loading grouped User Layers from GeoPackage into map canvas."""
     groups = OrderedDict()
     groups["1D"] = dm.MODEL_1D_ELEMENTS
     groups["2D"] = dm.MODEL_2D_ELEMENTS
@@ -181,6 +224,7 @@ def load_user_layers(gpkg_path):
 
 
 def load_model_raster_layers(gpkg_path):
+    """Loading raster layers related with 3Di model."""
     gpkg_dir = os.path.dirname(gpkg_path)
     group_name = "Model rasters"
     get_tree_group(group_name)
@@ -207,6 +251,7 @@ def load_model_raster_layers(gpkg_path):
 
 
 def remove_user_layers():
+    """Removing all 3Di model User Layers and rasters from the map canvas."""
     groups = ["1D", "2D", "Inflow", "Settings", "Model rasters"]
     for group_name in groups:
         remove_group_with_children(group_name)
@@ -222,10 +267,12 @@ def open_edit_form(dialog, layer, feature):
 
 
 def connect_signal(signal, slot):
+    """Connecting signal with slot."""
     signal.connect(slot)
 
 
 def disconnect_signal(signal, slot):
+    """Disconnecting signal with slot."""
     try:
         signal.disconnect(slot)
     except TypeError:
@@ -233,6 +280,7 @@ def disconnect_signal(signal, slot):
 
 
 def find_point_nodes(point, node_layer, tolerance=0.0000001, allow_multiple=False, locator=None):
+    """Function that finds features from given layer that are located within tolerance distance from given point."""
     if not locator:
         locator = QgsPointLocator(node_layer)
     connection_node_feats = []
@@ -248,6 +296,9 @@ def find_point_nodes(point, node_layer, tolerance=0.0000001, allow_multiple=Fals
 
 
 def find_linestring_nodes(linestring, node_layer, tolerance=0.0000001, allow_multiple=False, locator=None):
+    """
+    Function that finds features from given layer that are located within tolerance distance from linestring endpoints.
+    """
     if not locator:
         locator = QgsPointLocator(node_layer)
     feats_at_start, feats_at_end = [], []
@@ -274,11 +325,13 @@ def find_linestring_nodes(linestring, node_layer, tolerance=0.0000001, allow_mul
 
 
 def count_vertices(geometry):
+    """Returning number of vertices within geometry."""
     c = sum(1 for _ in geometry.vertices())
     return c
 
 
 def get_qgis(qgis_build_path="C:/OSGeo4W64/apps/qgis", qgis_proj_path="C:/OSGeo4W64/share/proj"):
+    """Initializing QGIS instance for running standalone scripts tha are using QGIS API."""
     qgis_python_path = os.path.join(qgis_build_path, "python")
     qgis_plugins_path = os.path.join(qgis_python_path, "plugins")
 

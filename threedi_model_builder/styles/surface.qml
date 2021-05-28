@@ -1,14 +1,14 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis labelsEnabled="0" styleCategories="AllStyleCategories" simplifyDrawingTol="1" simplifyAlgorithm="0" hasScaleBasedVisibilityFlag="0" simplifyLocal="1" simplifyMaxScale="1" minScale="1e+08" readOnly="0" version="3.4.5-Madeira" maxScale="0" simplifyDrawingHints="1">
+<qgis styleCategories="LayerConfiguration|Symbology|Labeling|Fields|Forms" labelsEnabled="0" version="3.16.3-Hannover" readOnly="0">
   <flags>
     <Identifiable>1</Identifiable>
     <Removable>1</Removable>
     <Searchable>1</Searchable>
   </flags>
-  <renderer-v2 forceraster="0" type="singleSymbol" enableorderby="0" symbollevels="0">
+  <renderer-v2 symbollevels="0" type="singleSymbol" forceraster="0" enableorderby="0">
     <symbols>
-      <symbol name="0" force_rhr="0" alpha="1" type="fill" clip_to_extent="1">
-        <layer class="SimpleFill" pass="0" locked="0" enabled="1">
+      <symbol name="0" clip_to_extent="1" alpha="1" force_rhr="0" type="fill">
+        <layer locked="0" pass="0" class="SimpleFill" enabled="1">
           <prop k="border_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
           <prop k="color" v="244,198,119,255"/>
           <prop k="joinstyle" v="bevel"/>
@@ -33,35 +33,17 @@
     <rotation/>
     <sizescale/>
   </renderer-v2>
-  <customproperties>
-    <property value="0" key="embeddedWidgets/count"/>
-    <property key="variableNames"/>
-    <property key="variableValues"/>
-  </customproperties>
   <blendMode>0</blendMode>
   <featureBlendMode>0</featureBlendMode>
-  <layerOpacity>0.9</layerOpacity>
-  <SingleCategoryDiagramRenderer diagramType="Histogram" attributeLegend="1">
-    <DiagramCategory lineSizeType="MM" diagramOrientation="Up" labelPlacementMethod="XHeight" scaleDependency="Area" lineSizeScale="3x:0,0,0,0,0,0" backgroundColor="#ffffff" width="15" maxScaleDenominator="1e+08" height="15" sizeType="MM" rotationOffset="270" penWidth="0" enabled="0" minimumSize="0" backgroundAlpha="255" minScaleDenominator="0" sizeScale="3x:0,0,0,0,0,0" scaleBasedVisibility="0" penColor="#000000" opacity="1" penAlpha="255" barWidth="5">
-      <fontProperties description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" style=""/>
-      <attribute label="" field="" color="#000000"/>
-    </DiagramCategory>
-  </SingleCategoryDiagramRenderer>
-  <DiagramLayerSettings placement="0" dist="0" obstacle="0" showAll="1" priority="0" zIndex="0" linePlacementFlags="2">
-    <properties>
-      <Option type="Map">
-        <Option name="name" value="" type="QString"/>
-        <Option name="properties"/>
-        <Option name="type" value="collection" type="QString"/>
-      </Option>
-    </properties>
-  </DiagramLayerSettings>
-  <geometryOptions removeDuplicateNodes="0" geometryPrecision="0">
-    <activeChecks/>
-    <checkConfiguration/>
-  </geometryOptions>
   <fieldConfiguration>
-    <field name="id">
+    <field name="fid" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option/>
+        </config>
+      </editWidget>
+    </field>
+    <field name="id" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -71,7 +53,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="display_name">
+    <field name="code" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -81,7 +63,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="code">
+    <field name="display_name" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -91,7 +73,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="zoom_category">
+    <field name="zoom_category" configurationFlags="None">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
@@ -119,7 +101,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="nr_of_inhabitants">
+    <field name="nr_of_inhabitants" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -129,7 +111,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="dry_weather_flow">
+    <field name="area" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -139,7 +121,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="function">
+    <field name="dry_weather_flow" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -149,7 +131,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="area">
+    <field name="function" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -159,7 +141,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="surface_parameters_id">
+    <field name="surface_parameters_id" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -171,73 +153,54 @@
     </field>
   </fieldConfiguration>
   <aliases>
-    <alias name="" index="0" field="id"/>
-    <alias name="" index="1" field="display_name"/>
-    <alias name="" index="2" field="code"/>
-    <alias name="" index="3" field="zoom_category"/>
-    <alias name="" index="4" field="nr_of_inhabitants"/>
-    <alias name="" index="5" field="dry_weather_flow"/>
-    <alias name="" index="6" field="function"/>
-    <alias name="" index="7" field="area"/>
-    <alias name="" index="8" field="surface_parameters_id"/>
+    <alias name="" field="fid" index="0"/>
+    <alias name="" field="id" index="1"/>
+    <alias name="" field="code" index="2"/>
+    <alias name="" field="display_name" index="3"/>
+    <alias name="" field="zoom_category" index="4"/>
+    <alias name="" field="nr_of_inhabitants" index="5"/>
+    <alias name="" field="area" index="6"/>
+    <alias name="" field="dry_weather_flow" index="7"/>
+    <alias name="" field="function" index="8"/>
+    <alias name="" field="surface_parameters_id" index="9"/>
   </aliases>
-  <excludeAttributesWMS/>
-  <excludeAttributesWFS/>
   <defaults>
-    <default applyOnUpdate="0" field="id" expression="if(maximum(id) is null,1, maximum(id)+1)"/>
-    <default applyOnUpdate="0" field="display_name" expression="'new'"/>
-    <default applyOnUpdate="0" field="code" expression="'new'"/>
-    <default applyOnUpdate="0" field="zoom_category" expression="-1"/>
-    <default applyOnUpdate="0" field="nr_of_inhabitants" expression=""/>
-    <default applyOnUpdate="0" field="dry_weather_flow" expression=""/>
-    <default applyOnUpdate="0" field="function" expression=""/>
-    <default applyOnUpdate="0" field="area" expression="$area"/>
-    <default applyOnUpdate="0" field="surface_parameters_id" expression=""/>
+    <default field="fid" expression="" applyOnUpdate="0"/>
+    <default field="id" expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="1"/>
+    <default field="code" expression="'new'" applyOnUpdate="0"/>
+    <default field="display_name" expression="'new'" applyOnUpdate="0"/>
+    <default field="zoom_category" expression="-1" applyOnUpdate="0"/>
+    <default field="nr_of_inhabitants" expression="" applyOnUpdate="0"/>
+    <default field="area" expression="$area" applyOnUpdate="0"/>
+    <default field="dry_weather_flow" expression="" applyOnUpdate="0"/>
+    <default field="function" expression="" applyOnUpdate="0"/>
+    <default field="surface_parameters_id" expression="" applyOnUpdate="0"/>
   </defaults>
   <constraints>
-    <constraint notnull_strength="1" constraints="3" exp_strength="0" field="id" unique_strength="1"/>
-    <constraint notnull_strength="2" constraints="1" exp_strength="0" field="display_name" unique_strength="0"/>
-    <constraint notnull_strength="2" constraints="1" exp_strength="0" field="code" unique_strength="0"/>
-    <constraint notnull_strength="2" constraints="1" exp_strength="0" field="zoom_category" unique_strength="0"/>
-    <constraint notnull_strength="0" constraints="0" exp_strength="0" field="nr_of_inhabitants" unique_strength="0"/>
-    <constraint notnull_strength="0" constraints="0" exp_strength="0" field="dry_weather_flow" unique_strength="0"/>
-    <constraint notnull_strength="0" constraints="0" exp_strength="0" field="function" unique_strength="0"/>
-    <constraint notnull_strength="2" constraints="1" exp_strength="0" field="area" unique_strength="0"/>
-    <constraint notnull_strength="2" constraints="1" exp_strength="0" field="surface_parameters_id" unique_strength="0"/>
+    <constraint field="fid" constraints="3" exp_strength="0" notnull_strength="1" unique_strength="1"/>
+    <constraint field="id" constraints="3" exp_strength="0" notnull_strength="1" unique_strength="1"/>
+    <constraint field="code" constraints="1" exp_strength="0" notnull_strength="2" unique_strength="0"/>
+    <constraint field="display_name" constraints="1" exp_strength="0" notnull_strength="2" unique_strength="0"/>
+    <constraint field="zoom_category" constraints="1" exp_strength="0" notnull_strength="2" unique_strength="0"/>
+    <constraint field="nr_of_inhabitants" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
+    <constraint field="area" constraints="1" exp_strength="0" notnull_strength="2" unique_strength="0"/>
+    <constraint field="dry_weather_flow" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
+    <constraint field="function" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
+    <constraint field="surface_parameters_id" constraints="1" exp_strength="0" notnull_strength="2" unique_strength="0"/>
   </constraints>
   <constraintExpressions>
-    <constraint exp="" field="id" desc=""/>
-    <constraint exp="" field="display_name" desc=""/>
-    <constraint exp="" field="code" desc=""/>
-    <constraint exp="" field="zoom_category" desc=""/>
-    <constraint exp="" field="nr_of_inhabitants" desc=""/>
-    <constraint exp="" field="dry_weather_flow" desc=""/>
-    <constraint exp="" field="function" desc=""/>
-    <constraint exp="" field="area" desc=""/>
-    <constraint exp="" field="surface_parameters_id" desc=""/>
+    <constraint field="fid" desc="" exp=""/>
+    <constraint field="id" desc="" exp=""/>
+    <constraint field="code" desc="" exp=""/>
+    <constraint field="display_name" desc="" exp=""/>
+    <constraint field="zoom_category" desc="" exp=""/>
+    <constraint field="nr_of_inhabitants" desc="" exp=""/>
+    <constraint field="area" desc="" exp=""/>
+    <constraint field="dry_weather_flow" desc="" exp=""/>
+    <constraint field="function" desc="" exp=""/>
+    <constraint field="surface_parameters_id" desc="" exp=""/>
   </constraintExpressions>
   <expressionfields/>
-  <attributeactions>
-    <defaultAction value="{00000000-0000-0000-0000-000000000000}" key="Canvas"/>
-  </attributeactions>
-  <attributetableconfig sortExpression="" sortOrder="0" actionWidgetStyle="dropDown">
-    <columns>
-      <column name="id" hidden="0" width="-1" type="field"/>
-      <column name="display_name" hidden="0" width="-1" type="field"/>
-      <column name="code" hidden="0" width="-1" type="field"/>
-      <column name="zoom_category" hidden="0" width="-1" type="field"/>
-      <column name="nr_of_inhabitants" hidden="0" width="-1" type="field"/>
-      <column name="dry_weather_flow" hidden="0" width="-1" type="field"/>
-      <column name="function" hidden="0" width="-1" type="field"/>
-      <column name="area" hidden="0" width="-1" type="field"/>
-      <column name="surface_parameters_id" hidden="0" width="-1" type="field"/>
-      <column hidden="1" width="-1" type="actions"/>
-    </columns>
-  </attributetableconfig>
-  <conditionalstyles>
-    <rowstyles/>
-    <fieldstyles/>
-  </conditionalstyles>
   <editform tolerant="1"></editform>
   <editforminit/>
   <editforminitcodesource>0</editforminitcodesource>
@@ -262,25 +225,25 @@ def my_form_open(dialog, layer, feature):
   <featformsuppress>0</featformsuppress>
   <editorlayout>tablayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer name="Surface" groupBox="0" columnCount="1" visibilityExpressionEnabled="0" visibilityExpression="" showLabel="1">
-      <attributeEditorContainer name="General" groupBox="1" columnCount="1" visibilityExpressionEnabled="0" visibilityExpression="" showLabel="1">
-        <attributeEditorField name="id" index="0" showLabel="1"/>
-        <attributeEditorField name="display_name" index="1" showLabel="1"/>
+    <attributeEditorContainer name="Surface" visibilityExpression="" groupBox="0" visibilityExpressionEnabled="0" columnCount="1" showLabel="1">
+      <attributeEditorContainer name="General" visibilityExpression="" groupBox="1" visibilityExpressionEnabled="0" columnCount="1" showLabel="1">
+        <attributeEditorField name="id" index="1" showLabel="1"/>
+        <attributeEditorField name="display_name" index="3" showLabel="1"/>
         <attributeEditorField name="code" index="2" showLabel="1"/>
       </attributeEditorContainer>
-      <attributeEditorContainer name="Characteristics" groupBox="1" columnCount="1" visibilityExpressionEnabled="0" visibilityExpression="" showLabel="1">
-        <attributeEditorContainer name="Rain water" groupBox="1" columnCount="1" visibilityExpressionEnabled="0" visibilityExpression="" showLabel="1">
-          <attributeEditorField name="surface_parameters_id" index="8" showLabel="1"/>
-          <attributeEditorField name="area" index="7" showLabel="1"/>
+      <attributeEditorContainer name="Characteristics" visibilityExpression="" groupBox="1" visibilityExpressionEnabled="0" columnCount="1" showLabel="1">
+        <attributeEditorContainer name="Rain water" visibilityExpression="" groupBox="1" visibilityExpressionEnabled="0" columnCount="1" showLabel="1">
+          <attributeEditorField name="surface_parameters_id" index="9" showLabel="1"/>
+          <attributeEditorField name="area" index="6" showLabel="1"/>
         </attributeEditorContainer>
-        <attributeEditorContainer name="Municipal water" groupBox="1" columnCount="1" visibilityExpressionEnabled="0" visibilityExpression="" showLabel="1">
-          <attributeEditorField name="nr_of_inhabitants" index="4" showLabel="1"/>
-          <attributeEditorField name="dry_weather_flow" index="5" showLabel="1"/>
+        <attributeEditorContainer name="Municipal water" visibilityExpression="" groupBox="1" visibilityExpressionEnabled="0" columnCount="1" showLabel="1">
+          <attributeEditorField name="nr_of_inhabitants" index="5" showLabel="1"/>
+          <attributeEditorField name="dry_weather_flow" index="7" showLabel="1"/>
         </attributeEditorContainer>
       </attributeEditorContainer>
-      <attributeEditorContainer name="Visualization" groupBox="1" columnCount="1" visibilityExpressionEnabled="0" visibilityExpression="" showLabel="1">
-        <attributeEditorField name="zoom_category" index="3" showLabel="1"/>
-        <attributeEditorField name="function" index="6" showLabel="1"/>
+      <attributeEditorContainer name="Visualization" visibilityExpression="" groupBox="1" visibilityExpressionEnabled="0" columnCount="1" showLabel="1">
+        <attributeEditorField name="zoom_category" index="4" showLabel="1"/>
+        <attributeEditorField name="function" index="8" showLabel="1"/>
       </attributeEditorContainer>
     </attributeEditorContainer>
   </attributeEditorForm>
@@ -289,6 +252,7 @@ def my_form_open(dialog, layer, feature):
     <field name="code" editable="1"/>
     <field name="display_name" editable="1"/>
     <field name="dry_weather_flow" editable="1"/>
+    <field name="fid" editable="1"/>
     <field name="function" editable="1"/>
     <field name="id" editable="1"/>
     <field name="nr_of_inhabitants" editable="1"/>
@@ -300,14 +264,15 @@ def my_form_open(dialog, layer, feature):
     <field name="code" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>
     <field name="dry_weather_flow" labelOnTop="0"/>
+    <field name="fid" labelOnTop="0"/>
     <field name="function" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
     <field name="nr_of_inhabitants" labelOnTop="0"/>
     <field name="surface_parameters_id" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
   </labelOnTop>
+  <dataDefinedFieldProperties/>
   <widgets/>
-  <previewExpression>display_name</previewExpression>
-  <mapTip></mapTip>
+  <previewExpression>"display_name"</previewExpression>
   <layerGeometryType>2</layerGeometryType>
 </qgis>

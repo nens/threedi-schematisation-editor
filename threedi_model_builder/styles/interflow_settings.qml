@@ -1,179 +1,155 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis maxScale="0" readOnly="0" version="3.4.11-Madeira" styleCategories="AllStyleCategories" hasScaleBasedVisibilityFlag="0" minScale="1e+8">
+<qgis styleCategories="LayerConfiguration|Symbology|Labeling|Fields|Forms" version="3.16.3-Hannover" readOnly="0">
   <flags>
     <Identifiable>1</Identifiable>
     <Removable>1</Removable>
     <Searchable>1</Searchable>
   </flags>
-  <customproperties>
-    <property key="dualview/previewExpressions">
-      <value>id</value>
-    </property>
-    <property value="0" key="embeddedWidgets/count"/>
-    <property key="variableNames"/>
-    <property key="variableValues"/>
-  </customproperties>
-  <geometryOptions geometryPrecision="0" removeDuplicateNodes="0">
-    <activeChecks/>
-    <checkConfiguration/>
-  </geometryOptions>
   <fieldConfiguration>
-    <field name="id">
+    <field name="fid" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option/>
+        </config>
+      </editWidget>
+    </field>
+    <field name="id" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option value="false" name="IsMultiline" type="bool"/>
-            <Option value="false" name="UseHtml" type="bool"/>
+            <Option name="IsMultiline" value="false" type="bool"/>
+            <Option name="UseHtml" value="false" type="bool"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field name="interflow_type">
+    <field name="interflow_type" configurationFlags="None">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option value="0" name="0: No interflow" type="QString"/>
+                <Option name="0: No interflow" value="0" type="QString"/>
               </Option>
               <Option type="Map">
-                <Option value="1" name="1: Porosity is rescaled per computational cell with respect to the deepest surface level in that cell. (Defining the porosity_layer_thickness is mandatory)" type="QString"/>
+                <Option name="1: Porosity is rescaled per computational cell with respect to the deepest surface level in that cell. (Defining the porosity_layer_thickness is mandatory)" value="1" type="QString"/>
               </Option>
               <Option type="Map">
-                <Option value="2" name="2: Porosity is rescaled per computational cell with respect to the deepest surface level in the 2D surface domain. (Defining the porosity_layer_thickness is mandatory)" type="QString"/>
+                <Option name="2: Porosity is rescaled per computational cell with respect to the deepest surface level in the 2D surface domain. (Defining the porosity_layer_thickness is mandatory)" value="2" type="QString"/>
               </Option>
               <Option type="Map">
-                <Option value="3" name="3: The impervious layer thickness is uniform in the 2D surface domain and is based on the impervious_layer_elevation and the deepest surface level in that cell." type="QString"/>
+                <Option name="3: The impervious layer thickness is uniform in the 2D surface domain and is based on the impervious_layer_elevation and the deepest surface level in that cell." value="3" type="QString"/>
               </Option>
               <Option type="Map">
-                <Option value="4" name="4: The impervious layer thickness is non-uniform in the 2D surface domain and is based on the impervious_layer_elevation with respect to the deepest surface level in the 2D surface domain." type="QString"/>
+                <Option name="4: The impervious layer thickness is non-uniform in the 2D surface domain and is based on the impervious_layer_elevation with respect to the deepest surface level in the 2D surface domain." value="4" type="QString"/>
               </Option>
             </Option>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field name="porosity">
+    <field name="porosity" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="porosity_file">
+    <field name="porosity_file" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="porosity_layer_thickness">
+    <field name="porosity_layer_thickness" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="impervious_layer_elevation">
+    <field name="impervious_layer_elevation" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="hydraulic_conductivity">
+    <field name="hydraulic_conductivity" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="hydraulic_conductivity_file">
+    <field name="hydraulic_conductivity_file" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="display_name">
+    <field name="display_name" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option value="false" name="IsMultiline" type="bool"/>
-            <Option value="false" name="UseHtml" type="bool"/>
+            <Option name="IsMultiline" value="false" type="bool"/>
+            <Option name="UseHtml" value="false" type="bool"/>
           </Option>
         </config>
       </editWidget>
     </field>
   </fieldConfiguration>
   <aliases>
-    <alias index="0" name="" field="id"/>
-    <alias index="1" name="" field="interflow_type"/>
-    <alias index="2" name="" field="porosity"/>
-    <alias index="3" name="" field="porosity_file"/>
-    <alias index="4" name="" field="porosity_layer_thickness"/>
-    <alias index="5" name="" field="impervious_layer_elevation"/>
-    <alias index="6" name="" field="hydraulic_conductivity"/>
-    <alias index="7" name="" field="hydraulic_conductivity_file"/>
-    <alias index="8" name="" field="display_name"/>
+    <alias name="" field="fid" index="0"/>
+    <alias name="" field="id" index="1"/>
+    <alias name="" field="interflow_type" index="2"/>
+    <alias name="" field="porosity" index="3"/>
+    <alias name="" field="porosity_file" index="4"/>
+    <alias name="" field="porosity_layer_thickness" index="5"/>
+    <alias name="" field="impervious_layer_elevation" index="6"/>
+    <alias name="" field="hydraulic_conductivity" index="7"/>
+    <alias name="" field="hydraulic_conductivity_file" index="8"/>
+    <alias name="" field="display_name" index="9"/>
   </aliases>
-  <excludeAttributesWMS/>
-  <excludeAttributesWFS/>
   <defaults>
-    <default applyOnUpdate="0" expression="if(maximum(id) is null,1, maximum(id)+1)" field="id"/>
-    <default applyOnUpdate="0" expression="" field="interflow_type"/>
-    <default applyOnUpdate="0" expression="" field="porosity"/>
-    <default applyOnUpdate="0" expression="" field="porosity_file"/>
-    <default applyOnUpdate="0" expression="" field="porosity_layer_thickness"/>
-    <default applyOnUpdate="0" expression="" field="impervious_layer_elevation"/>
-    <default applyOnUpdate="0" expression="" field="hydraulic_conductivity"/>
-    <default applyOnUpdate="0" expression="" field="hydraulic_conductivity_file"/>
-    <default applyOnUpdate="0" expression="" field="display_name"/>
+    <default field="fid" expression="" applyOnUpdate="0"/>
+    <default field="id" expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="1"/>
+    <default field="interflow_type" expression="" applyOnUpdate="0"/>
+    <default field="porosity" expression="" applyOnUpdate="0"/>
+    <default field="porosity_file" expression="" applyOnUpdate="0"/>
+    <default field="porosity_layer_thickness" expression="" applyOnUpdate="0"/>
+    <default field="impervious_layer_elevation" expression="" applyOnUpdate="0"/>
+    <default field="hydraulic_conductivity" expression="" applyOnUpdate="0"/>
+    <default field="hydraulic_conductivity_file" expression="" applyOnUpdate="0"/>
+    <default field="display_name" expression="" applyOnUpdate="0"/>
   </defaults>
   <constraints>
-    <constraint exp_strength="0" notnull_strength="1" field="id" constraints="3" unique_strength="1"/>
-    <constraint exp_strength="0" notnull_strength="2" field="interflow_type" constraints="1" unique_strength="0"/>
-    <constraint exp_strength="0" notnull_strength="0" field="porosity" constraints="0" unique_strength="0"/>
-    <constraint exp_strength="0" notnull_strength="0" field="porosity_file" constraints="0" unique_strength="0"/>
-    <constraint exp_strength="0" notnull_strength="0" field="porosity_layer_thickness" constraints="0" unique_strength="0"/>
-    <constraint exp_strength="0" notnull_strength="0" field="impervious_layer_elevation" constraints="0" unique_strength="0"/>
-    <constraint exp_strength="0" notnull_strength="0" field="hydraulic_conductivity" constraints="0" unique_strength="0"/>
-    <constraint exp_strength="0" notnull_strength="0" field="hydraulic_conductivity_file" constraints="0" unique_strength="0"/>
-    <constraint exp_strength="0" notnull_strength="2" field="display_name" constraints="1" unique_strength="0"/>
+    <constraint field="fid" constraints="3" exp_strength="0" notnull_strength="1" unique_strength="1"/>
+    <constraint field="id" constraints="3" exp_strength="0" notnull_strength="1" unique_strength="1"/>
+    <constraint field="interflow_type" constraints="1" exp_strength="0" notnull_strength="2" unique_strength="0"/>
+    <constraint field="porosity" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
+    <constraint field="porosity_file" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
+    <constraint field="porosity_layer_thickness" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
+    <constraint field="impervious_layer_elevation" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
+    <constraint field="hydraulic_conductivity" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
+    <constraint field="hydraulic_conductivity_file" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
+    <constraint field="display_name" constraints="1" exp_strength="0" notnull_strength="2" unique_strength="0"/>
   </constraints>
   <constraintExpressions>
-    <constraint exp="" desc="" field="id"/>
-    <constraint exp="" desc="" field="interflow_type"/>
-    <constraint exp="" desc="" field="porosity"/>
-    <constraint exp="" desc="" field="porosity_file"/>
-    <constraint exp="" desc="" field="porosity_layer_thickness"/>
-    <constraint exp="" desc="" field="impervious_layer_elevation"/>
-    <constraint exp="" desc="" field="hydraulic_conductivity"/>
-    <constraint exp="" desc="" field="hydraulic_conductivity_file"/>
-    <constraint exp="" desc="" field="display_name"/>
+    <constraint field="fid" desc="" exp=""/>
+    <constraint field="id" desc="" exp=""/>
+    <constraint field="interflow_type" desc="" exp=""/>
+    <constraint field="porosity" desc="" exp=""/>
+    <constraint field="porosity_file" desc="" exp=""/>
+    <constraint field="porosity_layer_thickness" desc="" exp=""/>
+    <constraint field="impervious_layer_elevation" desc="" exp=""/>
+    <constraint field="hydraulic_conductivity" desc="" exp=""/>
+    <constraint field="hydraulic_conductivity_file" desc="" exp=""/>
+    <constraint field="display_name" desc="" exp=""/>
   </constraintExpressions>
   <expressionfields/>
-  <attributeactions>
-    <defaultAction value="{00000000-0000-0000-0000-000000000000}" key="Canvas"/>
-  </attributeactions>
-  <attributetableconfig actionWidgetStyle="dropDown" sortExpression="" sortOrder="0">
-    <columns>
-      <column width="-1" hidden="0" name="id" type="field"/>
-      <column width="-1" hidden="0" name="interflow_type" type="field"/>
-      <column width="-1" hidden="0" name="porosity" type="field"/>
-      <column width="-1" hidden="0" name="porosity_file" type="field"/>
-      <column width="-1" hidden="0" name="porosity_layer_thickness" type="field"/>
-      <column width="-1" hidden="0" name="impervious_layer_elevation" type="field"/>
-      <column width="-1" hidden="0" name="hydraulic_conductivity" type="field"/>
-      <column width="-1" hidden="0" name="hydraulic_conductivity_file" type="field"/>
-      <column width="-1" hidden="0" name="display_name" type="field"/>
-      <column width="-1" hidden="1" type="actions"/>
-    </columns>
-  </attributetableconfig>
-  <conditionalstyles>
-    <rowstyles/>
-    <fieldstyles/>
-  </conditionalstyles>
   <editform tolerant="1"></editform>
   <editforminit/>
   <editforminitcodesource>0</editforminitcodesource>
@@ -198,48 +174,50 @@ def my_form_open(dialog, layer, feature):
   <featformsuppress>0</featformsuppress>
   <editorlayout>tablayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer showLabel="1" columnCount="1" visibilityExpression="" name="General" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorField showLabel="1" index="0" name="id"/>
-      <attributeEditorField showLabel="1" index="8" name="display_name"/>
-      <attributeEditorField showLabel="1" index="1" name="interflow_type"/>
+    <attributeEditorContainer name="General" visibilityExpression="" groupBox="0" visibilityExpressionEnabled="0" columnCount="1" showLabel="1">
+      <attributeEditorField name="id" index="1" showLabel="1"/>
+      <attributeEditorField name="display_name" index="9" showLabel="1"/>
+      <attributeEditorField name="interflow_type" index="2" showLabel="1"/>
     </attributeEditorContainer>
-    <attributeEditorContainer showLabel="1" columnCount="1" visibilityExpression="" name="Porosity" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorField showLabel="1" index="2" name="porosity"/>
-      <attributeEditorField showLabel="1" index="3" name="porosity_file"/>
-      <attributeEditorField showLabel="1" index="4" name="porosity_layer_thickness"/>
+    <attributeEditorContainer name="Porosity" visibilityExpression="" groupBox="0" visibilityExpressionEnabled="0" columnCount="1" showLabel="1">
+      <attributeEditorField name="porosity" index="3" showLabel="1"/>
+      <attributeEditorField name="porosity_file" index="4" showLabel="1"/>
+      <attributeEditorField name="porosity_layer_thickness" index="5" showLabel="1"/>
     </attributeEditorContainer>
-    <attributeEditorContainer showLabel="1" columnCount="1" visibilityExpression="" name="Hydraulic conductivity" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorField showLabel="1" index="7" name="hydraulic_conductivity_file"/>
-      <attributeEditorField showLabel="1" index="6" name="hydraulic_conductivity"/>
+    <attributeEditorContainer name="Hydraulic conductivity" visibilityExpression="" groupBox="0" visibilityExpressionEnabled="0" columnCount="1" showLabel="1">
+      <attributeEditorField name="hydraulic_conductivity_file" index="8" showLabel="1"/>
+      <attributeEditorField name="hydraulic_conductivity" index="7" showLabel="1"/>
     </attributeEditorContainer>
-    <attributeEditorContainer showLabel="1" columnCount="1" visibilityExpression="" name="Impervious layer" groupBox="0" visibilityExpressionEnabled="0">
-      <attributeEditorField showLabel="1" index="5" name="impervious_layer_elevation"/>
+    <attributeEditorContainer name="Impervious layer" visibilityExpression="" groupBox="0" visibilityExpressionEnabled="0" columnCount="1" showLabel="1">
+      <attributeEditorField name="impervious_layer_elevation" index="6" showLabel="1"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
-    <field editable="1" name="display_name"/>
-    <field editable="1" name="hydraulic_conductivity"/>
-    <field editable="1" name="hydraulic_conductivity_file"/>
-    <field editable="1" name="id"/>
-    <field editable="1" name="impervious_layer_elevation"/>
-    <field editable="1" name="interflow_type"/>
-    <field editable="1" name="porosity"/>
-    <field editable="1" name="porosity_file"/>
-    <field editable="1" name="porosity_layer_thickness"/>
+    <field name="display_name" editable="1"/>
+    <field name="fid" editable="1"/>
+    <field name="hydraulic_conductivity" editable="1"/>
+    <field name="hydraulic_conductivity_file" editable="1"/>
+    <field name="id" editable="1"/>
+    <field name="impervious_layer_elevation" editable="1"/>
+    <field name="interflow_type" editable="1"/>
+    <field name="porosity" editable="1"/>
+    <field name="porosity_file" editable="1"/>
+    <field name="porosity_layer_thickness" editable="1"/>
   </editable>
   <labelOnTop>
-    <field labelOnTop="0" name="display_name"/>
-    <field labelOnTop="0" name="hydraulic_conductivity"/>
-    <field labelOnTop="0" name="hydraulic_conductivity_file"/>
-    <field labelOnTop="0" name="id"/>
-    <field labelOnTop="0" name="impervious_layer_elevation"/>
-    <field labelOnTop="0" name="interflow_type"/>
-    <field labelOnTop="0" name="porosity"/>
-    <field labelOnTop="0" name="porosity_file"/>
-    <field labelOnTop="0" name="porosity_layer_thickness"/>
+    <field name="display_name" labelOnTop="0"/>
+    <field name="fid" labelOnTop="0"/>
+    <field name="hydraulic_conductivity" labelOnTop="0"/>
+    <field name="hydraulic_conductivity_file" labelOnTop="0"/>
+    <field name="id" labelOnTop="0"/>
+    <field name="impervious_layer_elevation" labelOnTop="0"/>
+    <field name="interflow_type" labelOnTop="0"/>
+    <field name="porosity" labelOnTop="0"/>
+    <field name="porosity_file" labelOnTop="0"/>
+    <field name="porosity_layer_thickness" labelOnTop="0"/>
   </labelOnTop>
+  <dataDefinedFieldProperties/>
   <widgets/>
-  <previewExpression>id</previewExpression>
-  <mapTip></mapTip>
+  <previewExpression>"id"</previewExpression>
   <layerGeometryType>4</layerGeometryType>
 </qgis>

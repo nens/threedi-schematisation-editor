@@ -17,6 +17,8 @@ from threedi_model_builder.utils import (
 
 
 class LayersManager:
+    """Class with methods and attributes used for managing 3Di User Layers."""
+
     VECTOR_GROUPS = (
         ("1D", dm.MODEL_1D_ELEMENTS),
         ("2D", dm.MODEL_2D_ELEMENTS),
@@ -48,11 +50,13 @@ class LayersManager:
 
     @property
     def group_names(self):
+        """Names of User Layer groups"""
         names = tuple(group_name for group_name, model_elements in self.VECTOR_GROUPS + self.RASTER_GROUPS)
         return names
 
     @property
     def data_model_groups(self):
+        """Data models to groups mapping."""
         data_model_groups = {}
         for group_name, model_elements in self.VECTOR_GROUPS:
             for model_cls in model_elements:
@@ -60,11 +64,13 @@ class LayersManager:
         return data_model_groups
 
     def create_groups(self):
+        """Creating all User Layers groups."""
         self.remove_groups()
         for group_name in self.group_names:
             get_tree_group(group_name, create=True)
 
     def remove_groups(self):
+        """Removing all User Layers groups."""
         self.remove_loaded_layers()
         for group_name in self.group_names:
             grp = get_tree_group(group_name, create=False)
@@ -79,10 +85,19 @@ class LayersManager:
         return None
 
     def initialize_data_model_layer(self, model_cls):
+        """Initializing single model layer based on data model class."""
         layer = gpkg_layer(self.model_gpkg_path, model_cls.__tablename__, model_cls.__layername__)
         qml_path = get_qml_style_path(model_cls.__tablename__)
         if qml_path is not None:
             layer.loadNamedStyle(qml_path)
+        attr_table_config = layer.attributeTableConfig()
+        columns = attr_table_config.columns()
+        for column in columns:
+            if column.name == "fid":
+                column.hidden = True
+                break
+        attr_table_config.setColumns(columns)
+        layer.setAttributeTableConfig(attr_table_config)
         form_ui_path = get_form_ui_path(model_cls.__tablename__)
         if form_ui_path:
             form_config = layer.editFormConfig()
@@ -98,11 +113,13 @@ class LayersManager:
         self.layer_handlers[layer.id()] = handler
 
     def load_vector_layers(self):
+        """Loading all vector layers."""
         for group_name, group_models in self.VECTOR_GROUPS:
             for model_cls in group_models:
                 self.initialize_data_model_layer(model_cls)
 
     def load_raster_layers(self):
+        """Loading all available raster layers."""
         gpkg_dir = os.path.dirname(self.model_gpkg_path)
         for group_name, group_models in self.RASTER_GROUPS:
             for model_cls in group_models:
@@ -125,12 +142,14 @@ class LayersManager:
                     add_layer_to_group(group_name, rlayer, bottom=True)
 
     def load_all_layers(self):
+        """Creating groups and loading vector, raster and tabular layers."""
         self.create_groups()
         self.load_vector_layers()
         self.load_raster_layers()
         self.add_joins()
 
     def remove_loaded_layers(self):
+        """Removing loaded vector layers."""
         for model_cls, layer_handler in list(self.model_handlers.items()):
             layer_handler.disconnect_handler_signals()
             layer = layer_handler.layer
