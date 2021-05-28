@@ -31,9 +31,9 @@ class ThreediModelBuilderPlugin:
     def initGui(self):
         self.action_open = QAction("Open 3Di Geopackage", self.iface.mainWindow())
         self.action_open.triggered.connect(self.open_model_from_geopackage)
-        self.action_import = QAction("Import from Spatialite", self.iface.mainWindow())
+        self.action_import = QAction("Load from Spatialite", self.iface.mainWindow())
         self.action_import.triggered.connect(self.import_from_spatialite)
-        self.action_export = QAction("Export to Spatialite", self.iface.mainWindow())
+        self.action_export = QAction("Save to Spatialite", self.iface.mainWindow())
         self.action_export.triggered.connect(self.export_to_spatialite)
         self.iface.addToolBarIcon(self.action_open)
         self.iface.addToolBarIcon(self.action_import)

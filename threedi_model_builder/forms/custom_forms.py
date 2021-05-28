@@ -1,9 +1,15 @@
 import threedi_model_builder.data_models as dm
 import threedi_model_builder.enumerators as en
-from threedi_model_builder.utils import find_point_nodes, find_linestring_nodes, connect_signal
 from functools import partial
 from enum import Enum
 from types import MappingProxyType
+from threedi_model_builder.utils import (
+    find_point_nodes,
+    find_linestring_nodes,
+    connect_signal,
+    is_optional,
+    optional_type,
+)
 from qgis.PyQt.QtCore import QObject
 from qgis.PyQt.QtWidgets import (
     QCheckBox,
@@ -12,7 +18,6 @@ from qgis.PyQt.QtWidgets import (
     QLineEdit,
     QSpinBox,
 )
-
 from qgis.core import NULL, QgsGeometry
 from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
 
@@ -46,13 +51,17 @@ class BaseForm(QObject):
         self.set_foreign_widgets()
         self.layer.editingStarted.connect(self.toggle_edit_mode)
         self.layer.editingStopped.connect(self.toggle_edit_mode)
+        self.dialog.active_form_signals.add((self.layer.editingStarted, self.toggle_edit_mode))
+        self.dialog.active_form_signals.add((self.layer.editingStopped, self.toggle_edit_mode))
 
     @property
     def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with identifier and value = data model feature."""
         fm_features = {}
         return fm_features
 
     def setup_form_widgets(self):
+        """Setting up all form widgets."""
         if self.feature is None:
             return
         if self.feature.id() < 0:
@@ -65,13 +74,12 @@ class BaseForm(QObject):
                     return
                 self.creation = True
                 self.handler.set_feature_values(self.feature)
-        self.populate_widgets()
-        self.populate_extra_widgets()
         self.toggle_edit_mode()
         self.connect_foreign_widgets()
         self.connect_custom_widgets()
 
     def set_foreign_widgets(self):
+        """Setting up widgets handling values from related models features."""
         main_fields = set(self.MODEL.__annotations__.keys())
         for related_cls, relations_number in self.handler.RELATED_MODELS.items():
             table_name = related_cls.__tablename__
@@ -92,6 +100,8 @@ class BaseForm(QObject):
                     self.foreign_widgets[widget_name] = (widget, related_cls, numerical_modifier, field_name)
 
     def toggle_edit_mode(self):
+        """Toggling editing for foreign widgets."""
+        self.populate_with_extra_widgets()
         editing_active = self.layer.isEditable()
         for widget, related_cls, numerical_modifier, field_name in self.foreign_widgets.values():
             widget.setEnabled(editing_active)
@@ -103,7 +113,6 @@ class BaseForm(QObject):
         start_end_modifier is used when there are multiple features edited in the form, for example two manholes in
         a pipe form. The modifier should be 1 for starting point and 2 for ending.
         """
-
         if data_model_cls is not None:
             field_name_prefix = data_model_cls.__tablename__ + "_"
             if start_end_modifier is not None:
@@ -118,6 +127,13 @@ class BaseForm(QObject):
             if widget is None:
                 # the filed might not be shown in the form
                 continue
+            if is_optional(field_type):
+                field_type = optional_type(field_type)
+            else:
+                if self.layer.isEditable():
+                    widget.setStyleSheet("background-color: rgb(255, 224, 178);")
+                else:
+                    widget.setStyleSheet("")
             if issubclass(field_type, Enum):
                 cbo_items = {t.name.capitalize().replace("_", " "): t.value for t in field_type}
                 self.populate_combo(widget, cbo_items)
@@ -140,6 +156,7 @@ class BaseForm(QObject):
             combo_widget.addItem(text, data)
 
     def set_widget_value(self, widget, value, var_type=None):
+        """Setting widget value."""
         if isinstance(widget, QLineEdit):
             widget.setText(str(value) if value is not None else "")
             widget.setCursorPosition(0)
@@ -161,6 +178,7 @@ class BaseForm(QObject):
             self.uc.log_warn(f"Unknown widget type: {widget.__class__.__name__}")
 
     def get_widget_value(self, widget):
+        """Getting value from widget."""
         if isinstance(widget, QLineEdit):
             value = widget.text()
         elif isinstance(widget, QCheckBox):
@@ -175,6 +193,7 @@ class BaseForm(QObject):
         return value
 
     def get_widget_editing_signal(self, widget):
+        """Getting widget signal that will be recognize as an editing indication."""
         if isinstance(widget, QLineEdit):
             signal = widget.textChanged
         elif isinstance(widget, QCheckBox):
@@ -182,13 +201,14 @@ class BaseForm(QObject):
         elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
             signal = widget.valueChanged
         elif isinstance(widget, QComboBox):
-            signal = widget.currentIndexChanged
+            signal = widget.activated
         else:
             self.uc.log_warn(f"Unknown widget type: {widget.__class__.__name__}")
             signal = None
         return signal
 
     def set_value_from_widget(self, widget, feature, model_cls, field_name):
+        """Setting value from widget to associated feature."""
         if feature:
             value = self.get_widget_value(widget)
             handler = self.layer_manager.model_handlers[model_cls]
@@ -199,7 +219,7 @@ class BaseForm(QObject):
             layer.updateFeature(feature)
 
     def connect_foreign_widgets(self):
-        """Connect widgets for other layers attributes."""
+        """Connect widget signals responsible for handling related layers attributes."""
         for widget_name, (widget, model_cls, numerical_modifier, field_name) in self.foreign_widgets.items():
             signal = self.get_widget_editing_signal(widget)
             try:
@@ -218,8 +238,8 @@ class BaseForm(QObject):
         """Connect other widgets."""
         pass
 
-    def populate_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+    def populate_with_extra_widgets(self):
+        """Populate widgets with addition of the other layers attributes."""
         pass
 
 
@@ -231,17 +251,20 @@ class FormWithNode(BaseForm):
 
     @property
     def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with identifier and value = data model feature."""
         fm_features = {
             (dm.ConnectionNode, None): self.connection_node,
         }
         return fm_features
 
     def setup_connection_node_on_edit(self):
+        """Setting up connection nodes during editing feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_feat = connection_node_handler.get_feat_by_id(self.feature["connection_node_id"])
         self.connection_node = connection_node_feat
 
     def setup_connection_node_on_creation(self):
+        """Setting up connection nodes during adding feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_layer = connection_node_handler.layer
         if not connection_node_layer.isEditable():
@@ -253,10 +276,11 @@ class FormWithNode(BaseForm):
         self.connection_node = connection_node_feat
 
     def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
         self.feature["connection_node_id"] = self.connection_node["id"]
 
-    def populate_extra_widgets(self):
+    def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
             self.setup_connection_node_on_creation()
@@ -278,6 +302,7 @@ class FormWithStartEndNode(BaseForm):
 
     @property
     def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with identifier and value = data model feature."""
         fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
@@ -285,6 +310,7 @@ class FormWithStartEndNode(BaseForm):
         return fm_features
 
     def setup_connection_nodes_on_edit(self):
+        """Setting up connection nodes during editing feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_start_id = self.feature["connection_node_start_id"]
         connection_node_end_id = self.feature["connection_node_end_id"]
@@ -292,6 +318,7 @@ class FormWithStartEndNode(BaseForm):
         self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_end_id)
 
     def setup_connection_nodes_on_creation(self):
+        """Setting up connection nodes during adding feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_layer = connection_node_handler.layer
         if not connection_node_layer.isEditable():
@@ -320,12 +347,12 @@ class FormWithStartEndNode(BaseForm):
             end_geom = QgsGeometry.fromPointXY(end_point)
             end_connection_node_feat = connection_node_handler.create_new_feature(geometry=end_geom)
             connection_node_layer.addFeature(end_connection_node_feat)
-
         # Assign features as an form instance attributes.
         self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
 
     def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
         self.feature["connection_node_start_id"] = self.connection_node_start["id"]
         self.feature["connection_node_end_id"] = self.connection_node_end["id"]
@@ -336,7 +363,7 @@ class FormWithStartEndNode(BaseForm):
         except KeyError:
             pass  # Some layers might not have code and display name
 
-    def populate_extra_widgets(self):
+    def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
             self.setup_connection_nodes_on_creation()
@@ -357,17 +384,20 @@ class FormWithCSDefinition(BaseForm):
 
     @property
     def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with identifier and value = data model feature."""
         fm_features = {
             (dm.CrossSectionDefinition, None):  self.cross_section_definition,
         }
         return fm_features
 
     def setup_cross_section_definition_on_edit(self):
+        """Setting up connection nodes during editing feature."""
         cross_section_def_handler = self.layer_manager.model_handlers[dm.CrossSectionDefinition]
         cross_section_def_feat = cross_section_def_handler.get_feat_by_id(self.feature["cross_section_definition_id"])
         self.cross_section_definition = cross_section_def_feat
 
     def setup_cross_section_definition_on_creation(self):
+        """Setting up connection nodes during adding feature."""
         cross_section_def_handler = self.layer_manager.model_handlers[dm.CrossSectionDefinition]
         cross_section_def_layer = cross_section_def_handler.layer
         cross_section_def_feat = cross_section_def_handler.create_new_feature()
@@ -379,10 +409,11 @@ class FormWithCSDefinition(BaseForm):
         self.cross_section_definition = cross_section_def_feat
 
     def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
         self.feature["cross_section_definition_id"] = self.cross_section_definition["id"]
 
-    def populate_extra_widgets(self):
+    def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
             self.setup_cross_section_definition_on_creation()
@@ -417,6 +448,7 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
 
     @property
     def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with identifier and value = data model feature."""
         fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
@@ -427,6 +459,7 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
         return fm_features
 
     def setup_manholes_on_edit(self):
+        """Setting up manholes during editing feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_start_id = self.feature["connection_node_start_id"]
         connection_node_end_id = self.feature["connection_node_end_id"]
@@ -436,6 +469,7 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
         self.manhole_end = connection_node_handler.get_manhole_feat_for_node_id(connection_node_end_id)
 
     def setup_manholes_on_creation(self):
+        """Setting up manholes during adding feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
         connection_node_layer = connection_node_handler.layer
@@ -490,6 +524,7 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
         self.manhole_end = end_manhole_feat
 
     def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
         code_display_name = f"{self.manhole_start['code']}-{self.manhole_end['code']}"
         self.feature["code"] = code_display_name
@@ -497,7 +532,7 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
         self.feature["invert_level_start_point"] = self.manhole_start["bottom_level"]
         self.feature["invert_level_end_point"] = self.manhole_end["bottom_level"]
 
-    def populate_extra_widgets(self):
+    def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
             self.setup_cross_section_definition_on_creation()
@@ -521,6 +556,7 @@ class WeirForm(FormWithCSDefinition, FormWithStartEndNode):
 
     @property
     def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with identifier and value = data model feature."""
         fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
@@ -529,9 +565,10 @@ class WeirForm(FormWithCSDefinition, FormWithStartEndNode):
         return fm_features
 
     def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
 
-    def populate_extra_widgets(self):
+    def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
             self.setup_cross_section_definition_on_creation()
@@ -555,6 +592,7 @@ class CulvertForm(FormWithCSDefinition, FormWithStartEndNode):
 
     @property
     def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with identifier and value = data model feature."""
         fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
@@ -563,9 +601,10 @@ class CulvertForm(FormWithCSDefinition, FormWithStartEndNode):
         return fm_features
 
     def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
 
-    def populate_extra_widgets(self):
+    def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
             self.setup_cross_section_definition_on_creation()
@@ -589,6 +628,7 @@ class OrificeForm(FormWithCSDefinition, FormWithStartEndNode):
 
     @property
     def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with identifier and value = data model feature."""
         fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
@@ -597,9 +637,10 @@ class OrificeForm(FormWithCSDefinition, FormWithStartEndNode):
         return fm_features
 
     def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
 
-    def populate_extra_widgets(self):
+    def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
             self.setup_cross_section_definition_on_creation()
@@ -633,6 +674,7 @@ class PumpstationMapForm(FormWithStartEndNode):
 
     @property
     def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with identifier and value = data model feature."""
         fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
@@ -641,6 +683,7 @@ class PumpstationMapForm(FormWithStartEndNode):
         return fm_features
 
     def setup_pumpstation_on_edit(self):
+        """Setting up pumpstation during editing feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         pumpstation_handler = self.layer_manager.model_handlers[dm.Pumpstation]
         connection_node_start_id = self.feature["connection_node_start_id"]
@@ -651,6 +694,7 @@ class PumpstationMapForm(FormWithStartEndNode):
         self.pumpstation = pumpstation_handler.get_feat_by_id(pumpstation_id)
 
     def setup_pumpstation_on_creation(self):
+        """Setting up pumpstation during adding feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         pumpstation_handler = self.layer_manager.model_handlers[dm.Pumpstation]
         connection_node_layer = connection_node_handler.layer
@@ -690,10 +734,11 @@ class PumpstationMapForm(FormWithStartEndNode):
         self.pumpstation = start_pump_feat
 
     def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
         self.feature["pumpstation_id"] = self.pumpstation["id"]
 
-    def populate_extra_widgets(self):
+    def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
             self.pumpstation = self.select_start_pumpstation()
