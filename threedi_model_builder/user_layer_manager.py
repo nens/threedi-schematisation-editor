@@ -2,14 +2,14 @@
 import os
 import threedi_model_builder.data_models as dm
 from types import MappingProxyType
-from qgis.core import QgsExpression, QgsFeatureRequest, QgsRasterLayer, QgsVectorLayerJoinInfo
+from qgis.core import QgsExpression, QgsFeatureRequest, QgsRasterLayer, QgsVectorLayerJoinInfo, QgsMapLayer
 from threedi_model_builder.user_layer_handlers import MODEL_HANDLERS
 from threedi_model_builder.user_layer_forms import LayerEditFormFactory
 from threedi_model_builder.utils import (
     gpkg_layer,
     get_form_ui_path,
     get_qml_style_path,
-    get_tree_group,
+    create_tree_group,
     add_layer_to_group,
     remove_group_with_children,
     remove_layer,
@@ -45,12 +45,19 @@ class LayersManager:
         self.form_factory = LayerEditFormFactory(self)
         self.model_handlers = {}
         self.layer_handlers = {}
-        self.loaded_rasters = {}
         self.active_form_signals = set()
 
     @property
+    def main_group(self):
+        """Main model group."""
+        model_file_dir = os.path.basename(os.path.dirname(self.model_gpkg_path))
+        model_name = os.path.basename(self.model_gpkg_path).rsplit(".", 1)[0]
+        model_group_name = f"3Di model: {model_file_dir}/{model_name}"
+        return model_group_name
+
+    @property
     def group_names(self):
-        """Names of User Layer groups"""
+        """Names of User Layer groups."""
         names = tuple(group_name for group_name, model_elements in self.VECTOR_GROUPS + self.RASTER_GROUPS)
         return names
 
@@ -66,16 +73,15 @@ class LayersManager:
     def create_groups(self):
         """Creating all User Layers groups."""
         self.remove_groups()
+        main_group = create_tree_group(self.main_group)
         for group_name in self.group_names:
-            get_tree_group(group_name, create=True)
+            grp = create_tree_group(group_name, root=main_group)
+            grp.setExpanded(False)
 
     def remove_groups(self):
         """Removing all User Layers groups."""
         self.remove_loaded_layers()
-        for group_name in self.group_names:
-            grp = get_tree_group(group_name, create=False)
-            if grp:
-                remove_group_with_children(group_name)
+        remove_group_with_children(self.main_group)
 
     def get_layer_data_model(self, layer):
         """Return data model class for given layer."""
@@ -106,6 +112,7 @@ class LayersManager:
         dm_groups = self.data_model_groups
         group_name = dm_groups[model_cls]
         add_layer_to_group(group_name, layer, bottom=True)
+        layer.setFlags(QgsMapLayer.Searchable | QgsMapLayer.Identifiable)
         handler_cls = MODEL_HANDLERS[model_cls]
         handler = handler_cls(self, layer)
         handler.connect_handler_signals()
@@ -148,13 +155,18 @@ class LayersManager:
         self.load_raster_layers()
         self.add_joins()
 
-    def remove_loaded_layers(self):
+    def remove_loaded_layers(self, dry_remove=False):
         """Removing loaded vector layers."""
         for model_cls, layer_handler in list(self.model_handlers.items()):
-            layer_handler.disconnect_handler_signals()
-            layer = layer_handler.layer
-            remove_layer(layer)
-            del self.model_handlers[model_cls]
+            try:
+                layer_handler.disconnect_handler_signals()
+                layer = layer_handler.layer
+                if dry_remove is False:
+                    remove_layer(layer)
+            except RuntimeError:
+                continue
+        self.model_handlers.clear()
+        self.layer_handlers.clear()
 
     def add_joins(self):
         """Setting joins between layers."""
