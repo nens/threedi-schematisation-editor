@@ -1,5 +1,6 @@
 # Copyright (C) 2021 by Lutra Consulting
 from qgis.PyQt.QtWidgets import QAction
+from qgis.core import QgsProject
 from threedi_model_builder.communication import UICommunication
 from threedi_model_builder.user_layer_manager import LayersManager
 from threedi_model_builder.conversion import ModelDataConverter
@@ -8,6 +9,7 @@ from threedi_model_builder.utils import (
     create_empty_model,
     get_filepath,
     remove_user_layers,
+    check_enable_macros_option,
 )
 
 
@@ -27,14 +29,16 @@ class ThreediModelBuilderPlugin:
         self.model_gpkg = None
         self.layer_manager = None
         self.form_factory = None
+        self.project = QgsProject.instance()
+        self.project.removeAll.connect(self.on_project_close)
 
     def initGui(self):
         self.action_open = QAction("Open 3Di Geopackage", self.iface.mainWindow())
         self.action_open.triggered.connect(self.open_model_from_geopackage)
         self.action_import = QAction("Load from Spatialite", self.iface.mainWindow())
-        self.action_import.triggered.connect(self.import_from_spatialite)
+        self.action_import.triggered.connect(self.load_from_spatialite)
         self.action_export = QAction("Save to Spatialite", self.iface.mainWindow())
-        self.action_export.triggered.connect(self.export_to_spatialite)
+        self.action_export.triggered.connect(self.save_to_spatialite)
         self.iface.addToolBarIcon(self.action_open)
         self.iface.addToolBarIcon(self.action_import)
         self.iface.addToolBarIcon(self.action_export)
@@ -46,6 +50,13 @@ class ThreediModelBuilderPlugin:
         del self.action_import
         self.iface.removeToolBarIcon(self.action_export)
         del self.action_export
+
+    def check_macros_status(self):
+        macros_status = check_enable_macros_option()
+        if macros_status != "Always":
+            msg = f"Required 'Macros enabled' option is set to '{macros_status}'. " \
+                  "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable macros)."
+            self.uc.bar_warn(msg, dur=10)
 
     def select_user_layers_geopackage(self):
         name_filter = "3Di User Layers (*.gpkg *.GPKG)"
@@ -67,9 +78,10 @@ class ThreediModelBuilderPlugin:
         self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
         self.layer_manager.load_all_layers()
         self.uc.bar_info("3Di User Layers registered!")
+        self.check_macros_status()
 
-    def import_from_spatialite(self):
-        src_sqlite = self.select_sqlite_database(title="Select database to import features from")
+    def load_from_spatialite(self):
+        src_sqlite = self.select_sqlite_database(title="Select database to load features from")
         if not src_sqlite:
             return
         if self.layer_manager is not None:
@@ -81,15 +93,27 @@ class ThreediModelBuilderPlugin:
         self.model_gpkg = dst_gpkg
         self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
         self.layer_manager.load_all_layers()
-        self.uc.show_info("Import finished!")
+        self.uc.show_info("Loading from Spatialite finished!")
+        self.check_macros_status()
 
-    def export_to_spatialite(self):
+    def save_to_spatialite(self):
         if not self.model_gpkg:
             return
-        dst_sqlite = self.select_sqlite_database(title="Select database to export features to")
+        dst_sqlite = self.select_sqlite_database(title="Select database to save features to")
         if not dst_sqlite:
             return
         converter = ModelDataConverter(dst_sqlite, self.model_gpkg)
         converter.trim_sqlite_targets()
         converter.export_all_model_data()
-        self.uc.show_info("Export finished!")
+        self.uc.show_info("Saving to Spatialite finished!")
+
+    def on_project_close(self):
+        if self.layer_manager is None:
+            return
+        title = "Save to Spatialite?"
+        question = "Would you like to save model to Spatialite before closing project?"
+        answer = self.uc.ask(None, title, question)
+        if answer is True:
+            self.save_to_spatialite()
+        self.layer_manager.remove_loaded_layers(dry_remove=True)
+        self.layer_manager = None

@@ -147,22 +147,28 @@ def get_form_ui_path(table_name):
     return None
 
 
-def get_tree_group(name, create=True, insert_at_top=False):
+def create_tree_group(name, insert_at_top=False, root=None):
+    """Creating layer tree group with given name."""
+    root = QgsProject.instance().layerTreeRoot() if root is None else root
+    grp = QgsLayerTreeGroup(name)
+    root.insertChildNode(0 if insert_at_top else -1, grp)
+    return grp
+
+
+def get_tree_group(name):
     """Getting layer tree group with given name."""
     root = QgsProject.instance().layerTreeRoot()
     grp = root.findGroup(name)
-    if not grp and create:
-        grp = QgsLayerTreeGroup(name)
-        root.insertChildNode(0 if insert_at_top else -1, grp)
     return grp
 
 
 def add_layer_to_group(name, layer, bottom=False):
     """Adding layer to the specific group."""
-    grp = QgsProject.instance().layerTreeRoot().findGroup(name)
+    project = QgsProject.instance()
+    grp = project.layerTreeRoot().findGroup(name)
     if not grp:
         return
-    QgsProject.instance().addMapLayer(layer, False)
+    project.addMapLayer(layer, False)
     grp.insertChildNode(-1 if bottom else 0, QgsLayerTreeLayer(layer))
 
 
@@ -173,11 +179,11 @@ def remove_layer(layer):
 
 def remove_group_with_children(name):
     """Removing group with all layers from the map canvas."""
-    root = QgsProject.instance().layerTreeRoot()
+    project = QgsProject.instance()
+    root = project.layerTreeRoot()
     group = root.findGroup(name)
     if group is not None:
-        for child in group.children():
-            QgsProject.instance().removeMapLayer(child.layerId())
+        group.removeAllChildren()
         root.removeChildNode(group)
 
 
@@ -328,6 +334,12 @@ def count_vertices(geometry):
     """Returning number of vertices within geometry."""
     c = sum(1 for _ in geometry.vertices())
     return c
+
+
+def check_enable_macros_option():
+    settings = QSettings()
+    option = settings.value("/qgis/enableMacros", type=str)
+    return option
 
 
 def get_qgis(qgis_build_path="C:/OSGeo4W64/apps/qgis", qgis_proj_path="C:/OSGeo4W64/share/proj"):

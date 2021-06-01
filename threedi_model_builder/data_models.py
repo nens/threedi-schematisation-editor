@@ -167,7 +167,7 @@ class Pumpstation(ModelObject):
 @dataclass
 class PumpstationMap(ModelObject):
     __tablename__ = "pumpstation_map"
-    __layername__ = "Pumpstation map"
+    __layername__ = "Pumpstation (with end node)"
     __geometrytype__ = GeometryType.Linestring
 
     SQLITE_SOURCES = ("v2_pumpstation_view",)
