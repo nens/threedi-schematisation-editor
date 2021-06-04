@@ -1,16 +1,16 @@
 # Copyright (C) 2021 by Lutra Consulting
 from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtWidgets import QMessageBox, QInputDialog
+from qgis.PyQt.QtWidgets import QMessageBox, QInputDialog, QProgressBar
 from qgis.core import Qgis, QgsMessageLog
 
 
-class UICommunication(object):
+class UICommunication:
     """Class with methods for handling messages using QGIS interface."""
 
-    def __init__(self, iface, context):
+    def __init__(self, iface=None, context=None):
         self.iface = iface
         self.context = context
-        self.message_bar = self.iface.messageBar()
+        self.message_bar = self.iface.messageBar() if iface is not None else None
 
     def show_info(self, msg, parent=None, context=None):
         """Showing info dialog."""
@@ -78,6 +78,8 @@ class UICommunication(object):
 
     def pick_item(self, title, message, parent=None, *items):
         """Getting item from list of items."""
+        if self.iface is None:
+            return None
         parent = parent if parent is not None else self.iface.mainWindow()
         item, accept = QInputDialog.getItem(parent, title, message, items, editable=False)
         if accept is False:
@@ -95,3 +97,25 @@ class UICommunication(object):
     def log_info(self, msg):
         """Log the info message to QGIS logs."""
         self.log_msg(msg, level=Qgis.Info)
+
+    def progress_bar(self, msg, minimum=0, maximum=0, init_value=0, clear_msg_bar=False):
+        """Setting progress bar."""
+        if self.iface is None:
+            return None
+        if clear_msg_bar:
+            self.iface.messageBar().clearWidgets()
+        pmb = self.iface.messageBar().createMessage(msg)
+        pb = QProgressBar()
+        pb.setMinimum(minimum)
+        pb.setMaximum(maximum)
+        pb.setValue(init_value)
+        pb.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        pmb.layout().addWidget(pb)
+        self.iface.messageBar().pushWidget(pmb, Qgis.Info)
+        return pb
+
+    def clear_message_bar(self):
+        """Clearing message bar."""
+        if self.iface is None:
+            return None
+        self.iface.messageBar().clearWidgets()

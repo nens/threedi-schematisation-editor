@@ -245,6 +245,7 @@ class BaseForm(QObject):
 
 class FormWithNode(BaseForm):
     """Base edit form for user layers with a single connection node."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
         self.connection_node = None
@@ -295,6 +296,7 @@ class FormWithNode(BaseForm):
 
 class FormWithStartEndNode(BaseForm):
     """Base edit form for user layers start and end connection nodes."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
         self.connection_node_start = None
@@ -330,13 +332,15 @@ class FormWithStartEndNode(BaseForm):
             # Create and add ending points
             end_geom = QgsGeometry.fromPointXY(end_point)
             end_connection_node_feat = connection_node_handler.create_new_feature_from_template(
-                start_connection_node_feat, geometry=end_geom)
+                start_connection_node_feat, geometry=end_geom
+            )
             connection_node_layer.addFeature(end_connection_node_feat)
         elif start_connection_node_feat is None and end_connection_node_feat is not None:
             # Create and add starting points
             start_geom = QgsGeometry.fromPointXY(start_point)
             start_connection_node_feat = connection_node_handler.create_new_feature_from_template(
-                end_connection_node_feat, geometry=start_geom)
+                end_connection_node_feat, geometry=start_geom
+            )
             connection_node_layer.addFeature(start_connection_node_feat)
         elif start_connection_node_feat is None and end_connection_node_feat is None:
             # Create and add starting points
@@ -378,6 +382,7 @@ class FormWithStartEndNode(BaseForm):
 
 class FormWithCSDefinition(BaseForm):
     """Base edit form for user layers with Cross Section Definition."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
         self.cross_section_definition = None
@@ -386,7 +391,7 @@ class FormWithCSDefinition(BaseForm):
     def foreign_models_features(self):
         """Property returning dictionary where key = data model class with identifier and value = data model feature."""
         fm_features = {
-            (dm.CrossSectionDefinition, None):  self.cross_section_definition,
+            (dm.CrossSectionDefinition, None): self.cross_section_definition,
         }
         return fm_features
 
@@ -428,11 +433,13 @@ class FormWithCSDefinition(BaseForm):
 
 class ConnectionNodeForm(BaseForm):
     """Connection node edit form logic."""
+
     MODEL = dm.ConnectionNode
 
 
 class ManholeForm(FormWithNode):
     """Manhole user layer edit form logic."""
+
     MODEL = dm.Manhole
 
 
@@ -487,7 +494,8 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
             # Create and add ending points
             end_geom = QgsGeometry.fromPointXY(end_point)
             end_manhole_feat, end_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
-                end_geom, template_feat=start_manhole_feat)
+                end_geom, template_feat=start_manhole_feat
+            )
             connection_node_layer.addFeature(end_connection_node_feat)
             manhole_layer.addFeature(end_manhole_feat)
         elif start_manhole_feat is None and end_manhole_feat is not None:
@@ -496,14 +504,16 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
             # Create and add starting points
             start_geom = QgsGeometry.fromPointXY(start_point)
             start_manhole_feat, start_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
-                start_geom, template_feat=end_manhole_feat)
+                start_geom, template_feat=end_manhole_feat
+            )
             connection_node_layer.addFeature(start_connection_node_feat)
             manhole_layer.addFeature(start_manhole_feat)
         elif start_manhole_feat is None and end_manhole_feat is None:
             # Create and add starting points
             start_geom = QgsGeometry.fromPointXY(start_point)
             start_manhole_feat, start_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
-                start_geom)
+                start_geom
+            )
             connection_node_layer.addFeature(start_connection_node_feat)
             manhole_layer.addFeature(start_manhole_feat)
             # Create and add ending points
@@ -711,7 +721,8 @@ class PumpstationMapForm(FormWithStartEndNode):
             start_geom = QgsGeometry.fromPointXY(start_point)
             if start_connection_node_feat is None:
                 start_pump_feat, start_connection_node_feat = pumpstation_handler.create_pump_with_connection_node(
-                    start_geom)
+                    start_geom
+                )
                 connection_node_layer.addFeature(start_connection_node_feat)
             else:
                 start_pump_feat = pumpstation_handler.create_new_feature(start_geom)
@@ -719,14 +730,16 @@ class PumpstationMapForm(FormWithStartEndNode):
             if end_connection_node_feat is None:
                 end_geom = QgsGeometry.fromPointXY(end_point)
                 end_connection_node_feat = connection_node_handler.create_new_feature_from_template(
-                    start_connection_node_feat, geometry=end_geom)
+                    start_connection_node_feat, geometry=end_geom
+                )
                 connection_node_layer.addFeature(end_connection_node_feat)
             pumpstation_layer.addFeature(start_pump_feat)
         else:
             if end_connection_node_feat is None:
                 end_geom = QgsGeometry.fromPointXY(end_point)
                 end_connection_node_feat = connection_node_handler.create_new_feature_from_template(
-                    start_connection_node_feat, geometry=end_geom)
+                    start_connection_node_feat, geometry=end_geom
+                )
                 connection_node_layer.addFeature(end_connection_node_feat)
         # Assign features as an form instance attributes.
         self.connection_node_start = start_connection_node_feat
