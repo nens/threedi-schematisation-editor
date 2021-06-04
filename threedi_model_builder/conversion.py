@@ -7,6 +7,7 @@ from threedi_model_builder.utils import (
     vector_layer_factory,
     cast_if_bool,
 )
+from threedi_model_builder.communication import UICommunication
 from operator import itemgetter
 from collections import OrderedDict, defaultdict
 from qgis.core import (
@@ -18,19 +19,36 @@ from qgis.core import (
     QgsCoordinateTransform,
     QgsGeometry,
 )
+from qgis.PyQt.QtCore import QCoreApplication
 
 
 class ModelDataConverter:
     """Class with methods Spatialite <==> GeoPackage conversion of the 3Di model layers."""
 
-    def __init__(self, src_sqlite, dst_gpkg, use_source_epsg=True):
+    SUPPORTED_SCHEMA_VERSION = 174
+
+    def __init__(self, src_sqlite, dst_gpkg, use_source_epsg=True, user_communication=None):
         self.src_sqlite = src_sqlite
         self.dst_gpkg = dst_gpkg
         self.epsg_code = 4326
         self.all_models = dm.ALL_MODELS[:]
         self.timeseries_rawdata = OrderedDict()
+        self.uc = user_communication if user_communication is not None else UICommunication(context="3Di Model Builder")
         if use_source_epsg is True:
             self.set_source_epsg()
+
+    @staticmethod
+    def spatialite_schema_version(sqlite_path):
+        """Getting Spatialite 3Di model database schema version."""
+        south_migration_history_table = sqlite_layer(sqlite_path, "south_migrationhistory", geom_column=None)
+        if not south_migration_history_table.isValid():
+            return None
+        id_idx = south_migration_history_table.fields().indexFromName("id")
+        try:
+            spatialite_schema_id = max(south_migration_history_table.uniqueValues(id_idx)) + 1
+        except ValueError:
+            spatialite_schema_id = 1
+        return spatialite_schema_id
 
     def set_source_epsg(self):
         """Setting source EPSG code from 3Di model settings table."""
@@ -73,7 +91,9 @@ class ModelDataConverter:
 
             def geometry_transform(geometry):
                 geometry.transform(transformation)
+
         else:
+
             def geometry_transform(geometry):
                 pass
 
@@ -83,9 +103,12 @@ class ModelDataConverter:
         dst_field_names = {f.name() for f in dst_fields}
         skip_geometry = dst_layer.geometryType() == QgsWkbTypes.GeometryType.NullGeometry
         if skip_geometry:
+
             def transfer_geometry(source_feat, destination_feat):
                 pass
+
         else:
+
             def transfer_geometry(source_feat, destination_feat):
                 src_geom = source_feat.geometry()
                 new_geom = QgsGeometry(src_geom)
@@ -167,8 +190,9 @@ class ModelDataConverter:
         elif src_layer_name == dm.Pumpstation.__layername__:
             map_table = dm.PumpstationMap.__tablename__
             map_layer = gpkg_layer(self.dst_gpkg, map_table)
-            connections_ids = {feat["pumpstation_id"]: feat["connection_node_end_id"] for feat in
-                               map_layer.getFeatures()}
+            connections_ids = {
+                feat["pumpstation_id"]: feat["connection_node_end_id"] for feat in map_layer.getFeatures()
+            }
             for feat in new_feats:
                 feat_id = feat["id"]
                 try:
@@ -191,8 +215,9 @@ class ModelDataConverter:
         impervious_surface_layer = gpkg_layer(self.dst_gpkg, dm.ImperviousSurface.__tablename__)
         surface_layer = gpkg_layer(self.dst_gpkg, dm.Surface.__tablename__)
         connection_node_points = {f["id"]: f.geometry().asPoint() for f in connection_node_layer.getFeatures()}
-        impervious_surface_points = {f["id"]: f.geometry().centroid().asPoint() for f in
-                                     impervious_surface_layer.getFeatures()}
+        impervious_surface_points = {
+            f["id"]: f.geometry().centroid().asPoint() for f in impervious_surface_layer.getFeatures()
+        }
         surface_points = {f["id"]: f.geometry().centroid().asPoint() for f in surface_layer.getFeatures()}
         impervious_surface_map_layer = gpkg_layer(self.dst_gpkg, dm.ImperviousSurfaceMap.__tablename__)
         surface_map_layer = gpkg_layer(self.dst_gpkg, dm.SurfaceMap.__tablename__)
@@ -200,12 +225,12 @@ class ModelDataConverter:
         for feat in impervious_surface_map_layer.getFeatures():
             fid, node_id, surface_id = feat.id(), feat["connection_node_id"], feat["impervious_surface_id"]
             link_geom = QgsGeometry.fromPolylineXY(
-                [impervious_surface_points[surface_id], connection_node_points[node_id]])
+                [impervious_surface_points[surface_id], connection_node_points[node_id]]
+            )
             impervious_surface_map_geoms[fid] = link_geom
         for feat in surface_map_layer.getFeatures():
             fid, node_id, surface_id = feat.id(), feat["connection_node_id"], feat["surface_id"]
-            link_geom = QgsGeometry.fromPolylineXY(
-                [surface_points[surface_id], connection_node_points[node_id]])
+            link_geom = QgsGeometry.fromPolylineXY([surface_points[surface_id], connection_node_points[node_id]])
             surface_map_geoms[fid] = link_geom
         impervious_surface_map_layer.startEditing()
         for fid, link_geom in impervious_surface_map_geoms.items():
@@ -240,19 +265,53 @@ class ModelDataConverter:
             dst_layer.addFeatures(new_feats)
             dst_layer.commitChanges()
 
+    def src_dst_feat_count(self, annotated_model_csl):
+        """Counting features in data model source and destination layers."""
+        src_feat_count = 0
+        for src_table in annotated_model_csl.SQLITE_TARGETS:
+            src_target_layer = sqlite_layer(self.src_sqlite, src_table)
+            if not src_target_layer.isValid():
+                src_target_layer = sqlite_layer(self.src_sqlite, src_table, geom_column=None)
+            src_feat_count += src_target_layer.featureCount()
+        dst_table = annotated_model_csl.__tablename__
+        dst_layer = gpkg_layer(self.dst_gpkg, dst_table)
+        dst_feat_count = dst_layer.featureCount()
+        return src_feat_count, dst_feat_count
+
     def import_all_model_data(self):
         """Converting all Spatialite layers into GeoPackage User Layers."""
         self.timeseries_rawdata.clear()
-        for data_model_cls in self.all_models:
-            if data_model_cls == dm.Timeseries:
-                continue
-            print(f"Processing data for {data_model_cls.__layername__}...")
+        models_to_import = list(self.all_models)
+        models_to_import.remove(dm.Timeseries)
+        number_of_steps = len(models_to_import)
+        msg = "Loading data from Spatialite..."
+        self.uc.progress_bar(msg, 0, number_of_steps, 0, clear_msg_bar=True)
+        QCoreApplication.processEvents()
+        incomplete_imports = OrderedDict()
+        for i, data_model_cls in enumerate(models_to_import):
+            msg = f'Loading "{data_model_cls.__layername__}" layer data...'
+            self.uc.progress_bar(msg, 0, number_of_steps, i, clear_msg_bar=True)
+            QCoreApplication.processEvents()
             self.import_model_data(data_model_cls)
+            sqlite_feat_count, gpkg_feat_count = self.src_dst_feat_count(data_model_cls)
+            if sqlite_feat_count != gpkg_feat_count:
+                missing = sqlite_feat_count - gpkg_feat_count
+                incomplete_imports[data_model_cls] = (sqlite_feat_count, gpkg_feat_count, missing)
         # Adding geometry between surfaces and connection nodes
-        print(f"Adding links between surfaces and connection nodes...")
+        msg = f"Adding links between surfaces and connection nodes..."
+        self.uc.progress_bar(msg, 0, number_of_steps, number_of_steps, clear_msg_bar=True)
+        QCoreApplication.processEvents()
         self.add_surface_map_geometries()
+        self.uc.clear_message_bar()
         # TODO: Uncomment line below after finishing forms implementation
         # self.process_timeseries_rawdata()
+        if incomplete_imports:
+            warn = "Incomplete import:\n\n"
+            warn += "\n".join(
+                f"{model_cls.__layername__}: {gpkg_fc} out of {sqlite_fc} features imported ({miss_no} missing)"
+                for model_cls, (sqlite_fc, gpkg_fc, miss_no) in incomplete_imports.items()
+            )
+            self.uc.show_warn(warn)
 
     def export_model_data(self, annotated_model_csl):
         """Converting GeoPackage User Layer into Spatialite layer based on model data class."""
@@ -297,8 +356,28 @@ class ModelDataConverter:
         """Converting all GeoPackage User Layers into Spatialite layers."""
         # TODO: Uncomment line below after finishing forms implementation
         # self.recreate_timeseries_rawdata()
-        for data_model_cls in self.all_models:
-            if data_model_cls == dm.Timeseries or data_model_cls == dm.PumpstationMap:
-                continue
-            print(f"Processing data for {data_model_cls.__layername__}...")
+        models_to_export = list(self.all_models)
+        models_to_export.remove(dm.Timeseries)
+        models_to_export.remove(dm.PumpstationMap)
+        number_of_steps = len(models_to_export)
+        msg = "Saving data into Spatialite..."
+        self.uc.progress_bar(msg, 0, number_of_steps, 0, clear_msg_bar=True)
+        QCoreApplication.processEvents()
+        incomplete_exports = OrderedDict()
+        for i, data_model_cls in enumerate(models_to_export):
+            msg = f'Saving "{data_model_cls.__layername__}" layer data...'
+            self.uc.progress_bar(msg, 0, number_of_steps, i, clear_msg_bar=True)
+            QCoreApplication.processEvents()
             self.export_model_data(data_model_cls)
+            sqlite_feat_count, gpkg_feat_count = self.src_dst_feat_count(data_model_cls)
+            if gpkg_feat_count != sqlite_feat_count:
+                missing = gpkg_feat_count - sqlite_feat_count
+                incomplete_exports[data_model_cls] = (sqlite_feat_count, gpkg_feat_count, missing)
+        self.uc.clear_message_bar()
+        if incomplete_exports:
+            warn = "Incomplete export:\n\n"
+            warn += "\n".join(
+                f"{model_cls.__layername__}: {sqlite_fc} out of {gpkg_fc} features exported ({miss_no} missing)"
+                for model_cls, (sqlite_fc, gpkg_fc, miss_no) in incomplete_exports.items()
+            )
+            self.uc.show_warn(warn)

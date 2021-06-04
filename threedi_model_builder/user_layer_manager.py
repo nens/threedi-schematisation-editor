@@ -27,16 +27,18 @@ class LayersManager:
     )
     RASTER_GROUPS = (("Model rasters", dm.ELEMENTS_WITH_RASTERS),)
 
-    LAYER_JOINS = MappingProxyType({
-        dm.CrossSectionLocation: {
-            dm.CrossSectionDefinition: {
-                "target_field_name": "cross_section_definition_id",
-                "join_field_name": "id",
-                "prefix": "cross_section_definition_",
-                "join_field_names_subset": ("code", "width", "height", "shape")
+    LAYER_JOINS = MappingProxyType(
+        {
+            dm.CrossSectionLocation: {
+                dm.CrossSectionDefinition: {
+                    "target_field_name": "cross_section_definition_id",
+                    "join_field_name": "id",
+                    "prefix": "cross_section_definition_",
+                    "join_field_names_subset": ("code", "width", "height", "shape"),
+                },
             },
-        },
-    })
+        }
+    )
 
     def __init__(self, iface, user_communication, model_gpkg_path):
         self.iface = iface

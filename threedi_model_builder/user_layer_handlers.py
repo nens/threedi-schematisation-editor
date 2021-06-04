@@ -27,6 +27,7 @@ from qgis.PyQt.QtCore import QTimer
 
 class UserLayerHandler:
     """Base handler class for 3Di User Layer that adds extra logic to the standard QGIS layer actions."""
+
     MODEL = dm.ModelObject
     RELATED_MODELS = MappingProxyType({})  # model_cls: number of model instances
     DEFAULTS = MappingProxyType({})
@@ -61,8 +62,11 @@ class UserLayerHandler:
     @property
     def other_1d_handlers(self):
         """Getting other handlers within 1D group."""
-        other_1d_handlers = [self.layer_manager.model_handlers[model_cls] for model_cls in dm.MODEL_1D_ELEMENTS
-                             if model_cls != self.MODEL]
+        other_1d_handlers = [
+            self.layer_manager.model_handlers[model_cls]
+            for model_cls in dm.MODEL_1D_ELEMENTS
+            if model_cls != self.MODEL
+        ]
         return other_1d_handlers
 
     @property

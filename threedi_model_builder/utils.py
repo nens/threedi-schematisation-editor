@@ -355,6 +355,7 @@ def get_qgis(qgis_build_path="C:/OSGeo4W64/apps/qgis", qgis_proj_path="C:/OSGeo4
     sys.path.insert(1, qgis_plugins_path)
 
     from qgis.core import QgsApplication
+
     qgis_app = QgsApplication([b"test"], False)
     qgis_app.initQgis()
     return qgis_app

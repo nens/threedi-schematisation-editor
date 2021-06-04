@@ -54,8 +54,10 @@ class ThreediModelBuilderPlugin:
     def check_macros_status(self):
         macros_status = check_enable_macros_option()
         if macros_status != "Always":
-            msg = f"Required 'Macros enabled' option is set to '{macros_status}'. " \
-                  "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable macros)."
+            msg = (
+                f"Required 'Macros enabled' option is set to '{macros_status}'. "
+                "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable macros)."
+            )
             self.uc.bar_warn(msg, dur=10)
 
     def select_user_layers_geopackage(self):
@@ -84,16 +86,21 @@ class ThreediModelBuilderPlugin:
         src_sqlite = self.select_sqlite_database(title="Select database to load features from")
         if not src_sqlite:
             return
+        schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
+        if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
+            warn_msg = f"Loading from the Spatialite canceled - schema version '{schema_version}' is not supported!"
+            self.uc.show_warn(warn_msg)
+            return
         if self.layer_manager is not None:
             self.layer_manager.remove_groups()
         dst_gpkg = src_sqlite.replace(".sqlite", ".gpkg")
-        converter = ModelDataConverter(src_sqlite, dst_gpkg)
+        converter = ModelDataConverter(src_sqlite, dst_gpkg, user_communication=self.uc)
         converter.create_empty_user_layers()
         converter.import_all_model_data()
         self.model_gpkg = dst_gpkg
         self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
         self.layer_manager.load_all_layers()
-        self.uc.show_info("Loading from Spatialite finished!")
+        self.uc.show_info("Loading from the Spatialite finished!")
         self.check_macros_status()
 
     def save_to_spatialite(self):
@@ -102,10 +109,15 @@ class ThreediModelBuilderPlugin:
         dst_sqlite = self.select_sqlite_database(title="Select database to save features to")
         if not dst_sqlite:
             return
-        converter = ModelDataConverter(dst_sqlite, self.model_gpkg)
+        schema_version = ModelDataConverter.spatialite_schema_version(dst_sqlite)
+        if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
+            warn_msg = f"Saving to the Spatialite canceled - schema version '{schema_version}' is not supported!"
+            self.uc.show_warn(warn_msg)
+            return
+        converter = ModelDataConverter(dst_sqlite, self.model_gpkg, user_communication=self.uc)
         converter.trim_sqlite_targets()
         converter.export_all_model_data()
-        self.uc.show_info("Saving to Spatialite finished!")
+        self.uc.show_info("Saving to the Spatialite finished!")
 
     def on_project_close(self):
         if self.layer_manager is None:
