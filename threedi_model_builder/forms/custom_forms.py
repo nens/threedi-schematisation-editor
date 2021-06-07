@@ -436,6 +436,10 @@ class ConnectionNodeForm(BaseForm):
 
     MODEL = dm.ConnectionNode
 
+    def populate_with_extra_widgets(self):
+        # Populate widgets based on features attributes
+        self.populate_widgets()
+
 
 class ManholeForm(FormWithNode):
     """Manhole user layer edit form logic."""

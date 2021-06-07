@@ -289,16 +289,16 @@ def find_point_nodes(point, node_layer, tolerance=0.0000001, allow_multiple=Fals
     """Function that finds features from given layer that are located within tolerance distance from given point."""
     if not locator:
         locator = QgsPointLocator(node_layer)
-    connection_node_feats = []
-    connection_node_feat = None
+    node_feats = []
+    node_feat = None
     matches = locator.verticesInRect(point, tolerance)
     for match in matches:
         match_layer = match.layer()
         if match_layer:
             node_fid = match.featureId()
-            connection_node_feat = match_layer.getFeature(node_fid)
-            connection_node_feats.append(connection_node_feat)
-    return connection_node_feats if allow_multiple else connection_node_feat
+            node_feat = match_layer.getFeature(node_fid)
+            node_feats.append(node_feat)
+    return node_feats if allow_multiple else node_feat
 
 
 def find_linestring_nodes(linestring, node_layer, tolerance=0.0000001, allow_multiple=False, locator=None):
@@ -308,26 +308,26 @@ def find_linestring_nodes(linestring, node_layer, tolerance=0.0000001, allow_mul
     if not locator:
         locator = QgsPointLocator(node_layer)
     feats_at_start, feats_at_end = [], []
-    connection_node_start_feat, connection_node_end_feat = None, None
+    node_start_feat, node_end_feat = None, None
     start_point, end_point = linestring[0], linestring[-1]
     start_matches = locator.verticesInRect(start_point, tolerance)
     end_matches = locator.verticesInRect(end_point, tolerance)
     for start_match in start_matches:
         start_match_layer = start_match.layer()
         if start_match_layer:
-            start_node_fid = start_match.featureId()
-            connection_node_start_feat = start_match_layer.getFeature(start_node_fid)
-            feats_at_start.append(connection_node_start_feat)
+            node_start_fid = start_match.featureId()
+            node_start_feat = start_match_layer.getFeature(node_start_fid)
+            feats_at_start.append(node_start_feat)
     for end_match in end_matches:
         end_match_layer = end_match.layer()
         if end_match_layer:
-            end_node_fid = end_match.featureId()
-            connection_node_end_feat = end_match_layer.getFeature(end_node_fid)
-            feats_at_end.append(connection_node_end_feat)
+            node_end_fid = end_match.featureId()
+            node_end_feat = end_match_layer.getFeature(node_end_fid)
+            feats_at_end.append(node_end_feat)
     if allow_multiple:
         return feats_at_start, feats_at_end
     else:
-        return connection_node_start_feat, connection_node_end_feat
+        return node_start_feat, node_end_feat
 
 
 def count_vertices(geometry):

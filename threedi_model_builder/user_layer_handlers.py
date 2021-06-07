@@ -11,7 +11,7 @@ from threedi_model_builder.enumerators import (
     PipeMaterial,
     PumpType,
 )
-from threedi_model_builder.utils import connect_signal, disconnect_signal, count_vertices
+from threedi_model_builder.utils import connect_signal, disconnect_signal, count_vertices, find_point_nodes
 from types import MappingProxyType
 from functools import partial
 from qgis.core import (
@@ -331,6 +331,28 @@ class PumpstationHandler(UserLayerHandler):
             "capacity": 10.0,
         }
     )
+
+    def connect_additional_signals(self):
+        """Connecting signals to actions specific for the particular layers."""
+        self.layer.featureAdded.connect(self.adjust_manhole_indicator)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to actions specific for the particular layers."""
+        self.layer.featureAdded.disconnect(self.adjust_manhole_indicator)
+
+    def adjust_manhole_indicator(self, feat_id):
+        """Adjusting underlying manhole attributes."""
+        feat = self.layer.getFeature(feat_id)
+        point = feat.geometry().asPoint()
+        manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
+        manhole_layer = manhole_handler.layer
+        manhole_feat = find_point_nodes(point, manhole_layer)
+        if manhole_feat is not None:
+            manhole_fid = manhole_feat.id()
+            if not manhole_layer.isEditable():
+                manhole_layer.startEditing()
+            manhole_indicator_idx = manhole_layer.fields().lookupField("manhole_indicator")
+            manhole_layer.changeAttributeValue(manhole_fid, manhole_indicator_idx, ManholeIndicator.PUMP.value)
 
     def get_pumpstation_feats_for_node_id(self, node_id):
         """Check if there is a pumpstation features defined for node of the given node_id and return it."""
