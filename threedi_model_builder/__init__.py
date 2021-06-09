@@ -87,8 +87,13 @@ class ThreediModelBuilderPlugin:
         if not src_sqlite:
             return
         schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
-        if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
-            warn_msg = f"Loading from the Spatialite canceled - schema version '{schema_version}' is not supported!"
+        if schema_version not in ModelDataConverter.SUPPORTED_SCHEMA_VERSIONS:
+            warn_msg = (
+                "The spatialite you have selected could not be loaded, "
+                f"because its database schema version ({schema_version}) is not up to date. "
+                "Please find your model revision on 3di.lizard.net/models, "
+                "download the spatialite from there and try again."
+            )
             self.uc.show_warn(warn_msg)
             return
         if self.layer_manager is not None:
@@ -110,8 +115,13 @@ class ThreediModelBuilderPlugin:
         if not dst_sqlite:
             return
         schema_version = ModelDataConverter.spatialite_schema_version(dst_sqlite)
-        if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
-            warn_msg = f"Saving to the Spatialite canceled - schema version '{schema_version}' is not supported!"
+        if schema_version not in ModelDataConverter.SUPPORTED_SCHEMA_VERSIONS:
+            warn_msg = (
+                "The spatialite you have selected could not be used for saving, "
+                f"because its database schema version ({schema_version}) is not up to date. "
+                "Please find your model revision on 3di.lizard.net/models, "
+                "download the spatialite from there and try again."
+            )
             self.uc.show_warn(warn_msg)
             return
         converter = ModelDataConverter(dst_sqlite, self.model_gpkg, user_communication=self.uc)
