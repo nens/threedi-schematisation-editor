@@ -18,6 +18,7 @@ from qgis.core import (
     QgsExpression,
     QgsCoordinateTransform,
     QgsGeometry,
+    QgsPointXY,
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
@@ -25,7 +26,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 class ModelDataConverter:
     """Class with methods Spatialite <==> GeoPackage conversion of the 3Di model layers."""
 
-    SUPPORTED_SCHEMA_VERSION = 174
+    SUPPORTED_SCHEMA_VERSIONS = (174, 175)
 
     def __init__(self, src_sqlite, dst_gpkg, use_source_epsg=True, user_communication=None):
         self.src_sqlite = src_sqlite
@@ -214,23 +215,35 @@ class ModelDataConverter:
         connection_node_layer = gpkg_layer(self.dst_gpkg, dm.ConnectionNode.__tablename__)
         impervious_surface_layer = gpkg_layer(self.dst_gpkg, dm.ImperviousSurface.__tablename__)
         surface_layer = gpkg_layer(self.dst_gpkg, dm.Surface.__tablename__)
-        connection_node_points = {f["id"]: f.geometry().asPoint() for f in connection_node_layer.getFeatures()}
-        impervious_surface_points = {
-            f["id"]: f.geometry().centroid().asPoint() for f in impervious_surface_layer.getFeatures()
-        }
-        surface_points = {f["id"]: f.geometry().centroid().asPoint() for f in surface_layer.getFeatures()}
+        connection_node_points = {f["id"]: f.geometry() for f in connection_node_layer.getFeatures()}
+        impervious_surface_points = {f["id"]: f.geometry().centroid() for f in impervious_surface_layer.getFeatures()}
+        surface_points = {f["id"]: f.geometry().centroid() for f in surface_layer.getFeatures()}
         impervious_surface_map_layer = gpkg_layer(self.dst_gpkg, dm.ImperviousSurfaceMap.__tablename__)
         surface_map_layer = gpkg_layer(self.dst_gpkg, dm.SurfaceMap.__tablename__)
         impervious_surface_map_geoms, surface_map_geoms = {}, {}
         for feat in impervious_surface_map_layer.getFeatures():
             fid, node_id, surface_id = feat.id(), feat["connection_node_id"], feat["impervious_surface_id"]
-            link_geom = QgsGeometry.fromPolylineXY(
-                [impervious_surface_points[surface_id], connection_node_points[node_id]]
-            )
+            connection_node_geom = connection_node_points[node_id]
+            connection_node_point = connection_node_geom.asPoint()
+            isurface_centroid_geom = impervious_surface_points[surface_id]
+            try:
+                isurface_point = isurface_centroid_geom.asPoint()
+            except ValueError:
+                # If surface have no geometry let use point laying 10 meters to the north from connection node
+                isurface_point = QgsPointXY(connection_node_point.x(), connection_node_point.y() + 10.0)
+            link_geom = QgsGeometry.fromPolylineXY([isurface_point, connection_node_point])
             impervious_surface_map_geoms[fid] = link_geom
         for feat in surface_map_layer.getFeatures():
             fid, node_id, surface_id = feat.id(), feat["connection_node_id"], feat["surface_id"]
-            link_geom = QgsGeometry.fromPolylineXY([surface_points[surface_id], connection_node_points[node_id]])
+            connection_node_geom = connection_node_points[node_id]
+            connection_node_point = connection_node_geom.asPoint()
+            surface_centroid_geom = surface_points[surface_id]
+            try:
+                surface_point = surface_centroid_geom.asPoint()
+            except ValueError:
+                # If surface have no geometry let use point laying 10 meters to the north from connection node
+                surface_point = QgsPointXY(connection_node_point.x(), connection_node_point.y() + 10.0)
+            link_geom = QgsGeometry.fromPolylineXY([surface_point, connection_node_point])
             surface_map_geoms[fid] = link_geom
         impervious_surface_map_layer.startEditing()
         for fid, link_geom in impervious_surface_map_geoms.items():
@@ -268,11 +281,13 @@ class ModelDataConverter:
     def src_dst_feat_count(self, annotated_model_csl):
         """Counting features in data model source and destination layers."""
         src_feat_count = 0
+        request = QgsFeatureRequest()
+        request.setFlags(QgsFeatureRequest.NoGeometry)
         for src_table in annotated_model_csl.SQLITE_TARGETS:
             src_target_layer = sqlite_layer(self.src_sqlite, src_table)
             if not src_target_layer.isValid():
                 src_target_layer = sqlite_layer(self.src_sqlite, src_table, geom_column=None)
-            src_feat_count += src_target_layer.featureCount()
+            src_feat_count += len(tuple(1 for _ in src_target_layer.getFeatures(request)))
         dst_table = annotated_model_csl.__tablename__
         dst_layer = gpkg_layer(self.dst_gpkg, dst_table)
         dst_feat_count = dst_layer.featureCount()
@@ -296,7 +311,8 @@ class ModelDataConverter:
             sqlite_feat_count, gpkg_feat_count = self.src_dst_feat_count(data_model_cls)
             if sqlite_feat_count != gpkg_feat_count:
                 missing = sqlite_feat_count - gpkg_feat_count
-                incomplete_imports[data_model_cls] = (sqlite_feat_count, gpkg_feat_count, missing)
+                if missing:
+                    incomplete_imports[data_model_cls] = (sqlite_feat_count, gpkg_feat_count, missing)
         # Adding geometry between surfaces and connection nodes
         msg = f"Adding links between surfaces and connection nodes..."
         self.uc.progress_bar(msg, 0, number_of_steps, number_of_steps, clear_msg_bar=True)
@@ -372,7 +388,8 @@ class ModelDataConverter:
             sqlite_feat_count, gpkg_feat_count = self.src_dst_feat_count(data_model_cls)
             if gpkg_feat_count != sqlite_feat_count:
                 missing = gpkg_feat_count - sqlite_feat_count
-                incomplete_exports[data_model_cls] = (sqlite_feat_count, gpkg_feat_count, missing)
+                if missing:
+                    incomplete_exports[data_model_cls] = (sqlite_feat_count, gpkg_feat_count, missing)
         self.uc.clear_message_bar()
         if incomplete_exports:
             warn = "Incomplete export:\n\n"
