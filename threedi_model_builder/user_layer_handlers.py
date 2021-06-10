@@ -47,8 +47,8 @@ class UserLayerHandler:
     def disconnect_handler_signals(self):
         """Disconnecting layer signals."""
         self.layer.editingStarted.disconnect(self.on_editing_started)
-        self.layer.beforeRollBack.connect(self.on_rollback)
-        self.layer.beforeCommitChanges.connect(self.on_commit_changes)
+        self.layer.beforeRollBack.disconnect(self.on_rollback)
+        self.layer.beforeCommitChanges.disconnect(self.on_commit_changes)
         self.disconnect_additional_signals()
 
     def connect_additional_signals(self):
