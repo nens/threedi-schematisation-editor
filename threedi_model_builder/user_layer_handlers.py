@@ -60,24 +60,30 @@ class UserLayerHandler:
         pass
 
     @property
-    def other_1d_handlers(self):
-        """Getting other handlers within 1D group."""
-        other_1d_handlers = [
-            self.layer_manager.model_handlers[model_cls]
-            for model_cls in dm.MODEL_1D_ELEMENTS
-            if model_cls != self.MODEL
-        ]
-        return other_1d_handlers
+    def topologically_linked_models(self):
+        """Getting topologically linked models."""
+        linked_models = dm.MODEL_1D_ELEMENTS + (dm.ImperviousSurfaceMap, dm.SurfaceMap)
+        return linked_models
 
     @property
-    def other_1d_layers(self):
+    def other_linked_handlers(self):
+        """Getting other handlers within 1D group."""
+        other_handlers = [
+            self.layer_manager.model_handlers[model_cls]
+            for model_cls in self.topologically_linked_models
+            if model_cls != self.MODEL
+        ]
+        return other_handlers
+
+    @property
+    def other_linked_layers(self):
         """Getting other layers within 1D group."""
-        other_1d_layers = [handler.layer for handler in self.other_1d_handlers]
-        return other_1d_layers
+        other_layers = [handler.layer for handler in self.other_linked_handlers]
+        return other_layers
 
     def set_layers_snapping(self):
         """Setting snapping rules."""
-        if self.MODEL not in dm.MODEL_1D_ELEMENTS:
+        if self.MODEL not in self.topologically_linked_models:
             return
         project = QgsProject.instance()
         project.setTopologicalEditing(True)
@@ -85,7 +91,7 @@ class UserLayerHandler:
         snap_config.setMode(QgsSnappingConfig.AdvancedConfiguration)
         snap_config.setIntersectionSnapping(True)
         individual_configs = snap_config.individualLayerSettings()
-        for layer in self.other_1d_layers + [self.layer]:
+        for layer in self.other_linked_layers + [self.layer]:
             try:
                 iconf = individual_configs[layer]
             except KeyError:
@@ -113,9 +119,9 @@ class UserLayerHandler:
 
     def multi_start_editing(self):
         """Start editing for all layers with 1D group."""
-        if self.MODEL not in dm.MODEL_1D_ELEMENTS:
+        if self.MODEL not in self.topologically_linked_models:
             return
-        other_1d_handlers = self.other_1d_handlers
+        other_1d_handlers = self.other_linked_handlers
         for layer_handler in other_1d_handlers:
             layer = layer_handler.layer
             disconnect_signal(layer.editingStarted, layer_handler.on_editing_started)
@@ -123,15 +129,15 @@ class UserLayerHandler:
             layer = layer_handler.layer
             if not layer.isEditable():
                 layer.startEditing()
-        for layer_handler in self.other_1d_handlers:
+        for layer_handler in self.other_linked_handlers:
             layer = layer_handler.layer
             connect_signal(layer.editingStarted, layer_handler.on_editing_started)
 
     def multi_rollback(self):
         """Rollback changes for all layers with 1D group."""
-        if self.MODEL not in dm.MODEL_1D_ELEMENTS:
+        if self.MODEL not in self.topologically_linked_models:
             return
-        other_1d_handlers = self.other_1d_handlers
+        other_1d_handlers = self.other_linked_handlers
         for layer_handler in other_1d_handlers:
             layer = layer_handler.layer
             disconnect_signal(layer.beforeRollBack, layer_handler.on_rollback)
@@ -139,15 +145,15 @@ class UserLayerHandler:
             layer = layer_handler.layer
             if layer.isEditable():
                 layer.rollBack()
-        for layer_handler in self.other_1d_handlers:
+        for layer_handler in self.other_linked_handlers:
             layer = layer_handler.layer
             connect_signal(layer.beforeRollBack, layer_handler.on_rollback)
 
     def multi_commit_changes(self):
         """Commit changes for all layers with 1D group."""
-        if self.MODEL not in dm.MODEL_1D_ELEMENTS:
+        if self.MODEL not in self.topologically_linked_models:
             return
-        other_1d_handlers = self.other_1d_handlers
+        other_1d_handlers = self.other_linked_handlers
         for layer_handler in other_1d_handlers:
             layer = layer_handler.layer
             disconnect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
@@ -155,7 +161,7 @@ class UserLayerHandler:
             layer = layer_handler.layer
             if layer.isEditable():
                 layer.commitChanges(stopEditing=True)
-        for layer_handler in self.other_1d_handlers:
+        for layer_handler in self.other_linked_handlers:
             layer = layer_handler.layer
             connect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
 
