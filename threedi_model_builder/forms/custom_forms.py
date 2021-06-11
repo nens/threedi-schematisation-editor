@@ -1,5 +1,6 @@
 import threedi_model_builder.data_models as dm
 import threedi_model_builder.enumerators as en
+from collections import defaultdict
 from functools import partial
 from enum import Enum
 from types import MappingProxyType
@@ -49,10 +50,14 @@ class BaseForm(QObject):
         self.main_widgets = {}
         self.foreign_widgets = {}
         self.set_foreign_widgets()
+        self.extra_features = defaultdict(list)
         self.layer.editingStarted.connect(self.toggle_edit_mode)
         self.layer.editingStopped.connect(self.toggle_edit_mode)
+        self.button_box = self.dialog.findChild(QObject, "buttonBox")
+        self.button_box.accepted.connect(self.add_related_features)
         self.dialog.active_form_signals.add((self.layer.editingStarted, self.toggle_edit_mode))
         self.dialog.active_form_signals.add((self.layer.editingStopped, self.toggle_edit_mode))
+        self.dialog.active_form_signals.add((self.button_box.accepted, self.add_related_features))
 
     @property
     def foreign_models_features(self):
@@ -230,6 +235,24 @@ class BaseForm(QObject):
             connect_signal(signal, slot)
             self.dialog.active_form_signals.add((signal, slot))
 
+    def sequence_related_features_ids(self):
+        """Sequencing new feature 'id' values."""
+        for features_to_add in self.extra_features.values():
+            if len(features_to_add) > 1:
+                increment_by = 0
+                for feat in features_to_add:
+                    feat["id"] = feat["id"] + increment_by
+                    increment_by += 1
+
+    def add_related_features(self):
+        """Adding related features that should be added along currently added feature."""
+        for handler, features_to_add in self.extra_features.items():
+            layer = handler.layer
+            if not layer.isEditable():
+                layer.startEditing()
+            layer.addFeatures(features_to_add)
+        self.extra_features.clear()
+
     def fill_related_attributes(self):
         """Filling attributes referring to the other layers features."""
         pass
@@ -268,13 +291,12 @@ class FormWithNode(BaseForm):
         """Setting up connection nodes during adding feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_layer = connection_node_handler.layer
-        if not connection_node_layer.isEditable():
-            connection_node_layer.startEditing()
         connection_node_feat = find_point_nodes(self.feature.geometry().asPoint(), connection_node_layer)
         if connection_node_feat is None:
             connection_node_feat = connection_node_handler.create_new_feature(self.feature.geometry())
-            connection_node_layer.addFeature(connection_node_feat)
+            self.extra_features[connection_node_handler].append(connection_node_feat)
         self.connection_node = connection_node_feat
+        self.sequence_related_features_ids()
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
@@ -323,8 +345,6 @@ class FormWithStartEndNode(BaseForm):
         """Setting up connection nodes during adding feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_layer = connection_node_handler.layer
-        if not connection_node_layer.isEditable():
-            connection_node_layer.startEditing()
         linestring = self.feature.geometry().asPolyline()
         start_point, end_point = linestring[0], linestring[-1]
         start_connection_node_feat, end_connection_node_feat = find_linestring_nodes(linestring, connection_node_layer)
@@ -334,26 +354,27 @@ class FormWithStartEndNode(BaseForm):
             end_connection_node_feat = connection_node_handler.create_new_feature_from_template(
                 start_connection_node_feat, geometry=end_geom
             )
-            connection_node_layer.addFeature(end_connection_node_feat)
+            self.extra_features[connection_node_handler].append(end_connection_node_feat)
         elif start_connection_node_feat is None and end_connection_node_feat is not None:
             # Create and add starting points
             start_geom = QgsGeometry.fromPointXY(start_point)
             start_connection_node_feat = connection_node_handler.create_new_feature_from_template(
                 end_connection_node_feat, geometry=start_geom
             )
-            connection_node_layer.addFeature(start_connection_node_feat)
+            self.extra_features[connection_node_handler].append(start_connection_node_feat)
         elif start_connection_node_feat is None and end_connection_node_feat is None:
             # Create and add starting points
             start_geom = QgsGeometry.fromPointXY(start_point)
             start_connection_node_feat = connection_node_handler.create_new_feature(geometry=start_geom)
-            connection_node_layer.addFeature(start_connection_node_feat)
+            self.extra_features[connection_node_handler].append(start_connection_node_feat)
             # Create and add ending points
             end_geom = QgsGeometry.fromPointXY(end_point)
             end_connection_node_feat = connection_node_handler.create_new_feature(geometry=end_geom)
-            connection_node_layer.addFeature(end_connection_node_feat)
+            self.extra_features[connection_node_handler].append(end_connection_node_feat)
         # Assign features as an form instance attributes.
         self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
+        self.sequence_related_features_ids()
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
@@ -404,14 +425,12 @@ class FormWithCSDefinition(BaseForm):
     def setup_cross_section_definition_on_creation(self):
         """Setting up connection nodes during adding feature."""
         cross_section_def_handler = self.layer_manager.model_handlers[dm.CrossSectionDefinition]
-        cross_section_def_layer = cross_section_def_handler.layer
         cross_section_def_feat = cross_section_def_handler.create_new_feature()
-        if not cross_section_def_layer.isEditable():
-            cross_section_def_layer.startEditing()
         if self.MODEL == dm.Weir:
             cross_section_def_feat["shape"] = en.CrossSectionShape.RECTANGLE.value
-        cross_section_def_layer.addFeature(cross_section_def_feat)
+        self.extra_features[cross_section_def_handler].append(cross_section_def_feat)
         self.cross_section_definition = cross_section_def_feat
+        self.sequence_related_features_ids()
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
@@ -483,12 +502,7 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
         """Setting up manholes during adding feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
-        connection_node_layer = connection_node_handler.layer
         manhole_layer = manhole_handler.layer
-        if not connection_node_layer.isEditable():
-            connection_node_layer.startEditing()
-        if not manhole_layer.isEditable():
-            manhole_layer.startEditing()
         linestring = self.feature.geometry().asPolyline()
         start_point, end_point = linestring[0], linestring[-1]
         start_manhole_feat, end_manhole_feat = find_linestring_nodes(linestring, manhole_layer)
@@ -500,8 +514,8 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
             end_manhole_feat, end_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
                 end_geom, template_feat=start_manhole_feat
             )
-            connection_node_layer.addFeature(end_connection_node_feat)
-            manhole_layer.addFeature(end_manhole_feat)
+            self.extra_features[connection_node_handler].append(end_connection_node_feat)
+            self.extra_features[manhole_handler].append(end_manhole_feat)
         elif start_manhole_feat is None and end_manhole_feat is not None:
             end_connection_node_id = end_manhole_feat["connection_node_id"]
             end_connection_node_feat = connection_node_handler.get_feat_by_id(end_connection_node_id)
@@ -510,21 +524,21 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
             start_manhole_feat, start_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
                 start_geom, template_feat=end_manhole_feat
             )
-            connection_node_layer.addFeature(start_connection_node_feat)
-            manhole_layer.addFeature(start_manhole_feat)
+            self.extra_features[connection_node_handler].append(start_connection_node_feat)
+            self.extra_features[manhole_handler].append(start_manhole_feat)
         elif start_manhole_feat is None and end_manhole_feat is None:
             # Create and add starting points
             start_geom = QgsGeometry.fromPointXY(start_point)
             start_manhole_feat, start_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
                 start_geom
             )
-            connection_node_layer.addFeature(start_connection_node_feat)
-            manhole_layer.addFeature(start_manhole_feat)
+            self.extra_features[connection_node_handler].append(start_connection_node_feat)
+            self.extra_features[manhole_handler].append(start_manhole_feat)
             # Create and add ending points
             end_geom = QgsGeometry.fromPointXY(end_point)
             end_manhole_feat, end_connection_node_feat = manhole_handler.create_manhole_with_connection_node(end_geom)
-            connection_node_layer.addFeature(end_connection_node_feat)
-            manhole_layer.addFeature(end_manhole_feat)
+            self.extra_features[connection_node_handler].append(end_connection_node_feat)
+            self.extra_features[manhole_handler].append(end_manhole_feat)
         else:
             start_connection_node_id = start_manhole_feat["connection_node_id"]
             start_connection_node_feat = connection_node_handler.get_feat_by_id(start_connection_node_id)
@@ -536,6 +550,7 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
         self.connection_node_end = end_connection_node_feat
         self.manhole_start = start_manhole_feat
         self.manhole_end = end_manhole_feat
+        self.sequence_related_features_ids()
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
@@ -712,11 +727,6 @@ class PumpstationMapForm(FormWithStartEndNode):
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         pumpstation_handler = self.layer_manager.model_handlers[dm.Pumpstation]
         connection_node_layer = connection_node_handler.layer
-        pumpstation_layer = pumpstation_handler.layer
-        if not connection_node_layer.isEditable():
-            connection_node_layer.startEditing()
-        if not pumpstation_layer.isEditable():
-            pumpstation_layer.startEditing()
         linestring = self.feature.geometry().asPolyline()
         start_point, end_point = linestring[0], linestring[-1]
         start_connection_node_feat, end_connection_node_feat = find_linestring_nodes(linestring, connection_node_layer)
@@ -727,7 +737,7 @@ class PumpstationMapForm(FormWithStartEndNode):
                 start_pump_feat, start_connection_node_feat = pumpstation_handler.create_pump_with_connection_node(
                     start_geom
                 )
-                connection_node_layer.addFeature(start_connection_node_feat)
+                self.extra_features[connection_node_handler].append(start_connection_node_feat)
             else:
                 start_pump_feat = pumpstation_handler.create_new_feature(start_geom)
                 start_pump_feat["connection_node_id"] = start_connection_node_feat["id"]
@@ -736,19 +746,20 @@ class PumpstationMapForm(FormWithStartEndNode):
                 end_connection_node_feat = connection_node_handler.create_new_feature_from_template(
                     start_connection_node_feat, geometry=end_geom
                 )
-                connection_node_layer.addFeature(end_connection_node_feat)
-            pumpstation_layer.addFeature(start_pump_feat)
+                self.extra_features[connection_node_handler].append(end_connection_node_feat)
+            self.extra_features[pumpstation_handler].append(start_pump_feat)
         else:
             if end_connection_node_feat is None:
                 end_geom = QgsGeometry.fromPointXY(end_point)
                 end_connection_node_feat = connection_node_handler.create_new_feature_from_template(
                     start_connection_node_feat, geometry=end_geom
                 )
-                connection_node_layer.addFeature(end_connection_node_feat)
+                self.extra_features[connection_node_handler].append(end_connection_node_feat)
         # Assign features as an form instance attributes.
         self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
         self.pumpstation = start_pump_feat
+        self.sequence_related_features_ids()
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
