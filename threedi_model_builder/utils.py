@@ -15,6 +15,8 @@ from qgis.core import (
     QgsLayerTreeLayer,
     QgsProject,
     QgsField,
+    QgsGeometry,
+    QgsCoordinateTransform,
     QgsVectorFileWriter,
     QgsPointLocator,
 )
@@ -287,10 +289,19 @@ def disconnect_signal(signal, slot):
 
 def find_point_nodes(point, node_layer, tolerance=0.0000001, allow_multiple=False, locator=None):
     """Function that finds features from given layer that are located within tolerance distance from given point."""
+    project = QgsProject.instance()
+    src_crs = node_layer.sourceCrs()
+    dst_crs = project.crs()
+    transform_ctx = project.transformContext()
     if not locator:
-        locator = QgsPointLocator(node_layer)
+        locator = QgsPointLocator(node_layer, dst_crs, transform_ctx)
     node_feats = []
     node_feat = None
+    if src_crs != dst_crs:
+        transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx)
+        point_geom = QgsGeometry.fromPointXY(point)
+        point_geom.transform(transformation)
+        point = point_geom.asPoint()
     matches = locator.verticesInRect(point, tolerance)
     for match in matches:
         match_layer = match.layer()
@@ -305,11 +316,23 @@ def find_linestring_nodes(linestring, node_layer, tolerance=0.0000001, allow_mul
     """
     Function that finds features from given layer that are located within tolerance distance from linestring endpoints.
     """
+    project = QgsProject.instance()
+    src_crs = node_layer.sourceCrs()
+    dst_crs = project.crs()
+    transform_ctx = project.transformContext()
     if not locator:
-        locator = QgsPointLocator(node_layer)
+        locator = QgsPointLocator(node_layer, dst_crs, transform_ctx)
     feats_at_start, feats_at_end = [], []
     node_start_feat, node_end_feat = None, None
     start_point, end_point = linestring[0], linestring[-1]
+    if src_crs != dst_crs:
+        start_geom = QgsGeometry.fromPointXY(start_point)
+        end_geom = QgsGeometry.fromPointXY(end_point)
+        transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx)
+        start_geom.transform(transformation)
+        end_geom.transform(transformation)
+        start_point = start_geom.asPoint()
+        end_point = end_geom.asPoint()
     start_matches = locator.verticesInRect(start_point, tolerance)
     end_matches = locator.verticesInRect(end_point, tolerance)
     for start_match in start_matches:
