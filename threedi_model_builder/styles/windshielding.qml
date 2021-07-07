@@ -1,10 +1,27 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis styleCategories="LayerConfiguration|Symbology|Labeling|Fields|Forms" version="3.16.3-Hannover" readOnly="0">
+<qgis minScale="0" version="3.16.3-Hannover" readOnly="0" hasScaleBasedVisibilityFlag="0" maxScale="0" styleCategories="AllStyleCategories">
   <flags>
     <Identifiable>1</Identifiable>
-    <Removable>1</Removable>
+    <Removable>0</Removable>
     <Searchable>1</Searchable>
   </flags>
+  <temporal enabled="0" accumulate="0" startField="" fixedDuration="0" mode="0" startExpression="" durationUnit="min" endField="" endExpression="" durationField="">
+    <fixedRange>
+      <start></start>
+      <end></end>
+    </fixedRange>
+  </temporal>
+  <customproperties>
+    <property value="0" key="embeddedWidgets/count"/>
+    <property key="variableNames"/>
+    <property key="variableValues"/>
+  </customproperties>
+  <geometryOptions removeDuplicateNodes="0" geometryPrecision="0">
+    <activeChecks/>
+    <checkConfiguration/>
+  </geometryOptions>
+  <legend type="default-vector"/>
+  <referencedLayers/>
   <fieldConfiguration>
     <field name="fid" configurationFlags="None">
       <editWidget type="TextEdit">
@@ -17,8 +34,8 @@
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" value="false" type="bool"/>
-            <Option name="UseHtml" value="false" type="bool"/>
+            <Option value="false" type="bool" name="IsMultiline"/>
+            <Option value="false" type="bool" name="UseHtml"/>
           </Option>
         </config>
       </editWidget>
@@ -27,8 +44,8 @@
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" value="false" type="bool"/>
-            <Option name="UseHtml" value="false" type="bool"/>
+            <Option value="false" type="bool" name="IsMultiline"/>
+            <Option value="false" type="bool" name="UseHtml"/>
           </Option>
         </config>
       </editWidget>
@@ -37,8 +54,8 @@
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" value="false" type="bool"/>
-            <Option name="UseHtml" value="false" type="bool"/>
+            <Option value="false" type="bool" name="IsMultiline"/>
+            <Option value="false" type="bool" name="UseHtml"/>
           </Option>
         </config>
       </editWidget>
@@ -47,8 +64,8 @@
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" value="false" type="bool"/>
-            <Option name="UseHtml" value="false" type="bool"/>
+            <Option value="false" type="bool" name="IsMultiline"/>
+            <Option value="false" type="bool" name="UseHtml"/>
           </Option>
         </config>
       </editWidget>
@@ -57,8 +74,8 @@
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" value="false" type="bool"/>
-            <Option name="UseHtml" value="false" type="bool"/>
+            <Option value="false" type="bool" name="IsMultiline"/>
+            <Option value="false" type="bool" name="UseHtml"/>
           </Option>
         </config>
       </editWidget>
@@ -95,66 +112,90 @@
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" value="false" type="bool"/>
-            <Option name="UseHtml" value="false" type="bool"/>
+            <Option value="false" type="bool" name="IsMultiline"/>
+            <Option value="false" type="bool" name="UseHtml"/>
           </Option>
         </config>
       </editWidget>
     </field>
   </fieldConfiguration>
   <aliases>
-    <alias name="" field="fid" index="0"/>
-    <alias name="" field="id" index="1"/>
-    <alias name="" field="north" index="2"/>
-    <alias name="" field="northeast" index="3"/>
-    <alias name="" field="east" index="4"/>
-    <alias name="" field="southeast" index="5"/>
-    <alias name="" field="south" index="6"/>
-    <alias name="" field="southwest" index="7"/>
-    <alias name="" field="west" index="8"/>
-    <alias name="" field="northwest" index="9"/>
-    <alias name="" field="channel_id" index="10"/>
+    <alias field="fid" index="0" name=""/>
+    <alias field="id" index="1" name=""/>
+    <alias field="north" index="2" name=""/>
+    <alias field="northeast" index="3" name=""/>
+    <alias field="east" index="4" name=""/>
+    <alias field="southeast" index="5" name=""/>
+    <alias field="south" index="6" name=""/>
+    <alias field="southwest" index="7" name=""/>
+    <alias field="west" index="8" name=""/>
+    <alias field="northwest" index="9" name=""/>
+    <alias field="channel_id" index="10" name=""/>
   </aliases>
   <defaults>
-    <default field="fid" expression="" applyOnUpdate="0"/>
-    <default field="id" expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="1"/>
-    <default field="north" expression="" applyOnUpdate="0"/>
-    <default field="northeast" expression="" applyOnUpdate="0"/>
-    <default field="east" expression="" applyOnUpdate="0"/>
-    <default field="southeast" expression="" applyOnUpdate="0"/>
-    <default field="south" expression="" applyOnUpdate="0"/>
-    <default field="southwest" expression="" applyOnUpdate="0"/>
-    <default field="west" expression="" applyOnUpdate="0"/>
-    <default field="northwest" expression="" applyOnUpdate="0"/>
-    <default field="channel_id" expression="" applyOnUpdate="0"/>
+    <default expression="" applyOnUpdate="0" field="fid"/>
+    <default expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0" field="id"/>
+    <default expression="" applyOnUpdate="0" field="north"/>
+    <default expression="" applyOnUpdate="0" field="northeast"/>
+    <default expression="" applyOnUpdate="0" field="east"/>
+    <default expression="" applyOnUpdate="0" field="southeast"/>
+    <default expression="" applyOnUpdate="0" field="south"/>
+    <default expression="" applyOnUpdate="0" field="southwest"/>
+    <default expression="" applyOnUpdate="0" field="west"/>
+    <default expression="" applyOnUpdate="0" field="northwest"/>
+    <default expression="" applyOnUpdate="0" field="channel_id"/>
   </defaults>
   <constraints>
-    <constraint field="fid" constraints="3" exp_strength="0" notnull_strength="1" unique_strength="1"/>
-    <constraint field="id" constraints="3" exp_strength="0" notnull_strength="1" unique_strength="1"/>
-    <constraint field="north" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
-    <constraint field="northeast" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
-    <constraint field="east" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
-    <constraint field="southeast" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
-    <constraint field="south" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
-    <constraint field="southwest" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
-    <constraint field="west" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
-    <constraint field="northwest" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
-    <constraint field="channel_id" constraints="0" exp_strength="0" notnull_strength="0" unique_strength="0"/>
+    <constraint constraints="3" exp_strength="0" notnull_strength="1" field="fid" unique_strength="1"/>
+    <constraint constraints="3" exp_strength="0" notnull_strength="1" field="id" unique_strength="1"/>
+    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="north" unique_strength="0"/>
+    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="northeast" unique_strength="0"/>
+    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="east" unique_strength="0"/>
+    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="southeast" unique_strength="0"/>
+    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="south" unique_strength="0"/>
+    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="southwest" unique_strength="0"/>
+    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="west" unique_strength="0"/>
+    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="northwest" unique_strength="0"/>
+    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="channel_id" unique_strength="0"/>
   </constraints>
   <constraintExpressions>
-    <constraint field="fid" desc="" exp=""/>
-    <constraint field="id" desc="" exp=""/>
-    <constraint field="north" desc="" exp=""/>
-    <constraint field="northeast" desc="" exp=""/>
-    <constraint field="east" desc="" exp=""/>
-    <constraint field="southeast" desc="" exp=""/>
-    <constraint field="south" desc="" exp=""/>
-    <constraint field="southwest" desc="" exp=""/>
-    <constraint field="west" desc="" exp=""/>
-    <constraint field="northwest" desc="" exp=""/>
-    <constraint field="channel_id" desc="" exp=""/>
+    <constraint exp="" desc="" field="fid"/>
+    <constraint exp="" desc="" field="id"/>
+    <constraint exp="" desc="" field="north"/>
+    <constraint exp="" desc="" field="northeast"/>
+    <constraint exp="" desc="" field="east"/>
+    <constraint exp="" desc="" field="southeast"/>
+    <constraint exp="" desc="" field="south"/>
+    <constraint exp="" desc="" field="southwest"/>
+    <constraint exp="" desc="" field="west"/>
+    <constraint exp="" desc="" field="northwest"/>
+    <constraint exp="" desc="" field="channel_id"/>
   </constraintExpressions>
   <expressionfields/>
+  <attributeactions>
+    <defaultAction value="{00000000-0000-0000-0000-000000000000}" key="Canvas"/>
+  </attributeactions>
+  <attributetableconfig sortOrder="0" sortExpression="" actionWidgetStyle="dropDown">
+    <columns>
+      <column width="-1" hidden="1" type="field" name="fid"/>
+      <column width="-1" hidden="0" type="field" name="id"/>
+      <column width="-1" hidden="0" type="field" name="north"/>
+      <column width="-1" hidden="0" type="field" name="northeast"/>
+      <column width="-1" hidden="0" type="field" name="east"/>
+      <column width="-1" hidden="0" type="field" name="southeast"/>
+      <column width="-1" hidden="0" type="field" name="south"/>
+      <column width="-1" hidden="0" type="field" name="southwest"/>
+      <column width="-1" hidden="0" type="field" name="west"/>
+      <column width="-1" hidden="0" type="field" name="northwest"/>
+      <column width="-1" hidden="0" type="field" name="channel_id"/>
+      <column width="-1" hidden="1" type="actions"/>
+    </columns>
+  </attributetableconfig>
+  <conditionalstyles>
+    <rowstyles/>
+    <fieldstyles/>
+  </conditionalstyles>
+  <storedexpressions/>
   <editform tolerant="1"></editform>
   <editforminit/>
   <editforminitcodesource>0</editforminitcodesource>
@@ -179,50 +220,51 @@ def my_form_open(dialog, layer, feature):
   <featformsuppress>0</featformsuppress>
   <editorlayout>tablayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer name="General" visibilityExpression="" groupBox="0" visibilityExpressionEnabled="0" columnCount="1" showLabel="1">
-      <attributeEditorField name="id" index="1" showLabel="1"/>
-      <attributeEditorField name="channel_id" index="10" showLabel="1"/>
-      <attributeEditorField name="north" index="2" showLabel="1"/>
-      <attributeEditorField name="northeast" index="3" showLabel="1"/>
-      <attributeEditorField name="east" index="4" showLabel="1"/>
-      <attributeEditorField name="southeast" index="5" showLabel="1"/>
-      <attributeEditorField name="south" index="6" showLabel="1"/>
-      <attributeEditorField name="southwest" index="7" showLabel="1"/>
-      <attributeEditorField name="west" index="8" showLabel="1"/>
-      <attributeEditorField name="northwest" index="9" showLabel="1"/>
-      <attributeEditorField name="the_geom" index="-1" showLabel="1"/>
+    <attributeEditorContainer showLabel="1" groupBox="0" visibilityExpression="" columnCount="1" name="General" visibilityExpressionEnabled="0">
+      <attributeEditorField showLabel="1" index="1" name="id"/>
+      <attributeEditorField showLabel="1" index="10" name="channel_id"/>
+      <attributeEditorField showLabel="1" index="2" name="north"/>
+      <attributeEditorField showLabel="1" index="3" name="northeast"/>
+      <attributeEditorField showLabel="1" index="4" name="east"/>
+      <attributeEditorField showLabel="1" index="5" name="southeast"/>
+      <attributeEditorField showLabel="1" index="6" name="south"/>
+      <attributeEditorField showLabel="1" index="7" name="southwest"/>
+      <attributeEditorField showLabel="1" index="8" name="west"/>
+      <attributeEditorField showLabel="1" index="9" name="northwest"/>
+      <attributeEditorField showLabel="1" index="-1" name="the_geom"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
-    <field name="channel_id" editable="1"/>
-    <field name="east" editable="1"/>
-    <field name="fid" editable="1"/>
-    <field name="id" editable="1"/>
-    <field name="north" editable="1"/>
-    <field name="northeast" editable="1"/>
-    <field name="northwest" editable="1"/>
-    <field name="south" editable="1"/>
-    <field name="southeast" editable="1"/>
-    <field name="southwest" editable="1"/>
-    <field name="the_geom" editable="1"/>
-    <field name="west" editable="1"/>
+    <field editable="1" name="channel_id"/>
+    <field editable="1" name="east"/>
+    <field editable="1" name="fid"/>
+    <field editable="1" name="id"/>
+    <field editable="1" name="north"/>
+    <field editable="1" name="northeast"/>
+    <field editable="1" name="northwest"/>
+    <field editable="1" name="south"/>
+    <field editable="1" name="southeast"/>
+    <field editable="1" name="southwest"/>
+    <field editable="1" name="the_geom"/>
+    <field editable="1" name="west"/>
   </editable>
   <labelOnTop>
-    <field name="channel_id" labelOnTop="0"/>
-    <field name="east" labelOnTop="0"/>
-    <field name="fid" labelOnTop="0"/>
-    <field name="id" labelOnTop="0"/>
-    <field name="north" labelOnTop="0"/>
-    <field name="northeast" labelOnTop="0"/>
-    <field name="northwest" labelOnTop="0"/>
-    <field name="south" labelOnTop="0"/>
-    <field name="southeast" labelOnTop="0"/>
-    <field name="southwest" labelOnTop="0"/>
-    <field name="the_geom" labelOnTop="0"/>
-    <field name="west" labelOnTop="0"/>
+    <field labelOnTop="0" name="channel_id"/>
+    <field labelOnTop="0" name="east"/>
+    <field labelOnTop="0" name="fid"/>
+    <field labelOnTop="0" name="id"/>
+    <field labelOnTop="0" name="north"/>
+    <field labelOnTop="0" name="northeast"/>
+    <field labelOnTop="0" name="northwest"/>
+    <field labelOnTop="0" name="south"/>
+    <field labelOnTop="0" name="southeast"/>
+    <field labelOnTop="0" name="southwest"/>
+    <field labelOnTop="0" name="the_geom"/>
+    <field labelOnTop="0" name="west"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>
   <widgets/>
   <previewExpression>"id"</previewExpression>
+  <mapTip></mapTip>
   <layerGeometryType>4</layerGeometryType>
 </qgis>

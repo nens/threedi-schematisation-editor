@@ -6,11 +6,11 @@ from threedi_model_builder.data_models import ALL_MODELS
 def test_data_import_export_integrity(data_conversion_setup):
     qgis_app, src_sqlite, reference_sqlite, import_export_sqlite, gpkg = data_conversion_setup
 
-    importer = ModelDataConverter(import_export_sqlite, gpkg, use_source_epsg=False)
+    importer = ModelDataConverter(import_export_sqlite, gpkg)
     importer.create_empty_user_layers()
     importer.import_all_model_data()
 
-    exporter = ModelDataConverter(import_export_sqlite, gpkg, use_source_epsg=False)
+    exporter = ModelDataConverter(import_export_sqlite, gpkg)
     exporter.trim_sqlite_targets()
     exporter.export_all_model_data()
 

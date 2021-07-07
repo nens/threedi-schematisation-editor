@@ -28,15 +28,13 @@ class ModelDataConverter:
 
     SUPPORTED_SCHEMA_VERSIONS = (174, 175)
 
-    def __init__(self, src_sqlite, dst_gpkg, use_source_epsg=True, user_communication=None):
+    def __init__(self, src_sqlite, dst_gpkg, epsg_code=4326, user_communication=None):
         self.src_sqlite = src_sqlite
         self.dst_gpkg = dst_gpkg
-        self.epsg_code = 4326
+        self.epsg_code = epsg_code
         self.all_models = dm.ALL_MODELS[:]
         self.timeseries_rawdata = OrderedDict()
         self.uc = user_communication if user_communication is not None else UICommunication(context="3Di Model Builder")
-        if use_source_epsg is True:
-            self.set_source_epsg()
 
     @staticmethod
     def spatialite_schema_version(sqlite_path):
@@ -51,14 +49,35 @@ class ModelDataConverter:
             spatialite_schema_id = 1
         return spatialite_schema_id
 
-    def set_source_epsg(self):
-        """Setting source EPSG code from 3Di model settings table."""
+    def set_epsg_from_sqlite(self):
+        """Setting EPSG code from SQLITE 3Di model settings table."""
         settings_table = next(iter(dm.GlobalSettings.SQLITE_SOURCES))
         settings_layer = sqlite_layer(self.src_sqlite, settings_table, geom_column=None)
-        settings_feat = next(settings_layer.getFeatures())
+        try:
+            settings_feat = next(settings_layer.getFeatures())
+        except StopIteration:
+            msg = f"'{settings_table}' table is empty. Please add record with EPSG code first."
+            self.uc.show_error(msg)
+            return False
         epsg_from_settings = settings_feat["epsg_code"]
         if epsg_from_settings and epsg_from_settings != self.epsg_code:
             self.epsg_code = epsg_from_settings
+        return True
+
+    def set_epsg_from_gpkg(self):
+        """Setting EPSG code from GeoPackage 3Di model settings table."""
+        settings_table = dm.GlobalSettings.__tablename__
+        settings_layer = gpkg_layer(self.dst_gpkg, settings_table)
+        try:
+            settings_feat = next(settings_layer.getFeatures())
+        except StopIteration:
+            msg = f"'{dm.GlobalSettings.__layername__}' layer is empty. Please add record with EPSG code first."
+            self.uc.show_error(msg)
+            return False
+        epsg_from_settings = settings_feat["epsg_code"]
+        if epsg_from_settings and epsg_from_settings != self.epsg_code:
+            self.epsg_code = epsg_from_settings
+        return True
 
     def create_empty_user_layers(self, overwrite=True):
         """Creating empty 3Di User Layers structure within GeoPackage."""
@@ -278,20 +297,32 @@ class ModelDataConverter:
             dst_layer.addFeatures(new_feats)
             dst_layer.commitChanges()
 
-    def src_dst_feat_count(self, annotated_model_csl):
-        """Counting features in data model source and destination layers."""
-        src_feat_count = 0
-        request = QgsFeatureRequest()
-        request.setFlags(QgsFeatureRequest.NoGeometry)
+    def collect_src_dst_ids(self, annotated_model_csl):
+        """Getting unique feature IDs of source and destination layers."""
+        src_feat_ids, dst_feat_ids = set(), set()
+        src_expr = None
+        if annotated_model_csl == dm.Pumpstation:
+            src_expr = QgsExpression('"connection_node_start_id" IS NOT NULL AND "connection_node_end_id" IS NULL')
+        elif annotated_model_csl == dm.PumpstationMap:
+            src_expr = QgsExpression('"connection_node_start_id" IS NOT NULL AND "connection_node_end_id" IS NOT NULL')
+        if src_expr is None:
+            src_request = QgsFeatureRequest()
+        else:
+            src_request = QgsFeatureRequest(src_expr)
+        src_request.setFlags(QgsFeatureRequest.NoGeometry)
+        dst_request = QgsFeatureRequest()
+        dst_request.setFlags(QgsFeatureRequest.NoGeometry)
         for src_table in annotated_model_csl.SQLITE_TARGETS:
             src_target_layer = sqlite_layer(self.src_sqlite, src_table)
             if not src_target_layer.isValid():
                 src_target_layer = sqlite_layer(self.src_sqlite, src_table, geom_column=None)
-            src_feat_count += len(tuple(1 for _ in src_target_layer.getFeatures(request)))
+            # Let's assume that ids are unique across multiple sqlite targets
+            src_feat_ids |= {src_feat["id"] for src_feat in src_target_layer.getFeatures(src_request)}
         dst_table = annotated_model_csl.__tablename__
         dst_layer = gpkg_layer(self.dst_gpkg, dst_table)
-        dst_feat_count = dst_layer.featureCount()
-        return src_feat_count, dst_feat_count
+        dst_id_idx = dst_layer.fields().indexFromName("id")
+        dst_feat_ids |= set(dst_layer.uniqueValues(dst_id_idx))
+        return src_feat_ids, dst_feat_ids
 
     def import_all_model_data(self):
         """Converting all Spatialite layers into GeoPackage User Layers."""
@@ -308,11 +339,14 @@ class ModelDataConverter:
             self.uc.progress_bar(msg, 0, number_of_steps, i, clear_msg_bar=True)
             QCoreApplication.processEvents()
             self.import_model_data(data_model_cls)
-            sqlite_feat_count, gpkg_feat_count = self.src_dst_feat_count(data_model_cls)
+            sqlite_feat_ids, gpkg_feat_ids = self.collect_src_dst_ids(data_model_cls)
+            sqlite_feat_count = len(sqlite_feat_ids)
+            gpkg_feat_count = len(gpkg_feat_ids)
             if sqlite_feat_count != gpkg_feat_count:
-                missing = sqlite_feat_count - gpkg_feat_count
+                missing_ids = list(sorted(sqlite_feat_ids - gpkg_feat_ids))
+                missing = len(missing_ids)
                 if missing:
-                    incomplete_imports[data_model_cls] = (sqlite_feat_count, gpkg_feat_count, missing)
+                    incomplete_imports[data_model_cls] = (sqlite_feat_count, gpkg_feat_count, missing, missing_ids)
         # Adding geometry between surfaces and connection nodes
         msg = f"Adding links between surfaces and connection nodes..."
         self.uc.progress_bar(msg, 0, number_of_steps, number_of_steps, clear_msg_bar=True)
@@ -322,11 +356,15 @@ class ModelDataConverter:
         # TODO: Uncomment line below after finishing forms implementation
         # self.process_timeseries_rawdata()
         if incomplete_imports:
-            warn = "Incomplete import:\n\n"
-            warn += "\n".join(
-                f"{model_cls.__layername__}: {gpkg_fc} out of {sqlite_fc} features imported ({miss_no} missing)"
-                for model_cls, (sqlite_fc, gpkg_fc, miss_no) in incomplete_imports.items()
-            )
+            warn = "Incomplete import:\n"
+            for model_cls, (sqlite_fc, gpkg_fc, miss_no, missing_ids) in incomplete_imports.items():
+                layer_name = model_cls.__layername__
+                warn += f"\n{layer_name}: {gpkg_fc} out of {sqlite_fc} features imported ({miss_no} missing)\n"
+                ids_str = ", ".join(str(mid) for mid in missing_ids[:10])
+                warn += f"ID's of missing features: {ids_str}"
+                if miss_no > 10:
+                    warn += " ..."
+            warn += "\nPlease run the 3Di schematization checker for more details"
             self.uc.show_warn(warn)
 
     def export_model_data(self, annotated_model_csl):
@@ -385,16 +423,22 @@ class ModelDataConverter:
             self.uc.progress_bar(msg, 0, number_of_steps, i, clear_msg_bar=True)
             QCoreApplication.processEvents()
             self.export_model_data(data_model_cls)
-            sqlite_feat_count, gpkg_feat_count = self.src_dst_feat_count(data_model_cls)
+            sqlite_feat_ids, gpkg_feat_ids = self.collect_src_dst_ids(data_model_cls)
+            sqlite_feat_count = len(sqlite_feat_ids)
+            gpkg_feat_count = len(gpkg_feat_ids)
             if gpkg_feat_count != sqlite_feat_count:
-                missing = gpkg_feat_count - sqlite_feat_count
+                missing_ids = list(sorted(gpkg_feat_ids - sqlite_feat_ids))
+                missing = len(missing_ids)
                 if missing:
-                    incomplete_exports[data_model_cls] = (sqlite_feat_count, gpkg_feat_count, missing)
+                    incomplete_exports[data_model_cls] = (sqlite_feat_count, gpkg_feat_count, missing, missing_ids)
         self.uc.clear_message_bar()
         if incomplete_exports:
-            warn = "Incomplete export:\n\n"
-            warn += "\n".join(
-                f"{model_cls.__layername__}: {sqlite_fc} out of {gpkg_fc} features exported ({miss_no} missing)"
-                for model_cls, (sqlite_fc, gpkg_fc, miss_no) in incomplete_exports.items()
-            )
+            warn = "Incomplete export:\n"
+            for model_cls, (sqlite_fc, gpkg_fc, miss_no, miss_ids) in incomplete_exports.items():
+                layer_name = model_cls.__layername__
+                warn += f"\n{layer_name}: {sqlite_fc} out of {gpkg_fc} features exported ({miss_no} missing)\n"
+                ids_str = ", ".join(str(mid) for mid in miss_ids[:10])
+                warn += f"ID's of missing features: {ids_str}"
+                if miss_no > 10:
+                    warn += " ..."
             self.uc.show_warn(warn)

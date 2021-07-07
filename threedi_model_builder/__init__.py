@@ -100,6 +100,9 @@ class ThreediModelBuilderPlugin:
             self.layer_manager.remove_groups()
         dst_gpkg = src_sqlite.replace(".sqlite", ".gpkg")
         converter = ModelDataConverter(src_sqlite, dst_gpkg, user_communication=self.uc)
+        known_epsg = converter.set_epsg_from_sqlite()
+        if known_epsg is False:
+            return
         converter.create_empty_user_layers()
         converter.import_all_model_data()
         self.model_gpkg = dst_gpkg
@@ -125,6 +128,9 @@ class ThreediModelBuilderPlugin:
             self.uc.show_warn(warn_msg)
             return
         converter = ModelDataConverter(dst_sqlite, self.model_gpkg, user_communication=self.uc)
+        known_epsg = converter.set_epsg_from_gpkg()
+        if known_epsg is False:
+            return
         converter.trim_sqlite_targets()
         converter.export_all_model_data()
         self.uc.show_info("Saving to the Spatialite finished!")

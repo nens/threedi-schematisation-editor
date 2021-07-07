@@ -62,7 +62,7 @@ class UserLayerHandler:
     @property
     def topologically_linked_models(self):
         """Getting topologically linked models."""
-        linked_models = dm.MODEL_1D_ELEMENTS + (dm.ImperviousSurfaceMap, dm.SurfaceMap)
+        linked_models = dm.MODEL_1D_ELEMENTS  # + (dm.ImperviousSurfaceMap, dm.SurfaceMap)
         return linked_models
 
     @property
