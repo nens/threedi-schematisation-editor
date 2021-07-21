@@ -141,13 +141,22 @@ class UserLayerHandler:
         for layer_handler in other_1d_handlers:
             layer = layer_handler.layer
             disconnect_signal(layer.beforeRollBack, layer_handler.on_rollback)
+            disconnect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
         for layer_handler in other_1d_handlers:
             layer = layer_handler.layer
             if layer.isEditable():
+                if layer.isModified():
+                    title = "Stop Editing"
+                    question = f"Do you want to save changes to layer {layer.name()}?"
+                    answer = self.layer_manager.uc.ask(None, title, question)
+                    if answer is True:
+                        layer.commitChanges(stopEditing=True)
+                        continue
                 layer.rollBack()
         for layer_handler in self.other_linked_handlers:
             layer = layer_handler.layer
             connect_signal(layer.beforeRollBack, layer_handler.on_rollback)
+            connect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
 
     def multi_commit_changes(self):
         """Commit changes for all layers with 1D group."""
