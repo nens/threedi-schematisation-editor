@@ -8,6 +8,7 @@ from threedi_model_builder.utils import (
     cast_if_bool,
 )
 from threedi_model_builder.communication import UICommunication
+from threedi_model_builder.custom_widgets import ProjectionSelectionDialog
 from operator import itemgetter
 from collections import OrderedDict, defaultdict
 from qgis.core import (
@@ -21,6 +22,7 @@ from qgis.core import (
     QgsPointXY,
 )
 from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtWidgets import QDialog
 
 
 class ModelDataConverter:
@@ -55,13 +57,23 @@ class ModelDataConverter:
         settings_layer = sqlite_layer(self.src_sqlite, settings_table, geom_column=None)
         try:
             settings_feat = next(settings_layer.getFeatures())
+            fetched_epsg = settings_feat["epsg_code"]
         except StopIteration:
-            msg = f"'{settings_table}' table is empty. Please add record with EPSG code first."
-            self.uc.show_error(msg)
-            return False
-        epsg_from_settings = settings_feat["epsg_code"]
-        if epsg_from_settings and epsg_from_settings != self.epsg_code:
-            self.epsg_code = epsg_from_settings
+            msg = f"'{settings_table}' table is empty. Please pick EPSG code that you want to use first."
+            self.uc.show_warn(msg)
+            crs_selection_dlg = ProjectionSelectionDialog()
+            res = crs_selection_dlg.exec_()
+            if res == QDialog.Accepted:
+                selected_crs = crs_selection_dlg.projection_selection.crs()
+                epsg_str = selected_crs.authid().split(":")[-1]
+                if epsg_str.isnumeric():
+                    fetched_epsg = int(epsg_str)
+                else:
+                    fetched_epsg = -1
+            else:
+                return False
+        if fetched_epsg and fetched_epsg != self.epsg_code:
+            self.epsg_code = fetched_epsg
         return True
 
     def set_epsg_from_gpkg(self):
@@ -74,9 +86,9 @@ class ModelDataConverter:
             msg = f"'{dm.GlobalSettings.__layername__}' layer is empty. Please add record with EPSG code first."
             self.uc.show_error(msg)
             return False
-        epsg_from_settings = settings_feat["epsg_code"]
-        if epsg_from_settings and epsg_from_settings != self.epsg_code:
-            self.epsg_code = epsg_from_settings
+        fetched_epsg = settings_feat["epsg_code"]
+        if fetched_epsg and fetched_epsg != self.epsg_code:
+            self.epsg_code = fetched_epsg
         return True
 
     def create_empty_user_layers(self, overwrite=True):
@@ -302,7 +314,7 @@ class ModelDataConverter:
         src_feat_ids, dst_feat_ids = set(), set()
         src_expr = None
         if annotated_model_csl == dm.Pumpstation:
-            src_expr = QgsExpression('"connection_node_start_id" IS NOT NULL AND "connection_node_end_id" IS NULL')
+            src_expr = QgsExpression('"connection_node_start_id" IS NOT NULL')
         elif annotated_model_csl == dm.PumpstationMap:
             src_expr = QgsExpression('"connection_node_start_id" IS NOT NULL AND "connection_node_end_id" IS NOT NULL')
         if src_expr is None:

@@ -19,6 +19,7 @@ def classFactory(iface):
 
 class ThreediModelBuilderPlugin:
     PLUGIN_NAME = "3Di Model Builder"
+    THREEDI_GPKG_VAR_NAME = "threedi_gpkg_var"
 
     def __init__(self, iface):
         self.iface = iface
@@ -26,11 +27,14 @@ class ThreediModelBuilderPlugin:
         self.action_open = None
         self.action_import = None
         self.action_export = None
+        self.action_remove = None
         self.model_gpkg = None
         self.layer_manager = None
         self.form_factory = None
         self.project = QgsProject.instance()
         self.project.removeAll.connect(self.on_project_close)
+        self.project.readProject.connect(self.on_3di_project_read)
+        self.project.projectSaved.connect(self.on_3di_project_save)
 
     def initGui(self):
         self.action_open = QAction("Open 3Di Geopackage", self.iface.mainWindow())
@@ -39,9 +43,13 @@ class ThreediModelBuilderPlugin:
         self.action_import.triggered.connect(self.load_from_spatialite)
         self.action_export = QAction("Save to Spatialite", self.iface.mainWindow())
         self.action_export.triggered.connect(self.save_to_spatialite)
+        self.action_remove = QAction("Remove 3Di model", self.iface.mainWindow())
+        self.action_remove.triggered.connect(self.remove_model_from_project)
         self.iface.addToolBarIcon(self.action_open)
         self.iface.addToolBarIcon(self.action_import)
         self.iface.addToolBarIcon(self.action_export)
+        self.iface.addToolBarIcon(self.action_remove)
+        self.toggle_active_project_actions()
 
     def unload(self):
         self.iface.removeToolBarIcon(self.action_open)
@@ -50,6 +58,16 @@ class ThreediModelBuilderPlugin:
         del self.action_import
         self.iface.removeToolBarIcon(self.action_export)
         del self.action_export
+        self.iface.removeToolBarIcon(self.action_remove)
+        del self.action_remove
+
+    def toggle_active_project_actions(self):
+        if self.model_gpkg is None:
+            self.action_export.setDisabled(True)
+            self.action_remove.setDisabled(True)
+        else:
+            self.action_export.setEnabled(True)
+            self.action_remove.setEnabled(True)
 
     def check_macros_status(self):
         macros_status = check_enable_macros_option()
@@ -70,17 +88,41 @@ class ThreediModelBuilderPlugin:
         filename = get_filepath(self.iface.mainWindow(), filter=name_filter, save=False, dialog_title=title)
         return filename
 
+    def on_3di_project_read(self):
+        self.action_export.setDisabled(True)
+        custom_vars = self.project.customVariables()
+        try:
+            self.model_gpkg = custom_vars[self.THREEDI_GPKG_VAR_NAME]
+        except KeyError:
+            self.model_gpkg = None
+            self.toggle_active_project_actions()
+            return
+        remove_user_layers()
+        self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
+        self.layer_manager.load_all_layers()
+        self.uc.bar_info("3Di User Layers registered!")
+        self.check_macros_status()
+        self.toggle_active_project_actions()
+
+    def on_3di_project_save(self):
+        if self.model_gpkg is not None:
+            self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAME: self.model_gpkg})
+
     def open_model_from_geopackage(self):
         model_gpkg = self.select_user_layers_geopackage()
         if not model_gpkg:
             return
         if self.layer_manager is not None:
             self.layer_manager.remove_groups()
+            self.model_gpkg = None
+            self.toggle_active_project_actions()
         self.model_gpkg = model_gpkg
         self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
         self.layer_manager.load_all_layers()
         self.uc.bar_info("3Di User Layers registered!")
         self.check_macros_status()
+        self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAME: self.model_gpkg})
+        self.toggle_active_project_actions()
 
     def load_from_spatialite(self):
         src_sqlite = self.select_sqlite_database(title="Select database to load features from")
@@ -98,6 +140,8 @@ class ThreediModelBuilderPlugin:
             return
         if self.layer_manager is not None:
             self.layer_manager.remove_groups()
+            self.model_gpkg = None
+            self.toggle_active_project_actions()
         dst_gpkg = src_sqlite.replace(".sqlite", ".gpkg")
         converter = ModelDataConverter(src_sqlite, dst_gpkg, user_communication=self.uc)
         known_epsg = converter.set_epsg_from_sqlite()
@@ -110,6 +154,8 @@ class ThreediModelBuilderPlugin:
         self.layer_manager.load_all_layers()
         self.uc.show_info("Loading from the Spatialite finished!")
         self.check_macros_status()
+        self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAME: self.model_gpkg})
+        self.toggle_active_project_actions()
 
     def save_to_spatialite(self):
         if not self.model_gpkg:
@@ -135,6 +181,18 @@ class ThreediModelBuilderPlugin:
         converter.export_all_model_data()
         self.uc.show_info("Saving to the Spatialite finished!")
 
+    def remove_model_from_project(self):
+        if not self.model_gpkg:
+            return
+        if self.layer_manager is not None:
+            self.layer_manager.remove_groups()
+            self.model_gpkg = None
+        custom_vars = self.project.customVariables()
+        if self.THREEDI_GPKG_VAR_NAME in custom_vars:
+            del custom_vars[self.THREEDI_GPKG_VAR_NAME]
+            self.project.setCustomVariables(custom_vars)
+        self.toggle_active_project_actions()
+
     def on_project_close(self):
         if self.layer_manager is None:
             return
@@ -145,3 +203,5 @@ class ThreediModelBuilderPlugin:
             self.save_to_spatialite()
         self.layer_manager.remove_loaded_layers(dry_remove=True)
         self.layer_manager = None
+        self.model_gpkg = None
+        self.toggle_active_project_actions()
