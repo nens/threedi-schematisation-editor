@@ -10,6 +10,7 @@ from threedi_model_builder.utils import (
     get_filepath,
     remove_user_layers,
     check_enable_macros_option,
+    ConversionError,
 )
 
 
@@ -147,8 +148,12 @@ class ThreediModelBuilderPlugin:
         known_epsg = converter.set_epsg_from_sqlite()
         if known_epsg is False:
             return
-        converter.create_empty_user_layers()
-        converter.import_all_model_data()
+        try:
+            converter.create_empty_user_layers()
+            converter.import_all_model_data()
+        except ConversionError:
+            self.uc.bar_warn("Loading from the Spatialite failed!")
+            return
         self.model_gpkg = dst_gpkg
         self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
         self.layer_manager.load_all_layers()
@@ -181,10 +186,20 @@ class ThreediModelBuilderPlugin:
         converter.export_all_model_data()
         self.uc.show_info("Saving to the Spatialite finished!")
 
+    def save_to_spatialite_on_action(self):
+        model_modified = self.layer_manager.model_modified()
+        if model_modified:
+            title = "Save to Spatialite?"
+            question = "Would you like to save model to Spatialite before closing project?"
+            answer = self.uc.ask(None, title, question)
+            if answer is True:
+                self.save_to_spatialite()
+
     def remove_model_from_project(self):
         if not self.model_gpkg:
             return
         if self.layer_manager is not None:
+            self.save_to_spatialite_on_action()
             self.layer_manager.remove_groups()
             self.model_gpkg = None
         custom_vars = self.project.customVariables()
@@ -196,11 +211,7 @@ class ThreediModelBuilderPlugin:
     def on_project_close(self):
         if self.layer_manager is None:
             return
-        title = "Save to Spatialite?"
-        question = "Would you like to save model to Spatialite before closing project?"
-        answer = self.uc.ask(None, title, question)
-        if answer is True:
-            self.save_to_spatialite()
+        self.save_to_spatialite_on_action()
         self.layer_manager.remove_loaded_layers(dry_remove=True)
         self.layer_manager = None
         self.model_gpkg = None

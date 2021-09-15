@@ -104,7 +104,7 @@ def layer_to_gpkg(layer, gpkg_filename, overwrite=False, driver_name="GPKG"):
     options.driverName = driver_name
     options.layerName = layer.name()
     writer, error = QgsVectorFileWriter.writeAsVectorFormatV2(layer, gpkg_filename, transform_context, options)
-    return writer
+    return writer, error
 
 
 def gpkg_layer(gpkg_path, table_name, layer_name=None):
@@ -382,3 +382,7 @@ def get_qgis(qgis_build_path="C:/OSGeo4W64/apps/qgis-ltr", qgis_proj_path="C:/OS
     qgis_app = QgsApplication([b"test"], False)
     qgis_app.initQgis()
     return qgis_app
+
+
+class ConversionError(Exception):
+    pass
