@@ -206,3 +206,8 @@ class LayersManager:
     def populate_edit_form(self, dialog, layer, feature):
         """Add extra logic to custom edit form of the layer."""
         self.form_factory.set_layer_form_logic(dialog, layer, feature)
+
+    def model_modified(self):
+        """Checking if any user layers were modified during work session."""
+        modified = any(handler.layer_modified for handler in self.layer_handlers.values())
+        return modified

@@ -36,6 +36,7 @@ class UserLayerHandler:
         self.layer_manager = layer_manager
         self.form_factory = self.layer_manager.form_factory
         self.layer = layer
+        self.layer_modified = False
 
     def connect_handler_signals(self):
         """Connecting layer signals."""
@@ -160,6 +161,7 @@ class UserLayerHandler:
 
     def multi_commit_changes(self):
         """Commit changes for all layers with 1D group."""
+        self.layer_modified = True
         if self.MODEL not in self.topologically_linked_models:
             return
         other_1d_handlers = self.other_linked_handlers

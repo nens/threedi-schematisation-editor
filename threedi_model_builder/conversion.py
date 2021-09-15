@@ -6,6 +6,7 @@ from threedi_model_builder.utils import (
     layer_to_gpkg,
     vector_layer_factory,
     cast_if_bool,
+    ConversionError,
 )
 from threedi_model_builder.communication import UICommunication
 from threedi_model_builder.custom_widgets import ProjectionSelectionDialog
@@ -20,6 +21,7 @@ from qgis.core import (
     QgsCoordinateTransform,
     QgsGeometry,
     QgsPointXY,
+    QgsVectorFileWriter,
 )
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtWidgets import QDialog
@@ -95,10 +97,11 @@ class ModelDataConverter:
         """Creating empty 3Di User Layers structure within GeoPackage."""
         vector_layers = [vector_layer_factory(model_cls, epsg=self.epsg_code) for model_cls in self.all_models]
         overwrite = overwrite
-        write_results = {}
         for vl in vector_layers:
-            writer = layer_to_gpkg(vl, self.dst_gpkg, overwrite=overwrite)
-            write_results[vl.id()] = writer
+            writer, error_msg = layer_to_gpkg(vl, self.dst_gpkg, overwrite=overwrite)
+            if writer != QgsVectorFileWriter.NoError:
+                self.uc.show_error(error_msg)
+                raise ConversionError((writer, error_msg))
             overwrite = False
 
     def trim_sqlite_targets(self):
