@@ -120,7 +120,6 @@ def sqlite_layer(sqlite_path, table_name, layer_name=None, geom_column="the_geom
     uri = QgsDataSourceUri()
     uri.setDatabase(sqlite_path)
     uri.setDataSource(schema, table_name, geom_column)
-    print(sqlite_path, schema, table_name, geom_column)
     layer_name = table_name if layer_name is None else layer_name
     vlayer = QgsVectorLayer(uri.uri(), layer_name, "spatialite")
     return vlayer
