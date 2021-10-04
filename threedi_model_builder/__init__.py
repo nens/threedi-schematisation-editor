@@ -5,10 +5,10 @@ from threedi_model_builder.communication import UICommunication
 from threedi_model_builder.user_layer_manager import LayersManager
 from threedi_model_builder.conversion import ModelDataConverter
 from threedi_model_builder.utils import (
-    load_user_layers,
     create_empty_model,
     get_filepath,
     remove_user_layers,
+    add_settings_entry,
     check_enable_macros_option,
     ConversionError,
 )
@@ -81,12 +81,12 @@ class ThreediModelBuilderPlugin:
 
     def select_user_layers_geopackage(self):
         name_filter = "3Di User Layers (*.gpkg *.GPKG)"
-        filename = get_filepath(self.iface.mainWindow(), filter=name_filter, save=False)
+        filename = get_filepath(self.iface.mainWindow(), extension_filter=name_filter, save=False)
         return filename
 
     def select_sqlite_database(self, title):
         name_filter = "Spatialite Database (*.sqlite)"
-        filename = get_filepath(self.iface.mainWindow(), filter=name_filter, save=False, dialog_title=title)
+        filename = get_filepath(self.iface.mainWindow(), extension_filter=name_filter, save=False, dialog_title=title)
         return filename
 
     def on_3di_project_read(self):
@@ -154,6 +154,8 @@ class ThreediModelBuilderPlugin:
         except ConversionError:
             self.uc.bar_warn("Loading from the Spatialite failed!")
             return
+        if converter.missing_source_settings is True:
+            add_settings_entry(dst_gpkg, id=1, epsg_code=converter.epsg_code)
         self.model_gpkg = dst_gpkg
         self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
         self.layer_manager.load_all_layers()

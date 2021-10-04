@@ -11,9 +11,15 @@ from threedi_model_builder.enumerators import (
     PipeMaterial,
     PumpType,
 )
-from threedi_model_builder.utils import connect_signal, disconnect_signal, count_vertices, find_point_nodes
 from types import MappingProxyType
 from functools import partial
+from threedi_model_builder.utils import (
+    connect_signal,
+    disconnect_signal,
+    count_vertices,
+    find_point_nodes,
+    get_next_feature_id,
+)
 from qgis.core import (
     NULL,
     QgsFeature,
@@ -63,7 +69,7 @@ class UserLayerHandler:
     @property
     def topologically_linked_models(self):
         """Getting topologically linked models."""
-        linked_models = dm.MODEL_1D_ELEMENTS
+        linked_models = dm.MODEL_1D_ELEMENTS + (dm.ImperviousSurfaceMap, dm.SurfaceMap)
         return linked_models
 
     @property
@@ -206,13 +212,7 @@ class UserLayerHandler:
         """Return first available ID within layer features."""
         if layer is None:
             layer = self.layer
-        id_idx = layer.fields().indexFromName("id")
-        # Ensure the id attribute is unique
-        try:
-            next_id = max(layer.uniqueValues(id_idx)) + 1
-        except ValueError:
-            # this is the first feature
-            next_id = 1
+        next_id = get_next_feature_id(layer)
         return next_id
 
     def set_feature_values(self, feat, set_id=True, **custom_values):
@@ -359,17 +359,18 @@ class PumpstationHandler(UserLayerHandler):
 
     def adjust_manhole_indicator(self, feat_id):
         """Adjusting underlying manhole attributes."""
-        feat = self.layer.getFeature(feat_id)
-        point = feat.geometry().asPoint()
-        manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
-        manhole_layer = manhole_handler.layer
-        manhole_feat = find_point_nodes(point, manhole_layer)
-        if manhole_feat is not None:
-            manhole_fid = manhole_feat.id()
-            if not manhole_layer.isEditable():
-                manhole_layer.startEditing()
-            manhole_indicator_idx = manhole_layer.fields().lookupField("manhole_indicator")
-            manhole_layer.changeAttributeValue(manhole_fid, manhole_indicator_idx, ManholeIndicator.PUMP.value)
+        if feat_id < 0:  # This logic should be triggered just once after adding feature, but before committing changes.
+            feat = self.layer.getFeature(feat_id)
+            point = feat.geometry().asPoint()
+            manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
+            manhole_layer = manhole_handler.layer
+            manhole_feat = find_point_nodes(point, manhole_layer)
+            if manhole_feat is not None:
+                manhole_fid = manhole_feat.id()
+                if not manhole_layer.isEditable():
+                    manhole_layer.startEditing()
+                manhole_indicator_idx = manhole_layer.fields().lookupField("manhole_indicator")
+                manhole_layer.changeAttributeValue(manhole_fid, manhole_indicator_idx, ManholeIndicator.PUMP.value)
 
     def get_pumpstation_feats_for_node_id(self, node_id):
         """Check if there is a pumpstation features defined for node of the given node_id and return it."""
@@ -664,10 +665,20 @@ class SurfaceHandler(UserLayerHandler):
 
 class ImperviousSurfaceMapHandler(UserLayerHandler):
     MODEL = dm.ImperviousSurfaceMap
+    DEFAULTS = MappingProxyType(
+        {
+            "percentage": 100.00,
+        }
+    )
 
 
 class SurfaceMapHandler(UserLayerHandler):
     MODEL = dm.SurfaceMap
+    DEFAULTS = MappingProxyType(
+        {
+            "percentage": 100.00,
+        }
+    )
 
 
 class SurfaceParameterHandler(UserLayerHandler):

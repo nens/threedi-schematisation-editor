@@ -2,13 +2,15 @@
 import os
 import threedi_model_builder.data_models as dm
 from types import MappingProxyType
-from qgis.core import QgsExpression, QgsFeatureRequest, QgsRasterLayer, QgsVectorLayerJoinInfo, QgsMapLayer
+from qgis.core import QgsExpression, QgsFeatureRequest, QgsRasterLayer, QgsVectorLayerJoinInfo
 from threedi_model_builder.user_layer_handlers import MODEL_HANDLERS
 from threedi_model_builder.user_layer_forms import LayerEditFormFactory
 from threedi_model_builder.utils import (
     gpkg_layer,
     get_form_ui_path,
     get_qml_style_path,
+    get_multiple_qml_style_paths,
+    set_initial_layer_configuration,
     create_tree_group,
     add_layer_to_group,
     remove_group_with_children,
@@ -94,27 +96,38 @@ class LayersManager:
 
     def initialize_data_model_layer(self, model_cls):
         """Initializing single model layer based on data model class."""
+        default_style_name = "default"
         layer = gpkg_layer(self.model_gpkg_path, model_cls.__tablename__, model_cls.__layername__)
-        qml_path = get_qml_style_path(model_cls.__tablename__)
-        if qml_path is not None:
-            layer.loadNamedStyle(qml_path)
-        attr_table_config = layer.attributeTableConfig()
-        columns = attr_table_config.columns()
-        for column in columns:
-            if column.name == "fid":
-                column.hidden = True
-                break
-        attr_table_config.setColumns(columns)
-        layer.setAttributeTableConfig(attr_table_config)
+        fields_indexes = list(range(len(layer.fields())))
         form_ui_path = get_form_ui_path(model_cls.__tablename__)
+        qml_paths = get_multiple_qml_style_paths(model_cls.__tablename__, "vector")
+        qml_names = [os.path.basename(qml_path).split(".")[0] for qml_path in qml_paths]
+        try:
+            default_idx = qml_names.index(default_style_name)
+            qml_paths.append(qml_paths.pop(default_idx))
+            qml_names.append(qml_names.pop(default_idx))
+        except ValueError:
+            # There is no default.qml style defined for the model layer
+            pass
+        style_manager = layer.styleManager()
+        for style_name, qml_path in zip(qml_names, qml_paths):
+            layer.loadNamedStyle(qml_path)
+            set_initial_layer_configuration(layer)
+            style_manager.addStyleFromLayer(style_name)
+        all_styles = style_manager.styles()
+        default_widgets_setup = [(idx, layer.editorWidgetSetup(idx)) for idx in fields_indexes]
+        default_edit_form_config = layer.editFormConfig()
         if form_ui_path:
-            form_config = layer.editFormConfig()
-            form_config.setUiForm(form_ui_path)
-            layer.setEditFormConfig(form_config)
+            default_edit_form_config.setUiForm(form_ui_path)
+        for style in all_styles:
+            style_manager.setCurrentStyle(style)
+            layer.setEditFormConfig(default_edit_form_config)
+            for field_idx, field_widget_setup in default_widgets_setup:
+                layer.setEditorWidgetSetup(field_idx, field_widget_setup)
+        style_manager.setCurrentStyle(default_style_name)
         dm_groups = self.data_model_groups
         group_name = dm_groups[model_cls]
         add_layer_to_group(group_name, layer, bottom=True)
-        layer.setFlags(QgsMapLayer.Searchable | QgsMapLayer.Identifiable)
         handler_cls = MODEL_HANDLERS[model_cls]
         handler = handler_cls(self, layer)
         handler.connect_handler_signals()

@@ -7,6 +7,7 @@ from types import MappingProxyType
 from threedi_model_builder.utils import (
     find_point_nodes,
     find_linestring_nodes,
+    find_point_polygons,
     connect_signal,
     is_optional,
     optional_type,
@@ -450,6 +451,63 @@ class FormWithCSDefinition(BaseForm):
         self.populate_widgets()
 
 
+class NodeToSurfaceMapForm(BaseForm):
+    """Basic surface to node map edit form logic."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.surface_model = None
+        self.surface_id_field = None
+        self.surface = None
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        surface_handler = self.layer_manager.model_handlers[self.surface_model]
+        connection_node_layer = connection_node_handler.layer
+        surface_layer = surface_handler.layer
+        linestring = self.feature.geometry().asPolyline()
+        start_point, end_point = linestring[0], linestring[-1]
+        connection_node_feat = find_point_nodes(end_point, connection_node_layer)
+        connection_node = connection_node_feat
+        if connection_node is not None:
+            self.feature["connection_node_id"] = connection_node["id"]
+        if self.surface is None:
+            self.surface = find_point_polygons(start_point, surface_layer)
+        if self.surface is not None:
+            self.feature[self.surface_id_field] = self.surface["id"]
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.surface = self.select_start_surface()
+            self.fill_related_attributes()
+        self.populate_widgets()
+
+    def select_start_surface(self):
+        """Selecting start surface"""
+        title = f"Select start {self.surface_model.__layername__}"
+        message = f"{self.surface_model.__layername__}s at location"
+        linestring = self.feature.geometry().asPolyline()
+        start_point, end_point = linestring[0], linestring[-1]
+        surface_handler = self.layer_manager.model_handlers[self.surface_model]
+        surface_layer = surface_handler.layer
+        surface_feats = find_point_polygons(start_point, surface_layer, allow_multiple=True)
+        surfaces_no = len(surface_feats)
+        if surfaces_no == 0:
+            surface_feat = None
+        elif surfaces_no == 1:
+            surface_feat = next(iter(surface_feats))
+        else:
+            surface_feats_by_id = {int(feat["id"]): feat for feat in surface_feats}
+            surface_entries = [f"{feat_id} ({feat['display_name']})" for feat_id, feat in surface_feats_by_id.items()]
+            surface_entry = self.uc.pick_item(title, message, None, *surface_entries)
+            surface_id = int(surface_entry.split()[0]) if surface_entry else None
+            surface_feat = surface_feats_by_id[surface_id] if surface_id else None
+        return surface_feat
+
+
 class ConnectionNodeForm(BaseForm):
     """Connection node edit form logic."""
 
@@ -801,6 +859,28 @@ class PumpstationMapForm(FormWithStartEndNode):
         return pumpstation_feat
 
 
+class ImperviousSurfaceMapForm(NodeToSurfaceMapForm):
+    """Impervious Surface Map user layer edit form logic."""
+
+    MODEL = dm.ImperviousSurfaceMap
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.surface_model = dm.ImperviousSurface
+        self.surface_id_field = "impervious_surface_id"
+
+
+class SurfaceMapForm(NodeToSurfaceMapForm):
+    """Surface Map user layer edit form logic."""
+
+    MODEL = dm.SurfaceMap
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.surface_model = dm.Surface
+        self.surface_id_field = "surface_id"
+
+
 ALL_FORMS = (
     ConnectionNodeForm,
     ManholeForm,
@@ -810,6 +890,8 @@ ALL_FORMS = (
     OrificeForm,
     PumpstationForm,
     PumpstationMapForm,
+    ImperviousSurfaceMapForm,
+    SurfaceMapForm,
 )
 
 MODEL_FORMS = MappingProxyType({form.MODEL: form for form in ALL_FORMS})
