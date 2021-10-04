@@ -9,6 +9,8 @@ from qgis.PyQt.QtCore import QSettings, QVariant
 from qgis.PyQt.QtWidgets import QFileDialog
 from qgis.core import (
     QgsDataSourceUri,
+    QgsFeature,
+    QgsMapLayer,
     QgsVectorLayer,
     QgsRasterLayer,
     QgsLayerTreeGroup,
@@ -140,6 +142,16 @@ def get_qml_style_path(style_name, *subfolders):
     return None
 
 
+def get_multiple_qml_style_paths(styles_folder_name, *subfolders):
+    """Getting QML styles paths within given styles folder."""
+    styles_folder_path = os.path.join(os.path.dirname(__file__), "styles", *subfolders, styles_folder_name)
+    if os.path.exists(styles_folder_path):
+        qml_paths = [os.path.join(styles_folder_path, q) for q in os.listdir(styles_folder_path) if q.endswith(".qml")]
+    else:
+        qml_paths = []
+    return qml_paths
+
+
 def get_form_ui_path(table_name):
     """Getting UI form path for a given table name."""
     ui_filename = f"{table_name}.ui"
@@ -189,19 +201,19 @@ def remove_group_with_children(name):
         root.removeChildNode(group)
 
 
-def get_filepath(parent, filter=None, extension=None, save=True, dialog_title=None):
+def get_filepath(parent, extension_filter=None, extension=None, save=True, dialog_title=None):
     """Opening dialog to get a filepath."""
-    if filter is None:
-        filter = "All Files (*.*)"
+    if extension_filter is None:
+        extension_filter = "All Files (*.*)"
 
     if dialog_title is None:
         dialog_title = "Choose file"
 
     starting_dir = QSettings().value("threedi_mb/last_folder", os.path.expanduser("~"), type=str)
     if save is True:
-        file_name, __ = QFileDialog.getSaveFileName(parent, dialog_title, starting_dir, filter)
+        file_name, __ = QFileDialog.getSaveFileName(parent, dialog_title, starting_dir, extension_filter)
     else:
-        file_name, __ = QFileDialog.getOpenFileName(parent, dialog_title, starting_dir, filter)
+        file_name, __ = QFileDialog.getOpenFileName(parent, dialog_title, starting_dir, extension_filter)
     if len(file_name) == 0:
         return None
 
@@ -213,6 +225,19 @@ def get_filepath(parent, filter=None, extension=None, save=True, dialog_title=No
     return file_name
 
 
+def set_initial_layer_configuration(layer):
+    """Set initial vector layer configuration that should be set within currently active style."""
+    attr_table_config = layer.attributeTableConfig()
+    columns = attr_table_config.columns()
+    for column in columns:
+        if column.name == "fid":
+            column.hidden = True
+            break
+    attr_table_config.setColumns(columns)
+    layer.setAttributeTableConfig(attr_table_config)
+    layer.setFlags(QgsMapLayer.Searchable | QgsMapLayer.Identifiable)
+
+
 def load_user_layers(gpkg_path):
     """Loading grouped User Layers from GeoPackage into map canvas."""
     groups = OrderedDict()
@@ -220,14 +245,38 @@ def load_user_layers(gpkg_path):
     groups["2D"] = dm.MODEL_2D_ELEMENTS
     groups["Inflow"] = dm.INFLOW_ELEMENTS
     groups["Settings"] = dm.SETTINGS_ELEMENTS
+    default_style_name = "default"
     for group_name, group_models in groups.items():
         get_tree_group(group_name)
         for model_cls in group_models:
-            vlayer = gpkg_layer(gpkg_path, model_cls.__tablename__, model_cls.__layername__)
-            qml_path = get_qml_style_path(model_cls.__tablename__)
-            if qml_path is not None:
-                vlayer.loadNamedStyle(qml_path)
-            add_layer_to_group(group_name, vlayer, bottom=True)
+            layer = gpkg_layer(gpkg_path, model_cls.__tablename__, model_cls.__layername__)
+            fields_indexes = list(range(len(layer.fields())))
+            form_ui_path = get_form_ui_path(model_cls.__tablename__)
+            qml_paths = get_multiple_qml_style_paths(model_cls.__tablename__, "vector")
+            qml_names = [os.path.basename(qml_path).split(".")[0] for qml_path in qml_paths]
+            try:
+                default_idx = qml_names.index(default_style_name)
+                qml_paths.append(qml_paths.pop(default_idx))
+                qml_names.append(qml_names.pop(default_idx))
+            except ValueError:
+                # There is no default.qml style defined for the model layer
+                pass
+            style_manager = layer.styleManager()
+            for style_name, qml_path in zip(qml_names, qml_paths):
+                layer.loadNamedStyle(qml_path)
+                style_manager.addStyleFromLayer(style_name)
+            all_styles = style_manager.styles()
+            default_widgets_setup = [(idx, layer.editorWidgetSetup(idx)) for idx in fields_indexes]
+            default_edit_form_config = layer.editFormConfig()
+            if form_ui_path:
+                default_edit_form_config.setUiForm(form_ui_path)
+            for style in all_styles:
+                style_manager.setCurrentStyle(style)
+                layer.setEditFormConfig(default_edit_form_config)
+                for field_idx, field_widget_setup in default_widgets_setup:
+                    layer.setEditorWidgetSetup(field_idx, field_widget_setup)
+            style_manager.setCurrentStyle(default_style_name)
+            add_layer_to_group(group_name, layer, bottom=True)
     load_model_raster_layers(gpkg_path)
 
 
@@ -353,6 +402,31 @@ def find_linestring_nodes(linestring, node_layer, tolerance=0.0000001, allow_mul
         return node_start_feat, node_end_feat
 
 
+def find_point_polygons(point, polygon_layer, allow_multiple=False, locator=None):
+    """Function that finds features from given polygon layer that contains given point."""
+    project = QgsProject.instance()
+    src_crs = polygon_layer.sourceCrs()
+    dst_crs = project.crs()
+    transform_ctx = project.transformContext()
+    if not locator:
+        locator = QgsPointLocator(polygon_layer, dst_crs, transform_ctx)
+    polygon_feats = []
+    polygon_feat = None
+    if src_crs != dst_crs:
+        transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx)
+        point_geom = QgsGeometry.fromPointXY(point)
+        point_geom.transform(transformation)
+        point = point_geom.asPoint()
+    matches = locator.pointInPolygon(point)
+    for match in matches:
+        match_layer = match.layer()
+        if match_layer:
+            polygon_fid = match.featureId()
+            polygon_feat = match_layer.getFeature(polygon_fid)
+            polygon_feats.append(polygon_feat)
+    return polygon_feats if allow_multiple else polygon_feat
+
+
 def count_vertices(geometry):
     """Returning number of vertices within geometry."""
     c = sum(1 for _ in geometry.vertices())
@@ -360,9 +434,35 @@ def count_vertices(geometry):
 
 
 def check_enable_macros_option():
+    """Check if macros are enabled."""
     settings = QSettings()
     option = settings.value("/qgis/enableMacros", type=str)
     return option
+
+
+def get_next_feature_id(layer):
+    """Return first available ID within layer features."""
+    id_idx = layer.fields().indexFromName("id")
+    # Ensure the id attribute is unique
+    try:
+        next_id = max(layer.uniqueValues(id_idx)) + 1
+    except ValueError:
+        # this is the first feature
+        next_id = 1
+    return next_id
+
+
+def add_settings_entry(gpkg_path, **initial_fields_values):
+    """Adding initial settings entry with defined fields values."""
+    settings_layer = gpkg_layer(gpkg_path, dm.GlobalSettings.__tablename__)
+    if settings_layer.featureCount() == 0:
+        settings_fields = settings_layer.fields()
+        settings_feat = QgsFeature(settings_fields)
+        for field, value in initial_fields_values.items():
+            settings_feat[field] = value
+        settings_layer.startEditing()
+        settings_layer.addFeature(settings_feat)
+        settings_layer.commitChanges()
 
 
 def get_qgis(qgis_build_path="C:/OSGeo4W64/apps/qgis-ltr", qgis_proj_path="C:/OSGeo4W64/share/proj"):

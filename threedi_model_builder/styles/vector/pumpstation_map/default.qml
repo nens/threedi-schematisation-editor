@@ -1,14 +1,9 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis labelsEnabled="0" styleCategories="LayerConfiguration|Symbology|Labeling|Forms" readOnly="0" version="3.16.3-Hannover">
-  <flags>
-    <Identifiable>1</Identifiable>
-    <Removable>1</Removable>
-    <Searchable>1</Searchable>
-  </flags>
-  <renderer-v2 type="singleSymbol" forceraster="0" enableorderby="0" symbollevels="0">
+<qgis styleCategories="Symbology|Labeling|Forms|MapTips" version="3.16.9-Hannover" labelsEnabled="0">
+  <renderer-v2 enableorderby="0" symbollevels="0" type="singleSymbol" forceraster="0">
     <symbols>
-      <symbol clip_to_extent="1" type="line" force_rhr="0" name="0" alpha="1">
-        <layer locked="0" enabled="1" pass="0" class="SimpleLine">
+      <symbol clip_to_extent="1" name="0" type="line" alpha="1" force_rhr="0">
+        <layer enabled="1" class="SimpleLine" locked="0" pass="0">
           <prop v="0" k="align_dash_pattern"/>
           <prop v="square" k="capstyle"/>
           <prop v="5;2" k="customdash"/>
@@ -32,13 +27,13 @@
           <prop v="3x:0,0,0,0,0,0" k="width_map_unit_scale"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option value="" type="QString" name="name"/>
+              <Option value="" name="name" type="QString"/>
               <Option name="properties"/>
-              <Option value="collection" type="QString" name="type"/>
+              <Option value="collection" name="type" type="QString"/>
             </Option>
           </data_defined_properties>
         </layer>
-        <layer locked="0" enabled="1" pass="0" class="MarkerLine">
+        <layer enabled="1" class="MarkerLine" locked="0" pass="0">
           <prop v="4" k="average_angle_length"/>
           <prop v="3x:0,0,0,0,0,0" k="average_angle_map_unit_scale"/>
           <prop v="MM" k="average_angle_unit"/>
@@ -56,13 +51,13 @@
           <prop v="1" k="rotate"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option value="" type="QString" name="name"/>
+              <Option value="" name="name" type="QString"/>
               <Option name="properties"/>
-              <Option value="collection" type="QString" name="type"/>
+              <Option value="collection" name="type" type="QString"/>
             </Option>
           </data_defined_properties>
-          <symbol clip_to_extent="1" type="marker" force_rhr="0" name="@0@1" alpha="1">
-            <layer locked="0" enabled="1" pass="0" class="SimpleMarker">
+          <symbol clip_to_extent="1" name="@0@1" type="marker" alpha="1" force_rhr="0">
+            <layer enabled="1" class="SimpleMarker" locked="0" pass="0">
               <prop v="90" k="angle"/>
               <prop v="77,77,77,255" k="color"/>
               <prop v="1" k="horizontal_anchor_point"/>
@@ -83,15 +78,15 @@
               <prop v="1" k="vertical_anchor_point"/>
               <data_defined_properties>
                 <Option type="Map">
-                  <Option value="" type="QString" name="name"/>
+                  <Option value="" name="name" type="QString"/>
                   <Option name="properties"/>
-                  <Option value="collection" type="QString" name="type"/>
+                  <Option value="collection" name="type" type="QString"/>
                 </Option>
               </data_defined_properties>
             </layer>
           </symbol>
         </layer>
-        <layer locked="0" enabled="1" pass="0" class="SimpleLine">
+        <layer enabled="1" class="SimpleLine" locked="0" pass="0">
           <prop v="0" k="align_dash_pattern"/>
           <prop v="square" k="capstyle"/>
           <prop v="5;2" k="customdash"/>
@@ -115,13 +110,13 @@
           <prop v="3x:0,0,0,0,0,0" k="width_map_unit_scale"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option value="" type="QString" name="name"/>
+              <Option value="" name="name" type="QString"/>
               <Option name="properties"/>
-              <Option value="collection" type="QString" name="type"/>
+              <Option value="collection" name="type" type="QString"/>
             </Option>
           </data_defined_properties>
         </layer>
-        <layer locked="0" enabled="1" pass="0" class="SimpleLine">
+        <layer enabled="1" class="SimpleLine" locked="0" pass="0">
           <prop v="0" k="align_dash_pattern"/>
           <prop v="square" k="capstyle"/>
           <prop v="5;2" k="customdash"/>
@@ -145,9 +140,9 @@
           <prop v="3x:0,0,0,0,0,0" k="width_map_unit_scale"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option value="" type="QString" name="name"/>
+              <Option value="" name="name" type="QString"/>
               <Option name="properties"/>
-              <Option value="collection" type="QString" name="type"/>
+              <Option value="collection" name="type" type="QString"/>
             </Option>
           </data_defined_properties>
         </layer>
@@ -187,6 +182,13 @@
         </config>
       </editWidget>
     </field>
+    <field name="pumpstation_id">
+      <editWidget type="Range">
+        <config>
+          <Option/>
+        </config>
+      </editWidget>
+    </field>
     <field name="connection_node_start_id">
       <editWidget type="Range">
         <config>
@@ -202,34 +204,34 @@
       </editWidget>
     </field>
   </fieldConfiguration>
-  <editform tolerant="1">.</editform>
+  <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_model_builder\forms\ui\pumpstation_map.ui</editform>
   <editforminit>open_edit_form</editforminit>
   <editforminitcodesource>2</editforminitcodesource>
   <editforminitfilepath>.</editforminitfilepath>
   <editforminitcode><![CDATA[from threedi_model_builder.utils import open_edit_form]]></editforminitcode>
   <featformsuppress>0</featformsuppress>
-  <editorlayout>tablayout</editorlayout>
+  <editorlayout>uifilelayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer showLabel="1" visibilityExpression="" groupBox="0" visibilityExpressionEnabled="0" columnCount="1" name="Pumpstation view">
-      <attributeEditorContainer showLabel="1" visibilityExpression="" groupBox="1" visibilityExpressionEnabled="0" columnCount="1" name="General">
-        <attributeEditorField showLabel="1" index="-1" name="pump_id"/>
-        <attributeEditorField showLabel="1" index="-1" name="pump_display_name"/>
-        <attributeEditorField showLabel="1" index="-1" name="pump_code"/>
+    <attributeEditorContainer visibilityExpression="" name="Pumpstation view" columnCount="1" groupBox="0" visibilityExpressionEnabled="0" showLabel="1">
+      <attributeEditorContainer visibilityExpression="" name="General" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
+        <attributeEditorField name="id" showLabel="1" index="-1"/>
+        <attributeEditorField name="display_name" showLabel="1" index="-1"/>
+        <attributeEditorField name="code" showLabel="1" index="-1"/>
       </attributeEditorContainer>
-      <attributeEditorContainer showLabel="1" visibilityExpression="" groupBox="1" visibilityExpressionEnabled="0" columnCount="1" name="Characteristics">
-        <attributeEditorField showLabel="1" index="-1" name="pump_start_level"/>
-        <attributeEditorField showLabel="1" index="-1" name="pump_lower_stop_level"/>
-        <attributeEditorField showLabel="1" index="-1" name="pump_upper_stop_level"/>
-        <attributeEditorField showLabel="1" index="-1" name="pump_capacity"/>
-        <attributeEditorField showLabel="1" index="-1" name="pump_type"/>
+      <attributeEditorContainer visibilityExpression="" name="Characteristics" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
+        <attributeEditorField name="start_level" showLabel="1" index="-1"/>
+        <attributeEditorField name="lower_stop_level" showLabel="1" index="-1"/>
+        <attributeEditorField name="upper_stop_level" showLabel="1" index="-1"/>
+        <attributeEditorField name="capacity" showLabel="1" index="-1"/>
+        <attributeEditorField name="type" showLabel="1" index="-1"/>
       </attributeEditorContainer>
-      <attributeEditorContainer showLabel="1" visibilityExpression="" groupBox="1" visibilityExpressionEnabled="0" columnCount="1" name="Visualization">
-        <attributeEditorField showLabel="1" index="-1" name="pump_sewerage"/>
-        <attributeEditorField showLabel="1" index="-1" name="pump_zoom_category"/>
+      <attributeEditorContainer visibilityExpression="" name="Visualization" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
+        <attributeEditorField name="sewerage" showLabel="1" index="-1"/>
+        <attributeEditorField name="zoom_category" showLabel="1" index="-1"/>
       </attributeEditorContainer>
-      <attributeEditorContainer showLabel="1" visibilityExpression="" groupBox="1" visibilityExpressionEnabled="0" columnCount="1" name="Connection nodes">
-        <attributeEditorField showLabel="1" index="-1" name="pump_connection_node_start_id"/>
-        <attributeEditorField showLabel="1" index="-1" name="pump_connection_node_end_id"/>
+      <attributeEditorContainer visibilityExpression="" name="Connection nodes" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
+        <attributeEditorField name="connection_node_start_id" showLabel="1" index="-1"/>
+        <attributeEditorField name="connection_node_end_id" showLabel="1" index="-1"/>
       </attributeEditorContainer>
     </attributeEditorContainer>
   </attributeEditorForm>
@@ -241,44 +243,46 @@
     <field editable="1" name="display_name"/>
     <field editable="1" name="fid"/>
     <field editable="1" name="id"/>
-    <field editable="1" name="pump_capacity"/>
-    <field editable="1" name="pump_classification"/>
-    <field editable="1" name="pump_code"/>
-    <field editable="0" name="pump_connection_node_end_id"/>
-    <field editable="0" name="pump_connection_node_start_id"/>
-    <field editable="1" name="pump_display_name"/>
-    <field editable="1" name="pump_id"/>
-    <field editable="1" name="pump_lower_stop_level"/>
-    <field editable="1" name="pump_sewerage"/>
-    <field editable="1" name="pump_start_level"/>
-    <field editable="1" name="pump_type"/>
-    <field editable="1" name="pump_upper_stop_level"/>
-    <field editable="1" name="pump_zoom_category"/>
+    <field editable="1" name="capacity"/>
+    <field editable="1" name="classification"/>
+    <field editable="1" name="code"/>
+    <field editable="0" name="connection_node_end_id"/>
+    <field editable="0" name="connection_node_start_id"/>
+    <field editable="1" name="display_name"/>
+    <field editable="1" name="id"/>
+    <field editable="1" name="lower_stop_level"/>
+    <field editable="1" name="sewerage"/>
+    <field editable="1" name="start_level"/>
+    <field editable="1" name="type"/>
+    <field editable="1" name="upper_stop_level"/>
+    <field editable="1" name="zoom_category"/>
+    <field editable="1" name="pumpstation_id"/>
   </editable>
   <labelOnTop>
-    <field labelOnTop="0" name="ROWID"/>
-    <field labelOnTop="0" name="code"/>
-    <field labelOnTop="0" name="connection_node_end_id"/>
-    <field labelOnTop="0" name="connection_node_start_id"/>
-    <field labelOnTop="0" name="display_name"/>
-    <field labelOnTop="0" name="fid"/>
-    <field labelOnTop="0" name="id"/>
-    <field labelOnTop="0" name="pump_capacity"/>
-    <field labelOnTop="0" name="pump_classification"/>
-    <field labelOnTop="0" name="pump_code"/>
-    <field labelOnTop="0" name="pump_connection_node_end_id"/>
-    <field labelOnTop="0" name="pump_connection_node_start_id"/>
-    <field labelOnTop="0" name="pump_display_name"/>
-    <field labelOnTop="0" name="pump_id"/>
-    <field labelOnTop="0" name="pump_lower_stop_level"/>
-    <field labelOnTop="0" name="pump_sewerage"/>
-    <field labelOnTop="0" name="pump_start_level"/>
-    <field labelOnTop="0" name="pump_type"/>
-    <field labelOnTop="0" name="pump_upper_stop_level"/>
-    <field labelOnTop="0" name="pump_zoom_category"/>
+    <field name="ROWID" labelOnTop="0"/>
+    <field name="code" labelOnTop="0"/>
+    <field name="connection_node_end_id" labelOnTop="0"/>
+    <field name="connection_node_start_id" labelOnTop="0"/>
+    <field name="display_name" labelOnTop="0"/>
+    <field name="fid" labelOnTop="0"/>
+    <field name="id" labelOnTop="0"/>
+    <field name="capacity" labelOnTop="0"/>
+    <field name="classification" labelOnTop="0"/>
+    <field name="code" labelOnTop="0"/>
+    <field name="connection_node_end_id" labelOnTop="0"/>
+    <field name="connection_node_start_id" labelOnTop="0"/>
+    <field name="display_name" labelOnTop="0"/>
+    <field name="id" labelOnTop="0"/>
+    <field name="lower_stop_level" labelOnTop="0"/>
+    <field name="sewerage" labelOnTop="0"/>
+    <field name="start_level" labelOnTop="0"/>
+    <field name="type" labelOnTop="0"/>
+    <field name="upper_stop_level" labelOnTop="0"/>
+    <field name="zoom_category" labelOnTop="0"/>
+    <field name="pumpstation_id" labelOnTop="0"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>
   <widgets/>
-  <previewExpression>"ROWID"</previewExpression>
+  <mapTip></mapTip>
   <layerGeometryType>1</layerGeometryType>
 </qgis>

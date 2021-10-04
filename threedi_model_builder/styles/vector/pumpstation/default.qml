@@ -220,7 +220,7 @@
   <attributeEditorForm>
     <attributeEditorContainer showLabel="1" visibilityExpression="" groupBox="0" visibilityExpressionEnabled="0" columnCount="1" name="Pumpstation point view">
       <attributeEditorContainer showLabel="1" visibilityExpression="" groupBox="1" visibilityExpressionEnabled="0" columnCount="1" name="General">
-        <attributeEditorField showLabel="1" index="-1" name="pump_id"/>
+        <attributeEditorField showLabel="1" index="-1" name="id"/>
         <attributeEditorField showLabel="1" index="3" name="display_name"/>
         <attributeEditorField showLabel="1" index="2" name="code"/>
       </attributeEditorContainer>
@@ -255,7 +255,7 @@
     <field editable="1" name="fid"/>
     <field editable="1" name="id"/>
     <field editable="1" name="lower_stop_level"/>
-    <field editable="1" name="pump_id"/>
+    <field editable="1" name="id"/>
     <field editable="1" name="sewerage"/>
     <field editable="1" name="start_level"/>
     <field editable="1" name="storage_area"/>
@@ -275,7 +275,7 @@
     <field labelOnTop="0" name="fid"/>
     <field labelOnTop="0" name="id"/>
     <field labelOnTop="0" name="lower_stop_level"/>
-    <field labelOnTop="0" name="pump_id"/>
+    <field labelOnTop="0" name="id"/>
     <field labelOnTop="0" name="sewerage"/>
     <field labelOnTop="0" name="start_level"/>
     <field labelOnTop="0" name="storage_area"/>

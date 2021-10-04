@@ -36,6 +36,7 @@ class ModelDataConverter:
         self.src_sqlite = src_sqlite
         self.dst_gpkg = dst_gpkg
         self.epsg_code = epsg_code
+        self.missing_source_settings = False
         self.all_models = dm.ALL_MODELS[:]
         self.timeseries_rawdata = OrderedDict()
         self.uc = user_communication if user_communication is not None else UICommunication(context="3Di Model Builder")
@@ -61,6 +62,7 @@ class ModelDataConverter:
             settings_feat = next(settings_layer.getFeatures())
             fetched_epsg = settings_feat["epsg_code"]
         except StopIteration:
+            self.missing_source_settings = True
             msg = f"'{settings_table}' table is empty. Please pick EPSG code that you want to use first."
             self.uc.show_warn(msg)
             crs_selection_dlg = ProjectionSelectionDialog()

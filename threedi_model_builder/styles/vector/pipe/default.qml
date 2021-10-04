@@ -689,33 +689,33 @@
   <attributeEditorForm>
     <attributeEditorContainer columnCount="1" groupBox="0" visibilityExpression="" name="Pipe view" showLabel="1" visibilityExpressionEnabled="0">
       <attributeEditorContainer columnCount="1" groupBox="1" visibilityExpression="" name="General" showLabel="1" visibilityExpressionEnabled="0">
-        <attributeEditorField name="pipe_id" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_display_name" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_code" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_calculation_type" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_dist_calc_points" showLabel="1" index="-1"/>
+        <attributeEditorField name="id" showLabel="1" index="-1"/>
+        <attributeEditorField name="display_name" showLabel="1" index="-1"/>
+        <attributeEditorField name="code" showLabel="1" index="-1"/>
+        <attributeEditorField name="calculation_type" showLabel="1" index="-1"/>
+        <attributeEditorField name="dist_calc_points" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer columnCount="1" groupBox="1" visibilityExpression="" name="Characteristics" showLabel="1" visibilityExpressionEnabled="0">
-        <attributeEditorField name="pipe_invert_level_start_point" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_invert_level_end_point" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_friction_value" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_friction_type" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_material" showLabel="1" index="-1"/>
+        <attributeEditorField name="invert_level_start_point" showLabel="1" index="-1"/>
+        <attributeEditorField name="invert_level_end_point" showLabel="1" index="-1"/>
+        <attributeEditorField name="friction_value" showLabel="1" index="-1"/>
+        <attributeEditorField name="friction_type" showLabel="1" index="-1"/>
+        <attributeEditorField name="material" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer columnCount="1" groupBox="1" visibilityExpression="" name="Cross section definition" showLabel="1" visibilityExpressionEnabled="0">
-        <attributeEditorField name="pipe_cross_section_definition_id" showLabel="1" index="-1"/>
-        <attributeEditorField name="def_shape" showLabel="1" index="-1"/>
-        <attributeEditorField name="def_width" showLabel="1" index="-1"/>
-        <attributeEditorField name="def_height" showLabel="1" index="-1"/>
-        <attributeEditorField name="def_code" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_definition_id" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_definition_shape" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_definition_width" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_definition_height" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_definition_code" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer columnCount="1" groupBox="1" visibilityExpression="" name="Visualization" showLabel="1" visibilityExpressionEnabled="0">
-        <attributeEditorField name="pipe_sewerage_type" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_zoom_category" showLabel="1" index="-1"/>
+        <attributeEditorField name="sewerage_type" showLabel="1" index="-1"/>
+        <attributeEditorField name="zoom_category" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer columnCount="1" groupBox="1" visibilityExpression="" name="Connection nodes" showLabel="1" visibilityExpressionEnabled="0">
-        <attributeEditorField name="pipe_connection_node_start_id" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_connection_node_end_id" showLabel="1" index="-1"/>
+        <attributeEditorField name="connection_node_start_id" showLabel="1" index="-1"/>
+        <attributeEditorField name="connection_node_end_id" showLabel="1" index="-1"/>
       </attributeEditorContainer>
     </attributeEditorContainer>
   </attributeEditorForm>
@@ -726,11 +726,11 @@
     <field name="connection_node_end_id" editable="1"/>
     <field name="connection_node_start_id" editable="1"/>
     <field name="cross_section_definition_id" editable="1"/>
-    <field name="def_code" editable="0"/>
-    <field name="def_height" editable="0"/>
-    <field name="def_id" editable="1"/>
-    <field name="def_shape" editable="0"/>
-    <field name="def_width" editable="0"/>
+    <field name="cross_section_definition_code" editable="0"/>
+    <field name="cross_section_definition_height" editable="0"/>
+    <field name="cross_section_definition_id" editable="1"/>
+    <field name="cross_section_definition_shape" editable="0"/>
+    <field name="cross_section_definition_width" editable="0"/>
     <field name="display_name" editable="1"/>
     <field name="dist_calc_points" editable="1"/>
     <field name="fid" editable="1"/>
@@ -741,25 +741,25 @@
     <field name="invert_level_start_point" editable="1"/>
     <field name="material" editable="1"/>
     <field name="original_length" editable="1"/>
-    <field name="pipe_calculation_type" editable="1"/>
-    <field name="pipe_code" editable="1"/>
-    <field name="pipe_connection_node_end_id" editable="0"/>
-    <field name="pipe_connection_node_start_id" editable="0"/>
-    <field name="pipe_cross_section_definition_id" editable="1"/>
-    <field name="pipe_display_name" editable="1"/>
-    <field name="pipe_dist_calc_points" editable="1"/>
-    <field name="pipe_friction_type" editable="1"/>
-    <field name="pipe_friction_value" editable="1"/>
-    <field name="pipe_id" editable="1"/>
-    <field name="pipe_invert_level_end_point" editable="1"/>
-    <field name="pipe_invert_level_start_point" editable="1"/>
-    <field name="pipe_material" editable="1"/>
-    <field name="pipe_original_length" editable="1"/>
-    <field name="pipe_pipe_quality" editable="1"/>
-    <field name="pipe_profile_num" editable="1"/>
+    <field name="calculation_type" editable="1"/>
+    <field name="code" editable="1"/>
+    <field name="connection_node_end_id" editable="0"/>
+    <field name="connection_node_start_id" editable="0"/>
+    <field name="cross_section_definition_id" editable="1"/>
+    <field name="display_name" editable="1"/>
+    <field name="dist_calc_points" editable="1"/>
+    <field name="friction_type" editable="1"/>
+    <field name="friction_value" editable="1"/>
+    <field name="id" editable="1"/>
+    <field name="invert_level_end_point" editable="1"/>
+    <field name="invert_level_start_point" editable="1"/>
+    <field name="material" editable="1"/>
+    <field name="original_length" editable="1"/>
     <field name="pipe_quality" editable="1"/>
-    <field name="pipe_sewerage_type" editable="1"/>
-    <field name="pipe_zoom_category" editable="1"/>
+    <field name="profile_num" editable="1"/>
+    <field name="pipe_quality" editable="1"/>
+    <field name="sewerage_type" editable="1"/>
+    <field name="zoom_category" editable="1"/>
     <field name="profile_num" editable="1"/>
     <field name="sewerage_type" editable="1"/>
     <field name="zoom_category" editable="1"/>
@@ -771,11 +771,11 @@
     <field labelOnTop="0" name="connection_node_end_id"/>
     <field labelOnTop="0" name="connection_node_start_id"/>
     <field labelOnTop="0" name="cross_section_definition_id"/>
-    <field labelOnTop="0" name="def_code"/>
-    <field labelOnTop="0" name="def_height"/>
-    <field labelOnTop="0" name="def_id"/>
-    <field labelOnTop="0" name="def_shape"/>
-    <field labelOnTop="0" name="def_width"/>
+    <field labelOnTop="0" name="cross_section_definition_code"/>
+    <field labelOnTop="0" name="cross_section_definition_height"/>
+    <field labelOnTop="0" name="cross_section_definition_id"/>
+    <field labelOnTop="0" name="cross_section_definition_shape"/>
+    <field labelOnTop="0" name="cross_section_definition_width"/>
     <field labelOnTop="0" name="display_name"/>
     <field labelOnTop="0" name="dist_calc_points"/>
     <field labelOnTop="0" name="fid"/>
@@ -786,25 +786,25 @@
     <field labelOnTop="0" name="invert_level_start_point"/>
     <field labelOnTop="0" name="material"/>
     <field labelOnTop="0" name="original_length"/>
-    <field labelOnTop="0" name="pipe_calculation_type"/>
-    <field labelOnTop="0" name="pipe_code"/>
-    <field labelOnTop="0" name="pipe_connection_node_end_id"/>
-    <field labelOnTop="0" name="pipe_connection_node_start_id"/>
-    <field labelOnTop="0" name="pipe_cross_section_definition_id"/>
-    <field labelOnTop="0" name="pipe_display_name"/>
-    <field labelOnTop="0" name="pipe_dist_calc_points"/>
-    <field labelOnTop="0" name="pipe_friction_type"/>
-    <field labelOnTop="0" name="pipe_friction_value"/>
-    <field labelOnTop="0" name="pipe_id"/>
-    <field labelOnTop="0" name="pipe_invert_level_end_point"/>
-    <field labelOnTop="0" name="pipe_invert_level_start_point"/>
-    <field labelOnTop="0" name="pipe_material"/>
-    <field labelOnTop="0" name="pipe_original_length"/>
-    <field labelOnTop="0" name="pipe_pipe_quality"/>
-    <field labelOnTop="0" name="pipe_profile_num"/>
+    <field labelOnTop="0" name="calculation_type"/>
+    <field labelOnTop="0" name="code"/>
+    <field labelOnTop="0" name="connection_node_end_id"/>
+    <field labelOnTop="0" name="connection_node_start_id"/>
+    <field labelOnTop="0" name="cross_section_definition_id"/>
+    <field labelOnTop="0" name="display_name"/>
+    <field labelOnTop="0" name="dist_calc_points"/>
+    <field labelOnTop="0" name="friction_type"/>
+    <field labelOnTop="0" name="friction_value"/>
+    <field labelOnTop="0" name="id"/>
+    <field labelOnTop="0" name="invert_level_end_point"/>
+    <field labelOnTop="0" name="invert_level_start_point"/>
+    <field labelOnTop="0" name="material"/>
+    <field labelOnTop="0" name="original_length"/>
     <field labelOnTop="0" name="pipe_quality"/>
-    <field labelOnTop="0" name="pipe_sewerage_type"/>
-    <field labelOnTop="0" name="pipe_zoom_category"/>
+    <field labelOnTop="0" name="profile_num"/>
+    <field labelOnTop="0" name="pipe_quality"/>
+    <field labelOnTop="0" name="sewerage_type"/>
+    <field labelOnTop="0" name="zoom_category"/>
     <field labelOnTop="0" name="profile_num"/>
     <field labelOnTop="0" name="sewerage_type"/>
     <field labelOnTop="0" name="zoom_category"/>

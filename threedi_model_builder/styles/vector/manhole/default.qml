@@ -7,8 +7,8 @@
   </flags>
   <renderer-v2 type="RuleRenderer" enableorderby="0" forceraster="0" symbollevels="0">
     <rules key="{4fbba513-a3b1-4a92-97bc-3d44735ac986}">
-      <rule filter="manhole_indicator = 0" key="{a951db60-faa9-4c95-9eaa-a51d84ff90b1}" label="Manhole (inspection)" symbol="0"/>
-      <rule filter="manhole_indicator = 1" key="{c9e7ab73-45d5-45d6-970d-b4e28230c1e5}" label="Outlet" symbol="1"/>
+      <rule filter="manhole_indicator = 0" key="{a951db60-faa9-4c95-9eaa-a51d84ff90b1}" label="Manhole (inspection)" scalemaxdenom="5000" symbol="0"/>
+      <rule filter="manhole_indicator = 1" key="{c9e7ab73-45d5-45d6-970d-b4e28230c1e5}" label="Outlet" scalemaxdenom="15000" symbol="1"/>
       <rule filter="manhole_indicator = 2" key="{a1d98efc-8098-4201-a75e-93dc7c47f076}" label="Pumping station" symbol="2"/>
       <rule filter="ELSE" key="{1b6d21ed-8a83-4e3f-850e-ca64e766f7da}" label="Manhole (unspecified)" scalemaxdenom="5000" symbol="3"/>
     </rules>
@@ -663,25 +663,25 @@
   <attributeEditorForm>
     <attributeEditorContainer showLabel="1" visibilityExpressionEnabled="0" name="Manhole_view" groupBox="0" columnCount="1" visibilityExpression="">
       <attributeEditorContainer showLabel="1" visibilityExpressionEnabled="0" name="General" groupBox="1" columnCount="1" visibilityExpression="">
-        <attributeEditorField showLabel="1" name="manh_id" index="-1"/>
-        <attributeEditorField showLabel="1" name="manh_display_name" index="-1"/>
-        <attributeEditorField showLabel="1" name="manh_code" index="-1"/>
-        <attributeEditorField showLabel="1" name="manh_calculation_type" index="-1"/>
+        <attributeEditorField showLabel="1" name="id" index="-1"/>
+        <attributeEditorField showLabel="1" name="display_name" index="-1"/>
+        <attributeEditorField showLabel="1" name="code" index="-1"/>
+        <attributeEditorField showLabel="1" name="calculation_type" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer showLabel="1" visibilityExpressionEnabled="0" name="Characteristics" groupBox="1" columnCount="1" visibilityExpression="">
-        <attributeEditorField showLabel="1" name="manh_shape" index="-1"/>
-        <attributeEditorField showLabel="1" name="manh_width" index="-1"/>
-        <attributeEditorField showLabel="1" name="manh_length" index="-1"/>
-        <attributeEditorField showLabel="1" name="manh_bottom_level" index="-1"/>
-        <attributeEditorField showLabel="1" name="manh_surface_level" index="-1"/>
-        <attributeEditorField showLabel="1" name="manh_drain_level" index="-1"/>
+        <attributeEditorField showLabel="1" name="shape" index="-1"/>
+        <attributeEditorField showLabel="1" name="width" index="-1"/>
+        <attributeEditorField showLabel="1" name="length" index="-1"/>
+        <attributeEditorField showLabel="1" name="bottom_level" index="-1"/>
+        <attributeEditorField showLabel="1" name="surface_level" index="-1"/>
+        <attributeEditorField showLabel="1" name="drain_level" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer showLabel="1" visibilityExpressionEnabled="0" name="Visualisation" groupBox="1" columnCount="1" visibilityExpression="">
-        <attributeEditorField showLabel="1" name="manh_manhole_indicator" index="-1"/>
-        <attributeEditorField showLabel="1" name="manh_zoom_category" index="-1"/>
+        <attributeEditorField showLabel="1" name="manhole_indicator" index="-1"/>
+        <attributeEditorField showLabel="1" name="zoom_category" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer showLabel="1" visibilityExpressionEnabled="0" name="Connection node" groupBox="1" columnCount="1" visibilityExpression="">
-        <attributeEditorField showLabel="1" name="manh_connection_node_id" index="-1"/>
+        <attributeEditorField showLabel="1" name="connection_node_id" index="-1"/>
         <attributeEditorField showLabel="1" name="node_code" index="-1"/>
         <attributeEditorField showLabel="1" name="node_initial_waterlevel" index="-1"/>
         <attributeEditorField showLabel="1" name="node_storage_area" index="-1"/>
@@ -699,20 +699,20 @@
     <field editable="1" name="fid"/>
     <field editable="1" name="id"/>
     <field editable="1" name="length"/>
-    <field editable="1" name="manh_bottom_level"/>
-    <field editable="1" name="manh_calculation_type"/>
-    <field editable="1" name="manh_code"/>
-    <field editable="0" name="manh_connection_node_id"/>
-    <field editable="1" name="manh_display_name"/>
-    <field editable="1" name="manh_drain_level"/>
-    <field editable="0" name="manh_id"/>
-    <field editable="1" name="manh_length"/>
-    <field editable="1" name="manh_manhole_indicator"/>
-    <field editable="1" name="manh_sediment_level"/>
-    <field editable="1" name="manh_shape"/>
-    <field editable="1" name="manh_surface_level"/>
-    <field editable="1" name="manh_width"/>
-    <field editable="1" name="manh_zoom_category"/>
+    <field editable="1" name="bottom_level"/>
+    <field editable="1" name="calculation_type"/>
+    <field editable="1" name="code"/>
+    <field editable="0" name="connection_node_id"/>
+    <field editable="1" name="display_name"/>
+    <field editable="1" name="drain_level"/>
+    <field editable="0" name="id"/>
+    <field editable="1" name="length"/>
+    <field editable="1" name="manhole_indicator"/>
+    <field editable="1" name="sediment_level"/>
+    <field editable="1" name="shape"/>
+    <field editable="1" name="surface_level"/>
+    <field editable="1" name="width"/>
+    <field editable="1" name="zoom_category"/>
     <field editable="1" name="manhole_indicator"/>
     <field editable="1" name="node_code"/>
     <field editable="0" name="node_id"/>
@@ -736,20 +736,20 @@
     <field labelOnTop="0" name="fid"/>
     <field labelOnTop="0" name="id"/>
     <field labelOnTop="0" name="length"/>
-    <field labelOnTop="0" name="manh_bottom_level"/>
-    <field labelOnTop="0" name="manh_calculation_type"/>
-    <field labelOnTop="0" name="manh_code"/>
-    <field labelOnTop="0" name="manh_connection_node_id"/>
-    <field labelOnTop="0" name="manh_display_name"/>
-    <field labelOnTop="0" name="manh_drain_level"/>
-    <field labelOnTop="0" name="manh_id"/>
-    <field labelOnTop="0" name="manh_length"/>
-    <field labelOnTop="0" name="manh_manhole_indicator"/>
-    <field labelOnTop="0" name="manh_sediment_level"/>
-    <field labelOnTop="0" name="manh_shape"/>
-    <field labelOnTop="0" name="manh_surface_level"/>
-    <field labelOnTop="0" name="manh_width"/>
-    <field labelOnTop="0" name="manh_zoom_category"/>
+    <field labelOnTop="0" name="bottom_level"/>
+    <field labelOnTop="0" name="calculation_type"/>
+    <field labelOnTop="0" name="code"/>
+    <field labelOnTop="0" name="connection_node_id"/>
+    <field labelOnTop="0" name="display_name"/>
+    <field labelOnTop="0" name="drain_level"/>
+    <field labelOnTop="0" name="id"/>
+    <field labelOnTop="0" name="length"/>
+    <field labelOnTop="0" name="manhole_indicator"/>
+    <field labelOnTop="0" name="sediment_level"/>
+    <field labelOnTop="0" name="shape"/>
+    <field labelOnTop="0" name="surface_level"/>
+    <field labelOnTop="0" name="width"/>
+    <field labelOnTop="0" name="zoom_category"/>
     <field labelOnTop="0" name="manhole_indicator"/>
     <field labelOnTop="0" name="node_code"/>
     <field labelOnTop="0" name="node_id"/>
