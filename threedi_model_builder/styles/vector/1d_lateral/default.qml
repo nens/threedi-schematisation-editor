@@ -156,7 +156,7 @@
   <defaults>
     <default expression="" applyOnUpdate="0" field="fid"/>
     <default expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0" field="id"/>
-    <default expression="if(aggregate('v2_connection_nodes','min',&quot;id&quot;, intersects($geometry,geometry(@parent))) is null,'Created automatically',aggregate('v2_connection_nodes','min',&quot;id&quot;, intersects($geometry,geometry(@parent))))" applyOnUpdate="0" field="connection_node_id"/>
+    <default expression="if(aggregate('Connection Node','min',&quot;id&quot;, intersects($geometry,geometry(@parent))) is null,'Created automatically',aggregate('Connection Node','min',&quot;id&quot;, intersects($geometry,geometry(@parent))))" applyOnUpdate="1" field="connection_node_id"/>
     <default expression="" applyOnUpdate="0" field="timeseries"/>
   </defaults>
   <constraints>

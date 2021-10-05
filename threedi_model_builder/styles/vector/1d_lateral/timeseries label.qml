@@ -157,6 +157,12 @@
       </editWidget>
     </field>
   </fieldConfiguration>
+  <defaults>
+    <default expression="" applyOnUpdate="0" field="fid"/>
+    <default expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0" field="id"/>
+    <default expression="if(aggregate('Connection Node','min',&quot;id&quot;, intersects($geometry,geometry(@parent))) is null,'Created automatically',aggregate('Connection Node','min',&quot;id&quot;, intersects($geometry,geometry(@parent))))" applyOnUpdate="1" field="connection_node_id"/>
+    <default expression="" applyOnUpdate="0" field="timeseries"/>
+  </defaults>
   <editform tolerant="1">.</editform>
   <editforminit/>
   <editforminitcodesource>0</editforminitcodesource>

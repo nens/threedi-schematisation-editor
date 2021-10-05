@@ -258,8 +258,8 @@
     <default expression="" applyOnUpdate="0" field="calculation_type"/>
     <default expression="" applyOnUpdate="0" field="dist_calc_points"/>
     <default expression="5" applyOnUpdate="0" field="zoom_category"/>
-    <default expression="aggregate('v2_connection_nodes','min',&quot;id&quot;, intersects($geometry,start_point(geometry(@parent))))" applyOnUpdate="0" field="connection_node_start_id"/>
-    <default expression="aggregate('v2_connection_nodes','min',&quot;id&quot;, intersects($geometry,end_point(geometry(@parent))))" applyOnUpdate="0" field="connection_node_end_id"/>
+    <default expression="aggregate('Connection Node','min',&quot;id&quot;, intersects($geometry,start_point(geometry(@parent))))" applyOnUpdate="1" field="connection_node_start_id"/>
+    <default expression="aggregate('Connection Node','min',&quot;id&quot;, intersects($geometry,end_point(geometry(@parent))))" applyOnUpdate="1" field="connection_node_end_id"/>
   </defaults>
   <constraints>
     <constraint constraints="3" exp_strength="0" notnull_strength="1" field="fid" unique_strength="1"/>
