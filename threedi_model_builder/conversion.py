@@ -378,8 +378,11 @@ class ModelDataConverter:
         if not xs_def_lyr.isValid():
             xs_def_lyr = sqlite_layer(self.src_sqlite, xs_def_table, geom_column=None)
         first_model_with_xs_def = next(iter(dm.ELEMENTS_WITH_XS_DEF))
-        dst_field_names = [field_name for field_name in first_model_with_xs_def.__annotations__.keys()
-                           if field_name.startswith("cross_section_")]
+        dst_field_names = [
+            field_name
+            for field_name in first_model_with_xs_def.__annotations__.keys()
+            if field_name.startswith("cross_section_")
+        ]
         # Get cross section definition data and reformat it to fit User Layers structure
         xs_definitions = {}
         for xs_def_feat in xs_def_lyr.getFeatures():

@@ -618,7 +618,7 @@ class WeirForm(FormWithStartEndNode):
         self.populate_widgets()
 
 
-class CulvertForm( FormWithStartEndNode):
+class CulvertForm(FormWithStartEndNode):
     """Culvert user layer edit form logic."""
 
     MODEL = dm.Culvert

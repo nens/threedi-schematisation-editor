@@ -930,9 +930,18 @@ SETTINGS_ELEMENTS = (
 )
 
 ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS
-ALL_MODELS = ALL_MODELS + (Timeseries, CrossSectionDefinition,)
+ALL_MODELS = ALL_MODELS + (
+    Timeseries,
+    CrossSectionDefinition,
+)
 
-ELEMENTS_WITH_XS_DEF = (Weir, Culvert, Orifice, Pipe, CrossSectionLocation,)
+ELEMENTS_WITH_XS_DEF = (
+    Weir,
+    Culvert,
+    Orifice,
+    Pipe,
+    CrossSectionLocation,
+)
 
 ELEMENTS_WITH_TIMESERIES = (
     BoundaryCondition1D,
