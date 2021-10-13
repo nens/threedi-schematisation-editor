@@ -43,7 +43,7 @@
                 </Option>
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 1 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 2 then to_real(&quot;cross_section_definition_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 3 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" name="expression" type="QString"/>
+                  <Option value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 1 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 2 then to_real(&quot;cross_section_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 3 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -86,7 +86,7 @@
                 </Option>
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 1 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 2 then to_real(&quot;cross_section_definition_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 3 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" name="expression" type="QString"/>
+                  <Option value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 1 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 2 then to_real(&quot;cross_section_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 3 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -129,7 +129,7 @@
                 </Option>
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 1 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 2 then to_real(&quot;cross_section_definition_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 3 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" name="expression" type="QString"/>
+                  <Option value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 1 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 2 then to_real(&quot;cross_section_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 3 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -172,7 +172,7 @@
                 </Option>
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 1 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 2 then to_real(&quot;cross_section_definition_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 3 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" name="expression" type="QString"/>
+                  <Option value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 1 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 2 then to_real(&quot;cross_section_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 3 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -215,7 +215,7 @@
                 </Option>
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 1 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 2 then to_real(&quot;cross_section_definition_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 3 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" name="expression" type="QString"/>
+                  <Option value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 1 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 2 then to_real(&quot;cross_section_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 3 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -260,7 +260,7 @@
                 </Option>
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 1 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 2 then to_real(&quot;cross_section_definition_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape = 3 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_definition_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" name="expression" type="QString"/>
+                  <Option value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 1 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 2 then to_real(&quot;cross_section_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 3 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -277,7 +277,7 @@
     <rules key="{a59aab93-485b-46fb-bfeb-83aac4af7cc2}">
       <rule scalemaxdenom="5000" description="Crosssection" key="{1e7f1486-e64b-4a35-8a07-9d4f4d85a927}">
         <settings calloutType="simple">
-          <text-style fontFamily="MS Gothic" fontLetterSpacing="0" blendMode="0" textOpacity="1" fontWeight="50" fontWordSpacing="0" isExpression="1" fontKerning="1" fontSizeUnit="Point" fontUnderline="0" textColor="0,0,0,255" fieldName="CASE WHEN cross_section_definition_shape = 1 THEN 'rect '||round(cross_section_definition_width*1000)||'x'||round(cross_section_definition_height*1000) &#xd;&#xa;WHEN cross_section_definition_shape = 2 THEN 'Ø'||round(cross_section_definition_width*1000) &#xd;&#xa;WHEN cross_section_definition_shape = 3 THEN 'egg ' || round(cross_section_definition_width*1000) || '/' || round(cross_section_definition_width*1000*1.5,3) &#xd;&#xa;WHEN cross_section_definition_shape in (5, 6) THEN &#xd;&#xa;&#x9;'tab ' ||&#xd;&#xa;&#x9;round(array_last(array_sort(string_to_array(cross_section_definition_width, ' ')))*1000) ||&#xd;&#xa;&#x9;'/' || &#xd;&#xa;&#x9;round(array_last(array_sort(string_to_array(cross_section_definition_height, ' ')))*1000)&#xd;&#xa;END " fontItalic="0" fontStrikeout="0" fontSize="7" allowHtml="0" useSubstitutions="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOrientation="horizontal" capitalization="0" multilineHeight="1" previewBkgrdColor="255,255,255,255" namedStyle="Regular">
+          <text-style fontFamily="MS Gothic" fontLetterSpacing="0" blendMode="0" textOpacity="1" fontWeight="50" fontWordSpacing="0" isExpression="1" fontKerning="1" fontSizeUnit="Point" fontUnderline="0" textColor="0,0,0,255" fieldName="CASE WHEN cross_section_shape = 1 THEN 'rect '||round(cross_section_width*1000)||'x'||round(cross_section_height*1000) &#xd;&#xa;WHEN cross_section_shape = 2 THEN 'Ø'||round(cross_section_width*1000) &#xd;&#xa;WHEN cross_section_shape = 3 THEN 'egg ' || round(cross_section_width*1000) || '/' || round(cross_section_width*1000*1.5,3) &#xd;&#xa;WHEN cross_section_shape in (5, 6) THEN &#xd;&#xa;&#x9;'tab ' ||&#xd;&#xa;&#x9;round(array_last(array_sort(string_to_array(cross_section_width, ' ')))*1000) ||&#xd;&#xa;&#x9;'/' || &#xd;&#xa;&#x9;round(array_last(array_sort(string_to_array(cross_section_height, ' ')))*1000)&#xd;&#xa;END " fontItalic="0" fontStrikeout="0" fontSize="7" allowHtml="0" useSubstitutions="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOrientation="horizontal" capitalization="0" multilineHeight="1" previewBkgrdColor="255,255,255,255" namedStyle="Regular">
             <text-buffer bufferBlendMode="0" bufferDraw="1" bufferNoFill="0" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferOpacity="1" bufferSize="0.7" bufferColor="255,255,255,255" bufferJoinStyle="128" bufferSizeUnits="MM"/>
             <text-mask maskType="0" maskSize="0" maskOpacity="1" maskSizeUnits="MM" maskEnabled="0" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskJoinStyle="128"/>
             <background shapeBorderColor="128,128,128,255" shapeJoinStyle="64" shapeRotation="0" shapeOffsetUnit="MM" shapeRadiiX="0" shapeOffsetMapUnitScale="3x:0,0,0,0,0,0" shapeFillColor="255,255,255,255" shapeRotationType="0" shapeSizeMapUnitScale="3x:0,0,0,0,0,0" shapeRadiiY="0" shapeRadiiUnit="MM" shapeOffsetX="0" shapeBorderWidth="0" shapeOpacity="1" shapeRadiiMapUnitScale="3x:0,0,0,0,0,0" shapeBorderWidthUnit="MM" shapeBlendMode="0" shapeSVGFile="" shapeDraw="0" shapeSizeX="0" shapeSizeType="0" shapeSizeUnit="MM" shapeType="0" shapeSizeY="0" shapeOffsetY="0" shapeBorderWidthMapUnitScale="3x:0,0,0,0,0,0">
@@ -330,7 +330,7 @@
               <Option name="properties" type="Map">
                 <Option name="Color" type="Map">
                   <Option value="false" name="active" type="bool"/>
-                  <Option value="case &#xd;&#xa;when &quot;pipe_sewerage_type&quot; = 0 then '#ffaa00'&#xd;&#xa;when &quot;pipe_sewerage_type&quot; = 0 then '#55aaff'&#xd;&#xa;when &quot;pipe_sewerage_type&quot; = 0 then '#ff0000'&#xd;&#xa;when &quot;pipe_sewerage_type&quot; = 0 then '#999999'&#xd;&#xa;else '#000000'&#xd;&#xa;end" name="expression" type="QString"/>
+                  <Option value="case &#xd;&#xa;when &quot;sewerage_type&quot; = 0 then '#ffaa00'&#xd;&#xa;when &quot;sewerage_type&quot; = 0 then '#55aaff'&#xd;&#xa;when &quot;sewerage_type&quot; = 0 then '#ff0000'&#xd;&#xa;when &quot;sewerage_type&quot; = 0 then '#999999'&#xd;&#xa;else '#000000'&#xd;&#xa;end" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -493,13 +493,6 @@
         </config>
       </editWidget>
     </field>
-    <field name="cross_section_definition_id">
-      <editWidget type="Range">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
   </fieldConfiguration>
   <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_model_builder\forms\ui\pipe.ui</editform>
   <editforminit/>
@@ -525,33 +518,33 @@ def my_form_open(dialog, layer, feature):
   <attributeEditorForm>
     <attributeEditorContainer visibilityExpression="" name="Pipe view" columnCount="1" groupBox="0" visibilityExpressionEnabled="0" showLabel="1">
       <attributeEditorContainer visibilityExpression="" name="General" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
-        <attributeEditorField name="pipe_id" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_display_name" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_code" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_calculation_type" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_dist_calc_points" showLabel="1" index="-1"/>
+        <attributeEditorField name="id" showLabel="1" index="-1"/>
+        <attributeEditorField name="display_name" showLabel="1" index="-1"/>
+        <attributeEditorField name="code" showLabel="1" index="-1"/>
+        <attributeEditorField name="calculation_type" showLabel="1" index="-1"/>
+        <attributeEditorField name="dist_calc_points" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer visibilityExpression="" name="Characteristics" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
-        <attributeEditorField name="pipe_invert_level_start_point" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_invert_level_end_point" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_friction_value" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_friction_type" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_material" showLabel="1" index="-1"/>
+        <attributeEditorField name="invert_level_start_point" showLabel="1" index="-1"/>
+        <attributeEditorField name="invert_level_end_point" showLabel="1" index="-1"/>
+        <attributeEditorField name="friction_value" showLabel="1" index="-1"/>
+        <attributeEditorField name="friction_type" showLabel="1" index="-1"/>
+        <attributeEditorField name="material" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer visibilityExpression="" name="Cross section definition" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
-        <attributeEditorField name="pipe_cross_section_definition_id" showLabel="1" index="-1"/>
-        <attributeEditorField name="cross_section_definition_shape" showLabel="1" index="-1"/>
-        <attributeEditorField name="cross_section_definition_width" showLabel="1" index="-1"/>
-        <attributeEditorField name="cross_section_definition_height" showLabel="1" index="-1"/>
-        <attributeEditorField name="cross_section_definition_code" showLabel="1" index="-1"/>
+
+        <attributeEditorField name="cross_section_shape" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_width" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_height" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_code" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer visibilityExpression="" name="Visualization" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
-        <attributeEditorField name="pipe_sewerage_type" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_zoom_category" showLabel="1" index="-1"/>
+        <attributeEditorField name="sewerage_type" showLabel="1" index="-1"/>
+        <attributeEditorField name="zoom_category" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer visibilityExpression="" name="Connection nodes" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
-        <attributeEditorField name="pipe_connection_node_start_id" showLabel="1" index="-1"/>
-        <attributeEditorField name="pipe_connection_node_end_id" showLabel="1" index="-1"/>
+        <attributeEditorField name="connection_node_start_id" showLabel="1" index="-1"/>
+        <attributeEditorField name="connection_node_end_id" showLabel="1" index="-1"/>
       </attributeEditorContainer>
     </attributeEditorContainer>
   </attributeEditorForm>
@@ -561,12 +554,10 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="code"/>
     <field editable="1" name="connection_node_end_id"/>
     <field editable="1" name="connection_node_start_id"/>
-    <field editable="1" name="cross_section_definition_id"/>
-    <field editable="0" name="cross_section_definition_code"/>
-    <field editable="0" name="cross_section_definition_height"/>
-    <field editable="1" name="cross_section_definition_id"/>
-    <field editable="0" name="cross_section_definition_shape"/>
-    <field editable="0" name="cross_section_definition_width"/>
+    <field editable="1" name="cross_section_code"/>
+    <field editable="1" name="cross_section_height"/>
+    <field editable="1" name="cross_section_shape"/>
+    <field editable="1" name="cross_section_width"/>
     <field editable="1" name="display_name"/>
     <field editable="1" name="dist_calc_points"/>
     <field editable="1" name="fid"/>
@@ -577,25 +568,24 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="invert_level_start_point"/>
     <field editable="1" name="material"/>
     <field editable="1" name="original_length"/>
-    <field editable="1" name="pipe_calculation_type"/>
-    <field editable="1" name="pipe_code"/>
-    <field editable="0" name="pipe_connection_node_end_id"/>
-    <field editable="0" name="pipe_connection_node_start_id"/>
-    <field editable="1" name="pipe_cross_section_definition_id"/>
-    <field editable="1" name="pipe_display_name"/>
-    <field editable="1" name="pipe_dist_calc_points"/>
-    <field editable="1" name="pipe_friction_type"/>
-    <field editable="1" name="pipe_friction_value"/>
-    <field editable="1" name="pipe_id"/>
-    <field editable="1" name="pipe_invert_level_end_point"/>
-    <field editable="1" name="pipe_invert_level_start_point"/>
-    <field editable="1" name="pipe_material"/>
-    <field editable="1" name="pipe_original_length"/>
-    <field editable="1" name="pipe_pipe_quality"/>
-    <field editable="1" name="pipe_profile_num"/>
+    <field editable="1" name="calculation_type"/>
+    <field editable="1" name="code"/>
+    <field editable="0" name="connection_node_end_id"/>
+    <field editable="0" name="connection_node_start_id"/>
+    <field editable="1" name="display_name"/>
+    <field editable="1" name="dist_calc_points"/>
+    <field editable="1" name="friction_type"/>
+    <field editable="1" name="friction_value"/>
+    <field editable="1" name="id"/>
+    <field editable="1" name="invert_level_end_point"/>
+    <field editable="1" name="invert_level_start_point"/>
+    <field editable="1" name="material"/>
+    <field editable="1" name="original_length"/>
     <field editable="1" name="pipe_quality"/>
-    <field editable="1" name="pipe_sewerage_type"/>
-    <field editable="1" name="pipe_zoom_category"/>
+    <field editable="1" name="profile_num"/>
+    <field editable="1" name="quality"/>
+    <field editable="1" name="sewerage_type"/>
+    <field editable="1" name="zoom_category"/>
     <field editable="1" name="profile_num"/>
     <field editable="1" name="sewerage_type"/>
     <field editable="1" name="zoom_category"/>
@@ -606,12 +596,10 @@ def my_form_open(dialog, layer, feature):
     <field name="code" labelOnTop="0"/>
     <field name="connection_node_end_id" labelOnTop="0"/>
     <field name="connection_node_start_id" labelOnTop="0"/>
-    <field name="cross_section_definition_id" labelOnTop="0"/>
-    <field name="cross_section_definition_code" labelOnTop="0"/>
-    <field name="cross_section_definition_height" labelOnTop="0"/>
-    <field name="cross_section_definition_id" labelOnTop="0"/>
-    <field name="cross_section_definition_shape" labelOnTop="0"/>
-    <field name="cross_section_definition_width" labelOnTop="0"/>
+    <field name="cross_section_code" labelOnTop="0"/>
+    <field name="cross_section_height" labelOnTop="0"/>
+    <field name="cross_section_shape" labelOnTop="0"/>
+    <field name="cross_section_width" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>
     <field name="dist_calc_points" labelOnTop="0"/>
     <field name="fid" labelOnTop="0"/>
@@ -622,25 +610,24 @@ def my_form_open(dialog, layer, feature):
     <field name="invert_level_start_point" labelOnTop="0"/>
     <field name="material" labelOnTop="0"/>
     <field name="original_length" labelOnTop="0"/>
-    <field name="pipe_calculation_type" labelOnTop="0"/>
-    <field name="pipe_code" labelOnTop="0"/>
-    <field name="pipe_connection_node_end_id" labelOnTop="0"/>
-    <field name="pipe_connection_node_start_id" labelOnTop="0"/>
-    <field name="pipe_cross_section_definition_id" labelOnTop="0"/>
-    <field name="pipe_display_name" labelOnTop="0"/>
-    <field name="pipe_dist_calc_points" labelOnTop="0"/>
-    <field name="pipe_friction_type" labelOnTop="0"/>
-    <field name="pipe_friction_value" labelOnTop="0"/>
-    <field name="pipe_id" labelOnTop="0"/>
-    <field name="pipe_invert_level_end_point" labelOnTop="0"/>
-    <field name="pipe_invert_level_start_point" labelOnTop="0"/>
-    <field name="pipe_material" labelOnTop="0"/>
-    <field name="pipe_original_length" labelOnTop="0"/>
-    <field name="pipe_pipe_quality" labelOnTop="0"/>
-    <field name="pipe_profile_num" labelOnTop="0"/>
+    <field name="calculation_type" labelOnTop="0"/>
+    <field name="code" labelOnTop="0"/>
+    <field name="connection_node_end_id" labelOnTop="0"/>
+    <field name="connection_node_start_id" labelOnTop="0"/>
+    <field name="display_name" labelOnTop="0"/>
+    <field name="dist_calc_points" labelOnTop="0"/>
+    <field name="friction_type" labelOnTop="0"/>
+    <field name="friction_value" labelOnTop="0"/>
+    <field name="id" labelOnTop="0"/>
+    <field name="invert_level_end_point" labelOnTop="0"/>
+    <field name="invert_level_start_point" labelOnTop="0"/>
+    <field name="material" labelOnTop="0"/>
+    <field name="original_length" labelOnTop="0"/>
     <field name="pipe_quality" labelOnTop="0"/>
-    <field name="pipe_sewerage_type" labelOnTop="0"/>
-    <field name="pipe_zoom_category" labelOnTop="0"/>
+    <field name="profile_num" labelOnTop="0"/>
+    <field name="quality" labelOnTop="0"/>
+    <field name="sewerage_type" labelOnTop="0"/>
+    <field name="zoom_category" labelOnTop="0"/>
     <field name="profile_num" labelOnTop="0"/>
     <field name="sewerage_type" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>

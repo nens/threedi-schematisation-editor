@@ -1,6 +1,7 @@
 import os
 import sys
 import shutil
+import sqlite3
 import threedi_model_builder.data_models as dm
 from enum import Enum
 from typing import Union
@@ -486,3 +487,106 @@ def get_qgis(qgis_build_path="C:/OSGeo4W64/apps/qgis-ltr", qgis_proj_path="C:/OS
 
 class ConversionError(Exception):
     pass
+
+
+def create_3di_views(sqlite_filepath):
+    """Create views in 3Di model sqlite database."""
+    connection = sqlite3.connect(sqlite_filepath)
+    qry = """
+    CREATE VIEW IF NOT EXISTS v2_manhole_view
+    AS SELECT manh.rowid AS ROWID, node.id AS node_id, manh.bottom_level
+    AS manh_bottom_level, manh.surface_level AS manh_surface_level,
+    manh.display_name AS manh_display_name, manh.shape AS manh_shape,
+    manh.width AS manh_width, manh.length AS manh_length,
+    manh.manhole_indicator AS manh_manhole_indicator, manh.calculation_type
+    AS manh_calculation_type, manh.drain_level AS manh_drain_level,
+    manh.zoom_category AS manh_zoom_category, node.initial_waterlevel AS
+    node_initial_waterlevel, manh.id AS manh_id, manh.connection_node_id  AS
+    manh_connection_node_id, node.storage_area AS node_storage_area,
+    manh.code AS manh_code, node.code AS node_code, node.the_geom,
+    node.the_geom_linestring AS node_the_geom_linestring,
+    manh.sediment_level AS manh_sediment_level
+    FROM v2_manhole manh, v2_connection_nodes node
+    WHERE manh.connection_node_id = node.id;
+
+    DELETE FROM views_geometry_columns
+    WHERE view_name = 'v2_manhole_view';
+
+    INSERT INTO views_geometry_columns (view_name, view_geometry,
+    view_rowid, f_table_name, f_geometry_column)
+    VALUES('v2_manhole_view', 'the_geom', 'ROWID',
+    'v2_connection_nodes', 'the_geom');
+
+    CREATE VIEW IF NOT EXISTS v2_pumpstation_point_view
+    AS SELECT a.ROWID AS ROWID, a.id AS pump_id, a.display_name, a.code,
+    a.classification, a.sewerage, a.start_level, a.lower_stop_level,
+    a.upper_stop_level, a.capacity, a.zoom_category,
+    a.connection_node_start_id, a.connection_node_end_id, a.type,
+    b.id AS connection_node_id, b.storage_area, b.the_geom
+    FROM v2_pumpstation a
+    JOIN v2_connection_nodes b
+    ON a.connection_node_start_id = b.id;
+
+    DELETE FROM views_geometry_columns
+    WHERE view_name = 'v2_pumpstation_point_view';
+
+    INSERT INTO views_geometry_columns (view_name, view_geometry,
+    view_rowid, f_table_name, f_geometry_column)
+    VALUES('v2_pumpstation_point_view', 'the_geom',
+    'connection_node_start_id', 'v2_connection_nodes', 'the_geom');
+
+    CREATE VIEW IF NOT EXISTS v2_1d_lateral_view
+    AS SELECT a.ROWID AS ROWID, a.id AS id,
+    a.connection_node_id AS connection_node_id,
+    a.timeseries AS timeseries, b.the_geom
+    FROM v2_1d_lateral a
+    JOIN v2_connection_nodes b ON a.connection_node_id = b.id;
+
+    DELETE FROM views_geometry_columns
+    WHERE view_name = 'v2_1d_lateral_view';
+
+    INSERT INTO views_geometry_columns (view_name, view_geometry,
+    view_rowid, f_table_name, f_geometry_column)
+    VALUES('v2_1d_lateral_view', 'the_geom', 'connection_node_id',
+    'v2_connection_nodes', 'the_geom');
+
+    CREATE VIEW IF NOT EXISTS v2_1d_boundary_conditions_view
+    AS SELECT a.ROWID AS ROWID, a.id AS id,
+    a.connection_node_id AS connection_node_id,
+    a.boundary_type AS boundary_type, a.timeseries AS timeseries,
+    b.the_geom
+    FROM v2_1d_boundary_conditions a
+    JOIN v2_connection_nodes b ON a.connection_node_id = b.id;
+
+    DELETE FROM views_geometry_columns
+    WHERE view_name = 'v2_1d_boundary_conditions_view';
+
+    INSERT INTO views_geometry_columns (view_name, view_geometry,
+    view_rowid, f_table_name, f_geometry_column)
+    VALUES('v2_1d_boundary_conditions_view', 'the_geom',
+    'connection_node_id', 'v2_connection_nodes', 'the_geom');
+
+    CREATE VIEW IF NOT EXISTS v2_cross_section_location_view
+    AS SELECT loc.ROWID as ROWID, loc.id as loc_id, loc.code as loc_code,
+    loc.reference_level as loc_reference_level,
+    loc.bank_level as loc_bank_level, loc.friction_type as
+    loc_friction_type, loc.friction_value as loc_friction_value,
+    loc.definition_id as loc_definition_id, loc.channel_id as
+    loc_channel_id, loc.the_geom as the_geom, def.id as def_id,
+    def.shape as def_shape, def.width as def_width, def.code as
+    def_code, def.height as def_height
+    FROM v2_cross_section_location loc, v2_cross_section_definition def
+    WHERE loc.definition_id = def.id;
+
+    DELETE FROM views_geometry_columns
+    WHERE view_name = 'v2_cross_section_location_view';
+
+    INSERT INTO views_geometry_columns (view_name, view_geometry,
+    view_rowid, f_table_name, f_geometry_column)
+    VALUES('v2_cross_section_location_view', 'the_geom',
+    'ROWID', 'v2_cross_section_location', 'the_geom');
+    """
+    c = connection.cursor()
+    c.executescript(qry)
+    connection.commit()
+    connection.close()

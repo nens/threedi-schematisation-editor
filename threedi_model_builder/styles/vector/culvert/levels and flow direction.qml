@@ -507,13 +507,6 @@
         </config>
       </editWidget>
     </field>
-    <field name="cross_section_definition_id">
-      <editWidget type="Range">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
   </fieldConfiguration>
   <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_model_builder\forms\ui\culvert.ui</editform>
   <editforminit/>
@@ -556,11 +549,10 @@ def my_form_open(dialog, layer, feature):
         <attributeEditorField name="discharge_coefficient_negative" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer visibilityExpression="" name="Cross section definition" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
-        <attributeEditorField name="cross_section_definition_id" showLabel="1" index="-1"/>
-        <attributeEditorField name="cross_section_definition_code" showLabel="1" index="-1"/>
-        <attributeEditorField name="cross_section_definition_shape" showLabel="1" index="-1"/>
-        <attributeEditorField name="cross_section_definition_width" showLabel="1" index="-1"/>
-        <attributeEditorField name="cross_section_definition_height" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_code" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_shape" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_width" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_height" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer visibilityExpression="" name="Visualization" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
         <attributeEditorField name="zoom_category" showLabel="1" index="-1"/>
@@ -577,12 +569,10 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="code"/>
     <field editable="1" name="connection_node_end_id"/>
     <field editable="1" name="connection_node_start_id"/>
-    <field editable="1" name="cross_section_definition_id"/>
     <field editable="1" name="calculation_type"/>
     <field editable="1" name="code"/>
     <field editable="0" name="connection_node_end_id"/>
     <field editable="0" name="connection_node_start_id"/>
-    <field editable="1" name="cross_section_definition_id"/>
     <field editable="1" name="discharge_coefficient_negative"/>
     <field editable="1" name="discharge_coefficient_positive"/>
     <field editable="1" name="display_name"/>
@@ -593,11 +583,10 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="invert_level_end_point"/>
     <field editable="1" name="invert_level_start_point"/>
     <field editable="1" name="zoom_category"/>
-    <field editable="0" name="cross_section_definition_code"/>
-    <field editable="0" name="cross_section_definition_height"/>
-    <field editable="0" name="cross_section_definition_id"/>
-    <field editable="0" name="cross_section_definition_shape"/>
-    <field editable="0" name="cross_section_definition_width"/>
+    <field editable="1" name="cross_section_code"/>
+    <field editable="1" name="cross_section_height"/>
+    <field editable="1" name="cross_section_shape"/>
+    <field editable="1" name="cross_section_width"/>
     <field editable="1" name="discharge_coefficient_negative"/>
     <field editable="1" name="discharge_coefficient_positive"/>
     <field editable="1" name="display_name"/>
@@ -616,12 +605,10 @@ def my_form_open(dialog, layer, feature):
     <field name="code" labelOnTop="0"/>
     <field name="connection_node_end_id" labelOnTop="0"/>
     <field name="connection_node_start_id" labelOnTop="0"/>
-    <field name="cross_section_definition_id" labelOnTop="0"/>
     <field name="calculation_type" labelOnTop="0"/>
     <field name="code" labelOnTop="0"/>
     <field name="connection_node_end_id" labelOnTop="0"/>
     <field name="connection_node_start_id" labelOnTop="0"/>
-    <field name="cross_section_definition_id" labelOnTop="0"/>
     <field name="discharge_coefficient_negative" labelOnTop="0"/>
     <field name="discharge_coefficient_positive" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>
@@ -632,11 +619,10 @@ def my_form_open(dialog, layer, feature):
     <field name="invert_level_end_point" labelOnTop="0"/>
     <field name="invert_level_start_point" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
-    <field name="cross_section_definition_code" labelOnTop="0"/>
-    <field name="cross_section_definition_height" labelOnTop="0"/>
-    <field name="cross_section_definition_id" labelOnTop="0"/>
-    <field name="cross_section_definition_shape" labelOnTop="0"/>
-    <field name="cross_section_definition_width" labelOnTop="0"/>
+    <field name="cross_section_code" labelOnTop="0"/>
+    <field name="cross_section_height" labelOnTop="0"/>
+    <field name="cross_section_shape" labelOnTop="0"/>
+    <field name="cross_section_width" labelOnTop="0"/>
     <field name="discharge_coefficient_negative" labelOnTop="0"/>
     <field name="discharge_coefficient_positive" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>

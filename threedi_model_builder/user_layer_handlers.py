@@ -429,7 +429,6 @@ class WeirHandler(UserLayerHandler):
     RELATED_MODELS = MappingProxyType(
         {
             dm.ConnectionNode: 2,
-            dm.CrossSectionDefinition: 1,
         }
     )
 
@@ -491,7 +490,6 @@ class OrificeHandler(UserLayerHandler):
     RELATED_MODELS = MappingProxyType(
         {
             dm.ConnectionNode: 2,
-            dm.CrossSectionDefinition: 1,
         }
     )
 
@@ -529,7 +527,6 @@ class PipeHandler(UserLayerHandler):
         {
             dm.ConnectionNode: 2,
             dm.Manhole: 2,
-            dm.CrossSectionDefinition: 1,
         }
     )
     DEFAULTS = MappingProxyType(
@@ -616,15 +613,6 @@ class CrossSectionLocationHandler(UserLayerHandler):
 
 class ChannelHandler(UserLayerHandler):
     MODEL = dm.Channel
-
-
-class CrossSectionDefinitionHandler(UserLayerHandler):
-    MODEL = dm.CrossSectionDefinition
-    DEFAULTS = MappingProxyType(
-        {
-            "code": "new",
-        }
-    )
 
 
 class BoundaryCondition2DHandler(UserLayerHandler):
@@ -722,7 +710,6 @@ ALL_HANDLERS = (
     PipeHandler,
     CrossSectionLocationHandler,
     ChannelHandler,
-    CrossSectionDefinitionHandler,
     BoundaryCondition2DHandler,
     Lateral2DHandler,
     LinearObstacleHandler,
