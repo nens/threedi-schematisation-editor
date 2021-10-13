@@ -1,6 +1,6 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
 <qgis styleCategories="Symbology|Labeling|Forms|MapTips" version="3.16.9-Hannover" labelsEnabled="1">
-  <renderer-v2 enableorderby="0" symbollevels="0" graduatedMethod="GraduatedSize" type="graduatedSymbol" forceraster="0" attr="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;when cross_section_definition_shape = 1 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;when cross_section_definition_shape = 2 then to_real(&quot;cross_section_definition_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;when cross_section_definition_shape = 3 then (to_real(&quot;cross_section_definition_width&quot;) + to_real(&quot;cross_section_definition_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;when cross_section_definition_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_definition_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;end, &#xd;&#xa; &#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)">
+  <renderer-v2 enableorderby="0" symbollevels="0" graduatedMethod="GraduatedSize" type="graduatedSymbol" forceraster="0" attr="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;when cross_section_shape = 1 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;when cross_section_shape = 2 then to_real(&quot;cross_section_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;when cross_section_shape = 3 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;when cross_section_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;end, &#xd;&#xa; &#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)">
     <ranges>
       <range lower="0.000000000000000" render="true" symbol="0" upper="0.100000000000000" label="0 - 100"/>
       <range lower="0.100000000000000" render="true" symbol="1" upper="0.200000000000000" label="100 - 200"/>
@@ -43,7 +43,7 @@
               <Option name="properties" type="Map">
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_definition_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
+                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -81,7 +81,7 @@
               <Option name="properties" type="Map">
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_definition_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
+                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -119,7 +119,7 @@
               <Option name="properties" type="Map">
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_definition_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
+                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -157,7 +157,7 @@
               <Option name="properties" type="Map">
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_definition_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
+                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -195,7 +195,7 @@
               <Option name="properties" type="Map">
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_definition_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
+                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -233,7 +233,7 @@
               <Option name="properties" type="Map">
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_definition_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
+                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -271,7 +271,7 @@
               <Option name="properties" type="Map">
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_definition_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
+                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -309,7 +309,7 @@
               <Option name="properties" type="Map">
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_definition_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
+                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -347,7 +347,7 @@
               <Option name="properties" type="Map">
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_definition_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
+                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -385,7 +385,7 @@
               <Option name="properties" type="Map">
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_definition_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
+                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -425,7 +425,7 @@
               <Option name="properties" type="Map">
                 <Option name="outlineWidth" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_definition_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
+                  <Option value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
               </Option>
@@ -450,7 +450,7 @@
     <rules key="{7993e0a3-7236-42e9-a4fb-9bdc69f19151}">
       <rule scalemaxdenom="10000" description="Crosssection" key="{34239014-7531-4cb8-9933-c7072acf1cf3}">
         <settings calloutType="simple">
-          <text-style fontFamily="MS Gothic" fontLetterSpacing="0" blendMode="0" textOpacity="1" fontWeight="50" fontWordSpacing="0" isExpression="1" fontKerning="1" fontSizeUnit="Point" fontUnderline="0" textColor="0,0,0,255" fieldName="CASE WHEN cross_section_definition_shape = 1 THEN 'rect '||round(cross_section_definition_width*1000)||'x'||round(cross_section_definition_height*1000) &#xd;&#xa;WHEN cross_section_definition_shape = 2 THEN 'Ø'||round(cross_section_definition_width*1000) &#xd;&#xa;WHEN cross_section_definition_shape = 3 THEN 'egg ' || round(cross_section_definition_width*1000) || '/' || round(cross_section_definition_width*1000*1.5,3) &#xd;&#xa;WHEN cross_section_definition_shape in (5, 6) THEN &#xd;&#xa;&#x9;'tab ' ||&#xd;&#xa;&#x9;round(array_last(array_sort(string_to_array(cross_section_definition_width, ' ')))*1000) ||&#xd;&#xa;&#x9;'/' || &#xd;&#xa;&#x9;round(array_last(array_sort(string_to_array(cross_section_definition_height, ' ')))*1000)&#xd;&#xa;END " fontItalic="0" fontStrikeout="0" fontSize="7" allowHtml="0" useSubstitutions="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOrientation="horizontal" capitalization="0" multilineHeight="1" previewBkgrdColor="255,255,255,255" namedStyle="Regular">
+          <text-style fontFamily="MS Gothic" fontLetterSpacing="0" blendMode="0" textOpacity="1" fontWeight="50" fontWordSpacing="0" isExpression="1" fontKerning="1" fontSizeUnit="Point" fontUnderline="0" textColor="0,0,0,255" fieldName="CASE WHEN cross_section_shape = 1 THEN 'rect '||round(cross_section_width*1000)||'x'||round(cross_section_height*1000) &#xd;&#xa;WHEN cross_section_shape = 2 THEN 'Ø'||round(cross_section_width*1000) &#xd;&#xa;WHEN cross_section_shape = 3 THEN 'egg ' || round(cross_section_width*1000) || '/' || round(cross_section_width*1000*1.5,3) &#xd;&#xa;WHEN cross_section_shape in (5, 6) THEN &#xd;&#xa;&#x9;'tab ' ||&#xd;&#xa;&#x9;round(array_last(array_sort(string_to_array(cross_section_width, ' ')))*1000) ||&#xd;&#xa;&#x9;'/' || &#xd;&#xa;&#x9;round(array_last(array_sort(string_to_array(cross_section_height, ' ')))*1000)&#xd;&#xa;END " fontItalic="0" fontStrikeout="0" fontSize="7" allowHtml="0" useSubstitutions="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOrientation="horizontal" capitalization="0" multilineHeight="1" previewBkgrdColor="255,255,255,255" namedStyle="Regular">
             <text-buffer bufferBlendMode="0" bufferDraw="1" bufferNoFill="0" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferOpacity="1" bufferSize="0.7" bufferColor="255,255,255,255" bufferJoinStyle="128" bufferSizeUnits="MM"/>
             <text-mask maskType="0" maskSize="0" maskOpacity="1" maskSizeUnits="MM" maskEnabled="0" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskJoinStyle="128"/>
             <background shapeBorderColor="128,128,128,255" shapeJoinStyle="64" shapeRotation="0" shapeOffsetUnit="MM" shapeRadiiX="0" shapeOffsetMapUnitScale="3x:0,0,0,0,0,0" shapeFillColor="255,255,255,255" shapeRotationType="0" shapeSizeMapUnitScale="3x:0,0,0,0,0,0" shapeRadiiY="0" shapeRadiiUnit="MM" shapeOffsetX="0" shapeBorderWidth="0" shapeOpacity="1" shapeRadiiMapUnitScale="3x:0,0,0,0,0,0" shapeBorderWidthUnit="MM" shapeBlendMode="0" shapeSVGFile="" shapeDraw="0" shapeSizeX="0" shapeSizeType="0" shapeSizeUnit="MM" shapeType="0" shapeSizeY="0" shapeOffsetY="0" shapeBorderWidthMapUnitScale="3x:0,0,0,0,0,0">
@@ -645,13 +645,6 @@
         </config>
       </editWidget>
     </field>
-    <field name="cross_section_definition_id">
-      <editWidget type="Range">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
   </fieldConfiguration>
   <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_model_builder\forms\ui\orifice.ui</editform>
   <editforminit/>
@@ -697,11 +690,10 @@ def my_form_open(dialog, layer, feature):
         <attributeEditorField name="zoom_category" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer visibilityExpression="" name="Cross section" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
-        <attributeEditorField name="cross_section_definition_id" showLabel="1" index="-1"/>
-        <attributeEditorField name="cross_section_definition_shape" showLabel="1" index="-1"/>
-        <attributeEditorField name="cross_section_definition_width" showLabel="1" index="-1"/>
-        <attributeEditorField name="cross_section_definition_height" showLabel="1" index="-1"/>
-        <attributeEditorField name="cross_section_definition_code" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_shape" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_width" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_height" showLabel="1" index="-1"/>
+        <attributeEditorField name="cross_section_code" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer visibilityExpression="" name="Connection nodes" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
         <attributeEditorField name="connection_node_start_id" showLabel="1" index="-1"/>
@@ -716,12 +708,10 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="connection_node_start_id"/>
     <field editable="1" name="crest_level"/>
     <field editable="1" name="crest_type"/>
-    <field editable="1" name="cross_section_definition_id"/>
-    <field editable="0" name="cross_section_definition_code"/>
-    <field editable="0" name="cross_section_definition_height"/>
-    <field editable="1" name="cross_section_definition_id"/>
-    <field editable="0" name="cross_section_definition_shape"/>
-    <field editable="0" name="cross_section_definition_width"/>
+    <field editable="1" name="cross_section_code"/>
+    <field editable="1" name="cross_section_height"/>
+    <field editable="1" name="cross_section_shape"/>
+    <field editable="1" name="cross_section_width"/>
     <field editable="1" name="discharge_coefficient_negative"/>
     <field editable="1" name="discharge_coefficient_positive"/>
     <field editable="1" name="display_name"/>
@@ -735,7 +725,6 @@ def my_form_open(dialog, layer, feature):
     <field editable="0" name="connection_node_start_id"/>
     <field editable="1" name="crest_level"/>
     <field editable="1" name="crest_type"/>
-    <field editable="1" name="cross_section_definition_id"/>
     <field editable="1" name="discharge_coefficient_negative"/>
     <field editable="1" name="discharge_coefficient_positive"/>
     <field editable="1" name="display_name"/>
@@ -755,12 +744,10 @@ def my_form_open(dialog, layer, feature):
     <field name="connection_node_start_id" labelOnTop="0"/>
     <field name="crest_level" labelOnTop="0"/>
     <field name="crest_type" labelOnTop="0"/>
-    <field name="cross_section_definition_id" labelOnTop="0"/>
-    <field name="cross_section_definition_code" labelOnTop="0"/>
-    <field name="cross_section_definition_height" labelOnTop="0"/>
-    <field name="cross_section_definition_id" labelOnTop="0"/>
-    <field name="cross_section_definition_shape" labelOnTop="0"/>
-    <field name="cross_section_definition_width" labelOnTop="0"/>
+    <field name="cross_section_code" labelOnTop="0"/>
+    <field name="cross_section_height" labelOnTop="0"/>
+    <field name="cross_section_shape" labelOnTop="0"/>
+    <field name="cross_section_width" labelOnTop="0"/>
     <field name="discharge_coefficient_negative" labelOnTop="0"/>
     <field name="discharge_coefficient_positive" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>
@@ -774,7 +761,6 @@ def my_form_open(dialog, layer, feature):
     <field name="connection_node_start_id" labelOnTop="0"/>
     <field name="crest_level" labelOnTop="0"/>
     <field name="crest_type" labelOnTop="0"/>
-    <field name="cross_section_definition_id" labelOnTop="0"/>
     <field name="discharge_coefficient_negative" labelOnTop="0"/>
     <field name="discharge_coefficient_positive" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>

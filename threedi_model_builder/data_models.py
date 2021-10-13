@@ -217,7 +217,6 @@ class Weir(ModelObject):
             "zoom_category": "weir_zoom_category",
             "connection_node_start_id": "weir_connection_node_start_id",
             "connection_node_end_id": "weir_connection_node_end_id",
-            "cross_section_definition_id": "weir_cross_section_definition_id",
         }
     )
 
@@ -235,7 +234,11 @@ class Weir(ModelObject):
     zoom_category: Optional[ZoomCategories]
     connection_node_start_id: int
     connection_node_end_id: int
-    cross_section_definition_id: int
+    cross_section_code: str
+    cross_section_shape: CrossSectionShape
+    cross_section_width: Optional[float]
+    cross_section_height: Optional[float]
+    cross_section_table: Optional[str]
 
 
 @dataclass
@@ -263,7 +266,6 @@ class Culvert(ModelObject):
             "zoom_category": "cul_zoom_category",
             "connection_node_start_id": "cul_connection_node_start_id",
             "connection_node_end_id": "cul_connection_node_end_id",
-            "cross_section_definition_id": "cul_cross_section_definition_id",
         }
     )
 
@@ -281,7 +283,11 @@ class Culvert(ModelObject):
     zoom_category: Optional[ZoomCategories]
     connection_node_start_id: int
     connection_node_end_id: int
-    cross_section_definition_id: int
+    cross_section_code: str
+    cross_section_shape: CrossSectionShape
+    cross_section_width: Optional[float]
+    cross_section_height: Optional[float]
+    cross_section_table: Optional[str]
 
 
 @dataclass
@@ -309,7 +315,6 @@ class Orifice(ModelObject):
             "zoom_category": "orf_zoom_category",
             "connection_node_start_id": "orf_connection_node_start_id",
             "connection_node_end_id": "orf_connection_node_end_id",
-            "cross_section_definition_id": "orf_cross_section_definition_id",
         }
     )
 
@@ -327,7 +332,11 @@ class Orifice(ModelObject):
     zoom_category: Optional[ZoomCategories]
     connection_node_start_id: int
     connection_node_end_id: int
-    cross_section_definition_id: int
+    cross_section_code: str
+    cross_section_shape: CrossSectionShape
+    cross_section_width: Optional[float]
+    cross_section_height: Optional[float]
+    cross_section_table: Optional[str]
 
 
 @dataclass
@@ -358,7 +367,6 @@ class Pipe(ModelObject):
             "original_length": "pipe_original_length",
             "connection_node_start_id": "pipe_connection_node_start_id",
             "connection_node_end_id": "pipe_connection_node_end_id",
-            "cross_section_definition_id": "pipe_cross_section_definition_id",
         }
     )
 
@@ -379,7 +387,11 @@ class Pipe(ModelObject):
     original_length: Optional[float]
     connection_node_start_id: int
     connection_node_end_id: int
-    cross_section_definition_id: int
+    cross_section_code: str
+    cross_section_shape: CrossSectionShape
+    cross_section_width: Optional[float]
+    cross_section_height: Optional[float]
+    cross_section_table: Optional[str]
 
 
 @dataclass
@@ -400,13 +412,6 @@ class CrossSectionLocation(ModelObject):
             "friction_type": "loc_friction_type",
             "bank_level": "loc_bank_level",
             "channel_id": "loc_channel_id",
-            "cross_section_definition_id": "loc_definition_id",
-        }
-    )
-
-    EXPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "cross_section_definition_id": "definition_id",
         }
     )
 
@@ -417,23 +422,11 @@ class CrossSectionLocation(ModelObject):
     friction_value: float
     bank_level: Optional[float]
     channel_id: int
-    cross_section_definition_id: int
-
-
-@dataclass
-class CrossSectionDefinition(ModelObject):
-    __tablename__ = "cross_section_definition"
-    __layername__ = "Cross section definition"
-    __geometrytype__ = GeometryType.NoGeometry
-
-    SQLITE_SOURCES = ("v2_cross_section_definition",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
-    id: int
-    code: str
-    width: Optional[str]
-    height: Optional[str]
-    shape: Optional[CrossSectionShape]
+    cross_section_code: str
+    cross_section_shape: CrossSectionShape
+    cross_section_width: Optional[float]
+    cross_section_height: Optional[float]
+    cross_section_table: Optional[str]
 
 
 @dataclass
@@ -865,6 +858,22 @@ class NumericalSettings(ModelObject):
 
 
 @dataclass
+class CrossSectionDefinition(ModelObject):
+    __tablename__ = "cross_section_definition"
+    __layername__ = "Cross section definition"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    SQLITE_SOURCES = ("v2_cross_section_definition",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: int
+    code: str
+    width: Optional[str]
+    height: Optional[str]
+    shape: Optional[CrossSectionShape]
+
+
+@dataclass
 class Timeseries(ModelObject):
     __tablename__ = "timeseries"
     __layername__ = "Timeseries"
@@ -891,7 +900,6 @@ MODEL_1D_ELEMENTS = (
     Pipe,
     CrossSectionLocation,
     Channel,
-    CrossSectionDefinition,
 )
 
 MODEL_2D_ELEMENTS = (
@@ -921,16 +929,19 @@ SETTINGS_ELEMENTS = (
     NumericalSettings,
 )
 
+ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS
+ALL_MODELS = ALL_MODELS + (Timeseries, CrossSectionDefinition,)
 
-ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS + (Timeseries,)
+ELEMENTS_WITH_XS_DEF = (Weir, Culvert, Orifice, Pipe, CrossSectionLocation,)
+
 ELEMENTS_WITH_TIMESERIES = (
     BoundaryCondition1D,
     Lateral1D,
     BoundaryCondition2D,
     Lateral2D,
 )
-ELEMENTS_WITH_RASTERS = tuple(model_cls for model_cls in SETTINGS_ELEMENTS if model_cls.RELATED_RASTERS)
 
+ELEMENTS_WITH_RASTERS = tuple(model_cls for model_cls in SETTINGS_ELEMENTS if model_cls.RELATED_RASTERS)
 
 TABLE_MANNING = MappingProxyType(
     {
@@ -945,3 +956,5 @@ TABLE_MANNING = MappingProxyType(
         PipeMaterial.STEEL: 0.0130,
     }
 )
+
+TABLE_SHAPES = [CrossSectionShape.TABULATED_RECTANGLE.value, CrossSectionShape.TABULATED_TRAPEZIUM.value]

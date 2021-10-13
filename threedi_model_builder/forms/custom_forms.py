@@ -1,5 +1,4 @@
 import threedi_model_builder.data_models as dm
-import threedi_model_builder.enumerators as en
 from collections import defaultdict
 from functools import partial
 from enum import Enum
@@ -19,6 +18,7 @@ from qgis.PyQt.QtWidgets import (
     QDoubleSpinBox,
     QLineEdit,
     QSpinBox,
+    QPlainTextEdit,
 )
 from qgis.core import NULL, QgsGeometry
 from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
@@ -180,6 +180,8 @@ class BaseForm(QObject):
             item_idx = widget.findData(value)
             if item_idx >= 0:
                 widget.setCurrentIndex(item_idx)
+        elif isinstance(widget, QPlainTextEdit):
+            widget.setPlainText(str(value) if value is not None else "")
         else:
             self.uc.log_warn(f"Unknown widget type: {widget.__class__.__name__}")
 
@@ -193,6 +195,8 @@ class BaseForm(QObject):
             value = widget.value()
         elif isinstance(widget, QComboBox):
             value = widget.currentData()
+        elif isinstance(widget, QPlainTextEdit):
+            value = widget.toPlainText()
         else:
             self.uc.log_warn(f"Unknown widget type: {widget.__class__.__name__}")
             value = None
@@ -200,7 +204,7 @@ class BaseForm(QObject):
 
     def get_widget_editing_signal(self, widget):
         """Getting widget signal that will be recognize as an editing indication."""
-        if isinstance(widget, QLineEdit):
+        if isinstance(widget, (QLineEdit, QPlainTextEdit)):
             signal = widget.textChanged
         elif isinstance(widget, QCheckBox):
             signal = widget.stateChanged
@@ -402,55 +406,6 @@ class FormWithStartEndNode(BaseForm):
         self.populate_widgets()
 
 
-class FormWithCSDefinition(BaseForm):
-    """Base edit form for user layers with Cross Section Definition."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, *kwargs)
-        self.cross_section_definition = None
-
-    @property
-    def foreign_models_features(self):
-        """Property returning dictionary where key = data model class with identifier and value = data model feature."""
-        fm_features = {
-            (dm.CrossSectionDefinition, None): self.cross_section_definition,
-        }
-        return fm_features
-
-    def setup_cross_section_definition_on_edit(self):
-        """Setting up connection nodes during editing feature."""
-        cross_section_def_handler = self.layer_manager.model_handlers[dm.CrossSectionDefinition]
-        cross_section_def_feat = cross_section_def_handler.get_feat_by_id(self.feature["cross_section_definition_id"])
-        self.cross_section_definition = cross_section_def_feat
-
-    def setup_cross_section_definition_on_creation(self):
-        """Setting up connection nodes during adding feature."""
-        cross_section_def_handler = self.layer_manager.model_handlers[dm.CrossSectionDefinition]
-        cross_section_def_feat = cross_section_def_handler.create_new_feature()
-        if self.MODEL == dm.Weir:
-            cross_section_def_feat["shape"] = en.CrossSectionShape.RECTANGLE.value
-        self.extra_features[cross_section_def_handler].append(cross_section_def_feat)
-        self.cross_section_definition = cross_section_def_feat
-        self.sequence_related_features_ids()
-
-    def fill_related_attributes(self):
-        """Filling feature values based on related features attributes."""
-        super().fill_related_attributes()
-        self.feature["cross_section_definition_id"] = self.cross_section_definition["id"]
-
-    def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
-        if self.creation is True:
-            self.setup_cross_section_definition_on_creation()
-            # Set feature specific attributes
-            self.fill_related_attributes()
-        else:
-            self.setup_cross_section_definition_on_edit()
-        # Populate widgets based on features attributes
-        self.populate_foreign_widgets()
-        self.populate_widgets()
-
-
 class NodeToSurfaceMapForm(BaseForm):
     """Basic surface to node map edit form logic."""
 
@@ -524,7 +479,7 @@ class ManholeForm(FormWithNode):
     MODEL = dm.Manhole
 
 
-class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
+class PipeForm(FormWithStartEndNode):
     """Pipe user layer edit form logic."""
 
     MODEL = dm.Pipe
@@ -542,7 +497,6 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
             (dm.ConnectionNode, 2): self.connection_node_end,
             (dm.Manhole, 1): self.manhole_start,
             (dm.Manhole, 2): self.manhole_end,
-            (dm.CrossSectionDefinition, None): self.cross_section_definition,
         }
         return fm_features
 
@@ -622,18 +576,16 @@ class PipeForm(FormWithCSDefinition, FormWithStartEndNode):
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
-            self.setup_cross_section_definition_on_creation()
             self.setup_manholes_on_creation()
             self.fill_related_attributes()
         else:
-            self.setup_cross_section_definition_on_edit()
             self.setup_manholes_on_edit()
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
 
 
-class WeirForm(FormWithCSDefinition, FormWithStartEndNode):
+class WeirForm(FormWithStartEndNode):
     """Weir user layer edit form logic."""
 
     MODEL = dm.Weir
@@ -647,7 +599,6 @@ class WeirForm(FormWithCSDefinition, FormWithStartEndNode):
         fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
-            (dm.CrossSectionDefinition, None): self.cross_section_definition,
         }
         return fm_features
 
@@ -658,18 +609,16 @@ class WeirForm(FormWithCSDefinition, FormWithStartEndNode):
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
-            self.setup_cross_section_definition_on_creation()
             self.setup_connection_nodes_on_creation()
             self.fill_related_attributes()
         else:
-            self.setup_cross_section_definition_on_edit()
             self.setup_connection_nodes_on_edit()
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
 
 
-class CulvertForm(FormWithCSDefinition, FormWithStartEndNode):
+class CulvertForm( FormWithStartEndNode):
     """Culvert user layer edit form logic."""
 
     MODEL = dm.Culvert
@@ -683,7 +632,6 @@ class CulvertForm(FormWithCSDefinition, FormWithStartEndNode):
         fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
-            (dm.CrossSectionDefinition, None): self.cross_section_definition,
         }
         return fm_features
 
@@ -694,18 +642,16 @@ class CulvertForm(FormWithCSDefinition, FormWithStartEndNode):
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
-            self.setup_cross_section_definition_on_creation()
             self.setup_connection_nodes_on_creation()
             self.fill_related_attributes()
         else:
-            self.setup_cross_section_definition_on_edit()
             self.setup_connection_nodes_on_edit()
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
 
 
-class OrificeForm(FormWithCSDefinition, FormWithStartEndNode):
+class OrificeForm(FormWithStartEndNode):
     """Orifice user layer edit form logic."""
 
     MODEL = dm.Orifice
@@ -719,7 +665,6 @@ class OrificeForm(FormWithCSDefinition, FormWithStartEndNode):
         fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
-            (dm.CrossSectionDefinition, None): self.cross_section_definition,
         }
         return fm_features
 
@@ -730,11 +675,9 @@ class OrificeForm(FormWithCSDefinition, FormWithStartEndNode):
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
-            self.setup_cross_section_definition_on_creation()
             self.setup_connection_nodes_on_creation()
             self.fill_related_attributes()
         else:
-            self.setup_cross_section_definition_on_edit()
             self.setup_connection_nodes_on_edit()
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()

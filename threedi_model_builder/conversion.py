@@ -40,6 +40,19 @@ class ModelDataConverter:
         self.all_models = dm.ALL_MODELS[:]
         self.timeseries_rawdata = OrderedDict()
         self.uc = user_communication if user_communication is not None else UICommunication(context="3Di Model Builder")
+        self.commit_errors = defaultdict(list)
+
+    def report_commit_errors(self):
+        """Report all caught commit errors."""
+        error_message = ""
+        errors_per_data_model = list(self.commit_errors.items())
+        errors_per_data_model.sort(key=itemgetter(0))
+        for layer_name, errors in errors_per_data_model:
+            errors_str = "\n".join(errors)
+            error_message += f"{layer_name} commit errors:\n{errors_str}\n"
+        error_message.strip()
+        if error_message:
+            self.uc.show_error(error_message)
 
     @staticmethod
     def spatialite_schema_version(sqlite_path):
@@ -108,14 +121,19 @@ class ModelDataConverter:
 
     def trim_sqlite_targets(self):
         """Removing all features from Spatialite tables."""
+        self.commit_errors.clear()
         for model_cls in self.all_models:
             for src_table in model_cls.SQLITE_TARGETS or tuple():
                 src_layer = sqlite_layer(self.src_sqlite, src_table)
                 if not src_layer.isValid():
                     src_layer = sqlite_layer(self.src_sqlite, src_table, geom_column=None)
                 fids = [f.id() for f in src_layer.getFeatures()]
-                src_layer_dp = src_layer.dataProvider()
-                src_layer_dp.deleteFeatures(fids)
+                src_layer.startEditing()
+                src_layer.deleteFeatures(fids)
+                success = src_layer.commitChanges()
+                if not success:
+                    commit_errors = src_layer.commitErrors()
+                    self.commit_errors[model_cls.__layername__] += commit_errors
 
     @staticmethod
     def copy_features(src_layer, dst_layer, request=None, **field_mappings):
@@ -199,7 +217,10 @@ class ModelDataConverter:
                 ts_features.append(ts_feat)
         ts_layer.startEditing()
         ts_layer.addFeatures(ts_features)
-        ts_layer.commitChanges()
+        success = ts_layer.commitChanges()
+        if not success:
+            commit_errors = ts_layer.commitErrors()
+            self.commit_errors[dm.Timeseries.__layername__] += commit_errors
 
     def recreate_timeseries_rawdata(self):
         """Reading Timeseries from User Layer table."""
@@ -284,11 +305,17 @@ class ModelDataConverter:
         impervious_surface_map_layer.startEditing()
         for fid, link_geom in impervious_surface_map_geoms.items():
             impervious_surface_map_layer.changeGeometry(fid, link_geom)
-        impervious_surface_map_layer.commitChanges()
+        success = impervious_surface_map_layer.commitChanges()
+        if not success:
+            commit_errors = impervious_surface_map_layer.commitErrors()
+            self.commit_errors[dm.ImperviousSurface.__layername__] += commit_errors
         surface_map_layer.startEditing()
         for fid, link_geom in surface_map_geoms.items():
             surface_map_layer.changeGeometry(fid, link_geom)
-        surface_map_layer.commitChanges()
+        success = surface_map_layer.commitChanges()
+        if not success:
+            commit_errors = surface_map_layer.commitErrors()
+            self.commit_errors[dm.Surface.__layername__] += commit_errors
 
     def import_model_data(self, annotated_model_csl):
         """Converting Spatialite layer into GeoPackage User Layer based on model data class."""
@@ -312,7 +339,10 @@ class ModelDataConverter:
                 self.extract_timeseries_rawdata(src_layer, dst_layer)
             dst_layer.startEditing()
             dst_layer.addFeatures(new_feats)
-            dst_layer.commitChanges()
+            success = dst_layer.commitChanges()
+            if not success:
+                commit_errors = dst_layer.commitErrors()
+                self.commit_errors[dst_layer_name] += commit_errors
 
     def collect_src_dst_ids(self, annotated_model_csl):
         """Getting unique feature IDs of source and destination layers."""
@@ -341,11 +371,98 @@ class ModelDataConverter:
         dst_feat_ids |= set(dst_layer.uniqueValues(dst_id_idx))
         return src_feat_ids, dst_feat_ids
 
+    def import_cross_section_definition_data(self):
+        """Importing and splitting cross section definition data."""
+        xs_def_table = next(iter(dm.CrossSectionDefinition.SQLITE_SOURCES))
+        xs_def_lyr = sqlite_layer(self.src_sqlite, xs_def_table)
+        if not xs_def_lyr.isValid():
+            xs_def_lyr = sqlite_layer(self.src_sqlite, xs_def_table, geom_column=None)
+        first_model_with_xs_def = next(iter(dm.ELEMENTS_WITH_XS_DEF))
+        dst_field_names = [field_name for field_name in first_model_with_xs_def.__annotations__.keys()
+                           if field_name.startswith("cross_section_")]
+        # Get cross section definition data and reformat it to fit User Layers structure
+        xs_definitions = {}
+        for xs_def_feat in xs_def_lyr.getFeatures():
+            src_xs_def_id = xs_def_feat["id"]
+            src_xs_def_code = xs_def_feat["code"]
+            src_xs_def_shape = xs_def_feat["shape"]
+            src_xs_def_height = xs_def_feat["height"]
+            src_xs_def_width = xs_def_feat["width"]
+            if src_xs_def_shape in dm.TABLE_SHAPES:
+                xs_def_table = "\n".join(
+                    f"{h}, {w}" for h, w in zip(src_xs_def_height.split(), src_xs_def_width.split())
+                )
+                xs_def_height = None
+                xs_def_width = None
+            else:
+                try:
+                    xs_def_height = float(src_xs_def_height)
+                except (TypeError, ValueError):
+                    xs_def_height = None
+                try:
+                    xs_def_width = float(src_xs_def_width)
+                except (TypeError, ValueError):
+                    xs_def_width = None
+                xs_def_table = None
+            xs_def_data = {
+                "cross_section_code": src_xs_def_code,
+                "cross_section_shape": src_xs_def_shape,
+                "cross_section_height": xs_def_height,
+                "cross_section_width": xs_def_width,
+                "cross_section_table": xs_def_table,
+            }
+            xs_definitions[src_xs_def_id] = xs_def_data
+        # Update User Layers cross section definition data
+        request = QgsFeatureRequest()
+        request.setFlags(QgsFeatureRequest.NoGeometry)
+        for model_cls in dm.ELEMENTS_WITH_XS_DEF:
+            # Initialize spatialite and GeoPackage layers for the model class with the cross section definition data
+            table_name = next(iter(model_cls.SQLITE_SOURCES))
+            src_xs_def_lyr = sqlite_layer(self.src_sqlite, table_name)
+            if not src_xs_def_lyr.isValid():
+                src_xs_def_lyr = sqlite_layer(self.src_sqlite, table_name, geom_column=None)
+            dst_xs_def_lyr = gpkg_layer(self.dst_gpkg, model_cls.__tablename__)
+            # Map field names to field indexes
+            dst_layer_fields = dst_xs_def_lyr.fields()
+            field_indexes = {fld: dst_layer_fields.lookupField(fld) for fld in dst_field_names}
+            # Establish `cross_section_definition_id` field
+            src_id_field_name = model_cls.IMPORT_FIELD_MAPPINGS["id"]
+            xs_def_id_field_name = None
+            for field in src_xs_def_lyr.fields():
+                field_name = field.name()
+                if "definition_id" in field_name:
+                    xs_def_id_field_name = field_name
+                    break
+            # Map feature `id`s to cross section definition `id`s based on source spatialite layers
+            feat_to_xs_def = {}
+            for src_feat in src_xs_def_lyr.getFeatures(request):
+                src_feat_id = src_feat[src_id_field_name]
+                xs_def_id = src_feat[xs_def_id_field_name]
+                feat_to_xs_def[src_feat_id] = xs_def_id
+            # Pair cross section definition data with User Layer features and prepare update dictionary
+            xs_def_data_changes = {}
+            for dst_feat in dst_xs_def_lyr.getFeatures(request):
+                fid = dst_feat.id()
+                dst_feat_id = dst_feat["id"]
+                xs_def_id = feat_to_xs_def[dst_feat_id]
+                xs_def_data = xs_definitions[xs_def_id]
+                xs_def_data_changes[fid] = {field_indexes[fld]: xs_def_data[fld] for fld in xs_def_data.keys()}
+            # Update User Layers with cross section definition data
+            dst_xs_def_lyr.startEditing()
+            for fid, changes in xs_def_data_changes.items():
+                dst_xs_def_lyr.changeAttributeValues(fid, changes)
+            success = dst_xs_def_lyr.commitChanges()
+            if not success:
+                commit_errors = dst_xs_def_lyr.commitErrors()
+                self.commit_errors[model_cls.__layername__] += commit_errors
+
     def import_all_model_data(self):
         """Converting all Spatialite layers into GeoPackage User Layers."""
+        self.commit_errors.clear()
         self.timeseries_rawdata.clear()
         models_to_import = list(self.all_models)
         models_to_import.remove(dm.Timeseries)
+        models_to_import.remove(dm.CrossSectionDefinition)
         number_of_steps = len(models_to_import)
         msg = "Loading data from Spatialite..."
         self.uc.progress_bar(msg, 0, number_of_steps, 0, clear_msg_bar=True)
@@ -369,6 +486,10 @@ class ModelDataConverter:
         self.uc.progress_bar(msg, 0, number_of_steps, number_of_steps, clear_msg_bar=True)
         QCoreApplication.processEvents()
         self.add_surface_map_geometries()
+        msg = f"Importing and splitting cross section definition data..."
+        self.uc.progress_bar(msg, 0, number_of_steps, number_of_steps, clear_msg_bar=True)
+        QCoreApplication.processEvents()
+        self.import_cross_section_definition_data()
         self.uc.clear_message_bar()
         # TODO: Uncomment line below after finishing forms implementation
         # self.process_timeseries_rawdata()
@@ -383,6 +504,7 @@ class ModelDataConverter:
                     warn += " ..."
             warn += "\nPlease run the 3Di schematization checker for more details"
             self.uc.show_warn(warn)
+        self.report_commit_errors()
 
     def export_model_data(self, annotated_model_csl):
         """Converting GeoPackage User Layer into Spatialite layer based on model data class."""
@@ -406,12 +528,18 @@ class ModelDataConverter:
             new_obstacle_feats = self.copy_features(src_layer, dst_obstacle_layer, obstacle_request, **switched_map)
             dst_obstacle_layer.startEditing()
             dst_obstacle_layer.addFeatures(new_obstacle_feats)
-            dst_obstacle_layer.commitChanges()
+            success = dst_obstacle_layer.commitChanges()
+            if not success:
+                commit_errors = dst_obstacle_layer.commitErrors()
+                self.commit_errors[src_layer_name] += commit_errors
             # Copy only levee features
             new_levee_feats = self.copy_features(src_layer, dst_levee_layer, levee_request, **switched_map)
             dst_levee_layer.startEditing()
             dst_levee_layer.addFeatures(new_levee_feats)
-            dst_levee_layer.commitChanges()
+            success = dst_levee_layer.commitChanges()
+            if not success:
+                commit_errors = dst_levee_layer.commitErrors()
+                self.commit_errors[src_layer_name] += commit_errors
         else:
             dst_table = next(iter(annotated_model_csl.SQLITE_TARGETS))
             dst_layer = sqlite_layer(self.src_sqlite, dst_table)
@@ -421,15 +549,101 @@ class ModelDataConverter:
             self.fill_required_attributes(src_layer, new_feats)
             dst_layer.startEditing()
             dst_layer.addFeatures(new_feats)
-            dst_layer.commitChanges()
+            success = dst_layer.commitChanges()
+            if not success:
+                commit_errors = dst_layer.commitErrors()
+                self.commit_errors[src_layer_name] += commit_errors
+
+    def export_cross_section_definition_data(self):
+        """Exporting and aggregating cross section definition data."""
+        request = QgsFeatureRequest()
+        request.setFlags(QgsFeatureRequest.NoGeometry)
+        xs_def_data_ids = OrderedDict()
+        lyr_feat_to_xs_def_id = {}
+        next_xs_def_id = 1
+        # Get and aggregate cross section definition data
+        for model_cls in dm.ELEMENTS_WITH_XS_DEF:
+            table_name = next(iter(model_cls.SQLITE_TARGETS))
+            src_with_xs_def_lyr = gpkg_layer(self.dst_gpkg, model_cls.__tablename__)
+            for feat_with_xs_def in src_with_xs_def_lyr.getFeatures(request):
+                feat_id = feat_with_xs_def["id"]
+                src_xs_def_code = feat_with_xs_def["cross_section_code"]
+                src_xs_def_shape = feat_with_xs_def["cross_section_shape"]
+                src_xs_def_height = feat_with_xs_def["cross_section_height"]
+                src_xs_def_width = feat_with_xs_def["cross_section_width"]
+                src_xs_def_table = feat_with_xs_def["cross_section_table"]
+                if src_xs_def_shape in dm.TABLE_SHAPES:
+                    parsed_table = [row.split(",") for row in src_xs_def_table.split("\n")]
+                    height_values, width_values = list(zip(*parsed_table))
+                    xs_def_height = " ".join(hv.strip() for hv in height_values)
+                    xs_def_width = " ".join(wv.strip() for wv in width_values)
+                else:
+                    xs_def_height = str(src_xs_def_height) if src_xs_def_height else None
+                    xs_def_width = str(src_xs_def_width) if src_xs_def_width else None
+                xs_def_data = (src_xs_def_code, src_xs_def_shape, xs_def_height, xs_def_width)
+                try:
+                    xs_def_id = xs_def_data_ids[xs_def_data]
+                except KeyError:
+                    xs_def_id = next_xs_def_id
+                    xs_def_data_ids[xs_def_data] = xs_def_id
+                    next_xs_def_id += 1
+                lyr_feat_to_xs_def_id[table_name, feat_id] = xs_def_id
+        # Inserting CrossSectionDefinition data
+        xs_def_table = next(iter(dm.CrossSectionDefinition.SQLITE_TARGETS))
+        xs_def_lyr = sqlite_layer(self.src_sqlite, xs_def_table)
+        if not xs_def_lyr.isValid():
+            xs_def_lyr = sqlite_layer(self.src_sqlite, xs_def_table, geom_column=None)
+        xs_def_fields = xs_def_lyr.fields()
+        new_xs_def_feats = []
+        for (xs_def_code, xs_def_shape, xs_def_height, xs_def_width), xs_def_id in xs_def_data_ids.items():
+            new_feat = QgsFeature(xs_def_fields)
+            new_feat["id"] = xs_def_id
+            new_feat["code"] = xs_def_code
+            new_feat["shape"] = xs_def_shape
+            new_feat["height"] = xs_def_height
+            new_feat["width"] = xs_def_width
+            new_xs_def_feats.append(new_feat)
+        xs_def_lyr.startEditing()
+        xs_def_lyr.addFeatures(new_xs_def_feats)
+        success = xs_def_lyr.commitChanges()
+        if not success:
+            commit_errors = xs_def_lyr.commitErrors()
+            self.commit_errors[dm.CrossSectionDefinition.__layername__] += commit_errors
+        # Update `cross_section_definition_id` fields in the layers that refers to the cross section definition data
+        for model_cls in dm.ELEMENTS_WITH_XS_DEF:
+            dst_changes = {}
+            table_name = next(iter(model_cls.SQLITE_TARGETS))
+            dst_with_xs_def_lyr = sqlite_layer(self.src_sqlite, table_name)
+            if not dst_with_xs_def_lyr.isValid():
+                dst_with_xs_def_lyr = sqlite_layer(self.src_sqlite, table_name, geom_column=None)
+            # Establish `cross_section_definition_id` field index
+            dst_with_xs_def_lyr_fields = dst_with_xs_def_lyr.fields()
+            xs_def_id_field = "definition_id" if model_cls == dm.CrossSectionLocation else "cross_section_definition_id"
+            xs_def_id_field_idx = dst_with_xs_def_lyr_fields.lookupField(xs_def_id_field)
+            # Create dictionary with `cross_section_definition_id` updates
+            for dst_feat in dst_with_xs_def_lyr.getFeatures(request):
+                feat_fid = dst_feat.id()
+                dst_feat_id = dst_feat["id"]
+                xs_def_id = lyr_feat_to_xs_def_id[table_name, dst_feat_id]
+                dst_changes[feat_fid] = xs_def_id
+            # Update `cross_section_definition_id`field
+            dst_with_xs_def_lyr.startEditing()
+            for feat_fid, xs_def_id in dst_changes.items():
+                dst_with_xs_def_lyr.changeAttributeValue(feat_fid, xs_def_id_field_idx, xs_def_id)
+            success = dst_with_xs_def_lyr.commitChanges()
+            if not success:
+                commit_errors = dst_with_xs_def_lyr.commitErrors()
+                self.commit_errors[model_cls.__layername__] += commit_errors
 
     def export_all_model_data(self):
         """Converting all GeoPackage User Layers into Spatialite layers."""
         # TODO: Uncomment line below after finishing forms implementation
         # self.recreate_timeseries_rawdata()
+        self.commit_errors.clear()
         models_to_export = list(self.all_models)
         models_to_export.remove(dm.Timeseries)
         models_to_export.remove(dm.PumpstationMap)
+        models_to_export.remove(dm.CrossSectionDefinition)
         number_of_steps = len(models_to_export)
         msg = "Saving data into Spatialite..."
         self.uc.progress_bar(msg, 0, number_of_steps, 0, clear_msg_bar=True)
@@ -448,6 +662,10 @@ class ModelDataConverter:
                 missing = len(missing_ids)
                 if missing:
                     incomplete_exports[data_model_cls] = (sqlite_feat_count, gpkg_feat_count, missing, missing_ids)
+        msg = f"Exporting and aggregating cross section definition data..."
+        self.uc.progress_bar(msg, 0, number_of_steps, number_of_steps, clear_msg_bar=True)
+        QCoreApplication.processEvents()
+        self.export_cross_section_definition_data()
         self.uc.clear_message_bar()
         if incomplete_exports:
             warn = "Incomplete export:\n"
@@ -459,3 +677,4 @@ class ModelDataConverter:
                 if miss_no > 10:
                     warn += " ..."
             self.uc.show_warn(warn)
+        self.report_commit_errors()

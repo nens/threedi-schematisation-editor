@@ -10,6 +10,7 @@ from threedi_model_builder.utils import (
     remove_user_layers,
     add_settings_entry,
     check_enable_macros_option,
+    create_3di_views,
     ConversionError,
 )
 
@@ -129,6 +130,7 @@ class ThreediModelBuilderPlugin:
         src_sqlite = self.select_sqlite_database(title="Select database to load features from")
         if not src_sqlite:
             return
+        create_3di_views(src_sqlite)
         schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
         if schema_version not in ModelDataConverter.SUPPORTED_SCHEMA_VERSIONS:
             warn_msg = (
@@ -170,6 +172,7 @@ class ThreediModelBuilderPlugin:
         dst_sqlite = self.select_sqlite_database(title="Select database to save features to")
         if not dst_sqlite:
             return
+        create_3di_views(dst_sqlite)
         schema_version = ModelDataConverter.spatialite_schema_version(dst_sqlite)
         if schema_version not in ModelDataConverter.SUPPORTED_SCHEMA_VERSIONS:
             warn_msg = (
@@ -185,6 +188,7 @@ class ThreediModelBuilderPlugin:
         if known_epsg is False:
             return
         converter.trim_sqlite_targets()
+        converter.report_commit_errors()
         converter.export_all_model_data()
         self.uc.show_info("Saving to the Spatialite finished!")
 
