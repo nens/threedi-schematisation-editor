@@ -300,8 +300,10 @@ class FormWithNode(BaseForm):
         if connection_node_feat is None:
             connection_node_feat = connection_node_handler.create_new_feature(self.feature.geometry())
             self.extra_features[connection_node_handler].append(connection_node_feat)
-        self.connection_node = connection_node_feat
+        # Sequence related features ids
         self.sequence_related_features_ids()
+        # Assign features as an form instance attributes.
+        self.connection_node = connection_node_feat
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
@@ -376,10 +378,11 @@ class FormWithStartEndNode(BaseForm):
             end_geom = QgsGeometry.fromPointXY(end_point)
             end_connection_node_feat = connection_node_handler.create_new_feature(geometry=end_geom)
             self.extra_features[connection_node_handler].append(end_connection_node_feat)
+        # Sequence related features ids
+        self.sequence_related_features_ids()
         # Assign features as an form instance attributes.
         self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
-        self.sequence_related_features_ids()
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
@@ -557,12 +560,16 @@ class PipeForm(FormWithStartEndNode):
             end_connection_node_id = end_manhole_feat["connection_node_id"]
             end_connection_node_feat = connection_node_handler.get_feat_by_id(end_connection_node_id)
 
+        # Sequence related features ids
+        self.sequence_related_features_ids()
+        # Reassign manholes connection_node_id after sequencing
+        start_manhole_feat["connection_node_id"] = start_connection_node_feat["id"]
+        end_manhole_feat["connection_node_id"] = end_connection_node_feat["id"]
         # Assign features as an form instance attributes.
         self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
         self.manhole_start = start_manhole_feat
         self.manhole_end = end_manhole_feat
-        self.sequence_related_features_ids()
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
