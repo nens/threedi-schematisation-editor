@@ -887,6 +887,194 @@ class Timeseries(ModelObject):
     value: float
 
 
+@dataclass
+class CalculationPoint(ModelObject):
+    __tablename__ = "calculation_point"
+    __layername__ = "Calculation point"
+    __geometrytype__ = GeometryType.Point
+
+    SQLITE_SOURCES = ("v2_calculation_point",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: int
+    content_type_id: int
+    user_ref: str
+    calc_type: int
+
+
+@dataclass
+class ConnectedPoint(ModelObject):
+    __tablename__ = "connected_point"
+    __layername__ = "Connected point"
+    __geometrytype__ = GeometryType.Point
+
+    SQLITE_SOURCES = ("v2_connected_pnt",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: int
+    calculation_pnt_id: int
+    exchange_level: Optional[float]
+    levee_id: Optional[int]
+
+
+@dataclass
+class Control(ModelObject):
+    __tablename__ = "control"
+    __layername__ = "Control"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    SQLITE_SOURCES = ("v2_control",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: int
+    control_id: Optional[int]
+    control_group_id: Optional[int]
+    control_type: Optional[str]
+    measure_group_id: Optional[int]
+    measure_frequency: Optional[int]
+    start: Optional[str]
+    end: Optional[str]
+
+
+@dataclass
+class ControlDelta(ModelObject):
+    __tablename__ = "control_delta"
+    __layername__ = "Control delta"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    SQLITE_SOURCES = ("v2_control_delta",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: int
+    measure_variable: Optional[str]
+    measure_delta: Optional[float]
+    measure_dt: Optional[float]
+    action_type: Optional[str]
+    action_value: Optional[str]
+    action_time: Optional[float]
+    target_type: Optional[str]
+    target_id: Optional[int]
+
+
+@dataclass
+class ControlGroup(ModelObject):
+    __tablename__ = "control_group"
+    __layername__ = "Control group"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    SQLITE_SOURCES = ("v2_control_group",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: Optional[int]
+    name: Optional[str]
+    description: Optional[str]
+
+
+@dataclass
+class ControlMeasureGroup(ModelObject):
+    __tablename__ = "control_measure_group"
+    __layername__ = "Control measure group"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    SQLITE_SOURCES = ("v2_control_measure_group",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: int
+
+
+@dataclass
+class ControlMeasureMap(ModelObject):
+    __tablename__ = "control_measure_map"
+    __layername__ = "Control measure map"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    SQLITE_SOURCES = ("v2_control_measure_map",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: int
+    measure_group_id: Optional[int]
+    object_id: Optional[int]
+    object_type: Optional[str]
+    weight: Optional[float]
+
+
+@dataclass
+class ControlMemory(ModelObject):
+    __tablename__ = "control_memory"
+    __layername__ = "Control memory"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    SQLITE_SOURCES = ("v2_control_memory",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: Optional[int]
+    action_value: Optional[str]
+    is_inverse: bool
+    upper_threshold: Optional[float]
+    lower_threshold: Optional[float]
+    target_type: Optional[str]
+    measure_variable: Optional[str]
+    is_active: bool
+    action_type: Optional[str]
+    target_id: Optional[int]
+
+
+@dataclass
+class ControlPID(ModelObject):
+    __tablename__ = "control_pid"
+    __layername__ = "Control PID"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    SQLITE_SOURCES = ("v2_control_pid",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: Optional[int]
+    target_lower_limit: Optional[str]
+    setpoint: Optional[float]
+    kd: Optional[float]
+    ki: Optional[float]
+    target_type: Optional[str]
+    measure_variable: Optional[str]
+    kp: Optional[float]
+    action_type: Optional[str]
+    target_upper_limit: Optional[str]
+    target_id: Optional[int]
+
+
+@dataclass
+class ControlTable(ModelObject):
+    __tablename__ = "control_table"
+    __layername__ = "Control table"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    SQLITE_SOURCES = ("v2_control_table",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: Optional[int]
+    action_table: Optional[str]
+    measure_operator: Optional[str]
+    target_type: Optional[str]
+    measure_variable: Optional[str]
+    action_type: Optional[str]
+    target_id: Optional[int]
+
+
+@dataclass
+class ControlTimed(ModelObject):
+    __tablename__ = "control_timed"
+    __layername__ = "Control timed"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    SQLITE_SOURCES = ("v2_control_timed",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: int
+    action_type: Optional[str]
+    action_table: Optional[str]
+    target_type: Optional[str]
+    target_id: Optional[int]
+
+
 MODEL_1D_ELEMENTS = (
     ConnectionNode,
     BoundaryCondition1D,
@@ -929,11 +1117,29 @@ SETTINGS_ELEMENTS = (
     NumericalSettings,
 )
 
+BREACHES_ELEMENTS = (
+    CalculationPoint,
+    ConnectedPoint,
+)
+
+CONTROL_STRUCTURES_ELEMENTS = (
+    Control,
+    ControlDelta,
+    ControlGroup,
+    ControlMeasureGroup,
+    ControlMeasureMap,
+    ControlMemory,
+    ControlPID,
+    ControlTable,
+    ControlTimed,
+)
+
 ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS
 ALL_MODELS = ALL_MODELS + (
     Timeseries,
     CrossSectionDefinition,
 )
+ALL_MODELS = ALL_MODELS + BREACHES_ELEMENTS + CONTROL_STRUCTURES_ELEMENTS
 
 ELEMENTS_WITH_XS_DEF = (
     Weir,
