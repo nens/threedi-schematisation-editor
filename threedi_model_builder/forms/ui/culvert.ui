@@ -711,51 +711,6 @@ coefficient positive</string>
           <string>Cross section definition</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
-          <item row="3" column="3">
-           <widget class="QDoubleSpinBox" name="cross_section_height">
-            <property name="buttonSymbols">
-             <enum>QAbstractSpinBox::NoButtons</enum>
-            </property>
-            <property name="decimals">
-             <number>3</number>
-            </property>
-            <property name="maximum">
-             <double>1000000.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_14">
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="inputMethodHints">
-             <set>Qt::ImhNone</set>
-            </property>
-            <property name="text">
-             <string>Code</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-            </property>
-            <property name="indent">
-             <number>10</number>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="3">
-           <widget class="QLineEdit" name="cross_section_code">
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="inputMethodHints">
-             <set>Qt::ImhNone</set>
-            </property>
-            <property name="clearButtonEnabled">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="0">
            <widget class="QLabel" name="label_5">
             <property name="locale">
@@ -772,8 +727,34 @@ coefficient positive</string>
             </property>
            </widget>
           </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>Table</string>
+            </property>
+           </widget>
+          </item>
           <item row="4" column="1" colspan="3">
            <widget class="QPlainTextEdit" name="cross_section_table"/>
+          </item>
+          <item row="3" column="1">
+           <widget class="QDoubleSpinBox" name="cross_section_width">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="buttonSymbols">
+             <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="decimals">
+             <number>3</number>
+            </property>
+            <property name="maximum">
+             <double>1000000.000000000000000</double>
+            </property>
+           </widget>
           </item>
           <item row="3" column="0">
            <widget class="QLabel" name="label_7">
@@ -791,22 +772,22 @@ coefficient positive</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QComboBox" name="cross_section_shape">
+          <item row="3" column="3">
+           <widget class="QDoubleSpinBox" name="cross_section_height">
             <property name="sizePolicy">
-             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
+            <property name="buttonSymbols">
+             <enum>QAbstractSpinBox::NoButtons</enum>
             </property>
-            <property name="inputMethodHints">
-             <set>Qt::ImhNone</set>
+            <property name="decimals">
+             <number>3</number>
             </property>
-            <property name="editable">
-             <bool>false</bool>
+            <property name="maximum">
+             <double>1000000.000000000000000</double>
             </property>
            </widget>
           </item>
@@ -829,29 +810,22 @@ coefficient positive</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
-           <widget class="QLabel" name="label_8">
-            <property name="text">
-             <string>Table</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QDoubleSpinBox" name="cross_section_width">
+          <item row="1" column="1" colspan="3">
+           <widget class="QComboBox" name="cross_section_shape">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <property name="buttonSymbols">
-             <enum>QAbstractSpinBox::NoButtons</enum>
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
             </property>
-            <property name="decimals">
-             <number>3</number>
+            <property name="inputMethodHints">
+             <set>Qt::ImhNone</set>
             </property>
-            <property name="maximum">
-             <double>1000000.000000000000000</double>
+            <property name="editable">
+             <bool>false</bool>
             </property>
            </widget>
           </item>

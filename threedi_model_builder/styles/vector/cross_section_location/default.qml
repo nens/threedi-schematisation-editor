@@ -132,16 +132,6 @@
         </config>
       </editWidget>
     </field>
-    <field name="cross_section_code">
-      <editWidget type="TextEdit">
-        <config>
-          <Option type="Map">
-            <Option name="IsMultiline" value="false" type="bool"/>
-            <Option name="UseHtml" value="false" type="bool"/>
-          </Option>
-        </config>
-      </editWidget>
-    </field>
     <field name="cross_section_shape">
       <editWidget type="Range">
         <config>
@@ -233,13 +223,11 @@ def my_form_open(dialog, layer, feature):
         <attributeEditorField name="cross_section_shape" showLabel="1" index="9"/>
         <attributeEditorField name="cross_section_height" showLabel="1" index="11"/>
         <attributeEditorField name="cross_section_width" showLabel="1" index="10"/>
-        <attributeEditorField name="cross_section_code" showLabel="1" index="8"/>
         <attributeEditorField name="cross_section_table" showLabel="1" index="12"/>
       </attributeEditorContainer>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
-    <field name="Cross section definition_code" editable="0"/>
     <field name="Cross section definition_height" editable="0"/>
     <field name="Cross section definition_shape" editable="0"/>
     <field name="Cross section definition_width" editable="0"/>
@@ -247,7 +235,6 @@ def my_form_open(dialog, layer, feature):
     <field name="bank_level" editable="1"/>
     <field name="channel_id" editable="1"/>
     <field name="code" editable="1"/>
-    <field name="cross_section_code" editable="1"/>
     <field name="cross_section_height" editable="1"/>
     <field name="cross_section_shape" editable="1"/>
     <field name="cross_section_table" editable="1"/>
@@ -258,13 +245,8 @@ def my_form_open(dialog, layer, feature):
     <field name="friction_value" editable="1"/>
     <field name="id" editable="1"/>
     <field name="reference_level" editable="1"/>
-    <field name="v2_cross_section_code" editable="0"/>
-    <field name="v2_cross_section_height" editable="0"/>
-    <field name="v2_cross_section_shape" editable="0"/>
-    <field name="v2_cross_section_width" editable="0"/>
   </editable>
   <labelOnTop>
-    <field name="Cross section definition_code" labelOnTop="0"/>
     <field name="Cross section definition_height" labelOnTop="0"/>
     <field name="Cross section definition_shape" labelOnTop="0"/>
     <field name="Cross section definition_width" labelOnTop="0"/>
@@ -272,7 +254,6 @@ def my_form_open(dialog, layer, feature):
     <field name="bank_level" labelOnTop="0"/>
     <field name="channel_id" labelOnTop="0"/>
     <field name="code" labelOnTop="0"/>
-    <field name="cross_section_code" labelOnTop="0"/>
     <field name="cross_section_height" labelOnTop="0"/>
     <field name="cross_section_shape" labelOnTop="0"/>
     <field name="cross_section_table" labelOnTop="0"/>
@@ -283,10 +264,6 @@ def my_form_open(dialog, layer, feature):
     <field name="friction_value" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
     <field name="reference_level" labelOnTop="0"/>
-    <field name="v2_cross_section_code" labelOnTop="0"/>
-    <field name="v2_cross_section_height" labelOnTop="0"/>
-    <field name="v2_cross_section_shape" labelOnTop="0"/>
-    <field name="v2_cross_section_width" labelOnTop="0"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>
   <widgets/>

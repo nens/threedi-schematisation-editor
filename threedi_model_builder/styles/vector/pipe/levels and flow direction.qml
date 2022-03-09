@@ -1320,7 +1320,6 @@ def my_form_open(dialog, layer, feature):
         <attributeEditorField name="cross_section_shape" showLabel="1" index="-1"/>
         <attributeEditorField name="cross_section_width" showLabel="1" index="-1"/>
         <attributeEditorField name="cross_section_height" showLabel="1" index="-1"/>
-        <attributeEditorField name="cross_section_code" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer visibilityExpression="" name="Visualization" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
         <attributeEditorField name="sewerage_type" showLabel="1" index="-1"/>
@@ -1338,7 +1337,6 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="code"/>
     <field editable="1" name="connection_node_end_id"/>
     <field editable="1" name="connection_node_start_id"/>
-    <field editable="1" name="cross_section_code"/>
     <field editable="1" name="cross_section_height"/>
     <field editable="1" name="cross_section_shape"/>
     <field editable="1" name="cross_section_width"/>
@@ -1380,7 +1378,6 @@ def my_form_open(dialog, layer, feature):
     <field name="code" labelOnTop="0"/>
     <field name="connection_node_end_id" labelOnTop="0"/>
     <field name="connection_node_start_id" labelOnTop="0"/>
-    <field name="cross_section_code" labelOnTop="0"/>
     <field name="cross_section_height" labelOnTop="0"/>
     <field name="cross_section_shape" labelOnTop="0"/>
     <field name="cross_section_width" labelOnTop="0"/>

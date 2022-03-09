@@ -709,13 +709,6 @@
         </config>
       </editWidget>
     </field>
-    <field name="cross_section_code">
-      <editWidget type="TextEdit">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
     <field name="cross_section_shape">
       <editWidget type="Range">
         <config>
@@ -790,7 +783,6 @@
         <attributeEditorField name="cross_section_shape" showLabel="1" index="16"/>
         <attributeEditorField name="cross_section_width" showLabel="1" index="17"/>
         <attributeEditorField name="cross_section_height" showLabel="1" index="18"/>
-        <attributeEditorField name="cross_section_code" showLabel="1" index="15"/>
       </attributeEditorContainer>
       <attributeEditorContainer name="Connection nodes" showLabel="1" groupBox="1" visibilityExpression="" columnCount="1" visibilityExpressionEnabled="0">
         <attributeEditorField name="connection_node_start_id" showLabel="1" index="13"/>
@@ -805,7 +797,6 @@
     <field name="connection_node_start_id" editable="0"/>
     <field name="crest_level" editable="1"/>
     <field name="crest_type" editable="1"/>
-    <field name="cross_section_code" editable="1"/>
     <field name="cross_section_height" editable="1"/>
     <field name="cross_section_shape" editable="1"/>
     <field name="cross_section_table" editable="1"/>
@@ -828,7 +819,6 @@
     <field name="connection_node_start_id" labelOnTop="0"/>
     <field name="crest_level" labelOnTop="0"/>
     <field name="crest_type" labelOnTop="0"/>
-    <field name="cross_section_code" labelOnTop="0"/>
     <field name="cross_section_height" labelOnTop="0"/>
     <field name="cross_section_shape" labelOnTop="0"/>
     <field name="cross_section_table" labelOnTop="0"/>

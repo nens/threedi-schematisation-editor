@@ -375,7 +375,7 @@
     <default applyOnUpdate="0" field="capacity" expression=""/>
     <default applyOnUpdate="0" field="zoom_category" expression="2"/>
     <default applyOnUpdate="0" field="connection_node_start_id" expression="'filled automatically'"/>
-    <default applyOnUpdate="0" field="connection_node_end_id" expression="'if you want to use an endpoint use v2_pumpstation_view'"/>
+    <default applyOnUpdate="0" field="connection_node_end_id" expression="'filled automatically'"/>
     <default applyOnUpdate="0" field="type" expression="1"/>
     <default applyOnUpdate="0" field="connection_node_id" expression="'filled automatically'"/>
     <default applyOnUpdate="0" field="storage_area" expression=""/>

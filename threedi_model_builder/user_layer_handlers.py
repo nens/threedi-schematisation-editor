@@ -345,7 +345,7 @@ class PumpstationHandler(UserLayerHandler):
             "code": "new",
             "sewerage": False,
             "type": PumpType.SUCTION_SIDE.value,
-            "capacity": 10.0,
+            "capacity": None,
         }
     )
 
@@ -474,7 +474,7 @@ class CulvertHandler(UserLayerHandler):
             "display_name": "new",
             "code": "new",
             "dist_calc_points": 1000,
-            "calculation_type": CalculationTypeCulvert.STANDALONE.value,
+            "calculation_type": CalculationTypeCulvert.ISOLATED.value,
             "friction_type": FrictionType.MANNING.value,
             "friction_value": 0.02,
             "discharge_coefficient_positive": 0.8,

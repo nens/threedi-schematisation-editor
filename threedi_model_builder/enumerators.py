@@ -48,17 +48,14 @@ class AggregationMethod(Enum):
 
 class CalculationType(Enum):
     EMBEDDED = 100
-    STANDALONE = 101
+    ISOLATED = 101
     CONNECTED = 102
     DOUBLE_CONNECTED = 105
 
 
 class CalculationTypeCulvert(Enum):
-    EMBEDDED_NODE = 0
-    ISOLATED_NODE = 1
-    CONNECTED_NODE = 2
     EMBEDDED = 100
-    STANDALONE = 101
+    ISOLATED = 101
     CONNECTED = 102
     DOUBLE_CONNECTED = 105
 

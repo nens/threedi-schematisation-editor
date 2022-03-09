@@ -664,16 +664,6 @@
         </config>
       </editWidget>
     </field>
-    <field name="cross_section_code">
-      <editWidget type="TextEdit">
-        <config>
-          <Option type="Map">
-            <Option name="IsMultiline" value="false" type="bool"/>
-            <Option name="UseHtml" value="false" type="bool"/>
-          </Option>
-        </config>
-      </editWidget>
-    </field>
     <field name="cross_section_shape">
       <editWidget type="Range">
         <config>
@@ -754,7 +744,6 @@
         <attributeEditorField name="cross_section_shape" showLabel="1" index="19"/>
         <attributeEditorField name="cross_section_width" showLabel="1" index="20"/>
         <attributeEditorField name="cross_section_height" showLabel="1" index="21"/>
-        <attributeEditorField name="cross_section_code" showLabel="1" index="18"/>
       </attributeEditorContainer>
       <attributeEditorContainer name="Visualization" showLabel="1" groupBox="1" visibilityExpression="" columnCount="1" visibilityExpressionEnabled="0">
         <attributeEditorField name="sewerage_type" showLabel="1" index="12"/>
@@ -772,7 +761,6 @@
     <field name="code" editable="1"/>
     <field name="connection_node_end_id" editable="0"/>
     <field name="connection_node_start_id" editable="0"/>
-    <field name="cross_section_code" editable="1"/>
     <field name="cross_section_height" editable="1"/>
     <field name="cross_section_shape" editable="1"/>
     <field name="cross_section_table" editable="1"/>
@@ -798,7 +786,6 @@
     <field name="code" labelOnTop="0"/>
     <field name="connection_node_end_id" labelOnTop="0"/>
     <field name="connection_node_start_id" labelOnTop="0"/>
-    <field name="cross_section_code" labelOnTop="0"/>
     <field name="cross_section_height" labelOnTop="0"/>
     <field name="cross_section_shape" labelOnTop="0"/>
     <field name="cross_section_table" labelOnTop="0"/>

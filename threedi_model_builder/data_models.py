@@ -144,7 +144,6 @@ class Pumpstation(ModelObject):
             "id": "pump_id",
         }
     )
-
     EXPORT_FIELD_MAPPINGS = MappingProxyType(
         {
             "connection_node_id": "connection_node_start_id",
@@ -234,7 +233,6 @@ class Weir(ModelObject):
     zoom_category: Optional[ZoomCategories]
     connection_node_start_id: int
     connection_node_end_id: int
-    cross_section_code: str
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
@@ -283,7 +281,6 @@ class Culvert(ModelObject):
     zoom_category: Optional[ZoomCategories]
     connection_node_start_id: int
     connection_node_end_id: int
-    cross_section_code: str
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
@@ -332,7 +329,6 @@ class Orifice(ModelObject):
     zoom_category: Optional[ZoomCategories]
     connection_node_start_id: int
     connection_node_end_id: int
-    cross_section_code: str
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
@@ -387,7 +383,6 @@ class Pipe(ModelObject):
     original_length: Optional[float]
     connection_node_start_id: int
     connection_node_end_id: int
-    cross_section_code: str
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
@@ -422,7 +417,6 @@ class CrossSectionLocation(ModelObject):
     friction_value: float
     bank_level: Optional[float]
     channel_id: int
-    cross_section_code: str
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
@@ -911,8 +905,19 @@ class ConnectedPoint(ModelObject):
     SQLITE_SOURCES = ("v2_connected_pnt",)
     SQLITE_TARGETS = SQLITE_SOURCES
 
+    IMPORT_FIELD_MAPPINGS = MappingProxyType(
+        {
+            "calculation_point_id": "calculation_pnt_id",
+        }
+    )
+    EXPORT_FIELD_MAPPINGS = MappingProxyType(
+        {
+            "calculation_point_id": "calculation_pnt_id",
+        }
+    )
+
     id: int
-    calculation_pnt_id: int
+    calculation_point_id: int
     exchange_level: Optional[float]
     levee_id: Optional[int]
 

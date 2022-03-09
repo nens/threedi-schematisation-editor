@@ -177,10 +177,10 @@ def get_tree_group(name):
     return grp
 
 
-def add_layer_to_group(name, layer, bottom=False):
+def add_layer_to_group(name, layer, bottom=False, cached_groups=None):
     """Adding layer to the specific group."""
     project = QgsProject.instance()
-    grp = project.layerTreeRoot().findGroup(name)
+    grp = cached_groups.get(name, None) if cached_groups else project.layerTreeRoot().findGroup(name)
     if not grp:
         return
     project.addMapLayer(layer, False)
@@ -239,6 +239,15 @@ def set_initial_layer_configuration(layer):
     layer.setFlags(QgsMapLayer.Searchable | QgsMapLayer.Identifiable)
 
 
+def set_field_default_value(vector_layer, field_name, expression, apply_on_update=False):
+    """Set default value expression for field under the given index."""
+    field_index = vector_layer.fields().lookupField(field_name)
+    default_value_definition = vector_layer.defaultValueDefinition(field_index)
+    default_value_definition.setExpression(expression)
+    default_value_definition.setApplyOnUpdate(apply_on_update)
+    vector_layer.setDefaultValueDefinition(field_index, default_value_definition)
+
+
 def load_user_layers(gpkg_path):
     """Loading grouped User Layers from GeoPackage into map canvas."""
     groups = OrderedDict()
@@ -271,6 +280,9 @@ def load_user_layers(gpkg_path):
             default_edit_form_config = layer.editFormConfig()
             if form_ui_path:
                 default_edit_form_config.setUiForm(form_ui_path)
+            else:
+                id_increment_expression = "if (maximum(id) is null, 1, maximum(id) + 1)"
+                set_field_default_value(layer, "id", id_increment_expression)
             for style in all_styles:
                 style_manager.setCurrentStyle(style)
                 layer.setEditFormConfig(default_edit_form_config)
@@ -590,3 +602,26 @@ def create_3di_views(sqlite_filepath):
     c.executescript(qry)
     connection.commit()
     connection.close()
+
+
+def is_gpkg_connection_exist(gpkg_path):
+    """Check if GeoPackage connection exists in settings."""
+    gpkg_path = gpkg_path.replace("\\", "/")
+    settings = QSettings()
+    settings.beginGroup("providers/ogr/GPKG/connections")
+    for connection in settings.allKeys():
+        connection_path = settings.value(connection, type=str)
+        connection_path = connection_path.replace("\\", "/")
+        if connection_path == gpkg_path:
+            return True
+    return False
+
+
+def add_gpkg_connection(gpkg_path, iface=None):
+    """Write GeoPackage connection into the settings."""
+    connection_name = os.path.basename(gpkg_path)
+    gpkg_path = gpkg_path.replace("\\", "/")
+    settings = QSettings()
+    settings.setValue(f"providers/ogr/GPKG/connections/{connection_name}/path", gpkg_path)
+    if iface is not None:
+        iface.mainWindow().connectionsChanged.emit()

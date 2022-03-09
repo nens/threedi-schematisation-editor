@@ -372,7 +372,7 @@ class ModelDataConverter:
         return src_feat_ids, dst_feat_ids
 
     def import_cross_section_definition_data(self):
-        """Importing and splitting cross section definition data."""
+        """Importing and splitting cross-section definition data."""
         xs_def_table = next(iter(dm.CrossSectionDefinition.SQLITE_SOURCES))
         xs_def_lyr = sqlite_layer(self.src_sqlite, xs_def_table)
         if not xs_def_lyr.isValid():
@@ -383,11 +383,10 @@ class ModelDataConverter:
             for field_name in first_model_with_xs_def.__annotations__.keys()
             if field_name.startswith("cross_section_")
         ]
-        # Get cross section definition data and reformat it to fit User Layers structure
+        # Get cross-section definition data and reformat it to fit User Layers structure
         xs_definitions = {}
         for xs_def_feat in xs_def_lyr.getFeatures():
             src_xs_def_id = xs_def_feat["id"]
-            src_xs_def_code = xs_def_feat["code"]
             src_xs_def_shape = xs_def_feat["shape"]
             src_xs_def_height = xs_def_feat["height"]
             src_xs_def_width = xs_def_feat["width"]
@@ -408,18 +407,17 @@ class ModelDataConverter:
                     xs_def_width = None
                 xs_def_table = None
             xs_def_data = {
-                "cross_section_code": src_xs_def_code,
                 "cross_section_shape": src_xs_def_shape,
                 "cross_section_height": xs_def_height,
                 "cross_section_width": xs_def_width,
                 "cross_section_table": xs_def_table,
             }
             xs_definitions[src_xs_def_id] = xs_def_data
-        # Update User Layers cross section definition data
+        # Update User Layers cross-section definition data
         request = QgsFeatureRequest()
         request.setFlags(QgsFeatureRequest.NoGeometry)
         for model_cls in dm.ELEMENTS_WITH_XS_DEF:
-            # Initialize spatialite and GeoPackage layers for the model class with the cross section definition data
+            # Initialize spatialite and GeoPackage layers for the model class with the cross-section definition data
             table_name = next(iter(model_cls.SQLITE_SOURCES))
             src_xs_def_lyr = sqlite_layer(self.src_sqlite, table_name)
             if not src_xs_def_lyr.isValid():
@@ -436,13 +434,13 @@ class ModelDataConverter:
                 if "definition_id" in field_name:
                     xs_def_id_field_name = field_name
                     break
-            # Map feature `id`s to cross section definition `id`s based on source spatialite layers
+            # Map feature `id`s to cross-section definition `id`s based on source spatialite layers
             feat_to_xs_def = {}
             for src_feat in src_xs_def_lyr.getFeatures(request):
                 src_feat_id = src_feat[src_id_field_name]
                 xs_def_id = src_feat[xs_def_id_field_name]
                 feat_to_xs_def[src_feat_id] = xs_def_id
-            # Pair cross section definition data with User Layer features and prepare update dictionary
+            # Pair cross-section definition data with User Layer features and prepare update dictionary
             xs_def_data_changes = {}
             for dst_feat in dst_xs_def_lyr.getFeatures(request):
                 fid = dst_feat.id()
@@ -450,7 +448,7 @@ class ModelDataConverter:
                 xs_def_id = feat_to_xs_def[dst_feat_id]
                 xs_def_data = xs_definitions[xs_def_id]
                 xs_def_data_changes[fid] = {field_indexes[fld]: xs_def_data[fld] for fld in xs_def_data.keys()}
-            # Update User Layers with cross section definition data
+            # Update User Layers with cross-section definition data
             dst_xs_def_lyr.startEditing()
             for fid, changes in xs_def_data_changes.items():
                 dst_xs_def_lyr.changeAttributeValues(fid, changes)
@@ -489,7 +487,7 @@ class ModelDataConverter:
         self.uc.progress_bar(msg, 0, number_of_steps, number_of_steps, clear_msg_bar=True)
         QCoreApplication.processEvents()
         self.add_surface_map_geometries()
-        msg = f"Importing and splitting cross section definition data..."
+        msg = f"Importing and splitting cross-section definition data..."
         self.uc.progress_bar(msg, 0, number_of_steps, number_of_steps, clear_msg_bar=True)
         QCoreApplication.processEvents()
         self.import_cross_section_definition_data()
@@ -557,20 +555,36 @@ class ModelDataConverter:
                 commit_errors = dst_layer.commitErrors()
                 self.commit_errors[src_layer_name] += commit_errors
 
+    @staticmethod
+    def cross_section_definition_code(shape, width, width_values=None, height_values=None):
+        """Generate cross-section definition code."""
+        if shape == en.CrossSectionShape.RECTANGLE.value and width:
+            code = f"rect_{width:.3f}"
+        elif shape == en.CrossSectionShape.CIRCLE.value and width:
+            code = f"round_{width:.3f}"
+        elif shape == en.CrossSectionShape.EGG.value and width:
+            code = f"egg_{width:.3f}_{width * 1.5:.3f}"
+        elif shape == en.CrossSectionShape.TABULATED_RECTANGLE.value and width_values and height_values:
+            code = f"tab_rect_{float(max(width_values, key=float)):.3f}_{float(max(height_values, key=float)):.3f}"
+        elif shape == en.CrossSectionShape.TABULATED_TRAPEZIUM.value and width_values and height_values:
+            code = f"tab_trap_{float(max(width_values, key=float)):.3f}_{float(max(height_values, key=float)):.3f}"
+        else:
+            code = None
+        return code
+
     def export_cross_section_definition_data(self):
-        """Exporting and aggregating cross section definition data."""
+        """Exporting and aggregating cross-section definition data."""
         request = QgsFeatureRequest()
         request.setFlags(QgsFeatureRequest.NoGeometry)
         xs_def_data_ids = OrderedDict()
         lyr_feat_to_xs_def_id = {}
         next_xs_def_id = 1
-        # Get and aggregate cross section definition data
+        # Get and aggregate cross-section definition data
         for model_cls in dm.ELEMENTS_WITH_XS_DEF:
             table_name = next(iter(model_cls.SQLITE_TARGETS))
             src_with_xs_def_lyr = gpkg_layer(self.dst_gpkg, model_cls.__tablename__)
             for feat_with_xs_def in src_with_xs_def_lyr.getFeatures(request):
                 feat_id = feat_with_xs_def["id"]
-                src_xs_def_code = feat_with_xs_def["cross_section_code"]
                 src_xs_def_shape = feat_with_xs_def["cross_section_shape"]
                 src_xs_def_height = feat_with_xs_def["cross_section_height"]
                 src_xs_def_width = feat_with_xs_def["cross_section_width"]
@@ -580,9 +594,13 @@ class ModelDataConverter:
                     height_values, width_values = list(zip(*parsed_table))
                     xs_def_height = " ".join(hv.strip() for hv in height_values)
                     xs_def_width = " ".join(wv.strip() for wv in width_values)
+                    src_xs_def_code = self.cross_section_definition_code(
+                        src_xs_def_shape, src_xs_def_width, width_values, height_values
+                    )
                 else:
                     xs_def_height = str(src_xs_def_height) if src_xs_def_height else None
                     xs_def_width = str(src_xs_def_width) if src_xs_def_width else None
+                    src_xs_def_code = self.cross_section_definition_code(src_xs_def_shape, src_xs_def_width)
                 xs_def_data = (src_xs_def_code, src_xs_def_shape, xs_def_height, xs_def_width)
                 try:
                     xs_def_id = xs_def_data_ids[xs_def_data]
@@ -612,7 +630,7 @@ class ModelDataConverter:
         if not success:
             commit_errors = xs_def_lyr.commitErrors()
             self.commit_errors[dm.CrossSectionDefinition.__layername__] += commit_errors
-        # Update `cross_section_definition_id` fields in the layers that refers to the cross section definition data
+        # Update `cross_section_definition_id` fields in the layers that refers to the cross-section definition data
         for model_cls in dm.ELEMENTS_WITH_XS_DEF:
             dst_changes = {}
             table_name = next(iter(model_cls.SQLITE_TARGETS))
@@ -665,7 +683,7 @@ class ModelDataConverter:
                 missing = len(missing_ids)
                 if missing:
                     incomplete_exports[data_model_cls] = (sqlite_feat_count, gpkg_feat_count, missing, missing_ids)
-        msg = f"Exporting and aggregating cross section definition data..."
+        msg = f"Exporting and aggregating cross-section definition data..."
         self.uc.progress_bar(msg, 0, number_of_steps, number_of_steps, clear_msg_bar=True)
         QCoreApplication.processEvents()
         self.export_cross_section_definition_data()

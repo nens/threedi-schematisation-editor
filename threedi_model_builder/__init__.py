@@ -11,6 +11,8 @@ from threedi_model_builder.utils import (
     add_settings_entry,
     check_enable_macros_option,
     create_3di_views,
+    is_gpkg_connection_exist,
+    add_gpkg_connection,
     ConversionError,
 )
 
@@ -125,6 +127,8 @@ class ThreediModelBuilderPlugin:
         self.check_macros_status()
         self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAME: self.model_gpkg})
         self.toggle_active_project_actions()
+        if self.model_gpkg and not is_gpkg_connection_exist(self.model_gpkg):
+            add_gpkg_connection(self.model_gpkg, self.iface)
 
     def load_from_spatialite(self):
         src_sqlite = self.select_sqlite_database(title="Select database to load features from")
@@ -165,10 +169,15 @@ class ThreediModelBuilderPlugin:
         self.check_macros_status()
         self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAME: self.model_gpkg})
         self.toggle_active_project_actions()
+        if self.model_gpkg and not is_gpkg_connection_exist(self.model_gpkg):
+            add_gpkg_connection(self.model_gpkg, self.iface)
 
     def save_to_spatialite(self):
         if not self.model_gpkg:
             return
+        if self.layer_manager is None:
+            return
+        self.layer_manager.stop_model_editing()
         dst_sqlite = self.select_sqlite_database(title="Select database to save features to")
         if not dst_sqlite:
             return
@@ -213,6 +222,7 @@ class ThreediModelBuilderPlugin:
             del custom_vars[self.THREEDI_GPKG_VAR_NAME]
             self.project.setCustomVariables(custom_vars)
         self.toggle_active_project_actions()
+        self.iface.mapCanvas().refresh()
 
     def on_project_close(self):
         if self.layer_manager is None:
