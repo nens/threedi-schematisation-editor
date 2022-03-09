@@ -516,13 +516,6 @@
         </config>
       </editWidget>
     </field>
-    <field name="cross_section_code">
-      <editWidget type="TextEdit">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
     <field name="cross_section_shape">
       <editWidget type="Range">
         <config>
@@ -591,7 +584,6 @@
         <attributeEditorField name="discharge_coefficient_negative" showLabel="1" index="9"/>
       </attributeEditorContainer>
       <attributeEditorContainer name="Cross section definition" showLabel="1" groupBox="1" visibilityExpression="" columnCount="1" visibilityExpressionEnabled="0">
-        <attributeEditorField name="cross_section_code" showLabel="1" index="15"/>
         <attributeEditorField name="cross_section_shape" showLabel="1" index="16"/>
         <attributeEditorField name="cross_section_width" showLabel="1" index="17"/>
         <attributeEditorField name="cross_section_height" showLabel="1" index="18"/>
@@ -611,7 +603,6 @@
     <field name="code" editable="1"/>
     <field name="connection_node_end_id" editable="0"/>
     <field name="connection_node_start_id" editable="0"/>
-    <field name="cross_section_code" editable="1"/>
     <field name="cross_section_height" editable="1"/>
     <field name="cross_section_shape" editable="1"/>
     <field name="cross_section_table" editable="1"/>
@@ -634,7 +625,6 @@
     <field name="code" labelOnTop="0"/>
     <field name="connection_node_end_id" labelOnTop="0"/>
     <field name="connection_node_start_id" labelOnTop="0"/>
-    <field name="cross_section_code" labelOnTop="0"/>
     <field name="cross_section_height" labelOnTop="0"/>
     <field name="cross_section_shape" labelOnTop="0"/>
     <field name="cross_section_table" labelOnTop="0"/>

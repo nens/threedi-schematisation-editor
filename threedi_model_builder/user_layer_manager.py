@@ -11,6 +11,7 @@ from threedi_model_builder.utils import (
     get_qml_style_path,
     get_multiple_qml_style_paths,
     set_initial_layer_configuration,
+    set_field_default_value,
     create_tree_group,
     add_layer_to_group,
     remove_group_with_children,
@@ -38,6 +39,7 @@ class LayersManager:
         self.form_factory = LayerEditFormFactory(self)
         self.model_handlers = {}
         self.layer_handlers = {}
+        self.spawned_groups = {}
         self.active_form_signals = set()
 
     @property
@@ -70,11 +72,13 @@ class LayersManager:
         for group_name in self.group_names:
             grp = create_tree_group(group_name, root=main_group)
             grp.setExpanded(False)
+            self.spawned_groups[group_name] = grp
 
     def remove_groups(self):
         """Removing all User Layers groups."""
         self.remove_loaded_layers()
         remove_group_with_children(self.main_group)
+        self.spawned_groups.clear()
 
     def get_layer_data_model(self, layer):
         """Return data model class for given layer."""
@@ -108,6 +112,9 @@ class LayersManager:
         default_edit_form_config = layer.editFormConfig()
         if form_ui_path:
             default_edit_form_config.setUiForm(form_ui_path)
+        else:
+            id_increment_expression = "if (maximum(id) is null, 1, maximum(id) + 1)"
+            set_field_default_value(layer, "id", id_increment_expression)
         for style in all_styles:
             style_manager.setCurrentStyle(style)
             layer.setEditFormConfig(default_edit_form_config)
@@ -116,7 +123,7 @@ class LayersManager:
         style_manager.setCurrentStyle(default_style_name)
         dm_groups = self.data_model_groups
         group_name = dm_groups[model_cls]
-        add_layer_to_group(group_name, layer, bottom=True)
+        add_layer_to_group(group_name, layer, bottom=True, cached_groups=self.spawned_groups)
         handler_cls = MODEL_HANDLERS[model_cls]
         handler = handler_cls(self, layer)
         handler.connect_handler_signals()
@@ -150,7 +157,7 @@ class LayersManager:
                     qml_path = get_qml_style_path(raster_file_field, "raster")
                     if qml_path is not None:
                         rlayer.loadNamedStyle(qml_path)
-                    add_layer_to_group(group_name, rlayer, bottom=True)
+                    add_layer_to_group(group_name, rlayer, bottom=True, cached_groups=self.spawned_groups)
 
     def load_all_layers(self):
         """Creating groups and loading vector, raster and tabular layers."""
@@ -171,6 +178,7 @@ class LayersManager:
                 continue
         self.model_handlers.clear()
         self.layer_handlers.clear()
+        self.spawned_groups.clear()
 
     def add_joins(self):
         """Setting joins between layers."""
@@ -213,3 +221,8 @@ class LayersManager:
         """Checking if any user layers were modified during work session."""
         modified = any(handler.layer_modified for handler in self.layer_handlers.values())
         return modified
+
+    def stop_model_editing(self):
+        """Stop editing session for the all layers within a model."""
+        for handler in self.layer_handlers.values():
+            handler.on_rollback()

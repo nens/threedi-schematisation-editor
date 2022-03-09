@@ -700,7 +700,7 @@
     <default field="capacity" applyOnUpdate="0" expression=""/>
     <default field="zoom_category" applyOnUpdate="0" expression="2"/>
     <default field="connection_node_start_id" applyOnUpdate="0" expression="'filled automatically'"/>
-    <default field="connection_node_end_id" applyOnUpdate="0" expression="'if you want to use an endpoint use v2_pumpstation_view'"/>
+    <default field="connection_node_end_id" applyOnUpdate="0" expression="'filled automatically'"/>
     <default field="type" applyOnUpdate="0" expression="1"/>
     <default field="connection_node_id" applyOnUpdate="0" expression="'filled automatically'"/>
     <default field="storage_area" applyOnUpdate="0" expression=""/>
