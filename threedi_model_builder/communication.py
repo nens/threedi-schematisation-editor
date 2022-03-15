@@ -1,4 +1,4 @@
-# Copyright (C) 2021 by Lutra Consulting
+# Copyright (C) 2022 by Lutra Consulting
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QMessageBox, QInputDialog, QProgressBar
 from qgis.core import Qgis, QgsMessageLog

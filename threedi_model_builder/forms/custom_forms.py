@@ -1,3 +1,4 @@
+# Copyright (C) 2022 by Lutra Consulting
 import threedi_model_builder.data_models as dm
 from collections import defaultdict
 from functools import partial

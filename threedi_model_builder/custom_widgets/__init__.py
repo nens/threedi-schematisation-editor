@@ -1,4 +1,4 @@
-# Copyright (C) 2021 by Lutra Consulting
+# Copyright (C) 2022 by Lutra Consulting
 import os
 from qgis.PyQt import uic
 

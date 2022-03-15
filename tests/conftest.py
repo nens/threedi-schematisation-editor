@@ -1,3 +1,4 @@
+# Copyright (C) 2022 by Lutra Consulting
 import pytest
 import os
 import shutil

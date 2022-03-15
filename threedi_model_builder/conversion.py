@@ -1,3 +1,4 @@
+# Copyright (C) 2022 by Lutra Consulting
 import threedi_model_builder.data_models as dm
 import threedi_model_builder.enumerators as en
 from threedi_model_builder.utils import (

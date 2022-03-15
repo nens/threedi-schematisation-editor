@@ -1,3 +1,4 @@
+# Copyright (C) 2022 by Lutra Consulting
 import os
 import sys
 import shutil

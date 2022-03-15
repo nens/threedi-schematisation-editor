@@ -1,4 +1,4 @@
-# Copyright (C) 2021 by Lutra Consulting
+# Copyright (C) 2022 by Lutra Consulting
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import QgsProject
 from threedi_model_builder.communication import UICommunication

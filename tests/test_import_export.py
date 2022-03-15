@@ -1,3 +1,4 @@
+# Copyright (C) 2022 by Lutra Consulting
 from threedi_model_builder.utils import sqlite_layer
 from threedi_model_builder.conversion import ModelDataConverter
 from threedi_model_builder.data_models import ALL_MODELS

@@ -1,3 +1,4 @@
+# Copyright (C) 2022 by Lutra Consulting
 from dataclasses import dataclass
 from typing import Optional
 from types import MappingProxyType

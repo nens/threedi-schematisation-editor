@@ -1,3 +1,4 @@
+# Copyright (C) 2022 by Lutra Consulting
 from threedi_model_builder.forms.custom_forms import MODEL_FORMS
 from threedi_model_builder.utils import disconnect_signal
 

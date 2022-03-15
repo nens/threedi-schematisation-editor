@@ -1,4 +1,4 @@
-# Copyright (C) 2021 by Lutra Consulting
+# Copyright (C) 2022 by Lutra Consulting
 import os
 import threedi_model_builder.data_models as dm
 from types import MappingProxyType
