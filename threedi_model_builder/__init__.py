@@ -11,7 +11,7 @@ from threedi_model_builder.utils import (
     add_settings_entry,
     check_enable_macros_option,
     create_3di_views,
-    is_gpkg_connection_exist,
+    is_gpkg_connection_exists,
     add_gpkg_connection,
     ConversionError,
 )
@@ -127,7 +127,7 @@ class ThreediModelBuilderPlugin:
         self.check_macros_status()
         self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAME: self.model_gpkg})
         self.toggle_active_project_actions()
-        if self.model_gpkg and not is_gpkg_connection_exist(self.model_gpkg):
+        if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
             add_gpkg_connection(self.model_gpkg, self.iface)
 
     def load_from_spatialite(self):
@@ -169,7 +169,7 @@ class ThreediModelBuilderPlugin:
         self.check_macros_status()
         self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAME: self.model_gpkg})
         self.toggle_active_project_actions()
-        if self.model_gpkg and not is_gpkg_connection_exist(self.model_gpkg):
+        if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
             add_gpkg_connection(self.model_gpkg, self.iface)
 
     def save_to_spatialite(self):

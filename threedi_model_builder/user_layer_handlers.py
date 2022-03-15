@@ -18,16 +18,10 @@ from threedi_model_builder.utils import (
     disconnect_signal,
     count_vertices,
     find_point_nodes,
+    find_linestring_nodes,
     get_next_feature_id,
 )
-from qgis.core import (
-    NULL,
-    QgsFeature,
-    QgsProject,
-    QgsSnappingConfig,
-    QgsTolerance,
-    QgsGeometry,
-)
+from qgis.core import QgsFeature, QgsGeometry, NULL
 from qgis.PyQt.QtCore import QTimer
 
 
@@ -67,17 +61,11 @@ class UserLayerHandler:
         pass
 
     @property
-    def topologically_linked_models(self):
-        """Getting topologically linked models."""
-        linked_models = dm.MODEL_1D_ELEMENTS + (dm.ImperviousSurfaceMap, dm.SurfaceMap)
-        return linked_models
-
-    @property
     def other_linked_handlers(self):
         """Getting other handlers within 1D group."""
         other_handlers = [
             self.layer_manager.model_handlers[model_cls]
-            for model_cls in self.topologically_linked_models
+            for model_cls in self.layer_manager.common_editing_group
             if model_cls != self.MODEL
         ]
         return other_handlers
@@ -88,45 +76,9 @@ class UserLayerHandler:
         other_layers = [handler.layer for handler in self.other_linked_handlers]
         return other_layers
 
-    def set_layers_snapping(self):
-        """Setting snapping rules."""
-        if self.MODEL not in self.topologically_linked_models:
-            return
-        project = QgsProject.instance()
-        project.setTopologicalEditing(True)
-        snap_config = project.snappingConfig()
-        snap_config.setMode(QgsSnappingConfig.AdvancedConfiguration)
-        snap_config.setIntersectionSnapping(True)
-        individual_configs = snap_config.individualLayerSettings()
-        for layer in self.other_linked_layers + [self.layer]:
-            try:
-                iconf = individual_configs[layer]
-            except KeyError:
-                continue
-            iconf.setTolerance(10)
-            iconf.setTypeFlag(QgsSnappingConfig.VertexFlag)
-            iconf.setUnits(QgsTolerance.Pixels)
-            iconf.setEnabled(True)
-            snap_config.setIndividualLayerSettings(layer, iconf)
-        if snap_config.enabled() is False:
-            snap_config.setEnabled(True)
-        project.setSnappingConfig(snap_config)
-
-    @staticmethod
-    def reset_snapping():
-        """Method used to reset snapping options to the default state."""
-        project = QgsProject.instance()
-        project.setTopologicalEditing(True)
-        snap_config = project.snappingConfig()
-        snap_config.setMode(QgsSnappingConfig.AllLayers)
-        snap_config.setIntersectionSnapping(True)
-        if snap_config.enabled() is False:
-            snap_config.setEnabled(True)
-        project.setSnappingConfig(snap_config)
-
     def multi_start_editing(self):
         """Start editing for all layers with 1D group."""
-        if self.MODEL not in self.topologically_linked_models:
+        if self.MODEL not in self.layer_manager.common_editing_group:
             return
         other_1d_handlers = self.other_linked_handlers
         for layer_handler in other_1d_handlers:
@@ -142,7 +94,7 @@ class UserLayerHandler:
 
     def multi_rollback(self):
         """Rollback changes for all layers with 1D group."""
-        if self.MODEL not in self.topologically_linked_models:
+        if self.MODEL not in self.layer_manager.common_editing_group:
             return
         other_1d_handlers = self.other_linked_handlers
         for layer_handler in other_1d_handlers:
@@ -168,7 +120,7 @@ class UserLayerHandler:
     def multi_commit_changes(self):
         """Commit changes for all layers with 1D group."""
         self.layer_modified = True
-        if self.MODEL not in self.topologically_linked_models:
+        if self.MODEL not in self.layer_manager.common_editing_group:
             return
         other_1d_handlers = self.other_linked_handlers
         for layer_handler in other_1d_handlers:
@@ -185,23 +137,20 @@ class UserLayerHandler:
     def on_editing_started(self):
         """Action on editing started signal."""
         self.multi_start_editing()
-        self.set_layers_snapping()
 
     def on_rollback(self):
         """Action on rollback signal."""
         self.multi_rollback()
-        self.reset_snapping()
 
     def on_commit_changes(self):
         """Action on commit changes signal."""
         self.multi_commit_changes()
-        self.reset_snapping()
 
-    def get_feat_by_id(self, object_id):
+    def get_feat_by_id(self, object_id, id_field="id"):
         """Return layer feature with the given id."""
         feat = None
         if object_id not in (None, NULL):
-            feats = self.layer_manager.get_layer_features(self.MODEL, f'"id" = {object_id}')
+            feats = self.layer_manager.get_layer_features(self.MODEL, f'"{id_field}" = {object_id}')
             try:
                 feat = next(feats)
             except StopIteration:
@@ -267,6 +216,37 @@ class UserLayerHandler:
         new_source_geom = QgsGeometry.fromPolyline([start_point, end_point])
         feat.setGeometry(new_source_geom)
         self.layer.updateFeature(feat)
+
+    def update_node_references(self, feat_id, geometry):
+        """Update references to the connections nodes after geometry change."""
+        node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        node_layer = node_handler.layer
+        model_geometry_type = self.MODEL.__geometrytype__
+        layer_fields = self.layer.fields()
+        if model_geometry_type == GeometryType.Point:
+            point = geometry.asPoint()
+            connection_node_feat = find_point_nodes(point, node_layer)
+            connection_node_id = connection_node_feat["id"] if connection_node_feat else None
+            connection_node_id_idx = layer_fields.lookupField("connection_node_id")
+            changes = {connection_node_id_idx: connection_node_id}
+            self.layer.changeAttributeValues(feat_id, changes)
+        elif model_geometry_type == GeometryType.Linestring:
+            linestring = geometry.asPolyline()
+            start_connection_node_feat, end_connection_node_feat = find_linestring_nodes(linestring, node_layer)
+            changes = {}
+            start_connection_node_id = start_connection_node_feat["id"] if start_connection_node_feat else None
+            start_connection_node_id_idx = layer_fields.lookupField("connection_node_start_id")
+            changes[start_connection_node_id_idx] = start_connection_node_id
+            end_connection_node_id = end_connection_node_feat["id"] if end_connection_node_feat else None
+            end_connection_node_id_idx = layer_fields.lookupField("connection_node_end_id")
+            changes[end_connection_node_id_idx] = end_connection_node_id
+            if self.MODEL == dm.PumpstationMap:
+                pumpstation_layer = self.layer_manager.model_handlers[dm.Pumpstation].layer
+                start_pump_feat = find_point_nodes(linestring[0], pumpstation_layer)
+                start_pump_id = start_pump_feat["id"] if start_pump_feat else None
+                start_pump_id_idx = layer_fields.lookupField("pumpstation_id")
+                changes[start_pump_id_idx] = start_pump_id
+            self.layer.changeAttributeValues(feat_id, changes)
 
 
 class ConnectionNodeHandler(UserLayerHandler):
@@ -352,10 +332,12 @@ class PumpstationHandler(UserLayerHandler):
     def connect_additional_signals(self):
         """Connecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.connect(self.adjust_manhole_indicator)
+        self.layer.geometryChanged.connect(self.update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.adjust_manhole_indicator)
+        self.layer.geometryChanged.disconnect(self.update_node_references)
 
     def adjust_manhole_indicator(self, feat_id):
         """Adjusting underlying manhole attributes."""
@@ -413,10 +395,12 @@ class PumpstationMapHandler(UserLayerHandler):
     def connect_additional_signals(self):
         """Connecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_pumpstation_map)
+        self.layer.geometryChanged.connect(self.update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_simplify_pumpstation_map)
+        self.layer.geometryChanged.disconnect(self.update_node_references)
 
     def trigger_simplify_pumpstation_map(self, pumpstation_map_id):
         """Triggering geometry simplification on newly added feature."""
@@ -449,10 +433,12 @@ class WeirHandler(UserLayerHandler):
     def connect_additional_signals(self):
         """Connecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_weir)
+        self.layer.geometryChanged.connect(self.update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_simplify_weir)
+        self.layer.geometryChanged.disconnect(self.update_node_references)
 
     def trigger_simplify_weir(self, weir_feat_id):
         """Triggering geometry simplification on newly added feature."""
@@ -484,6 +470,14 @@ class CulvertHandler(UserLayerHandler):
         }
     )
 
+    def connect_additional_signals(self):
+        """Connecting signals to actions specific for the particular layers."""
+        self.layer.geometryChanged.connect(self.update_node_references)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to actions specific for the particular layers."""
+        self.layer.geometryChanged.disconnect(self.update_node_references)
+
 
 class OrificeHandler(UserLayerHandler):
     MODEL = dm.Orifice
@@ -510,10 +504,12 @@ class OrificeHandler(UserLayerHandler):
     def connect_additional_signals(self):
         """Connecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_orifice)
+        self.layer.geometryChanged.connect(self.update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_simplify_orifice)
+        self.layer.geometryChanged.disconnect(self.update_node_references)
 
     def trigger_simplify_orifice(self, orifice_feat_id):
         """Triggering geometry simplification on newly added feature."""
@@ -546,10 +542,12 @@ class PipeHandler(UserLayerHandler):
     def connect_additional_signals(self):
         """Connecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_segmentize_pipe)
+        self.layer.geometryChanged.connect(self.update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to actions specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_segmentize_pipe)
+        self.layer.geometryChanged.disconnect(self.update_node_references)
 
     def trigger_segmentize_pipe(self, pipe_feat_id):
         """
@@ -646,9 +644,53 @@ class WindshieldingHandler(UserLayerHandler):
 class ImperviousSurfaceHandler(UserLayerHandler):
     MODEL = dm.ImperviousSurface
 
+    def connect_additional_signals(self):
+        """Connecting signals to actions specific for the particular layers."""
+        self.layer.geometryChanged.connect(self.update_surface_link)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to actions specific for the particular layers."""
+        self.layer.geometryChanged.disconnect(self.update_surface_link)
+
+    def update_surface_link(self, feat_id, geometry):
+        """Update geometry of the surface - node link."""
+        surface_handler = self.layer_manager.model_handlers[dm.ImperviousSurface]
+        surface_layer = surface_handler.layer
+        surface_link_handler = self.layer_manager.model_handlers[dm.ImperviousSurfaceMap]
+        surface_link_layer = surface_link_handler.layer
+        surface_feat = surface_layer.getFeature(feat_id)
+        link_feat = surface_link_handler.get_feat_by_id(surface_feat["id"], "impervious_surface_id")
+        point = geometry.centroid().asPoint()
+        link_linestring = link_feat.geometry().asPolyline()
+        link_linestring[0] = point
+        link_new_geom = QgsGeometry.fromPolylineXY(link_linestring)
+        surface_link_layer.changeGeometry(link_feat.id(), link_new_geom)
+
 
 class SurfaceHandler(UserLayerHandler):
     MODEL = dm.Surface
+
+    def connect_additional_signals(self):
+        """Connecting signals to actions specific for the particular layers."""
+        self.layer.geometryChanged.connect(self.update_surface_link)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to actions specific for the particular layers."""
+        self.layer.geometryChanged.disconnect(self.update_surface_link)
+
+    def update_surface_link(self, feat_id, geometry):
+        """Update geometry of the surface - node link."""
+        surface_handler = self.layer_manager.model_handlers[dm.Surface]
+        surface_layer = surface_handler.layer
+        surface_link_handler = self.layer_manager.model_handlers[dm.SurfaceMap]
+        surface_link_layer = surface_link_handler.layer
+        surface_feat = surface_layer.getFeature(feat_id)
+        link_feat = surface_link_handler.get_feat_by_id(surface_feat["id"], "surface_id")
+        point = geometry.centroid().asPoint()
+        link_linestring = link_feat.geometry().asPolyline()
+        link_linestring[0] = point
+        link_new_geom = QgsGeometry.fromPolylineXY(link_linestring)
+        surface_link_layer.changeGeometry(link_feat.id(), link_new_geom)
 
 
 class ImperviousSurfaceMapHandler(UserLayerHandler):
