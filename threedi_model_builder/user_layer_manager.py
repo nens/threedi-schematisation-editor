@@ -2,7 +2,15 @@
 import os
 import threedi_model_builder.data_models as dm
 from types import MappingProxyType
-from qgis.core import QgsExpression, QgsFeatureRequest, QgsRasterLayer, QgsVectorLayerJoinInfo
+from qgis.core import (
+    QgsExpression,
+    QgsFeatureRequest,
+    QgsRasterLayer,
+    QgsVectorLayerJoinInfo,
+    QgsProject,
+    QgsSnappingConfig,
+    QgsTolerance,
+)
 from threedi_model_builder.user_layer_handlers import MODEL_HANDLERS
 from threedi_model_builder.user_layer_forms import LayerEditFormFactory
 from threedi_model_builder.utils import (
@@ -32,6 +40,40 @@ class LayersManager:
 
     LAYER_JOINS = MappingProxyType({})
 
+    TOPOLOGICAL_EDITING_GROUPS = MappingProxyType(
+        {
+            dm.ConnectionNode: (
+                dm.Manhole,
+                dm.Pipe,
+                dm.Weir,
+                dm.Orifice,
+                dm.Culvert,
+                dm.Pumpstation,
+                dm.PumpstationMap,
+                dm.Channel,
+                dm.SurfaceMap,
+                dm.ImperviousSurfaceMap,
+                dm.Lateral1D,
+                dm.BoundaryCondition1D,
+            ),
+            dm.Manhole: (
+                dm.ConnectionNode,
+                dm.Pipe,
+                dm.Weir,
+                dm.Orifice,
+                dm.Culvert,
+                dm.Pumpstation,
+                dm.PumpstationMap,
+                dm.Channel,
+                dm.SurfaceMap,
+                dm.ImperviousSurfaceMap,
+                dm.Lateral1D,
+                dm.BoundaryCondition1D,
+            ),
+            dm.Channel: (dm.CrossSectionLocation,),
+        }
+    )
+
     def __init__(self, iface, user_communication, model_gpkg_path):
         self.iface = iface
         self.uc = user_communication
@@ -41,6 +83,76 @@ class LayersManager:
         self.layer_handlers = {}
         self.spawned_groups = {}
         self.active_form_signals = set()
+        self.iface.currentLayerChanged.connect(self.on_active_layer_changed)
+
+    def on_active_layer_changed(self, layer):
+        self.reset_snapping()
+        try:
+            layer_handler = self.layer_handlers[layer.id()]
+        except (KeyError, AttributeError):
+            return
+        self.set_layers_snapping(layer_handler)
+
+    def set_layers_snapping(self, layer_handler):
+        """Setting snapping rules."""
+        active_layer = layer_handler.layer
+        layer_model = layer_handler.MODEL
+        snapped_layers = [active_layer]
+        if layer_model in self.TOPOLOGICAL_EDITING_GROUPS:
+            snapped_layers += [
+                self.model_handlers[linked_model].layer for linked_model in self.TOPOLOGICAL_EDITING_GROUPS[layer_model]
+            ]
+            use_topological_editing = True
+        else:
+            if layer_model != dm.ConnectionNode:
+                connection_node_layer = self.model_handlers[dm.ConnectionNode].layer
+                snapped_layers.append(connection_node_layer)
+            use_topological_editing = False
+        project = QgsProject.instance()
+        project.setTopologicalEditing(use_topological_editing)
+        snap_config = project.snappingConfig()
+        snap_config.setMode(QgsSnappingConfig.AdvancedConfiguration)
+        snap_config.setIntersectionSnapping(True)
+        individual_configs = snap_config.individualLayerSettings()
+        for layer in snapped_layers:
+            try:
+                iconf = individual_configs[layer]
+            except KeyError:
+                continue
+            iconf.setTolerance(10)
+            iconf.setTypeFlag(QgsSnappingConfig.VertexFlag)
+            iconf.setUnits(QgsTolerance.Pixels)
+            iconf.setEnabled(True)
+            snap_config.setIndividualLayerSettings(layer, iconf)
+        if snap_config.enabled() is False:
+            snap_config.setEnabled(True)
+        project.setSnappingConfig(snap_config)
+
+    @staticmethod
+    def reset_snapping():
+        """Method used to reset snapping options to the default state."""
+        project = QgsProject.instance()
+        snap_config = project.snappingConfig()
+        individual_configs = snap_config.individualLayerSettings()
+        for layer, iconf in individual_configs.items():
+            iconf.setEnabled(False)
+            snap_config.setIndividualLayerSettings(layer, iconf)
+        snap_config.setMode(QgsSnappingConfig.AllLayers)
+        snap_config.setIntersectionSnapping(True)
+        if snap_config.enabled() is False:
+            snap_config.setEnabled(True)
+        project.setSnappingConfig(snap_config)
+
+    @property
+    def common_editing_group(self):
+        """Getting a group of models that should be edited simultaneously."""
+        linked_models = dm.MODEL_1D_ELEMENTS + (
+            dm.ImperviousSurface,
+            dm.ImperviousSurfaceMap,
+            dm.Surface,
+            dm.SurfaceMap,
+        )
+        return linked_models
 
     @property
     def main_group(self):

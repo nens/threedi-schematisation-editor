@@ -763,7 +763,7 @@ class PumpstationMapForm(FormWithStartEndNode):
                     start_connection_node_feat, geometry=end_geom
                 )
                 self.extra_features[connection_node_handler].append(end_connection_node_feat)
-        # Assign features as an form instance attributes.
+        # Assign features as a form instance attributes.
         self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
         self.pumpstation = start_pump_feat

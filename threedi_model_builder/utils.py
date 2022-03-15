@@ -604,7 +604,7 @@ def create_3di_views(sqlite_filepath):
     connection.close()
 
 
-def is_gpkg_connection_exist(gpkg_path):
+def is_gpkg_connection_exists(gpkg_path):
     """Check if GeoPackage connection exists in settings."""
     gpkg_path = gpkg_path.replace("\\", "/")
     settings = QSettings()
