@@ -9,6 +9,7 @@ from typing import Union
 from collections import OrderedDict
 from qgis.PyQt.QtCore import QSettings, QVariant
 from qgis.PyQt.QtWidgets import QFileDialog
+from qgis.PyQt.QtGui import QPainter
 from qgis.core import (
     QgsDataSourceUri,
     QgsFeature,
@@ -23,6 +24,9 @@ from qgis.core import (
     QgsCoordinateTransform,
     QgsVectorFileWriter,
     QgsPointLocator,
+    QgsHillshadeRenderer,
+    QgsBilinearRasterResampler,
+    QgsRasterMinMaxOrigin,
 )
 from qgis.utils import plugins
 
@@ -626,3 +630,24 @@ def add_gpkg_connection(gpkg_path, iface=None):
     settings.setValue(f"providers/ogr/GPKG/connections/{connection_name}/path", gpkg_path)
     if iface is not None:
         iface.mainWindow().connectionsChanged.emit()
+
+
+def hillshade_layer(raster_filepath, layer_name="Hillshade", band=1, light_azimuth=315, light_altitude=45, opacity=0.5):
+    """Initialize raster layer with hilshade rendering."""
+    hillshade_raster_layer = QgsRasterLayer(raster_filepath, layer_name)
+    renderer = QgsHillshadeRenderer(hillshade_raster_layer.dataProvider(), band, light_azimuth, light_altitude)
+    renderer.setOpacity(opacity)
+    hillshade_raster_layer.setRenderer(renderer)
+    hillshade_raster_layer.setBlendMode(QPainter.CompositionMode_Multiply)
+    hillshade_raster_layer.resampleFilter().setZoomedInResampler(QgsBilinearRasterResampler())
+    return hillshade_raster_layer
+
+
+def modify_raster_style(raster_layer, limits=QgsRasterMinMaxOrigin.MinMax, extent=QgsRasterMinMaxOrigin.UpdatedCanvas):
+    """Improve predefined raster styling."""
+    renderer = raster_layer.renderer().clone()
+    min_max_origin = renderer.minMaxOrigin()
+    min_max_origin.setLimits(limits)
+    min_max_origin.setExtent(extent)
+    renderer.setMinMaxOrigin(min_max_origin)
+    raster_layer.setRenderer(renderer)
