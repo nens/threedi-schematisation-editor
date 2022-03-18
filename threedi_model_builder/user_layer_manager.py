@@ -24,6 +24,8 @@ from threedi_model_builder.utils import (
     add_layer_to_group,
     remove_group_with_children,
     remove_layer,
+    hillshade_layer,
+    modify_raster_style,
 )
 
 
@@ -269,7 +271,11 @@ class LayersManager:
                     qml_path = get_qml_style_path(raster_file_field, "raster")
                     if qml_path is not None:
                         rlayer.loadNamedStyle(qml_path)
+                    modify_raster_style(rlayer)
                     add_layer_to_group(group_name, rlayer, bottom=True, cached_groups=self.spawned_groups)
+                    if raster_file_field == "dem_file":
+                        hillshade_raster_layer = hillshade_layer(raster_filepath)
+                        add_layer_to_group(group_name, hillshade_raster_layer, cached_groups=self.spawned_groups)
 
     def load_all_layers(self):
         """Creating groups and loading vector, raster and tabular layers."""
