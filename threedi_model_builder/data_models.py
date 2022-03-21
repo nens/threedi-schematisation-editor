@@ -727,7 +727,6 @@ class AggregationSettings(ModelObject):
     var_name: str
     flow_variable: FlowVariable
     aggregation_method: Optional[AggregationMethod]
-    aggregation_in_space: str  # This suppose to be boolean
     timestep: int
 
 

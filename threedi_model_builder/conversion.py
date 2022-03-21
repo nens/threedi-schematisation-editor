@@ -31,7 +31,7 @@ from qgis.PyQt.QtWidgets import QDialog
 class ModelDataConverter:
     """Class with methods Spatialite <==> GeoPackage conversion of the 3Di model layers."""
 
-    SUPPORTED_SCHEMA_VERSIONS = (174, 175)
+    SUPPORTED_SCHEMA_VERSION = 206
 
     def __init__(self, src_sqlite, dst_gpkg, epsg_code=4326, user_communication=None):
         self.src_sqlite = src_sqlite
@@ -58,13 +58,13 @@ class ModelDataConverter:
     @staticmethod
     def spatialite_schema_version(sqlite_path):
         """Getting Spatialite 3Di model database schema version."""
-        south_migration_history_table = sqlite_layer(sqlite_path, "south_migrationhistory", geom_column=None)
-        if not south_migration_history_table.isValid():
+        schema_version_table = sqlite_layer(sqlite_path, "schema_version", geom_column=None)
+        if not schema_version_table.isValid():
             return None
-        id_idx = south_migration_history_table.fields().indexFromName("id")
         try:
-            spatialite_schema_id = max(south_migration_history_table.uniqueValues(id_idx)) + 1
-        except ValueError:
+            schema_row = next(iter(schema_version_table.getFeatures()))
+            spatialite_schema_id = int(schema_row["version_num"])
+        except (StopIteration, TypeError):
             spatialite_schema_id = 1
         return spatialite_schema_id
 

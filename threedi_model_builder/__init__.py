@@ -136,7 +136,7 @@ class ThreediModelBuilderPlugin:
             return
         create_3di_views(src_sqlite)
         schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
-        if schema_version not in ModelDataConverter.SUPPORTED_SCHEMA_VERSIONS:
+        if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
             warn_msg = (
                 "The spatialite you have selected could not be loaded, "
                 f"because its database schema version ({schema_version}) is not up to date. "
@@ -183,7 +183,7 @@ class ThreediModelBuilderPlugin:
             return
         create_3di_views(dst_sqlite)
         schema_version = ModelDataConverter.spatialite_schema_version(dst_sqlite)
-        if schema_version not in ModelDataConverter.SUPPORTED_SCHEMA_VERSIONS:
+        if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
             warn_msg = (
                 "The spatialite you have selected could not be used for saving, "
                 f"because its database schema version ({schema_version}) is not up to date. "
