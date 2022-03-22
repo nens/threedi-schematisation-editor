@@ -566,7 +566,7 @@ class PipeForm(FormWithStartEndNode):
         # Reassign manholes connection_node_id after sequencing
         start_manhole_feat["connection_node_id"] = start_connection_node_feat["id"]
         end_manhole_feat["connection_node_id"] = end_connection_node_feat["id"]
-        # Assign features as an form instance attributes.
+        # Assign features as a form instance attributes.
         self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
         self.manhole_start = start_manhole_feat
