@@ -138,10 +138,9 @@ class ThreediModelBuilderPlugin:
         schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
         if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
             warn_msg = (
-                "The spatialite you have selected could not be loaded, "
-                f"because its database schema version ({schema_version}) is not up to date. "
-                "Please find your model revision on 3di.lizard.net/models, "
-                "download the spatialite from there and try again."
+                "The spatialite you have selected could not be loaded, because its database schema version "
+                f"({schema_version}) is not up to date. "
+                "Please migrate your spatialite to the current schema version and try again."
             )
             self.uc.show_warn(warn_msg)
             return
