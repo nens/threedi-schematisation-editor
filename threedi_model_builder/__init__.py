@@ -1,10 +1,13 @@
 # Copyright (C) 2022 by Lutra Consulting
+import os.path
+
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import QgsProject
 from threedi_model_builder.communication import UICommunication
 from threedi_model_builder.user_layer_manager import LayersManager
 from threedi_model_builder.conversion import ModelDataConverter
 from threedi_model_builder.utils import (
+    can_write_in_dir,
     create_empty_model,
     get_filepath,
     remove_user_layers,
@@ -134,6 +137,10 @@ class ThreediModelBuilderPlugin:
         src_sqlite = self.select_sqlite_database(title="Select database to load features from")
         if not src_sqlite:
             return
+        if not can_write_in_dir(os.path.dirname(src_sqlite)):
+            warn_msg = "You don't have required write permissions to load data from the selected spatialite."
+            self.uc.show_warn(warn_msg)
+            return
         create_3di_views(src_sqlite)
         schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
         if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
@@ -179,6 +186,10 @@ class ThreediModelBuilderPlugin:
         self.layer_manager.stop_model_editing()
         dst_sqlite = self.select_sqlite_database(title="Select database to save features to")
         if not dst_sqlite:
+            return
+        if not can_write_in_dir(os.path.dirname(dst_sqlite)):
+            warn_msg = "You don't have required write permissions to save data into the selected spatialite."
+            self.uc.show_warn(warn_msg)
             return
         create_3di_views(dst_sqlite)
         schema_version = ModelDataConverter.spatialite_schema_version(dst_sqlite)

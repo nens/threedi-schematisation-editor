@@ -53,11 +53,11 @@ class UserLayerHandler:
         self.disconnect_additional_signals()
 
     def connect_additional_signals(self):
-        """Connecting signals to actions specific for the particular layers."""
+        """Connecting signals to action specific for the particular layers."""
         pass
 
     def disconnect_additional_signals(self):
-        """Disconnecting signals to actions specific for the particular layers."""
+        """Disconnecting signals to action specific for the particular layers."""
         pass
 
     @property
@@ -231,14 +231,18 @@ class UserLayerHandler:
             changes = {connection_node_id_idx: connection_node_id}
             self.layer.changeAttributeValues(feat_id, changes)
         elif model_geometry_type == GeometryType.Linestring:
+            is_surface_link = self.MODEL in {dm.ImperviousSurfaceMap, dm.SurfaceMap}
             linestring = geometry.asPolyline()
             start_connection_node_feat, end_connection_node_feat = find_linestring_nodes(linestring, node_layer)
             changes = {}
-            start_connection_node_id = start_connection_node_feat["id"] if start_connection_node_feat else None
-            start_connection_node_id_idx = layer_fields.lookupField("connection_node_start_id")
-            changes[start_connection_node_id_idx] = start_connection_node_id
+            if not is_surface_link:
+                start_connection_node_id = start_connection_node_feat["id"] if start_connection_node_feat else None
+                start_connection_node_id_idx = layer_fields.lookupField("connection_node_start_id")
+                changes[start_connection_node_id_idx] = start_connection_node_id
             end_connection_node_id = end_connection_node_feat["id"] if end_connection_node_feat else None
-            end_connection_node_id_idx = layer_fields.lookupField("connection_node_end_id")
+            end_connection_node_id_idx = layer_fields.lookupField(
+                "connection_node_end_id" if not is_surface_link else "connection_node_id"
+            )
             changes[end_connection_node_id_idx] = end_connection_node_id
             if self.MODEL == dm.PumpstationMap:
                 pumpstation_layer = self.layer_manager.model_handlers[dm.Pumpstation].layer
@@ -330,12 +334,12 @@ class PumpstationHandler(UserLayerHandler):
     )
 
     def connect_additional_signals(self):
-        """Connecting signals to actions specific for the particular layers."""
+        """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.adjust_manhole_indicator)
         self.layer.geometryChanged.connect(self.update_node_references)
 
     def disconnect_additional_signals(self):
-        """Disconnecting signals to actions specific for the particular layers."""
+        """Disconnecting signals to action specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.adjust_manhole_indicator)
         self.layer.geometryChanged.disconnect(self.update_node_references)
 
@@ -393,12 +397,12 @@ class PumpstationMapHandler(UserLayerHandler):
     )
 
     def connect_additional_signals(self):
-        """Connecting signals to actions specific for the particular layers."""
+        """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_pumpstation_map)
         self.layer.geometryChanged.connect(self.update_node_references)
 
     def disconnect_additional_signals(self):
-        """Disconnecting signals to actions specific for the particular layers."""
+        """Disconnecting signals to action specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_simplify_pumpstation_map)
         self.layer.geometryChanged.disconnect(self.update_node_references)
 
@@ -431,12 +435,12 @@ class WeirHandler(UserLayerHandler):
     )
 
     def connect_additional_signals(self):
-        """Connecting signals to actions specific for the particular layers."""
+        """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_weir)
         self.layer.geometryChanged.connect(self.update_node_references)
 
     def disconnect_additional_signals(self):
-        """Disconnecting signals to actions specific for the particular layers."""
+        """Disconnecting signals to action specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_simplify_weir)
         self.layer.geometryChanged.disconnect(self.update_node_references)
 
@@ -471,11 +475,11 @@ class CulvertHandler(UserLayerHandler):
     )
 
     def connect_additional_signals(self):
-        """Connecting signals to actions specific for the particular layers."""
+        """Connecting signals to action specific for the particular layers."""
         self.layer.geometryChanged.connect(self.update_node_references)
 
     def disconnect_additional_signals(self):
-        """Disconnecting signals to actions specific for the particular layers."""
+        """Disconnecting signals to action specific for the particular layers."""
         self.layer.geometryChanged.disconnect(self.update_node_references)
 
 
@@ -502,12 +506,12 @@ class OrificeHandler(UserLayerHandler):
     )
 
     def connect_additional_signals(self):
-        """Connecting signals to actions specific for the particular layers."""
+        """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_orifice)
         self.layer.geometryChanged.connect(self.update_node_references)
 
     def disconnect_additional_signals(self):
-        """Disconnecting signals to actions specific for the particular layers."""
+        """Disconnecting signals to action specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_simplify_orifice)
         self.layer.geometryChanged.disconnect(self.update_node_references)
 
@@ -540,12 +544,12 @@ class PipeHandler(UserLayerHandler):
     )
 
     def connect_additional_signals(self):
-        """Connecting signals to actions specific for the particular layers."""
+        """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_segmentize_pipe)
         self.layer.geometryChanged.connect(self.update_node_references)
 
     def disconnect_additional_signals(self):
-        """Disconnecting signals to actions specific for the particular layers."""
+        """Disconnecting signals to action specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_segmentize_pipe)
         self.layer.geometryChanged.disconnect(self.update_node_references)
 
@@ -612,6 +616,10 @@ class PipeHandler(UserLayerHandler):
         new_source_pipe_geom = QgsGeometry.fromPolylineXY([first_seg_start_point, first_seg_end_point])
         pipe_feat.setGeometry(new_source_pipe_geom)
         pipe_feat["connection_node_end_id"] = points_connection_nodes[first_seg_end_point]
+        if first_seg_start_point in intermediate_bottom_levels:
+            pipe_feat["invert_level_start_point"] = intermediate_bottom_levels[first_seg_start_point]
+        if first_seg_end_point in intermediate_bottom_levels:
+            pipe_feat["invert_level_end_point"] = intermediate_bottom_levels[first_seg_end_point]
         self.layer.updateFeature(pipe_feat)
         # Let's add a new pipes
         skip_fields = ["connection_node_start_id", "connection_node_end_id"]
@@ -667,11 +675,11 @@ class ImperviousSurfaceHandler(UserLayerHandler):
     MODEL = dm.ImperviousSurface
 
     def connect_additional_signals(self):
-        """Connecting signals to actions specific for the particular layers."""
+        """Connecting signals to action specific for the particular layers."""
         self.layer.geometryChanged.connect(self.update_surface_link)
 
     def disconnect_additional_signals(self):
-        """Disconnecting signals to actions specific for the particular layers."""
+        """Disconnecting signals to action specific for the particular layers."""
         self.layer.geometryChanged.disconnect(self.update_surface_link)
 
     def update_surface_link(self, feat_id, geometry):
@@ -693,11 +701,11 @@ class SurfaceHandler(UserLayerHandler):
     MODEL = dm.Surface
 
     def connect_additional_signals(self):
-        """Connecting signals to actions specific for the particular layers."""
+        """Connecting signals to action specific for the particular layers."""
         self.layer.geometryChanged.connect(self.update_surface_link)
 
     def disconnect_additional_signals(self):
-        """Disconnecting signals to actions specific for the particular layers."""
+        """Disconnecting signals to action specific for the particular layers."""
         self.layer.geometryChanged.disconnect(self.update_surface_link)
 
     def update_surface_link(self, feat_id, geometry):
@@ -723,6 +731,14 @@ class ImperviousSurfaceMapHandler(UserLayerHandler):
         }
     )
 
+    def connect_additional_signals(self):
+        """Connecting signals to action specific for the particular layers."""
+        self.layer.geometryChanged.connect(self.update_node_references)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to action specific for the particular layers."""
+        self.layer.geometryChanged.disconnect(self.update_node_references)
+
 
 class SurfaceMapHandler(UserLayerHandler):
     MODEL = dm.SurfaceMap
@@ -731,6 +747,14 @@ class SurfaceMapHandler(UserLayerHandler):
             "percentage": 100.00,
         }
     )
+
+    def connect_additional_signals(self):
+        """Connecting signals to action specific for the particular layers."""
+        self.layer.geometryChanged.connect(self.update_node_references)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to action specific for the particular layers."""
+        self.layer.geometryChanged.disconnect(self.update_node_references)
 
 
 class SurfaceParameterHandler(UserLayerHandler):

@@ -5,6 +5,7 @@ import shutil
 import sqlite3
 import threedi_model_builder.data_models as dm
 from enum import Enum
+from uuid import uuid4
 from typing import Union
 from collections import OrderedDict
 from qgis.PyQt.QtCore import QSettings, QVariant
@@ -517,6 +518,19 @@ def is_gpkg_connection_exists(gpkg_path):
         if connection_path == gpkg_path:
             return True
     return False
+
+
+def can_write_in_dir(path_to_test):
+    """Try to write and remove an empty text file into given location."""
+    try:
+        test_filename = f"{uuid4()}.txt"
+        test_file_path = os.path.join(path_to_test, test_filename)
+        with open(test_file_path, "w") as test_file:
+            test_file.write("")
+        os.remove(test_file_path)
+        return True
+    except (PermissionError, OSError):
+        return False
 
 
 def add_gpkg_connection(gpkg_path, iface=None):
