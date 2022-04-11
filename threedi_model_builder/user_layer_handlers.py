@@ -19,6 +19,7 @@ from threedi_model_builder.utils import (
     count_vertices,
     find_point_nodes,
     find_linestring_nodes,
+    find_point_polygons,
     get_next_feature_id,
 )
 from qgis.core import QgsFeature, QgsGeometry, NULL
@@ -231,18 +232,14 @@ class UserLayerHandler:
             changes = {connection_node_id_idx: connection_node_id}
             self.layer.changeAttributeValues(feat_id, changes)
         elif model_geometry_type == GeometryType.Linestring:
-            is_surface_link = self.MODEL in {dm.ImperviousSurfaceMap, dm.SurfaceMap}
             linestring = geometry.asPolyline()
             start_connection_node_feat, end_connection_node_feat = find_linestring_nodes(linestring, node_layer)
             changes = {}
-            if not is_surface_link:
-                start_connection_node_id = start_connection_node_feat["id"] if start_connection_node_feat else None
-                start_connection_node_id_idx = layer_fields.lookupField("connection_node_start_id")
-                changes[start_connection_node_id_idx] = start_connection_node_id
+            start_connection_node_id = start_connection_node_feat["id"] if start_connection_node_feat else None
+            start_connection_node_id_idx = layer_fields.lookupField("connection_node_start_id")
+            changes[start_connection_node_id_idx] = start_connection_node_id
             end_connection_node_id = end_connection_node_feat["id"] if end_connection_node_feat else None
-            end_connection_node_id_idx = layer_fields.lookupField(
-                "connection_node_end_id" if not is_surface_link else "connection_node_id"
-            )
+            end_connection_node_id_idx = layer_fields.lookupField("connection_node_end_id")
             changes[end_connection_node_id_idx] = end_connection_node_id
             if self.MODEL == dm.PumpstationMap:
                 pumpstation_layer = self.layer_manager.model_handlers[dm.Pumpstation].layer
@@ -587,6 +584,7 @@ class PipeHandler(UserLayerHandler):
             elif idx == end_vertex_idx:
                 connection_node_id = pipe_feat["connection_node_end_id"]
                 points_connection_nodes[point] = connection_node_id
+                intermediate_bottom_levels[point] = pipe_feat["invert_level_end_point"]
             else:
                 geom = QgsGeometry.fromPointXY(point)
                 existing_node_feat = find_point_nodes(point, connection_node_layer)
@@ -616,8 +614,6 @@ class PipeHandler(UserLayerHandler):
         new_source_pipe_geom = QgsGeometry.fromPolylineXY([first_seg_start_point, first_seg_end_point])
         pipe_feat.setGeometry(new_source_pipe_geom)
         pipe_feat["connection_node_end_id"] = points_connection_nodes[first_seg_end_point]
-        if first_seg_start_point in intermediate_bottom_levels:
-            pipe_feat["invert_level_start_point"] = intermediate_bottom_levels[first_seg_start_point]
         if first_seg_end_point in intermediate_bottom_levels:
             pipe_feat["invert_level_end_point"] = intermediate_bottom_levels[first_seg_end_point]
         self.layer.updateFeature(pipe_feat)
@@ -733,11 +729,31 @@ class ImperviousSurfaceMapHandler(UserLayerHandler):
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.connect(self.update_node_references)
+        self.layer.geometryChanged.connect(self.update_link_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.disconnect(self.update_node_references)
+        self.layer.geometryChanged.disconnect(self.update_link_references)
+
+    def update_link_references(self, feat_id, geometry):
+        """Update references to the connections nodes and surfaces after geometry change."""
+        node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        surface_handler = self.layer_manager.model_handlers[dm.ImperviousSurface]
+        node_layer = node_handler.layer
+        surface_layer = surface_handler.layer
+        layer_fields = self.layer.fields()
+        linestring = geometry.asPolyline()
+        start_point, end_point = linestring[0], linestring[-1]
+        start_surface_feat = find_point_polygons(start_point, surface_layer)
+        end_connection_node_feat = find_point_nodes(end_point, node_layer)
+        changes = {}
+        start_surface_id = start_surface_feat["id"] if start_surface_feat else None
+        end_connection_node_id = end_connection_node_feat["id"] if end_connection_node_feat else None
+        start_surface_id_idx = layer_fields.lookupField("impervious_surface_id")
+        end_connection_node_id_idx = layer_fields.lookupField("connection_node_id")
+        changes[start_surface_id_idx] = start_surface_id
+        changes[end_connection_node_id_idx] = end_connection_node_id
+        self.layer.changeAttributeValues(feat_id, changes)
 
 
 class SurfaceMapHandler(UserLayerHandler):
@@ -750,11 +766,31 @@ class SurfaceMapHandler(UserLayerHandler):
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.connect(self.update_node_references)
+        self.layer.geometryChanged.connect(self.update_link_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.disconnect(self.update_node_references)
+        self.layer.geometryChanged.disconnect(self.update_link_references)
+
+    def update_link_references(self, feat_id, geometry):
+        """Update references to the connections nodes and surfaces after geometry change."""
+        node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        surface_handler = self.layer_manager.model_handlers[dm.Surface]
+        node_layer = node_handler.layer
+        surface_layer = surface_handler.layer
+        layer_fields = self.layer.fields()
+        linestring = geometry.asPolyline()
+        start_point, end_point = linestring[0], linestring[-1]
+        start_surface_feat = find_point_polygons(start_point, surface_layer)
+        end_connection_node_feat = find_point_nodes(end_point, node_layer)
+        changes = {}
+        start_surface_id = start_surface_feat["id"] if start_surface_feat else None
+        end_connection_node_id = end_connection_node_feat["id"] if end_connection_node_feat else None
+        start_surface_id_idx = layer_fields.lookupField("surface_id")
+        end_connection_node_id_idx = layer_fields.lookupField("connection_node_id")
+        changes[start_surface_id_idx] = start_surface_id
+        changes[end_connection_node_id_idx] = end_connection_node_id
+        self.layer.changeAttributeValues(feat_id, changes)
 
 
 class SurfaceParameterHandler(UserLayerHandler):
