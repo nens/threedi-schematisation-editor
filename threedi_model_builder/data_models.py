@@ -440,7 +440,7 @@ class Channel(ModelObject):
     dist_calc_points: Optional[float]
     zoom_category: Optional[ZoomCategories]
     connection_node_start_id: int
-    connection_node_end_id: Optional[int]
+    connection_node_end_id: int
 
 
 @dataclass

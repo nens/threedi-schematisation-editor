@@ -303,7 +303,7 @@ class FormWithNode(BaseForm):
             self.extra_features[connection_node_handler].append(connection_node_feat)
         # Sequence related features ids
         self.sequence_related_features_ids()
-        # Assign features as an form instance attributes.
+        # Assign features as a form instance attributes.
         self.connection_node = connection_node_feat
 
     def fill_related_attributes(self):
@@ -381,7 +381,7 @@ class FormWithStartEndNode(BaseForm):
             self.extra_features[connection_node_handler].append(end_connection_node_feat)
         # Sequence related features ids
         self.sequence_related_features_ids()
-        # Assign features as an form instance attributes.
+        # Assign features as a form instance attributes.
         self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
 
@@ -832,6 +832,40 @@ class SurfaceMapForm(NodeToSurfaceMapForm):
         self.surface_id_field = "surface_id"
 
 
+class ChannelForm(FormWithStartEndNode):
+    """Channel user layer edit form logic."""
+
+    MODEL = dm.Channel
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    @property
+    def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with identifier and value = data model feature."""
+        fm_features = {
+            (dm.ConnectionNode, 1): self.connection_node_start,
+            (dm.ConnectionNode, 2): self.connection_node_end,
+        }
+        # TODO: we need to add handling of related cross section locations.
+        return fm_features
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.setup_connection_nodes_on_creation()
+            self.fill_related_attributes()
+        else:
+            self.setup_connection_nodes_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+
+
 ALL_FORMS = (
     ConnectionNodeForm,
     ManholeForm,
@@ -843,6 +877,7 @@ ALL_FORMS = (
     PumpstationMapForm,
     ImperviousSurfaceMapForm,
     SurfaceMapForm,
+    ChannelForm,
 )
 
 MODEL_FORMS = MappingProxyType({form.MODEL: form for form in ALL_FORMS})

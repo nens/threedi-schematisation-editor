@@ -10,6 +10,7 @@ from threedi_model_builder.enumerators import (
     FrictionType,
     PipeMaterial,
     PumpType,
+    ZoomCategories,
 )
 from types import MappingProxyType
 from functools import partial
@@ -633,10 +634,54 @@ class PipeHandler(UserLayerHandler):
 
 class CrossSectionLocationHandler(UserLayerHandler):
     MODEL = dm.CrossSectionLocation
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.Channel: 1,
+        }
+    )
 
 
 class ChannelHandler(UserLayerHandler):
     MODEL = dm.Channel
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.ConnectionNode: 2,
+            dm.CrossSectionLocation: 1,
+        }
+    )
+    DEFAULTS = MappingProxyType(
+        {
+            "zoom_category": ZoomCategories.LOWEST_VISIBILITY.value,
+        }
+    )
+
+    def connect_additional_signals(self):
+        """Connecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.connect(self.trigger_fulfill_geometry_requirements)
+        self.layer.geometryChanged.connect(self.update_node_references)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.disconnect(self.trigger_fulfill_geometry_requirements)
+        self.layer.geometryChanged.disconnect(self.update_node_references)
+
+    def trigger_fulfill_geometry_requirements(self, channel_fet_id):
+        """Triggering geometry modifications on newly added feature."""
+        modify_geometry_method = partial(self.fulfill_geometry_requirements, channel_fet_id)
+        QTimer.singleShot(0, modify_geometry_method)
+
+    def fulfill_geometry_requirements(self, channel_feat_id):
+        """Fulfill geometry requirements for newly added channel."""
+        feat = self.layer.getFeature(channel_feat_id)
+        geom = feat.geometry()
+        vertices_count = count_vertices(geom)
+        linestring = geom.asPolyline()
+        if vertices_count < 3:
+            middle_point = geom.interpolate(geom.length() / 2.0).asPoint()
+            linestring.insert(1, middle_point)
+            new_source_geom = QgsGeometry.fromPolylineXY(linestring)
+            feat.setGeometry(new_source_geom)
+            self.layer.updateFeature(feat)
 
 
 class BoundaryCondition2DHandler(UserLayerHandler):
