@@ -159,6 +159,14 @@ class UserLayerHandler:
                 pass
         return feat
 
+    def get_multiple_feats_by_id(self, object_id, id_field="id"):
+        """Return layer multiple features with the given id."""
+        feats = []
+        if object_id not in (None, NULL):
+            for feat in self.layer_manager.get_layer_features(self.MODEL, f'"{id_field}" = {object_id}'):
+                feats.append(feat)
+        return feats
+
     def get_next_id(self, layer=None):
         """Return first available ID within layer features."""
         if layer is None:
@@ -639,6 +647,18 @@ class CrossSectionLocationHandler(UserLayerHandler):
             dm.Channel: 1,
         }
     )
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+            "length": 0.8,
+            "width": 0.8,
+            "shape": ManholeShape.ROUND.value,
+            "manhole_indicator": ManholeIndicator.INSPECTION.value,
+            "calculation_type": CalculationTypeNode.ISOLATED.value,
+            "bottom_level": -10.0,
+        }
+    )
 
 
 class ChannelHandler(UserLayerHandler):
@@ -646,7 +666,7 @@ class ChannelHandler(UserLayerHandler):
     RELATED_MODELS = MappingProxyType(
         {
             dm.ConnectionNode: 2,
-            dm.CrossSectionLocation: 1,
+            dm.CrossSectionLocation: float("inf"),
         }
     )
     DEFAULTS = MappingProxyType(

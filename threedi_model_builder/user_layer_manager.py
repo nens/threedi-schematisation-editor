@@ -76,6 +76,7 @@ class LayersManager:
                 dm.ConnectionNode,
                 dm.CrossSectionLocation,
             ),
+            dm.CrossSectionLocation: (dm.Channel,),
         }
     )
 
