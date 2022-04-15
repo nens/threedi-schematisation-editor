@@ -1002,21 +1002,29 @@ class CrossSectionLocationForm(BaseForm):
         point = point_geom.asPoint()
         channel_node_feat = find_point_nodes(point, channel_layer)
         if channel_node_feat:
+            channel_id = channel_node_feat["id"]
             channel_geom = channel_node_feat.geometry()
-            channel_points = channel_geom.asPolyline()
-            enumerated_points = {pnt: i for i, pnt in enumerate(channel_points, 1)}
-            cross_section_num = enumerated_points[point]
+            other_cross_sections = self.handler.get_multiple_feats_by_id(channel_id, "channel_id")
+            cross_section_num = len(other_cross_sections) + 1
             channel_code = channel_node_feat["code"]
             cross_section_location_code = f"{channel_code}_cross_section_{cross_section_num}"
-            self.feature["channel_id"] = channel_node_feat["id"]
+            self.feature["channel_id"] = channel_id
             self.feature["code"] = cross_section_location_code
             self.channel = channel_node_feat
-            try:
-                global_settings_feat = next(global_settings_layer.getFeatures())
-            except StopIteration:
-                global_settings_feat = None
-            if global_settings_feat:
-                self.feature["friction_type"] = global_settings_feat["frict_type"]
+            if other_cross_sections:
+                other_cross_sections.sort(key=lambda feat: channel_geom.lineLocatePoint(feat.geometry()))
+                closest_existing_cross_section = other_cross_sections[0]
+                self.feature["reference_level"] = closest_existing_cross_section["reference_level"]
+                self.feature["bank_level"] = closest_existing_cross_section["bank_level"]
+                self.feature["cross_section_shape"] = closest_existing_cross_section["cross_section_shape"]
+                self.feature["cross_section_width"] = closest_existing_cross_section["cross_section_width"]
+                self.feature["cross_section_height"] = closest_existing_cross_section["cross_section_height"]
+                self.feature["cross_section_table"] = closest_existing_cross_section["cross_section_table"]
+        try:
+            global_settings_feat = next(global_settings_layer.getFeatures())
+            self.feature["friction_type"] = global_settings_feat["frict_type"]
+        except StopIteration:
+            pass
 
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
