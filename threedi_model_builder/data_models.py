@@ -1178,3 +1178,62 @@ TABLE_MANNING = MappingProxyType(
 )
 
 TABLE_SHAPES = [CrossSectionShape.TABULATED_RECTANGLE.value, CrossSectionShape.TABULATED_TRAPEZIUM.value]
+
+MODEL_DEPENDENCIES = MappingProxyType(
+    {
+        ConnectionNode: {
+            BoundaryCondition1D: ("connection_node_id",),
+            Lateral1D: ("connection_node_id",),
+            Channel: (
+                "connection_node_start_id",
+                "connection_node_end_id",
+            ),
+            Culvert: (
+                "connection_node_start_id",
+                "connection_node_end_id",
+            ),
+            ImperviousSurfaceMap: ("connection_node_id",),
+            SurfaceMap: ("connection_node_id",),
+            Manhole: ("connection_node_id",),
+            Orifice: (
+                "connection_node_start_id",
+                "connection_node_end_id",
+            ),
+            Pipe: (
+                "connection_node_start_id",
+                "connection_node_end_id",
+            ),
+            Weir: (
+                "connection_node_start_id",
+                "connection_node_end_id",
+            ),
+            PumpstationMap: (
+                "connection_node_start_id",
+                "connection_node_end_id",
+            ),
+            Pumpstation: ("connection_node_id",),
+        },
+        Channel: {
+            CrossSectionLocation: ("channel_id",),
+            Windshielding: ("channel_id",),
+        },
+        ImperviousSurface: {
+            ImperviousSurfaceMap: ("impervious_surface_id",),
+        },
+        Surface: {
+            SurfaceMap: ("surface_id",),
+        },
+        Pumpstation: {
+            PumpstationMap: ("pumpstation_id",),
+        },
+        SurfaceParameters: {
+            Surface: ("surface_parameters_id",),
+        },
+        LinearObstacle: {
+            ConnectedPoint: ("levee_id",),
+        },
+        CalculationPoint: {
+            ConnectedPoint: ("calculation_point_id",),
+        },
+    }
+)
