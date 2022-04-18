@@ -169,7 +169,7 @@ class UserLayerHandler:
         if dependent_features:
             title = "Referenced features"
             msg = (
-                "There are other features referencing to the deleted element(s). "
+                f"There are other features referencing to the deleted '{self.MODEL.__layername__}' element(s). "
                 "Please decide how do you want to proceed."
             )
             delete_feat, delete_all, cancel = "Delete this feature only", "Delete all referenced features", "Cancel"
@@ -182,6 +182,7 @@ class UserLayerHandler:
                     if not dependent_layer.isEditable():
                         dependent_layer.startEditing()
                     dependent_layer.deleteFeatures(dependent_feat_ids)
+                self.layer_manager.iface.mapCanvas().refresh()
             else:
                 self.layer.rollBack()
 
