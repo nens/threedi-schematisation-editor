@@ -12,6 +12,7 @@ from threedi_model_builder.enumerators import (
     PumpType,
     ZoomCategories,
 )
+from collections import defaultdict
 from types import MappingProxyType
 from functools import partial
 from threedi_model_builder.utils import (
@@ -23,7 +24,7 @@ from threedi_model_builder.utils import (
     find_point_polygons,
     get_next_feature_id,
 )
-from qgis.core import QgsFeature, QgsGeometry, NULL
+from qgis.core import QgsFeature, QgsGeometry, QgsFeatureRequest, QgsExpression, NULL
 from qgis.PyQt.QtCore import QTimer
 
 
@@ -45,6 +46,7 @@ class UserLayerHandler:
         self.layer.editingStarted.connect(self.on_editing_started)
         self.layer.beforeRollBack.connect(self.on_rollback)
         self.layer.beforeCommitChanges.connect(self.on_commit_changes)
+        self.layer.featuresDeleted.connect(self.on_delete_features)
         self.connect_additional_signals()
 
     def disconnect_handler_signals(self):
@@ -52,6 +54,7 @@ class UserLayerHandler:
         self.layer.editingStarted.disconnect(self.on_editing_started)
         self.layer.beforeRollBack.disconnect(self.on_rollback)
         self.layer.beforeCommitChanges.disconnect(self.on_commit_changes)
+        self.layer.featuresDeleted.disconnect(self.on_delete_features)
         self.disconnect_additional_signals()
 
     def connect_additional_signals(self):
@@ -147,6 +150,40 @@ class UserLayerHandler:
     def on_commit_changes(self):
         """Action on commit changes signal."""
         self.multi_commit_changes()
+
+    def on_delete_features(self, feature_ids):
+        """Action on delete features signal."""
+        if self.MODEL not in dm.MODEL_DEPENDENCIES:
+            return
+        request = QgsFeatureRequest(feature_ids)
+        request.setFlags(QgsFeatureRequest.NoGeometry)
+        deleted_features_real_ids = [feat["id"] for feat in self.layer.dataProvider().getFeatures(request)]
+        dependent_features = defaultdict(list)
+        for deleted_feat_id in deleted_features_real_ids:
+            for dependent_data_model, dependent_fields in dm.MODEL_DEPENDENCIES[self.MODEL].items():
+                dependent_layer = self.layer_manager.model_handlers[dependent_data_model].layer
+                expr_str = " OR ".join(f'"{field_name}" = {deleted_feat_id}' for field_name in dependent_fields)
+                expr = QgsExpression(expr_str)
+                dependent_feats = [feat.id() for feat in dependent_layer.getFeatures(QgsFeatureRequest(expr))]
+                dependent_features[dependent_data_model] += dependent_feats
+        if dependent_features:
+            title = "Referenced features"
+            msg = (
+                "There are other features referencing to the deleted element(s). "
+                "Please decide how do you want to proceed."
+            )
+            delete_feat, delete_all, cancel = "Delete this feature only", "Delete all referenced features", "Cancel"
+            clicked_button = self.layer_manager.uc.custom_ask(None, title, msg, delete_feat, delete_all, cancel)
+            if clicked_button == delete_feat:
+                pass
+            elif clicked_button == delete_all:
+                for dependent_model, dependent_feat_ids in dependent_features.items():
+                    dependent_layer = self.layer_manager.model_handlers[dependent_model].layer
+                    if not dependent_layer.isEditable():
+                        dependent_layer.startEditing()
+                    dependent_layer.deleteFeatures(dependent_feat_ids)
+            else:
+                self.layer.rollBack()
 
     def get_feat_by_id(self, object_id, id_field="id"):
         """Return layer feature with the given id."""
