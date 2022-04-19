@@ -1,6 +1,7 @@
 # Copyright (C) 2022 by Lutra Consulting
 import threedi_model_builder.data_models as dm
 from collections import defaultdict
+from operator import itemgetter
 from functools import partial
 from enum import Enum
 from types import MappingProxyType
@@ -9,6 +10,7 @@ from threedi_model_builder.utils import (
     find_linestring_nodes,
     find_point_polygons,
     connect_signal,
+    disconnect_signal,
     is_optional,
     optional_type,
 )
@@ -51,6 +53,7 @@ class BaseForm(QObject):
         self.creation = False
         self.main_widgets = {}
         self.foreign_widgets = {}
+        self.custom_widgets = {}
         self.set_foreign_widgets()
         self.extra_features = defaultdict(list)
         self.layer.editingStarted.connect(self.toggle_edit_mode)
@@ -69,6 +72,7 @@ class BaseForm(QObject):
 
     def setup_form_widgets(self):
         """Setting up all form widgets."""
+        # TODO: Improve handling of newly added related features
         if self.feature is None:
             return
         if self.feature.id() < 0:
@@ -88,10 +92,15 @@ class BaseForm(QObject):
     def set_foreign_widgets(self):
         """Setting up widgets handling values from related models features."""
         main_fields = set(self.MODEL.__annotations__.keys())
+        infinity = float("inf")
         for related_cls, relations_number in self.handler.RELATED_MODELS.items():
             table_name = related_cls.__tablename__
-            for related_number in range(1, relations_number + 1):
-                if relations_number > 1:
+            range_end = relations_number + 1 if relations_number < infinity else 2
+            for related_number in range(1, range_end):
+                if relations_number == infinity:
+                    numerical_modifier = infinity
+                    str_num_mod = ""
+                elif relations_number > 1:
                     numerical_modifier = related_number
                     str_num_mod = f"_{related_number}"
                 else:
@@ -112,6 +121,8 @@ class BaseForm(QObject):
         editing_active = self.layer.isEditable()
         for widget, related_cls, numerical_modifier, field_name in self.foreign_widgets.values():
             widget.setEnabled(editing_active)
+        for widget in self.custom_widgets.values():
+            widget.setEnabled(editing_active)
 
     def populate_widgets(self, data_model_cls=None, feature=None, start_end_modifier=None):
         """
@@ -122,7 +133,7 @@ class BaseForm(QObject):
         """
         if data_model_cls is not None:
             field_name_prefix = data_model_cls.__tablename__ + "_"
-            if start_end_modifier is not None:
+            if start_end_modifier is not None and start_end_modifier != float("inf"):
                 field_name_prefix += str(start_end_modifier) + "_"
         else:
             data_model_cls = self.MODEL
@@ -159,7 +170,7 @@ class BaseForm(QObject):
         combo_widget.clear()
         if add_empty_entry:
             combo_widget.addItem("", None)
-        for text, data in value_map.items():
+        for text, data in sorted(value_map.items(), key=itemgetter(0)):
             combo_widget.addItem(text, data)
 
     def set_widget_value(self, widget, value, var_type=None):
@@ -303,7 +314,7 @@ class FormWithNode(BaseForm):
             self.extra_features[connection_node_handler].append(connection_node_feat)
         # Sequence related features ids
         self.sequence_related_features_ids()
-        # Assign features as an form instance attributes.
+        # Assign features as a form instance attributes.
         self.connection_node = connection_node_feat
 
     def fill_related_attributes(self):
@@ -381,7 +392,7 @@ class FormWithStartEndNode(BaseForm):
             self.extra_features[connection_node_handler].append(end_connection_node_feat)
         # Sequence related features ids
         self.sequence_related_features_ids()
-        # Assign features as an form instance attributes.
+        # Assign features as a form instance attributes.
         self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
 
@@ -832,6 +843,196 @@ class SurfaceMapForm(NodeToSurfaceMapForm):
         self.surface_id_field = "surface_id"
 
 
+class ChannelForm(FormWithStartEndNode):
+    """Channel user layer edit form logic."""
+
+    MODEL = dm.Channel
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.cross_section_locations = None
+        self.current_cross_section_location = None
+        xs_locations_cbo_name = "cross_section_locations"
+        self.current_cross_section_locations_cbo = self.dialog.findChild(QComboBox, xs_locations_cbo_name)
+        self.custom_widgets[xs_locations_cbo_name] = self.current_cross_section_locations_cbo
+
+    @property
+    def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with id and value = data model feature(s)."""
+        fm_features = {
+            (dm.ConnectionNode, 1): self.connection_node_start,
+            (dm.ConnectionNode, 2): self.connection_node_end,
+            (dm.CrossSectionLocation, float("inf")): self.cross_section_locations,
+        }
+        return fm_features
+
+    def setup_cross_section_location_on_edit(self):
+        """Setting up cross-section location during editing feature."""
+        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
+        connection_node_start_id = self.feature["connection_node_start_id"]
+        connection_node_end_id = self.feature["connection_node_end_id"]
+        channel_id = self.feature["id"]
+        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_start_id)
+        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_end_id)
+        self.cross_section_locations = cross_section_location_handler.get_multiple_feats_by_id(channel_id, "channel_id")
+        if self.cross_section_locations:
+            channel_cross_section_location_ids = {str(feat["id"]): feat for feat in self.cross_section_locations}
+            self.populate_combo(self.current_cross_section_locations_cbo, channel_cross_section_location_ids, False)
+            self.current_cross_section_location = self.cross_section_locations[0]
+
+    def setup_cross_section_location_on_creation(self):
+        """Setting up cross-section location during adding feature."""
+        self.setup_connection_nodes_on_creation()
+        cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
+        channel_geom = self.feature.geometry()
+        linestring = self.feature.geometry().asPolyline()
+        if len(linestring) >= 3:
+            cross_section_location_point = linestring[1]
+            cross_section_location_geom = QgsGeometry.fromPointXY(cross_section_location_point)
+        else:
+            cross_section_location_geom = channel_geom.interpolate(channel_geom.length() / 2.0)
+        cross_section_location_feat = cross_section_location_handler.create_new_feature(cross_section_location_geom)
+        channel_cross_section_location_ids = {str(cross_section_location_feat["id"]): cross_section_location_feat}
+        self.populate_combo(self.current_cross_section_locations_cbo, channel_cross_section_location_ids, False)
+        self.cross_section_locations = [cross_section_location_feat]
+        self.current_cross_section_location = cross_section_location_feat
+        self.extra_features[cross_section_location_handler].append(self.current_cross_section_location)
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+        global_settings_handler = self.layer_manager.model_handlers[dm.GlobalSettings]
+        global_settings_layer = global_settings_handler.layer
+        channel_code = self.feature["code"]
+        cross_section_location_code = f"{channel_code}_cross_section_1"
+        self.current_cross_section_location["channel_id"] = self.feature["id"]
+        self.current_cross_section_location["code"] = cross_section_location_code
+        try:
+            global_settings_feat = next(global_settings_layer.getFeatures())
+        except StopIteration:
+            global_settings_feat = None
+        if global_settings_feat:
+            self.current_cross_section_location["friction_type"] = global_settings_feat["frict_type"]
+
+    def set_current_cross_section_location(self, current_text):
+        """Set handling of selected channel cross-section location."""
+        if current_text:
+            cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
+            for signal, slot in self.dialog.active_form_signals:
+                disconnect_signal(signal, slot)
+            self.current_cross_section_location = cross_section_location_handler.get_feat_by_id(int(current_text))
+            self.populate_foreign_widgets()
+            for signal, slot in self.dialog.active_form_signals:
+                connect_signal(signal, slot)
+
+    def set_cross_section_location_value_from_widget(self, widget, field_name):
+        """Set currently selected cross-section attribute."""
+        self.set_value_from_widget(widget, self.current_cross_section_location, dm.CrossSectionLocation, field_name)
+
+    def connect_foreign_widgets(self):
+        """Connect widget signals responsible for handling related layers attributes."""
+        for widget_name, (widget, model_cls, numerical_modifier, field_name) in self.foreign_widgets.items():
+            signal = self.get_widget_editing_signal(widget)
+            try:
+                feature_or_features = self.foreign_models_features[model_cls, numerical_modifier]
+            except KeyError:
+                continue
+            if model_cls == dm.CrossSectionLocation:
+                slot = partial(self.set_cross_section_location_value_from_widget, widget, field_name)
+            else:
+                slot = partial(self.set_value_from_widget, widget, feature_or_features, model_cls, field_name)
+            connect_signal(signal, slot)
+            self.dialog.active_form_signals.add((signal, slot))
+
+    def connect_custom_widgets(self):
+        """Connect other widgets."""
+        signal = self.current_cross_section_locations_cbo.currentTextChanged
+        slot = self.set_current_cross_section_location
+        connect_signal(signal, slot)
+        self.dialog.active_form_signals.add((signal, slot))
+
+    def populate_foreign_widgets(self):
+        """Populating values within foreign layers widgets."""
+        for (data_model_cls, start_end_modifier), feature_or_features in self.foreign_models_features.items():
+            if data_model_cls == dm.CrossSectionLocation:
+                feature = self.current_cross_section_location
+            else:
+                feature = feature_or_features
+            if feature is not None:
+                self.populate_widgets(data_model_cls, feature, start_end_modifier)
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.setup_cross_section_location_on_creation()
+            self.fill_related_attributes()
+        else:
+            self.setup_cross_section_location_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+
+
+class CrossSectionLocationForm(BaseForm):
+    """Cross-section location user layer edit form logic."""
+
+    MODEL = dm.CrossSectionLocation
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.channel = None
+
+    @property
+    def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with id and value = data model feature(s)."""
+        fm_features = {
+            (dm.Channel, 1): self.channel,
+        }
+        return fm_features
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+        channel_handler = self.layer_manager.model_handlers[dm.Channel]
+        global_settings_handler = self.layer_manager.model_handlers[dm.GlobalSettings]
+        channel_layer = channel_handler.layer
+        global_settings_layer = global_settings_handler.layer
+        point_geom = self.feature.geometry()
+        point = point_geom.asPoint()
+        channel_node_feat = find_point_nodes(point, channel_layer)
+        if channel_node_feat:
+            channel_id = channel_node_feat["id"]
+            channel_geom = channel_node_feat.geometry()
+            other_cross_sections = self.handler.get_multiple_feats_by_id(channel_id, "channel_id")
+            cross_section_num = len(other_cross_sections) + 1
+            channel_code = channel_node_feat["code"]
+            cross_section_location_code = f"{channel_code}_cross_section_{cross_section_num}"
+            self.feature["channel_id"] = channel_id
+            self.feature["code"] = cross_section_location_code
+            self.channel = channel_node_feat
+            if other_cross_sections:
+                other_cross_sections.sort(key=lambda feat: channel_geom.lineLocatePoint(feat.geometry()))
+                closest_existing_cross_section = other_cross_sections[0]
+                self.feature["reference_level"] = closest_existing_cross_section["reference_level"]
+                self.feature["bank_level"] = closest_existing_cross_section["bank_level"]
+                self.feature["cross_section_shape"] = closest_existing_cross_section["cross_section_shape"]
+                self.feature["cross_section_width"] = closest_existing_cross_section["cross_section_width"]
+                self.feature["cross_section_height"] = closest_existing_cross_section["cross_section_height"]
+                self.feature["cross_section_table"] = closest_existing_cross_section["cross_section_table"]
+        try:
+            global_settings_feat = next(global_settings_layer.getFeatures())
+            self.feature["friction_type"] = global_settings_feat["frict_type"]
+        except StopIteration:
+            pass
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+
+
 ALL_FORMS = (
     ConnectionNodeForm,
     ManholeForm,
@@ -843,6 +1044,8 @@ ALL_FORMS = (
     PumpstationMapForm,
     ImperviousSurfaceMapForm,
     SurfaceMapForm,
+    ChannelForm,
+    CrossSectionLocationForm,
 )
 
 MODEL_FORMS = MappingProxyType({form.MODEL: form for form in ALL_FORMS})

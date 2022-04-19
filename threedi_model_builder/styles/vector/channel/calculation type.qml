@@ -1,25 +1,29 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis version="3.10.10-A Coruña" hasScaleBasedVisibilityFlag="0" simplifyAlgorithm="0" simplifyLocal="1" simplifyMaxScale="1" readOnly="0" styleCategories="AllStyleCategories" minScale="1e+08" simplifyDrawingTol="1" maxScale="0" labelsEnabled="0" simplifyDrawingHints="1">
+<qgis labelsEnabled="0" styleCategories="LayerConfiguration|Symbology|Labeling|Fields|Forms" readOnly="0" version="3.16.9-Hannover">
   <flags>
     <Identifiable>1</Identifiable>
-    <Removable>1</Removable>
+    <Removable>0</Removable>
     <Searchable>1</Searchable>
   </flags>
-  <renderer-v2 forceraster="0" enableorderby="0" symbollevels="0" attr="calculation_type" type="categorizedSymbol">
+  <renderer-v2 forceraster="0" attr="calculation_type" enableorderby="0" type="categorizedSymbol" symbollevels="0">
     <categories>
-      <category symbol="0" label="100: embedded" value="100" render="true"/>
-      <category symbol="1" label="101: isolated" value="101" render="true"/>
-      <category symbol="2" label="102: connected" value="102" render="true"/>
-      <category symbol="3" label="105: double connected" value="105" render="true"/>
-      <category symbol="4" label="other: invalid" value="" render="true"/>
+      <category symbol="0" value="100" label="100: embedded" render="true"/>
+      <category symbol="1" value="101" label="101: isolated" render="true"/>
+      <category symbol="2" value="102" label="102: connected" render="true"/>
+      <category symbol="3" value="105" label="105: double connected" render="true"/>
+      <category symbol="4" value="" label="other: invalid" render="true"/>
     </categories>
     <symbols>
-      <symbol alpha="1" force_rhr="0" name="0" clip_to_extent="1" type="line">
-        <layer pass="0" class="SimpleLine" enabled="1" locked="0">
+      <symbol clip_to_extent="1" type="line" alpha="1" force_rhr="0" name="0">
+        <layer class="SimpleLine" locked="0" pass="0" enabled="1">
+          <prop v="0" k="align_dash_pattern"/>
           <prop v="square" k="capstyle"/>
           <prop v="5;2" k="customdash"/>
           <prop v="3x:0,0,0,0,0,0" k="customdash_map_unit_scale"/>
           <prop v="MM" k="customdash_unit"/>
+          <prop v="0" k="dash_pattern_offset"/>
+          <prop v="3x:0,0,0,0,0,0" k="dash_pattern_offset_map_unit_scale"/>
+          <prop v="MM" k="dash_pattern_offset_unit"/>
           <prop v="0" k="draw_inside_polygon"/>
           <prop v="bevel" k="joinstyle"/>
           <prop v="11,178,181,255" k="line_color"/>
@@ -30,23 +34,28 @@
           <prop v="3x:0,0,0,0,0,0" k="offset_map_unit_scale"/>
           <prop v="MM" k="offset_unit"/>
           <prop v="0" k="ring_filter"/>
+          <prop v="0" k="tweak_dash_pattern_on_corners"/>
           <prop v="0" k="use_custom_dash"/>
           <prop v="3x:0,0,0,0,0,0" k="width_map_unit_scale"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option value="" name="name" type="QString"/>
+              <Option value="" type="QString" name="name"/>
               <Option name="properties"/>
-              <Option value="collection" name="type" type="QString"/>
+              <Option value="collection" type="QString" name="type"/>
             </Option>
           </data_defined_properties>
         </layer>
       </symbol>
-      <symbol alpha="1" force_rhr="0" name="1" clip_to_extent="1" type="line">
-        <layer pass="0" class="SimpleLine" enabled="1" locked="0">
+      <symbol clip_to_extent="1" type="line" alpha="1" force_rhr="0" name="1">
+        <layer class="SimpleLine" locked="0" pass="0" enabled="1">
+          <prop v="0" k="align_dash_pattern"/>
           <prop v="square" k="capstyle"/>
           <prop v="5;2" k="customdash"/>
           <prop v="3x:0,0,0,0,0,0" k="customdash_map_unit_scale"/>
           <prop v="MM" k="customdash_unit"/>
+          <prop v="0" k="dash_pattern_offset"/>
+          <prop v="3x:0,0,0,0,0,0" k="dash_pattern_offset_map_unit_scale"/>
+          <prop v="MM" k="dash_pattern_offset_unit"/>
           <prop v="0" k="draw_inside_polygon"/>
           <prop v="bevel" k="joinstyle"/>
           <prop v="181,136,11,255" k="line_color"/>
@@ -57,23 +66,28 @@
           <prop v="3x:0,0,0,0,0,0" k="offset_map_unit_scale"/>
           <prop v="MM" k="offset_unit"/>
           <prop v="0" k="ring_filter"/>
+          <prop v="0" k="tweak_dash_pattern_on_corners"/>
           <prop v="0" k="use_custom_dash"/>
           <prop v="3x:0,0,0,0,0,0" k="width_map_unit_scale"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option value="" name="name" type="QString"/>
+              <Option value="" type="QString" name="name"/>
               <Option name="properties"/>
-              <Option value="collection" name="type" type="QString"/>
+              <Option value="collection" type="QString" name="type"/>
             </Option>
           </data_defined_properties>
         </layer>
       </symbol>
-      <symbol alpha="1" force_rhr="0" name="2" clip_to_extent="1" type="line">
-        <layer pass="0" class="SimpleLine" enabled="1" locked="0">
+      <symbol clip_to_extent="1" type="line" alpha="1" force_rhr="0" name="2">
+        <layer class="SimpleLine" locked="0" pass="0" enabled="1">
+          <prop v="0" k="align_dash_pattern"/>
           <prop v="square" k="capstyle"/>
           <prop v="5;2" k="customdash"/>
           <prop v="3x:0,0,0,0,0,0" k="customdash_map_unit_scale"/>
           <prop v="MM" k="customdash_unit"/>
+          <prop v="0" k="dash_pattern_offset"/>
+          <prop v="3x:0,0,0,0,0,0" k="dash_pattern_offset_map_unit_scale"/>
+          <prop v="MM" k="dash_pattern_offset_unit"/>
           <prop v="0" k="draw_inside_polygon"/>
           <prop v="bevel" k="joinstyle"/>
           <prop v="167,11,181,255" k="line_color"/>
@@ -84,23 +98,28 @@
           <prop v="3x:0,0,0,0,0,0" k="offset_map_unit_scale"/>
           <prop v="MM" k="offset_unit"/>
           <prop v="0" k="ring_filter"/>
+          <prop v="0" k="tweak_dash_pattern_on_corners"/>
           <prop v="0" k="use_custom_dash"/>
           <prop v="3x:0,0,0,0,0,0" k="width_map_unit_scale"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option value="" name="name" type="QString"/>
+              <Option value="" type="QString" name="name"/>
               <Option name="properties"/>
-              <Option value="collection" name="type" type="QString"/>
+              <Option value="collection" type="QString" name="type"/>
             </Option>
           </data_defined_properties>
         </layer>
       </symbol>
-      <symbol alpha="1" force_rhr="0" name="3" clip_to_extent="1" type="line">
-        <layer pass="0" class="SimpleLine" enabled="1" locked="0">
+      <symbol clip_to_extent="1" type="line" alpha="1" force_rhr="0" name="3">
+        <layer class="SimpleLine" locked="0" pass="0" enabled="1">
+          <prop v="0" k="align_dash_pattern"/>
           <prop v="square" k="capstyle"/>
           <prop v="5;2" k="customdash"/>
           <prop v="3x:0,0,0,0,0,0" k="customdash_map_unit_scale"/>
           <prop v="MM" k="customdash_unit"/>
+          <prop v="0" k="dash_pattern_offset"/>
+          <prop v="3x:0,0,0,0,0,0" k="dash_pattern_offset_map_unit_scale"/>
+          <prop v="MM" k="dash_pattern_offset_unit"/>
           <prop v="0" k="draw_inside_polygon"/>
           <prop v="bevel" k="joinstyle"/>
           <prop v="97,3,106,255" k="line_color"/>
@@ -111,23 +130,28 @@
           <prop v="3x:0,0,0,0,0,0" k="offset_map_unit_scale"/>
           <prop v="MM" k="offset_unit"/>
           <prop v="0" k="ring_filter"/>
+          <prop v="0" k="tweak_dash_pattern_on_corners"/>
           <prop v="0" k="use_custom_dash"/>
           <prop v="3x:0,0,0,0,0,0" k="width_map_unit_scale"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option value="" name="name" type="QString"/>
+              <Option value="" type="QString" name="name"/>
               <Option name="properties"/>
-              <Option value="collection" name="type" type="QString"/>
+              <Option value="collection" type="QString" name="type"/>
             </Option>
           </data_defined_properties>
         </layer>
       </symbol>
-      <symbol alpha="1" force_rhr="0" name="4" clip_to_extent="1" type="line">
-        <layer pass="0" class="SimpleLine" enabled="1" locked="0">
+      <symbol clip_to_extent="1" type="line" alpha="1" force_rhr="0" name="4">
+        <layer class="SimpleLine" locked="0" pass="0" enabled="1">
+          <prop v="0" k="align_dash_pattern"/>
           <prop v="square" k="capstyle"/>
           <prop v="5;2" k="customdash"/>
           <prop v="3x:0,0,0,0,0,0" k="customdash_map_unit_scale"/>
           <prop v="MM" k="customdash_unit"/>
+          <prop v="0" k="dash_pattern_offset"/>
+          <prop v="3x:0,0,0,0,0,0" k="dash_pattern_offset_map_unit_scale"/>
+          <prop v="MM" k="dash_pattern_offset_unit"/>
           <prop v="0" k="draw_inside_polygon"/>
           <prop v="bevel" k="joinstyle"/>
           <prop v="125,139,143,255" k="line_color"/>
@@ -138,25 +162,30 @@
           <prop v="3x:0,0,0,0,0,0" k="offset_map_unit_scale"/>
           <prop v="MM" k="offset_unit"/>
           <prop v="0" k="ring_filter"/>
+          <prop v="0" k="tweak_dash_pattern_on_corners"/>
           <prop v="0" k="use_custom_dash"/>
           <prop v="3x:0,0,0,0,0,0" k="width_map_unit_scale"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option value="" name="name" type="QString"/>
+              <Option value="" type="QString" name="name"/>
               <Option name="properties"/>
-              <Option value="collection" name="type" type="QString"/>
+              <Option value="collection" type="QString" name="type"/>
             </Option>
           </data_defined_properties>
         </layer>
       </symbol>
     </symbols>
     <source-symbol>
-      <symbol alpha="1" force_rhr="0" name="0" clip_to_extent="1" type="line">
-        <layer pass="0" class="SimpleLine" enabled="1" locked="0">
+      <symbol clip_to_extent="1" type="line" alpha="1" force_rhr="0" name="0">
+        <layer class="SimpleLine" locked="0" pass="0" enabled="1">
+          <prop v="0" k="align_dash_pattern"/>
           <prop v="square" k="capstyle"/>
           <prop v="5;2" k="customdash"/>
           <prop v="3x:0,0,0,0,0,0" k="customdash_map_unit_scale"/>
           <prop v="MM" k="customdash_unit"/>
+          <prop v="0" k="dash_pattern_offset"/>
+          <prop v="3x:0,0,0,0,0,0" k="dash_pattern_offset_map_unit_scale"/>
+          <prop v="MM" k="dash_pattern_offset_unit"/>
           <prop v="0" k="draw_inside_polygon"/>
           <prop v="bevel" k="joinstyle"/>
           <prop v="101,101,101,255" k="line_color"/>
@@ -167,13 +196,14 @@
           <prop v="3x:0,0,0,0,0,0" k="offset_map_unit_scale"/>
           <prop v="MM" k="offset_unit"/>
           <prop v="0" k="ring_filter"/>
+          <prop v="0" k="tweak_dash_pattern_on_corners"/>
           <prop v="0" k="use_custom_dash"/>
           <prop v="3x:0,0,0,0,0,0" k="width_map_unit_scale"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option value="" name="name" type="QString"/>
+              <Option value="" type="QString" name="name"/>
               <Option name="properties"/>
-              <Option value="collection" name="type" type="QString"/>
+              <Option value="collection" type="QString" name="type"/>
             </Option>
           </data_defined_properties>
         </layer>
@@ -182,191 +212,183 @@
     <rotation/>
     <sizescale/>
   </renderer-v2>
-  <customproperties>
-    <property key="dualview/previewExpressions" value="display_name"/>
-    <property key="embeddedWidgets/count" value="0"/>
-    <property key="variableNames"/>
-    <property key="variableValues"/>
-  </customproperties>
   <blendMode>0</blendMode>
   <featureBlendMode>0</featureBlendMode>
-  <layerOpacity>1</layerOpacity>
-  <SingleCategoryDiagramRenderer attributeLegend="1" diagramType="Pie">
-    <DiagramCategory maxScaleDenominator="1e+08" penColor="#000000" lineSizeType="MM" height="15" penWidth="0" barWidth="5" backgroundAlpha="255" scaleDependency="Area" width="15" minimumSize="0" rotationOffset="270" sizeScale="3x:0,0,0,0,0,0" sizeType="MM" backgroundColor="#ffffff" lineSizeScale="3x:0,0,0,0,0,0" scaleBasedVisibility="0" labelPlacementMethod="XHeight" diagramOrientation="Up" enabled="0" minScaleDenominator="0" penAlpha="255" opacity="1">
-      <fontProperties style="" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0"/>
-      <attribute label="" color="#000000" field=""/>
-    </DiagramCategory>
-  </SingleCategoryDiagramRenderer>
-  <DiagramLayerSettings zIndex="0" obstacle="0" placement="2" priority="0" linePlacementFlags="2" dist="0" showAll="1">
-    <properties>
-      <Option type="Map">
-        <Option value="" name="name" type="QString"/>
-        <Option name="properties" type="Map">
-          <Option name="show" type="Map">
-            <Option value="true" name="active" type="bool"/>
-            <Option value="id" name="field" type="QString"/>
-            <Option value="2" name="type" type="int"/>
-          </Option>
-        </Option>
-        <Option value="collection" name="type" type="QString"/>
-      </Option>
-    </properties>
-  </DiagramLayerSettings>
-  <geometryOptions removeDuplicateNodes="0" geometryPrecision="0">
-    <activeChecks/>
-    <checkConfiguration/>
-  </geometryOptions>
   <fieldConfiguration>
-    <field name="id">
+    <field configurationFlags="None" name="fid">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option value="false" name="IsMultiline" type="bool"/>
-            <Option value="false" name="UseHtml" type="bool"/>
+            <Option value="false" type="bool" name="IsMultiline"/>
+            <Option value="false" type="bool" name="UseHtml"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field name="display_name">
-      <editWidget type="TextEdit">
+    <field configurationFlags="None" name="id">
+      <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option value="false" name="IsMultiline" type="bool"/>
-            <Option value="false" name="UseHtml" type="bool"/>
+            <Option value="true" type="bool" name="AllowNull"/>
+            <Option value="2147483647" type="int" name="Max"/>
+            <Option value="-2147483648" type="int" name="Min"/>
+            <Option value="0" type="int" name="Precision"/>
+            <Option value="1" type="int" name="Step"/>
+            <Option value="SpinBox" type="QString" name="Style"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field name="code">
+    <field configurationFlags="None" name="code">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option value="false" name="IsMultiline" type="bool"/>
-            <Option value="false" name="UseHtml" type="bool"/>
+            <Option value="false" type="bool" name="IsMultiline"/>
+            <Option value="false" type="bool" name="UseHtml"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field name="calculation_type">
+    <field configurationFlags="None" name="display_name">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option value="false" type="bool" name="IsMultiline"/>
+            <Option value="false" type="bool" name="UseHtml"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field configurationFlags="None" name="calculation_type">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
-            <Option name="map" type="List">
+            <Option type="List" name="map">
               <Option type="Map">
-                <Option value="100" name="100: embedded" type="QString"/>
+                <Option value="100" type="QString" name="100: embedded"/>
               </Option>
               <Option type="Map">
-                <Option value="101" name="101: isolated" type="QString"/>
+                <Option value="101" type="QString" name="101: isolated"/>
               </Option>
               <Option type="Map">
-                <Option value="102" name="102: connected" type="QString"/>
+                <Option value="102" type="QString" name="102: connected"/>
               </Option>
               <Option type="Map">
-                <Option value="105" name="105: double connected" type="QString"/>
+                <Option value="105" type="QString" name="105: double connected"/>
               </Option>
             </Option>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field name="dist_calc_points">
+    <field configurationFlags="None" name="dist_calc_points">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option value="false" name="IsMultiline" type="bool"/>
-            <Option value="false" name="UseHtml" type="bool"/>
+            <Option value="false" type="bool" name="IsMultiline"/>
+            <Option value="false" type="bool" name="UseHtml"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field name="zoom_category">
+    <field configurationFlags="None" name="zoom_category">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
-            <Option name="map" type="List">
+            <Option type="List" name="map">
               <Option type="Map">
-                <Option value="-1" name="-1" type="QString"/>
+                <Option value="-1" type="QString" name="-1"/>
               </Option>
               <Option type="Map">
-                <Option value="0" name="0" type="QString"/>
+                <Option value="0" type="QString" name="0"/>
               </Option>
               <Option type="Map">
-                <Option value="1" name="1" type="QString"/>
+                <Option value="1" type="QString" name="1"/>
               </Option>
               <Option type="Map">
-                <Option value="2" name="2" type="QString"/>
+                <Option value="2" type="QString" name="2"/>
               </Option>
               <Option type="Map">
-                <Option value="3" name="3" type="QString"/>
+                <Option value="3" type="QString" name="3"/>
               </Option>
               <Option type="Map">
-                <Option value="4" name="4" type="QString"/>
+                <Option value="4" type="QString" name="4"/>
               </Option>
               <Option type="Map">
-                <Option value="5" name="5" type="QString"/>
+                <Option value="5" type="QString" name="5"/>
               </Option>
             </Option>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field name="connection_node_start_id">
-      <editWidget type="TextEdit">
+    <field configurationFlags="None" name="connection_node_start_id">
+      <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option value="false" name="IsMultiline" type="bool"/>
-            <Option value="false" name="UseHtml" type="bool"/>
+            <Option value="true" type="bool" name="AllowNull"/>
+            <Option value="2147483647" type="int" name="Max"/>
+            <Option value="-2147483648" type="int" name="Min"/>
+            <Option value="0" type="int" name="Precision"/>
+            <Option value="1" type="int" name="Step"/>
+            <Option value="SpinBox" type="QString" name="Style"/>
           </Option>
         </config>
       </editWidget>
     </field>
-    <field name="connection_node_end_id">
-      <editWidget type="TextEdit">
+    <field configurationFlags="None" name="connection_node_end_id">
+      <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option value="false" name="IsMultiline" type="bool"/>
-            <Option value="false" name="UseHtml" type="bool"/>
+            <Option value="true" type="bool" name="AllowNull"/>
+            <Option value="2147483647" type="int" name="Max"/>
+            <Option value="-2147483648" type="int" name="Min"/>
+            <Option value="0" type="int" name="Precision"/>
+            <Option value="1" type="int" name="Step"/>
+            <Option value="SpinBox" type="QString" name="Style"/>
           </Option>
         </config>
       </editWidget>
     </field>
   </fieldConfiguration>
   <aliases>
-    <alias index="0" name="" field="id"/>
-    <alias index="1" name="" field="display_name"/>
-    <alias index="2" name="" field="code"/>
-    <alias index="3" name="" field="calculation_type"/>
-    <alias index="4" name="" field="dist_calc_points"/>
-    <alias index="5" name="" field="zoom_category"/>
-    <alias index="6" name="" field="connection_node_start_id"/>
-    <alias index="7" name="" field="connection_node_end_id"/>
+    <alias index="0" field="fid" name=""/>
+    <alias index="1" field="id" name=""/>
+    <alias index="2" field="code" name=""/>
+    <alias index="3" field="display_name" name=""/>
+    <alias index="4" field="calculation_type" name=""/>
+    <alias index="5" field="dist_calc_points" name=""/>
+    <alias index="6" field="zoom_category" name=""/>
+    <alias index="7" field="connection_node_start_id" name=""/>
+    <alias index="8" field="connection_node_end_id" name=""/>
   </aliases>
-  <excludeAttributesWMS/>
-  <excludeAttributesWFS/>
   <defaults>
-    <default expression="if(maximum(id) is null,1, maximum(id)+1)" field="id" applyOnUpdate="0"/>
-    <default expression="'new'" field="display_name" applyOnUpdate="0"/>
+    <default expression="" field="fid" applyOnUpdate="0"/>
+    <default expression="" field="id" applyOnUpdate="0"/>
     <default expression="'new'" field="code" applyOnUpdate="0"/>
+    <default expression="'new'" field="display_name" applyOnUpdate="0"/>
     <default expression="" field="calculation_type" applyOnUpdate="0"/>
     <default expression="" field="dist_calc_points" applyOnUpdate="0"/>
     <default expression="5" field="zoom_category" applyOnUpdate="0"/>
-    <default expression="aggregate('Connection Node','min',&quot;id&quot;, intersects($geometry,start_point(geometry(@parent))))" field="connection_node_start_id" applyOnUpdate="1"/>
-    <default expression="aggregate('Connection Node','min',&quot;id&quot;, intersects($geometry,end_point(geometry(@parent))))" field="connection_node_end_id" applyOnUpdate="1"/>
+    <default expression="" field="connection_node_start_id" applyOnUpdate="0"/>
+    <default expression="" field="connection_node_end_id" applyOnUpdate="0"/>
   </defaults>
   <constraints>
-    <constraint constraints="3" exp_strength="0" notnull_strength="1" field="id" unique_strength="1"/>
-    <constraint constraints="1" exp_strength="0" notnull_strength="2" field="display_name" unique_strength="0"/>
-    <constraint constraints="1" exp_strength="0" notnull_strength="2" field="code" unique_strength="0"/>
-    <constraint constraints="1" exp_strength="0" notnull_strength="2" field="calculation_type" unique_strength="0"/>
-    <constraint constraints="1" exp_strength="0" notnull_strength="2" field="dist_calc_points" unique_strength="0"/>
-    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="zoom_category" unique_strength="0"/>
-    <constraint constraints="1" exp_strength="0" notnull_strength="2" field="connection_node_start_id" unique_strength="0"/>
-    <constraint constraints="1" exp_strength="0" notnull_strength="2" field="connection_node_end_id" unique_strength="0"/>
+    <constraint exp_strength="0" constraints="3" field="fid" notnull_strength="1" unique_strength="1"/>
+    <constraint exp_strength="0" constraints="3" field="id" notnull_strength="1" unique_strength="1"/>
+    <constraint exp_strength="0" constraints="1" field="code" notnull_strength="2" unique_strength="0"/>
+    <constraint exp_strength="0" constraints="1" field="display_name" notnull_strength="2" unique_strength="0"/>
+    <constraint exp_strength="0" constraints="1" field="calculation_type" notnull_strength="2" unique_strength="0"/>
+    <constraint exp_strength="0" constraints="1" field="dist_calc_points" notnull_strength="2" unique_strength="0"/>
+    <constraint exp_strength="0" constraints="0" field="zoom_category" notnull_strength="0" unique_strength="0"/>
+    <constraint exp_strength="0" constraints="0" field="connection_node_start_id" notnull_strength="0" unique_strength="0"/>
+    <constraint exp_strength="0" constraints="0" field="connection_node_end_id" notnull_strength="0" unique_strength="0"/>
   </constraints>
   <constraintExpressions>
+    <constraint desc="" exp="" field="fid"/>
     <constraint desc="" exp="" field="id"/>
-    <constraint desc="" exp="" field="display_name"/>
     <constraint desc="" exp="" field="code"/>
+    <constraint desc="" exp="" field="display_name"/>
     <constraint desc="" exp="" field="calculation_type"/>
     <constraint desc="" exp="" field="dist_calc_points"/>
     <constraint desc="" exp="" field="zoom_category"/>
@@ -374,90 +396,55 @@
     <constraint desc="" exp="" field="connection_node_end_id"/>
   </constraintExpressions>
   <expressionfields/>
-  <attributeactions>
-    <defaultAction key="Canvas" value="{00000000-0000-0000-0000-000000000000}"/>
-  </attributeactions>
-  <attributetableconfig sortExpression="" sortOrder="0" actionWidgetStyle="dropDown">
-    <columns>
-      <column width="-1" name="id" hidden="0" type="field"/>
-      <column width="-1" name="display_name" hidden="0" type="field"/>
-      <column width="-1" name="code" hidden="0" type="field"/>
-      <column width="-1" name="calculation_type" hidden="0" type="field"/>
-      <column width="-1" name="dist_calc_points" hidden="0" type="field"/>
-      <column width="-1" name="zoom_category" hidden="0" type="field"/>
-      <column width="-1" name="connection_node_start_id" hidden="0" type="field"/>
-      <column width="-1" name="connection_node_end_id" hidden="0" type="field"/>
-      <column width="-1" hidden="1" type="actions"/>
-    </columns>
-  </attributetableconfig>
-  <conditionalstyles>
-    <rowstyles/>
-    <fieldstyles/>
-  </conditionalstyles>
-  <storedexpressions/>
-  <editform tolerant="1">../../../OSGEO4~1/bin</editform>
-  <editforminit/>
-  <editforminitcodesource>0</editforminitcodesource>
+  <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_model_builder\forms\ui\channel.ui</editform>
+  <editforminit>open_edit_form</editforminit>
+  <editforminitcodesource>2</editforminitcodesource>
   <editforminitfilepath>../../../OSGEO4~1/bin</editforminitfilepath>
-  <editforminitcode><![CDATA[# -*- coding: utf-8 -*-
-"""
-QGIS forms can have a Python function that is called when the form is
-opened.
-
-Use this function to add extra logic to your forms.
-
-Enter the name of the function in the "Python Init function"
-field.
-An example follows:
-"""
-from PyQt4.QtGui import QWidget
-
-def my_form_open(dialog, layer, feature):
-	geom = feature.geometry()
-	control = dialog.findChild(QWidget, "MyLineEdit")
-]]></editforminitcode>
+  <editforminitcode><![CDATA[from threedi_model_builder.utils import open_edit_form]]></editforminitcode>
   <featformsuppress>0</featformsuppress>
-  <editorlayout>tablayout</editorlayout>
+  <editorlayout>uifilelayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer visibilityExpression="" groupBox="0" showLabel="1" columnCount="1" visibilityExpressionEnabled="0" name="Channel">
-      <attributeEditorContainer visibilityExpression="" groupBox="1" showLabel="1" columnCount="1" visibilityExpressionEnabled="0" name="General">
-        <attributeEditorField index="0" showLabel="1" name="id"/>
-        <attributeEditorField index="1" showLabel="1" name="display_name"/>
+    <attributeEditorContainer columnCount="1" visibilityExpressionEnabled="0" groupBox="0" showLabel="1" name="Channel" visibilityExpression="">
+      <attributeEditorContainer columnCount="1" visibilityExpressionEnabled="0" groupBox="1" showLabel="1" name="General" visibilityExpression="">
+        <attributeEditorField index="1" showLabel="1" name="id"/>
+        <attributeEditorField index="3" showLabel="1" name="display_name"/>
         <attributeEditorField index="2" showLabel="1" name="code"/>
-        <attributeEditorField index="3" showLabel="1" name="calculation_type"/>
-        <attributeEditorField index="4" showLabel="1" name="dist_calc_points"/>
+        <attributeEditorField index="4" showLabel="1" name="calculation_type"/>
+        <attributeEditorField index="5" showLabel="1" name="dist_calc_points"/>
       </attributeEditorContainer>
-      <attributeEditorContainer visibilityExpression="" groupBox="1" showLabel="1" columnCount="1" visibilityExpressionEnabled="0" name="Visualization">
-        <attributeEditorField index="5" showLabel="1" name="zoom_category"/>
+      <attributeEditorContainer columnCount="1" visibilityExpressionEnabled="0" groupBox="1" showLabel="1" name="Visualization" visibilityExpression="">
+        <attributeEditorField index="6" showLabel="1" name="zoom_category"/>
       </attributeEditorContainer>
-      <attributeEditorContainer visibilityExpression="" groupBox="1" showLabel="1" columnCount="1" visibilityExpressionEnabled="0" name="Connection nodes">
-        <attributeEditorField index="6" showLabel="1" name="connection_node_start_id"/>
-        <attributeEditorField index="7" showLabel="1" name="connection_node_end_id"/>
+      <attributeEditorContainer columnCount="1" visibilityExpressionEnabled="0" groupBox="1" showLabel="1" name="Connection nodes" visibilityExpression="">
+        <attributeEditorField index="7" showLabel="1" name="connection_node_start_id"/>
+        <attributeEditorField index="8" showLabel="1" name="connection_node_end_id"/>
       </attributeEditorContainer>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
-    <field name="calculation_type" editable="1"/>
-    <field name="code" editable="1"/>
-    <field name="connection_node_end_id" editable="1"/>
-    <field name="connection_node_start_id" editable="1"/>
-    <field name="display_name" editable="1"/>
-    <field name="dist_calc_points" editable="1"/>
-    <field name="id" editable="1"/>
-    <field name="zoom_category" editable="1"/>
+    <field editable="1" name="calculation_type"/>
+    <field editable="1" name="code"/>
+    <field editable="0" name="connection_node_end_id"/>
+    <field editable="0" name="connection_node_start_id"/>
+    <field editable="1" name="display_name"/>
+    <field editable="1" name="dist_calc_points"/>
+    <field editable="1" name="fid"/>
+    <field editable="1" name="id"/>
+    <field editable="1" name="zoom_category"/>
   </editable>
   <labelOnTop>
-    <field name="calculation_type" labelOnTop="0"/>
-    <field name="code" labelOnTop="0"/>
-    <field name="connection_node_end_id" labelOnTop="0"/>
-    <field name="connection_node_start_id" labelOnTop="0"/>
-    <field name="display_name" labelOnTop="0"/>
-    <field name="dist_calc_points" labelOnTop="0"/>
-    <field name="id" labelOnTop="0"/>
-    <field name="zoom_category" labelOnTop="0"/>
+    <field labelOnTop="0" name="calculation_type"/>
+    <field labelOnTop="0" name="code"/>
+    <field labelOnTop="0" name="connection_node_end_id"/>
+    <field labelOnTop="0" name="connection_node_start_id"/>
+    <field labelOnTop="0" name="display_name"/>
+    <field labelOnTop="0" name="dist_calc_points"/>
+    <field labelOnTop="0" name="fid"/>
+    <field labelOnTop="0" name="id"/>
+    <field labelOnTop="0" name="zoom_category"/>
   </labelOnTop>
+  <dataDefinedFieldProperties/>
   <widgets/>
   <previewExpression>"display_name"</previewExpression>
-  <mapTip></mapTip>
   <layerGeometryType>1</layerGeometryType>
 </qgis>

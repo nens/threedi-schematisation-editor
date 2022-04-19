@@ -10,7 +10,9 @@ from threedi_model_builder.enumerators import (
     FrictionType,
     PipeMaterial,
     PumpType,
+    ZoomCategories,
 )
+from collections import defaultdict
 from types import MappingProxyType
 from functools import partial
 from threedi_model_builder.utils import (
@@ -22,7 +24,7 @@ from threedi_model_builder.utils import (
     find_point_polygons,
     get_next_feature_id,
 )
-from qgis.core import QgsFeature, QgsGeometry, NULL
+from qgis.core import QgsFeature, QgsGeometry, QgsFeatureRequest, QgsExpression, NULL
 from qgis.PyQt.QtCore import QTimer
 
 
@@ -44,6 +46,7 @@ class UserLayerHandler:
         self.layer.editingStarted.connect(self.on_editing_started)
         self.layer.beforeRollBack.connect(self.on_rollback)
         self.layer.beforeCommitChanges.connect(self.on_commit_changes)
+        self.layer.featuresDeleted.connect(self.on_delete_features)
         self.connect_additional_signals()
 
     def disconnect_handler_signals(self):
@@ -51,6 +54,7 @@ class UserLayerHandler:
         self.layer.editingStarted.disconnect(self.on_editing_started)
         self.layer.beforeRollBack.disconnect(self.on_rollback)
         self.layer.beforeCommitChanges.disconnect(self.on_commit_changes)
+        self.layer.featuresDeleted.disconnect(self.on_delete_features)
         self.disconnect_additional_signals()
 
     def connect_additional_signals(self):
@@ -147,6 +151,41 @@ class UserLayerHandler:
         """Action on commit changes signal."""
         self.multi_commit_changes()
 
+    def on_delete_features(self, feature_ids):
+        """Action on delete features signal."""
+        if self.MODEL not in dm.MODEL_DEPENDENCIES:
+            return
+        request = QgsFeatureRequest(feature_ids)
+        request.setFlags(QgsFeatureRequest.NoGeometry)
+        deleted_features_real_ids = [feat["id"] for feat in self.layer.dataProvider().getFeatures(request)]
+        dependent_features = defaultdict(list)
+        for deleted_feat_id in deleted_features_real_ids:
+            for dependent_data_model, dependent_fields in dm.MODEL_DEPENDENCIES[self.MODEL].items():
+                dependent_layer = self.layer_manager.model_handlers[dependent_data_model].layer
+                expr_str = " OR ".join(f'"{field_name}" = {deleted_feat_id}' for field_name in dependent_fields)
+                expr = QgsExpression(expr_str)
+                dependent_feats = [feat.id() for feat in dependent_layer.getFeatures(QgsFeatureRequest(expr))]
+                dependent_features[dependent_data_model] += dependent_feats
+        if dependent_features:
+            title = "Referenced features"
+            msg = (
+                f"There are other features referencing to the deleted '{self.MODEL.__layername__}' element(s). "
+                "Please decide how do you want to proceed."
+            )
+            delete_feat, delete_all, cancel = "Delete this feature only", "Delete all referenced features", "Cancel"
+            clicked_button = self.layer_manager.uc.custom_ask(None, title, msg, delete_feat, delete_all, cancel)
+            if clicked_button == delete_feat:
+                pass
+            elif clicked_button == delete_all:
+                for dependent_model, dependent_feat_ids in dependent_features.items():
+                    dependent_layer = self.layer_manager.model_handlers[dependent_model].layer
+                    if not dependent_layer.isEditable():
+                        dependent_layer.startEditing()
+                    dependent_layer.deleteFeatures(dependent_feat_ids)
+                self.layer_manager.iface.mapCanvas().refresh()
+            else:
+                self.layer.rollBack()
+
     def get_feat_by_id(self, object_id, id_field="id"):
         """Return layer feature with the given id."""
         feat = None
@@ -157,6 +196,14 @@ class UserLayerHandler:
             except StopIteration:
                 pass
         return feat
+
+    def get_multiple_feats_by_id(self, object_id, id_field="id"):
+        """Return layer multiple features with the given id."""
+        feats = []
+        if object_id not in (None, NULL):
+            for feat in self.layer_manager.get_layer_features(self.MODEL, f'"{id_field}" = {object_id}'):
+                feats.append(feat)
+        return feats
 
     def get_next_id(self, layer=None):
         """Return first available ID within layer features."""
@@ -633,10 +680,66 @@ class PipeHandler(UserLayerHandler):
 
 class CrossSectionLocationHandler(UserLayerHandler):
     MODEL = dm.CrossSectionLocation
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.Channel: 1,
+        }
+    )
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+            "length": 0.8,
+            "width": 0.8,
+            "shape": ManholeShape.ROUND.value,
+            "manhole_indicator": ManholeIndicator.INSPECTION.value,
+            "calculation_type": CalculationTypeNode.ISOLATED.value,
+            "bottom_level": -10.0,
+        }
+    )
 
 
 class ChannelHandler(UserLayerHandler):
     MODEL = dm.Channel
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.ConnectionNode: 2,
+            dm.CrossSectionLocation: float("inf"),
+        }
+    )
+    DEFAULTS = MappingProxyType(
+        {
+            "zoom_category": ZoomCategories.LOWEST_VISIBILITY.value,
+        }
+    )
+
+    def connect_additional_signals(self):
+        """Connecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.connect(self.trigger_fulfill_geometry_requirements)
+        self.layer.geometryChanged.connect(self.update_node_references)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.disconnect(self.trigger_fulfill_geometry_requirements)
+        self.layer.geometryChanged.disconnect(self.update_node_references)
+
+    def trigger_fulfill_geometry_requirements(self, channel_fet_id):
+        """Triggering geometry modifications on newly added feature."""
+        modify_geometry_method = partial(self.fulfill_geometry_requirements, channel_fet_id)
+        QTimer.singleShot(0, modify_geometry_method)
+
+    def fulfill_geometry_requirements(self, channel_feat_id):
+        """Fulfill geometry requirements for newly added channel."""
+        feat = self.layer.getFeature(channel_feat_id)
+        geom = feat.geometry()
+        vertices_count = count_vertices(geom)
+        linestring = geom.asPolyline()
+        if vertices_count < 3:
+            middle_point = geom.interpolate(geom.length() / 2.0).asPoint()
+            linestring.insert(1, middle_point)
+            new_source_geom = QgsGeometry.fromPolylineXY(linestring)
+            feat.setGeometry(new_source_geom)
+            self.layer.updateFeature(feat)
 
 
 class BoundaryCondition2DHandler(UserLayerHandler):

@@ -9,3 +9,4 @@ email=info@lutraconsulting.co.uk
 about=3Di Model Editor prototype
 tracker=https://gitlab.cloud.lutraconsulting.co.uk/nelen-schuurmans/model-builder-prototyping/-/issues
 repository=https://gitlab.cloud.lutraconsulting.co.uk/nelen-schuurmans/model-builder-prototyping
+experimental=False

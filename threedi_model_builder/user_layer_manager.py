@@ -72,7 +72,11 @@ class LayersManager:
                 dm.Lateral1D,
                 dm.BoundaryCondition1D,
             ),
-            dm.Channel: (dm.CrossSectionLocation,),
+            dm.Channel: (
+                dm.ConnectionNode,
+                dm.CrossSectionLocation,
+            ),
+            dm.CrossSectionLocation: (dm.Channel,),
         }
     )
 
