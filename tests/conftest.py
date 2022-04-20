@@ -2,7 +2,7 @@
 import pytest
 import os
 import shutil
-from threedi_model_builder.utils import get_qgis
+from threedi_schematisation_editor.utils import get_qgis
 
 
 @pytest.fixture

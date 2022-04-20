@@ -1,0 +1,12 @@
+[general]
+name=3Di Schematisation Editor
+qgisMinimumVersion=3.16
+qgisMaximumVersion=3.99
+description=3Di Schematisation Editor for QGIS
+version=1.0.3
+author=Lutra Consulting
+email=info@lutraconsulting.co.uk
+about=3Di Schematisation Editor prototype
+tracker=https://github.com/nens/threedi-schematisation-editor/issues
+repository=https://github.com/nens/threedi-schematisation-editor/issues
+experimental=True
