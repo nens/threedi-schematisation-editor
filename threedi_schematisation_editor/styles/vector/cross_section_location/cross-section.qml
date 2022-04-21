@@ -1,14 +1,14 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis version="3.16.9-Hannover" styleCategories="LayerConfiguration|Symbology|Labeling|Fields|Forms" labelsEnabled="1" readOnly="0">
+<qgis version="3.16.9-Hannover" readOnly="0" styleCategories="LayerConfiguration|Symbology|Labeling|Fields|Forms" labelsEnabled="1">
   <flags>
     <Identifiable>1</Identifiable>
     <Removable>0</Removable>
     <Searchable>1</Searchable>
   </flags>
-  <renderer-v2 forceraster="0" enableorderby="0" type="singleSymbol" symbollevels="0">
+  <renderer-v2 type="singleSymbol" symbollevels="0" enableorderby="0" forceraster="0">
     <symbols>
-      <symbol type="marker" alpha="1" clip_to_extent="1" force_rhr="0" name="0">
-        <layer pass="0" class="SimpleMarker" enabled="1" locked="0">
+      <symbol name="0" force_rhr="0" type="marker" alpha="1" clip_to_extent="1">
+        <layer pass="0" enabled="1" class="SimpleMarker" locked="0">
           <prop k="angle" v="0"/>
           <prop k="color" v="19,61,142,255"/>
           <prop k="horizontal_anchor_point" v="1"/>
@@ -29,15 +29,15 @@
           <prop k="vertical_anchor_point" v="1"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option value="" type="QString" name="name"/>
-              <Option type="Map" name="properties">
-                <Option type="Map" name="size">
-                  <Option value="true" type="bool" name="active"/>
-                  <Option value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;CASE WHEN cross_section_shape = 1 THEN to_real(cross_section_width)&#xd;&#xa;&#x9;&#x9;WHEN cross_section_shape = 2 THEN to_real(cross_section_width) &#xd;&#xa;&#x9;&#x9;WHEN cross_section_shape = 3 THEN to_real(cross_section_width)&#xd;&#xa;&#x9;&#x9;WHEN cross_section_shape in (5, 6) THEN &#xd;&#xa;&#x9;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;cross_section_width,&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;' '&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;END, &#xd;&#xa; &#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" type="QString" name="expression"/>
-                  <Option value="3" type="int" name="type"/>
+              <Option name="name" type="QString" value=""/>
+              <Option name="properties" type="Map">
+                <Option name="size" type="Map">
+                  <Option name="active" type="bool" value="true"/>
+                  <Option name="expression" type="QString" value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;CASE WHEN cross_section_shape = 1 THEN to_real(cross_section_width)&#xd;&#xa;&#x9;&#x9;WHEN cross_section_shape = 2 THEN to_real(cross_section_width) &#xd;&#xa;&#x9;&#x9;WHEN cross_section_shape = 3 THEN to_real(cross_section_width)&#xd;&#xa;&#x9;&#x9;WHEN cross_section_shape in (5, 6) THEN &#xd;&#xa;&#x9;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;cross_section_width,&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;' '&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;END, &#xd;&#xa; &#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)"/>
+                  <Option name="type" type="int" value="3"/>
                 </Option>
               </Option>
-              <Option value="collection" type="QString" name="type"/>
+              <Option name="type" type="QString" value="collection"/>
             </Option>
           </data_defined_properties>
         </layer>
@@ -47,15 +47,15 @@
     <sizescale/>
   </renderer-v2>
   <labeling type="rule-based">
-    <rules key="{6a133481-53dc-4ebd-8c8e-42fc675f8422}">
-      <rule scalemaxdenom="10000" key="{0b85f86e-c819-40a3-8114-9ee77cdfab21}" description="Crosssection">
+    <rules key="{ed1ca259-4397-4135-a782-709b500fdabe}">
+      <rule scalemaxdenom="10000" description="Crosssection" key="{b59e5ce6-c6be-4cf8-bb4e-efb7cb695a6e}">
         <settings calloutType="simple">
-          <text-style allowHtml="0" isExpression="1" namedStyle="Regular" fontStrikeout="0" previewBkgrdColor="255,255,255,255" textColor="0,0,0,255" fontWordSpacing="0" useSubstitutions="0" fontKerning="1" fontUnderline="0" fontSize="7" multilineHeight="1" blendMode="0" fieldName="represent_value(cross_section_shape)&#xd;&#xa;|| '\n' || &#xd;&#xa;CASE WHEN cross_section_shape = 1 THEN 'w: '||format_number(to_real(cross_section_width),2) &#xd;&#xa;WHEN cross_section_shape = 2 THEN 'Ø'||format_number(to_real(cross_section_width),2) &#xd;&#xa;WHEN cross_section_shape = 3 THEN 'w: ' || format_number(to_real(cross_section_width),2) &#xd;&#xa;WHEN cross_section_shape in (5, 6) THEN &#xd;&#xa;&#x9;'w: ' || &#xd;&#xa;&#x9;format_number(&#xd;&#xa;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;cross_section_width,&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;' '&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;),&#xd;&#xa;&#x9;&#x9;2&#xd;&#xa;&#x9;)&#xd;&#xa;END&#xd;&#xa;||  '\n' || &#xd;&#xa;CASE WHEN cross_section_shape = 1 THEN 'h: '||format_number(to_real(cross_section_height),2) &#xd;&#xa;WHEN cross_section_shape = 2 THEN '' &#xd;&#xa;WHEN cross_section_shape = 3 THEN 'h: ' || format_number(to_real(cross_section_width*1.5),2) &#xd;&#xa;WHEN cross_section_shape in (5, 6) THEN &#xd;&#xa;&#x9;'h: ' || &#xd;&#xa;&#x9;format_number(&#xd;&#xa;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;cross_section_height,&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;' '&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;),&#xd;&#xa;&#x9;&#x9;2&#xd;&#xa;&#x9;)&#xd;&#xa;END" fontSizeUnit="Point" textOrientation="horizontal" capitalization="0" fontFamily="MS Gothic" fontWeight="50" fontSizeMapUnitScale="3x:0,0,0,0,0,0" fontLetterSpacing="0" textOpacity="1" fontItalic="0">
-            <text-buffer bufferSize="0.7" bufferOpacity="1" bufferBlendMode="0" bufferSizeUnits="MM" bufferDraw="1" bufferColor="255,255,255,255" bufferNoFill="0" bufferJoinStyle="128" bufferSizeMapUnitScale="3x:0,0,0,0,0,0"/>
-            <text-mask maskSizeUnits="MM" maskEnabled="0" maskType="0" maskSize="0" maskedSymbolLayers="" maskJoinStyle="128" maskOpacity="1" maskSizeMapUnitScale="3x:0,0,0,0,0,0"/>
-            <background shapeSVGFile="" shapeOpacity="1" shapeType="0" shapeSizeUnit="MM" shapeOffsetY="0" shapeBlendMode="0" shapeRadiiUnit="MM" shapeRotationType="0" shapeRotation="0" shapeRadiiMapUnitScale="3x:0,0,0,0,0,0" shapeBorderColor="128,128,128,255" shapeDraw="0" shapeBorderWidthUnit="MM" shapeSizeType="0" shapeRadiiX="0" shapeSizeMapUnitScale="3x:0,0,0,0,0,0" shapeSizeY="0" shapeFillColor="255,255,255,255" shapeJoinStyle="64" shapeBorderWidthMapUnitScale="3x:0,0,0,0,0,0" shapeRadiiY="0" shapeSizeX="0" shapeOffsetUnit="MM" shapeOffsetX="0" shapeOffsetMapUnitScale="3x:0,0,0,0,0,0" shapeBorderWidth="0">
-              <symbol type="marker" alpha="1" clip_to_extent="1" force_rhr="0" name="markerSymbol">
-                <layer pass="0" class="SimpleMarker" enabled="1" locked="0">
+          <text-style blendMode="0" multilineHeight="1" namedStyle="Regular" textColor="0,0,0,255" fontWeight="50" fontSizeUnit="Point" isExpression="1" allowHtml="0" textOrientation="horizontal" capitalization="0" useSubstitutions="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" fontSize="7" fontWordSpacing="0" fontFamily="MS Gothic" fontItalic="0" previewBkgrdColor="255,255,255,255" fontStrikeout="0" fieldName="represent_value(cross_section_shape)&#xd;&#xa;|| '\n' || &#xd;&#xa;CASE WHEN cross_section_shape = 1 THEN 'w: '||format_number(to_real(cross_section_width),2) &#xd;&#xa;WHEN cross_section_shape = 2 THEN 'Ø'||format_number(to_real(cross_section_width),2) &#xd;&#xa;WHEN cross_section_shape = 3 THEN 'w: ' || format_number(to_real(cross_section_width),2) &#xd;&#xa;WHEN cross_section_shape in (5, 6) THEN &#xd;&#xa;&#x9;'w: ' || &#xd;&#xa;&#x9;format_number(&#xd;&#xa;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;cross_section_width,&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;' '&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;),&#xd;&#xa;&#x9;&#x9;2&#xd;&#xa;&#x9;)&#xd;&#xa;END&#xd;&#xa;||  '\n' || &#xd;&#xa;CASE WHEN cross_section_shape = 1 THEN 'h: '||format_number(to_real(cross_section_height),2) &#xd;&#xa;WHEN cross_section_shape = 2 THEN '' &#xd;&#xa;WHEN cross_section_shape = 3 THEN 'h: ' || format_number(to_real(cross_section_width*1.5),2) &#xd;&#xa;WHEN cross_section_shape in (5, 6) THEN &#xd;&#xa;&#x9;'h: ' || &#xd;&#xa;&#x9;format_number(&#xd;&#xa;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;cross_section_height,&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;' '&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;),&#xd;&#xa;&#x9;&#x9;2&#xd;&#xa;&#x9;)&#xd;&#xa;END" fontKerning="1" fontLetterSpacing="0" textOpacity="1" fontUnderline="0">
+            <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferSize="0.7" bufferNoFill="0" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferColor="255,255,255,255" bufferDraw="1" bufferJoinStyle="128" bufferOpacity="1"/>
+            <text-mask maskSizeUnits="MM" maskOpacity="1" maskEnabled="0" maskSize="0" maskedSymbolLayers="" maskType="0" maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0"/>
+            <background shapeRadiiMapUnitScale="3x:0,0,0,0,0,0" shapeBorderColor="128,128,128,255" shapeJoinStyle="64" shapeBorderWidthMapUnitScale="3x:0,0,0,0,0,0" shapeBorderWidthUnit="MM" shapeOpacity="1" shapeSizeUnit="MM" shapeBorderWidth="0" shapeFillColor="255,255,255,255" shapeOffsetY="0" shapeRadiiUnit="MM" shapeRadiiX="0" shapeRotationType="0" shapeOffsetMapUnitScale="3x:0,0,0,0,0,0" shapeType="0" shapeOffsetUnit="MM" shapeSizeX="0" shapeSVGFile="" shapeOffsetX="0" shapeSizeMapUnitScale="3x:0,0,0,0,0,0" shapeRadiiY="0" shapeDraw="0" shapeSizeY="0" shapeBlendMode="0" shapeRotation="0" shapeSizeType="0">
+              <symbol name="markerSymbol" force_rhr="0" type="marker" alpha="1" clip_to_extent="1">
+                <layer pass="0" enabled="1" class="SimpleMarker" locked="0">
                   <prop k="angle" v="0"/>
                   <prop k="color" v="133,182,111,255"/>
                   <prop k="horizontal_anchor_point" v="1"/>
@@ -76,61 +76,61 @@
                   <prop k="vertical_anchor_point" v="1"/>
                   <data_defined_properties>
                     <Option type="Map">
-                      <Option value="" type="QString" name="name"/>
+                      <Option name="name" type="QString" value=""/>
                       <Option name="properties"/>
-                      <Option value="collection" type="QString" name="type"/>
+                      <Option name="type" type="QString" value="collection"/>
                     </Option>
                   </data_defined_properties>
                 </layer>
               </symbol>
             </background>
-            <shadow shadowUnder="0" shadowRadius="1.5" shadowOffsetMapUnitScale="3x:0,0,0,0,0,0" shadowDraw="0" shadowOffsetGlobal="1" shadowColor="0,0,0,255" shadowOffsetAngle="135" shadowOffsetDist="1" shadowOpacity="0.7" shadowScale="100" shadowRadiusMapUnitScale="3x:0,0,0,0,0,0" shadowRadiusAlphaOnly="0" shadowBlendMode="6" shadowRadiusUnit="MM" shadowOffsetUnit="MM"/>
+            <shadow shadowRadius="1.5" shadowBlendMode="6" shadowDraw="0" shadowOpacity="0.7" shadowScale="100" shadowUnder="0" shadowOffsetUnit="MM" shadowRadiusAlphaOnly="0" shadowRadiusUnit="MM" shadowOffsetAngle="135" shadowOffsetDist="1" shadowOffsetMapUnitScale="3x:0,0,0,0,0,0" shadowOffsetGlobal="1" shadowRadiusMapUnitScale="3x:0,0,0,0,0,0" shadowColor="0,0,0,255"/>
             <dd_properties>
               <Option type="Map">
-                <Option value="" type="QString" name="name"/>
+                <Option name="name" type="QString" value=""/>
                 <Option name="properties"/>
-                <Option value="collection" type="QString" name="type"/>
+                <Option name="type" type="QString" value="collection"/>
               </Option>
             </dd_properties>
             <substitutions/>
           </text-style>
-          <text-format useMaxLineLengthForAutoWrap="1" autoWrapLength="0" addDirectionSymbol="0" wrapChar="" decimals="3" rightDirectionSymbol=">" leftDirectionSymbol="&lt;" multilineAlign="0" plussign="0" reverseDirectionSymbol="0" placeDirectionSymbol="0" formatNumbers="0"/>
-          <placement overrunDistanceUnit="MM" lineAnchorPercent="0.5" repeatDistance="0" polygonPlacementFlags="2" centroidInside="0" layerType="PointGeometry" preserveRotation="1" placement="0" geometryGenerator="" maxCurvedCharAngleOut="-25" geometryGeneratorType="PointGeometry" distMapUnitScale="3x:0,0,0,0,0,0" offsetType="0" overrunDistanceMapUnitScale="3x:0,0,0,0,0,0" overrunDistance="0" fitInPolygonOnly="0" repeatDistanceUnits="MM" distUnits="MM" lineAnchorType="0" centroidWhole="0" maxCurvedCharAngleIn="25" offsetUnits="MapUnit" repeatDistanceMapUnitScale="3x:0,0,0,0,0,0" geometryGeneratorEnabled="0" yOffset="0" xOffset="0" predefinedPositionOrder="TR,TL,BR,BL,R,L,TSR,BSR" rotationAngle="0" priority="5" quadOffset="4" dist="0" labelOffsetMapUnitScale="3x:0,0,0,0,0,0" placementFlags="9"/>
-          <rendering fontMinPixelSize="3" upsidedownLabels="0" scaleMax="10000000" obstacle="1" fontMaxPixelSize="10000" scaleVisibility="0" zIndex="0" scaleMin="1" obstacleFactor="1" fontLimitPixelSize="0" displayAll="0" maxNumLabels="2000" minFeatureSize="0" drawLabels="1" mergeLines="0" obstacleType="0" labelPerPart="0" limitNumLabels="0"/>
+          <text-format addDirectionSymbol="0" rightDirectionSymbol=">" wrapChar="" leftDirectionSymbol="&lt;" decimals="3" multilineAlign="0" useMaxLineLengthForAutoWrap="1" formatNumbers="0" placeDirectionSymbol="0" reverseDirectionSymbol="0" autoWrapLength="0" plussign="0"/>
+          <placement offsetType="0" xOffset="0" dist="0" geometryGeneratorType="PointGeometry" maxCurvedCharAngleOut="-25" overrunDistance="0" lineAnchorType="0" distMapUnitScale="3x:0,0,0,0,0,0" fitInPolygonOnly="0" overrunDistanceUnit="MM" lineAnchorPercent="0.5" yOffset="0" repeatDistance="0" layerType="PointGeometry" geometryGenerator="" maxCurvedCharAngleIn="25" offsetUnits="MapUnit" labelOffsetMapUnitScale="3x:0,0,0,0,0,0" quadOffset="4" overrunDistanceMapUnitScale="3x:0,0,0,0,0,0" polygonPlacementFlags="2" repeatDistanceMapUnitScale="3x:0,0,0,0,0,0" placementFlags="9" repeatDistanceUnits="MM" rotationAngle="0" predefinedPositionOrder="TR,TL,BR,BL,R,L,TSR,BSR" placement="0" centroidInside="0" preserveRotation="1" centroidWhole="0" distUnits="MM" geometryGeneratorEnabled="0" priority="5"/>
+          <rendering drawLabels="1" scaleVisibility="0" maxNumLabels="2000" fontMinPixelSize="3" mergeLines="0" minFeatureSize="0" zIndex="0" obstacle="1" fontMaxPixelSize="10000" obstacleFactor="1" obstacleType="0" limitNumLabels="0" upsidedownLabels="0" scaleMin="1" scaleMax="10000000" displayAll="0" labelPerPart="0" fontLimitPixelSize="0"/>
           <dd_properties>
             <Option type="Map">
-              <Option value="" type="QString" name="name"/>
-              <Option type="Map" name="properties">
-                <Option type="Map" name="Color">
-                  <Option value="false" type="bool" name="active"/>
-                  <Option value="case &#xd;&#xa;when &quot;sewerage_type&quot; = 0 then '#ffaa00'&#xd;&#xa;when &quot;sewerage_type&quot; = 0 then '#55aaff'&#xd;&#xa;when &quot;sewerage_type&quot; = 0 then '#ff0000'&#xd;&#xa;when &quot;sewerage_type&quot; = 0 then '#999999'&#xd;&#xa;else '#000000'&#xd;&#xa;end" type="QString" name="expression"/>
-                  <Option value="3" type="int" name="type"/>
+              <Option name="name" type="QString" value=""/>
+              <Option name="properties" type="Map">
+                <Option name="Color" type="Map">
+                  <Option name="active" type="bool" value="false"/>
+                  <Option name="expression" type="QString" value="case &#xd;&#xa;when &quot;sewerage_type&quot; = 0 then '#ffaa00'&#xd;&#xa;when &quot;sewerage_type&quot; = 0 then '#55aaff'&#xd;&#xa;when &quot;sewerage_type&quot; = 0 then '#ff0000'&#xd;&#xa;when &quot;sewerage_type&quot; = 0 then '#999999'&#xd;&#xa;else '#000000'&#xd;&#xa;end"/>
+                  <Option name="type" type="int" value="3"/>
                 </Option>
               </Option>
-              <Option value="collection" type="QString" name="type"/>
+              <Option name="type" type="QString" value="collection"/>
             </Option>
           </dd_properties>
           <callout type="simple">
             <Option type="Map">
-              <Option value="pole_of_inaccessibility" type="QString" name="anchorPoint"/>
-              <Option type="Map" name="ddProperties">
-                <Option value="" type="QString" name="name"/>
+              <Option name="anchorPoint" type="QString" value="pole_of_inaccessibility"/>
+              <Option name="ddProperties" type="Map">
+                <Option name="name" type="QString" value=""/>
                 <Option name="properties"/>
-                <Option value="collection" type="QString" name="type"/>
+                <Option name="type" type="QString" value="collection"/>
               </Option>
-              <Option value="false" type="bool" name="drawToAllParts"/>
-              <Option value="0" type="QString" name="enabled"/>
-              <Option value="point_on_exterior" type="QString" name="labelAnchorPoint"/>
-              <Option value="&lt;symbol type=&quot;line&quot; alpha=&quot;1&quot; clip_to_extent=&quot;1&quot; force_rhr=&quot;0&quot; name=&quot;symbol&quot;>&lt;layer pass=&quot;0&quot; class=&quot;SimpleLine&quot; enabled=&quot;1&quot; locked=&quot;0&quot;>&lt;prop k=&quot;align_dash_pattern&quot; v=&quot;0&quot;/>&lt;prop k=&quot;capstyle&quot; v=&quot;square&quot;/>&lt;prop k=&quot;customdash&quot; v=&quot;5;2&quot;/>&lt;prop k=&quot;customdash_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;prop k=&quot;customdash_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;dash_pattern_offset&quot; v=&quot;0&quot;/>&lt;prop k=&quot;dash_pattern_offset_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;prop k=&quot;dash_pattern_offset_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;draw_inside_polygon&quot; v=&quot;0&quot;/>&lt;prop k=&quot;joinstyle&quot; v=&quot;bevel&quot;/>&lt;prop k=&quot;line_color&quot; v=&quot;60,60,60,255&quot;/>&lt;prop k=&quot;line_style&quot; v=&quot;solid&quot;/>&lt;prop k=&quot;line_width&quot; v=&quot;0.3&quot;/>&lt;prop k=&quot;line_width_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;offset&quot; v=&quot;0&quot;/>&lt;prop k=&quot;offset_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;prop k=&quot;offset_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;ring_filter&quot; v=&quot;0&quot;/>&lt;prop k=&quot;tweak_dash_pattern_on_corners&quot; v=&quot;0&quot;/>&lt;prop k=&quot;use_custom_dash&quot; v=&quot;0&quot;/>&lt;prop k=&quot;width_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;data_defined_properties>&lt;Option type=&quot;Map&quot;>&lt;Option value=&quot;&quot; type=&quot;QString&quot; name=&quot;name&quot;/>&lt;Option name=&quot;properties&quot;/>&lt;Option value=&quot;collection&quot; type=&quot;QString&quot; name=&quot;type&quot;/>&lt;/Option>&lt;/data_defined_properties>&lt;/layer>&lt;/symbol>" type="QString" name="lineSymbol"/>
-              <Option value="0" type="double" name="minLength"/>
-              <Option value="3x:0,0,0,0,0,0" type="QString" name="minLengthMapUnitScale"/>
-              <Option value="MM" type="QString" name="minLengthUnit"/>
-              <Option value="0" type="double" name="offsetFromAnchor"/>
-              <Option value="3x:0,0,0,0,0,0" type="QString" name="offsetFromAnchorMapUnitScale"/>
-              <Option value="MM" type="QString" name="offsetFromAnchorUnit"/>
-              <Option value="0" type="double" name="offsetFromLabel"/>
-              <Option value="3x:0,0,0,0,0,0" type="QString" name="offsetFromLabelMapUnitScale"/>
-              <Option value="MM" type="QString" name="offsetFromLabelUnit"/>
+              <Option name="drawToAllParts" type="bool" value="false"/>
+              <Option name="enabled" type="QString" value="0"/>
+              <Option name="labelAnchorPoint" type="QString" value="point_on_exterior"/>
+              <Option name="lineSymbol" type="QString" value="&lt;symbol name=&quot;symbol&quot; force_rhr=&quot;0&quot; type=&quot;line&quot; alpha=&quot;1&quot; clip_to_extent=&quot;1&quot;>&lt;layer pass=&quot;0&quot; enabled=&quot;1&quot; class=&quot;SimpleLine&quot; locked=&quot;0&quot;>&lt;prop k=&quot;align_dash_pattern&quot; v=&quot;0&quot;/>&lt;prop k=&quot;capstyle&quot; v=&quot;square&quot;/>&lt;prop k=&quot;customdash&quot; v=&quot;5;2&quot;/>&lt;prop k=&quot;customdash_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;prop k=&quot;customdash_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;dash_pattern_offset&quot; v=&quot;0&quot;/>&lt;prop k=&quot;dash_pattern_offset_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;prop k=&quot;dash_pattern_offset_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;draw_inside_polygon&quot; v=&quot;0&quot;/>&lt;prop k=&quot;joinstyle&quot; v=&quot;bevel&quot;/>&lt;prop k=&quot;line_color&quot; v=&quot;60,60,60,255&quot;/>&lt;prop k=&quot;line_style&quot; v=&quot;solid&quot;/>&lt;prop k=&quot;line_width&quot; v=&quot;0.3&quot;/>&lt;prop k=&quot;line_width_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;offset&quot; v=&quot;0&quot;/>&lt;prop k=&quot;offset_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;prop k=&quot;offset_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;ring_filter&quot; v=&quot;0&quot;/>&lt;prop k=&quot;tweak_dash_pattern_on_corners&quot; v=&quot;0&quot;/>&lt;prop k=&quot;use_custom_dash&quot; v=&quot;0&quot;/>&lt;prop k=&quot;width_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;data_defined_properties>&lt;Option type=&quot;Map&quot;>&lt;Option name=&quot;name&quot; type=&quot;QString&quot; value=&quot;&quot;/>&lt;Option name=&quot;properties&quot;/>&lt;Option name=&quot;type&quot; type=&quot;QString&quot; value=&quot;collection&quot;/>&lt;/Option>&lt;/data_defined_properties>&lt;/layer>&lt;/symbol>"/>
+              <Option name="minLength" type="double" value="0"/>
+              <Option name="minLengthMapUnitScale" type="QString" value="3x:0,0,0,0,0,0"/>
+              <Option name="minLengthUnit" type="QString" value="MM"/>
+              <Option name="offsetFromAnchor" type="double" value="0"/>
+              <Option name="offsetFromAnchorMapUnitScale" type="QString" value="3x:0,0,0,0,0,0"/>
+              <Option name="offsetFromAnchorUnit" type="QString" value="MM"/>
+              <Option name="offsetFromLabel" type="double" value="0"/>
+              <Option name="offsetFromLabelMapUnitScale" type="QString" value="3x:0,0,0,0,0,0"/>
+              <Option name="offsetFromLabelUnit" type="QString" value="MM"/>
             </Option>
           </callout>
         </settings>
@@ -151,12 +151,12 @@
       <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option value="true" type="bool" name="AllowNull"/>
-            <Option value="2147483647" type="int" name="Max"/>
-            <Option value="-2147483648" type="int" name="Min"/>
-            <Option value="0" type="int" name="Precision"/>
-            <Option value="1" type="int" name="Step"/>
-            <Option value="SpinBox" type="QString" name="Style"/>
+            <Option name="AllowNull" type="bool" value="true"/>
+            <Option name="Max" type="int" value="2147483647"/>
+            <Option name="Min" type="int" value="-2147483648"/>
+            <Option name="Precision" type="int" value="0"/>
+            <Option name="Step" type="int" value="1"/>
+            <Option name="Style" type="QString" value="SpinBox"/>
           </Option>
         </config>
       </editWidget>
@@ -165,18 +165,22 @@
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option value="false" type="bool" name="IsMultiline"/>
-            <Option value="false" type="bool" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
     <field name="reference_level" configurationFlags="None">
-      <editWidget type="TextEdit">
+      <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option value="false" type="bool" name="IsMultiline"/>
-            <Option value="false" type="bool" name="UseHtml"/>
+            <Option name="AllowNull" type="bool" value="true"/>
+            <Option name="Max" type="double" value="1.7976931348623157e+308"/>
+            <Option name="Min" type="double" value="-1.7976931348623157e+308"/>
+            <Option name="Precision" type="int" value="3"/>
+            <Option name="Step" type="double" value="1"/>
+            <Option name="Style" type="QString" value="SpinBox"/>
           </Option>
         </config>
       </editWidget>
@@ -185,12 +189,12 @@
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
-            <Option type="List" name="map">
+            <Option name="map" type="List">
               <Option type="Map">
-                <Option value="1" type="QString" name="1: Chèzy"/>
+                <Option name="1: Chèzy" type="QString" value="1"/>
               </Option>
               <Option type="Map">
-                <Option value="2" type="QString" name="2: Manning"/>
+                <Option name="2: Manning" type="QString" value="2"/>
               </Option>
             </Option>
           </Option>
@@ -201,18 +205,22 @@
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option value="false" type="bool" name="IsMultiline"/>
-            <Option value="false" type="bool" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="false"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
     <field name="bank_level" configurationFlags="None">
-      <editWidget type="TextEdit">
+      <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option value="false" type="bool" name="IsMultiline"/>
-            <Option value="false" type="bool" name="UseHtml"/>
+            <Option name="AllowNull" type="bool" value="true"/>
+            <Option name="Max" type="double" value="1.7976931348623157e+308"/>
+            <Option name="Min" type="double" value="-1.7976931348623157e+308"/>
+            <Option name="Precision" type="int" value="3"/>
+            <Option name="Step" type="double" value="1"/>
+            <Option name="Style" type="QString" value="SpinBox"/>
           </Option>
         </config>
       </editWidget>
@@ -221,12 +229,12 @@
       <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option value="true" type="bool" name="AllowNull"/>
-            <Option value="2147483647" type="int" name="Max"/>
-            <Option value="-2147483648" type="int" name="Min"/>
-            <Option value="0" type="int" name="Precision"/>
-            <Option value="1" type="int" name="Step"/>
-            <Option value="SpinBox" type="QString" name="Style"/>
+            <Option name="AllowNull" type="bool" value="true"/>
+            <Option name="Max" type="int" value="2147483647"/>
+            <Option name="Min" type="int" value="-2147483648"/>
+            <Option name="Precision" type="int" value="0"/>
+            <Option name="Step" type="int" value="1"/>
+            <Option name="Style" type="QString" value="SpinBox"/>
           </Option>
         </config>
       </editWidget>
@@ -235,21 +243,21 @@
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
-            <Option type="List" name="map">
+            <Option name="map" type="List">
               <Option type="Map">
-                <Option value="2" type="QString" name="Circle"/>
+                <Option name="Circle" type="QString" value="2"/>
               </Option>
               <Option type="Map">
-                <Option value="3" type="QString" name="Egg"/>
+                <Option name="Egg" type="QString" value="3"/>
               </Option>
               <Option type="Map">
-                <Option value="1" type="QString" name="Rectangle"/>
+                <Option name="Rectangle" type="QString" value="1"/>
               </Option>
               <Option type="Map">
-                <Option value="5" type="QString" name="Tabulated rectangle"/>
+                <Option name="Tabulated rectangle" type="QString" value="5"/>
               </Option>
               <Option type="Map">
-                <Option value="6" type="QString" name="Tabulated trapezium"/>
+                <Option name="Tabulated trapezium" type="QString" value="6"/>
               </Option>
             </Option>
           </Option>
@@ -260,12 +268,12 @@
       <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option value="true" type="bool" name="AllowNull"/>
-            <Option value="1.7976931348623157e+308" type="double" name="Max"/>
-            <Option value="-1.7976931348623157e+308" type="double" name="Min"/>
-            <Option value="3" type="int" name="Precision"/>
-            <Option value="1" type="double" name="Step"/>
-            <Option value="SpinBox" type="QString" name="Style"/>
+            <Option name="AllowNull" type="bool" value="true"/>
+            <Option name="Max" type="double" value="1.7976931348623157e+308"/>
+            <Option name="Min" type="double" value="-1.7976931348623157e+308"/>
+            <Option name="Precision" type="int" value="3"/>
+            <Option name="Step" type="double" value="1"/>
+            <Option name="Style" type="QString" value="SpinBox"/>
           </Option>
         </config>
       </editWidget>
@@ -274,12 +282,12 @@
       <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option value="true" type="bool" name="AllowNull"/>
-            <Option value="1.7976931348623157e+308" type="double" name="Max"/>
-            <Option value="-1.7976931348623157e+308" type="double" name="Min"/>
-            <Option value="3" type="int" name="Precision"/>
-            <Option value="1" type="double" name="Step"/>
-            <Option value="SpinBox" type="QString" name="Style"/>
+            <Option name="AllowNull" type="bool" value="true"/>
+            <Option name="Max" type="double" value="1.7976931348623157e+308"/>
+            <Option name="Min" type="double" value="-1.7976931348623157e+308"/>
+            <Option name="Precision" type="int" value="3"/>
+            <Option name="Step" type="double" value="1"/>
+            <Option name="Style" type="QString" value="SpinBox"/>
           </Option>
         </config>
       </editWidget>
@@ -288,68 +296,68 @@
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option value="true" type="bool" name="IsMultiline"/>
-            <Option value="false" type="bool" name="UseHtml"/>
+            <Option name="IsMultiline" type="bool" value="true"/>
+            <Option name="UseHtml" type="bool" value="false"/>
           </Option>
         </config>
       </editWidget>
     </field>
   </fieldConfiguration>
   <aliases>
-    <alias field="fid" index="0" name=""/>
-    <alias field="id" index="1" name=""/>
-    <alias field="code" index="2" name=""/>
-    <alias field="reference_level" index="3" name=""/>
-    <alias field="friction_type" index="4" name=""/>
-    <alias field="friction_value" index="5" name=""/>
-    <alias field="bank_level" index="6" name=""/>
-    <alias field="channel_id" index="7" name=""/>
-    <alias field="cross_section_shape" index="8" name=""/>
-    <alias field="cross_section_width" index="9" name=""/>
-    <alias field="cross_section_height" index="10" name=""/>
-    <alias field="cross_section_table" index="11" name=""/>
+    <alias name="" index="0" field="fid"/>
+    <alias name="" index="1" field="id"/>
+    <alias name="" index="2" field="code"/>
+    <alias name="" index="3" field="reference_level"/>
+    <alias name="" index="4" field="friction_type"/>
+    <alias name="" index="5" field="friction_value"/>
+    <alias name="" index="6" field="bank_level"/>
+    <alias name="" index="7" field="channel_id"/>
+    <alias name="" index="8" field="cross_section_shape"/>
+    <alias name="" index="9" field="cross_section_width"/>
+    <alias name="" index="10" field="cross_section_height"/>
+    <alias name="" index="11" field="cross_section_table"/>
   </aliases>
   <defaults>
-    <default expression="" field="fid" applyOnUpdate="0"/>
-    <default expression="" field="id" applyOnUpdate="0"/>
-    <default expression="" field="code" applyOnUpdate="0"/>
-    <default expression="" field="reference_level" applyOnUpdate="0"/>
-    <default expression="" field="friction_type" applyOnUpdate="0"/>
-    <default expression="" field="friction_value" applyOnUpdate="0"/>
-    <default expression="" field="bank_level" applyOnUpdate="0"/>
-    <default expression="" field="channel_id" applyOnUpdate="0"/>
-    <default expression="" field="cross_section_shape" applyOnUpdate="0"/>
-    <default expression="" field="cross_section_width" applyOnUpdate="0"/>
-    <default expression="" field="cross_section_height" applyOnUpdate="0"/>
-    <default expression="" field="cross_section_table" applyOnUpdate="0"/>
+    <default field="fid" applyOnUpdate="0" expression=""/>
+    <default field="id" applyOnUpdate="0" expression=""/>
+    <default field="code" applyOnUpdate="0" expression=""/>
+    <default field="reference_level" applyOnUpdate="0" expression=""/>
+    <default field="friction_type" applyOnUpdate="0" expression=""/>
+    <default field="friction_value" applyOnUpdate="0" expression=""/>
+    <default field="bank_level" applyOnUpdate="0" expression=""/>
+    <default field="channel_id" applyOnUpdate="0" expression=""/>
+    <default field="cross_section_shape" applyOnUpdate="0" expression=""/>
+    <default field="cross_section_width" applyOnUpdate="0" expression=""/>
+    <default field="cross_section_height" applyOnUpdate="0" expression=""/>
+    <default field="cross_section_table" applyOnUpdate="0" expression=""/>
   </defaults>
   <constraints>
-    <constraint exp_strength="0" field="fid" constraints="3" unique_strength="1" notnull_strength="1"/>
-    <constraint exp_strength="0" field="id" constraints="0" unique_strength="0" notnull_strength="0"/>
-    <constraint exp_strength="0" field="code" constraints="0" unique_strength="0" notnull_strength="0"/>
-    <constraint exp_strength="0" field="reference_level" constraints="0" unique_strength="0" notnull_strength="0"/>
-    <constraint exp_strength="0" field="friction_type" constraints="0" unique_strength="0" notnull_strength="0"/>
-    <constraint exp_strength="0" field="friction_value" constraints="0" unique_strength="0" notnull_strength="0"/>
-    <constraint exp_strength="0" field="bank_level" constraints="0" unique_strength="0" notnull_strength="0"/>
-    <constraint exp_strength="0" field="channel_id" constraints="0" unique_strength="0" notnull_strength="0"/>
-    <constraint exp_strength="0" field="cross_section_shape" constraints="0" unique_strength="0" notnull_strength="0"/>
-    <constraint exp_strength="0" field="cross_section_width" constraints="0" unique_strength="0" notnull_strength="0"/>
-    <constraint exp_strength="0" field="cross_section_height" constraints="0" unique_strength="0" notnull_strength="0"/>
-    <constraint exp_strength="0" field="cross_section_table" constraints="0" unique_strength="0" notnull_strength="0"/>
+    <constraint unique_strength="1" notnull_strength="1" constraints="3" field="fid" exp_strength="0"/>
+    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="id" exp_strength="0"/>
+    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="code" exp_strength="0"/>
+    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="reference_level" exp_strength="0"/>
+    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="friction_type" exp_strength="0"/>
+    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="friction_value" exp_strength="0"/>
+    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="bank_level" exp_strength="0"/>
+    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="channel_id" exp_strength="0"/>
+    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="cross_section_shape" exp_strength="0"/>
+    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="cross_section_width" exp_strength="0"/>
+    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="cross_section_height" exp_strength="0"/>
+    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="cross_section_table" exp_strength="0"/>
   </constraints>
   <constraintExpressions>
-    <constraint field="fid" desc="" exp=""/>
-    <constraint field="id" desc="" exp=""/>
-    <constraint field="code" desc="" exp=""/>
-    <constraint field="reference_level" desc="" exp=""/>
-    <constraint field="friction_type" desc="" exp=""/>
-    <constraint field="friction_value" desc="" exp=""/>
-    <constraint field="bank_level" desc="" exp=""/>
-    <constraint field="channel_id" desc="" exp=""/>
-    <constraint field="cross_section_shape" desc="" exp=""/>
-    <constraint field="cross_section_width" desc="" exp=""/>
-    <constraint field="cross_section_height" desc="" exp=""/>
-    <constraint field="cross_section_table" desc="" exp=""/>
+    <constraint exp="" desc="" field="fid"/>
+    <constraint exp="" desc="" field="id"/>
+    <constraint exp="" desc="" field="code"/>
+    <constraint exp="" desc="" field="reference_level"/>
+    <constraint exp="" desc="" field="friction_type"/>
+    <constraint exp="" desc="" field="friction_value"/>
+    <constraint exp="" desc="" field="bank_level"/>
+    <constraint exp="" desc="" field="channel_id"/>
+    <constraint exp="" desc="" field="cross_section_shape"/>
+    <constraint exp="" desc="" field="cross_section_width"/>
+    <constraint exp="" desc="" field="cross_section_height"/>
+    <constraint exp="" desc="" field="cross_section_table"/>
   </constraintExpressions>
   <expressionfields/>
   <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_schematisation_editor\forms\ui\cross_section_location.ui</editform>
@@ -360,61 +368,61 @@
   <featformsuppress>0</featformsuppress>
   <editorlayout>uifilelayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer columnCount="1" groupBox="0" visibilityExpressionEnabled="0" showLabel="1" visibilityExpression="" name="Cross section location view">
-      <attributeEditorContainer columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1" visibilityExpression="" name="General">
-        <attributeEditorField showLabel="1" index="1" name="id"/>
-        <attributeEditorField showLabel="1" index="2" name="code"/>
-        <attributeEditorField showLabel="1" index="3" name="reference_level"/>
-        <attributeEditorField showLabel="1" index="6" name="bank_level"/>
-        <attributeEditorField showLabel="1" index="4" name="friction_type"/>
-        <attributeEditorField showLabel="1" index="5" name="friction_value"/>
-        <attributeEditorField showLabel="1" index="7" name="channel_id"/>
+    <attributeEditorContainer name="Cross section location view" visibilityExpression="" showLabel="1" groupBox="0" visibilityExpressionEnabled="0" columnCount="1">
+      <attributeEditorContainer name="General" visibilityExpression="" showLabel="1" groupBox="1" visibilityExpressionEnabled="0" columnCount="1">
+        <attributeEditorField name="id" index="1" showLabel="1"/>
+        <attributeEditorField name="code" index="2" showLabel="1"/>
+        <attributeEditorField name="reference_level" index="3" showLabel="1"/>
+        <attributeEditorField name="bank_level" index="6" showLabel="1"/>
+        <attributeEditorField name="friction_type" index="4" showLabel="1"/>
+        <attributeEditorField name="friction_value" index="5" showLabel="1"/>
+        <attributeEditorField name="channel_id" index="7" showLabel="1"/>
       </attributeEditorContainer>
-      <attributeEditorContainer columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1" visibilityExpression="" name="Cross section">
-        <attributeEditorField showLabel="1" index="8" name="cross_section_shape"/>
-        <attributeEditorField showLabel="1" index="10" name="cross_section_height"/>
-        <attributeEditorField showLabel="1" index="9" name="cross_section_width"/>
-        <attributeEditorField showLabel="1" index="11" name="cross_section_table"/>
+      <attributeEditorContainer name="Cross section" visibilityExpression="" showLabel="1" groupBox="1" visibilityExpressionEnabled="0" columnCount="1">
+        <attributeEditorField name="cross_section_shape" index="8" showLabel="1"/>
+        <attributeEditorField name="cross_section_height" index="10" showLabel="1"/>
+        <attributeEditorField name="cross_section_width" index="9" showLabel="1"/>
+        <attributeEditorField name="cross_section_table" index="11" showLabel="1"/>
       </attributeEditorContainer>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
-    <field editable="0" name="Cross section definition_height"/>
-    <field editable="0" name="Cross section definition_shape"/>
-    <field editable="0" name="Cross section definition_width"/>
-    <field editable="1" name="ROWID"/>
-    <field editable="1" name="bank_level"/>
-    <field editable="1" name="channel_id"/>
-    <field editable="1" name="code"/>
-    <field editable="1" name="cross_section_height"/>
-    <field editable="1" name="cross_section_shape"/>
-    <field editable="1" name="cross_section_table"/>
-    <field editable="1" name="cross_section_width"/>
-    <field editable="1" name="definition_id"/>
-    <field editable="1" name="fid"/>
-    <field editable="1" name="friction_type"/>
-    <field editable="1" name="friction_value"/>
-    <field editable="1" name="id"/>
-    <field editable="1" name="reference_level"/>
+    <field name="Cross section definition_height" editable="0"/>
+    <field name="Cross section definition_shape" editable="0"/>
+    <field name="Cross section definition_width" editable="0"/>
+    <field name="ROWID" editable="1"/>
+    <field name="bank_level" editable="1"/>
+    <field name="channel_id" editable="1"/>
+    <field name="code" editable="1"/>
+    <field name="cross_section_height" editable="1"/>
+    <field name="cross_section_shape" editable="1"/>
+    <field name="cross_section_table" editable="1"/>
+    <field name="cross_section_width" editable="1"/>
+    <field name="definition_id" editable="1"/>
+    <field name="fid" editable="1"/>
+    <field name="friction_type" editable="1"/>
+    <field name="friction_value" editable="1"/>
+    <field name="id" editable="1"/>
+    <field name="reference_level" editable="1"/>
   </editable>
   <labelOnTop>
-    <field labelOnTop="0" name="Cross section definition_height"/>
-    <field labelOnTop="0" name="Cross section definition_shape"/>
-    <field labelOnTop="0" name="Cross section definition_width"/>
-    <field labelOnTop="0" name="ROWID"/>
-    <field labelOnTop="0" name="bank_level"/>
-    <field labelOnTop="0" name="channel_id"/>
-    <field labelOnTop="0" name="code"/>
-    <field labelOnTop="0" name="cross_section_height"/>
-    <field labelOnTop="0" name="cross_section_shape"/>
-    <field labelOnTop="0" name="cross_section_table"/>
-    <field labelOnTop="0" name="cross_section_width"/>
-    <field labelOnTop="0" name="definition_id"/>
-    <field labelOnTop="0" name="fid"/>
-    <field labelOnTop="0" name="friction_type"/>
-    <field labelOnTop="0" name="friction_value"/>
-    <field labelOnTop="0" name="id"/>
-    <field labelOnTop="0" name="reference_level"/>
+    <field name="Cross section definition_height" labelOnTop="0"/>
+    <field name="Cross section definition_shape" labelOnTop="0"/>
+    <field name="Cross section definition_width" labelOnTop="0"/>
+    <field name="ROWID" labelOnTop="0"/>
+    <field name="bank_level" labelOnTop="0"/>
+    <field name="channel_id" labelOnTop="0"/>
+    <field name="code" labelOnTop="0"/>
+    <field name="cross_section_height" labelOnTop="0"/>
+    <field name="cross_section_shape" labelOnTop="0"/>
+    <field name="cross_section_table" labelOnTop="0"/>
+    <field name="cross_section_width" labelOnTop="0"/>
+    <field name="definition_id" labelOnTop="0"/>
+    <field name="fid" labelOnTop="0"/>
+    <field name="friction_type" labelOnTop="0"/>
+    <field name="friction_value" labelOnTop="0"/>
+    <field name="id" labelOnTop="0"/>
+    <field name="reference_level" labelOnTop="0"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>
   <widgets/>

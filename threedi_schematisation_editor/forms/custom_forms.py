@@ -883,7 +883,6 @@ class ChannelForm(FormWithStartEndNode):
 
     def setup_cross_section_location_on_creation(self):
         """Setting up cross-section location during adding feature."""
-        self.setup_connection_nodes_on_creation()
         cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
         channel_geom = self.feature.geometry()
         linestring = self.feature.geometry().asPolyline()
@@ -965,6 +964,7 @@ class ChannelForm(FormWithStartEndNode):
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
+            self.setup_connection_nodes_on_creation()
             self.setup_cross_section_location_on_creation()
             self.fill_related_attributes()
         else:
@@ -1004,18 +1004,57 @@ class CrossSectionLocationForm(BaseForm):
         if channel_node_feat:
             channel_id = channel_node_feat["id"]
             channel_geom = channel_node_feat.geometry()
+            point_distance_on_channel = channel_geom.lineLocatePoint(point_geom)
             other_cross_sections = self.handler.get_multiple_feats_by_id(channel_id, "channel_id")
-            cross_section_num = len(other_cross_sections) + 1
+            other_cross_sections_num = len(other_cross_sections)
+            cross_section_num = other_cross_sections_num + 1
             channel_code = channel_node_feat["code"]
             cross_section_location_code = f"{channel_code}_cross_section_{cross_section_num}"
             self.feature["channel_id"] = channel_id
             self.feature["code"] = cross_section_location_code
             self.channel = channel_node_feat
             if other_cross_sections:
-                other_cross_sections.sort(key=lambda feat: channel_geom.lineLocatePoint(feat.geometry()))
-                closest_existing_cross_section = other_cross_sections[0]
-                self.feature["reference_level"] = closest_existing_cross_section["reference_level"]
-                self.feature["bank_level"] = closest_existing_cross_section["bank_level"]
+                new_feat_with_distance = (self.feature, point_distance_on_channel)
+                cross_sections_with_distance = [
+                    (feat, channel_geom.lineLocatePoint(feat.geometry())) for feat in other_cross_sections
+                ]
+                cross_sections_with_distance.append(new_feat_with_distance)
+                cross_sections_with_distance.sort(key=itemgetter(-1))
+                new_feat_index = cross_sections_with_distance.index(new_feat_with_distance)
+                if new_feat_index == 0:
+                    # New cross-section is first along channel
+                    closest_existing_cross_section, closest_xs_distance = cross_sections_with_distance[1]
+                    reference_level = closest_existing_cross_section["reference_level"]
+                    bank_level = closest_existing_cross_section["bank_level"]
+                elif new_feat_index == other_cross_sections_num:
+                    # New cross-section is last along channel
+                    closest_existing_cross_section, closest_xs_distance = cross_sections_with_distance[-2]
+                    reference_level = closest_existing_cross_section["reference_level"]
+                    bank_level = closest_existing_cross_section["bank_level"]
+                else:
+                    # New cross-section is somewhere in the middle
+                    before_xs, before_xs_distance = cross_sections_with_distance[new_feat_index - 1]
+                    after_xs, after_xs_distance = cross_sections_with_distance[new_feat_index + 1]
+                    point_distance_to_before = point_distance_on_channel - before_xs_distance
+                    point_distance_to_after = after_xs_distance - point_distance_on_channel
+                    if point_distance_to_before < point_distance_to_after:
+                        closest_existing_cross_section, closest_xs_distance = before_xs, before_xs_distance
+                    else:
+                        closest_existing_cross_section, closest_xs_distance = after_xs, after_xs_distance
+                    before_to_after_distance = after_xs_distance - before_xs_distance
+                    interpolation_coefficient = point_distance_to_before / before_to_after_distance
+                    before_reference_level = before_xs["reference_level"]
+                    before_bank_level = before_xs["bank_level"]
+                    after_reference_level = after_xs["reference_level"]
+                    after_bank_level = after_xs["bank_level"]
+                    reference_level = before_reference_level + (
+                        (after_reference_level - before_reference_level) * interpolation_coefficient
+                    )
+                    bank_level = before_bank_level + (
+                        (after_bank_level - before_bank_level) * interpolation_coefficient
+                    )
+                self.feature["reference_level"] = reference_level
+                self.feature["bank_level"] = bank_level
                 self.feature["cross_section_shape"] = closest_existing_cross_section["cross_section_shape"]
                 self.feature["cross_section_width"] = closest_existing_cross_section["cross_section_width"]
                 self.feature["cross_section_height"] = closest_existing_cross_section["cross_section_height"]
