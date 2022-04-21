@@ -994,12 +994,15 @@ class CrossSectionLocationForm(BaseForm):
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
+        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         channel_handler = self.layer_manager.model_handlers[dm.Channel]
         global_settings_handler = self.layer_manager.model_handlers[dm.GlobalSettings]
         channel_layer = channel_handler.layer
         global_settings_layer = global_settings_handler.layer
         point_geom = self.feature.geometry()
         point = point_geom.asPoint()
+        if find_point_nodes(point, connection_node_handler.layer) is not None:
+            self.uc.show_warn("WARNING: Cross-section shouldn't be placed at connection node location!")
         channel_node_feat = find_point_nodes(point, channel_layer)
         if channel_node_feat:
             channel_id = channel_node_feat["id"]
