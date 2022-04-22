@@ -1,5 +1,5 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis version="3.16.9-Hannover" readOnly="0" styleCategories="LayerConfiguration|Symbology|Labeling|Fields|Forms" labelsEnabled="0">
+<qgis version="3.16.9-Hannover" labelsEnabled="0" readOnly="0" styleCategories="LayerConfiguration|Symbology|Labeling|Fields|Forms">
   <flags>
     <Identifiable>1</Identifiable>
     <Removable>0</Removable>
@@ -8,7 +8,7 @@
   <renderer-v2 type="singleSymbol" symbollevels="0" enableorderby="0" forceraster="0">
     <symbols>
       <symbol name="0" force_rhr="0" type="marker" alpha="1" clip_to_extent="1">
-        <layer pass="0" enabled="1" class="SimpleMarker" locked="0">
+        <layer enabled="1" class="SimpleMarker" pass="0" locked="0">
           <prop k="angle" v="0"/>
           <prop k="color" v="19,61,142,255"/>
           <prop k="horizontal_anchor_point" v="1"/>
@@ -111,11 +111,15 @@
       </editWidget>
     </field>
     <field name="friction_value" configurationFlags="None">
-      <editWidget type="TextEdit">
+      <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" type="bool" value="false"/>
-            <Option name="UseHtml" type="bool" value="false"/>
+            <Option name="AllowNull" type="bool" value="true"/>
+            <Option name="Max" type="double" value="1.7976931348623157e+308"/>
+            <Option name="Min" type="double" value="-1.7976931348623157e+308"/>
+            <Option name="Precision" type="int" value="3"/>
+            <Option name="Step" type="double" value="1"/>
+            <Option name="Style" type="QString" value="SpinBox"/>
           </Option>
         </config>
       </editWidget>
@@ -213,60 +217,60 @@
     </field>
   </fieldConfiguration>
   <aliases>
-    <alias name="" index="0" field="fid"/>
-    <alias name="" index="1" field="id"/>
-    <alias name="" index="2" field="code"/>
-    <alias name="" index="3" field="reference_level"/>
-    <alias name="" index="4" field="friction_type"/>
-    <alias name="" index="5" field="friction_value"/>
-    <alias name="" index="6" field="bank_level"/>
-    <alias name="" index="7" field="channel_id"/>
-    <alias name="" index="8" field="cross_section_shape"/>
-    <alias name="" index="9" field="cross_section_width"/>
-    <alias name="" index="10" field="cross_section_height"/>
-    <alias name="" index="11" field="cross_section_table"/>
+    <alias name="" field="fid" index="0"/>
+    <alias name="" field="id" index="1"/>
+    <alias name="" field="code" index="2"/>
+    <alias name="" field="reference_level" index="3"/>
+    <alias name="" field="friction_type" index="4"/>
+    <alias name="" field="friction_value" index="5"/>
+    <alias name="" field="bank_level" index="6"/>
+    <alias name="" field="channel_id" index="7"/>
+    <alias name="" field="cross_section_shape" index="8"/>
+    <alias name="" field="cross_section_width" index="9"/>
+    <alias name="" field="cross_section_height" index="10"/>
+    <alias name="" field="cross_section_table" index="11"/>
   </aliases>
   <defaults>
-    <default field="fid" applyOnUpdate="0" expression=""/>
-    <default field="id" applyOnUpdate="0" expression=""/>
-    <default field="code" applyOnUpdate="0" expression=""/>
-    <default field="reference_level" applyOnUpdate="0" expression=""/>
-    <default field="friction_type" applyOnUpdate="0" expression=""/>
-    <default field="friction_value" applyOnUpdate="0" expression=""/>
-    <default field="bank_level" applyOnUpdate="0" expression=""/>
-    <default field="channel_id" applyOnUpdate="0" expression=""/>
-    <default field="cross_section_shape" applyOnUpdate="0" expression=""/>
-    <default field="cross_section_width" applyOnUpdate="0" expression=""/>
-    <default field="cross_section_height" applyOnUpdate="0" expression=""/>
-    <default field="cross_section_table" applyOnUpdate="0" expression=""/>
+    <default applyOnUpdate="0" expression="" field="fid"/>
+    <default applyOnUpdate="0" expression="" field="id"/>
+    <default applyOnUpdate="0" expression="" field="code"/>
+    <default applyOnUpdate="0" expression="" field="reference_level"/>
+    <default applyOnUpdate="0" expression="" field="friction_type"/>
+    <default applyOnUpdate="0" expression="" field="friction_value"/>
+    <default applyOnUpdate="0" expression="" field="bank_level"/>
+    <default applyOnUpdate="0" expression="" field="channel_id"/>
+    <default applyOnUpdate="0" expression="" field="cross_section_shape"/>
+    <default applyOnUpdate="0" expression="" field="cross_section_width"/>
+    <default applyOnUpdate="0" expression="" field="cross_section_height"/>
+    <default applyOnUpdate="0" expression="" field="cross_section_table"/>
   </defaults>
   <constraints>
-    <constraint unique_strength="1" notnull_strength="1" constraints="3" field="fid" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="id" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="code" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="reference_level" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="friction_type" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="friction_value" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="bank_level" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="channel_id" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="cross_section_shape" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="cross_section_width" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="cross_section_height" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="cross_section_table" exp_strength="0"/>
+    <constraint unique_strength="1" exp_strength="0" field="fid" notnull_strength="1" constraints="3"/>
+    <constraint unique_strength="0" exp_strength="0" field="id" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="code" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="reference_level" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="friction_type" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="friction_value" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="bank_level" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="channel_id" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="cross_section_shape" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="cross_section_width" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="cross_section_height" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="cross_section_table" notnull_strength="0" constraints="0"/>
   </constraints>
   <constraintExpressions>
-    <constraint exp="" desc="" field="fid"/>
-    <constraint exp="" desc="" field="id"/>
-    <constraint exp="" desc="" field="code"/>
-    <constraint exp="" desc="" field="reference_level"/>
-    <constraint exp="" desc="" field="friction_type"/>
-    <constraint exp="" desc="" field="friction_value"/>
-    <constraint exp="" desc="" field="bank_level"/>
-    <constraint exp="" desc="" field="channel_id"/>
-    <constraint exp="" desc="" field="cross_section_shape"/>
-    <constraint exp="" desc="" field="cross_section_width"/>
-    <constraint exp="" desc="" field="cross_section_height"/>
-    <constraint exp="" desc="" field="cross_section_table"/>
+    <constraint desc="" field="fid" exp=""/>
+    <constraint desc="" field="id" exp=""/>
+    <constraint desc="" field="code" exp=""/>
+    <constraint desc="" field="reference_level" exp=""/>
+    <constraint desc="" field="friction_type" exp=""/>
+    <constraint desc="" field="friction_value" exp=""/>
+    <constraint desc="" field="bank_level" exp=""/>
+    <constraint desc="" field="channel_id" exp=""/>
+    <constraint desc="" field="cross_section_shape" exp=""/>
+    <constraint desc="" field="cross_section_width" exp=""/>
+    <constraint desc="" field="cross_section_height" exp=""/>
+    <constraint desc="" field="cross_section_table" exp=""/>
   </constraintExpressions>
   <expressionfields/>
   <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_schematisation_editor\forms\ui\cross_section_location.ui</editform>
@@ -277,8 +281,8 @@
   <featformsuppress>0</featformsuppress>
   <editorlayout>uifilelayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer name="Cross section location view" visibilityExpression="" showLabel="1" groupBox="0" visibilityExpressionEnabled="0" columnCount="1">
-      <attributeEditorContainer name="General" visibilityExpression="" showLabel="1" groupBox="1" visibilityExpressionEnabled="0" columnCount="1">
+    <attributeEditorContainer name="Cross section location view" groupBox="0" visibilityExpressionEnabled="0" visibilityExpression="" columnCount="1" showLabel="1">
+      <attributeEditorContainer name="General" groupBox="1" visibilityExpressionEnabled="0" visibilityExpression="" columnCount="1" showLabel="1">
         <attributeEditorField name="id" index="1" showLabel="1"/>
         <attributeEditorField name="code" index="2" showLabel="1"/>
         <attributeEditorField name="reference_level" index="3" showLabel="1"/>
@@ -287,7 +291,7 @@
         <attributeEditorField name="friction_value" index="5" showLabel="1"/>
         <attributeEditorField name="channel_id" index="7" showLabel="1"/>
       </attributeEditorContainer>
-      <attributeEditorContainer name="Cross section" visibilityExpression="" showLabel="1" groupBox="1" visibilityExpressionEnabled="0" columnCount="1">
+      <attributeEditorContainer name="Cross section" groupBox="1" visibilityExpressionEnabled="0" visibilityExpression="" columnCount="1" showLabel="1">
         <attributeEditorField name="cross_section_shape" index="8" showLabel="1"/>
         <attributeEditorField name="cross_section_height" index="10" showLabel="1"/>
         <attributeEditorField name="cross_section_width" index="9" showLabel="1"/>

@@ -1,5 +1,5 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis version="3.16.9-Hannover" readOnly="0" styleCategories="LayerConfiguration|Symbology|Labeling|Fields|Forms" labelsEnabled="1">
+<qgis version="3.16.9-Hannover" labelsEnabled="1" readOnly="0" styleCategories="LayerConfiguration|Symbology|Labeling|Fields|Forms">
   <flags>
     <Identifiable>1</Identifiable>
     <Removable>0</Removable>
@@ -8,7 +8,7 @@
   <renderer-v2 type="singleSymbol" symbollevels="0" enableorderby="0" forceraster="0">
     <symbols>
       <symbol name="0" force_rhr="0" type="marker" alpha="1" clip_to_extent="1">
-        <layer pass="0" enabled="1" class="SimpleMarker" locked="0">
+        <layer enabled="1" class="SimpleMarker" pass="0" locked="0">
           <prop k="angle" v="0"/>
           <prop k="color" v="19,61,142,255"/>
           <prop k="horizontal_anchor_point" v="1"/>
@@ -48,12 +48,12 @@
   </renderer-v2>
   <labeling type="simple">
     <settings calloutType="simple">
-      <text-style blendMode="0" multilineHeight="1" namedStyle="Regular" textColor="0,0,0,255" fontWeight="50" fontSizeUnit="Point" isExpression="1" allowHtml="0" textOrientation="horizontal" capitalization="0" useSubstitutions="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" fontSize="7" fontWordSpacing="0" fontFamily="MS Gothic" fontItalic="0" previewBkgrdColor="255,255,255,255" fontStrikeout="0" fieldName="'bank: '|| coalesce(format_number(bank_level, 2),'NULL')|| '\n'  || &#xd;&#xa;'ref:'|| coalesce(format_number(reference_level, 2),'NULL') ||'\n'  || &#xd;&#xa;'diff:'|| coalesce(format_number(bank_level - reference_level, 2),'NULL')&#xd;&#xa;" fontKerning="1" fontLetterSpacing="0" textOpacity="1" fontUnderline="0">
-        <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferSize="0.7" bufferNoFill="0" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferColor="255,255,255,255" bufferDraw="1" bufferJoinStyle="128" bufferOpacity="1"/>
-        <text-mask maskSizeUnits="MM" maskOpacity="1" maskEnabled="0" maskSize="0" maskedSymbolLayers="" maskType="0" maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0"/>
-        <background shapeRadiiMapUnitScale="3x:0,0,0,0,0,0" shapeBorderColor="128,128,128,255" shapeJoinStyle="64" shapeBorderWidthMapUnitScale="3x:0,0,0,0,0,0" shapeBorderWidthUnit="MM" shapeOpacity="1" shapeSizeUnit="MM" shapeBorderWidth="0" shapeFillColor="255,255,255,255" shapeOffsetY="0" shapeRadiiUnit="MM" shapeRadiiX="0" shapeRotationType="0" shapeOffsetMapUnitScale="3x:0,0,0,0,0,0" shapeType="0" shapeOffsetUnit="MM" shapeSizeX="0" shapeSVGFile="" shapeOffsetX="0" shapeSizeMapUnitScale="3x:0,0,0,0,0,0" shapeRadiiY="0" shapeDraw="0" shapeSizeY="0" shapeBlendMode="0" shapeRotation="0" shapeSizeType="0">
+      <text-style previewBkgrdColor="255,255,255,255" fontWordSpacing="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" fontSize="7" textOpacity="1" blendMode="0" fontSizeUnit="Point" fontKerning="1" fieldName="'bank: '|| coalesce(format_number(bank_level, 2),'NULL')|| '\n'  || &#xd;&#xa;'ref:'|| coalesce(format_number(reference_level, 2),'NULL') ||'\n'  || &#xd;&#xa;'diff:'|| coalesce(format_number(bank_level - reference_level, 2),'NULL')&#xd;&#xa;" fontWeight="50" fontFamily="MS Gothic" fontUnderline="0" allowHtml="0" useSubstitutions="0" isExpression="1" multilineHeight="1" namedStyle="Regular" fontItalic="0" textColor="0,0,0,255" fontLetterSpacing="0" fontStrikeout="0" capitalization="0" textOrientation="horizontal">
+        <text-buffer bufferDraw="1" bufferColor="255,255,255,255" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferJoinStyle="128" bufferNoFill="0" bufferSizeUnits="MM" bufferOpacity="1" bufferBlendMode="0" bufferSize="0.7"/>
+        <text-mask maskSize="0" maskJoinStyle="128" maskEnabled="0" maskOpacity="1" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskType="0" maskSizeUnits="MM"/>
+        <background shapeSizeX="0" shapeSizeMapUnitScale="3x:0,0,0,0,0,0" shapeRadiiUnit="MM" shapeOffsetUnit="MM" shapeBlendMode="0" shapeSizeUnit="MM" shapeRotationType="0" shapeDraw="0" shapeSVGFile="" shapeSizeType="0" shapeFillColor="255,255,255,255" shapeOffsetMapUnitScale="3x:0,0,0,0,0,0" shapeRadiiY="0" shapeBorderWidthMapUnitScale="3x:0,0,0,0,0,0" shapeType="0" shapeBorderWidth="0" shapeRadiiX="0" shapeSizeY="0" shapeOpacity="1" shapeOffsetY="0" shapeRotation="0" shapeBorderColor="128,128,128,255" shapeOffsetX="0" shapeJoinStyle="64" shapeRadiiMapUnitScale="3x:0,0,0,0,0,0" shapeBorderWidthUnit="MM">
           <symbol name="markerSymbol" force_rhr="0" type="marker" alpha="1" clip_to_extent="1">
-            <layer pass="0" enabled="1" class="SimpleMarker" locked="0">
+            <layer enabled="1" class="SimpleMarker" pass="0" locked="0">
               <prop k="angle" v="0"/>
               <prop k="color" v="133,182,111,255"/>
               <prop k="horizontal_anchor_point" v="1"/>
@@ -82,7 +82,7 @@
             </layer>
           </symbol>
         </background>
-        <shadow shadowRadius="1.5" shadowBlendMode="6" shadowDraw="0" shadowOpacity="0.7" shadowScale="100" shadowUnder="0" shadowOffsetUnit="MM" shadowRadiusAlphaOnly="0" shadowRadiusUnit="MM" shadowOffsetAngle="135" shadowOffsetDist="1" shadowOffsetMapUnitScale="3x:0,0,0,0,0,0" shadowOffsetGlobal="1" shadowRadiusMapUnitScale="3x:0,0,0,0,0,0" shadowColor="0,0,0,255"/>
+        <shadow shadowRadiusAlphaOnly="0" shadowDraw="0" shadowUnder="0" shadowOpacity="0.7" shadowBlendMode="6" shadowColor="0,0,0,255" shadowOffsetUnit="MM" shadowOffsetGlobal="1" shadowOffsetMapUnitScale="3x:0,0,0,0,0,0" shadowOffsetAngle="135" shadowRadiusMapUnitScale="3x:0,0,0,0,0,0" shadowOffsetDist="1" shadowRadius="1.5" shadowRadiusUnit="MM" shadowScale="100"/>
         <dd_properties>
           <Option type="Map">
             <Option name="name" type="QString" value=""/>
@@ -92,9 +92,9 @@
         </dd_properties>
         <substitutions/>
       </text-style>
-      <text-format addDirectionSymbol="0" rightDirectionSymbol=">" wrapChar="" leftDirectionSymbol="&lt;" decimals="3" multilineAlign="2" useMaxLineLengthForAutoWrap="1" formatNumbers="0" placeDirectionSymbol="0" reverseDirectionSymbol="0" autoWrapLength="0" plussign="0"/>
-      <placement offsetType="0" xOffset="0" dist="0" geometryGeneratorType="PointGeometry" maxCurvedCharAngleOut="-25" overrunDistance="0" lineAnchorType="0" distMapUnitScale="3x:0,0,0,0,0,0" fitInPolygonOnly="0" overrunDistanceUnit="MM" lineAnchorPercent="0.5" yOffset="0" repeatDistance="0" layerType="PointGeometry" geometryGenerator="" maxCurvedCharAngleIn="25" offsetUnits="MapUnit" labelOffsetMapUnitScale="3x:0,0,0,0,0,0" quadOffset="4" overrunDistanceMapUnitScale="3x:0,0,0,0,0,0" polygonPlacementFlags="2" repeatDistanceMapUnitScale="3x:0,0,0,0,0,0" placementFlags="9" repeatDistanceUnits="MM" rotationAngle="0" predefinedPositionOrder="TR,TL,BR,BL,R,L,TSR,BSR" placement="0" centroidInside="0" preserveRotation="1" centroidWhole="0" distUnits="MM" geometryGeneratorEnabled="0" priority="5"/>
-      <rendering drawLabels="1" scaleVisibility="1" maxNumLabels="2000" fontMinPixelSize="3" mergeLines="0" minFeatureSize="0" zIndex="0" obstacle="1" fontMaxPixelSize="10000" obstacleFactor="1" obstacleType="0" limitNumLabels="0" upsidedownLabels="0" scaleMin="1" scaleMax="5000" displayAll="0" labelPerPart="0" fontLimitPixelSize="0"/>
+      <text-format rightDirectionSymbol=">" plussign="0" wrapChar="" useMaxLineLengthForAutoWrap="1" multilineAlign="2" reverseDirectionSymbol="0" placeDirectionSymbol="0" decimals="3" autoWrapLength="0" leftDirectionSymbol="&lt;" formatNumbers="0" addDirectionSymbol="0"/>
+      <placement polygonPlacementFlags="2" centroidWhole="0" maxCurvedCharAngleOut="-25" repeatDistanceMapUnitScale="3x:0,0,0,0,0,0" rotationAngle="0" predefinedPositionOrder="TR,TL,BR,BL,R,L,TSR,BSR" dist="0" repeatDistance="0" layerType="PointGeometry" centroidInside="0" repeatDistanceUnits="MM" priority="5" offsetUnits="MapUnit" labelOffsetMapUnitScale="3x:0,0,0,0,0,0" geometryGenerator="" offsetType="0" placement="0" geometryGeneratorType="PointGeometry" fitInPolygonOnly="0" preserveRotation="1" yOffset="0" overrunDistanceUnit="MM" overrunDistance="0" xOffset="0" lineAnchorPercent="0.5" lineAnchorType="0" quadOffset="4" placementFlags="9" distUnits="MM" distMapUnitScale="3x:0,0,0,0,0,0" maxCurvedCharAngleIn="25" overrunDistanceMapUnitScale="3x:0,0,0,0,0,0" geometryGeneratorEnabled="0"/>
+      <rendering scaleVisibility="1" fontLimitPixelSize="0" fontMinPixelSize="3" obstacleFactor="1" minFeatureSize="0" mergeLines="0" maxNumLabels="2000" displayAll="0" obstacleType="0" scaleMax="5000" fontMaxPixelSize="10000" obstacle="1" zIndex="0" labelPerPart="0" drawLabels="1" scaleMin="1" upsidedownLabels="0" limitNumLabels="0"/>
       <dd_properties>
         <Option type="Map">
           <Option name="name" type="QString" value=""/>
@@ -119,7 +119,7 @@
           <Option name="drawToAllParts" type="bool" value="false"/>
           <Option name="enabled" type="QString" value="0"/>
           <Option name="labelAnchorPoint" type="QString" value="point_on_exterior"/>
-          <Option name="lineSymbol" type="QString" value="&lt;symbol name=&quot;symbol&quot; force_rhr=&quot;0&quot; type=&quot;line&quot; alpha=&quot;1&quot; clip_to_extent=&quot;1&quot;>&lt;layer pass=&quot;0&quot; enabled=&quot;1&quot; class=&quot;SimpleLine&quot; locked=&quot;0&quot;>&lt;prop k=&quot;align_dash_pattern&quot; v=&quot;0&quot;/>&lt;prop k=&quot;capstyle&quot; v=&quot;square&quot;/>&lt;prop k=&quot;customdash&quot; v=&quot;5;2&quot;/>&lt;prop k=&quot;customdash_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;prop k=&quot;customdash_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;dash_pattern_offset&quot; v=&quot;0&quot;/>&lt;prop k=&quot;dash_pattern_offset_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;prop k=&quot;dash_pattern_offset_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;draw_inside_polygon&quot; v=&quot;0&quot;/>&lt;prop k=&quot;joinstyle&quot; v=&quot;bevel&quot;/>&lt;prop k=&quot;line_color&quot; v=&quot;60,60,60,255&quot;/>&lt;prop k=&quot;line_style&quot; v=&quot;solid&quot;/>&lt;prop k=&quot;line_width&quot; v=&quot;0.3&quot;/>&lt;prop k=&quot;line_width_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;offset&quot; v=&quot;0&quot;/>&lt;prop k=&quot;offset_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;prop k=&quot;offset_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;ring_filter&quot; v=&quot;0&quot;/>&lt;prop k=&quot;tweak_dash_pattern_on_corners&quot; v=&quot;0&quot;/>&lt;prop k=&quot;use_custom_dash&quot; v=&quot;0&quot;/>&lt;prop k=&quot;width_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;data_defined_properties>&lt;Option type=&quot;Map&quot;>&lt;Option name=&quot;name&quot; type=&quot;QString&quot; value=&quot;&quot;/>&lt;Option name=&quot;properties&quot;/>&lt;Option name=&quot;type&quot; type=&quot;QString&quot; value=&quot;collection&quot;/>&lt;/Option>&lt;/data_defined_properties>&lt;/layer>&lt;/symbol>"/>
+          <Option name="lineSymbol" type="QString" value="&lt;symbol name=&quot;symbol&quot; force_rhr=&quot;0&quot; type=&quot;line&quot; alpha=&quot;1&quot; clip_to_extent=&quot;1&quot;>&lt;layer enabled=&quot;1&quot; class=&quot;SimpleLine&quot; pass=&quot;0&quot; locked=&quot;0&quot;>&lt;prop k=&quot;align_dash_pattern&quot; v=&quot;0&quot;/>&lt;prop k=&quot;capstyle&quot; v=&quot;square&quot;/>&lt;prop k=&quot;customdash&quot; v=&quot;5;2&quot;/>&lt;prop k=&quot;customdash_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;prop k=&quot;customdash_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;dash_pattern_offset&quot; v=&quot;0&quot;/>&lt;prop k=&quot;dash_pattern_offset_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;prop k=&quot;dash_pattern_offset_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;draw_inside_polygon&quot; v=&quot;0&quot;/>&lt;prop k=&quot;joinstyle&quot; v=&quot;bevel&quot;/>&lt;prop k=&quot;line_color&quot; v=&quot;60,60,60,255&quot;/>&lt;prop k=&quot;line_style&quot; v=&quot;solid&quot;/>&lt;prop k=&quot;line_width&quot; v=&quot;0.3&quot;/>&lt;prop k=&quot;line_width_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;offset&quot; v=&quot;0&quot;/>&lt;prop k=&quot;offset_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;prop k=&quot;offset_unit&quot; v=&quot;MM&quot;/>&lt;prop k=&quot;ring_filter&quot; v=&quot;0&quot;/>&lt;prop k=&quot;tweak_dash_pattern_on_corners&quot; v=&quot;0&quot;/>&lt;prop k=&quot;use_custom_dash&quot; v=&quot;0&quot;/>&lt;prop k=&quot;width_map_unit_scale&quot; v=&quot;3x:0,0,0,0,0,0&quot;/>&lt;data_defined_properties>&lt;Option type=&quot;Map&quot;>&lt;Option name=&quot;name&quot; type=&quot;QString&quot; value=&quot;&quot;/>&lt;Option name=&quot;properties&quot;/>&lt;Option name=&quot;type&quot; type=&quot;QString&quot; value=&quot;collection&quot;/>&lt;/Option>&lt;/data_defined_properties>&lt;/layer>&lt;/symbol>"/>
           <Option name="minLength" type="double" value="0"/>
           <Option name="minLengthMapUnitScale" type="QString" value="3x:0,0,0,0,0,0"/>
           <Option name="minLengthUnit" type="QString" value="MM"/>
@@ -198,11 +198,15 @@
       </editWidget>
     </field>
     <field name="friction_value" configurationFlags="None">
-      <editWidget type="TextEdit">
+      <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" type="bool" value="false"/>
-            <Option name="UseHtml" type="bool" value="false"/>
+            <Option name="AllowNull" type="bool" value="true"/>
+            <Option name="Max" type="double" value="1.7976931348623157e+308"/>
+            <Option name="Min" type="double" value="-1.7976931348623157e+308"/>
+            <Option name="Precision" type="int" value="3"/>
+            <Option name="Step" type="double" value="1"/>
+            <Option name="Style" type="QString" value="SpinBox"/>
           </Option>
         </config>
       </editWidget>
@@ -300,60 +304,60 @@
     </field>
   </fieldConfiguration>
   <aliases>
-    <alias name="" index="0" field="fid"/>
-    <alias name="" index="1" field="id"/>
-    <alias name="" index="2" field="code"/>
-    <alias name="" index="3" field="reference_level"/>
-    <alias name="" index="4" field="friction_type"/>
-    <alias name="" index="5" field="friction_value"/>
-    <alias name="" index="6" field="bank_level"/>
-    <alias name="" index="7" field="channel_id"/>
-    <alias name="" index="8" field="cross_section_shape"/>
-    <alias name="" index="9" field="cross_section_width"/>
-    <alias name="" index="10" field="cross_section_height"/>
-    <alias name="" index="11" field="cross_section_table"/>
+    <alias name="" field="fid" index="0"/>
+    <alias name="" field="id" index="1"/>
+    <alias name="" field="code" index="2"/>
+    <alias name="" field="reference_level" index="3"/>
+    <alias name="" field="friction_type" index="4"/>
+    <alias name="" field="friction_value" index="5"/>
+    <alias name="" field="bank_level" index="6"/>
+    <alias name="" field="channel_id" index="7"/>
+    <alias name="" field="cross_section_shape" index="8"/>
+    <alias name="" field="cross_section_width" index="9"/>
+    <alias name="" field="cross_section_height" index="10"/>
+    <alias name="" field="cross_section_table" index="11"/>
   </aliases>
   <defaults>
-    <default field="fid" applyOnUpdate="0" expression=""/>
-    <default field="id" applyOnUpdate="0" expression=""/>
-    <default field="code" applyOnUpdate="0" expression=""/>
-    <default field="reference_level" applyOnUpdate="0" expression=""/>
-    <default field="friction_type" applyOnUpdate="0" expression=""/>
-    <default field="friction_value" applyOnUpdate="0" expression=""/>
-    <default field="bank_level" applyOnUpdate="0" expression=""/>
-    <default field="channel_id" applyOnUpdate="0" expression=""/>
-    <default field="cross_section_shape" applyOnUpdate="0" expression=""/>
-    <default field="cross_section_width" applyOnUpdate="0" expression=""/>
-    <default field="cross_section_height" applyOnUpdate="0" expression=""/>
-    <default field="cross_section_table" applyOnUpdate="0" expression=""/>
+    <default applyOnUpdate="0" expression="" field="fid"/>
+    <default applyOnUpdate="0" expression="" field="id"/>
+    <default applyOnUpdate="0" expression="" field="code"/>
+    <default applyOnUpdate="0" expression="" field="reference_level"/>
+    <default applyOnUpdate="0" expression="" field="friction_type"/>
+    <default applyOnUpdate="0" expression="" field="friction_value"/>
+    <default applyOnUpdate="0" expression="" field="bank_level"/>
+    <default applyOnUpdate="0" expression="" field="channel_id"/>
+    <default applyOnUpdate="0" expression="" field="cross_section_shape"/>
+    <default applyOnUpdate="0" expression="" field="cross_section_width"/>
+    <default applyOnUpdate="0" expression="" field="cross_section_height"/>
+    <default applyOnUpdate="0" expression="" field="cross_section_table"/>
   </defaults>
   <constraints>
-    <constraint unique_strength="1" notnull_strength="1" constraints="3" field="fid" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="id" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="code" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="reference_level" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="friction_type" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="friction_value" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="bank_level" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="channel_id" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="cross_section_shape" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="cross_section_width" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="cross_section_height" exp_strength="0"/>
-    <constraint unique_strength="0" notnull_strength="0" constraints="0" field="cross_section_table" exp_strength="0"/>
+    <constraint unique_strength="1" exp_strength="0" field="fid" notnull_strength="1" constraints="3"/>
+    <constraint unique_strength="0" exp_strength="0" field="id" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="code" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="reference_level" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="friction_type" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="friction_value" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="bank_level" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="channel_id" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="cross_section_shape" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="cross_section_width" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="cross_section_height" notnull_strength="0" constraints="0"/>
+    <constraint unique_strength="0" exp_strength="0" field="cross_section_table" notnull_strength="0" constraints="0"/>
   </constraints>
   <constraintExpressions>
-    <constraint exp="" desc="" field="fid"/>
-    <constraint exp="" desc="" field="id"/>
-    <constraint exp="" desc="" field="code"/>
-    <constraint exp="" desc="" field="reference_level"/>
-    <constraint exp="" desc="" field="friction_type"/>
-    <constraint exp="" desc="" field="friction_value"/>
-    <constraint exp="" desc="" field="bank_level"/>
-    <constraint exp="" desc="" field="channel_id"/>
-    <constraint exp="" desc="" field="cross_section_shape"/>
-    <constraint exp="" desc="" field="cross_section_width"/>
-    <constraint exp="" desc="" field="cross_section_height"/>
-    <constraint exp="" desc="" field="cross_section_table"/>
+    <constraint desc="" field="fid" exp=""/>
+    <constraint desc="" field="id" exp=""/>
+    <constraint desc="" field="code" exp=""/>
+    <constraint desc="" field="reference_level" exp=""/>
+    <constraint desc="" field="friction_type" exp=""/>
+    <constraint desc="" field="friction_value" exp=""/>
+    <constraint desc="" field="bank_level" exp=""/>
+    <constraint desc="" field="channel_id" exp=""/>
+    <constraint desc="" field="cross_section_shape" exp=""/>
+    <constraint desc="" field="cross_section_width" exp=""/>
+    <constraint desc="" field="cross_section_height" exp=""/>
+    <constraint desc="" field="cross_section_table" exp=""/>
   </constraintExpressions>
   <expressionfields/>
   <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_schematisation_editor\forms\ui\cross_section_location.ui</editform>
@@ -364,8 +368,8 @@
   <featformsuppress>0</featformsuppress>
   <editorlayout>uifilelayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer name="Cross section location view" visibilityExpression="" showLabel="1" groupBox="0" visibilityExpressionEnabled="0" columnCount="1">
-      <attributeEditorContainer name="General" visibilityExpression="" showLabel="1" groupBox="1" visibilityExpressionEnabled="0" columnCount="1">
+    <attributeEditorContainer name="Cross section location view" groupBox="0" visibilityExpressionEnabled="0" visibilityExpression="" columnCount="1" showLabel="1">
+      <attributeEditorContainer name="General" groupBox="1" visibilityExpressionEnabled="0" visibilityExpression="" columnCount="1" showLabel="1">
         <attributeEditorField name="id" index="1" showLabel="1"/>
         <attributeEditorField name="code" index="2" showLabel="1"/>
         <attributeEditorField name="reference_level" index="3" showLabel="1"/>
@@ -374,7 +378,7 @@
         <attributeEditorField name="friction_value" index="5" showLabel="1"/>
         <attributeEditorField name="channel_id" index="7" showLabel="1"/>
       </attributeEditorContainer>
-      <attributeEditorContainer name="Cross section" visibilityExpression="" showLabel="1" groupBox="1" visibilityExpressionEnabled="0" columnCount="1">
+      <attributeEditorContainer name="Cross section" groupBox="1" visibilityExpressionEnabled="0" visibilityExpression="" columnCount="1" showLabel="1">
         <attributeEditorField name="cross_section_shape" index="8" showLabel="1"/>
         <attributeEditorField name="cross_section_height" index="10" showLabel="1"/>
         <attributeEditorField name="cross_section_width" index="9" showLabel="1"/>
