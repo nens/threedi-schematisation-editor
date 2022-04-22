@@ -13,6 +13,7 @@ from threedi_schematisation_editor.utils import (
     disconnect_signal,
     is_optional,
     optional_type,
+    enum_type,
 )
 from qgis.PyQt.QtCore import QObject
 from qgis.PyQt.QtWidgets import (
@@ -149,7 +150,11 @@ class BaseForm(QObject):
                 field_type = optional_type(field_type)
             else:
                 if self.layer.isEditable():
-                    widget.setStyleSheet("background-color: rgb(255, 224, 178);")
+                    self.set_validation_background(widget, field_type)
+                    edit_signal = self.get_widget_editing_signal(widget)
+                    edit_slot = partial(self.set_validation_background, widget, field_type)
+                    connect_signal(edit_signal, edit_slot)
+                    self.dialog.active_form_signals.add((edit_signal, edit_slot))
                 else:
                     widget.setStyleSheet("")
             if issubclass(field_type, Enum):
@@ -157,6 +162,22 @@ class BaseForm(QObject):
                 self.populate_combo(widget, cbo_items)
             self.set_widget_value(widget, feature[field_name], var_type=field_type)
             self.main_widgets[widget.objectName()] = widget
+
+    def set_validation_background(self, widget, field_type):
+        """Setting validation color background if required value is empty."""
+        widget_value = self.get_widget_value(widget)
+        required_value_stylesheet = "background-color: rgb(255, 224, 178);"
+        if issubclass(field_type, Enum):
+            valid_values = [e.value for e in field_type]
+            if widget_value in valid_values:
+                widget.setStyleSheet("")
+            else:
+                widget.setStyleSheet(required_value_stylesheet)
+        else:
+            if widget_value is not None and widget_value != "":
+                widget.setStyleSheet("")
+            else:
+                widget.setStyleSheet(required_value_stylesheet)
 
     def populate_foreign_widgets(self):
         """Populating values within foreign layers widgets."""
@@ -223,7 +244,7 @@ class BaseForm(QObject):
         elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
             signal = widget.valueChanged
         elif isinstance(widget, QComboBox):
-            signal = widget.activated
+            signal = widget.currentIndexChanged
         else:
             self.uc.log_warn(f"Unknown widget type: {widget.__class__.__name__}")
             signal = None
@@ -1050,11 +1071,13 @@ class CrossSectionLocationForm(BaseForm):
                     before_bank_level = before_xs["bank_level"]
                     after_reference_level = after_xs["reference_level"]
                     after_bank_level = after_xs["bank_level"]
-                    reference_level = before_reference_level + (
-                        (after_reference_level - before_reference_level) * interpolation_coefficient
+                    reference_level = round(
+                        before_reference_level
+                        + ((after_reference_level - before_reference_level) * interpolation_coefficient),
+                        3,
                     )
-                    bank_level = before_bank_level + (
-                        (after_bank_level - before_bank_level) * interpolation_coefficient
+                    bank_level = round(
+                        before_bank_level + ((after_bank_level - before_bank_level) * interpolation_coefficient), 3
                     )
                 self.feature["reference_level"] = reference_level
                 self.feature["bank_level"] = bank_level

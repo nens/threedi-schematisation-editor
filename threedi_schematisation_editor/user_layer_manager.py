@@ -139,14 +139,7 @@ class LayersManager:
         """Method used to reset snapping options to the default state."""
         project = QgsProject.instance()
         snap_config = project.snappingConfig()
-        individual_configs = snap_config.individualLayerSettings()
-        for layer, iconf in individual_configs.items():
-            iconf.setEnabled(False)
-            snap_config.setIndividualLayerSettings(layer, iconf)
-        snap_config.setMode(QgsSnappingConfig.AllLayers)
-        snap_config.setIntersectionSnapping(True)
-        if snap_config.enabled() is False:
-            snap_config.setEnabled(True)
+        snap_config.reset()
         project.setSnappingConfig(snap_config)
 
     @property

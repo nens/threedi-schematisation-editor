@@ -89,7 +89,7 @@ def is_optional(field_type):
 
 
 def optional_type(optional_field_type):
-    """Getting real type of an Optional field type."""
+    """Getting real type of Optional field type."""
     field_type = next(iter(optional_field_type.__args__))
     return field_type
 
