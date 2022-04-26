@@ -185,6 +185,22 @@ class LayersManager:
             grp.setExpanded(False)
             self.spawned_groups[group_name] = grp
 
+    def register_groups(self):
+        """Registering all User Layers groups."""
+        groups_registered = False
+        project = QgsProject.instance()
+        root = project.layerTreeRoot()
+        main_group = root.findGroup(self.main_group)
+        if not main_group:
+            return groups_registered
+        for group_name in self.group_names:
+            grp = main_group.findGroup(group_name)
+            if not grp:
+                return groups_registered
+            self.spawned_groups[group_name] = grp
+        groups_registered = True
+        return groups_registered
+
     def remove_groups(self):
         """Removing all User Layers groups."""
         self.remove_loaded_layers()
@@ -216,7 +232,7 @@ class LayersManager:
         style_manager = layer.styleManager()
         for style_name, qml_path in zip(qml_names, qml_paths):
             layer.loadNamedStyle(qml_path)
-            set_initial_layer_configuration(layer)
+            set_initial_layer_configuration(layer, model_cls)
             style_manager.addStyleFromLayer(style_name)
         all_styles = style_manager.styles()
         default_widgets_setup = [(idx, layer.editorWidgetSetup(idx)) for idx in fields_indexes]
@@ -247,6 +263,26 @@ class LayersManager:
             for model_cls in group_models:
                 self.initialize_data_model_layer(model_cls)
 
+    def register_vector_layers(self):
+        """Register all vector layers."""
+        layers_registered = False
+        project = QgsProject.instance()
+        present_layers = project.mapLayers()
+        present_layers_sources = {lyr.dataProvider().dataSourceUri(): lyr for lyr in present_layers.values()}
+        for group_name, group_models in self.VECTOR_GROUPS:
+            for model_cls in group_models:
+                layer_uri = f"{self.model_gpkg_path}|layername={model_cls.__tablename__}"
+                layer_uri = layer_uri.replace("\\", "/")
+                try:
+                    layer = present_layers_sources[layer_uri]
+                except KeyError:
+                    return layers_registered
+                handler_cls = MODEL_HANDLERS[model_cls]
+                handler = handler_cls(self, layer)
+                handler.connect_handler_signals()
+                self.model_handlers[model_cls] = handler
+                self.layer_handlers[layer.id()] = handler
+
     def load_raster_layers(self):
         """Loading all available raster layers."""
         gpkg_dir = os.path.dirname(self.model_gpkg_path)
@@ -274,12 +310,17 @@ class LayersManager:
                         hillshade_raster_layer = hillshade_layer(raster_filepath)
                         add_layer_to_group(group_name, hillshade_raster_layer, cached_groups=self.spawned_groups)
 
-    def load_all_layers(self):
-        """Creating groups and loading vector, raster and tabular layers."""
-        self.create_groups()
-        self.load_vector_layers()
-        self.load_raster_layers()
-        self.add_joins()
+    def load_all_layers(self, from_project=False):
+        """Creating/registering groups and loading/registering vector, raster and tabular layers."""
+        if not from_project:
+            self.create_groups()
+            self.load_vector_layers()
+            self.load_raster_layers()
+            self.add_joins()
+        else:
+            self.remove_loaded_layers(dry_remove=True)
+            self.register_groups()
+            self.register_vector_layers()
 
     def remove_loaded_layers(self, dry_remove=False):
         """Removing loaded vector layers."""

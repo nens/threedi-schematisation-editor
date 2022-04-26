@@ -104,9 +104,8 @@ class ThreediModelBuilderPlugin:
             self.model_gpkg = None
             self.toggle_active_project_actions()
             return
-        remove_user_layers()
         self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
-        self.layer_manager.load_all_layers()
+        self.layer_manager.load_all_layers(from_project=True)
         self.uc.bar_info("3Di User Layers registered!")
         self.check_macros_status()
         self.toggle_active_project_actions()
