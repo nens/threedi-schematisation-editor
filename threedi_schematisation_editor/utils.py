@@ -28,6 +28,8 @@ from qgis.core import (
     QgsHillshadeRenderer,
     QgsBilinearRasterResampler,
     QgsRasterMinMaxOrigin,
+    QgsEditorWidgetSetup,
+    QgsValueMapFieldFormatter,
 )
 from qgis.utils import plugins
 
@@ -232,14 +234,39 @@ def get_filepath(parent, extension_filter=None, extension=None, save=True, dialo
     return file_name
 
 
-def set_initial_layer_configuration(layer):
+def enum_to_editor_widget_setup(enum, optional=False):
+    """Creating QgsEditorWidgetSetup out of the Enum object."""
+    value_map = [{entry.name.capitalize().replace("_", " "): entry.value} for entry in enum]
+    if optional:
+        null_value = QgsValueMapFieldFormatter.NULL_VALUE
+        value_map.insert(0, {"": null_value})
+    ews = QgsEditorWidgetSetup("ValueMap", {"map": value_map})
+    return ews
+
+
+def set_initial_layer_configuration(layer, model_cls):
     """Set initial vector layer configuration that should be set within currently active style."""
     attr_table_config = layer.attributeTableConfig()
+    fields = layer.dataProvider().fields()
     columns = attr_table_config.columns()
     for column in columns:
-        if column.name == "fid":
+        column_name = column.name
+        if column_name == "fid":
             column.hidden = True
-            break
+            continue
+        try:
+            field_type = model_cls.__annotations__[column_name]
+            if is_optional(field_type):
+                field_type = optional_type(field_type)
+                optional = True
+            else:
+                optional = False
+            if issubclass(field_type, Enum):
+                field_idx = fields.lookupField(column_name)
+                ews = enum_to_editor_widget_setup(field_type, optional)
+                layer.setEditorWidgetSetup(field_idx, ews)
+        except KeyError:
+            continue
     attr_table_config.setColumns(columns)
     layer.setAttributeTableConfig(attr_table_config)
     layer.setFlags(QgsMapLayer.Searchable | QgsMapLayer.Identifiable)
