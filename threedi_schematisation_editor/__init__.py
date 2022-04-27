@@ -34,6 +34,7 @@ class ThreediModelBuilderPlugin:
         self.action_open = None
         self.action_import = None
         self.action_export = None
+        self.action_export_as = None
         self.action_remove = None
         self.model_gpkg = None
         self.layer_manager = None
@@ -49,12 +50,15 @@ class ThreediModelBuilderPlugin:
         self.action_import = QAction("Load from Spatialite", self.iface.mainWindow())
         self.action_import.triggered.connect(self.load_from_spatialite)
         self.action_export = QAction("Save to Spatialite", self.iface.mainWindow())
-        self.action_export.triggered.connect(self.save_to_spatialite)
+        self.action_export.triggered.connect(self.save_to_default)
+        self.action_export_as = QAction("Save As", self.iface.mainWindow())
+        self.action_export_as.triggered.connect(self.save_to_selected)
         self.action_remove = QAction("Remove 3Di model", self.iface.mainWindow())
         self.action_remove.triggered.connect(self.remove_model_from_project)
         self.iface.addToolBarIcon(self.action_open)
         self.iface.addToolBarIcon(self.action_import)
         self.iface.addToolBarIcon(self.action_export)
+        self.iface.addToolBarIcon(self.action_export_as)
         self.iface.addToolBarIcon(self.action_remove)
         self.toggle_active_project_actions()
 
@@ -71,9 +75,11 @@ class ThreediModelBuilderPlugin:
     def toggle_active_project_actions(self):
         if self.model_gpkg is None:
             self.action_export.setDisabled(True)
+            self.action_export_as.setDisabled(True)
             self.action_remove.setDisabled(True)
         else:
             self.action_export.setEnabled(True)
+            self.action_export_as.setEnabled(True)
             self.action_remove.setEnabled(True)
 
     def check_macros_status(self):
@@ -177,14 +183,27 @@ class ThreediModelBuilderPlugin:
         if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
             add_gpkg_connection(self.model_gpkg, self.iface)
 
-    def save_to_spatialite(self):
+    def save_to_selected(self):
+        self.save_to_spatialite()
+
+    def save_to_default(self):
+        self.save_to_spatialite(pick_destination=False)
+
+    def save_to_spatialite(self, pick_destination=True):
         if not self.model_gpkg:
             return
         if self.layer_manager is None:
             return
         self.layer_manager.stop_model_editing()
-        dst_sqlite = self.select_sqlite_database(title="Select database to save features to")
+        if pick_destination:
+            dst_sqlite = self.select_sqlite_database(title="Select database to save features to")
+        else:
+            dst_sqlite = self.model_gpkg.replace(".gpkg", ".sqlite")
         if not dst_sqlite:
+            return
+        if not os.path.isfile(dst_sqlite):
+            warn_msg = "Target spatialite file doesn't exist. Saving to spatialite canceled."
+            self.uc.show_warn(warn_msg)
             return
         if not can_write_in_dir(os.path.dirname(dst_sqlite)):
             warn_msg = "You don't have required write permissions to save data into the selected spatialite."
