@@ -26,6 +26,7 @@ from threedi_schematisation_editor.utils import (
     remove_layer,
     hillshade_layer,
     modify_raster_style,
+    max_height_width_label,
 )
 
 
@@ -176,6 +177,16 @@ class LayersManager:
                 data_model_groups[model_cls] = group_name
         return data_model_groups
 
+    @staticmethod
+    def register_custom_functions():
+        """Register custom expression functions"""
+        QgsExpression.registerFunction(max_height_width_label)
+
+    @staticmethod
+    def unregister_custom_functions():
+        """Unregister custom expression functions"""
+        QgsExpression.unregisterFunction("max_height_width_label")
+
     def create_groups(self):
         """Creating all User Layers groups."""
         self.remove_groups()
@@ -312,6 +323,7 @@ class LayersManager:
 
     def load_all_layers(self, from_project=False):
         """Creating/registering groups and loading/registering vector, raster and tabular layers."""
+        self.register_custom_functions()
         if not from_project:
             self.create_groups()
             self.load_vector_layers()

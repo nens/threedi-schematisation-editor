@@ -31,7 +31,7 @@ from qgis.core import (
     QgsEditorWidgetSetup,
     QgsValueMapFieldFormatter,
 )
-from qgis.utils import plugins
+from qgis.utils import plugins, qgsfunction
 
 field_types_mapping = {
     bool: QVariant.Bool,
@@ -367,6 +367,22 @@ def open_edit_form(dialog, layer, feature):
     except AttributeError:
         return
     plugin.layer_manager.populate_edit_form(dialog, layer, feature)
+
+
+@qgsfunction(args="auto", group="Custom")
+def max_height_width_label(table, feature, parent):
+    """Create label with max height and max width out of cross-section table values."""
+    height_list, width_list = [], []
+    for row in table.split("\n"):
+        height_str, width_str = row.split(",")
+        height = float(height_str)
+        width = float(width_str)
+        height_list.append(height)
+        width_list.append(width)
+    max_height = max(height_list)
+    max_width = max(width_list)
+    label = f"Height: {max_height}\nWidth: {max_width}"
+    return label
 
 
 def connect_signal(signal, slot):
