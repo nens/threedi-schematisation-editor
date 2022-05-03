@@ -13,7 +13,6 @@ from threedi_schematisation_editor.utils import (
     disconnect_signal,
     is_optional,
     optional_type,
-    enum_type,
 )
 from qgis.PyQt.QtCore import QObject
 from qgis.PyQt.QtWidgets import (
@@ -23,6 +22,7 @@ from qgis.PyQt.QtWidgets import (
     QLineEdit,
     QSpinBox,
     QPlainTextEdit,
+    QToolButton,
 )
 from qgis.core import NULL, QgsGeometry
 from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
@@ -146,8 +146,6 @@ class BaseForm(QObject):
             if widget is None:
                 # the filed might not be shown in the form
                 continue
-            if is_optional(field_type):
-                field_type = optional_type(field_type)
             else:
                 if self.layer.isEditable():
                     self.set_validation_background(widget, field_type)
@@ -157,27 +155,56 @@ class BaseForm(QObject):
                     self.dialog.active_form_signals.add((edit_signal, edit_slot))
                 else:
                     widget.setStyleSheet("")
-            if issubclass(field_type, Enum):
-                cbo_items = {t.name.capitalize().replace("_", " "): t.value for t in field_type}
+            real_field_type = optional_type(field_type) if is_optional(field_type) else field_type
+            if issubclass(real_field_type, Enum):
+                cbo_items = {t.name.capitalize().replace("_", " "): t.value for t in real_field_type}
                 self.populate_combo(widget, cbo_items)
-            self.set_widget_value(widget, feature[field_name], var_type=field_type)
-            self.main_widgets[widget.objectName()] = widget
+            self.set_widget_value(widget, feature[field_name], var_type=real_field_type)
+            self.set_validation_background(widget, field_type)
+            self.main_widgets[widget_name] = widget
+            clear_value_button_name = f"{widget_name}_clear"
+            if clear_value_button_name not in self.custom_widgets:
+                clear_value_button = self.dialog.findChild(QToolButton, clear_value_button_name)
+                if clear_value_button is not None:
+                    clear_signal = clear_value_button.clicked
+                    clear_slot = partial(self.handle_clear_value, widget, feature, data_model_cls, field_name)
+                    connect_signal(clear_signal, clear_slot)
+                    self.dialog.active_form_signals.add((clear_signal, clear_slot))
+                    self.custom_widgets[clear_value_button_name] = clear_value_button
 
     def set_validation_background(self, widget, field_type):
         """Setting validation color background if required value is empty."""
         widget_value = self.get_widget_value(widget)
         required_value_stylesheet = "background-color: rgb(255, 224, 178);"
-        if issubclass(field_type, Enum):
-            valid_values = [e.value for e in field_type]
-            if widget_value in valid_values:
-                widget.setStyleSheet("")
-            else:
-                widget.setStyleSheet(required_value_stylesheet)
+        if is_optional(field_type):
+            widget.setStyleSheet("")
         else:
-            if widget_value is not None and widget_value != "":
-                widget.setStyleSheet("")
+            if issubclass(field_type, Enum):
+                valid_values = [e.value for e in field_type]
+                if widget_value in valid_values:
+                    widget.setStyleSheet("")
+                else:
+                    widget.setStyleSheet(required_value_stylesheet)
             else:
-                widget.setStyleSheet(required_value_stylesheet)
+                if widget_value not in [None, NULL, ""]:
+                    widget.setStyleSheet("")
+                else:
+                    widget.setStyleSheet(required_value_stylesheet)
+
+    def handle_clear_value(self, widget, feature, model_cls, field_name):
+        """Handling custom clear value action."""
+        if feature:
+            if isinstance(widget, (QSpinBox, QDoubleSpinBox)):
+                handler = self.layer_manager.model_handlers[model_cls]
+                layer = handler.layer
+                field_idx = layer.fields().lookupField(field_name)
+                fid = feature.id()
+                if not layer.isEditable():
+                    layer.startEditing()
+                widget.clear()
+                layer.changeAttributeValue(fid, field_idx, NULL)
+                field_type = model_cls.__annotations__[field_name]
+                self.set_validation_background(widget, field_type=field_type)
 
     def populate_foreign_widgets(self):
         """Populating values within foreign layers widgets."""
@@ -225,7 +252,8 @@ class BaseForm(QObject):
         elif isinstance(widget, QCheckBox):
             value = widget.isChecked()
         elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
-            value = widget.value()
+            widget_text = widget.text()
+            value = widget.value() if (widget_text and widget_text != "NULL") else NULL
         elif isinstance(widget, QComboBox):
             value = widget.currentData()
         elif isinstance(widget, QPlainTextEdit):
@@ -236,7 +264,7 @@ class BaseForm(QObject):
         return value
 
     def get_widget_editing_signal(self, widget):
-        """Getting widget signal that will be recognize as an editing indication."""
+        """Getting widget signal that will be recognized as an editing indication."""
         if isinstance(widget, (QLineEdit, QPlainTextEdit)):
             signal = widget.textChanged
         elif isinstance(widget, QCheckBox):
@@ -256,10 +284,11 @@ class BaseForm(QObject):
             value = self.get_widget_value(widget)
             handler = self.layer_manager.model_handlers[model_cls]
             layer = handler.layer
+            field_idx = layer.fields().lookupField(field_name)
+            fid = feature.id()
             if not layer.isEditable():
                 layer.startEditing()
-            feature[field_name] = value
-            layer.updateFeature(feature)
+            layer.changeAttributeValue(fid, field_idx, value)
 
     def connect_foreign_widgets(self):
         """Connect widget signals responsible for handling related layers attributes."""
