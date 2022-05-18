@@ -1,7 +1,7 @@
 History
 =======
 
-1.0.5 (unreleased)
+1.0.5 (2022-05-18)
 ------------------
 
 - Added upload scripts and github workflows.
