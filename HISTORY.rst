@@ -1,7 +1,7 @@
 History
 =======
 
-1.0.6 (unreleased)
+1.0.6 (2022-05-18)
 ------------------
 
 - Fix in run attribute in github workflow.
