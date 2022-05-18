@@ -4,7 +4,7 @@ History
 1.0.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- ZIP generation.
 
 
 1.0.3 (2022-05-18)
