@@ -4,7 +4,7 @@ History
 1.0.6 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix in run attribute in github workflow.
 
 
 1.0.5 (2022-05-18)
