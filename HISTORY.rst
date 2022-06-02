@@ -4,7 +4,8 @@ History
 1.0.7 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Updated tests to run on Linux
+- Added Docker container for running tests
 
 
 1.0.6 (2022-05-18)
