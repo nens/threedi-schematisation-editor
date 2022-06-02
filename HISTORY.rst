@@ -4,7 +4,7 @@ History
 1.0.9 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Added docker-compose configuration.
 
 
 1.0.8 (2022-06-02)
