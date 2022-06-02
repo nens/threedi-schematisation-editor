@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - master
-      - basten_pluginRelease
     tags:
       - "*"
   pull_request:
@@ -20,9 +19,9 @@ jobs:
 
       - name: build
         run: |
-          docker build . -t schema
-          docker run -w /app/ -v "$(pwd):/app" schema make test
-          docker run -w /app/ -v "$(pwd):/app" schema make zip
+          docker-compose build schema
+          docker-compose run schema make test
+          docker-compose run schema make zip
 
       - name: Publish package
         if: startsWith(github.event.ref, 'refs/tags')
