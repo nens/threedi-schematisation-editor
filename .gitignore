@@ -1,0 +1,5 @@
+tests/tmp/
+tests/__pycache__
+threedi_schematisation_editor/__pycache__
+.coverage
+*__pycache*
