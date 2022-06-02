@@ -1,7 +1,7 @@
 History
 =======
 
-1.0.8 (unreleased)
+1.0.8 (2022-06-02)
 ------------------
 
 - Github action: prevent zip from being generated twice.
