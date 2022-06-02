@@ -1,13 +1,21 @@
 # Copyright (C) 2022 by Lutra Consulting
 import pytest
 import os
+import sys
 import shutil
 from threedi_schematisation_editor.utils import get_qgis
 
 
 @pytest.fixture
 def data_conversion_setup():
-    qgis_app = get_qgis()
+    # assume the tests run on linux, provide non-default folders
+    qgis_folder = ""
+    proj_folder = ""
+    if sys.platform == "linux":
+        qgis_folder = "/QGIS"
+        proj_folder = "/usr/share/proj"
+
+    qgis_app = get_qgis(qgis_folder, proj_folder)
     current_dir = os.path.dirname(__file__)
     tmp_dir = os.path.join(current_dir, "tmp")
     src_sqlite = os.path.join(current_dir, "test_data", "v2_bergermeer_orifices.sqlite")

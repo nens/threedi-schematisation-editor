@@ -3,10 +3,23 @@ name=3Di Schematisation Editor
 qgisMinimumVersion=3.16
 qgisMaximumVersion=3.99
 description=3Di Schematisation Editor for QGIS
-version=1.0.3
+version=1.0.9
 author=Lutra Consulting
 email=info@lutraconsulting.co.uk
 about=3Di Schematisation Editor prototype
 tracker=https://github.com/nens/threedi-schematisation-editor/issues
 repository=https://github.com/nens/threedi-schematisation-editor/issues
+
+changelog=https://github.com/nens/threedi-schematisation-editor/blob/master/HISTORY.rst
+
+# Tags are comma separated with spaces allowed
+tags=analysis, dem, hydraulics
+
+homepage=https://github.com/nens/threedi-schematisation-editor
+category=Plugins
+icon=icon.png
 experimental=True
+hasProcessingProvider=no
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
