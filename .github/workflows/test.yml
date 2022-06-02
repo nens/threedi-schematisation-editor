@@ -26,9 +26,7 @@ jobs:
 
       - name: Publish package
         if: startsWith(github.event.ref, 'refs/tags')
-        run: |
-          make zip
-          bash upload-artifact.sh
+        run: bash upload-artifact.sh
         env:
           ARTIFACTS_KEY: ${{ secrets.ARTIFACTS_KEY }}
 
