@@ -1,7 +1,7 @@
 History
 =======
 
-1.0.7 (unreleased)
+1.0.7 (2022-06-02)
 ------------------
 
 - Updated tests to run on Linux
