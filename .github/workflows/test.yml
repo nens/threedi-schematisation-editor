@@ -21,8 +21,8 @@ jobs:
       - name: build
         run: |
           docker build . -t schema
-          docker run -w /app/ -v "$(pwd):/app" -it schema make test
-          docker run -w /app/ -v "$(pwd):/app" -it schema make zip
+          docker run -w /app/ -v "$(pwd):/app" schema make test
+          docker run -w /app/ -v "$(pwd):/app" schema make zip
 
       - name: Publish package
         if: startsWith(github.event.ref, 'refs/tags')
