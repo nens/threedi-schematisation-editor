@@ -31,7 +31,7 @@ from qgis.PyQt.QtWidgets import QDialog
 class ModelDataConverter:
     """Class with methods Spatialite <==> GeoPackage conversion of the 3Di model layers."""
 
-    SUPPORTED_SCHEMA_VERSION = 206
+    SUPPORTED_SCHEMA_VERSION = 207
 
     def __init__(self, src_sqlite, dst_gpkg, epsg_code=4326, user_communication=None):
         self.src_sqlite = src_sqlite

@@ -13,7 +13,6 @@ from threedi_schematisation_editor.utils import (
     remove_user_layers,
     add_settings_entry,
     check_enable_macros_option,
-    create_3di_views,
     is_gpkg_connection_exists,
     add_gpkg_connection,
     ConversionError,
@@ -146,12 +145,12 @@ class ThreediModelBuilderPlugin:
             warn_msg = "You don't have required write permissions to load data from the selected spatialite."
             self.uc.show_warn(warn_msg)
             return
-        create_3di_views(src_sqlite)
         schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
         if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
+            schema_version_str = f" ({schema_version}) " if schema_version else " "
             warn_msg = (
-                "The spatialite you have selected could not be loaded, because its database schema version "
-                f"({schema_version}) is not up to date. "
+                "The spatialite you have selected could not be loaded, because its database schema version"
+                f"{schema_version_str}is not up to date. "
                 "Please migrate your spatialite to the current schema version and try again."
             )
             self.uc.show_warn(warn_msg)
@@ -209,12 +208,12 @@ class ThreediModelBuilderPlugin:
             warn_msg = "You don't have required write permissions to save data into the selected spatialite."
             self.uc.show_warn(warn_msg)
             return
-        create_3di_views(dst_sqlite)
         schema_version = ModelDataConverter.spatialite_schema_version(dst_sqlite)
         if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
+            schema_version_str = f" ({schema_version}) " if schema_version else " "
             warn_msg = (
                 "The spatialite you have selected could not be used for saving, "
-                f"because its database schema version ({schema_version}) is not up to date. "
+                f"because its database schema version{schema_version_str}is not up to date. "
                 "Please find your model revision on 3di.lizard.net/models, "
                 "download the spatialite from there and try again."
             )
