@@ -26,7 +26,9 @@ from threedi_schematisation_editor.utils import (
     remove_layer,
     hillshade_layer,
     modify_raster_style,
-    max_height_width_label,
+    cross_section_label,
+    diameter_label,
+    width_label,
 )
 
 
@@ -180,12 +182,16 @@ class LayersManager:
     @staticmethod
     def register_custom_functions():
         """Register custom expression functions"""
-        QgsExpression.registerFunction(max_height_width_label)
+        QgsExpression.registerFunction(cross_section_label)
+        QgsExpression.registerFunction(diameter_label)
+        QgsExpression.registerFunction(width_label)
 
     @staticmethod
     def unregister_custom_functions():
         """Unregister custom expression functions"""
-        QgsExpression.unregisterFunction("max_height_width_label")
+        QgsExpression.unregisterFunction("cross_section_label")
+        QgsExpression.unregisterFunction("diameter_label")
+        QgsExpression.unregisterFunction("width_label")
 
     def create_groups(self):
         """Creating all User Layers groups."""
