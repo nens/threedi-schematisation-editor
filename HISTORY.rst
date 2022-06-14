@@ -4,7 +4,7 @@ History
 1.0.10 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Prepared for release.
 
 
 1.0.9 (2022-06-02)
