@@ -61,9 +61,9 @@ class UICommunication:
             print(msg)
 
     @staticmethod
-    def ask(widget, title, question, box_icon=QMessageBox.Question):
+    def ask(parent, title, question, box_icon=QMessageBox.Question):
         """Ask for operation confirmation."""
-        msg_box = QMessageBox(widget)
+        msg_box = QMessageBox(parent)
         msg_box.setIcon(box_icon)
         msg_box.setWindowTitle(title)
         msg_box.setTextFormat(Qt.RichText)
@@ -77,9 +77,9 @@ class UICommunication:
             return True
 
     @staticmethod
-    def custom_ask(widget, title, question, *buttons_labels):
+    def custom_ask(parent, title, question, *buttons_labels):
         """Ask for custom operation confirmation."""
-        msg_box = QMessageBox(widget)
+        msg_box = QMessageBox(parent)
         msg_box.setIcon(QMessageBox.Question)
         msg_box.setWindowTitle(title)
         msg_box.setTextFormat(Qt.RichText)
