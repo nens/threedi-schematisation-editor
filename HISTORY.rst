@@ -1,10 +1,10 @@
 History
 =======
 
-1.2 (unreleased)
+1.1.1 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Simplified schema migration workflow.
 
 
 1.1 (2022-06-14)
