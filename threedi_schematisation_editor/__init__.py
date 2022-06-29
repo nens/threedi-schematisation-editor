@@ -15,6 +15,7 @@ from threedi_schematisation_editor.utils import (
     check_enable_macros_option,
     is_gpkg_connection_exists,
     add_gpkg_connection,
+    migrate_spatialite_schema,
     ConversionError,
 )
 
@@ -147,14 +148,19 @@ class ThreediModelBuilderPlugin:
             return
         schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
         if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
-            schema_version_str = f" ({schema_version}) " if schema_version else " "
-            warn_msg = (
-                "The spatialite you have selected could not be loaded, because its database schema version"
-                f"{schema_version_str}is not up to date. "
-                "Please migrate your spatialite to the current schema version and try again."
+            warn_and_ask_msg = (
+                "The selected spatialite cannot be used because its database schema version is out of date. "
+                "Would you like to migrate your spatialite to the current schema version?"
             )
-            self.uc.show_warn(warn_msg)
-            return
+            do_migration = self.uc.ask(None, "Missing migration", warn_and_ask_msg)
+            if do_migration:
+                migration_succeed, migration_feedback_msg = migrate_spatialite_schema(src_sqlite)
+                if not migration_succeed:
+                    self.uc.show_warn(migration_feedback_msg)
+                    return
+            else:
+                self.uc.bar_warn("Loading from the Spatialite aborted!")
+                return
         if self.layer_manager is not None:
             self.layer_manager.remove_groups()
             self.model_gpkg = None

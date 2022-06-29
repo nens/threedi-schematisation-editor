@@ -41,6 +41,16 @@ field_types_mapping = {
 }
 
 
+def backup_sqlite(filename):
+    """Make a backup of the sqlite database."""
+    backup_folder = os.path.join(os.path.dirname(os.path.dirname(filename)), "_backup")
+    os.makedirs(backup_folder, exist_ok=True)
+    prefix = str(uuid4())[:8]
+    backup_sqlite_path = os.path.join(backup_folder, f"{prefix}_{os.path.basename(filename)}")
+    shutil.copyfile(filename, backup_sqlite_path)
+    return backup_sqlite_path
+
+
 def cast_if_bool(value):
     """Function for changing True/False from GeoPackage layers to 0/1 integers used in Spatialite layers."""
     if value is True:
@@ -787,3 +797,30 @@ def create_3di_views(sqlite_filepath):
 
     connection.commit()
     connection.close()
+
+
+def migrate_spatialite_schema(sqlite_filepath):
+    migration_succeed = False
+    try:
+        from threedi_modelchecker.threedi_database import ThreediDatabase
+        from threedi_modelchecker.schema import ModelSchema
+        from threedi_modelchecker import errors
+
+        db_settings = {"db_path": sqlite_filepath}
+        threedi_db = ThreediDatabase(db_settings)
+        schema = ModelSchema(threedi_db)
+        backup_filepath = backup_sqlite(sqlite_filepath)
+        schema.upgrade(backup=False, upgrade_spatialite_version=True)
+        shutil.rmtree(os.path.dirname(backup_filepath))
+        migration_succeed = True
+        migration_feedback_msg = "Migration succeed."
+    except ImportError:
+        migration_feedback_msg = "Missing schematisation-checker library. Schema migration failed."
+    except errors.UpgradeFailedError:
+        migration_feedback_msg = (
+            "There are errors in the spatialite. Please re-open this file in QGIS 3.16, run the model checker and "
+            "fix error messages. Then attempt to upgrade again. For questions please contact the servicedesk."
+        )
+    except Exception as e:
+        migration_feedback_msg = f"{e}"
+    return migration_succeed, migration_feedback_msg
