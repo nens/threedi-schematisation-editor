@@ -159,6 +159,7 @@ class ThreediModelBuilderPlugin:
                     self.uc.show_warn(migration_feedback_msg)
                     return
             else:
+                self.uc.bar_warn("Loading from the Spatialite aborted!")
                 return
         if self.layer_manager is not None:
             self.layer_manager.remove_groups()
