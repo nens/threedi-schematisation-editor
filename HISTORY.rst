@@ -4,7 +4,7 @@ History
 1.1.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Added 3Di plugin icon.
 
 
 1.1.1 (2022-06-29)
