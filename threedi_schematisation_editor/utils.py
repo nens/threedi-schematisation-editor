@@ -824,3 +824,19 @@ def migrate_spatialite_schema(sqlite_filepath):
     except Exception as e:
         migration_feedback_msg = f"{e}"
     return migration_succeed, migration_feedback_msg
+
+
+class FormCustomizations:
+    """Methods container for the forms widgets extra customizations."""
+
+    @staticmethod
+    def cross_section_table_placeholder_text(widget):
+        placeholder_text = (
+            "Format this input as a CSV-style table of height, width pairs.\n\n"
+            "Example:\n\n"
+            "0.0, 0.5\n"
+            "0.5, 1.2\n"
+            "2.3, 3.2\n"
+            "4.4, 5.0"
+        )
+        widget.setPlaceholderText(placeholder_text)

@@ -74,6 +74,9 @@ class BaseForm(QObject):
     def setup_form_widgets(self):
         """Setting up all form widgets."""
         # TODO: Improve handling of newly added related features
+        for field, customisation_fn in self.handler.FORM_CUSTOMIZATIONS.items():
+            widget = self.dialog.findChild(QObject, field)
+            customisation_fn(widget)
         if self.feature is None:
             return
         if self.feature.id() < 0:
@@ -97,6 +100,7 @@ class BaseForm(QObject):
         for related_cls, relations_number in self.handler.RELATED_MODELS.items():
             table_name = related_cls.__tablename__
             range_end = relations_number + 1 if relations_number < infinity else 2
+            related_handler = self.layer_manager.model_handlers[related_cls]
             for related_number in range(1, range_end):
                 if relations_number == infinity:
                     numerical_modifier = infinity
@@ -114,6 +118,11 @@ class BaseForm(QObject):
                     widget = self.dialog.findChild(QObject, widget_name)
                     if widget is None:
                         continue
+                    try:
+                        customization_fn = related_handler.FORM_CUSTOMIZATIONS[field_name]
+                        customization_fn(widget)
+                    except KeyError:
+                        pass
                     self.foreign_widgets[widget_name] = (widget, related_cls, numerical_modifier, field_name)
 
     def toggle_edit_mode(self):

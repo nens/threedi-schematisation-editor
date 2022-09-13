@@ -23,6 +23,7 @@ from threedi_schematisation_editor.utils import (
     find_linestring_nodes,
     find_point_polygons,
     get_next_feature_id,
+    FormCustomizations,
 )
 from qgis.core import QgsFeature, QgsGeometry, QgsFeatureRequest, QgsExpression, NULL
 from qgis.PyQt.QtCore import QTimer
@@ -34,6 +35,7 @@ class UserLayerHandler:
     MODEL = dm.ModelObject
     RELATED_MODELS = MappingProxyType({})  # model_cls: number of model instances
     DEFAULTS = MappingProxyType({})
+    FORM_CUSTOMIZATIONS = MappingProxyType({})
 
     def __init__(self, layer_manager, layer):
         self.layer_manager = layer_manager
@@ -696,6 +698,9 @@ class CrossSectionLocationHandler(UserLayerHandler):
             "calculation_type": CalculationTypeNode.ISOLATED.value,
             "bottom_level": -10.0,
         }
+    )
+    FORM_CUSTOMIZATIONS = MappingProxyType(
+        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
 
 
