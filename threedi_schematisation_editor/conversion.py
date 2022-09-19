@@ -41,16 +41,16 @@ class ModelDataConverter:
         self.all_models = dm.ALL_MODELS[:]
         self.timeseries_rawdata = OrderedDict()
         self.uc = user_communication if user_communication is not None else UICommunication(context="3Di Model Builder")
-        self.commit_errors = defaultdict(list)
+        self.conversion_errors = defaultdict(list)
 
-    def report_commit_errors(self):
-        """Report all caught commit errors."""
+    def report_conversion_errors(self):
+        """Report all caught conversion errors."""
         error_message = ""
-        errors_per_data_model = list(self.commit_errors.items())
+        errors_per_data_model = list(self.conversion_errors.items())
         errors_per_data_model.sort(key=itemgetter(0))
         for layer_name, errors in errors_per_data_model:
             errors_str = "\n".join(errors)
-            error_message += f"{layer_name} commit errors:\n{errors_str}\n"
+            error_message += f"{layer_name} conversion errors:\n{errors_str}\n"
         error_message.strip()
         if error_message:
             self.uc.show_error(error_message)
@@ -122,7 +122,7 @@ class ModelDataConverter:
 
     def trim_sqlite_targets(self):
         """Removing all features from Spatialite tables."""
-        self.commit_errors.clear()
+        self.conversion_errors.clear()
         for model_cls in self.all_models:
             for src_table in model_cls.SQLITE_TARGETS or tuple():
                 src_layer = sqlite_layer(self.src_sqlite, src_table)
@@ -134,7 +134,7 @@ class ModelDataConverter:
                 success = src_layer.commitChanges()
                 if not success:
                     commit_errors = src_layer.commitErrors()
-                    self.commit_errors[model_cls.__layername__] += commit_errors
+                    self.conversion_errors[model_cls.__layername__] += commit_errors
 
     @staticmethod
     def copy_features(src_layer, dst_layer, request=None, **field_mappings):
@@ -221,7 +221,7 @@ class ModelDataConverter:
         success = ts_layer.commitChanges()
         if not success:
             commit_errors = ts_layer.commitErrors()
-            self.commit_errors[dm.Timeseries.__layername__] += commit_errors
+            self.conversion_errors[dm.Timeseries.__layername__] += commit_errors
 
     def recreate_timeseries_rawdata(self):
         """Reading Timeseries from User Layer table."""
@@ -281,7 +281,13 @@ class ModelDataConverter:
         impervious_surface_map_geoms, surface_map_geoms = {}, {}
         for feat in impervious_surface_map_layer.getFeatures():
             fid, node_id, surface_id = feat.id(), feat["connection_node_id"], feat["impervious_surface_id"]
-            connection_node_geom = connection_node_points[node_id]
+            try:
+                connection_node_geom = connection_node_points[node_id]
+            except KeyError:
+                missing_node_error = f"Impervious Surface ({fid}) with an invalid 'connection_node_id' reference. " \
+                                     f"Node ({node_id}) doesn't exist."
+                self.conversion_errors[dm.ImperviousSurface.__layername__].append(missing_node_error)
+                continue
             connection_node_point = connection_node_geom.asPoint()
             isurface_centroid_geom = impervious_surface_points[surface_id]
             try:
@@ -293,7 +299,13 @@ class ModelDataConverter:
             impervious_surface_map_geoms[fid] = link_geom
         for feat in surface_map_layer.getFeatures():
             fid, node_id, surface_id = feat.id(), feat["connection_node_id"], feat["surface_id"]
-            connection_node_geom = connection_node_points[node_id]
+            try:
+                connection_node_geom = connection_node_points[node_id]
+            except KeyError:
+                missing_node_error = f"Surface ({fid}) with an invalid 'connection_node_id' reference. " \
+                                     f"Node ({node_id}) doesn't exist."
+                self.conversion_errors[dm.Surface.__layername__].append(missing_node_error)
+                continue
             connection_node_point = connection_node_geom.asPoint()
             surface_centroid_geom = surface_points[surface_id]
             try:
@@ -309,14 +321,14 @@ class ModelDataConverter:
         success = impervious_surface_map_layer.commitChanges()
         if not success:
             commit_errors = impervious_surface_map_layer.commitErrors()
-            self.commit_errors[dm.ImperviousSurface.__layername__] += commit_errors
+            self.conversion_errors[dm.ImperviousSurface.__layername__] += commit_errors
         surface_map_layer.startEditing()
         for fid, link_geom in surface_map_geoms.items():
             surface_map_layer.changeGeometry(fid, link_geom)
         success = surface_map_layer.commitChanges()
         if not success:
             commit_errors = surface_map_layer.commitErrors()
-            self.commit_errors[dm.Surface.__layername__] += commit_errors
+            self.conversion_errors[dm.Surface.__layername__] += commit_errors
 
     def import_model_data(self, annotated_model_csl):
         """Converting Spatialite layer into GeoPackage User Layer based on model data class."""
@@ -343,7 +355,7 @@ class ModelDataConverter:
             success = dst_layer.commitChanges()
             if not success:
                 commit_errors = dst_layer.commitErrors()
-                self.commit_errors[dst_layer_name] += commit_errors
+                self.conversion_errors[dst_layer_name] += commit_errors
 
     def collect_src_dst_ids(self, annotated_model_csl):
         """Getting unique feature IDs of source and destination layers."""
@@ -456,11 +468,11 @@ class ModelDataConverter:
             success = dst_xs_def_lyr.commitChanges()
             if not success:
                 commit_errors = dst_xs_def_lyr.commitErrors()
-                self.commit_errors[model_cls.__layername__] += commit_errors
+                self.conversion_errors[model_cls.__layername__] += commit_errors
 
     def import_all_model_data(self):
         """Converting all Spatialite layers into GeoPackage User Layers."""
-        self.commit_errors.clear()
+        self.conversion_errors.clear()
         self.timeseries_rawdata.clear()
         models_to_import = list(self.all_models)
         models_to_import.remove(dm.Timeseries)
@@ -506,7 +518,7 @@ class ModelDataConverter:
                     warn += " ..."
             warn += "\nPlease run the 3Di schematization checker for more details"
             self.uc.show_warn(warn)
-        self.report_commit_errors()
+        self.report_conversion_errors()
 
     def export_model_data(self, annotated_model_csl):
         """Converting GeoPackage User Layer into Spatialite layer based on model data class."""
@@ -533,7 +545,7 @@ class ModelDataConverter:
             success = dst_obstacle_layer.commitChanges()
             if not success:
                 commit_errors = dst_obstacle_layer.commitErrors()
-                self.commit_errors[src_layer_name] += commit_errors
+                self.conversion_errors[src_layer_name] += commit_errors
             # Copy only levee features
             new_levee_feats = self.copy_features(src_layer, dst_levee_layer, levee_request, **switched_map)
             dst_levee_layer.startEditing()
@@ -541,7 +553,7 @@ class ModelDataConverter:
             success = dst_levee_layer.commitChanges()
             if not success:
                 commit_errors = dst_levee_layer.commitErrors()
-                self.commit_errors[src_layer_name] += commit_errors
+                self.conversion_errors[src_layer_name] += commit_errors
         else:
             dst_table = next(iter(annotated_model_csl.SQLITE_TARGETS))
             dst_layer = sqlite_layer(self.src_sqlite, dst_table)
@@ -554,7 +566,7 @@ class ModelDataConverter:
             success = dst_layer.commitChanges()
             if not success:
                 commit_errors = dst_layer.commitErrors()
-                self.commit_errors[src_layer_name] += commit_errors
+                self.conversion_errors[src_layer_name] += commit_errors
 
     @staticmethod
     def cross_section_definition_code(shape, width, width_values=None, height_values=None):
@@ -630,7 +642,7 @@ class ModelDataConverter:
         success = xs_def_lyr.commitChanges()
         if not success:
             commit_errors = xs_def_lyr.commitErrors()
-            self.commit_errors[dm.CrossSectionDefinition.__layername__] += commit_errors
+            self.conversion_errors[dm.CrossSectionDefinition.__layername__] += commit_errors
         # Update `cross_section_definition_id` fields in the layers that refers to the cross-section definition data
         for model_cls in dm.ELEMENTS_WITH_XS_DEF:
             dst_changes = {}
@@ -655,13 +667,13 @@ class ModelDataConverter:
             success = dst_with_xs_def_lyr.commitChanges()
             if not success:
                 commit_errors = dst_with_xs_def_lyr.commitErrors()
-                self.commit_errors[model_cls.__layername__] += commit_errors
+                self.conversion_errors[model_cls.__layername__] += commit_errors
 
     def export_all_model_data(self):
         """Converting all GeoPackage User Layers into Spatialite layers."""
         # TODO: Uncomment line below after finishing forms implementation
         # self.recreate_timeseries_rawdata()
-        self.commit_errors.clear()
+        self.conversion_errors.clear()
         models_to_export = list(self.all_models)
         models_to_export.remove(dm.Timeseries)
         models_to_export.remove(dm.PumpstationMap)
@@ -699,4 +711,4 @@ class ModelDataConverter:
                 if miss_no > 10:
                     warn += " ..."
             self.uc.show_warn(warn)
-        self.report_commit_errors()
+        self.report_conversion_errors()

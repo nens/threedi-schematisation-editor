@@ -230,7 +230,7 @@ class ThreediModelBuilderPlugin:
         if known_epsg is False:
             return
         converter.trim_sqlite_targets()
-        converter.report_commit_errors()
+        converter.report_conversion_errors()
         converter.export_all_model_data()
         self.uc.show_info("Saving to the Spatialite finished!")
 
