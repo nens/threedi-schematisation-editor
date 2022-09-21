@@ -94,7 +94,23 @@ class LayersManager:
         self.active_form_signals = set()
         self.iface.currentLayerChanged.connect(self.on_active_layer_changed)
 
+    def validate_layers(self, return_raw_errors=False):
+        """Validate all layers registered within handlers."""
+        fixed_errors, unsolved_errors = [], []
+        for handler in self.model_handlers.values():
+            fixed_validation_errors, unsorted_validation_errors = handler.validate_features()
+            fixed_errors += fixed_validation_errors
+            unsolved_errors += unsorted_validation_errors
+        if return_raw_errors:
+            return fixed_errors, unsolved_errors
+        else:
+            # TODO: make pretty output messages
+            fixed_errors_message = "\n".join(fix.error_message for fix in fixed_errors) if fixed_errors else ""
+            unsolved_errors_message = "\n".join(err.error_message for err in unsolved_errors) if unsolved_errors else ""
+            return fixed_errors_message, unsolved_errors_message
+
     def on_active_layer_changed(self, layer):
+        """Refresh snapping after active layer change."""
         self.reset_snapping()
         try:
             layer_handler = self.layer_handlers[layer.id()]

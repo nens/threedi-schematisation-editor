@@ -12,9 +12,10 @@ from threedi_schematisation_editor.enumerators import (
     PumpType,
     ZoomCategories,
 )
+from threedi_schematisation_editor.validators import CrossSectionTableValidator
 from collections import defaultdict
 from types import MappingProxyType
-from functools import partial
+from functools import partial, cached_property
 from threedi_schematisation_editor.utils import (
     connect_signal,
     disconnect_signal,
@@ -36,6 +37,7 @@ class UserLayerHandler:
     RELATED_MODELS = MappingProxyType({})  # model_cls: number of model instances
     DEFAULTS = MappingProxyType({})
     FORM_CUSTOMIZATIONS = MappingProxyType({})
+    VALIDATORS = tuple()
 
     def __init__(self, layer_manager, layer):
         self.layer_manager = layer_manager
@@ -66,6 +68,13 @@ class UserLayerHandler:
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
         pass
+
+    @cached_property
+    def field_indexes(self):
+        """Return field name to its index map"""
+        field_names = [field.name() for field in self.layer.fields()]
+        field_index_map = {field_name: self.layer.fields().lookupField(field_name) for field_name in field_names}
+        return field_index_map
 
     @property
     def other_linked_handlers(self):
@@ -123,6 +132,32 @@ class UserLayerHandler:
             layer = layer_handler.layer
             connect_signal(layer.beforeRollBack, layer_handler.on_rollback)
             connect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
+
+    def fix_validation_error(self, validation_error):
+        """Fix validation error using automatic fixes."""
+        if not self.layer.isEditable():
+            self.layer.startEditing()
+        for fix in validation_error.fixes:
+            field_idx = self.field_indexes[fix.field_name]
+            self.layer.changeAttributeValue(validation_error.feature_id, field_idx, fix.fixed_value)
+
+    def validate_features(self, autofix=True):
+        """Validate features (and fix on the fly if required)."""
+        fixed_validation_errors = []
+        unsorted_validation_errors = []
+        for feat in self.layer.getFeatures():
+            for validator_cls in self.VALIDATORS:
+                validator = validator_cls(self, feat, autofix=autofix)
+                for validation_method in validator.validation_methods:
+                    validation_method()
+                    for validation_error in validator.validation_errors:
+                        if validation_error.fixes:
+                            self.fix_validation_error(validation_error)
+                            fixed_validation_errors.append(validation_error)
+                        else:
+                            unsorted_validation_errors.append(validation_error)
+                    validator.clear()
+        return fixed_validation_errors, unsorted_validation_errors
 
     def multi_commit_changes(self):
         """Commit changes for all layers with 1D group."""
@@ -484,6 +519,8 @@ class WeirHandler(UserLayerHandler):
         {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
 
+    VALIDATORS = (CrossSectionTableValidator,)
+
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_weir)
@@ -526,6 +563,8 @@ class CulvertHandler(UserLayerHandler):
         {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
 
+    VALIDATORS = (CrossSectionTableValidator,)
+
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
         self.layer.geometryChanged.connect(self.update_node_references)
@@ -559,6 +598,8 @@ class OrificeHandler(UserLayerHandler):
     FORM_CUSTOMIZATIONS = MappingProxyType(
         {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
+
+    VALIDATORS = (CrossSectionTableValidator,)
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
@@ -600,6 +641,8 @@ class PipeHandler(UserLayerHandler):
     FORM_CUSTOMIZATIONS = MappingProxyType(
         {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
+
+    VALIDATORS = (CrossSectionTableValidator,)
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
@@ -714,6 +757,8 @@ class CrossSectionLocationHandler(UserLayerHandler):
     FORM_CUSTOMIZATIONS = MappingProxyType(
         {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
+
+    VALIDATORS = (CrossSectionTableValidator,)
 
 
 class ChannelHandler(UserLayerHandler):

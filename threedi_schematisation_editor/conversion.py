@@ -194,7 +194,7 @@ class ModelDataConverter:
 
     @staticmethod
     def parse_timeseries_row(timeseries_txt, timeseries_id, reference_layer, reference_id, offset=0):
-        """Parsing text Timeseries data into structurized form."""
+        """Parsing text Timeseries data into structured form."""
         series = []
         for row in timeseries_txt.split("\n"):
             duration_str, value_str = row.split(",")
@@ -203,7 +203,7 @@ class ModelDataConverter:
         return series
 
     def process_timeseries_rawdata(self):
-        """Writing structurized Timeseries into separate table."""
+        """Writing structured Timeseries into separate table."""
         ts_layer = gpkg_layer(self.dst_gpkg, dm.Timeseries.__tablename__)
         ts_fields = ts_layer.fields()
         ts_field_names = [f.name() for f in ts_fields]
@@ -284,8 +284,10 @@ class ModelDataConverter:
             try:
                 connection_node_geom = connection_node_points[node_id]
             except KeyError:
-                missing_node_error = f"Impervious Surface ({fid}) with an invalid 'connection_node_id' reference. " \
-                                     f"Node ({node_id}) doesn't exist."
+                missing_node_error = (
+                    f"Impervious Surface ({fid}) with an invalid 'connection_node_id' reference. "
+                    f"Node ({node_id}) doesn't exist."
+                )
                 self.conversion_errors[dm.ImperviousSurface.__layername__].append(missing_node_error)
                 continue
             connection_node_point = connection_node_geom.asPoint()
@@ -302,8 +304,10 @@ class ModelDataConverter:
             try:
                 connection_node_geom = connection_node_points[node_id]
             except KeyError:
-                missing_node_error = f"Surface ({fid}) with an invalid 'connection_node_id' reference. " \
-                                     f"Node ({node_id}) doesn't exist."
+                missing_node_error = (
+                    f"Surface ({fid}) with an invalid 'connection_node_id' reference. "
+                    f"Node ({node_id}) doesn't exist."
+                )
                 self.conversion_errors[dm.Surface.__layername__].append(missing_node_error)
                 continue
             connection_node_point = connection_node_geom.asPoint()

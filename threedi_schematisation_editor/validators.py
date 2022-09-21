@@ -1,0 +1,188 @@
+# Copyright (C) 2022 by Lutra Consulting
+import re
+from functools import cached_property
+from itertools import chain
+from qgis.core import NULL
+
+
+class FieldValidationError:
+    """Structure with field validation output."""
+
+    def __init__(self, data_model_cls, feature_id, field_name, current_value, error_message=None):
+        self.data_model_cls = data_model_cls
+        self.feature_id = feature_id
+        self.field_name = field_name
+        self.current_value = current_value
+        self.error_message = error_message
+        self.fixes = []
+
+    def add_autofix(self, fixed_value, field_name=None):
+        """Add autofix object with proposed value."""
+        fix = ValidationAutofix(field_name if field_name else self.field_name, fixed_value)
+        self.fixes.append(fix)
+
+
+class ValidationAutofix:
+    """Validation autofix object."""
+
+    def __init__(self, field_name, fixed_value):
+        self.field_name = field_name
+        self.fixed_value = fixed_value
+
+
+class AttributeValidator:
+    """Abstract class of field validator."""
+
+    FIELD_NAME = None
+    FIELD_INDEX = None
+
+    def __init__(self, handler, feature, autofix=False):
+        self.handler = handler
+        self.feature = feature
+        self.autofix = autofix
+        self.validation_errors = []
+
+    @property
+    def model(self):
+        """Return associated handler base model class."""
+        return self.handler.MODEL
+
+    @property
+    def layer(self):
+        """Return associated handler layer."""
+        return self.handler.layer
+
+    @property
+    def field_name(self):
+        """Return validated field name."""
+        return self.FIELD_NAME
+
+    @cached_property
+    def field_index(self):
+        """Return validated field index."""
+        if self.FIELD_INDEX is None:
+            field_idx = self.layer.fields().lookupField(self.field_name)
+        else:
+            field_idx = self.FIELD_INDEX
+        return field_idx
+
+    @cached_property
+    def fid(self):
+        """Return validated feature ID."""
+        return self.feature.id()
+
+    @cached_property
+    def field_value(self):
+        """Return validated field value."""
+        field_value = self.feature[self.field_name]
+        return field_value
+
+    @property
+    def empty_values(self):
+        """Return empty values representation set."""
+        return {None, NULL, ""}
+
+    @property
+    def validation_methods(self):
+        """Return available validations method list."""
+        available_methods = []
+        return available_methods
+
+    def clear(self):
+        """Clear validation errors list."""
+        self.validation_errors.clear()
+
+
+class CrossSectionTableValidator(AttributeValidator):
+    """'cross_section_table' field validator."""
+
+    FIELD_NAME = "cross_section_table"
+
+    @cached_property
+    def cross_section_table_rows(self):
+        """Return 'cross_section_table' rows."""
+        split_values = [row for row in self.field_value.split("\n")]
+        return split_values
+
+    @cached_property
+    def cross_section_table_values(self):
+        """Return 'cross_section_table' values tuples."""
+        split_values = [row.split(", ") for row in self.cross_section_table_rows]
+        return split_values
+
+    @property
+    def validation_methods(self):
+        """Return available validations method list."""
+        available_methods = [
+            self._not_empty,
+            self._valid_format,
+            self._no_trailing_blank_chars,
+            self._whitespace_after_comma,
+            self._no_dot_separator,
+        ]
+        return available_methods
+
+    def _not_empty(self):
+        """Check if field value is not empty."""
+        error_msg = f"'{self.field_name}' value is NULL"
+        if self.field_value in self.empty_values:
+            validation_error = FieldValidationError(self.model, self.fid, self.field_name, self.field_value, error_msg)
+            if self.autofix:
+                validation_error.add_autofix(NULL, "cross_section_width")
+                validation_error.add_autofix(NULL, "cross_section_height")
+            self.validation_errors.append(validation_error)
+
+    def _valid_format(self):
+        """Check if field value hav format that can be parsed."""
+        error_msg = f"'{self.field_name}' value have invalid format"
+        if self.field_value not in self.empty_values:
+            try:
+                _float_values = [(float(h), float(w)) for h, w in self.cross_section_table_values]
+            except ValueError:
+                validation_error = FieldValidationError(
+                    self.model, self.fid, self.field_name, self.field_value, error_msg
+                )
+                self.validation_errors.append(validation_error)
+
+    def _no_trailing_blank_chars(self):
+        """Check if field value have no trailing blank characters."""
+        error_msg = f"'{self.field_name}' value have trailing whitespaces"
+        if self.field_value not in self.empty_values:
+            stripped_field_value = self.field_value.lstrip()
+            if self.field_value != stripped_field_value:
+                validation_error = FieldValidationError(
+                    self.model, self.fid, self.field_name, self.field_value, error_msg
+                )
+                if self.autofix:
+                    validation_error.add_autofix(stripped_field_value)
+                self.validation_errors.append(validation_error)
+
+    def _whitespace_after_comma(self):
+        """Check if values are coma separated with following whitespace."""
+        error_msg = f"'{self.field_name}' value missing whitespaces after coma separators"
+        if self.field_value not in self.empty_values:
+            pattern = re.compile(", ", re.M)
+            if not re.search(pattern, self.field_value):
+                validation_error = FieldValidationError(
+                    self.model, self.fid, self.field_name, self.field_value, error_msg
+                )
+                if self.autofix:
+                    fixed_value = "\n".join(f"{h}, {w}" for h, w in self.cross_section_table_values)
+                    validation_error.add_autofix(fixed_value)
+                self.validation_errors.append(validation_error)
+
+    def _no_dot_separator(self):
+        """Check if float values are dot separated."""
+        error_msg = f"'{self.field_name}' value contains coma-separated float numbers"
+        if self.field_value not in self.empty_values:
+            pattern = re.compile("\d,\d")
+            for value in chain.from_iterable(self.cross_section_table_values):
+                if re.search(pattern, value):
+                    validation_error = FieldValidationError(
+                        self.model, self.fid, self.field_name, self.field_value, error_msg
+                    )
+                    if self.autofix:
+                        fixed_value = re.sub("(?<=\d),(?=\d)", ".", self.field_value)
+                        validation_error.add_autofix(fixed_value)
+                    self.validation_errors.append(validation_error)
+                    break

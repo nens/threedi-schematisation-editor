@@ -199,6 +199,12 @@ class ThreediModelBuilderPlugin:
             return
         if self.layer_manager is None:
             return
+        fixed_errors_msg, unsolved_errors_msg = self.layer_manager.validate_layers()
+        if fixed_errors_msg:
+            self.uc.show_info(fixed_errors_msg)
+        if unsolved_errors_msg:
+            self.uc.show_warn(fixed_errors_msg)
+            return
         self.layer_manager.stop_model_editing()
         if pick_destination:
             dst_sqlite = self.select_sqlite_database(title="Select database to save features to")
