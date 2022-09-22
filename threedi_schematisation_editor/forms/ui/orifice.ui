@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>550</width>
-    <height>600</height>
+    <width>602</width>
+    <height>703</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       <set>Qt::ImhNone</set>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -569,7 +569,7 @@ coefficient positive</string>
              <locale language="English" country="UnitedStates"/>
             </property>
             <property name="text">
-             <string>Crest level</string>
+             <string>Crest level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -694,7 +694,8 @@ coefficient positive</string>
           <item row="4" column="0">
            <widget class="QLabel" name="label_8">
             <property name="text">
-             <string>Table</string>
+             <string>Table
+[height, width]</string>
             </property>
            </widget>
           </item>
@@ -707,7 +708,7 @@ coefficient positive</string>
              <set>Qt::ImhNone</set>
             </property>
             <property name="text">
-             <string>Width</string>
+             <string>Width [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -758,7 +759,7 @@ coefficient positive</string>
              <set>Qt::ImhNone</set>
             </property>
             <property name="text">
-             <string>Height</string>
+             <string>Height [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -858,7 +859,7 @@ coefficient positive</string>
           <item row="0" column="2">
            <widget class="QLabel" name="label_52">
             <property name="text">
-             <string>Node initial water level</string>
+             <string>Node initial water level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -916,7 +917,7 @@ coefficient positive</string>
           <item row="1" column="2">
            <widget class="QLabel" name="label_55">
             <property name="text">
-             <string>Node storage area</string>
+             <string>Node storage area [m²]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1056,7 +1057,7 @@ coefficient positive</string>
           <item row="0" column="2">
            <widget class="QLabel" name="label_17">
             <property name="text">
-             <string>Node initial water level</string>
+             <string>Node initial water level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1069,7 +1070,7 @@ coefficient positive</string>
           <item row="1" column="2">
            <widget class="QLabel" name="label_22">
             <property name="text">
-             <string>Node storage area</string>
+             <string>Node storage area [m²]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>

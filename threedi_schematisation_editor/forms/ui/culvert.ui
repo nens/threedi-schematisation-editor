@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>500</width>
-    <height>600</height>
+    <width>579</width>
+    <height>703</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -113,7 +113,7 @@
              <locale language="English" country="UnitedStates"/>
             </property>
             <property name="text">
-             <string>Start invert level</string>
+             <string>Start invert level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -171,7 +171,7 @@
              <locale language="English" country="UnitedStates"/>
             </property>
             <property name="text">
-             <string>End invert level</string>
+             <string>End invert level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -535,7 +535,7 @@ coefficient positive</string>
           <item row="2" column="2">
            <widget class="QLabel" name="label_56">
             <property name="text">
-             <string>Distance between calculation points</string>
+             <string>Distance between calculation points [m]</string>
             </property>
             <property name="wordWrap">
              <bool>true</bool>
@@ -778,7 +778,7 @@ coefficient positive</string>
              <set>Qt::ImhNone</set>
             </property>
             <property name="text">
-             <string>Height</string>
+             <string>Height [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -791,7 +791,8 @@ coefficient positive</string>
           <item row="4" column="0">
            <widget class="QLabel" name="label_8">
             <property name="text">
-             <string>Table</string>
+             <string>Table
+[height, width]</string>
             </property>
            </widget>
           </item>
@@ -804,7 +805,7 @@ coefficient positive</string>
              <set>Qt::ImhNone</set>
             </property>
             <property name="text">
-             <string>Width</string>
+             <string>Width [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -920,7 +921,7 @@ coefficient positive</string>
           <item row="1" column="2">
            <widget class="QLabel" name="label_55">
             <property name="text">
-             <string>Node storage area</string>
+             <string>Node storage area [m²]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -987,7 +988,7 @@ coefficient positive</string>
           <item row="0" column="2">
            <widget class="QLabel" name="label_52">
             <property name="text">
-             <string>Node initial water level</string>
+             <string>Node initial water level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1103,7 +1104,7 @@ coefficient positive</string>
           <item row="0" column="2">
            <widget class="QLabel" name="label_17">
             <property name="text">
-             <string>Node initial water level</string>
+             <string>Node initial water level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1164,7 +1165,7 @@ coefficient positive</string>
           <item row="1" column="2">
            <widget class="QLabel" name="label_22">
             <property name="text">
-             <string>Node storage area</string>
+             <string>Node storage area [m²]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>550</width>
-    <height>600</height>
+    <width>602</width>
+    <height>693</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -415,7 +415,8 @@
           <item row="4" column="0">
            <widget class="QLabel" name="label_8">
             <property name="text">
-             <string>Table</string>
+             <string>Table
+[height, width]</string>
             </property>
            </widget>
           </item>
@@ -447,7 +448,7 @@
              <set>Qt::ImhNone</set>
             </property>
             <property name="text">
-             <string>Height</string>
+             <string>Height [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -473,7 +474,7 @@
              <set>Qt::ImhNone</set>
             </property>
             <property name="text">
-             <string>Width</string>
+             <string>Width [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -734,7 +735,7 @@
           <item row="4" column="3">
            <widget class="QLabel" name="label_51">
             <property name="text">
-             <string>Distance between calculation points</string>
+             <string>Distance between calculation points [m]</string>
             </property>
             <property name="wordWrap">
              <bool>true</bool>
@@ -883,7 +884,7 @@
           <item row="0" column="2">
            <widget class="QLabel" name="label_17">
             <property name="text">
-             <string>Node initial water level</string>
+             <string>Node initial water level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -931,7 +932,7 @@
           <item row="1" column="2">
            <widget class="QLabel" name="label_22">
             <property name="text">
-             <string>Node storage area</string>
+             <string>Node storage area [m²]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1135,7 +1136,7 @@
           <item row="0" column="3">
            <widget class="QLabel" name="label_32">
             <property name="text">
-             <string>Bottom level</string>
+             <string>Bottom level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1210,7 +1211,7 @@
           <item row="2" column="0">
            <widget class="QLabel" name="label_29">
             <property name="text">
-             <string>Length</string>
+             <string>Length [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1220,7 +1221,7 @@
           <item row="1" column="0">
            <widget class="QLabel" name="label_31">
             <property name="text">
-             <string>Width</string>
+             <string>Width [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1230,7 +1231,7 @@
           <item row="2" column="3">
            <widget class="QLabel" name="label_34">
             <property name="text">
-             <string>Drain level</string>
+             <string>Drain level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1271,7 +1272,7 @@
           <item row="1" column="3">
            <widget class="QLabel" name="label_33">
             <property name="text">
-             <string>Surface level</string>
+             <string>Surface level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1688,7 +1689,7 @@
           <item row="2" column="0">
            <widget class="QLabel" name="label_35">
             <property name="text">
-             <string>Length</string>
+             <string>Length [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1757,7 +1758,7 @@
           <item row="1" column="3">
            <widget class="QLabel" name="label_39">
             <property name="text">
-             <string>Surface level</string>
+             <string>Surface level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1770,7 +1771,7 @@
           <item row="2" column="3">
            <widget class="QLabel" name="label_40">
             <property name="text">
-             <string>Drain level</string>
+             <string>Drain level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1818,7 +1819,7 @@
           <item row="1" column="0">
            <widget class="QLabel" name="label_37">
             <property name="text">
-             <string>Width</string>
+             <string>Width [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1828,7 +1829,7 @@
           <item row="0" column="3">
            <widget class="QLabel" name="label_38">
             <property name="text">
-             <string>Bottom level</string>
+             <string>Bottom level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1979,7 +1980,7 @@
           <item row="1" column="2">
            <widget class="QLabel" name="label_50">
             <property name="text">
-             <string>Node storage area</string>
+             <string>Node storage area [m²]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1992,7 +1993,7 @@
           <item row="0" column="2">
            <widget class="QLabel" name="label_47">
             <property name="text">
-             <string>Node initial water level</string>
+             <string>Node initial water level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
