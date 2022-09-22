@@ -145,7 +145,7 @@ class CrossSectionTableValidator(AttributeValidator):
             self.validation_errors.append(validation_error)
 
     def _valid_format(self):
-        """Check if field value hav format that can be parsed."""
+        """Check if field value have format that can be parsed."""
         error_msg = f"'{self.field_name}' value have invalid format"
         if self.field_value not in self.empty_values:
             try:

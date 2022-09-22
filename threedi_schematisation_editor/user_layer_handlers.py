@@ -143,8 +143,7 @@ class UserLayerHandler:
 
     def validate_features(self, autofix=True):
         """Validate features (and fix on the fly if required)."""
-        fixed_validation_errors = []
-        unsorted_validation_errors = []
+        fixed_validation_errors, unsorted_validation_errors = [], []
         for feat in self.layer.getFeatures():
             for validator_cls in self.VALIDATORS:
                 validator = validator_cls(self, feat, autofix=autofix)
