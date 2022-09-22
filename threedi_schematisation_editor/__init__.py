@@ -200,10 +200,13 @@ class ThreediModelBuilderPlugin:
         if self.layer_manager is None:
             return
         fixed_errors_msg, unsolved_errors_msg = self.layer_manager.validate_layers()
-        if fixed_errors_msg:
-            self.uc.show_info(fixed_errors_msg)
         if unsolved_errors_msg:
-            self.uc.show_warn(fixed_errors_msg)
+            warn_msg = (
+                "Saving to Spatialite failed. "
+                "The following features have cross sections with incorrect table inputs:\n"
+            )
+            warn_msg += unsolved_errors_msg
+            self.uc.show_warn(warn_msg)
             return
         self.layer_manager.stop_model_editing()
         if pick_destination:

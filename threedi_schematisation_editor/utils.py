@@ -5,6 +5,8 @@ import shutil
 import sqlite3
 import threedi_schematisation_editor.data_models as dm
 from enum import Enum
+from itertools import groupby
+from operator import attrgetter
 from uuid import uuid4
 from typing import Union
 from collections import OrderedDict
@@ -824,6 +826,18 @@ def migrate_spatialite_schema(sqlite_filepath):
     except Exception as e:
         migration_feedback_msg = f"{e}"
     return migration_succeed, migration_feedback_msg
+
+
+def validation_errors_summary(validation_errors):
+    """Create validation summary message grouped by the data model class."""
+    summary_per_model = []
+    for model_cls, errors in groupby(validation_errors, attrgetter("data_model_cls")):
+        errors_fids = sorted(ve.source_id for ve in errors)
+        errors_fids_str = ", ".join(str(ve) for ve in errors_fids)
+        summary_per_model.append(f"{model_cls.__layername__}: {errors_fids_str}")
+    summary_per_model.sort()
+    summary_message = "\n".join(summary_per_model)
+    return summary_message
 
 
 class FormCustomizations:

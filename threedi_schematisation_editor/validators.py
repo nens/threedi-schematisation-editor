@@ -5,12 +5,21 @@ from itertools import chain
 from qgis.core import NULL
 
 
+class ValidationAutofix:
+    """Validation autofix object."""
+
+    def __init__(self, field_name, fixed_value):
+        self.field_name = field_name
+        self.fixed_value = fixed_value
+
+
 class FieldValidationError:
     """Structure with field validation output."""
 
-    def __init__(self, data_model_cls, feature_id, field_name, current_value, error_message=None):
+    def __init__(self, data_model_cls, feature_id, source_id, field_name, current_value, error_message=None):
         self.data_model_cls = data_model_cls
         self.feature_id = feature_id
+        self.source_id = source_id
         self.field_name = field_name
         self.current_value = current_value
         self.error_message = error_message
@@ -20,14 +29,6 @@ class FieldValidationError:
         """Add autofix object with proposed value."""
         fix = ValidationAutofix(field_name if field_name else self.field_name, fixed_value)
         self.fixes.append(fix)
-
-
-class ValidationAutofix:
-    """Validation autofix object."""
-
-    def __init__(self, field_name, fixed_value):
-        self.field_name = field_name
-        self.fixed_value = fixed_value
 
 
 class AttributeValidator:
@@ -61,10 +62,15 @@ class AttributeValidator:
     def field_index(self):
         """Return validated field index."""
         if self.FIELD_INDEX is None:
-            field_idx = self.layer.fields().lookupField(self.field_name)
+            field_idx = self.handler.field_indexes[self.field_name]
         else:
             field_idx = self.FIELD_INDEX
         return field_idx
+
+    @cached_property
+    def id(self):
+        """Return validated feature source ID."""
+        return self.feature["id"]
 
     @cached_property
     def fid(self):
@@ -126,7 +132,9 @@ class CrossSectionTableValidator(AttributeValidator):
         """Check if field value is not empty."""
         error_msg = f"'{self.field_name}' value is NULL"
         if self.field_value in self.empty_values:
-            validation_error = FieldValidationError(self.model, self.fid, self.field_name, self.field_value, error_msg)
+            validation_error = FieldValidationError(
+                self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
+            )
             if self.autofix:
                 validation_error.add_autofix(NULL, "cross_section_width")
                 validation_error.add_autofix(NULL, "cross_section_height")
@@ -140,7 +148,7 @@ class CrossSectionTableValidator(AttributeValidator):
                 _float_values = [(float(h), float(w)) for h, w in self.cross_section_table_values]
             except ValueError:
                 validation_error = FieldValidationError(
-                    self.model, self.fid, self.field_name, self.field_value, error_msg
+                    self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
                 )
                 self.validation_errors.append(validation_error)
 
@@ -151,7 +159,7 @@ class CrossSectionTableValidator(AttributeValidator):
             stripped_field_value = self.field_value.lstrip()
             if self.field_value != stripped_field_value:
                 validation_error = FieldValidationError(
-                    self.model, self.fid, self.field_name, self.field_value, error_msg
+                    self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
                 )
                 if self.autofix:
                     validation_error.add_autofix(stripped_field_value)
@@ -164,7 +172,7 @@ class CrossSectionTableValidator(AttributeValidator):
             pattern = re.compile(", ", re.M)
             if not re.search(pattern, self.field_value):
                 validation_error = FieldValidationError(
-                    self.model, self.fid, self.field_name, self.field_value, error_msg
+                    self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
                 )
                 if self.autofix:
                     fixed_value = "\n".join(f"{h}, {w}" for h, w in self.cross_section_table_values)
@@ -179,7 +187,7 @@ class CrossSectionTableValidator(AttributeValidator):
             for value in chain.from_iterable(self.cross_section_table_values):
                 if re.search(pattern, value):
                     validation_error = FieldValidationError(
-                        self.model, self.fid, self.field_name, self.field_value, error_msg
+                        self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
                     )
                     if self.autofix:
                         fixed_value = re.sub("(?<=\d),(?=\d)", ".", self.field_value)

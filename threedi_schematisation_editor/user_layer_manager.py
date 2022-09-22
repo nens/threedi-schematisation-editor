@@ -29,6 +29,7 @@ from threedi_schematisation_editor.utils import (
     cross_section_label,
     diameter_label,
     width_label,
+    validation_errors_summary,
 )
 
 
@@ -104,9 +105,8 @@ class LayersManager:
         if return_raw_errors:
             return fixed_errors, unsolved_errors
         else:
-            # TODO: make pretty output messages
-            fixed_errors_message = "\n".join(fix.error_message for fix in fixed_errors) if fixed_errors else ""
-            unsolved_errors_message = "\n".join(err.error_message for err in unsolved_errors) if unsolved_errors else ""
+            fixed_errors_message = validation_errors_summary(fixed_errors) if fixed_errors else ""
+            unsolved_errors_message = validation_errors_summary(unsolved_errors) if unsolved_errors else ""
             return fixed_errors_message, unsolved_errors_message
 
     def on_active_layer_changed(self, layer):
