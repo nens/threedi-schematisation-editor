@@ -104,6 +104,10 @@ class CrossSectionTableValidator(AttributeValidator):
 
     FIELD_NAME = "cross_section_table"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.invalid_format_detected = False
+
     @cached_property
     def cross_section_table_rows(self):
         """Return 'cross_section_table' rows."""
@@ -151,11 +155,12 @@ class CrossSectionTableValidator(AttributeValidator):
                     self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
                 )
                 self.validation_errors.append(validation_error)
+                self.invalid_format_detected = True
 
     def _no_trailing_blank_chars(self):
         """Check if field value have no trailing blank characters."""
         error_msg = f"'{self.field_name}' value have trailing whitespaces"
-        if self.field_value not in self.empty_values:
+        if self.field_value not in self.empty_values and not self.invalid_format_detected:
             stripped_field_value = self.field_value.lstrip()
             if self.field_value != stripped_field_value:
                 validation_error = FieldValidationError(
@@ -168,7 +173,7 @@ class CrossSectionTableValidator(AttributeValidator):
     def _whitespace_after_comma(self):
         """Check if values are coma separated with following whitespace."""
         error_msg = f"'{self.field_name}' value missing whitespaces after coma separators"
-        if self.field_value not in self.empty_values:
+        if self.field_value not in self.empty_values and not self.invalid_format_detected:
             pattern = re.compile(", ", re.M)
             if not re.search(pattern, self.field_value):
                 validation_error = FieldValidationError(
@@ -182,7 +187,7 @@ class CrossSectionTableValidator(AttributeValidator):
     def _no_dot_separator(self):
         """Check if float values are dot separated."""
         error_msg = f"'{self.field_name}' value contains coma-separated float numbers"
-        if self.field_value not in self.empty_values:
+        if self.field_value not in self.empty_values and not self.invalid_format_detected:
             pattern = re.compile("\d,\d")
             for value in chain.from_iterable(self.cross_section_table_values):
                 if re.search(pattern, value):
