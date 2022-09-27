@@ -480,6 +480,10 @@ class WeirHandler(UserLayerHandler):
         }
     )
 
+    FORM_CUSTOMIZATIONS = MappingProxyType(
+        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
+    )
+
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_weir)
@@ -501,7 +505,6 @@ class CulvertHandler(UserLayerHandler):
     RELATED_MODELS = MappingProxyType(
         {
             dm.ConnectionNode: 2,
-            dm.CrossSectionDefinition: 1,
         }
     )
 
@@ -518,6 +521,9 @@ class CulvertHandler(UserLayerHandler):
             "invert_level_start_point": -10.0,
             "invert_level_end_point": -10.0,
         }
+    )
+    FORM_CUSTOMIZATIONS = MappingProxyType(
+        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
 
     def connect_additional_signals(self):
@@ -549,6 +555,9 @@ class OrificeHandler(UserLayerHandler):
             "discharge_coefficient_negative": 0.8,
             "sewerage": False,
         }
+    )
+    FORM_CUSTOMIZATIONS = MappingProxyType(
+        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
 
     def connect_additional_signals(self):
@@ -587,6 +596,9 @@ class PipeHandler(UserLayerHandler):
             "invert_level_start_point": -10.0,
             "invert_level_end_point": -10.0,
         }
+    )
+    FORM_CUSTOMIZATIONS = MappingProxyType(
+        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
 
     def connect_additional_signals(self):
