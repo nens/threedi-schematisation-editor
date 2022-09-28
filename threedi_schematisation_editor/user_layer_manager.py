@@ -11,6 +11,7 @@ from qgis.core import (
     QgsSnappingConfig,
     QgsTolerance,
 )
+from qgis.PyQt.QtCore import QCoreApplication
 from threedi_schematisation_editor.user_layer_handlers import MODEL_HANDLERS
 from threedi_schematisation_editor.user_layer_forms import LayerEditFormFactory
 from threedi_schematisation_editor.utils import (
@@ -98,10 +99,17 @@ class LayersManager:
     def validate_layers(self, return_raw_errors=False):
         """Validate all layers registered within handlers."""
         fixed_errors, unsolved_errors = [], []
-        for handler in self.model_handlers.values():
+        handlers_count = len(self.model_handlers)
+        msg = "Validating data before the export..."
+        self.uc.progress_bar(msg, 0, handlers_count, 0, clear_msg_bar=True)
+        QCoreApplication.processEvents()
+        for i, handler in enumerate(self.model_handlers.values(), start=1):
             fixed_validation_errors, unsorted_validation_errors = handler.validate_features()
             fixed_errors += fixed_validation_errors
             unsolved_errors += unsorted_validation_errors
+            self.uc.progress_bar(msg, 0, handlers_count, i, clear_msg_bar=True)
+            QCoreApplication.processEvents()
+        self.uc.clear_message_bar()
         if return_raw_errors:
             return fixed_errors, unsolved_errors
         else:

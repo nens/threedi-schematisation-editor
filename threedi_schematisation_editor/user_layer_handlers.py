@@ -156,6 +156,8 @@ class UserLayerHandler:
                         else:
                             unsorted_validation_errors.append(validation_error)
                     validator.clear()
+        if autofix and self.layer.isModified():
+            self.layer.commitChanges()
         return fixed_validation_errors, unsorted_validation_errors
 
     def multi_commit_changes(self):

@@ -1,5 +1,4 @@
 # Copyright (C) 2022 by Lutra Consulting
-import re
 from functools import cached_property
 from itertools import chain
 from qgis.core import NULL
@@ -111,13 +110,13 @@ class CrossSectionTableValidator(AttributeValidator):
     @cached_property
     def cross_section_table_rows(self):
         """Return 'cross_section_table' rows."""
-        split_values = [row for row in self.field_value.split("\n")]
+        split_values = [row for row in self.field_value.strip().split("\n")]
         return split_values
 
     @cached_property
     def cross_section_table_values(self):
         """Return 'cross_section_table' values tuples."""
-        split_values = [row.split(", ") for row in self.cross_section_table_rows]
+        split_values = [[v.strip() for v in row.split(", ")] for row in self.cross_section_table_rows]
         return split_values
 
     @property
@@ -127,7 +126,6 @@ class CrossSectionTableValidator(AttributeValidator):
             self._not_empty,
             self._valid_format,
             self._no_trailing_blank_chars,
-            self._whitespace_after_comma,
             self._no_dot_separator,
         ]
         return available_methods
@@ -149,7 +147,9 @@ class CrossSectionTableValidator(AttributeValidator):
         error_msg = f"'{self.field_name}' value have invalid format"
         if self.field_value not in self.empty_values:
             try:
-                _float_values = [(float(h), float(w)) for h, w in self.cross_section_table_values]
+                _float_values = [
+                    (float(h.replace(",", ".")), float(w.replace(",", "."))) for h, w in self.cross_section_table_values
+                ]
             except ValueError:
                 validation_error = FieldValidationError(
                     self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
@@ -161,7 +161,7 @@ class CrossSectionTableValidator(AttributeValidator):
         """Check if field value have no trailing blank characters."""
         error_msg = f"'{self.field_name}' value have trailing whitespaces"
         if self.field_value not in self.empty_values and not self.invalid_format_detected:
-            stripped_field_value = self.field_value.lstrip()
+            stripped_field_value = self.field_value.rstrip()
             if self.field_value != stripped_field_value:
                 validation_error = FieldValidationError(
                     self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
@@ -170,32 +170,20 @@ class CrossSectionTableValidator(AttributeValidator):
                     validation_error.add_autofix(stripped_field_value)
                 self.validation_errors.append(validation_error)
 
-    def _whitespace_after_comma(self):
-        """Check if values are coma separated with following whitespace."""
-        error_msg = f"'{self.field_name}' value missing whitespaces after coma separators"
-        if self.field_value not in self.empty_values and not self.invalid_format_detected:
-            pattern = re.compile(", ", re.M)
-            if not re.search(pattern, self.field_value):
-                validation_error = FieldValidationError(
-                    self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
-                )
-                if self.autofix:
-                    fixed_value = "\n".join(f"{h}, {w}" for h, w in self.cross_section_table_values)
-                    validation_error.add_autofix(fixed_value)
-                self.validation_errors.append(validation_error)
-
     def _no_dot_separator(self):
         """Check if float values are dot separated."""
         error_msg = f"'{self.field_name}' value contains coma-separated float numbers"
         if self.field_value not in self.empty_values and not self.invalid_format_detected:
-            pattern = re.compile("\d,\d")
             for value in chain.from_iterable(self.cross_section_table_values):
-                if re.search(pattern, value):
+                if "," in value:
                     validation_error = FieldValidationError(
                         self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
                     )
                     if self.autofix:
-                        fixed_value = re.sub("(?<=\d),(?=\d)", ".", self.field_value)
-                        validation_error.add_autofix(fixed_value)
+                        fixed_values_list = [
+                            (h.replace(",", "."), w.replace(",", ".")) for h, w in self.cross_section_table_values
+                        ]
+                        fixed_field_value = "\n".join(f"{h}, {w}" for h, w in fixed_values_list)
+                        validation_error.add_autofix(fixed_field_value)
                     self.validation_errors.append(validation_error)
                     break

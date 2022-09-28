@@ -1,6 +1,5 @@
 # Copyright (C) 2022 by Lutra Consulting
 import os.path
-
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import QgsProject
 from threedi_schematisation_editor.communication import UICommunication
