@@ -116,7 +116,13 @@ class CrossSectionTableValidator(AttributeValidator):
     @cached_property
     def cross_section_table_values(self):
         """Return 'cross_section_table' values tuples."""
-        split_values = [[v.strip() for v in row.split(", ")] for row in self.cross_section_table_rows]
+        split_values = []
+        for row in self.cross_section_table_rows:
+            try:
+                h, w = row.split(", ")
+            except ValueError:
+                h, w = row.split(",")
+            split_values.append([h.strip(), w.strip()])
         return split_values
 
     @property

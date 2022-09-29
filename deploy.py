@@ -11,7 +11,7 @@ dest_dir_plug = os.path.join(
     "QGIS",
     "QGIS3",
     "profiles",
-    "python39",
+    "default",
     "python",
     "plugins",
     "threedi_schematisation_editor",

@@ -606,7 +606,7 @@ class ModelDataConverter:
                 src_xs_def_height = feat_with_xs_def["cross_section_height"]
                 src_xs_def_width = feat_with_xs_def["cross_section_width"]
                 src_xs_def_table = feat_with_xs_def["cross_section_table"]
-                if src_xs_def_shape in dm.TABLE_SHAPES:
+                if src_xs_def_shape in dm.TABLE_SHAPES and src_xs_def_table:
                     parsed_table = [row.split(",") for row in src_xs_def_table.split("\n")]
                     height_values, width_values = list(zip(*parsed_table))
                     xs_def_height = " ".join(hv.strip() for hv in height_values)
