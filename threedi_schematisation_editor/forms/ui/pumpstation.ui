@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>450</width>
-    <height>400</height>
+    <width>582</width>
+    <height>449</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -241,7 +241,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Start level</string>
+         <string>Start level [m]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -254,7 +254,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Lower stop level</string>
+         <string>Lower stop level [m]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -283,7 +283,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Capacity</string>
+         <string>Capacity [L/s]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -384,7 +384,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Upper stop level</string>
+         <string>Upper stop level [m]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -460,7 +460,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Node storage area</string>
+         <string>Node storage area [m²]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -489,7 +489,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Node initial water level</string>
+         <string>Node initial water level [m]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>

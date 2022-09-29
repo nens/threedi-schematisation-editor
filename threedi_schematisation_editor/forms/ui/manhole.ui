@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>450</width>
-    <height>400</height>
+    <width>574</width>
+    <height>449</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,7 +32,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Bottom level</string>
+         <string>Bottom level [m]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -70,7 +70,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Drain level</string>
+         <string>Drain level [m]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -167,7 +167,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Width</string>
+         <string>Width [m]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -202,7 +202,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Length</string>
+         <string>Length [m]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -215,7 +215,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Surface level</string>
+         <string>Surface level [m]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -523,7 +523,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Node initial water level</string>
+         <string>Node initial water level [m]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -616,7 +616,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Node storage area</string>
+         <string>Node storage area [m²]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
