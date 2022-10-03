@@ -1,399 +1,861 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis labelsEnabled="0" readOnly="0" version="3.16.9-Hannover" styleCategories="LayerConfiguration|Symbology|Labeling|Fields|Forms">
+<qgis readOnly="0" hasScaleBasedVisibilityFlag="0" simplifyDrawingTol="1" simplifyMaxScale="1" version="3.22.10-Białowieża" maxScale="0" simplifyDrawingHints="0" simplifyAlgorithm="0" styleCategories="AllStyleCategories" symbologyReferenceScale="-1" minScale="0" simplifyLocal="1" labelsEnabled="0">
   <flags>
     <Identifiable>1</Identifiable>
     <Removable>0</Removable>
     <Searchable>1</Searchable>
+    <Private>0</Private>
   </flags>
-  <renderer-v2 symbollevels="0" type="RuleRenderer" forceraster="0" enableorderby="0">
+  <temporal enabled="0" durationUnit="min" endField="" startExpression="" fixedDuration="0" accumulate="0" endExpression="" durationField="" mode="0" limitMode="0" startField="">
+    <fixedRange>
+      <start></start>
+      <end></end>
+    </fixedRange>
+  </temporal>
+  <renderer-v2 referencescale="-1" enableorderby="0" forceraster="0" symbollevels="0" type="RuleRenderer">
     <rules key="{4fbba513-a3b1-4a92-97bc-3d44735ac986}">
-      <rule symbol="0" filter="manhole_indicator = 0" label="Manhole (inspection)" key="{a951db60-faa9-4c95-9eaa-a51d84ff90b1}" scalemaxdenom="5000"/>
-      <rule symbol="1" filter="manhole_indicator = 1" label="Outlet" key="{c9e7ab73-45d5-45d6-970d-b4e28230c1e5}" scalemaxdenom="15000"/>
-      <rule symbol="2" filter="manhole_indicator = 2" label="Pumping station" key="{a1d98efc-8098-4201-a75e-93dc7c47f076}"/>
-      <rule symbol="3" filter="ELSE" label="Manhole (unspecified)" key="{1b6d21ed-8a83-4e3f-850e-ca64e766f7da}" scalemaxdenom="5000"/>
+      <rule symbol="0" scalemaxdenom="5000" filter="manhole_indicator = 0" key="{a951db60-faa9-4c95-9eaa-a51d84ff90b1}" label="Manhole (inspection)"/>
+      <rule symbol="1" scalemaxdenom="15000" filter="manhole_indicator = 1" key="{c9e7ab73-45d5-45d6-970d-b4e28230c1e5}" label="Outlet"/>
+      <rule symbol="2" filter="manhole_indicator = 2" key="{a1d98efc-8098-4201-a75e-93dc7c47f076}" label="Pumping station"/>
+      <rule symbol="3" scalemaxdenom="5000" filter="ELSE" key="{1b6d21ed-8a83-4e3f-850e-ca64e766f7da}" label="Manhole (unspecified)"/>
     </rules>
     <symbols>
-      <symbol force_rhr="0" name="0" type="marker" alpha="1" clip_to_extent="1">
-        <layer enabled="1" locked="0" pass="0" class="SimpleMarker">
-          <prop v="0" k="angle"/>
-          <prop v="255,255,255,255" k="color"/>
-          <prop v="1" k="horizontal_anchor_point"/>
-          <prop v="bevel" k="joinstyle"/>
-          <prop v="square" k="name"/>
-          <prop v="0,0" k="offset"/>
-          <prop v="3x:0,0,0,0,0,0" k="offset_map_unit_scale"/>
-          <prop v="MM" k="offset_unit"/>
-          <prop v="0,0,0,255" k="outline_color"/>
-          <prop v="solid" k="outline_style"/>
-          <prop v="0" k="outline_width"/>
-          <prop v="3x:0,0,0,0,0,0" k="outline_width_map_unit_scale"/>
-          <prop v="MM" k="outline_width_unit"/>
-          <prop v="diameter" k="scale_method"/>
-          <prop v="2" k="size"/>
-          <prop v="3x:0,0,0,0,0,0" k="size_map_unit_scale"/>
-          <prop v="MM" k="size_unit"/>
-          <prop v="1" k="vertical_anchor_point"/>
+      <symbol force_rhr="0" name="0" alpha="1" clip_to_extent="1" type="marker">
+        <data_defined_properties>
+          <Option type="Map">
+            <Option name="name" value="" type="QString"/>
+            <Option name="properties"/>
+            <Option name="type" value="collection" type="QString"/>
+          </Option>
+        </data_defined_properties>
+        <layer enabled="1" locked="0" class="SimpleMarker" pass="0">
+          <Option type="Map">
+            <Option name="angle" value="0" type="QString"/>
+            <Option name="cap_style" value="square" type="QString"/>
+            <Option name="color" value="255,255,255,255" type="QString"/>
+            <Option name="horizontal_anchor_point" value="1" type="QString"/>
+            <Option name="joinstyle" value="bevel" type="QString"/>
+            <Option name="name" value="square" type="QString"/>
+            <Option name="offset" value="0,0" type="QString"/>
+            <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="offset_unit" value="MM" type="QString"/>
+            <Option name="outline_color" value="0,0,0,255" type="QString"/>
+            <Option name="outline_style" value="solid" type="QString"/>
+            <Option name="outline_width" value="0" type="QString"/>
+            <Option name="outline_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="outline_width_unit" value="MM" type="QString"/>
+            <Option name="scale_method" value="diameter" type="QString"/>
+            <Option name="size" value="2" type="QString"/>
+            <Option name="size_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="size_unit" value="MM" type="QString"/>
+            <Option name="vertical_anchor_point" value="1" type="QString"/>
+          </Option>
+          <prop k="angle" v="0"/>
+          <prop k="cap_style" v="square"/>
+          <prop k="color" v="255,255,255,255"/>
+          <prop k="horizontal_anchor_point" v="1"/>
+          <prop k="joinstyle" v="bevel"/>
+          <prop k="name" v="square"/>
+          <prop k="offset" v="0,0"/>
+          <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="offset_unit" v="MM"/>
+          <prop k="outline_color" v="0,0,0,255"/>
+          <prop k="outline_style" v="solid"/>
+          <prop k="outline_width" v="0"/>
+          <prop k="outline_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="outline_width_unit" v="MM"/>
+          <prop k="scale_method" v="diameter"/>
+          <prop k="size" v="2"/>
+          <prop k="size_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="size_unit" v="MM"/>
+          <prop k="vertical_anchor_point" v="1"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option name="name" type="QString" value=""/>
+              <Option name="name" value="" type="QString"/>
               <Option name="properties"/>
-              <Option name="type" type="QString" value="collection"/>
+              <Option name="type" value="collection" type="QString"/>
             </Option>
           </data_defined_properties>
         </layer>
       </symbol>
-      <symbol force_rhr="0" name="1" type="marker" alpha="1" clip_to_extent="1">
-        <layer enabled="1" locked="0" pass="0" class="SimpleMarker">
-          <prop v="0" k="angle"/>
-          <prop v="63,128,192,255" k="color"/>
-          <prop v="1" k="horizontal_anchor_point"/>
-          <prop v="miter" k="joinstyle"/>
-          <prop v="square" k="name"/>
-          <prop v="0,0" k="offset"/>
-          <prop v="3x:0,0,0,0,0,0" k="offset_map_unit_scale"/>
-          <prop v="MM" k="offset_unit"/>
-          <prop v="85,170,255,255" k="outline_color"/>
-          <prop v="solid" k="outline_style"/>
-          <prop v="0.75" k="outline_width"/>
-          <prop v="3x:0,0,0,0,0,0" k="outline_width_map_unit_scale"/>
-          <prop v="MM" k="outline_width_unit"/>
-          <prop v="diameter" k="scale_method"/>
-          <prop v="2.5" k="size"/>
-          <prop v="3x:0,0,0,0,0,0" k="size_map_unit_scale"/>
-          <prop v="MM" k="size_unit"/>
-          <prop v="1" k="vertical_anchor_point"/>
+      <symbol force_rhr="0" name="1" alpha="1" clip_to_extent="1" type="marker">
+        <data_defined_properties>
+          <Option type="Map">
+            <Option name="name" value="" type="QString"/>
+            <Option name="properties"/>
+            <Option name="type" value="collection" type="QString"/>
+          </Option>
+        </data_defined_properties>
+        <layer enabled="1" locked="0" class="SimpleMarker" pass="0">
+          <Option type="Map">
+            <Option name="angle" value="0" type="QString"/>
+            <Option name="cap_style" value="square" type="QString"/>
+            <Option name="color" value="63,128,192,255" type="QString"/>
+            <Option name="horizontal_anchor_point" value="1" type="QString"/>
+            <Option name="joinstyle" value="miter" type="QString"/>
+            <Option name="name" value="square" type="QString"/>
+            <Option name="offset" value="0,0" type="QString"/>
+            <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="offset_unit" value="MM" type="QString"/>
+            <Option name="outline_color" value="85,170,255,255" type="QString"/>
+            <Option name="outline_style" value="solid" type="QString"/>
+            <Option name="outline_width" value="0.75" type="QString"/>
+            <Option name="outline_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="outline_width_unit" value="MM" type="QString"/>
+            <Option name="scale_method" value="diameter" type="QString"/>
+            <Option name="size" value="2.5" type="QString"/>
+            <Option name="size_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="size_unit" value="MM" type="QString"/>
+            <Option name="vertical_anchor_point" value="1" type="QString"/>
+          </Option>
+          <prop k="angle" v="0"/>
+          <prop k="cap_style" v="square"/>
+          <prop k="color" v="63,128,192,255"/>
+          <prop k="horizontal_anchor_point" v="1"/>
+          <prop k="joinstyle" v="miter"/>
+          <prop k="name" v="square"/>
+          <prop k="offset" v="0,0"/>
+          <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="offset_unit" v="MM"/>
+          <prop k="outline_color" v="85,170,255,255"/>
+          <prop k="outline_style" v="solid"/>
+          <prop k="outline_width" v="0.75"/>
+          <prop k="outline_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="outline_width_unit" v="MM"/>
+          <prop k="scale_method" v="diameter"/>
+          <prop k="size" v="2.5"/>
+          <prop k="size_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="size_unit" v="MM"/>
+          <prop k="vertical_anchor_point" v="1"/>
           <effect enabled="0" type="effectStack">
             <effect type="dropShadow">
-              <prop v="13" k="blend_mode"/>
-              <prop v="0.5" k="blur_level"/>
-              <prop v="MM" k="blur_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="blur_unit_scale"/>
-              <prop v="0,0,0,255" k="color"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="1" k="enabled"/>
-              <prop v="135" k="offset_angle"/>
-              <prop v="0.2" k="offset_distance"/>
-              <prop v="MM" k="offset_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="offset_unit_scale"/>
-              <prop v="1" k="opacity"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="13" type="QString"/>
+                <Option name="blur_level" value="0.5" type="QString"/>
+                <Option name="blur_unit" value="MM" type="QString"/>
+                <Option name="blur_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="color" value="0,0,0,255" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="1" type="QString"/>
+                <Option name="offset_angle" value="135" type="QString"/>
+                <Option name="offset_distance" value="0.2" type="QString"/>
+                <Option name="offset_unit" value="MM" type="QString"/>
+                <Option name="offset_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="opacity" value="1" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="13"/>
+              <prop k="blur_level" v="0.5"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color" v="0,0,0,255"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="1"/>
+              <prop k="offset_angle" v="135"/>
+              <prop k="offset_distance" v="0.2"/>
+              <prop k="offset_unit" v="MM"/>
+              <prop k="offset_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="opacity" v="1"/>
             </effect>
             <effect type="outerGlow">
-              <prop v="0" k="blend_mode"/>
-              <prop v="2.645" k="blur_level"/>
-              <prop v="MM" k="blur_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="blur_unit_scale"/>
-              <prop v="0,0,255,255" k="color1"/>
-              <prop v="0,255,0,255" k="color2"/>
-              <prop v="0" k="color_type"/>
-              <prop v="0" k="discrete"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="0" k="enabled"/>
-              <prop v="0.5" k="opacity"/>
-              <prop v="gradient" k="rampType"/>
-              <prop v="255,255,255,255" k="single_color"/>
-              <prop v="2" k="spread"/>
-              <prop v="MM" k="spread_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="spread_unit_scale"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="0" type="QString"/>
+                <Option name="blur_level" value="2.645" type="QString"/>
+                <Option name="blur_unit" value="MM" type="QString"/>
+                <Option name="blur_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="color1" value="0,0,255,255" type="QString"/>
+                <Option name="color2" value="0,255,0,255" type="QString"/>
+                <Option name="color_type" value="0" type="QString"/>
+                <Option name="discrete" value="0" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="0" type="QString"/>
+                <Option name="opacity" value="0.5" type="QString"/>
+                <Option name="rampType" value="gradient" type="QString"/>
+                <Option name="single_color" value="255,255,255,255" type="QString"/>
+                <Option name="spread" value="2" type="QString"/>
+                <Option name="spread_unit" value="MM" type="QString"/>
+                <Option name="spread_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="0"/>
+              <prop k="blur_level" v="2.645"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color1" v="0,0,255,255"/>
+              <prop k="color2" v="0,255,0,255"/>
+              <prop k="color_type" v="0"/>
+              <prop k="discrete" v="0"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="0"/>
+              <prop k="opacity" v="0.5"/>
+              <prop k="rampType" v="gradient"/>
+              <prop k="single_color" v="255,255,255,255"/>
+              <prop k="spread" v="2"/>
+              <prop k="spread_unit" v="MM"/>
+              <prop k="spread_unit_scale" v="3x:0,0,0,0,0,0"/>
             </effect>
             <effect type="drawSource">
-              <prop v="0" k="blend_mode"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="1" k="enabled"/>
-              <prop v="1" k="opacity"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="0" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="1" type="QString"/>
+                <Option name="opacity" value="1" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="0"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="1"/>
+              <prop k="opacity" v="1"/>
             </effect>
             <effect type="innerShadow">
-              <prop v="13" k="blend_mode"/>
-              <prop v="2.645" k="blur_level"/>
-              <prop v="MM" k="blur_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="blur_unit_scale"/>
-              <prop v="0,0,0,255" k="color"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="0" k="enabled"/>
-              <prop v="135" k="offset_angle"/>
-              <prop v="2" k="offset_distance"/>
-              <prop v="MM" k="offset_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="offset_unit_scale"/>
-              <prop v="1" k="opacity"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="13" type="QString"/>
+                <Option name="blur_level" value="2.645" type="QString"/>
+                <Option name="blur_unit" value="MM" type="QString"/>
+                <Option name="blur_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="color" value="0,0,0,255" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="0" type="QString"/>
+                <Option name="offset_angle" value="135" type="QString"/>
+                <Option name="offset_distance" value="2" type="QString"/>
+                <Option name="offset_unit" value="MM" type="QString"/>
+                <Option name="offset_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="opacity" value="1" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="13"/>
+              <prop k="blur_level" v="2.645"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color" v="0,0,0,255"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="0"/>
+              <prop k="offset_angle" v="135"/>
+              <prop k="offset_distance" v="2"/>
+              <prop k="offset_unit" v="MM"/>
+              <prop k="offset_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="opacity" v="1"/>
             </effect>
             <effect type="innerGlow">
-              <prop v="0" k="blend_mode"/>
-              <prop v="2.645" k="blur_level"/>
-              <prop v="MM" k="blur_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="blur_unit_scale"/>
-              <prop v="0,0,255,255" k="color1"/>
-              <prop v="0,255,0,255" k="color2"/>
-              <prop v="0" k="color_type"/>
-              <prop v="0" k="discrete"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="0" k="enabled"/>
-              <prop v="0.5" k="opacity"/>
-              <prop v="gradient" k="rampType"/>
-              <prop v="255,255,255,255" k="single_color"/>
-              <prop v="2" k="spread"/>
-              <prop v="MM" k="spread_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="spread_unit_scale"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="0" type="QString"/>
+                <Option name="blur_level" value="2.645" type="QString"/>
+                <Option name="blur_unit" value="MM" type="QString"/>
+                <Option name="blur_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="color1" value="0,0,255,255" type="QString"/>
+                <Option name="color2" value="0,255,0,255" type="QString"/>
+                <Option name="color_type" value="0" type="QString"/>
+                <Option name="discrete" value="0" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="0" type="QString"/>
+                <Option name="opacity" value="0.5" type="QString"/>
+                <Option name="rampType" value="gradient" type="QString"/>
+                <Option name="single_color" value="255,255,255,255" type="QString"/>
+                <Option name="spread" value="2" type="QString"/>
+                <Option name="spread_unit" value="MM" type="QString"/>
+                <Option name="spread_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="0"/>
+              <prop k="blur_level" v="2.645"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color1" v="0,0,255,255"/>
+              <prop k="color2" v="0,255,0,255"/>
+              <prop k="color_type" v="0"/>
+              <prop k="discrete" v="0"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="0"/>
+              <prop k="opacity" v="0.5"/>
+              <prop k="rampType" v="gradient"/>
+              <prop k="single_color" v="255,255,255,255"/>
+              <prop k="spread" v="2"/>
+              <prop k="spread_unit" v="MM"/>
+              <prop k="spread_unit_scale" v="3x:0,0,0,0,0,0"/>
             </effect>
           </effect>
           <data_defined_properties>
             <Option type="Map">
-              <Option name="name" type="QString" value=""/>
+              <Option name="name" value="" type="QString"/>
               <Option name="properties" type="Map">
                 <Option name="size" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="if(@map_scale&lt;10000, 2.5,1.5)"/>
-                  <Option name="type" type="int" value="3"/>
+                  <Option name="active" value="true" type="bool"/>
+                  <Option name="expression" value="if(@map_scale&lt;10000, 2.5,1.5)" type="QString"/>
+                  <Option name="type" value="3" type="int"/>
                 </Option>
               </Option>
-              <Option name="type" type="QString" value="collection"/>
+              <Option name="type" value="collection" type="QString"/>
             </Option>
           </data_defined_properties>
         </layer>
       </symbol>
-      <symbol force_rhr="0" name="2" type="marker" alpha="1" clip_to_extent="1">
-        <layer enabled="1" locked="0" pass="0" class="SimpleMarker">
-          <prop v="0" k="angle"/>
-          <prop v="85,255,127,0" k="color"/>
-          <prop v="1" k="horizontal_anchor_point"/>
-          <prop v="bevel" k="joinstyle"/>
-          <prop v="pentagon" k="name"/>
-          <prop v="0.10000000000000001,0.10000000000000001" k="offset"/>
-          <prop v="3x:0,0,0,0,0,0" k="offset_map_unit_scale"/>
-          <prop v="MM" k="offset_unit"/>
-          <prop v="0,0,0,183" k="outline_color"/>
-          <prop v="solid" k="outline_style"/>
-          <prop v="0.7" k="outline_width"/>
-          <prop v="3x:0,0,0,0,0,0" k="outline_width_map_unit_scale"/>
-          <prop v="MM" k="outline_width_unit"/>
-          <prop v="diameter" k="scale_method"/>
-          <prop v="4.1" k="size"/>
-          <prop v="3x:0,0,0,0,0,0" k="size_map_unit_scale"/>
-          <prop v="MM" k="size_unit"/>
-          <prop v="1" k="vertical_anchor_point"/>
+      <symbol force_rhr="0" name="2" alpha="1" clip_to_extent="1" type="marker">
+        <data_defined_properties>
+          <Option type="Map">
+            <Option name="name" value="" type="QString"/>
+            <Option name="properties"/>
+            <Option name="type" value="collection" type="QString"/>
+          </Option>
+        </data_defined_properties>
+        <layer enabled="1" locked="0" class="SimpleMarker" pass="0">
+          <Option type="Map">
+            <Option name="angle" value="0" type="QString"/>
+            <Option name="cap_style" value="square" type="QString"/>
+            <Option name="color" value="85,255,127,0" type="QString"/>
+            <Option name="horizontal_anchor_point" value="1" type="QString"/>
+            <Option name="joinstyle" value="bevel" type="QString"/>
+            <Option name="name" value="pentagon" type="QString"/>
+            <Option name="offset" value="0.10000000000000001,0.10000000000000001" type="QString"/>
+            <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="offset_unit" value="MM" type="QString"/>
+            <Option name="outline_color" value="0,0,0,183" type="QString"/>
+            <Option name="outline_style" value="solid" type="QString"/>
+            <Option name="outline_width" value="0.7" type="QString"/>
+            <Option name="outline_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="outline_width_unit" value="MM" type="QString"/>
+            <Option name="scale_method" value="diameter" type="QString"/>
+            <Option name="size" value="4.1" type="QString"/>
+            <Option name="size_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="size_unit" value="MM" type="QString"/>
+            <Option name="vertical_anchor_point" value="1" type="QString"/>
+          </Option>
+          <prop k="angle" v="0"/>
+          <prop k="cap_style" v="square"/>
+          <prop k="color" v="85,255,127,0"/>
+          <prop k="horizontal_anchor_point" v="1"/>
+          <prop k="joinstyle" v="bevel"/>
+          <prop k="name" v="pentagon"/>
+          <prop k="offset" v="0.10000000000000001,0.10000000000000001"/>
+          <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="offset_unit" v="MM"/>
+          <prop k="outline_color" v="0,0,0,183"/>
+          <prop k="outline_style" v="solid"/>
+          <prop k="outline_width" v="0.7"/>
+          <prop k="outline_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="outline_width_unit" v="MM"/>
+          <prop k="scale_method" v="diameter"/>
+          <prop k="size" v="4.1"/>
+          <prop k="size_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="size_unit" v="MM"/>
+          <prop k="vertical_anchor_point" v="1"/>
           <effect enabled="0" type="effectStack">
             <effect type="dropShadow">
-              <prop v="13" k="blend_mode"/>
-              <prop v="0.5" k="blur_level"/>
-              <prop v="MM" k="blur_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="blur_unit_scale"/>
-              <prop v="0,0,0,255" k="color"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="1" k="enabled"/>
-              <prop v="135" k="offset_angle"/>
-              <prop v="0.2" k="offset_distance"/>
-              <prop v="MM" k="offset_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="offset_unit_scale"/>
-              <prop v="1" k="opacity"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="13" type="QString"/>
+                <Option name="blur_level" value="0.5" type="QString"/>
+                <Option name="blur_unit" value="MM" type="QString"/>
+                <Option name="blur_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="color" value="0,0,0,255" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="1" type="QString"/>
+                <Option name="offset_angle" value="135" type="QString"/>
+                <Option name="offset_distance" value="0.2" type="QString"/>
+                <Option name="offset_unit" value="MM" type="QString"/>
+                <Option name="offset_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="opacity" value="1" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="13"/>
+              <prop k="blur_level" v="0.5"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color" v="0,0,0,255"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="1"/>
+              <prop k="offset_angle" v="135"/>
+              <prop k="offset_distance" v="0.2"/>
+              <prop k="offset_unit" v="MM"/>
+              <prop k="offset_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="opacity" v="1"/>
             </effect>
             <effect type="outerGlow">
-              <prop v="0" k="blend_mode"/>
-              <prop v="2.645" k="blur_level"/>
-              <prop v="MM" k="blur_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="blur_unit_scale"/>
-              <prop v="0,0,255,255" k="color1"/>
-              <prop v="0,255,0,255" k="color2"/>
-              <prop v="0" k="color_type"/>
-              <prop v="0" k="discrete"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="0" k="enabled"/>
-              <prop v="0.5" k="opacity"/>
-              <prop v="gradient" k="rampType"/>
-              <prop v="255,255,255,255" k="single_color"/>
-              <prop v="2" k="spread"/>
-              <prop v="MM" k="spread_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="spread_unit_scale"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="0" type="QString"/>
+                <Option name="blur_level" value="2.645" type="QString"/>
+                <Option name="blur_unit" value="MM" type="QString"/>
+                <Option name="blur_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="color1" value="0,0,255,255" type="QString"/>
+                <Option name="color2" value="0,255,0,255" type="QString"/>
+                <Option name="color_type" value="0" type="QString"/>
+                <Option name="discrete" value="0" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="0" type="QString"/>
+                <Option name="opacity" value="0.5" type="QString"/>
+                <Option name="rampType" value="gradient" type="QString"/>
+                <Option name="single_color" value="255,255,255,255" type="QString"/>
+                <Option name="spread" value="2" type="QString"/>
+                <Option name="spread_unit" value="MM" type="QString"/>
+                <Option name="spread_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="0"/>
+              <prop k="blur_level" v="2.645"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color1" v="0,0,255,255"/>
+              <prop k="color2" v="0,255,0,255"/>
+              <prop k="color_type" v="0"/>
+              <prop k="discrete" v="0"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="0"/>
+              <prop k="opacity" v="0.5"/>
+              <prop k="rampType" v="gradient"/>
+              <prop k="single_color" v="255,255,255,255"/>
+              <prop k="spread" v="2"/>
+              <prop k="spread_unit" v="MM"/>
+              <prop k="spread_unit_scale" v="3x:0,0,0,0,0,0"/>
             </effect>
             <effect type="drawSource">
-              <prop v="0" k="blend_mode"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="1" k="enabled"/>
-              <prop v="1" k="opacity"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="0" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="1" type="QString"/>
+                <Option name="opacity" value="1" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="0"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="1"/>
+              <prop k="opacity" v="1"/>
             </effect>
             <effect type="innerShadow">
-              <prop v="13" k="blend_mode"/>
-              <prop v="2.645" k="blur_level"/>
-              <prop v="MM" k="blur_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="blur_unit_scale"/>
-              <prop v="0,0,0,255" k="color"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="0" k="enabled"/>
-              <prop v="135" k="offset_angle"/>
-              <prop v="2" k="offset_distance"/>
-              <prop v="MM" k="offset_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="offset_unit_scale"/>
-              <prop v="1" k="opacity"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="13" type="QString"/>
+                <Option name="blur_level" value="2.645" type="QString"/>
+                <Option name="blur_unit" value="MM" type="QString"/>
+                <Option name="blur_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="color" value="0,0,0,255" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="0" type="QString"/>
+                <Option name="offset_angle" value="135" type="QString"/>
+                <Option name="offset_distance" value="2" type="QString"/>
+                <Option name="offset_unit" value="MM" type="QString"/>
+                <Option name="offset_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="opacity" value="1" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="13"/>
+              <prop k="blur_level" v="2.645"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color" v="0,0,0,255"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="0"/>
+              <prop k="offset_angle" v="135"/>
+              <prop k="offset_distance" v="2"/>
+              <prop k="offset_unit" v="MM"/>
+              <prop k="offset_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="opacity" v="1"/>
             </effect>
             <effect type="innerGlow">
-              <prop v="0" k="blend_mode"/>
-              <prop v="2.645" k="blur_level"/>
-              <prop v="MM" k="blur_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="blur_unit_scale"/>
-              <prop v="0,0,255,255" k="color1"/>
-              <prop v="0,255,0,255" k="color2"/>
-              <prop v="0" k="color_type"/>
-              <prop v="0" k="discrete"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="0" k="enabled"/>
-              <prop v="0.5" k="opacity"/>
-              <prop v="gradient" k="rampType"/>
-              <prop v="255,255,255,255" k="single_color"/>
-              <prop v="2" k="spread"/>
-              <prop v="MM" k="spread_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="spread_unit_scale"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="0" type="QString"/>
+                <Option name="blur_level" value="2.645" type="QString"/>
+                <Option name="blur_unit" value="MM" type="QString"/>
+                <Option name="blur_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="color1" value="0,0,255,255" type="QString"/>
+                <Option name="color2" value="0,255,0,255" type="QString"/>
+                <Option name="color_type" value="0" type="QString"/>
+                <Option name="discrete" value="0" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="0" type="QString"/>
+                <Option name="opacity" value="0.5" type="QString"/>
+                <Option name="rampType" value="gradient" type="QString"/>
+                <Option name="single_color" value="255,255,255,255" type="QString"/>
+                <Option name="spread" value="2" type="QString"/>
+                <Option name="spread_unit" value="MM" type="QString"/>
+                <Option name="spread_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="0"/>
+              <prop k="blur_level" v="2.645"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color1" v="0,0,255,255"/>
+              <prop k="color2" v="0,255,0,255"/>
+              <prop k="color_type" v="0"/>
+              <prop k="discrete" v="0"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="0"/>
+              <prop k="opacity" v="0.5"/>
+              <prop k="rampType" v="gradient"/>
+              <prop k="single_color" v="255,255,255,255"/>
+              <prop k="spread" v="2"/>
+              <prop k="spread_unit" v="MM"/>
+              <prop k="spread_unit_scale" v="3x:0,0,0,0,0,0"/>
             </effect>
           </effect>
           <data_defined_properties>
             <Option type="Map">
-              <Option name="name" type="QString" value=""/>
+              <Option name="name" value="" type="QString"/>
               <Option name="properties" type="Map">
                 <Option name="size" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="if(@map_scale&lt;10000, 4.1,3.1)"/>
-                  <Option name="type" type="int" value="3"/>
+                  <Option name="active" value="true" type="bool"/>
+                  <Option name="expression" value="if(@map_scale&lt;10000, 4.1,3.1)" type="QString"/>
+                  <Option name="type" value="3" type="int"/>
                 </Option>
               </Option>
-              <Option name="type" type="QString" value="collection"/>
+              <Option name="type" value="collection" type="QString"/>
             </Option>
           </data_defined_properties>
         </layer>
-        <layer enabled="1" locked="0" pass="0" class="SimpleMarker">
-          <prop v="0" k="angle"/>
-          <prop v="85,255,127,0" k="color"/>
-          <prop v="1" k="horizontal_anchor_point"/>
-          <prop v="bevel" k="joinstyle"/>
-          <prop v="pentagon" k="name"/>
-          <prop v="0,0" k="offset"/>
-          <prop v="3x:0,0,0,0,0,0" k="offset_map_unit_scale"/>
-          <prop v="MM" k="offset_unit"/>
-          <prop v="255,127,0,255" k="outline_color"/>
-          <prop v="solid" k="outline_style"/>
-          <prop v="0.7" k="outline_width"/>
-          <prop v="3x:0,0,0,0,0,0" k="outline_width_map_unit_scale"/>
-          <prop v="MM" k="outline_width_unit"/>
-          <prop v="diameter" k="scale_method"/>
-          <prop v="4" k="size"/>
-          <prop v="3x:0,0,0,0,0,0" k="size_map_unit_scale"/>
-          <prop v="MM" k="size_unit"/>
-          <prop v="1" k="vertical_anchor_point"/>
+        <layer enabled="1" locked="0" class="SimpleMarker" pass="0">
+          <Option type="Map">
+            <Option name="angle" value="0" type="QString"/>
+            <Option name="cap_style" value="square" type="QString"/>
+            <Option name="color" value="85,255,127,0" type="QString"/>
+            <Option name="horizontal_anchor_point" value="1" type="QString"/>
+            <Option name="joinstyle" value="bevel" type="QString"/>
+            <Option name="name" value="pentagon" type="QString"/>
+            <Option name="offset" value="0,0" type="QString"/>
+            <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="offset_unit" value="MM" type="QString"/>
+            <Option name="outline_color" value="255,127,0,255" type="QString"/>
+            <Option name="outline_style" value="solid" type="QString"/>
+            <Option name="outline_width" value="0.7" type="QString"/>
+            <Option name="outline_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="outline_width_unit" value="MM" type="QString"/>
+            <Option name="scale_method" value="diameter" type="QString"/>
+            <Option name="size" value="4" type="QString"/>
+            <Option name="size_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="size_unit" value="MM" type="QString"/>
+            <Option name="vertical_anchor_point" value="1" type="QString"/>
+          </Option>
+          <prop k="angle" v="0"/>
+          <prop k="cap_style" v="square"/>
+          <prop k="color" v="85,255,127,0"/>
+          <prop k="horizontal_anchor_point" v="1"/>
+          <prop k="joinstyle" v="bevel"/>
+          <prop k="name" v="pentagon"/>
+          <prop k="offset" v="0,0"/>
+          <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="offset_unit" v="MM"/>
+          <prop k="outline_color" v="255,127,0,255"/>
+          <prop k="outline_style" v="solid"/>
+          <prop k="outline_width" v="0.7"/>
+          <prop k="outline_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="outline_width_unit" v="MM"/>
+          <prop k="scale_method" v="diameter"/>
+          <prop k="size" v="4"/>
+          <prop k="size_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="size_unit" v="MM"/>
+          <prop k="vertical_anchor_point" v="1"/>
           <effect enabled="0" type="effectStack">
             <effect type="dropShadow">
-              <prop v="13" k="blend_mode"/>
-              <prop v="0.5" k="blur_level"/>
-              <prop v="MM" k="blur_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="blur_unit_scale"/>
-              <prop v="0,0,0,255" k="color"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="1" k="enabled"/>
-              <prop v="135" k="offset_angle"/>
-              <prop v="0.2" k="offset_distance"/>
-              <prop v="MM" k="offset_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="offset_unit_scale"/>
-              <prop v="1" k="opacity"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="13" type="QString"/>
+                <Option name="blur_level" value="0.5" type="QString"/>
+                <Option name="blur_unit" value="MM" type="QString"/>
+                <Option name="blur_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="color" value="0,0,0,255" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="1" type="QString"/>
+                <Option name="offset_angle" value="135" type="QString"/>
+                <Option name="offset_distance" value="0.2" type="QString"/>
+                <Option name="offset_unit" value="MM" type="QString"/>
+                <Option name="offset_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="opacity" value="1" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="13"/>
+              <prop k="blur_level" v="0.5"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color" v="0,0,0,255"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="1"/>
+              <prop k="offset_angle" v="135"/>
+              <prop k="offset_distance" v="0.2"/>
+              <prop k="offset_unit" v="MM"/>
+              <prop k="offset_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="opacity" v="1"/>
             </effect>
             <effect type="outerGlow">
-              <prop v="0" k="blend_mode"/>
-              <prop v="2.645" k="blur_level"/>
-              <prop v="MM" k="blur_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="blur_unit_scale"/>
-              <prop v="0,0,255,255" k="color1"/>
-              <prop v="0,255,0,255" k="color2"/>
-              <prop v="0" k="color_type"/>
-              <prop v="0" k="discrete"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="0" k="enabled"/>
-              <prop v="0.5" k="opacity"/>
-              <prop v="gradient" k="rampType"/>
-              <prop v="255,255,255,255" k="single_color"/>
-              <prop v="2" k="spread"/>
-              <prop v="MM" k="spread_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="spread_unit_scale"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="0" type="QString"/>
+                <Option name="blur_level" value="2.645" type="QString"/>
+                <Option name="blur_unit" value="MM" type="QString"/>
+                <Option name="blur_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="color1" value="0,0,255,255" type="QString"/>
+                <Option name="color2" value="0,255,0,255" type="QString"/>
+                <Option name="color_type" value="0" type="QString"/>
+                <Option name="discrete" value="0" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="0" type="QString"/>
+                <Option name="opacity" value="0.5" type="QString"/>
+                <Option name="rampType" value="gradient" type="QString"/>
+                <Option name="single_color" value="255,255,255,255" type="QString"/>
+                <Option name="spread" value="2" type="QString"/>
+                <Option name="spread_unit" value="MM" type="QString"/>
+                <Option name="spread_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="0"/>
+              <prop k="blur_level" v="2.645"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color1" v="0,0,255,255"/>
+              <prop k="color2" v="0,255,0,255"/>
+              <prop k="color_type" v="0"/>
+              <prop k="discrete" v="0"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="0"/>
+              <prop k="opacity" v="0.5"/>
+              <prop k="rampType" v="gradient"/>
+              <prop k="single_color" v="255,255,255,255"/>
+              <prop k="spread" v="2"/>
+              <prop k="spread_unit" v="MM"/>
+              <prop k="spread_unit_scale" v="3x:0,0,0,0,0,0"/>
             </effect>
             <effect type="drawSource">
-              <prop v="0" k="blend_mode"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="1" k="enabled"/>
-              <prop v="1" k="opacity"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="0" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="1" type="QString"/>
+                <Option name="opacity" value="1" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="0"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="1"/>
+              <prop k="opacity" v="1"/>
             </effect>
             <effect type="innerShadow">
-              <prop v="13" k="blend_mode"/>
-              <prop v="2.645" k="blur_level"/>
-              <prop v="MM" k="blur_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="blur_unit_scale"/>
-              <prop v="0,0,0,255" k="color"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="0" k="enabled"/>
-              <prop v="135" k="offset_angle"/>
-              <prop v="2" k="offset_distance"/>
-              <prop v="MM" k="offset_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="offset_unit_scale"/>
-              <prop v="1" k="opacity"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="13" type="QString"/>
+                <Option name="blur_level" value="2.645" type="QString"/>
+                <Option name="blur_unit" value="MM" type="QString"/>
+                <Option name="blur_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="color" value="0,0,0,255" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="0" type="QString"/>
+                <Option name="offset_angle" value="135" type="QString"/>
+                <Option name="offset_distance" value="2" type="QString"/>
+                <Option name="offset_unit" value="MM" type="QString"/>
+                <Option name="offset_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="opacity" value="1" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="13"/>
+              <prop k="blur_level" v="2.645"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color" v="0,0,0,255"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="0"/>
+              <prop k="offset_angle" v="135"/>
+              <prop k="offset_distance" v="2"/>
+              <prop k="offset_unit" v="MM"/>
+              <prop k="offset_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="opacity" v="1"/>
             </effect>
             <effect type="innerGlow">
-              <prop v="0" k="blend_mode"/>
-              <prop v="2.645" k="blur_level"/>
-              <prop v="MM" k="blur_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="blur_unit_scale"/>
-              <prop v="0,0,255,255" k="color1"/>
-              <prop v="0,255,0,255" k="color2"/>
-              <prop v="0" k="color_type"/>
-              <prop v="0" k="discrete"/>
-              <prop v="2" k="draw_mode"/>
-              <prop v="0" k="enabled"/>
-              <prop v="0.5" k="opacity"/>
-              <prop v="gradient" k="rampType"/>
-              <prop v="255,255,255,255" k="single_color"/>
-              <prop v="2" k="spread"/>
-              <prop v="MM" k="spread_unit"/>
-              <prop v="3x:0,0,0,0,0,0" k="spread_unit_scale"/>
+              <Option type="Map">
+                <Option name="blend_mode" value="0" type="QString"/>
+                <Option name="blur_level" value="2.645" type="QString"/>
+                <Option name="blur_unit" value="MM" type="QString"/>
+                <Option name="blur_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+                <Option name="color1" value="0,0,255,255" type="QString"/>
+                <Option name="color2" value="0,255,0,255" type="QString"/>
+                <Option name="color_type" value="0" type="QString"/>
+                <Option name="discrete" value="0" type="QString"/>
+                <Option name="draw_mode" value="2" type="QString"/>
+                <Option name="enabled" value="0" type="QString"/>
+                <Option name="opacity" value="0.5" type="QString"/>
+                <Option name="rampType" value="gradient" type="QString"/>
+                <Option name="single_color" value="255,255,255,255" type="QString"/>
+                <Option name="spread" value="2" type="QString"/>
+                <Option name="spread_unit" value="MM" type="QString"/>
+                <Option name="spread_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              </Option>
+              <prop k="blend_mode" v="0"/>
+              <prop k="blur_level" v="2.645"/>
+              <prop k="blur_unit" v="MM"/>
+              <prop k="blur_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color1" v="0,0,255,255"/>
+              <prop k="color2" v="0,255,0,255"/>
+              <prop k="color_type" v="0"/>
+              <prop k="discrete" v="0"/>
+              <prop k="draw_mode" v="2"/>
+              <prop k="enabled" v="0"/>
+              <prop k="opacity" v="0.5"/>
+              <prop k="rampType" v="gradient"/>
+              <prop k="single_color" v="255,255,255,255"/>
+              <prop k="spread" v="2"/>
+              <prop k="spread_unit" v="MM"/>
+              <prop k="spread_unit_scale" v="3x:0,0,0,0,0,0"/>
             </effect>
           </effect>
           <data_defined_properties>
             <Option type="Map">
-              <Option name="name" type="QString" value=""/>
+              <Option name="name" value="" type="QString"/>
               <Option name="properties" type="Map">
                 <Option name="size" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="if(@map_scale&lt;10000, 4,3)"/>
-                  <Option name="type" type="int" value="3"/>
+                  <Option name="active" value="true" type="bool"/>
+                  <Option name="expression" value="if(@map_scale&lt;10000, 4,3)" type="QString"/>
+                  <Option name="type" value="3" type="int"/>
                 </Option>
               </Option>
-              <Option name="type" type="QString" value="collection"/>
+              <Option name="type" value="collection" type="QString"/>
             </Option>
           </data_defined_properties>
         </layer>
       </symbol>
-      <symbol force_rhr="0" name="3" type="marker" alpha="1" clip_to_extent="1">
-        <layer enabled="1" locked="0" pass="0" class="SimpleMarker">
-          <prop v="0" k="angle"/>
-          <prop v="85,255,127,0" k="color"/>
-          <prop v="1" k="horizontal_anchor_point"/>
-          <prop v="bevel" k="joinstyle"/>
-          <prop v="square" k="name"/>
-          <prop v="0,0" k="offset"/>
-          <prop v="3x:0,0,0,0,0,0" k="offset_map_unit_scale"/>
-          <prop v="MM" k="offset_unit"/>
-          <prop v="255,9,1,255" k="outline_color"/>
-          <prop v="dot" k="outline_style"/>
-          <prop v="0.25" k="outline_width"/>
-          <prop v="3x:0,0,0,0,0,0" k="outline_width_map_unit_scale"/>
-          <prop v="MM" k="outline_width_unit"/>
-          <prop v="diameter" k="scale_method"/>
-          <prop v="2" k="size"/>
-          <prop v="3x:0,0,0,0,0,0" k="size_map_unit_scale"/>
-          <prop v="MM" k="size_unit"/>
-          <prop v="1" k="vertical_anchor_point"/>
+      <symbol force_rhr="0" name="3" alpha="1" clip_to_extent="1" type="marker">
+        <data_defined_properties>
+          <Option type="Map">
+            <Option name="name" value="" type="QString"/>
+            <Option name="properties"/>
+            <Option name="type" value="collection" type="QString"/>
+          </Option>
+        </data_defined_properties>
+        <layer enabled="1" locked="0" class="SimpleMarker" pass="0">
+          <Option type="Map">
+            <Option name="angle" value="0" type="QString"/>
+            <Option name="cap_style" value="square" type="QString"/>
+            <Option name="color" value="85,255,127,0" type="QString"/>
+            <Option name="horizontal_anchor_point" value="1" type="QString"/>
+            <Option name="joinstyle" value="bevel" type="QString"/>
+            <Option name="name" value="square" type="QString"/>
+            <Option name="offset" value="0,0" type="QString"/>
+            <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="offset_unit" value="MM" type="QString"/>
+            <Option name="outline_color" value="255,9,1,255" type="QString"/>
+            <Option name="outline_style" value="dot" type="QString"/>
+            <Option name="outline_width" value="0.25" type="QString"/>
+            <Option name="outline_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="outline_width_unit" value="MM" type="QString"/>
+            <Option name="scale_method" value="diameter" type="QString"/>
+            <Option name="size" value="2" type="QString"/>
+            <Option name="size_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="size_unit" value="MM" type="QString"/>
+            <Option name="vertical_anchor_point" value="1" type="QString"/>
+          </Option>
+          <prop k="angle" v="0"/>
+          <prop k="cap_style" v="square"/>
+          <prop k="color" v="85,255,127,0"/>
+          <prop k="horizontal_anchor_point" v="1"/>
+          <prop k="joinstyle" v="bevel"/>
+          <prop k="name" v="square"/>
+          <prop k="offset" v="0,0"/>
+          <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="offset_unit" v="MM"/>
+          <prop k="outline_color" v="255,9,1,255"/>
+          <prop k="outline_style" v="dot"/>
+          <prop k="outline_width" v="0.25"/>
+          <prop k="outline_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="outline_width_unit" v="MM"/>
+          <prop k="scale_method" v="diameter"/>
+          <prop k="size" v="2"/>
+          <prop k="size_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+          <prop k="size_unit" v="MM"/>
+          <prop k="vertical_anchor_point" v="1"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option name="name" type="QString" value=""/>
+              <Option name="name" value="" type="QString"/>
               <Option name="properties"/>
-              <Option name="type" type="QString" value="collection"/>
+              <Option name="type" value="collection" type="QString"/>
             </Option>
           </data_defined_properties>
         </layer>
       </symbol>
     </symbols>
   </renderer-v2>
+  <customproperties>
+    <Option type="Map">
+      <Option name="dualview/previewExpressions" type="List">
+        <Option value="COALESCE( &quot;display_name&quot;, '&lt;NULL>' )" type="QString"/>
+      </Option>
+      <Option name="embeddedWidgets/count" value="0" type="int"/>
+      <Option name="variableNames"/>
+      <Option name="variableValues"/>
+    </Option>
+  </customproperties>
   <blendMode>0</blendMode>
   <featureBlendMode>0</featureBlendMode>
+  <layerOpacity>1</layerOpacity>
+  <SingleCategoryDiagramRenderer attributeLegend="1" diagramType="Histogram">
+    <DiagramCategory width="15" barWidth="5" lineSizeScale="3x:0,0,0,0,0,0" height="15" scaleBasedVisibility="0" backgroundColor="#ffffff" rotationOffset="270" opacity="1" minScaleDenominator="0" penColor="#000000" labelPlacementMethod="XHeight" spacingUnitScale="3x:0,0,0,0,0,0" spacingUnit="MM" sizeScale="3x:0,0,0,0,0,0" diagramOrientation="Up" penWidth="0" enabled="0" sizeType="MM" showAxis="1" maxScaleDenominator="0" direction="0" spacing="5" backgroundAlpha="255" lineSizeType="MM" minimumSize="0" penAlpha="255" scaleDependency="Area">
+      <fontProperties description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" style=""/>
+      <axisSymbol>
+        <symbol force_rhr="0" name="" alpha="1" clip_to_extent="1" type="line">
+          <data_defined_properties>
+            <Option type="Map">
+              <Option name="name" value="" type="QString"/>
+              <Option name="properties"/>
+              <Option name="type" value="collection" type="QString"/>
+            </Option>
+          </data_defined_properties>
+          <layer enabled="1" locked="0" class="SimpleLine" pass="0">
+            <Option type="Map">
+              <Option name="align_dash_pattern" value="0" type="QString"/>
+              <Option name="capstyle" value="square" type="QString"/>
+              <Option name="customdash" value="5;2" type="QString"/>
+              <Option name="customdash_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              <Option name="customdash_unit" value="MM" type="QString"/>
+              <Option name="dash_pattern_offset" value="0" type="QString"/>
+              <Option name="dash_pattern_offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              <Option name="dash_pattern_offset_unit" value="MM" type="QString"/>
+              <Option name="draw_inside_polygon" value="0" type="QString"/>
+              <Option name="joinstyle" value="bevel" type="QString"/>
+              <Option name="line_color" value="35,35,35,255" type="QString"/>
+              <Option name="line_style" value="solid" type="QString"/>
+              <Option name="line_width" value="0.26" type="QString"/>
+              <Option name="line_width_unit" value="MM" type="QString"/>
+              <Option name="offset" value="0" type="QString"/>
+              <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              <Option name="offset_unit" value="MM" type="QString"/>
+              <Option name="ring_filter" value="0" type="QString"/>
+              <Option name="trim_distance_end" value="0" type="QString"/>
+              <Option name="trim_distance_end_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              <Option name="trim_distance_end_unit" value="MM" type="QString"/>
+              <Option name="trim_distance_start" value="0" type="QString"/>
+              <Option name="trim_distance_start_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              <Option name="trim_distance_start_unit" value="MM" type="QString"/>
+              <Option name="tweak_dash_pattern_on_corners" value="0" type="QString"/>
+              <Option name="use_custom_dash" value="0" type="QString"/>
+              <Option name="width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            </Option>
+            <prop k="align_dash_pattern" v="0"/>
+            <prop k="capstyle" v="square"/>
+            <prop k="customdash" v="5;2"/>
+            <prop k="customdash_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+            <prop k="customdash_unit" v="MM"/>
+            <prop k="dash_pattern_offset" v="0"/>
+            <prop k="dash_pattern_offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+            <prop k="dash_pattern_offset_unit" v="MM"/>
+            <prop k="draw_inside_polygon" v="0"/>
+            <prop k="joinstyle" v="bevel"/>
+            <prop k="line_color" v="35,35,35,255"/>
+            <prop k="line_style" v="solid"/>
+            <prop k="line_width" v="0.26"/>
+            <prop k="line_width_unit" v="MM"/>
+            <prop k="offset" v="0"/>
+            <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+            <prop k="offset_unit" v="MM"/>
+            <prop k="ring_filter" v="0"/>
+            <prop k="trim_distance_end" v="0"/>
+            <prop k="trim_distance_end_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+            <prop k="trim_distance_end_unit" v="MM"/>
+            <prop k="trim_distance_start" v="0"/>
+            <prop k="trim_distance_start_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+            <prop k="trim_distance_start_unit" v="MM"/>
+            <prop k="tweak_dash_pattern_on_corners" v="0"/>
+            <prop k="use_custom_dash" v="0"/>
+            <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+            <data_defined_properties>
+              <Option type="Map">
+                <Option name="name" value="" type="QString"/>
+                <Option name="properties"/>
+                <Option name="type" value="collection" type="QString"/>
+              </Option>
+            </data_defined_properties>
+          </layer>
+        </symbol>
+      </axisSymbol>
+    </DiagramCategory>
+  </SingleCategoryDiagramRenderer>
+  <DiagramLayerSettings placement="0" priority="0" obstacle="0" showAll="1" zIndex="0" dist="0" linePlacementFlags="18">
+    <properties>
+      <Option type="Map">
+        <Option name="name" value="" type="QString"/>
+        <Option name="properties"/>
+        <Option name="type" value="collection" type="QString"/>
+      </Option>
+    </properties>
+  </DiagramLayerSettings>
+  <geometryOptions removeDuplicateNodes="0" geometryPrecision="0">
+    <activeChecks/>
+    <checkConfiguration/>
+  </geometryOptions>
+  <legend showLabelLegend="0" type="default-vector"/>
+  <referencedLayers/>
   <fieldConfiguration>
     <field name="fid" configurationFlags="None">
       <editWidget type="TextEdit">
@@ -406,12 +868,12 @@
       <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option name="AllowNull" type="bool" value="true"/>
-            <Option name="Max" type="int" value="2147483647"/>
-            <Option name="Min" type="int" value="-2147483648"/>
-            <Option name="Precision" type="int" value="0"/>
-            <Option name="Step" type="int" value="1"/>
-            <Option name="Style" type="QString" value="SpinBox"/>
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="2147483647" type="int"/>
+            <Option name="Min" value="-2147483648" type="int"/>
+            <Option name="Precision" value="0" type="int"/>
+            <Option name="Step" value="1" type="int"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
           </Option>
         </config>
       </editWidget>
@@ -420,8 +882,8 @@
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" type="bool" value="false"/>
-            <Option name="UseHtml" type="bool" value="false"/>
+            <Option name="IsMultiline" value="false" type="bool"/>
+            <Option name="UseHtml" value="false" type="bool"/>
           </Option>
         </config>
       </editWidget>
@@ -434,25 +896,45 @@
       </editWidget>
     </field>
     <field name="calculation_type" configurationFlags="None">
-      <editWidget type="Range">
+      <editWidget type="ValueMap">
         <config>
           <Option type="Map">
-            <Option name="AllowNull" type="bool" value="true"/>
-            <Option name="Max" type="int" value="2147483647"/>
-            <Option name="Min" type="int" value="-2147483648"/>
-            <Option name="Precision" type="int" value="0"/>
-            <Option name="Step" type="int" value="1"/>
-            <Option name="Style" type="QString" value="SpinBox"/>
+            <Option name="map" type="List">
+              <Option type="Map">
+                <Option name="" value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Embedded" value="0" type="int"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Isolated" value="1" type="int"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Connected" value="2" type="int"/>
+              </Option>
+            </Option>
           </Option>
         </config>
       </editWidget>
     </field>
     <field name="shape" configurationFlags="None">
-      <editWidget type="TextEdit">
+      <editWidget type="ValueMap">
         <config>
           <Option type="Map">
-            <Option name="IsMultiline" type="bool" value="false"/>
-            <Option name="UseHtml" type="bool" value="false"/>
+            <Option name="map" type="List">
+              <Option type="Map">
+                <Option name="" value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Square" value="00" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Round" value="01" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Rectangle" value="02" type="QString"/>
+              </Option>
+            </Option>
           </Option>
         </config>
       </editWidget>
@@ -461,12 +943,12 @@
       <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option name="AllowNull" type="bool" value="true"/>
-            <Option name="Max" type="double" value="1.7976931348623157e+308"/>
-            <Option name="Min" type="double" value="0"/>
-            <Option name="Precision" type="int" value="2"/>
-            <Option name="Step" type="double" value="1"/>
-            <Option name="Style" type="QString" value="SpinBox"/>
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
+            <Option name="Min" value="0" type="double"/>
+            <Option name="Precision" value="3" type="int"/>
+            <Option name="Step" value="1" type="double"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
           </Option>
         </config>
       </editWidget>
@@ -475,12 +957,12 @@
       <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option name="AllowNull" type="bool" value="true"/>
-            <Option name="Max" type="double" value="1.7976931348623157e+308"/>
-            <Option name="Min" type="double" value="0"/>
-            <Option name="Precision" type="int" value="2"/>
-            <Option name="Step" type="double" value="1"/>
-            <Option name="Style" type="QString" value="SpinBox"/>
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
+            <Option name="Min" value="0" type="double"/>
+            <Option name="Precision" value="3" type="int"/>
+            <Option name="Step" value="1" type="double"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
           </Option>
         </config>
       </editWidget>
@@ -489,12 +971,12 @@
       <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option name="AllowNull" type="bool" value="true"/>
-            <Option name="Max" type="double" value="1.7976931348623157e+308"/>
-            <Option name="Min" type="double" value="-1.7976931348623157e+308"/>
-            <Option name="Precision" type="int" value="2"/>
-            <Option name="Step" type="double" value="1"/>
-            <Option name="Style" type="QString" value="SpinBox"/>
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
+            <Option name="Min" value="-1.7976931348623157e+308" type="double"/>
+            <Option name="Precision" value="3" type="int"/>
+            <Option name="Step" value="1" type="double"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
           </Option>
         </config>
       </editWidget>
@@ -503,12 +985,12 @@
       <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option name="AllowNull" type="bool" value="true"/>
-            <Option name="Max" type="double" value="1.7976931348623157e+308"/>
-            <Option name="Min" type="double" value="-1.7976931348623157e+308"/>
-            <Option name="Precision" type="int" value="2"/>
-            <Option name="Step" type="double" value="1"/>
-            <Option name="Style" type="QString" value="SpinBox"/>
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
+            <Option name="Min" value="-1.7976931348623157e+308" type="double"/>
+            <Option name="Precision" value="3" type="int"/>
+            <Option name="Step" value="1" type="double"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
           </Option>
         </config>
       </editWidget>
@@ -517,12 +999,12 @@
       <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option name="AllowNull" type="bool" value="true"/>
-            <Option name="Max" type="double" value="1.7976931348623157e+308"/>
-            <Option name="Min" type="double" value="-1.7976931348623157e+308"/>
-            <Option name="Precision" type="int" value="2"/>
-            <Option name="Step" type="double" value="1"/>
-            <Option name="Style" type="QString" value="SpinBox"/>
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
+            <Option name="Min" value="-1.7976931348623157e+308" type="double"/>
+            <Option name="Precision" value="3" type="int"/>
+            <Option name="Step" value="1" type="double"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
           </Option>
         </config>
       </editWidget>
@@ -531,40 +1013,65 @@
       <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option name="AllowNull" type="bool" value="true"/>
-            <Option name="Max" type="double" value="1.7976931348623157e+308"/>
-            <Option name="Min" type="double" value="-1.7976931348623157e+308"/>
-            <Option name="Precision" type="int" value="2"/>
-            <Option name="Step" type="double" value="1"/>
-            <Option name="Style" type="QString" value="SpinBox"/>
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
+            <Option name="Min" value="-1.7976931348623157e+308" type="double"/>
+            <Option name="Precision" value="3" type="int"/>
+            <Option name="Step" value="1" type="double"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
           </Option>
         </config>
       </editWidget>
     </field>
     <field name="manhole_indicator" configurationFlags="None">
-      <editWidget type="Range">
+      <editWidget type="ValueMap">
         <config>
           <Option type="Map">
-            <Option name="AllowNull" type="bool" value="true"/>
-            <Option name="Max" type="int" value="2147483647"/>
-            <Option name="Min" type="int" value="-2147483648"/>
-            <Option name="Precision" type="int" value="0"/>
-            <Option name="Step" type="int" value="1"/>
-            <Option name="Style" type="QString" value="SpinBox"/>
+            <Option name="map" type="List">
+              <Option type="Map">
+                <Option name="" value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Inspection" value="0" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Outlet" value="1" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Pump" value="2" type="QString"/>
+              </Option>
+            </Option>
           </Option>
         </config>
       </editWidget>
     </field>
     <field name="zoom_category" configurationFlags="None">
-      <editWidget type="Range">
+      <editWidget type="ValueMap">
         <config>
           <Option type="Map">
-            <Option name="AllowNull" type="bool" value="true"/>
-            <Option name="Max" type="int" value="2147483647"/>
-            <Option name="Min" type="int" value="-2147483648"/>
-            <Option name="Precision" type="int" value="0"/>
-            <Option name="Step" type="int" value="1"/>
-            <Option name="Style" type="QString" value="SpinBox"/>
+            <Option name="map" type="List">
+              <Option type="Map">
+                <Option name="" value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Lowest visibility" value="0" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Low visibility" value="1" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Medium low visibility" value="2" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Medium visibility" value="3" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="High visibility" value="4" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Highest visibility" value="5" type="QString"/>
+              </Option>
+            </Option>
           </Option>
         </config>
       </editWidget>
@@ -573,87 +1080,115 @@
       <editWidget type="Range">
         <config>
           <Option type="Map">
-            <Option name="AllowNull" type="bool" value="true"/>
-            <Option name="Max" type="int" value="2147483647"/>
-            <Option name="Min" type="int" value="-2147483648"/>
-            <Option name="Precision" type="int" value="0"/>
-            <Option name="Step" type="int" value="1"/>
-            <Option name="Style" type="QString" value="SpinBox"/>
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="2147483647" type="int"/>
+            <Option name="Min" value="-2147483648" type="int"/>
+            <Option name="Precision" value="0" type="int"/>
+            <Option name="Step" value="1" type="int"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
           </Option>
         </config>
       </editWidget>
     </field>
   </fieldConfiguration>
   <aliases>
-    <alias name="" index="0" field="fid"/>
-    <alias name="" index="1" field="id"/>
-    <alias name="" index="2" field="code"/>
-    <alias name="" index="3" field="display_name"/>
-    <alias name="" index="4" field="calculation_type"/>
-    <alias name="" index="5" field="shape"/>
-    <alias name="" index="6" field="width"/>
-    <alias name="" index="7" field="length"/>
-    <alias name="" index="8" field="bottom_level"/>
-    <alias name="" index="9" field="surface_level"/>
-    <alias name="" index="10" field="drain_level"/>
-    <alias name="" index="11" field="sediment_level"/>
-    <alias name="" index="12" field="manhole_indicator"/>
-    <alias name="" index="13" field="zoom_category"/>
-    <alias name="" index="14" field="connection_node_id"/>
+    <alias field="fid" name="" index="0"/>
+    <alias field="id" name="" index="1"/>
+    <alias field="code" name="" index="2"/>
+    <alias field="display_name" name="" index="3"/>
+    <alias field="calculation_type" name="" index="4"/>
+    <alias field="shape" name="" index="5"/>
+    <alias field="width" name="" index="6"/>
+    <alias field="length" name="" index="7"/>
+    <alias field="bottom_level" name="" index="8"/>
+    <alias field="surface_level" name="" index="9"/>
+    <alias field="drain_level" name="" index="10"/>
+    <alias field="sediment_level" name="" index="11"/>
+    <alias field="manhole_indicator" name="" index="12"/>
+    <alias field="zoom_category" name="" index="13"/>
+    <alias field="connection_node_id" name="" index="14"/>
   </aliases>
   <defaults>
-    <default applyOnUpdate="0" expression="" field="fid"/>
-    <default applyOnUpdate="0" expression="" field="id"/>
-    <default applyOnUpdate="0" expression="" field="code"/>
-    <default applyOnUpdate="0" expression="" field="display_name"/>
-    <default applyOnUpdate="0" expression="" field="calculation_type"/>
-    <default applyOnUpdate="0" expression="" field="shape"/>
-    <default applyOnUpdate="0" expression="" field="width"/>
-    <default applyOnUpdate="0" expression="" field="length"/>
-    <default applyOnUpdate="0" expression="" field="bottom_level"/>
-    <default applyOnUpdate="0" expression="" field="surface_level"/>
-    <default applyOnUpdate="0" expression="" field="drain_level"/>
-    <default applyOnUpdate="0" expression="" field="sediment_level"/>
-    <default applyOnUpdate="0" expression="" field="manhole_indicator"/>
-    <default applyOnUpdate="0" expression="" field="zoom_category"/>
-    <default applyOnUpdate="0" expression="" field="connection_node_id"/>
+    <default field="fid" expression="" applyOnUpdate="0"/>
+    <default field="id" expression="" applyOnUpdate="0"/>
+    <default field="code" expression="" applyOnUpdate="0"/>
+    <default field="display_name" expression="" applyOnUpdate="0"/>
+    <default field="calculation_type" expression="" applyOnUpdate="0"/>
+    <default field="shape" expression="" applyOnUpdate="0"/>
+    <default field="width" expression="" applyOnUpdate="0"/>
+    <default field="length" expression="" applyOnUpdate="0"/>
+    <default field="bottom_level" expression="" applyOnUpdate="0"/>
+    <default field="surface_level" expression="" applyOnUpdate="0"/>
+    <default field="drain_level" expression="" applyOnUpdate="0"/>
+    <default field="sediment_level" expression="" applyOnUpdate="0"/>
+    <default field="manhole_indicator" expression="" applyOnUpdate="0"/>
+    <default field="zoom_category" expression="" applyOnUpdate="0"/>
+    <default field="connection_node_id" expression="" applyOnUpdate="0"/>
   </defaults>
   <constraints>
-    <constraint constraints="3" unique_strength="1" notnull_strength="1" exp_strength="0" field="fid"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="id"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="code"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="display_name"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="calculation_type"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="shape"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="width"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="length"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="bottom_level"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="surface_level"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="drain_level"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="sediment_level"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="manhole_indicator"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="zoom_category"/>
-    <constraint constraints="0" unique_strength="0" notnull_strength="0" exp_strength="0" field="connection_node_id"/>
+    <constraint field="fid" exp_strength="0" notnull_strength="1" unique_strength="1" constraints="3"/>
+    <constraint field="id" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="code" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="display_name" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="calculation_type" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="shape" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="width" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="length" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="bottom_level" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="surface_level" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="drain_level" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="sediment_level" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="manhole_indicator" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="zoom_category" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="connection_node_id" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
   </constraints>
   <constraintExpressions>
-    <constraint desc="" exp="" field="fid"/>
-    <constraint desc="" exp="" field="id"/>
-    <constraint desc="" exp="" field="code"/>
-    <constraint desc="" exp="" field="display_name"/>
-    <constraint desc="" exp="" field="calculation_type"/>
-    <constraint desc="" exp="" field="shape"/>
-    <constraint desc="" exp="" field="width"/>
-    <constraint desc="" exp="" field="length"/>
-    <constraint desc="" exp="" field="bottom_level"/>
-    <constraint desc="" exp="" field="surface_level"/>
-    <constraint desc="" exp="" field="drain_level"/>
-    <constraint desc="" exp="" field="sediment_level"/>
-    <constraint desc="" exp="" field="manhole_indicator"/>
-    <constraint desc="" exp="" field="zoom_category"/>
-    <constraint desc="" exp="" field="connection_node_id"/>
+    <constraint field="fid" exp="" desc=""/>
+    <constraint field="id" exp="" desc=""/>
+    <constraint field="code" exp="" desc=""/>
+    <constraint field="display_name" exp="" desc=""/>
+    <constraint field="calculation_type" exp="" desc=""/>
+    <constraint field="shape" exp="" desc=""/>
+    <constraint field="width" exp="" desc=""/>
+    <constraint field="length" exp="" desc=""/>
+    <constraint field="bottom_level" exp="" desc=""/>
+    <constraint field="surface_level" exp="" desc=""/>
+    <constraint field="drain_level" exp="" desc=""/>
+    <constraint field="sediment_level" exp="" desc=""/>
+    <constraint field="manhole_indicator" exp="" desc=""/>
+    <constraint field="zoom_category" exp="" desc=""/>
+    <constraint field="connection_node_id" exp="" desc=""/>
   </constraintExpressions>
   <expressionfields/>
-  <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_schematisation_editor\forms\ui\manhole.ui</editform>
+  <attributeactions>
+    <defaultAction key="Canvas" value="{00000000-0000-0000-0000-000000000000}"/>
+  </attributeactions>
+  <attributetableconfig actionWidgetStyle="dropDown" sortOrder="0" sortExpression="">
+    <columns>
+      <column name="fid" hidden="1" width="-1" type="field"/>
+      <column name="id" hidden="0" width="-1" type="field"/>
+      <column name="code" hidden="0" width="-1" type="field"/>
+      <column name="display_name" hidden="0" width="-1" type="field"/>
+      <column name="calculation_type" hidden="0" width="-1" type="field"/>
+      <column name="shape" hidden="0" width="-1" type="field"/>
+      <column name="width" hidden="0" width="-1" type="field"/>
+      <column name="length" hidden="0" width="-1" type="field"/>
+      <column name="bottom_level" hidden="0" width="-1" type="field"/>
+      <column name="surface_level" hidden="0" width="-1" type="field"/>
+      <column name="drain_level" hidden="0" width="-1" type="field"/>
+      <column name="sediment_level" hidden="0" width="-1" type="field"/>
+      <column name="manhole_indicator" hidden="0" width="-1" type="field"/>
+      <column name="zoom_category" hidden="0" width="-1" type="field"/>
+      <column name="connection_node_id" hidden="0" width="-1" type="field"/>
+      <column hidden="1" width="-1" type="actions"/>
+    </columns>
+  </attributetableconfig>
+  <conditionalstyles>
+    <rowstyles/>
+    <fieldstyles/>
+  </conditionalstyles>
+  <storedexpressions/>
+  <editform tolerant="1">C:\Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\python39/python/plugins\threedi_schematisation_editor\forms\ui\manhole.ui</editform>
   <editforminit>open_edit_form</editforminit>
   <editforminitcodesource>2</editforminitcodesource>
   <editforminitfilepath>.</editforminitfilepath>
@@ -661,14 +1196,14 @@
   <featformsuppress>0</featformsuppress>
   <editorlayout>uifilelayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer visibilityExpression="" columnCount="1" visibilityExpressionEnabled="0" name="Manhole_view" showLabel="1" groupBox="0">
-      <attributeEditorContainer visibilityExpression="" columnCount="1" visibilityExpressionEnabled="0" name="General" showLabel="1" groupBox="1">
+    <attributeEditorContainer visibilityExpressionEnabled="0" name="Manhole_view" groupBox="0" showLabel="1" visibilityExpression="" columnCount="1">
+      <attributeEditorContainer visibilityExpressionEnabled="0" name="General" groupBox="1" showLabel="1" visibilityExpression="" columnCount="1">
         <attributeEditorField name="id" showLabel="1" index="1"/>
         <attributeEditorField name="display_name" showLabel="1" index="3"/>
         <attributeEditorField name="code" showLabel="1" index="2"/>
         <attributeEditorField name="calculation_type" showLabel="1" index="4"/>
       </attributeEditorContainer>
-      <attributeEditorContainer visibilityExpression="" columnCount="1" visibilityExpressionEnabled="0" name="Characteristics" showLabel="1" groupBox="1">
+      <attributeEditorContainer visibilityExpressionEnabled="0" name="Characteristics" groupBox="1" showLabel="1" visibilityExpression="" columnCount="1">
         <attributeEditorField name="shape" showLabel="1" index="5"/>
         <attributeEditorField name="width" showLabel="1" index="6"/>
         <attributeEditorField name="length" showLabel="1" index="7"/>
@@ -676,11 +1211,11 @@
         <attributeEditorField name="surface_level" showLabel="1" index="9"/>
         <attributeEditorField name="drain_level" showLabel="1" index="10"/>
       </attributeEditorContainer>
-      <attributeEditorContainer visibilityExpression="" columnCount="1" visibilityExpressionEnabled="0" name="Visualisation" showLabel="1" groupBox="1">
+      <attributeEditorContainer visibilityExpressionEnabled="0" name="Visualisation" groupBox="1" showLabel="1" visibilityExpression="" columnCount="1">
         <attributeEditorField name="manhole_indicator" showLabel="1" index="12"/>
         <attributeEditorField name="zoom_category" showLabel="1" index="13"/>
       </attributeEditorContainer>
-      <attributeEditorContainer visibilityExpression="" columnCount="1" visibilityExpressionEnabled="0" name="Connection node" showLabel="1" groupBox="1">
+      <attributeEditorContainer visibilityExpressionEnabled="0" name="Connection node" groupBox="1" showLabel="1" visibilityExpression="" columnCount="1">
         <attributeEditorField name="connection_node_id" showLabel="1" index="14"/>
         <attributeEditorField name="node_code" showLabel="1" index="-1"/>
         <attributeEditorField name="node_initial_waterlevel" showLabel="1" index="-1"/>
@@ -689,27 +1224,27 @@
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
-    <field editable="1" name="ROWID"/>
-    <field editable="1" name="bottom_level"/>
-    <field editable="1" name="calculation_type"/>
-    <field editable="1" name="code"/>
-    <field editable="0" name="connection_node_id"/>
-    <field editable="1" name="display_name"/>
-    <field editable="1" name="drain_level"/>
-    <field editable="1" name="fid"/>
-    <field editable="0" name="id"/>
-    <field editable="1" name="length"/>
-    <field editable="1" name="manhole_indicator"/>
-    <field editable="1" name="node_code"/>
-    <field editable="0" name="node_id"/>
-    <field editable="1" name="node_initial_waterlevel"/>
-    <field editable="1" name="node_storage_area"/>
-    <field editable="1" name="node_the_geom_linestring"/>
-    <field editable="1" name="sediment_level"/>
-    <field editable="1" name="shape"/>
-    <field editable="1" name="surface_level"/>
-    <field editable="1" name="width"/>
-    <field editable="1" name="zoom_category"/>
+    <field name="ROWID" editable="1"/>
+    <field name="bottom_level" editable="1"/>
+    <field name="calculation_type" editable="1"/>
+    <field name="code" editable="1"/>
+    <field name="connection_node_id" editable="0"/>
+    <field name="display_name" editable="1"/>
+    <field name="drain_level" editable="1"/>
+    <field name="fid" editable="1"/>
+    <field name="id" editable="0"/>
+    <field name="length" editable="1"/>
+    <field name="manhole_indicator" editable="1"/>
+    <field name="node_code" editable="1"/>
+    <field name="node_id" editable="0"/>
+    <field name="node_initial_waterlevel" editable="1"/>
+    <field name="node_storage_area" editable="1"/>
+    <field name="node_the_geom_linestring" editable="1"/>
+    <field name="sediment_level" editable="1"/>
+    <field name="shape" editable="1"/>
+    <field name="surface_level" editable="1"/>
+    <field name="width" editable="1"/>
+    <field name="zoom_category" editable="1"/>
   </editable>
   <labelOnTop>
     <field name="ROWID" labelOnTop="0"/>
@@ -734,8 +1269,26 @@
     <field name="width" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
   </labelOnTop>
+  <reuseLastValue>
+    <field reuseLastValue="0" name="bottom_level"/>
+    <field reuseLastValue="0" name="calculation_type"/>
+    <field reuseLastValue="0" name="code"/>
+    <field reuseLastValue="0" name="connection_node_id"/>
+    <field reuseLastValue="0" name="display_name"/>
+    <field reuseLastValue="0" name="drain_level"/>
+    <field reuseLastValue="0" name="fid"/>
+    <field reuseLastValue="0" name="id"/>
+    <field reuseLastValue="0" name="length"/>
+    <field reuseLastValue="0" name="manhole_indicator"/>
+    <field reuseLastValue="0" name="sediment_level"/>
+    <field reuseLastValue="0" name="shape"/>
+    <field reuseLastValue="0" name="surface_level"/>
+    <field reuseLastValue="0" name="width"/>
+    <field reuseLastValue="0" name="zoom_category"/>
+  </reuseLastValue>
   <dataDefinedFieldProperties/>
   <widgets/>
   <previewExpression>COALESCE( "display_name", '&lt;NULL>' )</previewExpression>
+  <mapTip></mapTip>
   <layerGeometryType>0</layerGeometryType>
 </qgis>

@@ -165,9 +165,11 @@ class BaseForm(QObject):
                 else:
                     widget.setStyleSheet("")
             real_field_type = optional_type(field_type) if is_optional(field_type) else field_type
-            if issubclass(real_field_type, Enum):
-                cbo_items = {t.name.capitalize().replace("_", " "): t.value for t in real_field_type}
-                self.populate_combo(widget, cbo_items)
+            if data_model_cls != self.MODEL:
+                # Populate combo boxes of related features only
+                if issubclass(real_field_type, Enum):
+                    cbo_items = {t.name.capitalize().replace("_", " "): t.value for t in real_field_type}
+                    self.populate_combo(widget, cbo_items)
             self.set_widget_value(widget, feature[field_name], var_type=real_field_type)
             self.set_validation_background(widget, field_type)
             self.main_widgets[widget_name] = widget
@@ -246,7 +248,7 @@ class BaseForm(QObject):
                     widget.setClearValueMode(widget.__class__.CustomValue, "")
                 widget.clear()
         elif isinstance(widget, QComboBox):
-            item_idx = widget.findData(value)
+            item_idx = widget.findData(value if value != NULL else None)
             if item_idx >= 0:
                 widget.setCurrentIndex(item_idx)
         elif isinstance(widget, QPlainTextEdit):
