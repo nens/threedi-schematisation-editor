@@ -701,7 +701,6 @@ class GlobalSettings(ModelObject):
     wind_shielding_file: Optional[str]
     use_0d_inflow: int
     table_step_size_1d: Optional[float]
-    table_step_size_volume_2d: Optional[float]
     use_2d_rain: int
     initial_groundwater_level: Optional[float]
     initial_groundwater_level_file: Optional[str]
@@ -849,6 +848,18 @@ class NumericalSettings(ModelObject):
     thin_water_layer_definition: Optional[float]
     use_of_cg: int
     use_of_nested_newton: int
+
+
+@dataclass
+class SchemaVersion(ModelObject):
+    __tablename__ = "schema_version"
+    __layername__ = "Schema version"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    SQLITE_SOURCES = ("schema_version",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    version_num: str
 
 
 @dataclass
@@ -1120,6 +1131,7 @@ SETTINGS_ELEMENTS = (
     GroundWaterSettings,
     InterflowSettings,
     NumericalSettings,
+    SchemaVersion,
 )
 
 BREACHES_ELEMENTS = (

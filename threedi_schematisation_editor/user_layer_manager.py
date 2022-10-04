@@ -281,8 +281,9 @@ class LayersManager:
         if form_ui_path:
             default_edit_form_config.setUiForm(form_ui_path)
         else:
-            id_increment_expression = "if (maximum(id) is null, 1, maximum(id) + 1)"
-            set_field_default_value(layer, "id", id_increment_expression)
+            if model_cls != dm.SchemaVersion:
+                id_increment_expression = "if (maximum(id) is null, 1, maximum(id) + 1)"
+                set_field_default_value(layer, "id", id_increment_expression)
         for style in all_styles:
             style_manager.setCurrentStyle(style)
             layer.setEditFormConfig(default_edit_form_config)
