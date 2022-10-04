@@ -1,16 +1,57 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis styleCategories="Symbology|Labeling|Forms|MapTips" labelsEnabled="1" version="3.16.9-Hannover">
-  <renderer-v2 type="categorizedSymbol" attr="calculation_type" enableorderby="0" symbollevels="0" forceraster="0">
+<qgis readOnly="0" hasScaleBasedVisibilityFlag="0" simplifyDrawingTol="1" simplifyMaxScale="1" version="3.22.10-Białowieża" maxScale="0" simplifyDrawingHints="0" simplifyAlgorithm="0" styleCategories="AllStyleCategories" symbologyReferenceScale="-1" minScale="0" simplifyLocal="1" labelsEnabled="0">
+  <flags>
+    <Identifiable>1</Identifiable>
+    <Removable>0</Removable>
+    <Searchable>1</Searchable>
+    <Private>0</Private>
+  </flags>
+  <temporal enabled="0" durationUnit="min" endField="" startExpression="" fixedDuration="0" accumulate="0" endExpression="" durationField="" mode="0" limitMode="0" startField="">
+    <fixedRange>
+      <start></start>
+      <end></end>
+    </fixedRange>
+  </temporal>
+  <renderer-v2 attr="calculation_type" referencescale="-1" enableorderby="0" forceraster="0" symbollevels="0" type="categorizedSymbol">
     <categories>
-      <category value="0" label="0: embedded" symbol="0" render="true"/>
-      <category value="1" label="1: isolated" symbol="1" render="true"/>
-      <category value="2" label="2: connected" symbol="2" render="true"/>
-      <category value="" label="other: invalid" symbol="3" render="true"/>
+      <category symbol="0" render="true" label="0: embedded" value="0"/>
+      <category symbol="1" render="true" label="1: isolated" value="1"/>
+      <category symbol="2" render="true" label="2: connected" value="2"/>
+      <category symbol="3" render="true" label="other: invalid" value=""/>
     </categories>
     <symbols>
-      <symbol type="marker" force_rhr="0" clip_to_extent="1" name="0" alpha="1">
-        <layer class="SimpleMarker" locked="0" pass="0" enabled="1">
+      <symbol force_rhr="0" name="0" alpha="1" clip_to_extent="1" type="marker">
+        <data_defined_properties>
+          <Option type="Map">
+            <Option name="name" value="" type="QString"/>
+            <Option name="properties"/>
+            <Option name="type" value="collection" type="QString"/>
+          </Option>
+        </data_defined_properties>
+        <layer enabled="1" locked="0" class="SimpleMarker" pass="0">
+          <Option type="Map">
+            <Option name="angle" value="0" type="QString"/>
+            <Option name="cap_style" value="square" type="QString"/>
+            <Option name="color" value="11,178,181,255" type="QString"/>
+            <Option name="horizontal_anchor_point" value="1" type="QString"/>
+            <Option name="joinstyle" value="bevel" type="QString"/>
+            <Option name="name" value="square" type="QString"/>
+            <Option name="offset" value="0,0" type="QString"/>
+            <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="offset_unit" value="MM" type="QString"/>
+            <Option name="outline_color" value="0,0,0,255" type="QString"/>
+            <Option name="outline_style" value="no" type="QString"/>
+            <Option name="outline_width" value="0" type="QString"/>
+            <Option name="outline_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="outline_width_unit" value="MM" type="QString"/>
+            <Option name="scale_method" value="diameter" type="QString"/>
+            <Option name="size" value="2.5" type="QString"/>
+            <Option name="size_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="size_unit" value="MM" type="QString"/>
+            <Option name="vertical_anchor_point" value="1" type="QString"/>
+          </Option>
           <prop k="angle" v="0"/>
+          <prop k="cap_style" v="square"/>
           <prop k="color" v="11,178,181,255"/>
           <prop k="horizontal_anchor_point" v="1"/>
           <prop k="joinstyle" v="bevel"/>
@@ -30,16 +71,45 @@
           <prop k="vertical_anchor_point" v="1"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option type="QString" value="" name="name"/>
+              <Option name="name" value="" type="QString"/>
               <Option name="properties"/>
-              <Option type="QString" value="collection" name="type"/>
+              <Option name="type" value="collection" type="QString"/>
             </Option>
           </data_defined_properties>
         </layer>
       </symbol>
-      <symbol type="marker" force_rhr="0" clip_to_extent="1" name="1" alpha="1">
-        <layer class="SimpleMarker" locked="0" pass="0" enabled="1">
+      <symbol force_rhr="0" name="1" alpha="1" clip_to_extent="1" type="marker">
+        <data_defined_properties>
+          <Option type="Map">
+            <Option name="name" value="" type="QString"/>
+            <Option name="properties"/>
+            <Option name="type" value="collection" type="QString"/>
+          </Option>
+        </data_defined_properties>
+        <layer enabled="1" locked="0" class="SimpleMarker" pass="0">
+          <Option type="Map">
+            <Option name="angle" value="0" type="QString"/>
+            <Option name="cap_style" value="square" type="QString"/>
+            <Option name="color" value="181,136,11,255" type="QString"/>
+            <Option name="horizontal_anchor_point" value="1" type="QString"/>
+            <Option name="joinstyle" value="bevel" type="QString"/>
+            <Option name="name" value="square" type="QString"/>
+            <Option name="offset" value="0,0" type="QString"/>
+            <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="offset_unit" value="MM" type="QString"/>
+            <Option name="outline_color" value="0,0,0,255" type="QString"/>
+            <Option name="outline_style" value="no" type="QString"/>
+            <Option name="outline_width" value="0" type="QString"/>
+            <Option name="outline_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="outline_width_unit" value="MM" type="QString"/>
+            <Option name="scale_method" value="diameter" type="QString"/>
+            <Option name="size" value="2.5" type="QString"/>
+            <Option name="size_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="size_unit" value="MM" type="QString"/>
+            <Option name="vertical_anchor_point" value="1" type="QString"/>
+          </Option>
           <prop k="angle" v="0"/>
+          <prop k="cap_style" v="square"/>
           <prop k="color" v="181,136,11,255"/>
           <prop k="horizontal_anchor_point" v="1"/>
           <prop k="joinstyle" v="bevel"/>
@@ -59,16 +129,45 @@
           <prop k="vertical_anchor_point" v="1"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option type="QString" value="" name="name"/>
+              <Option name="name" value="" type="QString"/>
               <Option name="properties"/>
-              <Option type="QString" value="collection" name="type"/>
+              <Option name="type" value="collection" type="QString"/>
             </Option>
           </data_defined_properties>
         </layer>
       </symbol>
-      <symbol type="marker" force_rhr="0" clip_to_extent="1" name="2" alpha="1">
-        <layer class="SimpleMarker" locked="0" pass="0" enabled="1">
+      <symbol force_rhr="0" name="2" alpha="1" clip_to_extent="1" type="marker">
+        <data_defined_properties>
+          <Option type="Map">
+            <Option name="name" value="" type="QString"/>
+            <Option name="properties"/>
+            <Option name="type" value="collection" type="QString"/>
+          </Option>
+        </data_defined_properties>
+        <layer enabled="1" locked="0" class="SimpleMarker" pass="0">
+          <Option type="Map">
+            <Option name="angle" value="0" type="QString"/>
+            <Option name="cap_style" value="square" type="QString"/>
+            <Option name="color" value="167,11,181,255" type="QString"/>
+            <Option name="horizontal_anchor_point" value="1" type="QString"/>
+            <Option name="joinstyle" value="bevel" type="QString"/>
+            <Option name="name" value="square" type="QString"/>
+            <Option name="offset" value="0,0" type="QString"/>
+            <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="offset_unit" value="MM" type="QString"/>
+            <Option name="outline_color" value="0,0,0,255" type="QString"/>
+            <Option name="outline_style" value="no" type="QString"/>
+            <Option name="outline_width" value="0" type="QString"/>
+            <Option name="outline_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="outline_width_unit" value="MM" type="QString"/>
+            <Option name="scale_method" value="diameter" type="QString"/>
+            <Option name="size" value="2.5" type="QString"/>
+            <Option name="size_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="size_unit" value="MM" type="QString"/>
+            <Option name="vertical_anchor_point" value="1" type="QString"/>
+          </Option>
           <prop k="angle" v="0"/>
+          <prop k="cap_style" v="square"/>
           <prop k="color" v="167,11,181,255"/>
           <prop k="horizontal_anchor_point" v="1"/>
           <prop k="joinstyle" v="bevel"/>
@@ -88,16 +187,45 @@
           <prop k="vertical_anchor_point" v="1"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option type="QString" value="" name="name"/>
+              <Option name="name" value="" type="QString"/>
               <Option name="properties"/>
-              <Option type="QString" value="collection" name="type"/>
+              <Option name="type" value="collection" type="QString"/>
             </Option>
           </data_defined_properties>
         </layer>
       </symbol>
-      <symbol type="marker" force_rhr="0" clip_to_extent="1" name="3" alpha="1">
-        <layer class="SimpleMarker" locked="0" pass="0" enabled="1">
+      <symbol force_rhr="0" name="3" alpha="1" clip_to_extent="1" type="marker">
+        <data_defined_properties>
+          <Option type="Map">
+            <Option name="name" value="" type="QString"/>
+            <Option name="properties"/>
+            <Option name="type" value="collection" type="QString"/>
+          </Option>
+        </data_defined_properties>
+        <layer enabled="1" locked="0" class="SimpleMarker" pass="0">
+          <Option type="Map">
+            <Option name="angle" value="0" type="QString"/>
+            <Option name="cap_style" value="square" type="QString"/>
+            <Option name="color" value="125,139,143,255" type="QString"/>
+            <Option name="horizontal_anchor_point" value="1" type="QString"/>
+            <Option name="joinstyle" value="bevel" type="QString"/>
+            <Option name="name" value="square" type="QString"/>
+            <Option name="offset" value="0,0" type="QString"/>
+            <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="offset_unit" value="MM" type="QString"/>
+            <Option name="outline_color" value="0,0,0,255" type="QString"/>
+            <Option name="outline_style" value="no" type="QString"/>
+            <Option name="outline_width" value="0" type="QString"/>
+            <Option name="outline_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="outline_width_unit" value="MM" type="QString"/>
+            <Option name="scale_method" value="diameter" type="QString"/>
+            <Option name="size" value="2.5" type="QString"/>
+            <Option name="size_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="size_unit" value="MM" type="QString"/>
+            <Option name="vertical_anchor_point" value="1" type="QString"/>
+          </Option>
           <prop k="angle" v="0"/>
+          <prop k="cap_style" v="square"/>
           <prop k="color" v="125,139,143,255"/>
           <prop k="horizontal_anchor_point" v="1"/>
           <prop k="joinstyle" v="bevel"/>
@@ -117,18 +245,47 @@
           <prop k="vertical_anchor_point" v="1"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option type="QString" value="" name="name"/>
+              <Option name="name" value="" type="QString"/>
               <Option name="properties"/>
-              <Option type="QString" value="collection" name="type"/>
+              <Option name="type" value="collection" type="QString"/>
             </Option>
           </data_defined_properties>
         </layer>
       </symbol>
     </symbols>
     <source-symbol>
-      <symbol type="marker" force_rhr="0" clip_to_extent="1" name="0" alpha="1">
-        <layer class="SimpleMarker" locked="0" pass="0" enabled="1">
+      <symbol force_rhr="0" name="0" alpha="1" clip_to_extent="1" type="marker">
+        <data_defined_properties>
+          <Option type="Map">
+            <Option name="name" value="" type="QString"/>
+            <Option name="properties"/>
+            <Option name="type" value="collection" type="QString"/>
+          </Option>
+        </data_defined_properties>
+        <layer enabled="1" locked="0" class="SimpleMarker" pass="0">
+          <Option type="Map">
+            <Option name="angle" value="0" type="QString"/>
+            <Option name="cap_style" value="square" type="QString"/>
+            <Option name="color" value="85,255,127,255" type="QString"/>
+            <Option name="horizontal_anchor_point" value="1" type="QString"/>
+            <Option name="joinstyle" value="bevel" type="QString"/>
+            <Option name="name" value="square" type="QString"/>
+            <Option name="offset" value="0,0" type="QString"/>
+            <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="offset_unit" value="MM" type="QString"/>
+            <Option name="outline_color" value="0,0,0,255" type="QString"/>
+            <Option name="outline_style" value="no" type="QString"/>
+            <Option name="outline_width" value="0" type="QString"/>
+            <Option name="outline_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="outline_width_unit" value="MM" type="QString"/>
+            <Option name="scale_method" value="diameter" type="QString"/>
+            <Option name="size" value="2.5" type="QString"/>
+            <Option name="size_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="size_unit" value="MM" type="QString"/>
+            <Option name="vertical_anchor_point" value="1" type="QString"/>
+          </Option>
           <prop k="angle" v="0"/>
+          <prop k="cap_style" v="square"/>
           <prop k="color" v="85,255,127,255"/>
           <prop k="horizontal_anchor_point" v="1"/>
           <prop k="joinstyle" v="bevel"/>
@@ -148,9 +305,9 @@
           <prop k="vertical_anchor_point" v="1"/>
           <data_defined_properties>
             <Option type="Map">
-              <Option type="QString" value="" name="name"/>
+              <Option name="name" value="" type="QString"/>
               <Option name="properties"/>
-              <Option type="QString" value="collection" name="type"/>
+              <Option name="type" value="collection" type="QString"/>
             </Option>
           </data_defined_properties>
         </layer>
@@ -159,242 +316,545 @@
     <rotation/>
     <sizescale/>
   </renderer-v2>
+  <customproperties>
+    <Option type="Map">
+      <Option name="embeddedWidgets/count" value="0" type="int"/>
+      <Option name="variableNames"/>
+      <Option name="variableValues"/>
+    </Option>
+  </customproperties>
   <blendMode>0</blendMode>
   <featureBlendMode>0</featureBlendMode>
+  <layerOpacity>1</layerOpacity>
+  <SingleCategoryDiagramRenderer attributeLegend="1" diagramType="Histogram">
+    <DiagramCategory width="15" barWidth="5" lineSizeScale="3x:0,0,0,0,0,0" height="15" scaleBasedVisibility="0" backgroundColor="#ffffff" rotationOffset="270" opacity="1" minScaleDenominator="0" penColor="#000000" labelPlacementMethod="XHeight" spacingUnitScale="3x:0,0,0,0,0,0" spacingUnit="MM" sizeScale="3x:0,0,0,0,0,0" diagramOrientation="Up" penWidth="0" enabled="0" sizeType="MM" showAxis="1" maxScaleDenominator="0" direction="0" spacing="5" backgroundAlpha="255" lineSizeType="MM" minimumSize="0" penAlpha="255" scaleDependency="Area">
+      <fontProperties description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" style=""/>
+      <axisSymbol>
+        <symbol force_rhr="0" name="" alpha="1" clip_to_extent="1" type="line">
+          <data_defined_properties>
+            <Option type="Map">
+              <Option name="name" value="" type="QString"/>
+              <Option name="properties"/>
+              <Option name="type" value="collection" type="QString"/>
+            </Option>
+          </data_defined_properties>
+          <layer enabled="1" locked="0" class="SimpleLine" pass="0">
+            <Option type="Map">
+              <Option name="align_dash_pattern" value="0" type="QString"/>
+              <Option name="capstyle" value="square" type="QString"/>
+              <Option name="customdash" value="5;2" type="QString"/>
+              <Option name="customdash_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              <Option name="customdash_unit" value="MM" type="QString"/>
+              <Option name="dash_pattern_offset" value="0" type="QString"/>
+              <Option name="dash_pattern_offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              <Option name="dash_pattern_offset_unit" value="MM" type="QString"/>
+              <Option name="draw_inside_polygon" value="0" type="QString"/>
+              <Option name="joinstyle" value="bevel" type="QString"/>
+              <Option name="line_color" value="35,35,35,255" type="QString"/>
+              <Option name="line_style" value="solid" type="QString"/>
+              <Option name="line_width" value="0.26" type="QString"/>
+              <Option name="line_width_unit" value="MM" type="QString"/>
+              <Option name="offset" value="0" type="QString"/>
+              <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              <Option name="offset_unit" value="MM" type="QString"/>
+              <Option name="ring_filter" value="0" type="QString"/>
+              <Option name="trim_distance_end" value="0" type="QString"/>
+              <Option name="trim_distance_end_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              <Option name="trim_distance_end_unit" value="MM" type="QString"/>
+              <Option name="trim_distance_start" value="0" type="QString"/>
+              <Option name="trim_distance_start_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+              <Option name="trim_distance_start_unit" value="MM" type="QString"/>
+              <Option name="tweak_dash_pattern_on_corners" value="0" type="QString"/>
+              <Option name="use_custom_dash" value="0" type="QString"/>
+              <Option name="width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            </Option>
+            <prop k="align_dash_pattern" v="0"/>
+            <prop k="capstyle" v="square"/>
+            <prop k="customdash" v="5;2"/>
+            <prop k="customdash_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+            <prop k="customdash_unit" v="MM"/>
+            <prop k="dash_pattern_offset" v="0"/>
+            <prop k="dash_pattern_offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+            <prop k="dash_pattern_offset_unit" v="MM"/>
+            <prop k="draw_inside_polygon" v="0"/>
+            <prop k="joinstyle" v="bevel"/>
+            <prop k="line_color" v="35,35,35,255"/>
+            <prop k="line_style" v="solid"/>
+            <prop k="line_width" v="0.26"/>
+            <prop k="line_width_unit" v="MM"/>
+            <prop k="offset" v="0"/>
+            <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+            <prop k="offset_unit" v="MM"/>
+            <prop k="ring_filter" v="0"/>
+            <prop k="trim_distance_end" v="0"/>
+            <prop k="trim_distance_end_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+            <prop k="trim_distance_end_unit" v="MM"/>
+            <prop k="trim_distance_start" v="0"/>
+            <prop k="trim_distance_start_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+            <prop k="trim_distance_start_unit" v="MM"/>
+            <prop k="tweak_dash_pattern_on_corners" v="0"/>
+            <prop k="use_custom_dash" v="0"/>
+            <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+            <data_defined_properties>
+              <Option type="Map">
+                <Option name="name" value="" type="QString"/>
+                <Option name="properties"/>
+                <Option name="type" value="collection" type="QString"/>
+              </Option>
+            </data_defined_properties>
+          </layer>
+        </symbol>
+      </axisSymbol>
+    </DiagramCategory>
+  </SingleCategoryDiagramRenderer>
+  <DiagramLayerSettings placement="0" priority="0" obstacle="0" showAll="1" zIndex="0" dist="0" linePlacementFlags="18">
+    <properties>
+      <Option type="Map">
+        <Option name="name" value="" type="QString"/>
+        <Option name="properties"/>
+        <Option name="type" value="collection" type="QString"/>
+      </Option>
+    </properties>
+  </DiagramLayerSettings>
+  <geometryOptions removeDuplicateNodes="0" geometryPrecision="0">
+    <activeChecks/>
+    <checkConfiguration/>
+  </geometryOptions>
+  <legend showLabelLegend="0" type="default-vector"/>
+  <referencedLayers/>
   <fieldConfiguration>
-    <field name="fid">
+    <field name="fid" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="id">
+    <field name="id" configurationFlags="None">
       <editWidget type="Range">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="2147483647" type="int"/>
+            <Option name="Min" value="-2147483648" type="int"/>
+            <Option name="Precision" value="0" type="int"/>
+            <Option name="Step" value="1" type="int"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
+          </Option>
         </config>
       </editWidget>
     </field>
-    <field name="code">
+    <field name="code" configurationFlags="None">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option name="IsMultiline" value="false" type="bool"/>
+            <Option name="UseHtml" value="false" type="bool"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="display_name" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="display_name">
-      <editWidget type="TextEdit">
+    <field name="calculation_type" configurationFlags="None">
+      <editWidget type="ValueMap">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option name="map" type="List">
+              <Option type="Map">
+                <Option name="" value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Embedded" value="0" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Isolated" value="1" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Connected" value="2" type="QString"/>
+              </Option>
+            </Option>
+          </Option>
         </config>
       </editWidget>
     </field>
-    <field name="calculation_type">
+    <field name="shape" configurationFlags="None">
+      <editWidget type="ValueMap">
+        <config>
+          <Option type="Map">
+            <Option name="map" type="List">
+              <Option type="Map">
+                <Option name="" value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Square" value="00" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Round" value="01" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Rectangle" value="02" type="QString"/>
+              </Option>
+            </Option>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="width" configurationFlags="None">
       <editWidget type="Range">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
+            <Option name="Min" value="0" type="double"/>
+            <Option name="Precision" value="3" type="int"/>
+            <Option name="Step" value="1" type="double"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
+          </Option>
         </config>
       </editWidget>
     </field>
-    <field name="shape">
-      <editWidget type="TextEdit">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
-    <field name="width">
-      <editWidget type="TextEdit">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
-    <field name="length">
-      <editWidget type="TextEdit">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
-    <field name="bottom_level">
-      <editWidget type="TextEdit">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
-    <field name="surface_level">
-      <editWidget type="TextEdit">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
-    <field name="drain_level">
-      <editWidget type="TextEdit">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
-    <field name="sediment_level">
-      <editWidget type="TextEdit">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
-    <field name="manhole_indicator">
+    <field name="length" configurationFlags="None">
       <editWidget type="Range">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
+            <Option name="Min" value="0" type="double"/>
+            <Option name="Precision" value="3" type="int"/>
+            <Option name="Step" value="1" type="double"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
+          </Option>
         </config>
       </editWidget>
     </field>
-    <field name="zoom_category">
+    <field name="bottom_level" configurationFlags="None">
       <editWidget type="Range">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
+            <Option name="Min" value="-1.7976931348623157e+308" type="double"/>
+            <Option name="Precision" value="3" type="int"/>
+            <Option name="Step" value="1" type="double"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
+          </Option>
         </config>
       </editWidget>
     </field>
-    <field name="connection_node_id">
+    <field name="surface_level" configurationFlags="None">
       <editWidget type="Range">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
+            <Option name="Min" value="-1.7976931348623157e+308" type="double"/>
+            <Option name="Precision" value="3" type="int"/>
+            <Option name="Step" value="1" type="double"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="drain_level" configurationFlags="None">
+      <editWidget type="Range">
+        <config>
+          <Option type="Map">
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
+            <Option name="Min" value="-1.7976931348623157e+308" type="double"/>
+            <Option name="Precision" value="3" type="int"/>
+            <Option name="Step" value="1" type="double"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="sediment_level" configurationFlags="None">
+      <editWidget type="Range">
+        <config>
+          <Option type="Map">
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
+            <Option name="Min" value="-1.7976931348623157e+308" type="double"/>
+            <Option name="Precision" value="3" type="int"/>
+            <Option name="Step" value="1" type="double"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="manhole_indicator" configurationFlags="None">
+      <editWidget type="ValueMap">
+        <config>
+          <Option type="Map">
+            <Option name="map" type="List">
+              <Option type="Map">
+                <Option name="" value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Inspection" value="0" type="int"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Outlet" value="1" type="int"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Pump" value="2" type="int"/>
+              </Option>
+            </Option>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="zoom_category" configurationFlags="None">
+      <editWidget type="ValueMap">
+        <config>
+          <Option type="Map">
+            <Option name="map" type="List">
+              <Option type="Map">
+                <Option name="" value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Lowest visibility" value="0" type="int"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Low visibility" value="1" type="int"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Medium low visibility" value="2" type="int"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Medium visibility" value="3" type="int"/>
+              </Option>
+              <Option type="Map">
+                <Option name="High visibility" value="4" type="int"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Highest visibility" value="5" type="int"/>
+              </Option>
+            </Option>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field name="connection_node_id" configurationFlags="None">
+      <editWidget type="Range">
+        <config>
+          <Option type="Map">
+            <Option name="AllowNull" value="true" type="bool"/>
+            <Option name="Max" value="2147483647" type="int"/>
+            <Option name="Min" value="-2147483648" type="int"/>
+            <Option name="Precision" value="0" type="int"/>
+            <Option name="Step" value="1" type="int"/>
+            <Option name="Style" value="SpinBox" type="QString"/>
+          </Option>
         </config>
       </editWidget>
     </field>
   </fieldConfiguration>
-  <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_schematisation_editor\forms\ui\manhole.ui</editform>
-  <editforminit/>
-  <editforminitcodesource>0</editforminitcodesource>
+  <aliases>
+    <alias field="fid" name="" index="0"/>
+    <alias field="id" name="" index="1"/>
+    <alias field="code" name="" index="2"/>
+    <alias field="display_name" name="" index="3"/>
+    <alias field="calculation_type" name="" index="4"/>
+    <alias field="shape" name="" index="5"/>
+    <alias field="width" name="" index="6"/>
+    <alias field="length" name="" index="7"/>
+    <alias field="bottom_level" name="" index="8"/>
+    <alias field="surface_level" name="" index="9"/>
+    <alias field="drain_level" name="" index="10"/>
+    <alias field="sediment_level" name="" index="11"/>
+    <alias field="manhole_indicator" name="" index="12"/>
+    <alias field="zoom_category" name="" index="13"/>
+    <alias field="connection_node_id" name="" index="14"/>
+  </aliases>
+  <defaults>
+    <default field="fid" expression="" applyOnUpdate="0"/>
+    <default field="id" expression="" applyOnUpdate="0"/>
+    <default field="code" expression="" applyOnUpdate="0"/>
+    <default field="display_name" expression="" applyOnUpdate="0"/>
+    <default field="calculation_type" expression="" applyOnUpdate="0"/>
+    <default field="shape" expression="" applyOnUpdate="0"/>
+    <default field="width" expression="" applyOnUpdate="0"/>
+    <default field="length" expression="" applyOnUpdate="0"/>
+    <default field="bottom_level" expression="" applyOnUpdate="0"/>
+    <default field="surface_level" expression="" applyOnUpdate="0"/>
+    <default field="drain_level" expression="" applyOnUpdate="0"/>
+    <default field="sediment_level" expression="" applyOnUpdate="0"/>
+    <default field="manhole_indicator" expression="" applyOnUpdate="0"/>
+    <default field="zoom_category" expression="" applyOnUpdate="0"/>
+    <default field="connection_node_id" expression="" applyOnUpdate="0"/>
+  </defaults>
+  <constraints>
+    <constraint field="fid" exp_strength="0" notnull_strength="1" unique_strength="1" constraints="3"/>
+    <constraint field="id" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="code" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="display_name" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="calculation_type" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="shape" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="width" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="length" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="bottom_level" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="surface_level" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="drain_level" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="sediment_level" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="manhole_indicator" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="zoom_category" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+    <constraint field="connection_node_id" exp_strength="0" notnull_strength="0" unique_strength="0" constraints="0"/>
+  </constraints>
+  <constraintExpressions>
+    <constraint field="fid" exp="" desc=""/>
+    <constraint field="id" exp="" desc=""/>
+    <constraint field="code" exp="" desc=""/>
+    <constraint field="display_name" exp="" desc=""/>
+    <constraint field="calculation_type" exp="" desc=""/>
+    <constraint field="shape" exp="" desc=""/>
+    <constraint field="width" exp="" desc=""/>
+    <constraint field="length" exp="" desc=""/>
+    <constraint field="bottom_level" exp="" desc=""/>
+    <constraint field="surface_level" exp="" desc=""/>
+    <constraint field="drain_level" exp="" desc=""/>
+    <constraint field="sediment_level" exp="" desc=""/>
+    <constraint field="manhole_indicator" exp="" desc=""/>
+    <constraint field="zoom_category" exp="" desc=""/>
+    <constraint field="connection_node_id" exp="" desc=""/>
+  </constraintExpressions>
+  <expressionfields/>
+  <attributeactions>
+    <defaultAction key="Canvas" value="{00000000-0000-0000-0000-000000000000}"/>
+  </attributeactions>
+  <attributetableconfig actionWidgetStyle="dropDown" sortOrder="0" sortExpression="">
+    <columns>
+      <column name="fid" hidden="1" width="-1" type="field"/>
+      <column name="id" hidden="0" width="-1" type="field"/>
+      <column name="code" hidden="0" width="-1" type="field"/>
+      <column name="display_name" hidden="0" width="-1" type="field"/>
+      <column name="calculation_type" hidden="0" width="-1" type="field"/>
+      <column name="shape" hidden="0" width="-1" type="field"/>
+      <column name="width" hidden="0" width="-1" type="field"/>
+      <column name="length" hidden="0" width="-1" type="field"/>
+      <column name="bottom_level" hidden="0" width="-1" type="field"/>
+      <column name="surface_level" hidden="0" width="-1" type="field"/>
+      <column name="drain_level" hidden="0" width="-1" type="field"/>
+      <column name="sediment_level" hidden="0" width="-1" type="field"/>
+      <column name="manhole_indicator" hidden="0" width="-1" type="field"/>
+      <column name="zoom_category" hidden="0" width="-1" type="field"/>
+      <column name="connection_node_id" hidden="0" width="-1" type="field"/>
+      <column hidden="1" width="-1" type="actions"/>
+    </columns>
+  </attributetableconfig>
+  <conditionalstyles>
+    <rowstyles/>
+    <fieldstyles/>
+  </conditionalstyles>
+  <storedexpressions/>
+  <editform tolerant="1">C:\Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\python39/python/plugins\threedi_schematisation_editor\forms\ui\manhole.ui</editform>
+  <editforminit>open_edit_form</editforminit>
+  <editforminitcodesource>2</editforminitcodesource>
   <editforminitfilepath>.</editforminitfilepath>
-  <editforminitcode><![CDATA[# -*- coding: utf-8 -*-
-"""
-QGIS forms can have a Python function that is called when the form is
-opened.
-
-Use this function to add extra logic to your forms.
-
-Enter the name of the function in the "Python Init function"
-field.
-An example follows:
-"""
-from PyQt4.QtGui import QWidget
-
-def my_form_open(dialog, layer, feature):
-	geom = feature.geometry()
-	control = dialog.findChild(QWidget, "MyLineEdit")
-]]></editforminitcode>
+  <editforminitcode><![CDATA[from threedi_schematisation_editor.utils import open_edit_form]]></editforminitcode>
   <featformsuppress>0</featformsuppress>
   <editorlayout>uifilelayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer groupBox="0" columnCount="1" visibilityExpression="" name="Manhole_view" showLabel="1" visibilityExpressionEnabled="0">
-      <attributeEditorContainer groupBox="1" columnCount="1" visibilityExpression="" name="General" showLabel="1" visibilityExpressionEnabled="0">
-        <attributeEditorField index="-1" name="id" showLabel="1"/>
-        <attributeEditorField index="-1" name="display_name" showLabel="1"/>
-        <attributeEditorField index="-1" name="code" showLabel="1"/>
-        <attributeEditorField index="-1" name="calculation_type" showLabel="1"/>
+    <attributeEditorContainer visibilityExpressionEnabled="0" name="Manhole_view" groupBox="0" showLabel="1" visibilityExpression="" columnCount="1">
+      <attributeEditorContainer visibilityExpressionEnabled="0" name="General" groupBox="1" showLabel="1" visibilityExpression="" columnCount="1">
+        <attributeEditorField name="id" showLabel="1" index="1"/>
+        <attributeEditorField name="display_name" showLabel="1" index="3"/>
+        <attributeEditorField name="code" showLabel="1" index="2"/>
+        <attributeEditorField name="calculation_type" showLabel="1" index="4"/>
       </attributeEditorContainer>
-      <attributeEditorContainer groupBox="1" columnCount="1" visibilityExpression="" name="Characteristics" showLabel="1" visibilityExpressionEnabled="0">
-        <attributeEditorField index="-1" name="shape" showLabel="1"/>
-        <attributeEditorField index="-1" name="width" showLabel="1"/>
-        <attributeEditorField index="-1" name="length" showLabel="1"/>
-        <attributeEditorField index="-1" name="bottom_level" showLabel="1"/>
-        <attributeEditorField index="-1" name="surface_level" showLabel="1"/>
-        <attributeEditorField index="-1" name="drain_level" showLabel="1"/>
+      <attributeEditorContainer visibilityExpressionEnabled="0" name="Characteristics" groupBox="1" showLabel="1" visibilityExpression="" columnCount="1">
+        <attributeEditorField name="shape" showLabel="1" index="5"/>
+        <attributeEditorField name="width" showLabel="1" index="6"/>
+        <attributeEditorField name="length" showLabel="1" index="7"/>
+        <attributeEditorField name="bottom_level" showLabel="1" index="8"/>
+        <attributeEditorField name="surface_level" showLabel="1" index="9"/>
+        <attributeEditorField name="drain_level" showLabel="1" index="10"/>
       </attributeEditorContainer>
-      <attributeEditorContainer groupBox="1" columnCount="1" visibilityExpression="" name="Visualisation" showLabel="1" visibilityExpressionEnabled="0">
-        <attributeEditorField index="-1" name="manhole_indicator" showLabel="1"/>
-        <attributeEditorField index="-1" name="zoom_category" showLabel="1"/>
+      <attributeEditorContainer visibilityExpressionEnabled="0" name="Visualisation" groupBox="1" showLabel="1" visibilityExpression="" columnCount="1">
+        <attributeEditorField name="manhole_indicator" showLabel="1" index="12"/>
+        <attributeEditorField name="zoom_category" showLabel="1" index="13"/>
       </attributeEditorContainer>
-      <attributeEditorContainer groupBox="1" columnCount="1" visibilityExpression="" name="Connection node" showLabel="1" visibilityExpressionEnabled="0">
-        <attributeEditorField index="-1" name="connection_node_id" showLabel="1"/>
-        <attributeEditorField index="-1" name="node_code" showLabel="1"/>
-        <attributeEditorField index="-1" name="node_initial_waterlevel" showLabel="1"/>
-        <attributeEditorField index="-1" name="node_storage_area" showLabel="1"/>
+      <attributeEditorContainer visibilityExpressionEnabled="0" name="Connection node" groupBox="1" showLabel="1" visibilityExpression="" columnCount="1">
+        <attributeEditorField name="connection_node_id" showLabel="1" index="14"/>
+        <attributeEditorField name="node_code" showLabel="1" index="-1"/>
+        <attributeEditorField name="node_initial_waterlevel" showLabel="1" index="-1"/>
+        <attributeEditorField name="node_storage_area" showLabel="1" index="-1"/>
       </attributeEditorContainer>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
-    <field editable="1" name="ROWID"/>
-    <field editable="1" name="bottom_level"/>
-    <field editable="1" name="calculation_type"/>
-    <field editable="1" name="code"/>
-    <field editable="1" name="connection_node_id"/>
-    <field editable="1" name="display_name"/>
-    <field editable="1" name="drain_level"/>
-    <field editable="1" name="fid"/>
-    <field editable="1" name="id"/>
-    <field editable="1" name="length"/>
-    <field editable="1" name="bottom_level"/>
-    <field editable="1" name="calculation_type"/>
-    <field editable="1" name="code"/>
-    <field editable="0" name="connection_node_id"/>
-    <field editable="1" name="display_name"/>
-    <field editable="1" name="drain_level"/>
-    <field editable="0" name="id"/>
-    <field editable="1" name="length"/>
-    <field editable="1" name="manhole_indicator"/>
-    <field editable="1" name="sediment_level"/>
-    <field editable="1" name="shape"/>
-    <field editable="1" name="surface_level"/>
-    <field editable="1" name="width"/>
-    <field editable="1" name="zoom_category"/>
-    <field editable="1" name="manhole_indicator"/>
-    <field editable="1" name="node_code"/>
-    <field editable="0" name="node_id"/>
-    <field editable="1" name="node_initial_waterlevel"/>
-    <field editable="1" name="node_storage_area"/>
-    <field editable="1" name="node_the_geom_linestring"/>
-    <field editable="1" name="sediment_level"/>
-    <field editable="1" name="shape"/>
-    <field editable="1" name="surface_level"/>
-    <field editable="1" name="width"/>
-    <field editable="1" name="zoom_category"/>
+    <field name="ROWID" editable="1"/>
+    <field name="bottom_level" editable="1"/>
+    <field name="calculation_type" editable="1"/>
+    <field name="code" editable="1"/>
+    <field name="connection_node_id" editable="0"/>
+    <field name="display_name" editable="1"/>
+    <field name="drain_level" editable="1"/>
+    <field name="fid" editable="1"/>
+    <field name="id" editable="0"/>
+    <field name="length" editable="1"/>
+    <field name="manhole_indicator" editable="1"/>
+    <field name="node_code" editable="1"/>
+    <field name="node_id" editable="0"/>
+    <field name="node_initial_waterlevel" editable="1"/>
+    <field name="node_storage_area" editable="1"/>
+    <field name="node_the_geom_linestring" editable="1"/>
+    <field name="sediment_level" editable="1"/>
+    <field name="shape" editable="1"/>
+    <field name="surface_level" editable="1"/>
+    <field name="width" editable="1"/>
+    <field name="zoom_category" editable="1"/>
   </editable>
   <labelOnTop>
-    <field labelOnTop="0" name="ROWID"/>
-    <field labelOnTop="0" name="bottom_level"/>
-    <field labelOnTop="0" name="calculation_type"/>
-    <field labelOnTop="0" name="code"/>
-    <field labelOnTop="0" name="connection_node_id"/>
-    <field labelOnTop="0" name="display_name"/>
-    <field labelOnTop="0" name="drain_level"/>
-    <field labelOnTop="0" name="fid"/>
-    <field labelOnTop="0" name="id"/>
-    <field labelOnTop="0" name="length"/>
-    <field labelOnTop="0" name="bottom_level"/>
-    <field labelOnTop="0" name="calculation_type"/>
-    <field labelOnTop="0" name="code"/>
-    <field labelOnTop="0" name="connection_node_id"/>
-    <field labelOnTop="0" name="display_name"/>
-    <field labelOnTop="0" name="drain_level"/>
-    <field labelOnTop="0" name="id"/>
-    <field labelOnTop="0" name="length"/>
-    <field labelOnTop="0" name="manhole_indicator"/>
-    <field labelOnTop="0" name="sediment_level"/>
-    <field labelOnTop="0" name="shape"/>
-    <field labelOnTop="0" name="surface_level"/>
-    <field labelOnTop="0" name="width"/>
-    <field labelOnTop="0" name="zoom_category"/>
-    <field labelOnTop="0" name="manhole_indicator"/>
-    <field labelOnTop="0" name="node_code"/>
-    <field labelOnTop="0" name="node_id"/>
-    <field labelOnTop="0" name="node_initial_waterlevel"/>
-    <field labelOnTop="0" name="node_storage_area"/>
-    <field labelOnTop="0" name="node_the_geom_linestring"/>
-    <field labelOnTop="0" name="sediment_level"/>
-    <field labelOnTop="0" name="shape"/>
-    <field labelOnTop="0" name="surface_level"/>
-    <field labelOnTop="0" name="width"/>
-    <field labelOnTop="0" name="zoom_category"/>
+    <field name="ROWID" labelOnTop="0"/>
+    <field name="bottom_level" labelOnTop="0"/>
+    <field name="calculation_type" labelOnTop="0"/>
+    <field name="code" labelOnTop="0"/>
+    <field name="connection_node_id" labelOnTop="0"/>
+    <field name="display_name" labelOnTop="0"/>
+    <field name="drain_level" labelOnTop="0"/>
+    <field name="fid" labelOnTop="0"/>
+    <field name="id" labelOnTop="0"/>
+    <field name="length" labelOnTop="0"/>
+    <field name="manhole_indicator" labelOnTop="0"/>
+    <field name="node_code" labelOnTop="0"/>
+    <field name="node_id" labelOnTop="0"/>
+    <field name="node_initial_waterlevel" labelOnTop="0"/>
+    <field name="node_storage_area" labelOnTop="0"/>
+    <field name="node_the_geom_linestring" labelOnTop="0"/>
+    <field name="sediment_level" labelOnTop="0"/>
+    <field name="shape" labelOnTop="0"/>
+    <field name="surface_level" labelOnTop="0"/>
+    <field name="width" labelOnTop="0"/>
+    <field name="zoom_category" labelOnTop="0"/>
   </labelOnTop>
+  <reuseLastValue>
+    <field reuseLastValue="0" name="bottom_level"/>
+    <field reuseLastValue="0" name="calculation_type"/>
+    <field reuseLastValue="0" name="code"/>
+    <field reuseLastValue="0" name="connection_node_id"/>
+    <field reuseLastValue="0" name="display_name"/>
+    <field reuseLastValue="0" name="drain_level"/>
+    <field reuseLastValue="0" name="fid"/>
+    <field reuseLastValue="0" name="id"/>
+    <field reuseLastValue="0" name="length"/>
+    <field reuseLastValue="0" name="manhole_indicator"/>
+    <field reuseLastValue="0" name="sediment_level"/>
+    <field reuseLastValue="0" name="shape"/>
+    <field reuseLastValue="0" name="surface_level"/>
+    <field reuseLastValue="0" name="width"/>
+    <field reuseLastValue="0" name="zoom_category"/>
+  </reuseLastValue>
   <dataDefinedFieldProperties/>
   <widgets/>
+  <previewExpression>"display_name"</previewExpression>
   <mapTip></mapTip>
   <layerGeometryType>0</layerGeometryType>
 </qgis>
