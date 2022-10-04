@@ -710,6 +710,7 @@ class GlobalSettings(ModelObject):
     control_group_id: int
     simple_infiltration_settings_id: int
     groundwater_settings_id: int
+    maximum_table_step_size: float
 
 
 @dataclass
