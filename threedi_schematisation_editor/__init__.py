@@ -68,6 +68,8 @@ class ThreediModelBuilderPlugin:
         del self.action_import
         self.iface.removeToolBarIcon(self.action_export)
         del self.action_export
+        self.iface.removeToolBarIcon(self.action_export_as)
+        del self.action_export_as
         self.iface.removeToolBarIcon(self.action_remove)
         del self.action_remove
 

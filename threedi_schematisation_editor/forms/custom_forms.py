@@ -166,8 +166,8 @@ class BaseForm(QObject):
                     widget.setStyleSheet("")
             real_field_type = optional_type(field_type) if is_optional(field_type) else field_type
             if data_model_cls != self.MODEL:
-                # Populate combo boxes of related features only
-                if issubclass(real_field_type, Enum):
+                # Populate combo boxes of related features only and if it wasn't populated already
+                if issubclass(real_field_type, Enum) and widget.count() == 0:
                     cbo_items = {t.name.capitalize().replace("_", " "): t.value for t in real_field_type}
                     self.populate_combo(widget, cbo_items)
             self.set_widget_value(widget, feature[field_name], var_type=real_field_type)

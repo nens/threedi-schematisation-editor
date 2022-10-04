@@ -114,9 +114,7 @@ class UserLayerHandler:
             return
         other_1d_handlers = self.other_linked_handlers
         for layer_handler in other_1d_handlers:
-            layer = layer_handler.layer
-            disconnect_signal(layer.beforeRollBack, layer_handler.on_rollback)
-            disconnect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
+            layer_handler.disconnect_handler_signals()
         for layer_handler in other_1d_handlers:
             layer = layer_handler.layer
             if layer.isEditable():
@@ -129,9 +127,7 @@ class UserLayerHandler:
                         continue
                 layer.rollBack()
         for layer_handler in self.other_linked_handlers:
-            layer = layer_handler.layer
-            connect_signal(layer.beforeRollBack, layer_handler.on_rollback)
-            connect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
+            layer_handler.connect_handler_signals()
 
     def fix_validation_error(self, validation_error):
         """Fix validation error using automatic fixes."""
