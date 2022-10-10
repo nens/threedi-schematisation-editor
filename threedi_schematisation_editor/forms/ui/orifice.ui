@@ -23,7 +23,7 @@
       <set>Qt::ImhNone</set>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -325,40 +325,30 @@
           <string>Characteristics</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_4">
-          <item row="5" column="1">
-           <widget class="QDoubleSpinBox" name="max_capacity">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_6">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
-            <property name="inputMethodHints">
-             <set>Qt::ImhNone</set>
+            <property name="text">
+             <string>Crest level [m]</string>
             </property>
-            <property name="buttonSymbols">
-             <enum>QAbstractSpinBox::NoButtons</enum>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
-            <property name="decimals">
-             <number>3</number>
+           </widget>
+          </item>
+          <item row="1" column="5">
+           <widget class="QToolButton" name="friction_value_clear">
+            <property name="text">
+             <string>x</string>
             </property>
-            <property name="minimum">
-             <double>-99999999.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>99999999.000000000000000</double>
-            </property>
-            <property name="showClearButton" stdset="0">
-             <bool>true</bool>
-            </property>
-            <property name="clearValue" stdset="0">
-             <bool>true</bool>
-            </property>
-            <property name="expressionsEnabled" stdset="0">
-             <bool>true</bool>
+           </widget>
+          </item>
+          <item row="4" column="5">
+           <widget class="QToolButton" name="discharge_coefficient_negative_clear">
+            <property name="text">
+             <string>x</string>
             </property>
            </widget>
           </item>
@@ -393,6 +383,80 @@
             </property>
             <property name="expressionsEnabled" stdset="0">
              <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <widget class="QLabel" name="label_15">
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="inputMethodHints">
+             <set>Qt::ImhNone</set>
+            </property>
+            <property name="text">
+             <string>Friction type</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+            <property name="indent">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="4" colspan="2">
+           <widget class="QComboBox" name="friction_type">
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="inputMethodHints">
+             <set>Qt::ImhNone</set>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QDoubleSpinBox" name="discharge_coefficient_positive">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="buttonSymbols">
+             <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="decimals">
+             <number>3</number>
+            </property>
+            <property name="maximum">
+             <double>1000000.000000000000000</double>
+            </property>
+            <property name="showClearButton" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="clearValue" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="expressionsEnabled" stdset="0">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="2">
+           <widget class="QToolButton" name="discharge_coefficient_positive_clear">
+            <property name="text">
+             <string>x</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" colspan="2">
+           <widget class="QComboBox" name="crest_type">
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
             </property>
            </widget>
           </item>
@@ -449,130 +513,10 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="3">
-           <widget class="QLabel" name="label_15">
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="inputMethodHints">
-             <set>Qt::ImhNone</set>
-            </property>
-            <property name="text">
-             <string>Friction type</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-            </property>
-            <property name="indent">
-             <number>10</number>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="1">
-           <widget class="QDoubleSpinBox" name="discharge_coefficient_positive">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="buttonSymbols">
-             <enum>QAbstractSpinBox::NoButtons</enum>
-            </property>
-            <property name="decimals">
-             <number>3</number>
-            </property>
-            <property name="maximum">
-             <double>1000000.000000000000000</double>
-            </property>
-            <property name="showClearButton" stdset="0">
-             <bool>true</bool>
-            </property>
-            <property name="clearValue" stdset="0">
-             <bool>true</bool>
-            </property>
-            <property name="expressionsEnabled" stdset="0">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="0">
-           <widget class="QLabel" name="label_10">
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="text">
-             <string>Discharge
-coefficient positive</string>
-            </property>
-            <property name="textFormat">
-             <enum>Qt::PlainText</enum>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-            </property>
-            <property name="wordWrap">
-             <bool>true</bool>
-            </property>
-            <property name="indent">
-             <number>-1</number>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="0">
-           <widget class="QLabel" name="label_23">
-            <property name="text">
-             <string>Max capacity</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_9">
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="text">
-             <string>Crest type</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="2">
-           <widget class="QToolButton" name="max_capacity_clear">
-            <property name="text">
-             <string>x</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="2">
            <widget class="QToolButton" name="crest_level_clear">
             <property name="text">
              <string>x</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="2">
-           <widget class="QToolButton" name="discharge_coefficient_positive_clear">
-            <property name="text">
-             <string>x</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_6">
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="text">
-             <string>Crest level [m]</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
            </widget>
           </item>
@@ -632,34 +576,39 @@ coefficient positive</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="5">
-           <widget class="QToolButton" name="friction_value_clear">
-            <property name="text">
-             <string>x</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="5">
-           <widget class="QToolButton" name="discharge_coefficient_negative_clear">
-            <property name="text">
-             <string>x</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1" colspan="2">
-           <widget class="QComboBox" name="crest_type">
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_10">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
+            <property name="text">
+             <string>Discharge
+coefficient positive</string>
+            </property>
+            <property name="textFormat">
+             <enum>Qt::PlainText</enum>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+            <property name="indent">
+             <number>-1</number>
+            </property>
            </widget>
           </item>
-          <item row="2" column="4" colspan="2">
-           <widget class="QComboBox" name="friction_type">
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_9">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
-            <property name="inputMethodHints">
-             <set>Qt::ImhNone</set>
+            <property name="text">
+             <string>Crest type</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
            </widget>
           </item>
@@ -1194,7 +1143,6 @@ coefficient positive</string>
   <tabstop>crest_level</tabstop>
   <tabstop>crest_type</tabstop>
   <tabstop>discharge_coefficient_positive</tabstop>
-  <tabstop>max_capacity</tabstop>
   <tabstop>friction_value</tabstop>
   <tabstop>friction_type</tabstop>
   <tabstop>discharge_coefficient_negative</tabstop>

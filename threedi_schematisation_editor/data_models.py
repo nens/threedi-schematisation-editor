@@ -308,7 +308,6 @@ class Orifice(ModelObject):
             "discharge_coefficient_negative": "orf_discharge_coefficient_negative",
             "friction_value": "orf_friction_value",
             "friction_type": "orf_friction_type",
-            "max_capacity": "orf_max_capacity",
             "sewerage": "orf_sewerage",
             "zoom_category": "orf_zoom_category",
             "connection_node_start_id": "orf_connection_node_start_id",
@@ -325,7 +324,6 @@ class Orifice(ModelObject):
     discharge_coefficient_negative: Optional[float]
     friction_value: float
     friction_type: FrictionType
-    max_capacity: float
     sewerage: bool
     zoom_category: Optional[ZoomCategories]
     connection_node_start_id: int

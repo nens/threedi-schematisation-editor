@@ -627,13 +627,6 @@
         </config>
       </editWidget>
     </field>
-    <field name="max_capacity">
-      <editWidget type="TextEdit">
-        <config>
-          <Option/>
-        </config>
-      </editWidget>
-    </field>
     <field name="sewerage">
       <editWidget type="CheckBox">
         <config>
@@ -700,7 +693,6 @@ def my_form_open(dialog, layer, feature):
         <attributeEditorField name="friction_type" showLabel="1" index="-1"/>
         <attributeEditorField name="discharge_coefficient_positive" showLabel="1" index="-1"/>
         <attributeEditorField name="discharge_coefficient_negative" showLabel="1" index="-1"/>
-        <attributeEditorField name="max_capacity" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer visibilityExpression="" name="Visualization" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
         <attributeEditorField name="sewerage" showLabel="1" index="-1"/>
@@ -734,7 +726,6 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="friction_type"/>
     <field editable="1" name="friction_value"/>
     <field editable="1" name="id"/>
-    <field editable="1" name="max_capacity"/>
     <field editable="1" name="code"/>
     <field editable="0" name="connection_node_end_id"/>
     <field editable="0" name="connection_node_start_id"/>
@@ -746,7 +737,6 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="friction_type"/>
     <field editable="1" name="friction_value"/>
     <field editable="1" name="id"/>
-    <field editable="1" name="max_capacity"/>
     <field editable="1" name="sewerage"/>
     <field editable="1" name="zoom_category"/>
     <field editable="1" name="sewerage"/>
@@ -769,7 +759,6 @@ def my_form_open(dialog, layer, feature):
     <field name="friction_type" labelOnTop="0"/>
     <field name="friction_value" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="max_capacity" labelOnTop="0"/>
     <field name="code" labelOnTop="0"/>
     <field name="connection_node_end_id" labelOnTop="0"/>
     <field name="connection_node_start_id" labelOnTop="0"/>
@@ -781,7 +770,6 @@ def my_form_open(dialog, layer, feature):
     <field name="friction_type" labelOnTop="0"/>
     <field name="friction_value" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="max_capacity" labelOnTop="0"/>
     <field name="sewerage" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
     <field name="sewerage" labelOnTop="0"/>

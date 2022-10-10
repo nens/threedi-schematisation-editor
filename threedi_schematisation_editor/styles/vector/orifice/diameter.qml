@@ -1307,20 +1307,6 @@
         </config>
       </editWidget>
     </field>
-    <field name="max_capacity" configurationFlags="None">
-      <editWidget type="Range">
-        <config>
-          <Option type="Map">
-            <Option name="AllowNull" type="bool" value="true"/>
-            <Option name="Max" type="double" value="1.7976931348623157e+308"/>
-            <Option name="Min" type="double" value="-1.7976931348623157e+308"/>
-            <Option name="Precision" type="int" value="4"/>
-            <Option name="Step" type="double" value="1"/>
-            <Option name="Style" type="QString" value="SpinBox"/>
-          </Option>
-        </config>
-      </editWidget>
-    </field>
     <field name="sewerage" configurationFlags="None">
       <editWidget type="CheckBox">
         <config>
@@ -1445,7 +1431,6 @@
     <alias field="discharge_coefficient_negative" name="" index="7"/>
     <alias field="friction_value" name="" index="8"/>
     <alias field="friction_type" name="" index="9"/>
-    <alias field="max_capacity" name="" index="10"/>
     <alias field="sewerage" name="" index="11"/>
     <alias field="zoom_category" name="" index="12"/>
     <alias field="connection_node_start_id" name="" index="13"/>
@@ -1466,7 +1451,6 @@
     <default field="discharge_coefficient_negative" expression="" applyOnUpdate="0"/>
     <default field="friction_value" expression="" applyOnUpdate="0"/>
     <default field="friction_type" expression="" applyOnUpdate="0"/>
-    <default field="max_capacity" expression="" applyOnUpdate="0"/>
     <default field="sewerage" expression="" applyOnUpdate="0"/>
     <default field="zoom_category" expression="" applyOnUpdate="0"/>
     <default field="connection_node_start_id" expression="" applyOnUpdate="0"/>
@@ -1487,7 +1471,6 @@
     <constraint field="discharge_coefficient_negative" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
     <constraint field="friction_value" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
     <constraint field="friction_type" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
-    <constraint field="max_capacity" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
     <constraint field="sewerage" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
     <constraint field="zoom_category" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
     <constraint field="connection_node_start_id" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
@@ -1508,7 +1491,6 @@
     <constraint field="discharge_coefficient_negative" desc="" exp=""/>
     <constraint field="friction_value" desc="" exp=""/>
     <constraint field="friction_type" desc="" exp=""/>
-    <constraint field="max_capacity" desc="" exp=""/>
     <constraint field="sewerage" desc="" exp=""/>
     <constraint field="zoom_category" desc="" exp=""/>
     <constraint field="connection_node_start_id" desc="" exp=""/>
@@ -1534,7 +1516,6 @@
       <column name="discharge_coefficient_negative" width="-1" hidden="0" type="field"/>
       <column name="friction_value" width="-1" hidden="0" type="field"/>
       <column name="friction_type" width="-1" hidden="0" type="field"/>
-      <column name="max_capacity" width="-1" hidden="0" type="field"/>
       <column name="sewerage" width="-1" hidden="0" type="field"/>
       <column name="zoom_category" width="-1" hidden="0" type="field"/>
       <column name="connection_node_start_id" width="-1" hidden="0" type="field"/>
@@ -1572,7 +1553,6 @@
         <attributeEditorField name="friction_type" index="9" showLabel="1"/>
         <attributeEditorField name="discharge_coefficient_positive" index="6" showLabel="1"/>
         <attributeEditorField name="discharge_coefficient_negative" index="7" showLabel="1"/>
-        <attributeEditorField name="max_capacity" index="10" showLabel="1"/>
       </attributeEditorContainer>
       <attributeEditorContainer name="Visualization" groupBox="1" visibilityExpression="" showLabel="1" columnCount="1" visibilityExpressionEnabled="0">
         <attributeEditorField name="sewerage" index="11" showLabel="1"/>
@@ -1607,7 +1587,6 @@
     <field name="friction_type" editable="1"/>
     <field name="friction_value" editable="1"/>
     <field name="id" editable="1"/>
-    <field name="max_capacity" editable="1"/>
     <field name="sewerage" editable="1"/>
     <field name="zoom_category" editable="1"/>
   </editable>
@@ -1629,7 +1608,6 @@
     <field name="friction_type" labelOnTop="0"/>
     <field name="friction_value" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="max_capacity" labelOnTop="0"/>
     <field name="sewerage" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
   </labelOnTop>
@@ -1650,7 +1628,6 @@
     <field name="friction_type" reuseLastValue="0"/>
     <field name="friction_value" reuseLastValue="0"/>
     <field name="id" reuseLastValue="0"/>
-    <field name="max_capacity" reuseLastValue="0"/>
     <field name="sewerage" reuseLastValue="0"/>
     <field name="zoom_category" reuseLastValue="0"/>
   </reuseLastValue>

@@ -667,20 +667,6 @@
         </config>
       </editWidget>
     </field>
-    <field name="max_capacity">
-      <editWidget type="Range">
-        <config>
-          <Option type="Map">
-            <Option name="AllowNull" value="true" type="bool"/>
-            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
-            <Option name="Min" value="-1.7976931348623157e+308" type="double"/>
-            <Option name="Precision" value="4" type="int"/>
-            <Option name="Step" value="1" type="double"/>
-            <Option name="Style" value="SpinBox" type="QString"/>
-          </Option>
-        </config>
-      </editWidget>
-    </field>
     <field name="sewerage">
       <editWidget type="CheckBox">
         <config>
@@ -773,7 +759,6 @@
         <attributeEditorField name="friction_type" showLabel="1" index="9"/>
         <attributeEditorField name="discharge_coefficient_positive" showLabel="1" index="6"/>
         <attributeEditorField name="discharge_coefficient_negative" showLabel="1" index="7"/>
-        <attributeEditorField name="max_capacity" showLabel="1" index="10"/>
       </attributeEditorContainer>
       <attributeEditorContainer name="Visualization" showLabel="1" groupBox="1" visibilityExpression="" columnCount="1" visibilityExpressionEnabled="0">
         <attributeEditorField name="sewerage" showLabel="1" index="11"/>
@@ -808,7 +793,6 @@
     <field name="friction_type" editable="1"/>
     <field name="friction_value" editable="1"/>
     <field name="id" editable="1"/>
-    <field name="max_capacity" editable="1"/>
     <field name="sewerage" editable="1"/>
     <field name="zoom_category" editable="1"/>
   </editable>
@@ -830,7 +814,6 @@
     <field name="friction_type" labelOnTop="0"/>
     <field name="friction_value" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="max_capacity" labelOnTop="0"/>
     <field name="sewerage" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
   </labelOnTop>
