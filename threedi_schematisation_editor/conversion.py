@@ -31,7 +31,7 @@ from qgis.PyQt.QtWidgets import QDialog
 class ModelDataConverter:
     """Class with methods Spatialite <==> GeoPackage conversion of the 3Di model layers."""
 
-    SUPPORTED_SCHEMA_VERSION = 207
+    SUPPORTED_SCHEMA_VERSION = 208
 
     def __init__(self, src_sqlite, dst_gpkg, epsg_code=4326, user_communication=None):
         self.src_sqlite = src_sqlite
@@ -491,6 +491,8 @@ class ModelDataConverter:
             self.uc.progress_bar(msg, 0, number_of_steps, i, clear_msg_bar=True)
             QCoreApplication.processEvents()
             self.import_model_data(data_model_cls)
+            if data_model_cls == dm.SchemaVersion:
+                continue
             sqlite_feat_ids, gpkg_feat_ids = self.collect_src_dst_ids(data_model_cls)
             sqlite_feat_count = len(sqlite_feat_ids)
             gpkg_feat_count = len(gpkg_feat_ids)
@@ -692,6 +694,8 @@ class ModelDataConverter:
             self.uc.progress_bar(msg, 0, number_of_steps, i, clear_msg_bar=True)
             QCoreApplication.processEvents()
             self.export_model_data(data_model_cls)
+            if data_model_cls == dm.SchemaVersion:
+                continue
             sqlite_feat_ids, gpkg_feat_ids = self.collect_src_dst_ids(data_model_cls)
             sqlite_feat_count = len(sqlite_feat_ids)
             gpkg_feat_count = len(gpkg_feat_ids)

@@ -983,6 +983,10 @@ class NumericalSettingsHandler(UserLayerHandler):
     MODEL = dm.NumericalSettings
 
 
+class SchemaVersionHandler(UserLayerHandler):
+    MODEL = dm.SchemaVersion
+
+
 ALL_HANDLERS = (
     ConnectionNodeHandler,
     BoundaryCondition1DHandler,
@@ -1014,6 +1018,7 @@ ALL_HANDLERS = (
     GroundWaterSettingsHandler,
     InterflowSettingsHandler,
     NumericalSettingsHandler,
+    SchemaVersionHandler,
 )
 
 MODEL_HANDLERS = MappingProxyType({handler.MODEL: handler for handler in ALL_HANDLERS})
