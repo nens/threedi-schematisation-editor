@@ -301,7 +301,10 @@
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option value="1" name="Rectangle" type="int"/>
+                <Option value="0" name="Closed rectangle" type="int"/>
+              </Option>
+              <Option type="Map">
+                <Option value="1" name="Open rectangle" type="int"/>
               </Option>
               <Option type="Map">
                 <Option value="2" name="Circle" type="int"/>

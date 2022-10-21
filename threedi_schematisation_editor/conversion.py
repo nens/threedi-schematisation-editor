@@ -577,7 +577,7 @@ class ModelDataConverter:
     @staticmethod
     def cross_section_definition_code(shape, width, width_values=None, height_values=None):
         """Generate cross-section definition code."""
-        if shape == en.CrossSectionShape.RECTANGLE.value and width:
+        if shape in {en.CrossSectionShape.OPEN_RECTANGLE.value, en.CrossSectionShape.CLOSED_RECTANGLE.value} and width:
             code = f"rect_{width:.3f}"
         elif shape == en.CrossSectionShape.CIRCLE.value and width:
             code = f"round_{width:.3f}"

@@ -68,7 +68,8 @@ class CalculationTypeNode(Enum):
 
 
 class CrossSectionShape(Enum):
-    RECTANGLE = 1
+    CLOSED_RECTANGLE = 0
+    OPEN_RECTANGLE = 1
     CIRCLE = 2
     EGG = 3
     TABULATED_RECTANGLE = 5

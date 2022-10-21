@@ -1395,7 +1395,10 @@
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option name="Rectangle" type="int" value="1"/>
+                <Option name="Closed rectangle" type="int" value="0"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Open rectangle" type="int" value="1"/>
               </Option>
               <Option type="Map">
                 <Option name="Circle" type="int" value="2"/>

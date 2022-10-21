@@ -245,19 +245,22 @@
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option name="Circle" type="QString" value="2"/>
+                <Option name="Closed rectangle" type="int" value="0"/>
               </Option>
               <Option type="Map">
-                <Option name="Egg" type="QString" value="3"/>
+                <Option name="Open rectangle" type="int" value="1"/>
               </Option>
               <Option type="Map">
-                <Option name="Rectangle" type="QString" value="1"/>
+                <Option name="Circle" type="int" value="2"/>
               </Option>
               <Option type="Map">
-                <Option name="Tabulated rectangle" type="QString" value="5"/>
+                <Option name="Egg" type="int" value="3"/>
               </Option>
               <Option type="Map">
-                <Option name="Tabulated trapezium" type="QString" value="6"/>
+                <Option name="Tabulated rectangle" type="int" value="5"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Tabulated trapezium" type="int" value="6"/>
               </Option>
             </Option>
           </Option>

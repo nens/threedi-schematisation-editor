@@ -393,7 +393,7 @@ def cross_section_label(feature, parent):
     label += shape_value_and_name
     width = feature["cross_section_width"]
     height = feature["cross_section_height"]
-    if shape_value == dm.CrossSectionShape.RECTANGLE.value:
+    if shape_value in {dm.CrossSectionShape.OPEN_RECTANGLE.value, dm.CrossSectionShape.CLOSED_RECTANGLE.value}:
         label += f"w: {width:.2f}\nh: {height:.2f}"
     elif shape_value == dm.CrossSectionShape.CIRCLE.value:
         label += f"Ø{width:.2f}"
@@ -426,7 +426,7 @@ def diameter_label(feature, parent):
         return label
     width = feature["cross_section_width"]
     height = feature["cross_section_height"]
-    if shape_value == dm.CrossSectionShape.RECTANGLE.value:
+    if shape_value in {dm.CrossSectionShape.OPEN_RECTANGLE.value, dm.CrossSectionShape.CLOSED_RECTANGLE.value}:
         label += f"rect {width*1000:.0f}x{height*1000:.0f}"
     elif shape_value == dm.CrossSectionShape.CIRCLE.value:
         label += f"Ø{width*1000:.0f}"
@@ -458,7 +458,7 @@ def width_label(feature, parent):
     if not shape_value:
         return label
     width = feature["cross_section_width"]
-    if shape_value == dm.CrossSectionShape.RECTANGLE.value:
+    if shape_value in {dm.CrossSectionShape.OPEN_RECTANGLE.value, dm.CrossSectionShape.CLOSED_RECTANGLE.value}:
         label += f"w: {width:.2f} (rect)"
     elif shape_value == dm.CrossSectionShape.CIRCLE.value:
         label += f"Ø{width:.2f}"
