@@ -895,7 +895,10 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget):
             cross_section_width_label_widget.setEnabled(True)
             cross_section_table_widget.setDisabled(True)
             cross_section_table_label_widget.setDisabled(True)
-
+            if cross_section_shape == dm.CrossSectionShape.CLOSED_RECTANGLE.value:
+                cross_section_height_widget.setEnabled(True)
+                cross_section_height_clear_widget.setEnabled(True)
+                cross_section_height_label_widget.setEnabled(True)
         elif cross_section_shape in {
             dm.CrossSectionShape.TABULATED_RECTANGLE.value,
             dm.CrossSectionShape.TABULATED_TRAPEZIUM.value,
