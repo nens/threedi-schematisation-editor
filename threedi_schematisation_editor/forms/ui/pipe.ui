@@ -413,7 +413,7 @@
            </widget>
           </item>
           <item row="4" column="0">
-           <widget class="QLabel" name="label_8">
+           <widget class="QLabel" name="cross_section_table_label">
             <property name="text">
              <string>Table
 [height, width]</string>
@@ -440,7 +440,7 @@
            </widget>
           </item>
           <item row="3" column="3">
-           <widget class="QLabel" name="label_13">
+           <widget class="QLabel" name="cross_section_height_label">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
@@ -466,7 +466,7 @@
            </widget>
           </item>
           <item row="3" column="0">
-           <widget class="QLabel" name="label_7">
+           <widget class="QLabel" name="cross_section_width_label">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
