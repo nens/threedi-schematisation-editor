@@ -10,7 +10,7 @@ from operator import attrgetter
 from uuid import uuid4
 from typing import Union
 from collections import OrderedDict
-from qgis.PyQt.QtCore import QSettings, QVariant
+from qgis.PyQt.QtCore import QSettings, QVariant, QObject
 from qgis.PyQt.QtWidgets import QFileDialog
 from qgis.PyQt.QtGui import QPainter
 from qgis.core import (
@@ -854,3 +854,59 @@ class FormCustomizations:
             "4.4, 5.0"
         )
         widget.setPlaceholderText(placeholder_text)
+
+
+def setup_cross_section_widgets(custom_form, cross_section_shape_widget):
+    """Adjust cross-section characteristic widgets availability based on the selected shape type."""
+    cross_section_width_widget = custom_form.dialog.findChild(QObject, "cross_section_width")
+    cross_section_width_clear_widget = custom_form.dialog.findChild(QObject, "cross_section_width_clear")
+    cross_section_width_label_widget = custom_form.dialog.findChild(QObject, "cross_section_width_label")
+    cross_section_height_widget = custom_form.dialog.findChild(QObject, "cross_section_height")
+    cross_section_height_clear_widget = custom_form.dialog.findChild(QObject, "cross_section_height_clear")
+    cross_section_height_label_widget = custom_form.dialog.findChild(QObject, "cross_section_height_label")
+    cross_section_table_widget = custom_form.dialog.findChild(QObject, "cross_section_table")
+    cross_section_table_label_widget = custom_form.dialog.findChild(QObject, "cross_section_table_label")
+    all_related_widgets = [
+        cross_section_width_widget,
+        cross_section_width_clear_widget,
+        cross_section_width_label_widget,
+        cross_section_height_widget,
+        cross_section_height_clear_widget,
+        cross_section_height_label_widget,
+        cross_section_table_widget,
+        cross_section_table_label_widget,
+    ]
+    for related_widget in all_related_widgets:
+        related_widget.setDisabled(True)
+    cross_section_shape = custom_form.get_widget_value(cross_section_shape_widget)
+    if cross_section_shape == dm.CrossSectionShape.CIRCLE.value:
+        cross_section_width_label_widget.setText("Diameter [m]")
+    else:
+        cross_section_width_label_widget.setText("Width [m]")
+    if custom_form.layer.isEditable():
+        if cross_section_shape in {
+            dm.CrossSectionShape.CLOSED_RECTANGLE.value,
+            dm.CrossSectionShape.OPEN_RECTANGLE.value,
+            dm.CrossSectionShape.CIRCLE.value,
+            dm.CrossSectionShape.EGG.value,
+        }:
+            cross_section_width_widget.setEnabled(True)
+            cross_section_width_clear_widget.setEnabled(True)
+            cross_section_width_label_widget.setEnabled(True)
+            cross_section_table_widget.setDisabled(True)
+            cross_section_table_label_widget.setDisabled(True)
+            if cross_section_shape == dm.CrossSectionShape.CLOSED_RECTANGLE.value:
+                cross_section_height_widget.setEnabled(True)
+                cross_section_height_clear_widget.setEnabled(True)
+                cross_section_height_label_widget.setEnabled(True)
+        elif cross_section_shape in {
+            dm.CrossSectionShape.TABULATED_RECTANGLE.value,
+            dm.CrossSectionShape.TABULATED_TRAPEZIUM.value,
+        }:
+            cross_section_width_widget.setDisabled(True)
+            cross_section_width_clear_widget.setDisabled(True)
+            cross_section_width_label_widget.setDisabled(True)
+            cross_section_table_widget.setEnabled(True)
+            cross_section_table_label_widget.setEnabled(True)
+        else:
+            pass

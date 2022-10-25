@@ -13,6 +13,7 @@ from threedi_schematisation_editor.utils import (
     disconnect_signal,
     is_optional,
     optional_type,
+    setup_cross_section_widgets,
 )
 from qgis.PyQt.QtCore import QObject
 from qgis.PyQt.QtWidgets import (
@@ -89,6 +90,7 @@ class BaseForm(QObject):
                     return
                 self.creation = True
                 self.handler.set_feature_values(self.feature)
+        self.activate_field_based_conditions()
         self.toggle_edit_mode()
         self.connect_foreign_widgets()
         self.connect_custom_widgets()
@@ -182,6 +184,9 @@ class BaseForm(QObject):
                     connect_signal(clear_signal, clear_slot)
                     self.dialog.active_form_signals.add((clear_signal, clear_slot))
                     self.custom_widgets[clear_value_button_name] = clear_value_button
+        widget = self.dialog.findChild(QObject, "cross_section_shape")
+        if widget is not None:
+            setup_cross_section_widgets(self, widget)
 
     def set_validation_background(self, widget, field_type):
         """Setting validation color background if required value is empty."""
@@ -342,6 +347,15 @@ class BaseForm(QObject):
     def populate_with_extra_widgets(self):
         """Populate widgets with addition of the other layers attributes."""
         pass
+
+    def activate_field_based_conditions(self):
+        """Activate filed based conditions."""
+        widget = self.dialog.findChild(QObject, "cross_section_shape")
+        if widget is not None:
+            edit_signal = self.get_widget_editing_signal(widget)
+            edit_slot = partial(setup_cross_section_widgets, self, widget)
+            connect_signal(edit_signal, edit_slot)
+            self.dialog.active_form_signals.add((edit_signal, edit_slot))
 
 
 class FormWithNode(BaseForm):
