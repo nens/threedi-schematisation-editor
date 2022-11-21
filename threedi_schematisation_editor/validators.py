@@ -1,4 +1,5 @@
 # Copyright (C) 2022 by Lutra Consulting
+import threedi_schematisation_editor.enumerators as en
 from functools import cached_property
 from itertools import chain
 from qgis.core import NULL
@@ -128,12 +129,15 @@ class CrossSectionTableValidator(AttributeValidator):
     @property
     def validation_methods(self):
         """Return available validations method list."""
-        available_methods = [
-            self._not_empty,
-            self._valid_format,
-            self._no_trailing_blank_chars,
-            self._no_dot_separator,
-        ]
+        available_methods = []
+        shape = self.feature["cross_section_shape"]
+        if shape in {en.CrossSectionShape.TABULATED_RECTANGLE.value, en.CrossSectionShape.TABULATED_TRAPEZIUM.value}:
+            available_methods += [
+                self._not_empty,
+                self._valid_format,
+                self._no_trailing_blank_chars,
+                self._no_dot_separator,
+            ]
         return available_methods
 
     def _not_empty(self):
