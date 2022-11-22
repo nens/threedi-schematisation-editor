@@ -40,7 +40,11 @@ class ModelDataConverter:
         self.missing_source_settings = False
         self.all_models = dm.ALL_MODELS[:]
         self.timeseries_rawdata = OrderedDict()
-        self.uc = user_communication if user_communication is not None else UICommunication(context="3Di Model Builder")
+        self.uc = (
+            user_communication
+            if user_communication is not None
+            else UICommunication(context="3Di Schematisation Editor")
+        )
         self.conversion_errors = defaultdict(list)
 
     def report_conversion_errors(self):
