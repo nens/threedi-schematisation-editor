@@ -5,7 +5,16 @@ History
 ------------------
 
 - Added 3Di plugin icon.
-
+- Added explainer text for the cross-section 'table' input widgets (#64).
+- Add units to attribute forms (#77).
+- Initial cross section table validators (#76).
+- Fix for issue #80, #79, #86, #75.
+- Added compatibility with schema version 208 (#81).
+- Added saving spatialite schema version in the geopackage.
+- Removed "max_capacity" field from the Orifice layer.
+- Modified channels editing rules.
+- Added enabling/disabling the width, height and table widgets based on the cross-section shape (#82).
+- Updated minimal schema version to 209.
 
 1.1.1 (2022-06-29)
 ------------------
