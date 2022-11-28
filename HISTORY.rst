@@ -1,8 +1,8 @@
 History
 =======
 
-1.1.2 (unreleased)
-------------------
+1.2 (2022-11-28)
+----------------
 
 - Added 3Di plugin icon.
 - Added explainer text for the cross-section 'table' input widgets (#64).
