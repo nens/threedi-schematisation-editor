@@ -804,13 +804,11 @@ def create_3di_views(sqlite_filepath):
 def migrate_spatialite_schema(sqlite_filepath):
     migration_succeed = False
     try:
-        from threedi_modelchecker.threedi_database import ThreediDatabase
-        from threedi_modelchecker.schema import ModelSchema
-        from threedi_modelchecker import errors
+        from threedi_schema import ThreediDatabase
+        from threedi_schema import errors
 
-        db_settings = {"db_path": sqlite_filepath}
-        threedi_db = ThreediDatabase(db_settings)
-        schema = ModelSchema(threedi_db)
+        threedi_db = ThreediDatabase(sqlite_filepath)
+        schema = threedi_db.schema
         backup_filepath = backup_sqlite(sqlite_filepath)
         schema.upgrade(backup=False, upgrade_spatialite_version=True)
         schema.set_spatial_indexes()
@@ -818,10 +816,10 @@ def migrate_spatialite_schema(sqlite_filepath):
         migration_succeed = True
         migration_feedback_msg = "Migration succeed."
     except ImportError:
-        migration_feedback_msg = "Missing schematisation-checker library. Schema migration failed."
+        migration_feedback_msg = "Missing threedi-schema library. Schema migration failed."
     except errors.UpgradeFailedError:
         migration_feedback_msg = (
-            "There are errors in the spatialite. Please re-open this file in QGIS 3.16, run the model checker and "
+            "There are errors in the spatialite. Please re-open this file in QGIS 3.16, run the threedi-schema and "
             "fix error messages. Then attempt to upgrade again. For questions please contact the servicedesk."
         )
     except Exception as e:
