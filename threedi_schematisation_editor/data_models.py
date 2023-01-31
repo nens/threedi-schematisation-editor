@@ -476,18 +476,12 @@ class LinearObstacle(ModelObject):
     __layername__ = "Linear Obstacle"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = (
-        "v2_obstacle",
-        "v2_levee",
-    )
+    SQLITE_SOURCES = ("v2_obstacle",)
     SQLITE_TARGETS = SQLITE_SOURCES
 
     id: int
     code: str
-    type: ObstacleType
     crest_level: float
-    material: Optional[Material]
-    max_breach_depth: Optional[float]
 
 
 @dataclass
@@ -924,47 +918,6 @@ class Timeseries(ModelObject):
 
 
 @dataclass
-class CalculationPoint(ModelObject):
-    __tablename__ = "calculation_point"
-    __layername__ = "Calculation point"
-    __geometrytype__ = GeometryType.Point
-
-    SQLITE_SOURCES = ("v2_calculation_point",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
-    id: int
-    content_type_id: int
-    user_ref: str
-    calc_type: int
-
-
-@dataclass
-class ConnectedPoint(ModelObject):
-    __tablename__ = "connected_point"
-    __layername__ = "Connected point"
-    __geometrytype__ = GeometryType.Point
-
-    SQLITE_SOURCES = ("v2_connected_pnt",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
-    IMPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "calculation_point_id": "calculation_pnt_id",
-        }
-    )
-    EXPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "calculation_point_id": "calculation_pnt_id",
-        }
-    )
-
-    id: int
-    calculation_point_id: int
-    exchange_level: Optional[float]
-    levee_id: Optional[int]
-
-
-@dataclass
 class Control(ModelObject):
     __tablename__ = "control"
     __layername__ = "Control"
@@ -1170,11 +1123,6 @@ SETTINGS_ELEMENTS = (
     SchemaVersion,
 )
 
-BREACHES_ELEMENTS = (
-    CalculationPoint,
-    ConnectedPoint,
-)
-
 CONTROL_STRUCTURES_ELEMENTS = (
     Control,
     ControlDelta,
@@ -1192,7 +1140,7 @@ ALL_MODELS = ALL_MODELS + (
     Timeseries,
     CrossSectionDefinition,
 )
-ALL_MODELS = ALL_MODELS + BREACHES_ELEMENTS + CONTROL_STRUCTURES_ELEMENTS
+ALL_MODELS = ALL_MODELS + CONTROL_STRUCTURES_ELEMENTS
 
 ELEMENTS_WITH_XS_DEF = (
     Weir,
@@ -1278,12 +1226,6 @@ MODEL_DEPENDENCIES = MappingProxyType(
         },
         SurfaceParameters: {
             Surface: ("surface_parameters_id",),
-        },
-        LinearObstacle: {
-            ConnectedPoint: ("levee_id",),
-        },
-        CalculationPoint: {
-            ConnectedPoint: ("calculation_point_id",),
         },
     }
 )
