@@ -773,6 +773,7 @@ class SimpleInfiltrationSettings(ModelObject):
     infiltration_surface_option: Optional[InfiltrationSurfaceOption]
     max_infiltration_capacity_file: Optional[str]
     display_name: str
+    max_infiltration_capacity: Optional[float]
 
 
 @dataclass
