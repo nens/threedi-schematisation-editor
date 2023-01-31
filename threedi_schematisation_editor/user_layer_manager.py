@@ -40,6 +40,7 @@ class LayersManager:
     VECTOR_GROUPS = (
         ("1D", dm.MODEL_1D_ELEMENTS),
         ("2D", dm.MODEL_2D_ELEMENTS),
+        ("1D2D", dm.MODEL_1D2D_ELEMENTS),
         ("Inflow", dm.INFLOW_ELEMENTS),
         ("Settings", dm.SETTINGS_ELEMENTS),
     )
@@ -80,8 +81,10 @@ class LayersManager:
             dm.Channel: (
                 dm.ConnectionNode,
                 dm.CrossSectionLocation,
+                dm.PotentialBreach,
             ),
             dm.CrossSectionLocation: (dm.Channel,),
+            dm.PotentialBreach: (dm.Channel,),
         }
     )
 
@@ -147,13 +150,18 @@ class LayersManager:
         snap_config.setMode(QgsSnappingConfig.AdvancedConfiguration)
         snap_config.setIntersectionSnapping(True)
         individual_configs = snap_config.individualLayerSettings()
+        snap_type = (
+            QgsSnappingConfig.VertexFlag | QgsSnappingConfig.SegmentFlag
+            if layer_model == dm.PotentialBreach
+            else QgsSnappingConfig.VertexFlag
+        )
         for layer in snapped_layers:
             try:
                 iconf = individual_configs[layer]
             except KeyError:
                 continue
             iconf.setTolerance(10)
-            iconf.setTypeFlag(QgsSnappingConfig.VertexFlag)
+            iconf.setTypeFlag(snap_type)
             iconf.setUnits(QgsTolerance.Pixels)
             iconf.setEnabled(True)
             snap_config.setIndividualLayerSettings(layer, iconf)
@@ -172,11 +180,15 @@ class LayersManager:
     @property
     def common_editing_group(self):
         """Getting a group of models that should be edited simultaneously."""
-        linked_models = dm.MODEL_1D_ELEMENTS + (
-            dm.ImperviousSurface,
-            dm.ImperviousSurfaceMap,
-            dm.Surface,
-            dm.SurfaceMap,
+        linked_models = (
+            dm.MODEL_1D_ELEMENTS
+            + dm.MODEL_1D2D_ELEMENTS
+            + (
+                dm.ImperviousSurface,
+                dm.ImperviousSurfaceMap,
+                dm.Surface,
+                dm.SurfaceMap,
+            )
         )
         return linked_models
 

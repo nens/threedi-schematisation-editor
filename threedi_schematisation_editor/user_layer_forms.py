@@ -1,6 +1,6 @@
 # Copyright (C) 2022 by Lutra Consulting
 from threedi_schematisation_editor.forms.custom_forms import MODEL_FORMS
-from threedi_schematisation_editor.utils import disconnect_signal, setup_cross_section_widgets
+from threedi_schematisation_editor.utils import disconnect_signal
 
 
 class LayerEditFormFactory:

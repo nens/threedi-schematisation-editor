@@ -554,6 +554,38 @@ class Windshielding(ModelObject):
 
 
 @dataclass
+class PotentialBreach(ModelObject):
+    __tablename__ = "potential_breach"
+    __layername__ = "Potential breach"
+    __geometrytype__ = GeometryType.Linestring
+
+    SQLITE_SOURCES = ("v2_potential_breach",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: int
+    code: Optional[str]
+    display_name: Optional[str]
+    channel_id: int
+    exchange_level: Optional[float]
+    levee_material: Optional[Material]
+    maximum_breach_depth: Optional[float]
+
+
+@dataclass
+class ExchangeLine(ModelObject):
+    __tablename__ = "exchange_line"
+    __layername__ = "Exchange line"
+    __geometrytype__ = GeometryType.Linestring
+
+    SQLITE_SOURCES = ("v2_exchange_line",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: int
+    channel_id: int
+    exchange_level: Optional[float]
+
+
+@dataclass
 class ImperviousSurface(ModelObject):
     __tablename__ = "impervious_surface"
     __layername__ = "Impervious Surface"
@@ -1115,6 +1147,11 @@ MODEL_2D_ELEMENTS = (
     Windshielding,
 )
 
+MODEL_1D2D_ELEMENTS = (
+    PotentialBreach,
+    ExchangeLine,
+)
+
 INFLOW_ELEMENTS = (
     ImperviousSurfaceMap,
     ImperviousSurface,
@@ -1150,7 +1187,7 @@ CONTROL_STRUCTURES_ELEMENTS = (
     ControlTimed,
 )
 
-ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS
+ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + MODEL_1D2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS
 ALL_MODELS = ALL_MODELS + (
     Timeseries,
     CrossSectionDefinition,
@@ -1227,6 +1264,8 @@ MODEL_DEPENDENCIES = MappingProxyType(
         Channel: {
             CrossSectionLocation: ("channel_id",),
             Windshielding: ("channel_id",),
+            PotentialBreach: ("channel_id",),
+            ExchangeLine: ("channel_id",),
         },
         ImperviousSurface: {
             ImperviousSurfaceMap: ("impervious_surface_id",),
