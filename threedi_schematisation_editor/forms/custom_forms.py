@@ -305,7 +305,10 @@ class BaseForm(QObject):
             fid = feature.id()
             if not layer.isEditable():
                 layer.startEditing()
-            layer.changeAttributeValue(fid, field_idx, value)
+            if fid > 0:
+                layer.changeAttributeValue(fid, field_idx, value)
+            else:
+                feature[field_name] = value
 
     def connect_foreign_widgets(self):
         """Connect widget signals responsible for handling related layers attributes."""
