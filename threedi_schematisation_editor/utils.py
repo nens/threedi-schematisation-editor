@@ -583,6 +583,28 @@ def find_point_polygons(point, polygon_layer, allow_multiple=False, locator=None
     return polygon_feats if allow_multiple else polygon_feat
 
 
+def find_point_polyline(point, polyline_layer, tolerance=0.0000001, locator=None):
+    """Function that finds feature from given polyline layer that intersects with given point."""
+    project = QgsProject.instance()
+    src_crs = polyline_layer.sourceCrs()
+    dst_crs = project.crs()
+    transform_ctx = project.transformContext()
+    if not locator:
+        locator = QgsPointLocator(polyline_layer, dst_crs, transform_ctx)
+    polyline_feat = None
+    if src_crs != dst_crs:
+        transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx)
+        point_geom = QgsGeometry.fromPointXY(point)
+        point_geom.transform(transformation)
+        point = point_geom.asPoint()
+    match = locator.nearestEdge(point, tolerance)
+    match_layer = match.layer()
+    if match_layer:
+        polyline_fid = match.featureId()
+        polyline_feat = match_layer.getFeature(polyline_fid)
+    return polyline_feat
+
+
 def count_vertices(geometry):
     """Returning number of vertices within geometry."""
     c = sum(1 for _ in geometry.vertices())
