@@ -1,4 +1,4 @@
-# Copyright (C) 2022 by Lutra Consulting
+# Copyright (C) 2023 by Lutra Consulting
 import threedi_schematisation_editor.enumerators as en
 from functools import cached_property
 from itertools import chain
