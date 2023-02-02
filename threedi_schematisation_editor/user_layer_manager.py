@@ -39,8 +39,8 @@ class LayersManager:
 
     VECTOR_GROUPS = (
         ("1D", dm.MODEL_1D_ELEMENTS),
-        ("2D", dm.MODEL_2D_ELEMENTS),
         ("1D2D", dm.MODEL_1D2D_ELEMENTS),
+        ("2D", dm.MODEL_2D_ELEMENTS),
         ("Inflow", dm.INFLOW_ELEMENTS),
         ("Settings", dm.SETTINGS_ELEMENTS),
     )
