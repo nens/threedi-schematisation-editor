@@ -29,7 +29,7 @@ class ThreediModelBuilderPlugin:
 
     def __init__(self, iface):
         self.iface = iface
-        self.uc = UICommunication(self.iface, "3Di Schematisation Editor")
+        self.uc = UICommunication(self.iface, self.PLUGIN_NAME)
         self.action_open = None
         self.action_import = None
         self.action_export = None
