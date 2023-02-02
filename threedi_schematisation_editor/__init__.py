@@ -24,12 +24,12 @@ def classFactory(iface):
 
 
 class ThreediModelBuilderPlugin:
-    PLUGIN_NAME = "3Di Model Builder"
+    PLUGIN_NAME = "3Di Schematisation Editor"
     THREEDI_GPKG_VAR_NAME = "threedi_gpkg_var"
 
     def __init__(self, iface):
         self.iface = iface
-        self.uc = UICommunication(self.iface, "3Di Model Builder")
+        self.uc = UICommunication(self.iface, "3Di Schematisation Editor")
         self.action_open = None
         self.action_import = None
         self.action_export = None
