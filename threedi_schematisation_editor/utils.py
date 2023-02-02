@@ -1,4 +1,4 @@
-# Copyright (C) 2022 by Lutra Consulting
+# Copyright (C) 2023 by Lutra Consulting
 import os
 import sys
 import shutil
@@ -583,6 +583,28 @@ def find_point_polygons(point, polygon_layer, allow_multiple=False, locator=None
     return polygon_feats if allow_multiple else polygon_feat
 
 
+def find_point_polyline(point, polyline_layer, tolerance=0.0000001, locator=None):
+    """Function that finds feature from given polyline layer that intersects with given point."""
+    project = QgsProject.instance()
+    src_crs = polyline_layer.sourceCrs()
+    dst_crs = project.crs()
+    transform_ctx = project.transformContext()
+    if not locator:
+        locator = QgsPointLocator(polyline_layer, dst_crs, transform_ctx)
+    polyline_feat = None
+    if src_crs != dst_crs:
+        transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx)
+        point_geom = QgsGeometry.fromPointXY(point)
+        point_geom.transform(transformation)
+        point = point_geom.asPoint()
+    match = locator.nearestEdge(point, tolerance)
+    match_layer = match.layer()
+    if match_layer:
+        polyline_fid = match.featureId()
+        polyline_feat = match_layer.getFeature(polyline_fid)
+    return polyline_feat
+
+
 def count_vertices(geometry):
     """Returning number of vertices within geometry."""
     c = sum(1 for _ in geometry.vertices())
@@ -804,13 +826,11 @@ def create_3di_views(sqlite_filepath):
 def migrate_spatialite_schema(sqlite_filepath):
     migration_succeed = False
     try:
-        from threedi_modelchecker.threedi_database import ThreediDatabase
-        from threedi_modelchecker.schema import ModelSchema
-        from threedi_modelchecker import errors
+        from threedi_schema import ThreediDatabase
+        from threedi_schema import errors
 
-        db_settings = {"db_path": sqlite_filepath}
-        threedi_db = ThreediDatabase(db_settings)
-        schema = ModelSchema(threedi_db)
+        threedi_db = ThreediDatabase(sqlite_filepath)
+        schema = threedi_db.schema
         backup_filepath = backup_sqlite(sqlite_filepath)
         schema.upgrade(backup=False, upgrade_spatialite_version=True)
         schema.set_spatial_indexes()
@@ -818,10 +838,10 @@ def migrate_spatialite_schema(sqlite_filepath):
         migration_succeed = True
         migration_feedback_msg = "Migration succeed."
     except ImportError:
-        migration_feedback_msg = "Missing schematisation-checker library. Schema migration failed."
+        migration_feedback_msg = "Missing threedi-schema library. Schema migration failed."
     except errors.UpgradeFailedError:
         migration_feedback_msg = (
-            "There are errors in the spatialite. Please re-open this file in QGIS 3.16, run the model checker and "
+            "There are errors in the spatialite. Please re-open this file in QGIS 3.16, run the threedi-schema and "
             "fix error messages. Then attempt to upgrade again. For questions please contact the servicedesk."
         )
     except Exception as e:

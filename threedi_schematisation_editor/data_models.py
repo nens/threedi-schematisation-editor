@@ -1,4 +1,4 @@
-# Copyright (C) 2022 by Lutra Consulting
+# Copyright (C) 2023 by Lutra Consulting
 from dataclasses import dataclass
 from typing import Optional
 from types import MappingProxyType
@@ -476,18 +476,12 @@ class LinearObstacle(ModelObject):
     __layername__ = "Linear Obstacle"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = (
-        "v2_obstacle",
-        "v2_levee",
-    )
+    SQLITE_SOURCES = ("v2_obstacle",)
     SQLITE_TARGETS = SQLITE_SOURCES
 
     id: int
     code: str
-    type: ObstacleType
     crest_level: float
-    material: Optional[Material]
-    max_breach_depth: Optional[float]
 
 
 @dataclass
@@ -551,6 +545,38 @@ class Windshielding(ModelObject):
     west: Optional[float]
     northwest: Optional[float]
     channel_id: int
+
+
+@dataclass
+class PotentialBreach(ModelObject):
+    __tablename__ = "potential_breach"
+    __layername__ = "Potential breach"
+    __geometrytype__ = GeometryType.Linestring
+
+    SQLITE_SOURCES = ("v2_potential_breach",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: int
+    code: Optional[str]
+    display_name: Optional[str]
+    channel_id: int
+    exchange_level: Optional[float]
+    levee_material: Optional[Material]
+    maximum_breach_depth: Optional[float]
+
+
+@dataclass
+class ExchangeLine(ModelObject):
+    __tablename__ = "exchange_line"
+    __layername__ = "Exchange line"
+    __geometrytype__ = GeometryType.Linestring
+
+    SQLITE_SOURCES = ("v2_exchange_line",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: int
+    channel_id: int
+    exchange_level: Optional[float]
 
 
 @dataclass
@@ -747,6 +773,7 @@ class SimpleInfiltrationSettings(ModelObject):
     infiltration_surface_option: Optional[InfiltrationSurfaceOption]
     max_infiltration_capacity_file: Optional[str]
     display_name: str
+    max_infiltration_capacity: Optional[float]
 
 
 @dataclass
@@ -889,47 +916,6 @@ class Timeseries(ModelObject):
     offset: int  # seconds
     duration: int  # seconds
     value: float
-
-
-@dataclass
-class CalculationPoint(ModelObject):
-    __tablename__ = "calculation_point"
-    __layername__ = "Calculation point"
-    __geometrytype__ = GeometryType.Point
-
-    SQLITE_SOURCES = ("v2_calculation_point",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
-    id: int
-    content_type_id: int
-    user_ref: str
-    calc_type: int
-
-
-@dataclass
-class ConnectedPoint(ModelObject):
-    __tablename__ = "connected_point"
-    __layername__ = "Connected point"
-    __geometrytype__ = GeometryType.Point
-
-    SQLITE_SOURCES = ("v2_connected_pnt",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
-    IMPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "calculation_point_id": "calculation_pnt_id",
-        }
-    )
-    EXPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "calculation_point_id": "calculation_pnt_id",
-        }
-    )
-
-    id: int
-    calculation_point_id: int
-    exchange_level: Optional[float]
-    levee_id: Optional[int]
 
 
 @dataclass
@@ -1115,6 +1101,11 @@ MODEL_2D_ELEMENTS = (
     Windshielding,
 )
 
+MODEL_1D2D_ELEMENTS = (
+    PotentialBreach,
+    ExchangeLine,
+)
+
 INFLOW_ELEMENTS = (
     ImperviousSurfaceMap,
     ImperviousSurface,
@@ -1133,11 +1124,6 @@ SETTINGS_ELEMENTS = (
     SchemaVersion,
 )
 
-BREACHES_ELEMENTS = (
-    CalculationPoint,
-    ConnectedPoint,
-)
-
 CONTROL_STRUCTURES_ELEMENTS = (
     Control,
     ControlDelta,
@@ -1150,12 +1136,12 @@ CONTROL_STRUCTURES_ELEMENTS = (
     ControlTimed,
 )
 
-ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS
+ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + MODEL_1D2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS
 ALL_MODELS = ALL_MODELS + (
     Timeseries,
     CrossSectionDefinition,
 )
-ALL_MODELS = ALL_MODELS + BREACHES_ELEMENTS + CONTROL_STRUCTURES_ELEMENTS
+ALL_MODELS = ALL_MODELS + CONTROL_STRUCTURES_ELEMENTS
 
 ELEMENTS_WITH_XS_DEF = (
     Weir,
@@ -1227,6 +1213,8 @@ MODEL_DEPENDENCIES = MappingProxyType(
         Channel: {
             CrossSectionLocation: ("channel_id",),
             Windshielding: ("channel_id",),
+            PotentialBreach: ("channel_id",),
+            ExchangeLine: ("channel_id",),
         },
         ImperviousSurface: {
             ImperviousSurfaceMap: ("impervious_surface_id",),
@@ -1239,12 +1227,6 @@ MODEL_DEPENDENCIES = MappingProxyType(
         },
         SurfaceParameters: {
             Surface: ("surface_parameters_id",),
-        },
-        LinearObstacle: {
-            ConnectedPoint: ("levee_id",),
-        },
-        CalculationPoint: {
-            ConnectedPoint: ("calculation_point_id",),
         },
     }
 )

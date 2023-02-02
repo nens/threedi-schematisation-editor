@@ -1,4 +1,4 @@
-# Copyright (C) 2022 by Lutra Consulting
+# Copyright (C) 2023 by Lutra Consulting
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.enumerators as en
 from threedi_schematisation_editor.utils import (
@@ -31,7 +31,7 @@ from qgis.PyQt.QtWidgets import QDialog
 class ModelDataConverter:
     """Class with methods Spatialite <==> GeoPackage conversion of the 3Di model layers."""
 
-    SUPPORTED_SCHEMA_VERSION = 209
+    SUPPORTED_SCHEMA_VERSION = 214
 
     def __init__(self, src_sqlite, dst_gpkg, epsg_code=4326, user_communication=None):
         self.src_sqlite = src_sqlite
@@ -246,11 +246,7 @@ class ModelDataConverter:
         """Filling required attributes during Spatialite <==> GeoPackage conversion."""
         src_layer_name = src_layer.name()
         layers_with_ts = {el.__layername__ for el in dm.ELEMENTS_WITH_TIMESERIES}
-        if src_layer_name in dm.LinearObstacle.SQLITE_SOURCES:
-            obstacle_type = en.ObstacleType.LEVEE.value if src_layer_name == "v2_levee" else en.ObstacleType.OTHER.value
-            for feat in new_feats:
-                feat["type"] = obstacle_type
-        elif src_layer_name == dm.Pumpstation.__layername__:
+        if src_layer_name == dm.Pumpstation.__layername__:
             map_table = dm.PumpstationMap.__tablename__
             map_layer = gpkg_layer(self.dst_gpkg, map_table)
             connections_ids = {
@@ -539,44 +535,18 @@ class ModelDataConverter:
         if annotated_model_csl.EXPORT_FIELD_MAPPINGS:
             field_mappings.update(annotated_model_csl.EXPORT_FIELD_MAPPINGS)
         switched_map = {v: k for k, v in field_mappings.items()}
-        if annotated_model_csl == dm.LinearObstacle:
-            dst_obstacle_table, dst_levee_table = annotated_model_csl.SQLITE_TARGETS
-            # Set expression requests to split Obstacles and Levees
-            obstacle_expr = QgsExpression(f'"type" = {en.ObstacleType.OTHER.value}')
-            obstacle_request = QgsFeatureRequest(obstacle_expr)
-            levee_expr = QgsExpression(f'"type" = {en.ObstacleType.LEVEE.value}')
-            levee_request = QgsFeatureRequest(levee_expr)
-            dst_obstacle_layer = sqlite_layer(self.src_sqlite, dst_obstacle_table)
-            dst_levee_layer = sqlite_layer(self.src_sqlite, dst_levee_table)
-            # Copy only obstacle features
-            new_obstacle_feats = self.copy_features(src_layer, dst_obstacle_layer, obstacle_request, **switched_map)
-            dst_obstacle_layer.startEditing()
-            dst_obstacle_layer.addFeatures(new_obstacle_feats)
-            success = dst_obstacle_layer.commitChanges()
-            if not success:
-                commit_errors = dst_obstacle_layer.commitErrors()
-                self.conversion_errors[src_layer_name] += commit_errors
-            # Copy only levee features
-            new_levee_feats = self.copy_features(src_layer, dst_levee_layer, levee_request, **switched_map)
-            dst_levee_layer.startEditing()
-            dst_levee_layer.addFeatures(new_levee_feats)
-            success = dst_levee_layer.commitChanges()
-            if not success:
-                commit_errors = dst_levee_layer.commitErrors()
-                self.conversion_errors[src_layer_name] += commit_errors
-        else:
-            dst_table = next(iter(annotated_model_csl.SQLITE_TARGETS))
-            dst_layer = sqlite_layer(self.src_sqlite, dst_table)
-            if not dst_layer.isValid():
-                dst_layer = sqlite_layer(self.src_sqlite, dst_table, geom_column=None)
-            new_feats = self.copy_features(src_layer, dst_layer, **switched_map)
-            self.fill_required_attributes(src_layer, new_feats)
-            dst_layer.startEditing()
-            dst_layer.addFeatures(new_feats)
-            success = dst_layer.commitChanges()
-            if not success:
-                commit_errors = dst_layer.commitErrors()
-                self.conversion_errors[src_layer_name] += commit_errors
+        dst_table = next(iter(annotated_model_csl.SQLITE_TARGETS))
+        dst_layer = sqlite_layer(self.src_sqlite, dst_table)
+        if not dst_layer.isValid():
+            dst_layer = sqlite_layer(self.src_sqlite, dst_table, geom_column=None)
+        new_feats = self.copy_features(src_layer, dst_layer, **switched_map)
+        self.fill_required_attributes(src_layer, new_feats)
+        dst_layer.startEditing()
+        dst_layer.addFeatures(new_feats)
+        success = dst_layer.commitChanges()
+        if not success:
+            commit_errors = dst_layer.commitErrors()
+            self.conversion_errors[src_layer_name] += commit_errors
 
     @staticmethod
     def cross_section_definition_code(shape, width, width_values=None, height_values=None):

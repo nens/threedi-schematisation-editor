@@ -1,4 +1,4 @@
-# Copyright (C) 2022 by Lutra Consulting
+# Copyright (C) 2023 by Lutra Consulting
 import threedi_schematisation_editor.data_models as dm
 from collections import defaultdict
 from operator import itemgetter
@@ -9,6 +9,7 @@ from threedi_schematisation_editor.utils import (
     find_point_nodes,
     find_linestring_nodes,
     find_point_polygons,
+    find_point_polyline,
     connect_signal,
     disconnect_signal,
     is_optional,
@@ -304,7 +305,10 @@ class BaseForm(QObject):
             fid = feature.id()
             if not layer.isEditable():
                 layer.startEditing()
-            layer.changeAttributeValue(fid, field_idx, value)
+            if fid > 0:
+                layer.changeAttributeValue(fid, field_idx, value)
+            else:
+                feature[field_name] = value
 
     def connect_foreign_widgets(self):
         """Connect widget signals responsible for handling related layers attributes."""
@@ -1152,6 +1156,58 @@ class CrossSectionLocationForm(BaseForm):
         self.populate_widgets()
 
 
+class PotentialBreachForm(BaseForm):
+    """Potential breach user layer edit form logic."""
+
+    MODEL = dm.PotentialBreach
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.channel = None
+
+    @property
+    def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with id and value = data model feature(s)."""
+        fm_features = {
+            (dm.Channel, 1): self.channel,
+        }
+        return fm_features
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+        channel_handler = self.layer_manager.model_handlers[dm.Channel]
+        channel_layer = channel_handler.layer
+        line_geom = self.feature.geometry()
+        start_point = line_geom.asPolyline()[0]
+        channel_node_feat = find_point_polyline(start_point, channel_layer)
+        if channel_node_feat:
+            channel_id = channel_node_feat["id"]
+            self.feature["channel_id"] = channel_id
+            self.channel = channel_node_feat
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+
+
+class ExchangeLineForm(BaseForm):
+    """Exchange line user layer edit form logic."""
+
+    MODEL = dm.ExchangeLine
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+
+
 ALL_FORMS = (
     ConnectionNodeForm,
     ManholeForm,
@@ -1165,6 +1221,8 @@ ALL_FORMS = (
     SurfaceMapForm,
     ChannelForm,
     CrossSectionLocationForm,
+    PotentialBreachForm,
+    ExchangeLineForm,
 )
 
 MODEL_FORMS = MappingProxyType({form.MODEL: form for form in ALL_FORMS})

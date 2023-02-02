@@ -1,4 +1,4 @@
-# Copyright (C) 2022 by Lutra Consulting
+# Copyright (C) 2023 by Lutra Consulting
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.enumerators import (
     CalculationTypeCulvert,
@@ -829,6 +829,46 @@ class WindshieldingHandler(UserLayerHandler):
     MODEL = dm.Windshielding
 
 
+class PotentialBreachHandler(UserLayerHandler):
+    MODEL = dm.PotentialBreach
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.Channel: 1,
+        }
+    )
+
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+        }
+    )
+
+    def connect_additional_signals(self):
+        """Connecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.connect(self.trigger_simplify_potential_breach)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.disconnect(self.trigger_simplify_potential_breach)
+
+    def trigger_simplify_potential_breach(self, potential_breach_feat_id):
+        """Triggering geometry simplification on newly added feature."""
+        simplify_method = partial(self.simplify_linear_feature, potential_breach_feat_id)
+        QTimer.singleShot(0, simplify_method)
+
+
+class ExchangeLineHandler(UserLayerHandler):
+    MODEL = dm.ExchangeLine
+
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+        }
+    )
+
+
 class ImperviousSurfaceHandler(UserLayerHandler):
     MODEL = dm.ImperviousSurface
 
@@ -1007,6 +1047,8 @@ ALL_HANDLERS = (
     GridRefinementAreaHandler,
     DEMAverageAreaHandler,
     WindshieldingHandler,
+    PotentialBreachHandler,
+    ExchangeLineHandler,
     ImperviousSurfaceHandler,
     SurfaceHandler,
     ImperviousSurfaceMapHandler,
