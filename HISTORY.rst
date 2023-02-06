@@ -4,7 +4,10 @@ History
 1.3 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Several UI fixes.
+- Added fix for issue #107. (#112)
+- Added breaches and exchange lines. (#111)
+- Upgraded required schema version to 214.
 
 
 1.2 (2022-11-28)
