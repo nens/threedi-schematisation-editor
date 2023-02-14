@@ -237,7 +237,7 @@
       <item row="1" column="3">
        <widget class="QLabel" name="label_26">
         <property name="text">
-         <string>Exchange level [m]</string>
+         <string>Exchange level [m MSL]</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
