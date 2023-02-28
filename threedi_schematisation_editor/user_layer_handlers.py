@@ -751,9 +751,9 @@ class CrossSectionLocationHandler(UserLayerHandler):
             "bottom_level": -10.0,
         }
     )
-    FORM_CUSTOMIZATIONS = MappingProxyType(
-        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
-    )
+    # FORM_CUSTOMIZATIONS = MappingProxyType(
+    #     {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
+    # )
 
     VALIDATORS = (CrossSectionTableValidator,)
 

@@ -15,6 +15,7 @@ from threedi_schematisation_editor.utils import (
     is_optional,
     optional_type,
     setup_cross_section_widgets,
+    NumericItemDelegate,
 )
 from qgis.PyQt.QtCore import QObject
 from qgis.PyQt.QtWidgets import (
@@ -25,6 +26,9 @@ from qgis.PyQt.QtWidgets import (
     QSpinBox,
     QPlainTextEdit,
     QToolButton,
+    QTableWidget,
+    QPushButton,
+    QTableWidgetItem,
 )
 from qgis.core import NULL, QgsGeometry
 from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
@@ -51,6 +55,7 @@ class BaseForm(QObject):
         self.uc = layer_manager.uc
         self.dialog = dialog
         self.layer = layer
+        self.fields = self.layer.fields()
         self.handler = self.layer_manager.model_handlers[self.MODEL]
         self.feature = feature
         self.creation = False
@@ -185,9 +190,6 @@ class BaseForm(QObject):
                     connect_signal(clear_signal, clear_slot)
                     self.dialog.active_form_signals.add((clear_signal, clear_slot))
                     self.custom_widgets[clear_value_button_name] = clear_value_button
-        widget = self.dialog.findChild(QObject, "cross_section_shape")
-        if widget is not None:
-            setup_cross_section_widgets(self, widget)
 
     def set_validation_background(self, widget, field_type):
         """Setting validation color background if required value is empty."""
@@ -360,6 +362,123 @@ class BaseForm(QObject):
             edit_slot = partial(setup_cross_section_widgets, self, widget)
             connect_signal(edit_signal, edit_slot)
             self.dialog.active_form_signals.add((edit_signal, edit_slot))
+
+
+class FormWithXSTable(BaseForm):
+    """Base edit form for user layers with cross-section table reference."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.cross_section_table = None
+        self.cross_section_table_edit = None
+        self.cross_section_table_add = None
+        self.cross_section_table_delete = None
+        self.cross_section_table_paste = None
+        self.cell_changed_signal = None
+        self.cell_changed_slot = None
+        self.setup_cross_section_table_widgets()
+
+    def setup_cross_section_table_widgets(self):
+        """Setup cross-section table widgets."""
+        xs_table = "cross_section_table_widget"
+        xs_table_add = "cross_section_table_add"
+        xs_table_delete = "cross_section_table_delete"
+        xs_table_paste = "cross_section_table_paste"
+        self.cross_section_table = self.dialog.findChild(QTableWidget, xs_table)
+        self.cross_section_table_add = self.dialog.findChild(QPushButton, xs_table_add)
+        self.cross_section_table_delete = self.dialog.findChild(QPushButton, xs_table_delete)
+        self.cross_section_table_paste = self.dialog.findChild(QPushButton, xs_table_paste)
+        self.custom_widgets[xs_table] = self.cross_section_table
+        self.custom_widgets[xs_table_add] = self.cross_section_table_add
+        self.custom_widgets[xs_table_delete] = self.cross_section_table_delete
+        self.custom_widgets[xs_table_paste] = self.cross_section_table_paste
+
+    def connect_custom_widgets(self):
+        """Connect other widgets."""
+        edit_signal = self.cross_section_table.cellChanged
+        edit_slot = self.edit_table_row
+        connect_signal(edit_signal, edit_slot)
+        self.dialog.active_form_signals.add((edit_signal, edit_slot))
+        self.cell_changed_signal = edit_signal
+        self.cell_changed_slot = edit_slot
+
+        add_signal = self.cross_section_table_add.clicked
+        add_slot = self.add_table_row
+        connect_signal(add_signal, add_slot)
+        self.dialog.active_form_signals.add((add_signal, add_slot))
+
+        delete_signal = self.cross_section_table_delete.clicked
+        delete_slot = self.delete_table_rows
+        connect_signal(delete_signal, delete_slot)
+        self.dialog.active_form_signals.add((delete_signal, delete_slot))
+
+        paste_signal = self.cross_section_table_paste.clicked
+        paste_slot = self.paste_table_rows
+        connect_signal(paste_signal, paste_slot)
+        self.dialog.active_form_signals.add((paste_signal, paste_slot))
+
+    def get_cross_section_table_text(self):
+        """Get cross-section table data as a string representation."""
+        num_of_rows = self.cross_section_table.rowCount()
+        num_of_cols = self.cross_section_table.columnCount()
+        cross_section_table_values = []
+        for row_num in range(num_of_rows):
+            values = [self.cross_section_table.item(row_num, col_num).text().strip() for col_num in range(num_of_cols)]
+            if all(values):
+                cross_section_table_values.append(values)
+        cross_section_table_str = "\n".join(", ".join(row) for row in cross_section_table_values)
+        return cross_section_table_str
+
+    def save_cross_section_table_edits(self):
+        """Save cross-section table value to the feature attribute."""
+        cross_section_table_str = self.get_cross_section_table_text()
+        cross_section_table_idx = self.fields.lookupField("cross_section_table")
+        changes = {cross_section_table_idx: cross_section_table_str}
+        self.layer.changeAttributeValues(self.feature.id(), changes)
+
+    def edit_table_row(self):
+        """Slot for handling table cells edits."""
+        self.save_cross_section_table_edits()
+
+    def add_table_row(self):
+        """Slot for handling new row addition."""
+        pass
+
+    def delete_table_rows(self):
+        """Slot for handling deletion of the selected rows."""
+        rows = {idx.row() for idx in self.cross_section_table.selectedIndexes()}
+        for row in sorted(rows, reverse=True):
+            self.cross_section_table.removeRow(row)
+        self.save_cross_section_table_edits()
+
+    def paste_table_rows(self):
+        """Handling pasting new rows from the clipboard."""
+        pass
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
+            disconnect_signal(self.cell_changed_signal, self.cell_changed_slot)
+        self.cross_section_table.clearContents()
+        self.cross_section_table.setRowCount(0)
+        self.cross_section_table.setColumnCount(2)
+        self.cross_section_table.setItemDelegateForColumn(0, NumericItemDelegate(self.cross_section_table))
+        self.cross_section_table.setItemDelegateForColumn(1, NumericItemDelegate(self.cross_section_table))
+        self.cross_section_table.setHorizontalHeaderLabels(["height", "width"])
+        table = self.feature["cross_section_table"]
+        for row_number, row in enumerate(table.split("\n")):
+            try:
+                height_str, width_str = row.replace(" ", "").split(",")
+            except ValueError:
+                continue
+            self.cross_section_table.insertRow(row_number)
+            self.cross_section_table.setItem(row_number, 0, QTableWidgetItem(height_str))
+            self.cross_section_table.setItem(row_number, 1, QTableWidgetItem(width_str))
+        if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
+            connect_signal(self.cell_changed_signal, self.cell_changed_slot)
 
 
 class FormWithNode(BaseForm):
@@ -1053,7 +1172,7 @@ class ChannelForm(FormWithStartEndNode):
         self.populate_widgets()
 
 
-class CrossSectionLocationForm(BaseForm):
+class CrossSectionLocationForm(FormWithXSTable):
     """Cross-section location user layer edit form logic."""
 
     MODEL = dm.CrossSectionLocation
@@ -1148,12 +1267,6 @@ class CrossSectionLocationForm(BaseForm):
             self.feature["friction_type"] = global_settings_feat["frict_type"]
         except StopIteration:
             pass
-
-    def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
-        if self.creation is True:
-            self.fill_related_attributes()
-        self.populate_widgets()
 
 
 class PotentialBreachForm(BaseForm):

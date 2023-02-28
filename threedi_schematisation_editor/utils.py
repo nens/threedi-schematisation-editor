@@ -11,8 +11,8 @@ from uuid import uuid4
 from typing import Union
 from collections import OrderedDict
 from qgis.PyQt.QtCore import QSettings, QVariant, QObject
-from qgis.PyQt.QtWidgets import QFileDialog
-from qgis.PyQt.QtGui import QPainter
+from qgis.PyQt.QtWidgets import QFileDialog, QItemDelegate, QLineEdit
+from qgis.PyQt.QtGui import QPainter, QDoubleValidator
 from qgis.core import (
     QgsDataSourceUri,
     QgsFeature,
@@ -808,7 +808,7 @@ def create_3di_views(sqlite_filepath):
 
     connection = sqlite3.connect(sqlite_filepath)
     c = connection.cursor()
-    for (name, view) in all_views.items():
+    for name, view in all_views.items():
         c.execute(f"DROP VIEW IF EXISTS {name}")
         c.execute(f"DELETE FROM views_geometry_columns WHERE view_name = '{name}'")
         c.execute(f"CREATE VIEW {name} AS {view['definition']}")
@@ -885,7 +885,10 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget):
     cross_section_height_widget = custom_form.dialog.findChild(QObject, "cross_section_height")
     cross_section_height_clear_widget = custom_form.dialog.findChild(QObject, "cross_section_height_clear")
     cross_section_height_label_widget = custom_form.dialog.findChild(QObject, "cross_section_height_label")
-    cross_section_table_widget = custom_form.dialog.findChild(QObject, "cross_section_table")
+    cross_section_table_widget = custom_form.dialog.findChild(QObject, "cross_section_table_widget")
+    cross_section_table_widget_add = custom_form.dialog.findChild(QObject, "cross_section_table_add")
+    cross_section_table_widget_paste = custom_form.dialog.findChild(QObject, "cross_section_table_paste")
+    cross_section_table_widget_delete = custom_form.dialog.findChild(QObject, "cross_section_table_delete")
     cross_section_table_label_widget = custom_form.dialog.findChild(QObject, "cross_section_table_label")
     all_related_widgets = [
         cross_section_width_widget,
@@ -895,6 +898,9 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget):
         cross_section_height_clear_widget,
         cross_section_height_label_widget,
         cross_section_table_widget,
+        cross_section_table_widget_add,
+        cross_section_table_widget_paste,
+        cross_section_table_widget_delete,
         cross_section_table_label_widget,
     ]
     for related_widget in all_related_widgets:
@@ -915,6 +921,9 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget):
             cross_section_width_clear_widget.setEnabled(True)
             cross_section_width_label_widget.setEnabled(True)
             cross_section_table_widget.setDisabled(True)
+            cross_section_table_widget_add.setDisabled(True)
+            cross_section_table_widget_paste.setDisabled(True)
+            cross_section_table_widget_delete.setDisabled(True)
             cross_section_table_label_widget.setDisabled(True)
             if cross_section_shape == dm.CrossSectionShape.CLOSED_RECTANGLE.value:
                 cross_section_height_widget.setEnabled(True)
@@ -928,6 +937,20 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget):
             cross_section_width_clear_widget.setDisabled(True)
             cross_section_width_label_widget.setDisabled(True)
             cross_section_table_widget.setEnabled(True)
+            cross_section_table_widget_add.setEnabled(True)
+            cross_section_table_widget_paste.setEnabled(True)
+            cross_section_table_widget_delete.setEnabled(True)
             cross_section_table_label_widget.setEnabled(True)
         else:
             pass
+
+
+class NumericItemDelegate(QItemDelegate):
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        validator = QDoubleValidator(editor)
+        validator.setBottom(0)
+        validator.setDecimals(3)
+        validator.setNotation(QDoubleValidator.StandardNotation)
+        editor.setValidator(validator)
+        return editor
