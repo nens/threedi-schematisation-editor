@@ -512,10 +512,6 @@ class WeirHandler(UserLayerHandler):
         }
     )
 
-    FORM_CUSTOMIZATIONS = MappingProxyType(
-        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
-    )
-
     VALIDATORS = (CrossSectionTableValidator,)
 
     def connect_additional_signals(self):
@@ -556,9 +552,6 @@ class CulvertHandler(UserLayerHandler):
             "invert_level_end_point": -10.0,
         }
     )
-    FORM_CUSTOMIZATIONS = MappingProxyType(
-        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
-    )
 
     VALIDATORS = (CrossSectionTableValidator,)
 
@@ -591,9 +584,6 @@ class OrificeHandler(UserLayerHandler):
             "discharge_coefficient_negative": 0.8,
             "sewerage": False,
         }
-    )
-    FORM_CUSTOMIZATIONS = MappingProxyType(
-        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
 
     VALIDATORS = (CrossSectionTableValidator,)
@@ -634,9 +624,6 @@ class PipeHandler(UserLayerHandler):
             "invert_level_start_point": -10.0,
             "invert_level_end_point": -10.0,
         }
-    )
-    FORM_CUSTOMIZATIONS = MappingProxyType(
-        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
 
     VALIDATORS = (CrossSectionTableValidator,)
@@ -751,9 +738,6 @@ class CrossSectionLocationHandler(UserLayerHandler):
             "bottom_level": -10.0,
         }
     )
-    # FORM_CUSTOMIZATIONS = MappingProxyType(
-    #     {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
-    # )
 
     VALIDATORS = (CrossSectionTableValidator,)
 
