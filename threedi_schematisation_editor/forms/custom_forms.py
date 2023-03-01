@@ -29,6 +29,7 @@ from qgis.PyQt.QtWidgets import (
     QTableWidget,
     QPushButton,
     QTableWidgetItem,
+    QApplication,
 )
 from qgis.core import NULL, QgsGeometry
 from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
@@ -417,6 +418,31 @@ class FormWithXSTable(BaseForm):
         connect_signal(paste_signal, paste_slot)
         self.dialog.active_form_signals.add((paste_signal, paste_slot))
 
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
+            disconnect_signal(self.cell_changed_signal, self.cell_changed_slot)
+        self.cross_section_table.clearContents()
+        self.cross_section_table.setRowCount(0)
+        self.cross_section_table.setColumnCount(2)
+        self.cross_section_table.setItemDelegateForColumn(0, NumericItemDelegate(self.cross_section_table))
+        self.cross_section_table.setItemDelegateForColumn(1, NumericItemDelegate(self.cross_section_table))
+        self.cross_section_table.setHorizontalHeaderLabels(["height", "width"])
+        table = self.feature["cross_section_table"]
+        for row_number, row in enumerate(table.split("\n")):
+            try:
+                height_str, width_str = row.replace(" ", "").split(",")
+            except ValueError:
+                continue
+            self.cross_section_table.insertRow(row_number)
+            self.cross_section_table.setItem(row_number, 0, QTableWidgetItem(height_str))
+            self.cross_section_table.setItem(row_number, 1, QTableWidgetItem(width_str))
+        if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
+            connect_signal(self.cell_changed_signal, self.cell_changed_slot)
+
     def get_cross_section_table_text(self):
         """Get cross-section table data as a string representation."""
         num_of_rows = self.cross_section_table.rowCount()
@@ -442,7 +468,8 @@ class FormWithXSTable(BaseForm):
 
     def add_table_row(self):
         """Slot for handling new row addition."""
-        pass
+        last_row_number = max({idx.row() for idx in self.cross_section_table.selectedIndexes()} or {0}) + 1
+        self.cross_section_table.insertRow(last_row_number)
 
     def delete_table_rows(self):
         """Slot for handling deletion of the selected rows."""
@@ -453,32 +480,23 @@ class FormWithXSTable(BaseForm):
 
     def paste_table_rows(self):
         """Handling pasting new rows from the clipboard."""
-        pass
-
-    def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
-        if self.creation is True:
-            self.fill_related_attributes()
-        self.populate_widgets()
+        text = QApplication.clipboard().text()
+        rows = text.split("\n")
+        last_row_num = self.cross_section_table.rowCount()
         if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
             disconnect_signal(self.cell_changed_signal, self.cell_changed_slot)
-        self.cross_section_table.clearContents()
-        self.cross_section_table.setRowCount(0)
-        self.cross_section_table.setColumnCount(2)
-        self.cross_section_table.setItemDelegateForColumn(0, NumericItemDelegate(self.cross_section_table))
-        self.cross_section_table.setItemDelegateForColumn(1, NumericItemDelegate(self.cross_section_table))
-        self.cross_section_table.setHorizontalHeaderLabels(["height", "width"])
-        table = self.feature["cross_section_table"]
-        for row_number, row in enumerate(table.split("\n")):
+        for row in rows:
             try:
                 height_str, width_str = row.replace(" ", "").split(",")
             except ValueError:
                 continue
-            self.cross_section_table.insertRow(row_number)
-            self.cross_section_table.setItem(row_number, 0, QTableWidgetItem(height_str))
-            self.cross_section_table.setItem(row_number, 1, QTableWidgetItem(width_str))
+            self.cross_section_table.insertRow(last_row_num)
+            self.cross_section_table.setItem(last_row_num, 0, QTableWidgetItem(height_str))
+            self.cross_section_table.setItem(last_row_num, 1, QTableWidgetItem(width_str))
+            last_row_num += 1
         if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
             connect_signal(self.cell_changed_signal, self.cell_changed_slot)
+        self.save_cross_section_table_edits()
 
 
 class FormWithNode(BaseForm):
