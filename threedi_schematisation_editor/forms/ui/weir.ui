@@ -651,8 +651,7 @@ coefficient positive</string>
           <item row="4" column="0">
            <widget class="QLabel" name="cross_section_table_label">
             <property name="text">
-             <string>Table
-[height, width]</string>
+             <string>Table</string>
             </property>
            </widget>
           </item>

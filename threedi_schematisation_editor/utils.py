@@ -906,6 +906,7 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
     for related_widget in all_related_widgets:
         related_widget.setDisabled(True)
     cross_section_shape = custom_form.get_widget_value(cross_section_shape_widget)
+    custom_form.update_cross_section_table_header()
     if cross_section_shape == dm.CrossSectionShape.CIRCLE.value:
         cross_section_width_label_widget.setText("Diameter [m]")
     else:
@@ -916,6 +917,7 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
             dm.CrossSectionShape.OPEN_RECTANGLE.value,
             dm.CrossSectionShape.CIRCLE.value,
             dm.CrossSectionShape.EGG.value,
+            dm.CrossSectionShape.INVERTED_EGG.value,
         }:
             cross_section_width_widget.setEnabled(True)
             cross_section_width_clear_widget.setEnabled(True)
@@ -925,13 +927,17 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
             cross_section_table_widget_paste.setDisabled(True)
             cross_section_table_widget_delete.setDisabled(True)
             cross_section_table_label_widget.setDisabled(True)
-            if cross_section_shape == dm.CrossSectionShape.CLOSED_RECTANGLE.value:
+            if cross_section_shape in {
+                dm.CrossSectionShape.CLOSED_RECTANGLE.value,
+                dm.CrossSectionShape.INVERTED_EGG.value,
+            }:
                 cross_section_height_widget.setEnabled(True)
                 cross_section_height_clear_widget.setEnabled(True)
                 cross_section_height_label_widget.setEnabled(True)
         elif cross_section_shape in {
             dm.CrossSectionShape.TABULATED_RECTANGLE.value,
             dm.CrossSectionShape.TABULATED_TRAPEZIUM.value,
+            dm.CrossSectionShape.YZ.value,
         }:
             cross_section_width_widget.setDisabled(True)
             cross_section_width_clear_widget.setDisabled(True)

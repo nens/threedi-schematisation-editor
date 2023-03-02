@@ -373,7 +373,6 @@ class FormWithXSTable(BaseForm):
         self.cross_section_table_add = None
         self.cross_section_table_delete = None
         self.cross_section_table_paste = None
-        self.cross_section_table_header = ["height", "width"]
         self.cell_changed_signal = None
         self.cell_changed_slot = None
         if self.MODEL == dm.Channel:
@@ -432,6 +431,15 @@ class FormWithXSTable(BaseForm):
         paste_slot = self.paste_table_rows
         connect_signal(paste_signal, paste_slot)
         self.dialog.active_form_signals.add((paste_signal, paste_slot))
+
+    def update_cross_section_table_header(self):
+        """Update cross-section table header based on selected shape."""
+        shape = self.get_widget_value(self.cross_section_shape)
+        if shape == dm.CrossSectionShape.YZ.value:
+            cross_section_table_header = ["Y [m]", "Z [m]"]
+        else:
+            cross_section_table_header = ["Height [m]", "Width [m]"]
+        self.cross_section_table.setHorizontalHeaderLabels(cross_section_table_header)
 
     def get_cross_section_table_text(self):
         """Get cross-section table data as a string representation."""
@@ -509,9 +517,9 @@ class FormWithXSTable(BaseForm):
         self.cross_section_table.clearContents()
         self.cross_section_table.setRowCount(0)
         self.cross_section_table.setColumnCount(2)
+        self.update_cross_section_table_header()
         self.cross_section_table.setItemDelegateForColumn(0, NumericItemDelegate(self.cross_section_table))
         self.cross_section_table.setItemDelegateForColumn(1, NumericItemDelegate(self.cross_section_table))
-        self.cross_section_table.setHorizontalHeaderLabels(self.cross_section_table_header)
         if self.current_cross_section_location is not None:
             table = self.current_cross_section_location["cross_section_table"] or ""
         else:

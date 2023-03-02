@@ -87,6 +87,12 @@
               <Option type="Map">
                 <Option value="6" type="QString" name="6: tabulated trapezium"/>
               </Option>
+              <Option type="Map">
+                <Option value="7" type="QString" name="7: yz"/>
+              </Option>
+              <Option type="Map">
+                <Option value="8" type="QString" name="8: inverted egg"/>
+              </Option>
             </Option>
           </Option>
         </config>
