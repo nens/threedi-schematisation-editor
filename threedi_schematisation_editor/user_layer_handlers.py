@@ -24,7 +24,6 @@ from threedi_schematisation_editor.utils import (
     find_linestring_nodes,
     find_point_polygons,
     get_next_feature_id,
-    FormCustomizations,
 )
 from qgis.core import QgsFeature, QgsGeometry, QgsFeatureRequest, QgsExpression, NULL
 from qgis.PyQt.QtCore import QTimer

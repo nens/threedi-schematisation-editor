@@ -1,4 +1,5 @@
 # Copyright (C) 2023 by Lutra Consulting
+import sys
 import threedi_schematisation_editor.data_models as dm
 from collections import defaultdict
 from operator import itemgetter
@@ -48,6 +49,7 @@ class BaseForm(QObject):
     """Base edit form for user layers edit form logic."""
 
     MODEL = None
+    MIN_FID = -sys.maxsize - 1
 
     def __init__(self, layer_manager, dialog, layer, feature):
         super().__init__(parent=dialog)  # We need to set dialog as a parent to keep form alive
@@ -86,7 +88,8 @@ class BaseForm(QObject):
             customisation_fn(widget)
         if self.feature is None:
             return
-        if self.feature.id() < 0:
+        fid = self.feature.id()
+        if fid == self.MIN_FID:
             geometry = self.feature.geometry()
             if not geometry:
                 return  # form open for an invalid feature
@@ -364,6 +367,7 @@ class FormWithXSTable(BaseForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
+        self.cross_section_shape = None
         self.cross_section_table = None
         self.cross_section_table_edit = None
         self.cross_section_table_add = None
@@ -389,6 +393,7 @@ class FormWithXSTable(BaseForm):
         xs_table_add = f"{self.cross_section_prefix}cross_section_table_add"
         xs_table_delete = f"{self.cross_section_prefix}cross_section_table_delete"
         xs_table_paste = f"{self.cross_section_prefix}cross_section_table_paste"
+        self.cross_section_shape = self.dialog.findChild(QObject, f"{self.cross_section_prefix}cross_section_shape")
         self.cross_section_table = self.dialog.findChild(QTableWidget, xs_table)
         self.cross_section_table_add = self.dialog.findChild(QPushButton, xs_table_add)
         self.cross_section_table_delete = self.dialog.findChild(QPushButton, xs_table_delete)
@@ -397,6 +402,11 @@ class FormWithXSTable(BaseForm):
         self.custom_widgets[xs_table_add] = self.cross_section_table_add
         self.custom_widgets[xs_table_delete] = self.cross_section_table_delete
         self.custom_widgets[xs_table_paste] = self.cross_section_table_paste
+
+    def setup_form_widgets(self):
+        """Setting up all form widgets."""
+        super().setup_form_widgets()
+        setup_cross_section_widgets(self, self.cross_section_shape, self.cross_section_prefix)
 
     def connect_custom_widgets(self):
         """Connect other widgets."""
@@ -445,9 +455,12 @@ class FormWithXSTable(BaseForm):
     def save_cross_section_table_edits(self):
         """Save cross-section table value to the feature attribute."""
         cross_section_table_str = self.get_cross_section_table_text()
-        cross_section_table_idx = self.layer_with_xs_fields.lookupField("cross_section_table")
-        changes = {cross_section_table_idx: cross_section_table_str}
-        self.layer_with_xs.changeAttributeValues(self.current_cross_section_location.id(), changes)
+        if self.creation is True:
+            self.current_cross_section_location["cross_section_table"] = cross_section_table_str
+        else:
+            cross_section_table_idx = self.layer_with_xs_fields.lookupField("cross_section_table")
+            changes = {cross_section_table_idx: cross_section_table_str}
+            self.layer_with_xs.changeAttributeValues(self.current_cross_section_location.id(), changes)
 
     def edit_table_row(self):
         """Slot for handling table cells edits."""
@@ -499,7 +512,10 @@ class FormWithXSTable(BaseForm):
         self.cross_section_table.setItemDelegateForColumn(0, NumericItemDelegate(self.cross_section_table))
         self.cross_section_table.setItemDelegateForColumn(1, NumericItemDelegate(self.cross_section_table))
         self.cross_section_table.setHorizontalHeaderLabels(self.cross_section_table_header)
-        table = self.current_cross_section_location["cross_section_table"] or ""
+        if self.current_cross_section_location is not None:
+            table = self.current_cross_section_location["cross_section_table"] or ""
+        else:
+            table = ""
         for row_number, row in enumerate(table.split("\n")):
             try:
                 height_str, width_str = row.replace(" ", "").split(",")
@@ -1173,6 +1189,7 @@ class ChannelForm(FormWithStartEndNode, FormWithXSTable):
             for signal, slot in self.dialog.active_form_signals:
                 connect_signal(signal, slot)
             self.populate_cross_section_table_data()
+        setup_cross_section_widgets(self, self.cross_section_shape, self.cross_section_prefix)
 
     def set_cross_section_location_value_from_widget(self, widget, field_name):
         """Set currently selected cross-section attribute."""
