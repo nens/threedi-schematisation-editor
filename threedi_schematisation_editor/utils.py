@@ -877,19 +877,19 @@ class FormCustomizations:
         widget.setPlaceholderText(placeholder_text)
 
 
-def setup_cross_section_widgets(custom_form, cross_section_shape_widget):
+def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=""):
     """Adjust cross-section characteristic widgets availability based on the selected shape type."""
-    cross_section_width_widget = custom_form.dialog.findChild(QObject, "cross_section_width")
-    cross_section_width_clear_widget = custom_form.dialog.findChild(QObject, "cross_section_width_clear")
-    cross_section_width_label_widget = custom_form.dialog.findChild(QObject, "cross_section_width_label")
-    cross_section_height_widget = custom_form.dialog.findChild(QObject, "cross_section_height")
-    cross_section_height_clear_widget = custom_form.dialog.findChild(QObject, "cross_section_height_clear")
-    cross_section_height_label_widget = custom_form.dialog.findChild(QObject, "cross_section_height_label")
-    cross_section_table_widget = custom_form.dialog.findChild(QObject, "cross_section_table_widget")
-    cross_section_table_widget_add = custom_form.dialog.findChild(QObject, "cross_section_table_add")
-    cross_section_table_widget_paste = custom_form.dialog.findChild(QObject, "cross_section_table_paste")
-    cross_section_table_widget_delete = custom_form.dialog.findChild(QObject, "cross_section_table_delete")
-    cross_section_table_label_widget = custom_form.dialog.findChild(QObject, "cross_section_table_label")
+    cross_section_width_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_width")
+    cross_section_width_clear_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_width_clear")
+    cross_section_width_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_width_label")
+    cross_section_height_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_height")
+    cross_section_height_clear_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_height_clear")
+    cross_section_height_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_height_label")
+    cross_section_table_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_widget")
+    cross_section_table_widget_add = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_add")
+    cross_section_table_widget_paste = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_paste")
+    cross_section_table_widget_delete = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_delete")
+    cross_section_table_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_label")
     all_related_widgets = [
         cross_section_width_widget,
         cross_section_width_clear_widget,

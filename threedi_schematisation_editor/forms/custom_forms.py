@@ -356,12 +356,7 @@ class BaseForm(QObject):
 
     def activate_field_based_conditions(self):
         """Activate filed based conditions."""
-        widget = self.dialog.findChild(QObject, "cross_section_shape")
-        if widget is not None:
-            edit_signal = self.get_widget_editing_signal(widget)
-            edit_slot = partial(setup_cross_section_widgets, self, widget)
-            connect_signal(edit_signal, edit_slot)
-            self.dialog.active_form_signals.add((edit_signal, edit_slot))
+        pass
 
 
 class FormWithXSTable(BaseForm):
@@ -374,12 +369,15 @@ class FormWithXSTable(BaseForm):
         self.cross_section_table_add = None
         self.cross_section_table_delete = None
         self.cross_section_table_paste = None
+        self.cross_section_table_header = ["height", "width"]
         self.cell_changed_signal = None
         self.cell_changed_slot = None
         if self.MODEL == dm.Channel:
+            self.cross_section_prefix = "cross_section_location_"
             self.current_cross_section_location = None
             self.layer_with_xs = self.layer_manager.model_handlers[dm.CrossSectionLocation].layer
         else:
+            self.cross_section_prefix = ""
             self.current_cross_section_location = self.feature
             self.layer_with_xs = self.layer
         self.layer_with_xs_fields = self.layer_with_xs.fields()
@@ -387,10 +385,10 @@ class FormWithXSTable(BaseForm):
 
     def setup_cross_section_table_widgets(self):
         """Setup cross-section table widgets."""
-        xs_table = "cross_section_table_widget"
-        xs_table_add = "cross_section_table_add"
-        xs_table_delete = "cross_section_table_delete"
-        xs_table_paste = "cross_section_table_paste"
+        xs_table = f"{self.cross_section_prefix}cross_section_table_widget"
+        xs_table_add = f"{self.cross_section_prefix}cross_section_table_add"
+        xs_table_delete = f"{self.cross_section_prefix}cross_section_table_delete"
+        xs_table_paste = f"{self.cross_section_prefix}cross_section_table_paste"
         self.cross_section_table = self.dialog.findChild(QTableWidget, xs_table)
         self.cross_section_table_add = self.dialog.findChild(QPushButton, xs_table_add)
         self.cross_section_table_delete = self.dialog.findChild(QPushButton, xs_table_delete)
@@ -500,7 +498,7 @@ class FormWithXSTable(BaseForm):
         self.cross_section_table.setColumnCount(2)
         self.cross_section_table.setItemDelegateForColumn(0, NumericItemDelegate(self.cross_section_table))
         self.cross_section_table.setItemDelegateForColumn(1, NumericItemDelegate(self.cross_section_table))
-        self.cross_section_table.setHorizontalHeaderLabels(["height", "width"])
+        self.cross_section_table.setHorizontalHeaderLabels(self.cross_section_table_header)
         table = self.current_cross_section_location["cross_section_table"] or ""
         for row_number, row in enumerate(table.split("\n")):
             try:
@@ -519,6 +517,15 @@ class FormWithXSTable(BaseForm):
             self.fill_related_attributes()
         self.populate_widgets()
         self.populate_cross_section_table_data()
+
+    def activate_field_based_conditions(self):
+        """Activate filed based conditions."""
+        widget = self.dialog.findChild(QObject, f"{self.cross_section_prefix}cross_section_shape")
+        if widget is not None:
+            edit_signal = self.get_widget_editing_signal(widget)
+            edit_slot = partial(setup_cross_section_widgets, self, widget, self.cross_section_prefix)
+            connect_signal(edit_signal, edit_slot)
+            self.dialog.active_form_signals.add((edit_signal, edit_slot))
 
 
 class FormWithNode(BaseForm):
