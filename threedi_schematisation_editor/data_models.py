@@ -1177,7 +1177,7 @@ TABLE_MANNING = MappingProxyType(
 TABLE_SHAPES = [
     CrossSectionShape.TABULATED_RECTANGLE.value,
     CrossSectionShape.TABULATED_TRAPEZIUM.value,
-    CrossSectionShape.YZ,
+    CrossSectionShape.YZ.value,
 ]
 
 MODEL_DEPENDENCIES = MappingProxyType(
