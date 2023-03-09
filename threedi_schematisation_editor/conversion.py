@@ -407,7 +407,7 @@ class ModelDataConverter:
             src_xs_def_shape = xs_def_feat["shape"]
             src_xs_def_height = xs_def_feat["height"]
             src_xs_def_width = xs_def_feat["width"]
-            if src_xs_def_shape in dm.TABLE_SHAPES:
+            if src_xs_def_shape in dm.TABLE_SHAPES and src_xs_def_height and src_xs_def_width:
                 table_zipp = zip(src_xs_def_height.split(), src_xs_def_width.split())
                 if src_xs_def_shape == dm.CrossSectionShape.YZ.value:
                     xs_def_table = "\n".join(f"{w}, {h}" for h, w in table_zipp)
