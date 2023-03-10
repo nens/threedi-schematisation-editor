@@ -144,6 +144,7 @@ class BaseForm(QObject):
             widget.setEnabled(editing_active)
         for widget in self.custom_widgets.values():
             widget.setEnabled(editing_active)
+        setup_cross_section_widgets(self, self.cross_section_shape, self.cross_section_prefix)
 
     def populate_widgets(self, data_model_cls=None, feature=None, start_end_modifier=None):
         """
