@@ -1,21 +1,22 @@
 # Copyright (C) 2023 by Lutra Consulting
 from dataclasses import dataclass
-from typing import Optional
 from types import MappingProxyType
+from typing import Optional
+
 from threedi_schematisation_editor.enumerators import (
     AggregationMethod,
     BoundaryType,
     CalculationType,
-    CalculationTypeNode,
     CalculationTypeCulvert,
+    CalculationTypeNode,
     CrestType,
     CrossSectionShape,
     FlowVariable,
     FrictionType,
     GeometryType,
     InfiltrationSurfaceOption,
-    InterflowType,
     InitializationType,
+    InterflowType,
     Later2DType,
     ManholeIndicator,
     ManholeShape,

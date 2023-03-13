@@ -1,8 +1,10 @@
 # Copyright (C) 2023 by Lutra Consulting
-import threedi_schematisation_editor.enumerators as en
 from functools import cached_property
 from itertools import chain
+
 from qgis.core import NULL
+
+import threedi_schematisation_editor.enumerators as en
 
 
 class ValidationAutofix:

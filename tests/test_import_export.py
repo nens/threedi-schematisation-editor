@@ -1,7 +1,7 @@
 # Copyright (C) 2023 by Lutra Consulting
-from threedi_schematisation_editor.utils import sqlite_layer
 from threedi_schematisation_editor.conversion import ModelDataConverter
 from threedi_schematisation_editor.data_models import ALL_MODELS
+from threedi_schematisation_editor.utils import sqlite_layer
 
 
 def test_data_import_export_integrity(data_conversion_setup):

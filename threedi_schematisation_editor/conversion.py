@@ -1,31 +1,33 @@
 # Copyright (C) 2023 by Lutra Consulting
-import threedi_schematisation_editor.data_models as dm
-import threedi_schematisation_editor.enumerators as en
-from threedi_schematisation_editor.utils import (
-    sqlite_layer,
-    gpkg_layer,
-    layer_to_gpkg,
-    vector_layer_factory,
-    cast_if_bool,
-    ConversionError,
-)
-from threedi_schematisation_editor.communication import UICommunication
-from threedi_schematisation_editor.custom_widgets import ProjectionSelectionDialog
-from operator import itemgetter
 from collections import OrderedDict, defaultdict
+from operator import itemgetter
+
 from qgis.core import (
-    QgsProject,
-    QgsWkbTypes,
+    QgsCoordinateTransform,
+    QgsExpression,
     QgsFeature,
     QgsFeatureRequest,
-    QgsExpression,
-    QgsCoordinateTransform,
     QgsGeometry,
     QgsPointXY,
+    QgsProject,
     QgsVectorFileWriter,
+    QgsWkbTypes,
 )
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtWidgets import QDialog
+
+import threedi_schematisation_editor.data_models as dm
+import threedi_schematisation_editor.enumerators as en
+from threedi_schematisation_editor.communication import UICommunication
+from threedi_schematisation_editor.custom_widgets import ProjectionSelectionDialog
+from threedi_schematisation_editor.utils import (
+    ConversionError,
+    cast_if_bool,
+    gpkg_layer,
+    layer_to_gpkg,
+    sqlite_layer,
+    vector_layer_factory,
+)
 
 
 class ModelDataConverter:

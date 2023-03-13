@@ -1,38 +1,40 @@
 # Copyright (C) 2023 by Lutra Consulting
 import os
-import sys
 import shutil
-import threedi_schematisation_editor.data_models as dm
+import sys
+from collections import OrderedDict
 from enum import Enum
 from itertools import groupby
 from operator import attrgetter
-from uuid import uuid4
 from typing import Union
-from collections import OrderedDict
-from qgis.PyQt.QtCore import QSettings, QVariant, QObject
-from qgis.PyQt.QtWidgets import QFileDialog, QItemDelegate, QLineEdit
-from qgis.PyQt.QtGui import QPainter, QDoubleValidator
+from uuid import uuid4
+
 from qgis.core import (
+    QgsBilinearRasterResampler,
+    QgsCoordinateTransform,
     QgsDataSourceUri,
+    QgsEditorWidgetSetup,
     QgsFeature,
-    QgsMapLayer,
-    QgsVectorLayer,
-    QgsRasterLayer,
-    QgsLayerTreeGroup,
-    QgsLayerTreeLayer,
-    QgsProject,
     QgsField,
     QgsGeometry,
-    QgsCoordinateTransform,
-    QgsVectorFileWriter,
-    QgsPointLocator,
     QgsHillshadeRenderer,
-    QgsBilinearRasterResampler,
+    QgsLayerTreeGroup,
+    QgsLayerTreeLayer,
+    QgsMapLayer,
+    QgsPointLocator,
+    QgsProject,
+    QgsRasterLayer,
     QgsRasterMinMaxOrigin,
-    QgsEditorWidgetSetup,
     QgsValueMapFieldFormatter,
+    QgsVectorFileWriter,
+    QgsVectorLayer,
 )
+from qgis.PyQt.QtCore import QObject, QSettings, QVariant
+from qgis.PyQt.QtGui import QDoubleValidator, QPainter
+from qgis.PyQt.QtWidgets import QFileDialog, QItemDelegate, QLineEdit
 from qgis.utils import plugins, qgsfunction
+
+import threedi_schematisation_editor.data_models as dm
 
 field_types_mapping = {
     bool: QVariant.Bool,
@@ -738,8 +740,7 @@ def modify_raster_style(raster_layer, limits=QgsRasterMinMaxOrigin.MinMax, exten
 def migrate_spatialite_schema(sqlite_filepath):
     migration_succeed = False
     try:
-        from threedi_schema import ThreediDatabase
-        from threedi_schema import errors
+        from threedi_schema import ThreediDatabase, errors
 
         threedi_db = ThreediDatabase(sqlite_filepath)
         schema = threedi_db.schema

@@ -6,6 +6,7 @@ History
 
 - Added handling of the "Inverted egg" and "XY" cross-section shape types. (#89, #91)
 - Changed the way of editing cross-section table to using proper table view. (#90)
+- Sorted imports
 
 
 1.3 (2023-02-06)

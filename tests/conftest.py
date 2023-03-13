@@ -1,8 +1,10 @@
 # Copyright (C) 2023 by Lutra Consulting
-import pytest
 import os
-import sys
 import shutil
+import sys
+
+import pytest
+
 from threedi_schematisation_editor.utils import get_qgis
 
 

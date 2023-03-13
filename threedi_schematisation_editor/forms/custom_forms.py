@@ -1,39 +1,41 @@
 # Copyright (C) 2023 by Lutra Consulting
 import sys
-import threedi_schematisation_editor.data_models as dm
 from collections import defaultdict
-from operator import itemgetter
-from functools import partial
 from enum import Enum
+from functools import partial
+from operator import itemgetter
 from types import MappingProxyType
-from threedi_schematisation_editor.utils import (
-    find_point_nodes,
-    find_linestring_nodes,
-    find_point_polygons,
-    find_point_polyline,
-    connect_signal,
-    disconnect_signal,
-    is_optional,
-    optional_type,
-    setup_cross_section_widgets,
-    NumericItemDelegate,
-)
+
+from qgis.core import NULL, QgsGeometry
+from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
 from qgis.PyQt.QtCore import QObject
 from qgis.PyQt.QtWidgets import (
+    QApplication,
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
     QLineEdit,
-    QSpinBox,
     QPlainTextEdit,
-    QToolButton,
-    QTableWidget,
     QPushButton,
+    QSpinBox,
+    QTableWidget,
     QTableWidgetItem,
-    QApplication,
+    QToolButton,
 )
-from qgis.core import NULL, QgsGeometry
-from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
+
+import threedi_schematisation_editor.data_models as dm
+from threedi_schematisation_editor.utils import (
+    NumericItemDelegate,
+    connect_signal,
+    disconnect_signal,
+    find_linestring_nodes,
+    find_point_nodes,
+    find_point_polygons,
+    find_point_polyline,
+    is_optional,
+    optional_type,
+    setup_cross_section_widgets,
+)
 
 field_types_widgets = MappingProxyType(
     {

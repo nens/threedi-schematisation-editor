@@ -1,36 +1,38 @@
 # Copyright (C) 2023 by Lutra Consulting
 import os
-import threedi_schematisation_editor.data_models as dm
 from types import MappingProxyType
+
 from qgis.core import (
     QgsExpression,
     QgsFeatureRequest,
-    QgsRasterLayer,
-    QgsVectorLayerJoinInfo,
     QgsProject,
+    QgsRasterLayer,
     QgsSnappingConfig,
     QgsTolerance,
+    QgsVectorLayerJoinInfo,
 )
 from qgis.PyQt.QtCore import QCoreApplication
-from threedi_schematisation_editor.user_layer_handlers import MODEL_HANDLERS
+
+import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.user_layer_forms import LayerEditFormFactory
+from threedi_schematisation_editor.user_layer_handlers import MODEL_HANDLERS
 from threedi_schematisation_editor.utils import (
-    gpkg_layer,
-    get_form_ui_path,
-    get_qml_style_path,
-    get_multiple_qml_style_paths,
-    set_initial_layer_configuration,
-    set_field_default_value,
-    create_tree_group,
     add_layer_to_group,
-    remove_group_with_children,
-    remove_layer,
-    hillshade_layer,
-    modify_raster_style,
+    create_tree_group,
     cross_section_label,
     diameter_label,
-    width_label,
+    get_form_ui_path,
+    get_multiple_qml_style_paths,
+    get_qml_style_path,
+    gpkg_layer,
+    hillshade_layer,
+    modify_raster_style,
+    remove_group_with_children,
+    remove_layer,
+    set_field_default_value,
+    set_initial_layer_configuration,
     validation_errors_summary,
+    width_label,
 )
 
 

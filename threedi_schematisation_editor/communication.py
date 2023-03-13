@@ -1,7 +1,7 @@
 # Copyright (C) 2023 by Lutra Consulting
-from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtWidgets import QMessageBox, QInputDialog, QProgressBar, QPushButton
 from qgis.core import Qgis, QgsMessageLog
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtWidgets import QInputDialog, QMessageBox, QProgressBar, QPushButton
 
 
 class UICommunication:

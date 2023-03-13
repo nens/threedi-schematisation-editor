@@ -1,7 +1,7 @@
 # Copyright (C) 2023 by Lutra Consulting
 import os
-from qgis.PyQt import uic
 
+from qgis.PyQt import uic
 
 basecls, uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "projection_selection.ui"))
 

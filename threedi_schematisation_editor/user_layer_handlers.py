@@ -1,32 +1,34 @@
 # Copyright (C) 2023 by Lutra Consulting
+from collections import defaultdict
+from functools import cached_property, partial
+from types import MappingProxyType
+
+from qgis.core import NULL, QgsExpression, QgsFeature, QgsFeatureRequest, QgsGeometry
+from qgis.PyQt.QtCore import QTimer
+
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.enumerators import (
     CalculationTypeCulvert,
     CalculationTypeNode,
     CrestType,
+    FrictionType,
     GeometryType,
     ManholeIndicator,
     ManholeShape,
-    FrictionType,
     PipeMaterial,
     PumpType,
     ZoomCategories,
 )
-from threedi_schematisation_editor.validators import CrossSectionTableValidator
-from collections import defaultdict
-from types import MappingProxyType
-from functools import partial, cached_property
 from threedi_schematisation_editor.utils import (
     connect_signal,
-    disconnect_signal,
     count_vertices,
-    find_point_nodes,
+    disconnect_signal,
     find_linestring_nodes,
+    find_point_nodes,
     find_point_polygons,
     get_next_feature_id,
 )
-from qgis.core import QgsFeature, QgsGeometry, QgsFeatureRequest, QgsExpression, NULL
-from qgis.PyQt.QtCore import QTimer
+from threedi_schematisation_editor.validators import CrossSectionTableValidator
 
 
 class UserLayerHandler:

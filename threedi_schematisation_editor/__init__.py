@@ -1,21 +1,23 @@
 # Copyright (C) 2023 by Lutra Consulting
 import os.path
-from qgis.PyQt.QtWidgets import QAction
+
 from qgis.core import QgsProject
+from qgis.PyQt.QtWidgets import QAction
+
 from threedi_schematisation_editor.communication import UICommunication
-from threedi_schematisation_editor.user_layer_manager import LayersManager
 from threedi_schematisation_editor.conversion import ModelDataConverter
+from threedi_schematisation_editor.user_layer_manager import LayersManager
 from threedi_schematisation_editor.utils import (
+    ConversionError,
+    add_gpkg_connection,
+    add_settings_entry,
     can_write_in_dir,
+    check_enable_macros_option,
     create_empty_model,
     get_filepath,
-    remove_user_layers,
-    add_settings_entry,
-    check_enable_macros_option,
     is_gpkg_connection_exists,
-    add_gpkg_connection,
     migrate_spatialite_schema,
-    ConversionError,
+    remove_user_layers,
 )
 
 
