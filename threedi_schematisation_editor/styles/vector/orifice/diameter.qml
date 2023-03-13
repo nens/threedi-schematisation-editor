@@ -1382,6 +1382,12 @@
               <Option type="Map">
                 <Option name="Tabulated trapezium" type="int" value="6"/>
               </Option>
+              <Option type="Map">
+                <Option name="YZ" type="int" value="7"/>
+              </Option>
+              <Option type="Map">
+                <Option name="Inverted egg" type="int" value="8"/>
+              </Option>
             </Option>
           </Option>
         </config>

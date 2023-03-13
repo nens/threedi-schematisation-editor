@@ -24,7 +24,6 @@ from threedi_schematisation_editor.utils import (
     find_linestring_nodes,
     find_point_polygons,
     get_next_feature_id,
-    FormCustomizations,
 )
 from qgis.core import QgsFeature, QgsGeometry, QgsFeatureRequest, QgsExpression, NULL
 from qgis.PyQt.QtCore import QTimer
@@ -512,10 +511,6 @@ class WeirHandler(UserLayerHandler):
         }
     )
 
-    FORM_CUSTOMIZATIONS = MappingProxyType(
-        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
-    )
-
     VALIDATORS = (CrossSectionTableValidator,)
 
     def connect_additional_signals(self):
@@ -556,9 +551,6 @@ class CulvertHandler(UserLayerHandler):
             "invert_level_end_point": -10.0,
         }
     )
-    FORM_CUSTOMIZATIONS = MappingProxyType(
-        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
-    )
 
     VALIDATORS = (CrossSectionTableValidator,)
 
@@ -591,9 +583,6 @@ class OrificeHandler(UserLayerHandler):
             "discharge_coefficient_negative": 0.8,
             "sewerage": False,
         }
-    )
-    FORM_CUSTOMIZATIONS = MappingProxyType(
-        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
 
     VALIDATORS = (CrossSectionTableValidator,)
@@ -634,9 +623,6 @@ class PipeHandler(UserLayerHandler):
             "invert_level_start_point": -10.0,
             "invert_level_end_point": -10.0,
         }
-    )
-    FORM_CUSTOMIZATIONS = MappingProxyType(
-        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
 
     VALIDATORS = (CrossSectionTableValidator,)
@@ -750,9 +736,6 @@ class CrossSectionLocationHandler(UserLayerHandler):
             "calculation_type": CalculationTypeNode.ISOLATED.value,
             "bottom_level": -10.0,
         }
-    )
-    FORM_CUSTOMIZATIONS = MappingProxyType(
-        {"cross_section_table": FormCustomizations.cross_section_table_placeholder_text}
     )
 
     VALIDATORS = (CrossSectionTableValidator,)

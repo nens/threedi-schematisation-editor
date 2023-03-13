@@ -4,7 +4,8 @@ History
 1.4 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Added handling of the "Inverted egg" and "XY" cross-section shape types. (#89, #91)
+- Changed the way of editing cross-section table to using proper table view. (#90)
 
 
 1.3 (2023-02-06)

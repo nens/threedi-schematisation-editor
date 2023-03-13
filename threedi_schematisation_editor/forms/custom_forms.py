@@ -1,4 +1,5 @@
 # Copyright (C) 2023 by Lutra Consulting
+import sys
 import threedi_schematisation_editor.data_models as dm
 from collections import defaultdict
 from operator import itemgetter
@@ -15,6 +16,7 @@ from threedi_schematisation_editor.utils import (
     is_optional,
     optional_type,
     setup_cross_section_widgets,
+    NumericItemDelegate,
 )
 from qgis.PyQt.QtCore import QObject
 from qgis.PyQt.QtWidgets import (
@@ -25,6 +27,10 @@ from qgis.PyQt.QtWidgets import (
     QSpinBox,
     QPlainTextEdit,
     QToolButton,
+    QTableWidget,
+    QPushButton,
+    QTableWidgetItem,
+    QApplication,
 )
 from qgis.core import NULL, QgsGeometry
 from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
@@ -43,6 +49,7 @@ class BaseForm(QObject):
     """Base edit form for user layers edit form logic."""
 
     MODEL = None
+    MIN_FID = -sys.maxsize - 1
 
     def __init__(self, layer_manager, dialog, layer, feature):
         super().__init__(parent=dialog)  # We need to set dialog as a parent to keep form alive
@@ -81,7 +88,8 @@ class BaseForm(QObject):
             customisation_fn(widget)
         if self.feature is None:
             return
-        if self.feature.id() < 0:
+        fid = self.feature.id()
+        if fid == self.MIN_FID:
             geometry = self.feature.geometry()
             if not geometry:
                 return  # form open for an invalid feature
@@ -136,6 +144,7 @@ class BaseForm(QObject):
             widget.setEnabled(editing_active)
         for widget in self.custom_widgets.values():
             widget.setEnabled(editing_active)
+        setup_cross_section_widgets(self, self.cross_section_shape, self.cross_section_prefix)
 
     def populate_widgets(self, data_model_cls=None, feature=None, start_end_modifier=None):
         """
@@ -185,9 +194,6 @@ class BaseForm(QObject):
                     connect_signal(clear_signal, clear_slot)
                     self.dialog.active_form_signals.add((clear_signal, clear_slot))
                     self.custom_widgets[clear_value_button_name] = clear_value_button
-        widget = self.dialog.findChild(QObject, "cross_section_shape")
-        if widget is not None:
-            setup_cross_section_widgets(self, widget)
 
     def set_validation_background(self, widget, field_type):
         """Setting validation color background if required value is empty."""
@@ -354,10 +360,195 @@ class BaseForm(QObject):
 
     def activate_field_based_conditions(self):
         """Activate filed based conditions."""
-        widget = self.dialog.findChild(QObject, "cross_section_shape")
+        pass
+
+
+class FormWithXSTable(BaseForm):
+    """Base edit form for user layers with cross-section table reference."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.cross_section_shape = None
+        self.cross_section_table = None
+        self.cross_section_table_edit = None
+        self.cross_section_table_add = None
+        self.cross_section_table_delete = None
+        self.cross_section_table_paste = None
+        self.cell_changed_signal = None
+        self.cell_changed_slot = None
+        if self.MODEL == dm.Channel:
+            self.cross_section_prefix = "cross_section_location_"
+            self.current_cross_section_location = None
+            self.layer_with_xs = self.layer_manager.model_handlers[dm.CrossSectionLocation].layer
+        else:
+            self.cross_section_prefix = ""
+            self.current_cross_section_location = self.feature
+            self.layer_with_xs = self.layer
+        self.layer_with_xs_fields = self.layer_with_xs.fields()
+        self.setup_cross_section_table_widgets()
+
+    def setup_cross_section_table_widgets(self):
+        """Setup cross-section table widgets."""
+        xs_table = f"{self.cross_section_prefix}cross_section_table_widget"
+        xs_table_add = f"{self.cross_section_prefix}cross_section_table_add"
+        xs_table_delete = f"{self.cross_section_prefix}cross_section_table_delete"
+        xs_table_paste = f"{self.cross_section_prefix}cross_section_table_paste"
+        self.cross_section_shape = self.dialog.findChild(QObject, f"{self.cross_section_prefix}cross_section_shape")
+        self.cross_section_table = self.dialog.findChild(QTableWidget, xs_table)
+        self.cross_section_table_add = self.dialog.findChild(QPushButton, xs_table_add)
+        self.cross_section_table_delete = self.dialog.findChild(QPushButton, xs_table_delete)
+        self.cross_section_table_paste = self.dialog.findChild(QPushButton, xs_table_paste)
+        self.custom_widgets[xs_table] = self.cross_section_table
+        self.custom_widgets[xs_table_add] = self.cross_section_table_add
+        self.custom_widgets[xs_table_delete] = self.cross_section_table_delete
+        self.custom_widgets[xs_table_paste] = self.cross_section_table_paste
+
+    def setup_form_widgets(self):
+        """Setting up all form widgets."""
+        super().setup_form_widgets()
+        setup_cross_section_widgets(self, self.cross_section_shape, self.cross_section_prefix)
+
+    def connect_custom_widgets(self):
+        """Connect other widgets."""
+        super().connect_custom_widgets()
+        edit_signal = self.cross_section_table.cellChanged
+        edit_slot = self.edit_table_row
+        connect_signal(edit_signal, edit_slot)
+        self.dialog.active_form_signals.add((edit_signal, edit_slot))
+        self.cell_changed_signal = edit_signal
+        self.cell_changed_slot = edit_slot
+
+        add_signal = self.cross_section_table_add.clicked
+        add_slot = self.add_table_row
+        connect_signal(add_signal, add_slot)
+        self.dialog.active_form_signals.add((add_signal, add_slot))
+
+        delete_signal = self.cross_section_table_delete.clicked
+        delete_slot = self.delete_table_rows
+        connect_signal(delete_signal, delete_slot)
+        self.dialog.active_form_signals.add((delete_signal, delete_slot))
+
+        paste_signal = self.cross_section_table_paste.clicked
+        paste_slot = self.paste_table_rows
+        connect_signal(paste_signal, paste_slot)
+        self.dialog.active_form_signals.add((paste_signal, paste_slot))
+
+    def update_cross_section_table_header(self):
+        """Update cross-section table header based on selected shape."""
+        shape = self.get_widget_value(self.cross_section_shape)
+        if shape == dm.CrossSectionShape.YZ.value:
+            cross_section_table_header = ["Y [m]", "Z [m]"]
+        else:
+            cross_section_table_header = ["Height [m]", "Width [m]"]
+        self.cross_section_table.setHorizontalHeaderLabels(cross_section_table_header)
+
+    def get_cross_section_table_text(self):
+        """Get cross-section table data as a string representation."""
+        num_of_rows = self.cross_section_table.rowCount()
+        num_of_cols = self.cross_section_table.columnCount()
+        cross_section_table_values = []
+        for row_num in range(num_of_rows):
+            values = []
+            for col_num in range(num_of_cols):
+                item = self.cross_section_table.item(row_num, col_num)
+                if item is not None:
+                    item_text = item.text().strip()
+                else:
+                    item_text = ""
+                values.append(item_text)
+            if all(values):
+                cross_section_table_values.append(values)
+        cross_section_table_str = "\n".join(", ".join(row) for row in cross_section_table_values)
+        return cross_section_table_str
+
+    def save_cross_section_table_edits(self):
+        """Save cross-section table value to the feature attribute."""
+        cross_section_table_str = self.get_cross_section_table_text()
+        if self.creation is True:
+            self.current_cross_section_location["cross_section_table"] = cross_section_table_str
+        else:
+            cross_section_table_idx = self.layer_with_xs_fields.lookupField("cross_section_table")
+            changes = {cross_section_table_idx: cross_section_table_str}
+            self.layer_with_xs.changeAttributeValues(self.current_cross_section_location.id(), changes)
+
+    def edit_table_row(self):
+        """Slot for handling table cells edits."""
+        self.save_cross_section_table_edits()
+
+    def add_table_row(self):
+        """Slot for handling new row addition."""
+        selected_rows = {idx.row() for idx in self.cross_section_table.selectedIndexes()}
+        if selected_rows:
+            last_row_number = max(selected_rows) + 1
+        else:
+            last_row_number = self.cross_section_table.rowCount()
+        self.cross_section_table.insertRow(last_row_number)
+
+    def delete_table_rows(self):
+        """Slot for handling deletion of the selected rows."""
+        selected_rows = {idx.row() for idx in self.cross_section_table.selectedIndexes()}
+        for row in sorted(selected_rows, reverse=True):
+            self.cross_section_table.removeRow(row)
+        self.save_cross_section_table_edits()
+
+    def paste_table_rows(self):
+        """Handling pasting new rows from the clipboard."""
+        text = QApplication.clipboard().text()
+        rows = text.split("\n")
+        last_row_num = self.cross_section_table.rowCount()
+        if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
+            disconnect_signal(self.cell_changed_signal, self.cell_changed_slot)
+        for row in rows:
+            try:
+                height_str, width_str = row.replace(" ", "").split(",")
+            except ValueError:
+                continue
+            self.cross_section_table.insertRow(last_row_num)
+            self.cross_section_table.setItem(last_row_num, 0, QTableWidgetItem(height_str))
+            self.cross_section_table.setItem(last_row_num, 1, QTableWidgetItem(width_str))
+            last_row_num += 1
+        if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
+            connect_signal(self.cell_changed_signal, self.cell_changed_slot)
+        self.save_cross_section_table_edits()
+
+    def populate_cross_section_table_data(self):
+        """Populate cross-section tabular data in the table widget."""
+        if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
+            disconnect_signal(self.cell_changed_signal, self.cell_changed_slot)
+        self.cross_section_table.clearContents()
+        self.cross_section_table.setRowCount(0)
+        self.cross_section_table.setColumnCount(2)
+        self.update_cross_section_table_header()
+        self.cross_section_table.setItemDelegateForColumn(0, NumericItemDelegate(self.cross_section_table))
+        self.cross_section_table.setItemDelegateForColumn(1, NumericItemDelegate(self.cross_section_table))
+        if self.current_cross_section_location is not None:
+            table = self.current_cross_section_location["cross_section_table"] or ""
+        else:
+            table = ""
+        for row_number, row in enumerate(table.split("\n")):
+            try:
+                height_str, width_str = row.replace(" ", "").split(",")
+            except ValueError:
+                continue
+            self.cross_section_table.insertRow(row_number)
+            self.cross_section_table.setItem(row_number, 0, QTableWidgetItem(height_str))
+            self.cross_section_table.setItem(row_number, 1, QTableWidgetItem(width_str))
+        if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
+            connect_signal(self.cell_changed_signal, self.cell_changed_slot)
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_cross_section_table_data()
+
+    def activate_field_based_conditions(self):
+        """Activate filed based conditions."""
+        widget = self.dialog.findChild(QObject, f"{self.cross_section_prefix}cross_section_shape")
         if widget is not None:
             edit_signal = self.get_widget_editing_signal(widget)
-            edit_slot = partial(setup_cross_section_widgets, self, widget)
+            edit_slot = partial(setup_cross_section_widgets, self, widget, self.cross_section_prefix)
             connect_signal(edit_signal, edit_slot)
             self.dialog.active_form_signals.add((edit_signal, edit_slot))
 
@@ -573,7 +764,7 @@ class ManholeForm(FormWithNode):
     MODEL = dm.Manhole
 
 
-class PipeForm(FormWithStartEndNode):
+class PipeForm(FormWithStartEndNode, FormWithXSTable):
     """Pipe user layer edit form logic."""
 
     MODEL = dm.Pipe
@@ -681,9 +872,10 @@ class PipeForm(FormWithStartEndNode):
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
+        self.populate_cross_section_table_data()
 
 
-class WeirForm(FormWithStartEndNode):
+class WeirForm(FormWithStartEndNode, FormWithXSTable):
     """Weir user layer edit form logic."""
 
     MODEL = dm.Weir
@@ -714,9 +906,10 @@ class WeirForm(FormWithStartEndNode):
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
+        self.populate_cross_section_table_data()
 
 
-class CulvertForm(FormWithStartEndNode):
+class CulvertForm(FormWithStartEndNode, FormWithXSTable):
     """Culvert user layer edit form logic."""
 
     MODEL = dm.Culvert
@@ -747,9 +940,10 @@ class CulvertForm(FormWithStartEndNode):
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
+        self.populate_cross_section_table_data()
 
 
-class OrificeForm(FormWithStartEndNode):
+class OrificeForm(FormWithStartEndNode, FormWithXSTable):
     """Orifice user layer edit form logic."""
 
     MODEL = dm.Orifice
@@ -780,6 +974,7 @@ class OrificeForm(FormWithStartEndNode):
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
+        self.populate_cross_section_table_data()
 
 
 class PumpstationForm(FormWithNode):
@@ -922,7 +1117,7 @@ class SurfaceMapForm(NodeToSurfaceMapForm):
         self.surface_id_field = "surface_id"
 
 
-class ChannelForm(FormWithStartEndNode):
+class ChannelForm(FormWithStartEndNode, FormWithXSTable):
     """Channel user layer edit form logic."""
 
     MODEL = dm.Channel
@@ -930,7 +1125,6 @@ class ChannelForm(FormWithStartEndNode):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
         self.cross_section_locations = None
-        self.current_cross_section_location = None
         xs_locations_cbo_name = "cross_section_locations"
         self.current_cross_section_locations_cbo = self.dialog.findChild(QComboBox, xs_locations_cbo_name)
         self.custom_widgets[xs_locations_cbo_name] = self.current_cross_section_locations_cbo
@@ -1003,6 +1197,8 @@ class ChannelForm(FormWithStartEndNode):
             self.populate_foreign_widgets()
             for signal, slot in self.dialog.active_form_signals:
                 connect_signal(signal, slot)
+            self.populate_cross_section_table_data()
+        setup_cross_section_widgets(self, self.cross_section_shape, self.cross_section_prefix)
 
     def set_cross_section_location_value_from_widget(self, widget, field_name):
         """Set currently selected cross-section attribute."""
@@ -1025,6 +1221,7 @@ class ChannelForm(FormWithStartEndNode):
 
     def connect_custom_widgets(self):
         """Connect other widgets."""
+        super().connect_custom_widgets()
         signal = self.current_cross_section_locations_cbo.currentTextChanged
         slot = self.set_current_cross_section_location
         connect_signal(signal, slot)
@@ -1051,9 +1248,10 @@ class ChannelForm(FormWithStartEndNode):
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
+        self.populate_cross_section_table_data()
 
 
-class CrossSectionLocationForm(BaseForm):
+class CrossSectionLocationForm(FormWithXSTable):
     """Cross-section location user layer edit form logic."""
 
     MODEL = dm.CrossSectionLocation
@@ -1148,12 +1346,6 @@ class CrossSectionLocationForm(BaseForm):
             self.feature["friction_type"] = global_settings_feat["frict_type"]
         except StopIteration:
             pass
-
-    def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
-        if self.creation is True:
-            self.fill_related_attributes()
-        self.populate_widgets()
 
 
 class PotentialBreachForm(BaseForm):
