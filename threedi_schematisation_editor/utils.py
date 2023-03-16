@@ -35,6 +35,7 @@ from qgis.PyQt.QtWidgets import QFileDialog, QItemDelegate, QLineEdit
 from qgis.utils import plugins, qgsfunction
 
 import threedi_schematisation_editor.data_models as dm
+import threedi_schematisation_editor.enumerators as en
 
 field_types_mapping = {
     bool: QVariant.Bool,
@@ -436,16 +437,18 @@ def cross_section_label(feature, parent):
     shape_value = feature["cross_section_shape"]
     if not shape_value:
         return label
-    shape_name = dm.CrossSectionShape(shape_value).name.lower().replace("_", " ")
+    shape_name = en.CrossSectionShape(shape_value).name.replace("_", " ")
+    if shape_value != en.CrossSectionShape.YZ.value:
+        shape_name = shape_name.capitalize()
     shape_value_and_name = f"{shape_value}: {shape_name}\n"
     label += shape_value_and_name
     width = feature["cross_section_width"]
     height = feature["cross_section_height"]
-    if shape_value in {dm.CrossSectionShape.OPEN_RECTANGLE.value, dm.CrossSectionShape.CLOSED_RECTANGLE.value}:
+    if shape_value in {en.CrossSectionShape.OPEN_RECTANGLE.value, en.CrossSectionShape.CLOSED_RECTANGLE.value}:
         label += f"w: {width:.2f}\nh: {height:.2f}"
-    elif shape_value == dm.CrossSectionShape.CIRCLE.value:
+    elif shape_value == en.CrossSectionShape.CIRCLE.value:
         label += f"Ø{width:.2f}"
-    elif shape_value in {dm.CrossSectionShape.EGG.value, dm.CrossSectionShape.INVERTED_EGG.value}:
+    elif shape_value in {en.CrossSectionShape.EGG.value, en.CrossSectionShape.INVERTED_EGG.value}:
         label += f"w: {width:.2f}\nh: {width*1.5:.2f}"
     elif shape_value in dm.TABLE_SHAPES:
         table = feature["cross_section_table"]
@@ -465,18 +468,18 @@ def diameter_label(feature, parent):
         return label
     width = feature["cross_section_width"]
     height = feature["cross_section_height"]
-    if shape_value in {dm.CrossSectionShape.OPEN_RECTANGLE.value, dm.CrossSectionShape.CLOSED_RECTANGLE.value}:
+    if shape_value in {en.CrossSectionShape.OPEN_RECTANGLE.value, en.CrossSectionShape.CLOSED_RECTANGLE.value}:
         label += f"rect {width*1000:.0f}x{height*1000:.0f}"
-    elif shape_value == dm.CrossSectionShape.CIRCLE.value:
+    elif shape_value == en.CrossSectionShape.CIRCLE.value:
         label += f"Ø{width*1000:.0f}"
-    elif shape_value == dm.CrossSectionShape.EGG.value:
+    elif shape_value == en.CrossSectionShape.EGG.value:
         label += f"egg {width*1000:.0f}/{width * 1000 * 1.5:.3f}"
     elif shape_value in dm.TABLE_SHAPES:
         table = feature["cross_section_table"]
         height_list, width_list = cross_section_table_values(table)
         max_height = max(height_list)
         max_width = max(width_list)
-        label += "tab " if shape_value != dm.CrossSectionShape.YZ.value else "yz "
+        label += "tab " if shape_value != en.CrossSectionShape.YZ.value else "yz "
         label += f"{max_width*1000:.0f}/{max_height*1000:.0f}"
     return label
 
@@ -489,18 +492,18 @@ def width_label(feature, parent):
     if not shape_value:
         return label
     width = feature["cross_section_width"]
-    if shape_value in {dm.CrossSectionShape.OPEN_RECTANGLE.value, dm.CrossSectionShape.CLOSED_RECTANGLE.value}:
+    if shape_value in {en.CrossSectionShape.OPEN_RECTANGLE.value, en.CrossSectionShape.CLOSED_RECTANGLE.value}:
         label += f"w: {width:.2f} (rect)"
-    elif shape_value == dm.CrossSectionShape.CIRCLE.value:
+    elif shape_value == en.CrossSectionShape.CIRCLE.value:
         label += f"Ø{width:.2f}"
-    elif shape_value in {dm.CrossSectionShape.EGG.value, dm.CrossSectionShape.INVERTED_EGG.value}:
+    elif shape_value in {en.CrossSectionShape.EGG.value, en.CrossSectionShape.INVERTED_EGG.value}:
         label += f"w: {width:.2f} (egg)"
     elif shape_value in dm.TABLE_SHAPES:
         table = feature["cross_section_table"]
         height_list, width_list = cross_section_table_values(table)
         max_width = max(width_list)
         label += f"w: {max_width:.2f} "
-        label += "(tab)" if shape_value != dm.CrossSectionShape.YZ.value else "(yz)"
+        label += "(tab)" if shape_value != en.CrossSectionShape.YZ.value else "(yz)"
     return label
 
 
@@ -831,17 +834,17 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
         related_widget.setDisabled(True)
     cross_section_shape = custom_form.get_widget_value(cross_section_shape_widget)
     custom_form.update_cross_section_table_header()
-    if cross_section_shape == dm.CrossSectionShape.CIRCLE.value:
+    if cross_section_shape == en.CrossSectionShape.CIRCLE.value:
         cross_section_width_label_widget.setText("Diameter [m]")
     else:
         cross_section_width_label_widget.setText("Width [m]")
     if custom_form.layer.isEditable():
         if cross_section_shape in {
-            dm.CrossSectionShape.CLOSED_RECTANGLE.value,
-            dm.CrossSectionShape.OPEN_RECTANGLE.value,
-            dm.CrossSectionShape.CIRCLE.value,
-            dm.CrossSectionShape.EGG.value,
-            dm.CrossSectionShape.INVERTED_EGG.value,
+            en.CrossSectionShape.CLOSED_RECTANGLE.value,
+            en.CrossSectionShape.OPEN_RECTANGLE.value,
+            en.CrossSectionShape.CIRCLE.value,
+            en.CrossSectionShape.EGG.value,
+            en.CrossSectionShape.INVERTED_EGG.value,
         }:
             cross_section_width_widget.setEnabled(True)
             cross_section_width_clear_widget.setEnabled(True)
@@ -852,15 +855,15 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
             cross_section_table_widget_delete.setDisabled(True)
             cross_section_table_label_widget.setDisabled(True)
             if cross_section_shape in {
-                dm.CrossSectionShape.CLOSED_RECTANGLE.value,
+                en.CrossSectionShape.CLOSED_RECTANGLE.value,
             }:
                 cross_section_height_widget.setEnabled(True)
                 cross_section_height_clear_widget.setEnabled(True)
                 cross_section_height_label_widget.setEnabled(True)
         elif cross_section_shape in {
-            dm.CrossSectionShape.TABULATED_RECTANGLE.value,
-            dm.CrossSectionShape.TABULATED_TRAPEZIUM.value,
-            dm.CrossSectionShape.YZ.value,
+            en.CrossSectionShape.TABULATED_RECTANGLE.value,
+            en.CrossSectionShape.TABULATED_TRAPEZIUM.value,
+            en.CrossSectionShape.YZ.value,
         }:
             cross_section_width_widget.setDisabled(True)
             cross_section_width_clear_widget.setDisabled(True)

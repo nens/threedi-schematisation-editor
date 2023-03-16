@@ -438,7 +438,7 @@ class FormWithXSTable(BaseForm):
     def update_cross_section_table_header(self):
         """Update cross-section table header based on selected shape."""
         shape = self.get_widget_value(self.cross_section_shape)
-        if shape == dm.CrossSectionShape.YZ.value:
+        if shape == en.CrossSectionShape.YZ.value:
             cross_section_table_header = ["Y [m]", "Z [m]"]
         else:
             cross_section_table_header = ["Height [m]", "Width [m]"]
