@@ -24,6 +24,7 @@ from qgis.PyQt.QtWidgets import (
 )
 
 import threedi_schematisation_editor.data_models as dm
+import threedi_schematisation_editor.enumerators as en
 from threedi_schematisation_editor.utils import (
     NumericItemDelegate,
     connect_signal,
