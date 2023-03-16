@@ -1330,14 +1330,28 @@ class CrossSectionLocationForm(FormWithXSTable):
                     before_bank_level = before_xs["bank_level"]
                     after_reference_level = after_xs["reference_level"]
                     after_bank_level = after_xs["bank_level"]
-                    reference_level = round(
-                        before_reference_level
-                        + ((after_reference_level - before_reference_level) * interpolation_coefficient),
-                        3,
-                    )
-                    bank_level = round(
-                        before_bank_level + ((after_bank_level - before_bank_level) * interpolation_coefficient), 3
-                    )
+                    if before_reference_level != NULL and after_reference_level != NULL:
+                        reference_level = round(
+                            before_reference_level
+                            + ((after_reference_level - before_reference_level) * interpolation_coefficient),
+                            3,
+                        )
+                    elif before_reference_level != NULL and after_reference_level == NULL:
+                        reference_level = before_reference_level
+                    elif before_reference_level == NULL and after_reference_level != NULL:
+                        reference_level = after_reference_level
+                    else:
+                        reference_level = NULL
+                    if before_bank_level != NULL and after_bank_level != NULL:
+                        bank_level = round(
+                            before_bank_level + ((after_bank_level - before_bank_level) * interpolation_coefficient), 3
+                        )
+                    elif before_bank_level != NULL and after_bank_level == NULL:
+                        bank_level = before_bank_level
+                    elif before_bank_level == NULL and after_bank_level != NULL:
+                        bank_level = after_bank_level
+                    else:
+                        bank_level = NULL
                 self.feature["reference_level"] = reference_level
                 self.feature["bank_level"] = bank_level
                 self.feature["cross_section_shape"] = closest_existing_cross_section["cross_section_shape"]
