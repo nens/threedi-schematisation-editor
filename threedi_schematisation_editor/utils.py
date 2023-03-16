@@ -410,6 +410,9 @@ def cross_section_table_values(cross_section_table):
 @qgsfunction(args="auto", group="Custom")
 def cross_section_max_height(feature, parent):
     """Get max height value."""
+    shape_value = feature["cross_section_shape"]
+    if shape_value not in dm.TABLE_SHAPES:
+        return feature["cross_section_height"]
     table = feature["cross_section_table"]
     height_list, width_list = cross_section_table_values(table)
     return max(height_list)
@@ -418,6 +421,9 @@ def cross_section_max_height(feature, parent):
 @qgsfunction(args="auto", group="Custom")
 def cross_section_max_width(feature, parent):
     """Get max width value."""
+    shape_value = feature["cross_section_shape"]
+    if shape_value not in dm.TABLE_SHAPES:
+        return feature["cross_section_width"]
     table = feature["cross_section_table"]
     height_list, width_list = cross_section_table_values(table)
     return max(width_list)
