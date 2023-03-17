@@ -408,7 +408,7 @@ def cross_section_table_values(cross_section_table):
     return height_list, width_list
 
 
-@qgsfunction(args="auto", group="Custom")
+@qgsfunction(args="auto", group="3Di")
 def cross_section_max_height(feature, parent):
     """Get max height value."""
     shape_value = feature["cross_section_shape"]
@@ -419,7 +419,7 @@ def cross_section_max_height(feature, parent):
     return max(height_list)
 
 
-@qgsfunction(args="auto", group="Custom")
+@qgsfunction(args="auto", group="3Di")
 def cross_section_max_width(feature, parent):
     """Get max width value."""
     shape_value = feature["cross_section_shape"]
@@ -430,7 +430,7 @@ def cross_section_max_width(feature, parent):
     return max(width_list)
 
 
-@qgsfunction(args="auto", group="Custom")
+@qgsfunction(args="auto", group="3Di")
 def cross_section_label(feature, parent):
     """Create label with max height and max width out of cross-section table values."""
     label = ""
@@ -444,7 +444,9 @@ def cross_section_label(feature, parent):
     label += shape_value_and_name
     width = feature["cross_section_width"]
     height = feature["cross_section_height"]
-    if shape_value in {en.CrossSectionShape.OPEN_RECTANGLE.value, en.CrossSectionShape.CLOSED_RECTANGLE.value}:
+    if shape_value == en.CrossSectionShape.CLOSED_RECTANGLE.value:
+        label += f"w: {width:.2f}"
+    elif shape_value == en.CrossSectionShape.OPEN_RECTANGLE.value:
         label += f"w: {width:.2f}\nh: {height:.2f}"
     elif shape_value == en.CrossSectionShape.CIRCLE.value:
         label += f"Ø{width:.2f}"
@@ -459,7 +461,7 @@ def cross_section_label(feature, parent):
     return label
 
 
-@qgsfunction(args="auto", group="Custom")
+@qgsfunction(args="auto", group="3Di")
 def diameter_label(feature, parent):
     """Create label with diameter value."""
     label = ""
@@ -484,7 +486,7 @@ def diameter_label(feature, parent):
     return label
 
 
-@qgsfunction(args="auto", group="Custom")
+@qgsfunction(args="auto", group="3Di")
 def width_label(feature, parent):
     """Create label with width value."""
     label = ""
