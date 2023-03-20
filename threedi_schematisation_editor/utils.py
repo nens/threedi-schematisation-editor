@@ -396,7 +396,7 @@ def open_edit_form(dialog, layer, feature):
     plugin.layer_manager.populate_edit_form(dialog, layer, feature)
 
 
-def cross_section_table_values(cross_section_table):
+def cross_section_table_values(cross_section_table, shape_value):
     """Get height and width values."""
     height_list, width_list = [], []
     for row in cross_section_table.split("\n"):
@@ -405,6 +405,8 @@ def cross_section_table_values(cross_section_table):
         width = float(width_str)
         height_list.append(height)
         width_list.append(width)
+    if shape_value == en.CrossSectionShape.YZ.value:
+        height_list, width_list = width_list, height_list
     return height_list, width_list
 
 
@@ -415,7 +417,7 @@ def cross_section_max_height(feature, parent):
     if shape_value not in dm.TABLE_SHAPES:
         return feature["cross_section_height"]
     table = feature["cross_section_table"]
-    height_list, width_list = cross_section_table_values(table)
+    height_list, width_list = cross_section_table_values(table, shape_value)
     return max(height_list)
 
 
@@ -426,7 +428,7 @@ def cross_section_max_width(feature, parent):
     if shape_value not in dm.TABLE_SHAPES:
         return feature["cross_section_width"]
     table = feature["cross_section_table"]
-    height_list, width_list = cross_section_table_values(table)
+    height_list, width_list = cross_section_table_values(table, shape_value)
     return max(width_list)
 
 
@@ -454,7 +456,7 @@ def cross_section_label(feature, parent):
         label += f"w: {width:.2f}\nh: {width*1.5:.2f}"
     elif shape_value in dm.TABLE_SHAPES:
         table = feature["cross_section_table"]
-        height_list, width_list = cross_section_table_values(table)
+        height_list, width_list = cross_section_table_values(table, shape_value)
         max_height = max(height_list)
         max_width = max(width_list)
         label += f"w: {max_width:.2f}\nh: {max_height:.2f}"
@@ -470,15 +472,17 @@ def diameter_label(feature, parent):
         return label
     width = feature["cross_section_width"]
     height = feature["cross_section_height"]
-    if shape_value in {en.CrossSectionShape.OPEN_RECTANGLE.value, en.CrossSectionShape.CLOSED_RECTANGLE.value}:
-        label += f"rect {width*1000:.0f}x{height*1000:.0f}"
+    if shape_value == en.CrossSectionShape.CLOSED_RECTANGLE.value:
+        label += f"rect {width * 1000:.0f}x{height * 1000:.0f}"
+    elif shape_value == en.CrossSectionShape.OPEN_RECTANGLE.value:
+        label += f"rect {width * 1000:.0f}"
     elif shape_value == en.CrossSectionShape.CIRCLE.value:
         label += f"Ø{width*1000:.0f}"
     elif shape_value == en.CrossSectionShape.EGG.value:
         label += f"egg {width*1000:.0f}/{width * 1000 * 1.5:.3f}"
     elif shape_value in dm.TABLE_SHAPES:
         table = feature["cross_section_table"]
-        height_list, width_list = cross_section_table_values(table)
+        height_list, width_list = cross_section_table_values(table, shape_value)
         max_height = max(height_list)
         max_width = max(width_list)
         label += "tab " if shape_value != en.CrossSectionShape.YZ.value else "yz "
@@ -502,7 +506,7 @@ def width_label(feature, parent):
         label += f"w: {width:.2f} (egg)"
     elif shape_value in dm.TABLE_SHAPES:
         table = feature["cross_section_table"]
-        height_list, width_list = cross_section_table_values(table)
+        height_list, width_list = cross_section_table_values(table, shape_value)
         max_width = max(width_list)
         label += f"w: {max_width:.2f} "
         label += "(tab)" if shape_value != en.CrossSectionShape.YZ.value else "(yz)"
