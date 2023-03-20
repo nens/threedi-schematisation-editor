@@ -12,7 +12,7 @@
       <end></end>
     </fixedRange>
   </temporal>
-  <renderer-v2 enableorderby="0" referencescale="-1" symbollevels="0" type="graduatedSymbol" graduatedMethod="GraduatedSize" attr="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;CASE WHEN cross_section_shape = 1 THEN to_real(cross_section_width)&#xd;&#xa;&#x9;&#x9;WHEN cross_section_shape = 2 THEN to_real(cross_section_width) &#xd;&#xa;&#x9;&#x9;WHEN cross_section_shape = 3 THEN to_real(cross_section_width)&#xd;&#xa;&#x9;&#x9;WHEN cross_section_shape in (5, 6) THEN &#xd;&#xa;&#x9;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;array_first(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;cross_section_width,&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;' '&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;END, &#xd;&#xa; &#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)&#xd;&#xa;&#xd;&#xa;" forceraster="0">
+  <renderer-v2 enableorderby="0" referencescale="-1" symbollevels="0" type="graduatedSymbol" graduatedMethod="GraduatedSize" attr="coalesce(cross_section_max_width(), 1)" forceraster="0">
     <ranges>
       <range lower="0.000000000000000" upper="0.250000000000000" label="&lt; 0.25" symbol="0" render="true"/>
       <range lower="0.250000000000000" upper="0.500000000000000" label="0.25-0.5" symbol="1" render="true"/>
@@ -91,19 +91,6 @@
           <prop k="tweak_dash_pattern_on_corners" v="0"/>
           <prop k="use_custom_dash" v="0"/>
           <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties" type="Map">
-                <Option name="outlineWidth" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)"/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-              </Option>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
         </layer>
       </symbol>
       <symbol name="1" alpha="1" clip_to_extent="1" type="line" force_rhr="0">
@@ -171,19 +158,6 @@
           <prop k="tweak_dash_pattern_on_corners" v="0"/>
           <prop k="use_custom_dash" v="0"/>
           <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties" type="Map">
-                <Option name="outlineWidth" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)"/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-              </Option>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
         </layer>
       </symbol>
       <symbol name="2" alpha="1" clip_to_extent="1" type="line" force_rhr="0">
@@ -251,19 +225,6 @@
           <prop k="tweak_dash_pattern_on_corners" v="0"/>
           <prop k="use_custom_dash" v="0"/>
           <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties" type="Map">
-                <Option name="outlineWidth" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)"/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-              </Option>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
         </layer>
       </symbol>
       <symbol name="3" alpha="1" clip_to_extent="1" type="line" force_rhr="0">
@@ -331,19 +292,6 @@
           <prop k="tweak_dash_pattern_on_corners" v="0"/>
           <prop k="use_custom_dash" v="0"/>
           <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties" type="Map">
-                <Option name="outlineWidth" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)"/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-              </Option>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
         </layer>
       </symbol>
       <symbol name="4" alpha="1" clip_to_extent="1" type="line" force_rhr="0">
@@ -411,19 +359,6 @@
           <prop k="tweak_dash_pattern_on_corners" v="0"/>
           <prop k="use_custom_dash" v="0"/>
           <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties" type="Map">
-                <Option name="outlineWidth" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)"/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-              </Option>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
         </layer>
       </symbol>
       <symbol name="5" alpha="1" clip_to_extent="1" type="line" force_rhr="0">
@@ -491,19 +426,6 @@
           <prop k="tweak_dash_pattern_on_corners" v="0"/>
           <prop k="use_custom_dash" v="0"/>
           <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties" type="Map">
-                <Option name="outlineWidth" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)"/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-              </Option>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
         </layer>
       </symbol>
       <symbol name="6" alpha="1" clip_to_extent="1" type="line" force_rhr="0">
@@ -571,19 +493,6 @@
           <prop k="tweak_dash_pattern_on_corners" v="0"/>
           <prop k="use_custom_dash" v="0"/>
           <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties" type="Map">
-                <Option name="outlineWidth" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)"/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-              </Option>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
         </layer>
       </symbol>
       <symbol name="7" alpha="1" clip_to_extent="1" type="line" force_rhr="0">
@@ -651,19 +560,6 @@
           <prop k="tweak_dash_pattern_on_corners" v="0"/>
           <prop k="use_custom_dash" v="0"/>
           <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties" type="Map">
-                <Option name="outlineWidth" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)"/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-              </Option>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
         </layer>
       </symbol>
       <symbol name="8" alpha="1" clip_to_extent="1" type="line" force_rhr="0">
@@ -731,19 +627,6 @@
           <prop k="tweak_dash_pattern_on_corners" v="0"/>
           <prop k="use_custom_dash" v="0"/>
           <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties" type="Map">
-                <Option name="outlineWidth" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)"/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-              </Option>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
         </layer>
       </symbol>
       <symbol name="9" alpha="1" clip_to_extent="1" type="line" force_rhr="0">
@@ -811,19 +694,6 @@
           <prop k="tweak_dash_pattern_on_corners" v="0"/>
           <prop k="use_custom_dash" v="0"/>
           <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties" type="Map">
-                <Option name="outlineWidth" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)"/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-              </Option>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
         </layer>
       </symbol>
     </symbols>
@@ -893,19 +763,6 @@
           <prop k="tweak_dash_pattern_on_corners" v="0"/>
           <prop k="use_custom_dash" v="0"/>
           <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties" type="Map">
-                <Option name="outlineWidth" type="Map">
-                  <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="coalesce(scale_exp( to_real(&quot;cross_section_width&quot;), 0.1, 1, 0.1, 3, 0.57), 0.4)"/>
-                  <Option name="type" type="int" value="3"/>
-                </Option>
-              </Option>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
         </layer>
       </symbol>
     </source-symbol>
