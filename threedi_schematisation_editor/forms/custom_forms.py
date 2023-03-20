@@ -24,6 +24,7 @@ from qgis.PyQt.QtWidgets import (
 )
 
 import threedi_schematisation_editor.data_models as dm
+import threedi_schematisation_editor.enumerators as en
 from threedi_schematisation_editor.utils import (
     NumericItemDelegate,
     connect_signal,
@@ -438,7 +439,7 @@ class FormWithXSTable(BaseForm):
     def update_cross_section_table_header(self):
         """Update cross-section table header based on selected shape."""
         shape = self.get_widget_value(self.cross_section_shape)
-        if shape == dm.CrossSectionShape.YZ.value:
+        if shape == en.CrossSectionShape.YZ.value:
             cross_section_table_header = ["Y [m]", "Z [m]"]
         else:
             cross_section_table_header = ["Height [m]", "Width [m]"]

@@ -411,7 +411,7 @@ class ModelDataConverter:
             src_xs_def_width = xs_def_feat["width"]
             if src_xs_def_shape in dm.TABLE_SHAPES and src_xs_def_height and src_xs_def_width:
                 table_zipp = zip(src_xs_def_height.split(), src_xs_def_width.split())
-                if src_xs_def_shape == dm.CrossSectionShape.YZ.value:
+                if src_xs_def_shape == en.CrossSectionShape.YZ.value:
                     xs_def_table = "\n".join(f"{w}, {h}" for h, w in table_zipp)
                 else:
                     xs_def_table = "\n".join(f"{h}, {w}" for h, w in table_zipp)
@@ -589,7 +589,7 @@ class ModelDataConverter:
                 if src_xs_def_shape in dm.TABLE_SHAPES and src_xs_def_table:
                     parsed_table = [row.split(",") for row in src_xs_def_table.split("\n")]
                     height_values, width_values = list(zip(*parsed_table))
-                    if src_xs_def_shape == dm.CrossSectionShape.YZ.value:
+                    if src_xs_def_shape == en.CrossSectionShape.YZ.value:
                         height_values, width_values = width_values, height_values
                     xs_def_height = " ".join(hv.strip() for hv in height_values)
                     xs_def_width = " ".join(wv.strip() for wv in width_values)

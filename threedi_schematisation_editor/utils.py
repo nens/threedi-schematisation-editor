@@ -35,6 +35,7 @@ from qgis.PyQt.QtWidgets import QFileDialog, QItemDelegate, QLineEdit
 from qgis.utils import plugins, qgsfunction
 
 import threedi_schematisation_editor.data_models as dm
+import threedi_schematisation_editor.enumerators as en
 
 field_types_mapping = {
     bool: QVariant.Bool,
@@ -395,43 +396,72 @@ def open_edit_form(dialog, layer, feature):
     plugin.layer_manager.populate_edit_form(dialog, layer, feature)
 
 
-@qgsfunction(args="auto", group="Custom")
+def cross_section_table_values(cross_section_table):
+    """Get height and width values."""
+    height_list, width_list = [], []
+    for row in cross_section_table.split("\n"):
+        height_str, width_str = row.split(",")
+        height = float(height_str)
+        width = float(width_str)
+        height_list.append(height)
+        width_list.append(width)
+    return height_list, width_list
+
+
+@qgsfunction(args="auto", group="3Di")
+def cross_section_max_height(feature, parent):
+    """Get max height value."""
+    shape_value = feature["cross_section_shape"]
+    if shape_value not in dm.TABLE_SHAPES:
+        return feature["cross_section_height"]
+    table = feature["cross_section_table"]
+    height_list, width_list = cross_section_table_values(table)
+    return max(height_list)
+
+
+@qgsfunction(args="auto", group="3Di")
+def cross_section_max_width(feature, parent):
+    """Get max width value."""
+    shape_value = feature["cross_section_shape"]
+    if shape_value not in dm.TABLE_SHAPES:
+        return feature["cross_section_width"]
+    table = feature["cross_section_table"]
+    height_list, width_list = cross_section_table_values(table)
+    return max(width_list)
+
+
+@qgsfunction(args="auto", group="3Di")
 def cross_section_label(feature, parent):
     """Create label with max height and max width out of cross-section table values."""
     label = ""
     shape_value = feature["cross_section_shape"]
-    if not shape_value:
+    if shape_value not in dm.ALL_SHAPES:
         return label
-    shape_name = dm.CrossSectionShape(shape_value).name.lower().replace("_", " ")
+    shape_name = en.CrossSectionShape(shape_value).name.replace("_", " ")
+    if shape_value != en.CrossSectionShape.YZ.value:
+        shape_name = shape_name.capitalize()
     shape_value_and_name = f"{shape_value}: {shape_name}\n"
     label += shape_value_and_name
     width = feature["cross_section_width"]
     height = feature["cross_section_height"]
-    if shape_value in {dm.CrossSectionShape.OPEN_RECTANGLE.value, dm.CrossSectionShape.CLOSED_RECTANGLE.value}:
+    if shape_value == en.CrossSectionShape.CLOSED_RECTANGLE.value:
         label += f"w: {width:.2f}\nh: {height:.2f}"
-    elif shape_value == dm.CrossSectionShape.CIRCLE.value:
+    elif shape_value == en.CrossSectionShape.OPEN_RECTANGLE.value:
+        label += f"w: {width:.2f}"
+    elif shape_value == en.CrossSectionShape.CIRCLE.value:
         label += f"Ø{width:.2f}"
-    elif shape_value == dm.CrossSectionShape.EGG.value:
+    elif shape_value in {en.CrossSectionShape.EGG.value, en.CrossSectionShape.INVERTED_EGG.value}:
         label += f"w: {width:.2f}\nh: {width*1.5:.2f}"
-    elif shape_value in [
-        dm.CrossSectionShape.TABULATED_RECTANGLE.value,
-        dm.CrossSectionShape.TABULATED_TRAPEZIUM.value,
-    ]:
+    elif shape_value in dm.TABLE_SHAPES:
         table = feature["cross_section_table"]
-        height_list, width_list = [], []
-        for row in table.split("\n"):
-            height_str, width_str = row.split(",")
-            height = float(height_str)
-            width = float(width_str)
-            height_list.append(height)
-            width_list.append(width)
+        height_list, width_list = cross_section_table_values(table)
         max_height = max(height_list)
         max_width = max(width_list)
         label += f"w: {max_width:.2f}\nh: {max_height:.2f}"
     return label
 
 
-@qgsfunction(args="auto", group="Custom")
+@qgsfunction(args="auto", group="3Di")
 def diameter_label(feature, parent):
     """Create label with diameter value."""
     label = ""
@@ -440,31 +470,23 @@ def diameter_label(feature, parent):
         return label
     width = feature["cross_section_width"]
     height = feature["cross_section_height"]
-    if shape_value in {dm.CrossSectionShape.OPEN_RECTANGLE.value, dm.CrossSectionShape.CLOSED_RECTANGLE.value}:
+    if shape_value in {en.CrossSectionShape.OPEN_RECTANGLE.value, en.CrossSectionShape.CLOSED_RECTANGLE.value}:
         label += f"rect {width*1000:.0f}x{height*1000:.0f}"
-    elif shape_value == dm.CrossSectionShape.CIRCLE.value:
+    elif shape_value == en.CrossSectionShape.CIRCLE.value:
         label += f"Ø{width*1000:.0f}"
-    elif shape_value == dm.CrossSectionShape.EGG.value:
+    elif shape_value == en.CrossSectionShape.EGG.value:
         label += f"egg {width*1000:.0f}/{width * 1000 * 1.5:.3f}"
-    elif shape_value in [
-        dm.CrossSectionShape.TABULATED_RECTANGLE.value,
-        dm.CrossSectionShape.TABULATED_TRAPEZIUM.value,
-    ]:
+    elif shape_value in dm.TABLE_SHAPES:
         table = feature["cross_section_table"]
-        height_list, width_list = [], []
-        for row in table.split("\n"):
-            height_str, width_str = row.split(",")
-            height = float(height_str)
-            width = float(width_str)
-            height_list.append(height)
-            width_list.append(width)
+        height_list, width_list = cross_section_table_values(table)
         max_height = max(height_list)
         max_width = max(width_list)
-        label += f"tab {max_width*1000:.0f}/{max_height*1000:.0f}"
+        label += "tab " if shape_value != en.CrossSectionShape.YZ.value else "yz "
+        label += f"{max_width*1000:.0f}/{max_height*1000:.0f}"
     return label
 
 
-@qgsfunction(args="auto", group="Custom")
+@qgsfunction(args="auto", group="3Di")
 def width_label(feature, parent):
     """Create label with width value."""
     label = ""
@@ -472,24 +494,18 @@ def width_label(feature, parent):
     if not shape_value:
         return label
     width = feature["cross_section_width"]
-    if shape_value in {dm.CrossSectionShape.OPEN_RECTANGLE.value, dm.CrossSectionShape.CLOSED_RECTANGLE.value}:
+    if shape_value in {en.CrossSectionShape.OPEN_RECTANGLE.value, en.CrossSectionShape.CLOSED_RECTANGLE.value}:
         label += f"w: {width:.2f} (rect)"
-    elif shape_value == dm.CrossSectionShape.CIRCLE.value:
+    elif shape_value == en.CrossSectionShape.CIRCLE.value:
         label += f"Ø{width:.2f}"
-    elif shape_value == dm.CrossSectionShape.EGG.value:
+    elif shape_value in {en.CrossSectionShape.EGG.value, en.CrossSectionShape.INVERTED_EGG.value}:
         label += f"w: {width:.2f} (egg)"
-    elif shape_value in [
-        dm.CrossSectionShape.TABULATED_RECTANGLE.value,
-        dm.CrossSectionShape.TABULATED_TRAPEZIUM.value,
-    ]:
+    elif shape_value in dm.TABLE_SHAPES:
         table = feature["cross_section_table"]
-        width_list = []
-        for row in table.split("\n"):
-            height_str, width_str = row.split(",")
-            width = float(width_str)
-            width_list.append(width)
+        height_list, width_list = cross_section_table_values(table)
         max_width = max(width_list)
-        label += f"w: {max_width:.2f} (tab)"
+        label += f"w: {max_width:.2f} "
+        label += "(tab)" if shape_value != en.CrossSectionShape.YZ.value else "(yz)"
     return label
 
 
@@ -820,18 +836,12 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
         related_widget.setDisabled(True)
     cross_section_shape = custom_form.get_widget_value(cross_section_shape_widget)
     custom_form.update_cross_section_table_header()
-    if cross_section_shape == dm.CrossSectionShape.CIRCLE.value:
+    if cross_section_shape == en.CrossSectionShape.CIRCLE.value:
         cross_section_width_label_widget.setText("Diameter [m]")
     else:
         cross_section_width_label_widget.setText("Width [m]")
     if custom_form.layer.isEditable():
-        if cross_section_shape in {
-            dm.CrossSectionShape.CLOSED_RECTANGLE.value,
-            dm.CrossSectionShape.OPEN_RECTANGLE.value,
-            dm.CrossSectionShape.CIRCLE.value,
-            dm.CrossSectionShape.EGG.value,
-            dm.CrossSectionShape.INVERTED_EGG.value,
-        }:
+        if cross_section_shape in dm.NON_TABLE_SHAPES:
             cross_section_width_widget.setEnabled(True)
             cross_section_width_clear_widget.setEnabled(True)
             cross_section_width_label_widget.setEnabled(True)
@@ -841,16 +851,12 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
             cross_section_table_widget_delete.setDisabled(True)
             cross_section_table_label_widget.setDisabled(True)
             if cross_section_shape in {
-                dm.CrossSectionShape.CLOSED_RECTANGLE.value,
+                en.CrossSectionShape.CLOSED_RECTANGLE.value,
             }:
                 cross_section_height_widget.setEnabled(True)
                 cross_section_height_clear_widget.setEnabled(True)
                 cross_section_height_label_widget.setEnabled(True)
-        elif cross_section_shape in {
-            dm.CrossSectionShape.TABULATED_RECTANGLE.value,
-            dm.CrossSectionShape.TABULATED_TRAPEZIUM.value,
-            dm.CrossSectionShape.YZ.value,
-        }:
+        elif cross_section_shape in dm.TABLE_SHAPES:
             cross_section_width_widget.setDisabled(True)
             cross_section_width_clear_widget.setDisabled(True)
             cross_section_width_label_widget.setDisabled(True)

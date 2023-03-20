@@ -20,6 +20,8 @@ from threedi_schematisation_editor.utils import (
     add_layer_to_group,
     create_tree_group,
     cross_section_label,
+    cross_section_max_height,
+    cross_section_max_width,
     diameter_label,
     get_form_ui_path,
     get_multiple_qml_style_paths,
@@ -223,6 +225,8 @@ class LayersManager:
         QgsExpression.registerFunction(cross_section_label)
         QgsExpression.registerFunction(diameter_label)
         QgsExpression.registerFunction(width_label)
+        QgsExpression.registerFunction(cross_section_max_height)
+        QgsExpression.registerFunction(cross_section_max_width)
 
     @staticmethod
     def unregister_custom_functions():
@@ -230,6 +234,8 @@ class LayersManager:
         QgsExpression.unregisterFunction("cross_section_label")
         QgsExpression.unregisterFunction("diameter_label")
         QgsExpression.unregisterFunction("width_label")
+        QgsExpression.unregisterFunction("cross_section_max_height")
+        QgsExpression.unregisterFunction("cross_section_max_width")
 
     def create_groups(self):
         """Creating all User Layers groups."""
