@@ -14,16 +14,16 @@
   </temporal>
   <renderer-v2 enableorderby="0" referencescale="-1" symbollevels="0" type="graduatedSymbol" graduatedMethod="GraduatedSize" attr="coalesce(cross_section_max_width(), 1)" forceraster="0">
     <ranges>
-      <range lower="0.000000000000000" upper="0.250000000000000" label="&lt; 0.25" symbol="0" render="true"/>
-      <range lower="0.250000000000000" upper="0.500000000000000" label="0.25-0.5" symbol="1" render="true"/>
-      <range lower="0.500000000000000" upper="0.750000000000000" label="0.5-0.75" symbol="2" render="true"/>
-      <range lower="0.750000000000000" upper="1.000000000000000" label="0.75-1" symbol="3" render="true"/>
-      <range lower="1.000000000000000" upper="1.500000000000000" label="1-1.5" symbol="4" render="true"/>
-      <range lower="1.500000000000000" upper="2.000000000000000" label="1.5-2" symbol="5" render="true"/>
-      <range lower="2.000000000000000" upper="3.000000000000000" label="2-3" symbol="6" render="true"/>
-      <range lower="3.000000000000000" upper="4.000000000000000" label="3-4" symbol="7" render="true"/>
-      <range lower="4.000000000000000" upper="5.000000000000000" label="4-5" symbol="8" render="true"/>
-      <range lower="5.000000000000000" upper="99999.000000000000000" label=">5" symbol="9" render="true"/>
+      <range lower="0.000000000000000" upper="0.250000000000000" label="&lt; 0.25 m" symbol="0" render="true"/>
+      <range lower="0.250000000000000" upper="0.500000000000000" label="0.25-0.5 m" symbol="1" render="true"/>
+      <range lower="0.500000000000000" upper="0.750000000000000" label="0.5-0.75 m" symbol="2" render="true"/>
+      <range lower="0.750000000000000" upper="1.000000000000000" label="0.75-1 m" symbol="3" render="true"/>
+      <range lower="1.000000000000000" upper="1.500000000000000" label="1-1.5 m" symbol="4" render="true"/>
+      <range lower="1.500000000000000" upper="2.000000000000000" label="1.5-2 m" symbol="5" render="true"/>
+      <range lower="2.000000000000000" upper="3.000000000000000" label="2-3 m" symbol="6" render="true"/>
+      <range lower="3.000000000000000" upper="4.000000000000000" label="3-4 m" symbol="7" render="true"/>
+      <range lower="4.000000000000000" upper="5.000000000000000" label="4-5 m" symbol="8" render="true"/>
+      <range lower="5.000000000000000" upper="99999.000000000000000" label=">5 m" symbol="9" render="true"/>
     </ranges>
     <symbols>
       <symbol name="0" alpha="1" clip_to_extent="1" type="line" force_rhr="0">
