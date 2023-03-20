@@ -435,7 +435,7 @@ def cross_section_label(feature, parent):
     """Create label with max height and max width out of cross-section table values."""
     label = ""
     shape_value = feature["cross_section_shape"]
-    if shape_value is None:
+    if shape_value not in dm.ALL_SHAPES:
         return label
     shape_name = en.CrossSectionShape(shape_value).name.replace("_", " ")
     if shape_value != en.CrossSectionShape.YZ.value:
@@ -841,13 +841,7 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
     else:
         cross_section_width_label_widget.setText("Width [m]")
     if custom_form.layer.isEditable():
-        if cross_section_shape in {
-            en.CrossSectionShape.CLOSED_RECTANGLE.value,
-            en.CrossSectionShape.OPEN_RECTANGLE.value,
-            en.CrossSectionShape.CIRCLE.value,
-            en.CrossSectionShape.EGG.value,
-            en.CrossSectionShape.INVERTED_EGG.value,
-        }:
+        if cross_section_shape in dm.NON_TABLE_SHAPES:
             cross_section_width_widget.setEnabled(True)
             cross_section_width_clear_widget.setEnabled(True)
             cross_section_width_label_widget.setEnabled(True)
@@ -862,11 +856,7 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
                 cross_section_height_widget.setEnabled(True)
                 cross_section_height_clear_widget.setEnabled(True)
                 cross_section_height_label_widget.setEnabled(True)
-        elif cross_section_shape in {
-            en.CrossSectionShape.TABULATED_RECTANGLE.value,
-            en.CrossSectionShape.TABULATED_TRAPEZIUM.value,
-            en.CrossSectionShape.YZ.value,
-        }:
+        elif cross_section_shape in dm.TABLE_SHAPES:
             cross_section_width_widget.setDisabled(True)
             cross_section_width_clear_widget.setDisabled(True)
             cross_section_width_label_widget.setDisabled(True)

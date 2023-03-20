@@ -1175,11 +1175,19 @@ TABLE_MANNING = MappingProxyType(
     }
 )
 
-TABLE_SHAPES = [
+ALL_SHAPES = {e.value for e in CrossSectionShape}
+NON_TABLE_SHAPES = {
+    CrossSectionShape.CLOSED_RECTANGLE.value,
+    CrossSectionShape.OPEN_RECTANGLE.value,
+    CrossSectionShape.CIRCLE.value,
+    CrossSectionShape.EGG.value,
+    CrossSectionShape.INVERTED_EGG.value,
+}
+TABLE_SHAPES = {
     CrossSectionShape.TABULATED_RECTANGLE.value,
     CrossSectionShape.TABULATED_TRAPEZIUM.value,
     CrossSectionShape.YZ.value,
-]
+}
 
 MODEL_DEPENDENCIES = MappingProxyType(
     {
