@@ -435,7 +435,7 @@ def cross_section_label(feature, parent):
     """Create label with max height and max width out of cross-section table values."""
     label = ""
     shape_value = feature["cross_section_shape"]
-    if not shape_value:
+    if shape_value is None:
         return label
     shape_name = en.CrossSectionShape(shape_value).name.replace("_", " ")
     if shape_value != en.CrossSectionShape.YZ.value:
@@ -445,9 +445,9 @@ def cross_section_label(feature, parent):
     width = feature["cross_section_width"]
     height = feature["cross_section_height"]
     if shape_value == en.CrossSectionShape.CLOSED_RECTANGLE.value:
-        label += f"w: {width:.2f}"
-    elif shape_value == en.CrossSectionShape.OPEN_RECTANGLE.value:
         label += f"w: {width:.2f}\nh: {height:.2f}"
+    elif shape_value == en.CrossSectionShape.OPEN_RECTANGLE.value:
+        label += f"w: {width:.2f}"
     elif shape_value == en.CrossSectionShape.CIRCLE.value:
         label += f"Ø{width:.2f}"
     elif shape_value in {en.CrossSectionShape.EGG.value, en.CrossSectionShape.INVERTED_EGG.value}:
