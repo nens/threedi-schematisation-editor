@@ -466,7 +466,7 @@ def diameter_label(feature, parent):
     """Create label with diameter value."""
     label = ""
     shape_value = feature["cross_section_shape"]
-    if not shape_value:
+    if shape_value not in dm.ALL_SHAPES:
         return label
     width = feature["cross_section_width"]
     height = feature["cross_section_height"]
@@ -491,7 +491,7 @@ def width_label(feature, parent):
     """Create label with width value."""
     label = ""
     shape_value = feature["cross_section_shape"]
-    if not shape_value:
+    if shape_value not in dm.ALL_SHAPES:
         return label
     width = feature["cross_section_width"]
     if shape_value in {en.CrossSectionShape.OPEN_RECTANGLE.value, en.CrossSectionShape.CLOSED_RECTANGLE.value}:
