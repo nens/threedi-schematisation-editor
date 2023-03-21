@@ -97,7 +97,7 @@
                 </Option>
                 <Option name="outlineWidth" type="Map">
                   <Option name="active" value="true" type="bool"/>
-                  <Option name="expression" value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 1 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 2 then to_real(&quot;cross_section_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 3 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" type="QString"/>
+                  <Option name="expression" value="try( coalesce( scale_linear(cross_section_max_width(), 0.1, 1, 0.1, 3), 1),	1)" type="QString"/>
                   <Option name="type" value="3" type="int"/>
                 </Option>
               </Option>
@@ -182,7 +182,7 @@
                 </Option>
                 <Option name="outlineWidth" type="Map">
                   <Option name="active" value="true" type="bool"/>
-                  <Option name="expression" value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 1 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 2 then to_real(&quot;cross_section_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 3 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" type="QString"/>
+                  <Option name="expression" value="try( coalesce( scale_linear(cross_section_max_width(), 0.1, 1, 0.1, 3), 1),	1)" type="QString"/>
                   <Option name="type" value="3" type="int"/>
                 </Option>
               </Option>
@@ -267,14 +267,14 @@
                 </Option>
                 <Option name="outlineWidth" type="Map">
                   <Option name="active" value="true" type="bool"/>
-                  <Option name="expression" value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 1 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 2 then to_real(&quot;cross_section_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 3 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" type="QString"/>
+                  <Option name="expression" value="try( coalesce( scale_linear(cross_section_max_width(), 0.1, 1, 0.1, 3), 1),	1)" type="QString"/>
                   <Option name="type" value="3" type="int"/>
                 </Option>
               </Option>
               <Option name="type" value="collection" type="QString"/>
             </Option>
           </data_defined_properties>
-        </layer>
+		</layer>
       </symbol>
       <symbol clip_to_extent="1" name="3" alpha="1" force_rhr="0" type="line">
         <data_defined_properties>
@@ -352,7 +352,7 @@
                 </Option>
                 <Option name="outlineWidth" type="Map">
                   <Option name="active" value="true" type="bool"/>
-                  <Option name="expression" value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 1 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 2 then to_real(&quot;cross_section_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 3 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" type="QString"/>
+                  <Option name="expression" value="try( coalesce( scale_linear(cross_section_max_width(), 0.1, 1, 0.1, 3), 1),	1)" type="QString"/>
                   <Option name="type" value="3" type="int"/>
                 </Option>
               </Option>
@@ -437,7 +437,7 @@
                 </Option>
                 <Option name="outlineWidth" type="Map">
                   <Option name="active" value="true" type="bool"/>
-                  <Option name="expression" value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 1 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 2 then to_real(&quot;cross_section_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 3 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" type="QString"/>
+                  <Option name="expression" value="try( coalesce( scale_linear(cross_section_max_width(), 0.1, 1, 0.1, 3), 1),	1)" type="QString"/>
                   <Option name="type" value="3" type="int"/>
                 </Option>
               </Option>
@@ -524,7 +524,7 @@
                 </Option>
                 <Option name="outlineWidth" type="Map">
                   <Option name="active" value="true" type="bool"/>
-                  <Option name="expression" value="try(&#xd;&#xa;&#x9;coalesce(&#xd;&#xa;&#x9;&#x9;scale_linear(&#xd;&#xa;&#x9;&#x9;&#x9;case &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 1 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_height&quot;))/2.0&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 2 then to_real(&quot;cross_section_width&quot;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape = 3 then (to_real(&quot;cross_section_width&quot;) + to_real(&quot;cross_section_width&quot;)*1.5)/2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;when cross_section_shape in (5,6) then&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_width, ' ')))) &#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;+&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;to_real(array_last(array_sort(string_to_array(cross_section_height, ' '))))&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;) / 2.0&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;end&#xd;&#xa;&#x9;&#x9;&#x9;, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;1, &#xd;&#xa;&#x9;&#x9;&#x9;0.1, &#xd;&#xa;&#x9;&#x9;&#x9;3&#xd;&#xa;&#x9;&#x9;), &#xd;&#xa;&#x9;&#x9;1&#xd;&#xa;&#x9;), &#xd;&#xa;&#x9;1&#xd;&#xa;)" type="QString"/>
+                  <Option name="expression" value="try( coalesce( scale_linear(cross_section_max_width(), 0.1, 1, 0.1, 3), 1),	1)" type="QString"/>
                   <Option name="type" value="3" type="int"/>
                 </Option>
               </Option>
