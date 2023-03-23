@@ -658,7 +658,7 @@ def get_next_feature_id(layer):
     # Ensure the id attribute is unique
     try:
         next_id = max(layer.uniqueValues(id_idx)) + 1
-    except ValueError:
+    except (TypeError, ValueError):
         # this is the first feature
         next_id = 1
     return next_id
