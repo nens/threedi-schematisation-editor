@@ -1,11 +1,12 @@
 # Copyright (C) 2023 by Lutra Consulting
 import os.path
 
-from qgis.core import QgsProject
+from qgis.core import QgsApplication, QgsProject
 from qgis.PyQt.QtWidgets import QAction
 
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.conversion import ModelDataConverter
+from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager
 from threedi_schematisation_editor.utils import (
     ConversionError,
@@ -22,10 +23,10 @@ from threedi_schematisation_editor.utils import (
 
 
 def classFactory(iface):
-    return ThreediModelBuilderPlugin(iface)
+    return ThreediSchematisationEditorPlugin(iface)
 
 
-class ThreediModelBuilderPlugin:
+class ThreediSchematisationEditorPlugin:
     PLUGIN_NAME = "3Di Schematisation Editor"
     THREEDI_GPKG_VAR_NAME = "threedi_gpkg_var"
 
@@ -40,12 +41,14 @@ class ThreediModelBuilderPlugin:
         self.model_gpkg = None
         self.layer_manager = None
         self.form_factory = None
+        self.provider = ThreediSchematisationEditorProcessingProvider()
         self.project = QgsProject.instance()
         self.project.removeAll.connect(self.on_project_close)
         self.project.readProject.connect(self.on_3di_project_read)
         self.project.projectSaved.connect(self.on_3di_project_save)
 
     def initGui(self):
+        QgsApplication.processingRegistry().addProvider(self.provider)
         self.action_open = QAction("Open 3Di Geopackage", self.iface.mainWindow())
         self.action_open.triggered.connect(self.open_model_from_geopackage)
         self.action_import = QAction("Load from Spatialite", self.iface.mainWindow())
@@ -64,6 +67,7 @@ class ThreediModelBuilderPlugin:
         self.toggle_active_project_actions()
 
     def unload(self):
+        QgsApplication.processingRegistry().removeProvider(self.provider)
         self.iface.removeToolBarIcon(self.action_open)
         del self.action_open
         self.iface.removeToolBarIcon(self.action_import)
