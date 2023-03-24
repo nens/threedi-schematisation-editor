@@ -3,6 +3,7 @@ import os
 from types import MappingProxyType
 
 from qgis.core import (
+    Qgis,
     QgsExpression,
     QgsFeatureRequest,
     QgsProject,
@@ -154,11 +155,19 @@ class LayersManager:
         snap_config.setMode(QgsSnappingConfig.AdvancedConfiguration)
         snap_config.setIntersectionSnapping(True)
         individual_configs = snap_config.individualLayerSettings()
-        snap_type = (
-            QgsSnappingConfig.VertexFlag | QgsSnappingConfig.SegmentFlag
-            if layer_model == dm.PotentialBreach
-            else QgsSnappingConfig.VertexFlag
-        )
+        try:
+            snap_type = (
+                Qgis.SnappingTypes(Qgis.SnappingType.Vertex | Qgis.SnappingType.Segment)
+                if layer_model == dm.PotentialBreach
+                else Qgis.SnappingType.Vertex
+            )
+        except AttributeError:
+            # Backward compatibility for QGIS versions before introducing `Qgis.SnappingTypes`
+            snap_type = (
+                QgsSnappingConfig.VertexFlag | QgsSnappingConfig.SegmentFlag
+                if layer_model == dm.PotentialBreach
+                else QgsSnappingConfig.VertexFlag
+            )
         for layer in snapped_layers:
             try:
                 iconf = individual_configs[layer]
