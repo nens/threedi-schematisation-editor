@@ -228,6 +228,7 @@ class BaseForm(QObject):
                 fid = feature.id()
                 if not layer.isEditable():
                     layer.startEditing()
+                widget.setValue(widget.maximum())  # workaround for the issue #129
                 widget.clear()
                 layer.changeAttributeValue(fid, field_idx, NULL)
                 field_type = model_cls.__annotations__[field_name]
@@ -262,6 +263,7 @@ class BaseForm(QObject):
             else:
                 if isinstance(widget, (QgsSpinBox, QgsDoubleSpinBox)):
                     widget.setClearValueMode(widget.__class__.CustomValue, "")
+                widget.setValue(widget.maximum())  # workaround for the issue #129
                 widget.clear()
         elif isinstance(widget, QComboBox):
             item_idx = widget.findData(value if value != NULL else None)
