@@ -119,18 +119,19 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
             if not channel_id:
                 feedback.reportError(f"Error: invalid channel ID. Processing feature with FID {channel_fid} skipped.")
                 continue
-            channel_calc_type = channel_feat["calculation_type"]
-            if channel_calc_type not in calculation_type_max_exchange_lines:
+            calculation_type = channel_feat["calculation_type"]
+            if calculation_type not in calculation_type_max_exchange_lines:
                 feedback.reportError(
                     f"Error: invalid channel calculation type. Processing feature with FID {channel_fid} skipped."
                 )
                 continue
-            channel_calc_type_name = CalculationType(channel_calc_type).name
+            calculation_type_name = CalculationType(calculation_type).name
             channel_expression_text = f'"channel_id" = {channel_id}'
             channel_exchange_lines = list(get_features_by_expression(exchange_lines_lyr, channel_expression_text))
-            calc_type_limit = calculation_type_max_exchange_lines[channel_calc_type]
+            calc_type_limit = calculation_type_max_exchange_lines[calculation_type]
             if len(channel_exchange_lines) >= calc_type_limit:
-                feedback.reportError(error_template.format(channel_id, channel_calc_type, channel_calc_type_name, calc_type_limit))
+                error_msg = error_template.format(channel_id, calculation_type, calculation_type_name, calc_type_limit)
+                feedback.reportError(error_msg)
                 continue
             channel_geom = channel_feat.geometry()
             offset_geom = channel_geom.offsetCurve(offset_distance, 8, Qgis.JoinStyle.Bevel, 0.0)
