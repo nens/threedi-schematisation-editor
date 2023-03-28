@@ -142,5 +142,9 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
         if exchange_line_feats:
             exchange_lines_lyr.startEditing()
             exchange_lines_lyr.addFeatures(exchange_line_feats)
-            exchange_lines_lyr.commitChanges()
+            success = exchange_lines_lyr.commitChanges()
+            if not success:
+                commit_errors = exchange_lines_lyr.commitErrors()
+                commit_errors_message = "\n".join(commit_errors)
+                feedback.reportError(commit_errors_message)
         return {}
