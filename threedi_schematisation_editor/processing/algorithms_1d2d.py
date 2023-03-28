@@ -80,7 +80,7 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
                 )
             offset_distance = self.parameterAsDouble(parameters, self.OFFSET_DISTANCE, context)
             if offset_distance == 0:
-                invalid_parameters_messages.append("Offset distance have to be grater or lesser than 0")
+                invalid_parameters_messages.append("Offset distance cannot be 0")
             exchange_lines_lyr = self.parameterAsLayer(parameters, self.EXCHANGE_LINES, context)
             exchange_lines_names = {f.name() for f in exchange_lines_lyr.fields()}
             if "channel_id" not in exchange_lines_names:
@@ -110,7 +110,7 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
             CalculationType.DOUBLE_CONNECTED.value: 2,
         }
         error_template = (
-            "Error: channel {} with calculation type {} already has a maximum of {} exchange lines. "
+            "Error: channel {} with calculation type {} ({}) already has a maximum of {} exchange lines. "
             "Change the calculation type or remove exchange lines for this channel and try again."
         )
         for channel_feat in channels.getFeatures():
@@ -125,11 +125,12 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
                     f"Error: invalid channel calculation type. Processing feature with FID {channel_fid} skipped."
                 )
                 continue
+            channel_calc_type_name = CalculationType(channel_calc_type).name
             channel_expression_text = f'"channel_id" = {channel_id}'
             channel_exchange_lines = list(get_features_by_expression(exchange_lines_lyr, channel_expression_text))
             calc_type_limit = calculation_type_max_exchange_lines[channel_calc_type]
             if len(channel_exchange_lines) >= calc_type_limit:
-                feedback.reportError(error_template.format(channel_id, channel_calc_type, calc_type_limit))
+                feedback.reportError(error_template.format(channel_id, channel_calc_type, channel_calc_type_name, calc_type_limit))
                 continue
             channel_geom = channel_feat.geometry()
             offset_geom = channel_geom.offsetCurve(offset_distance, 8, Qgis.JoinStyle.Bevel, 0.0)
