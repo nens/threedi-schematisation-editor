@@ -1,7 +1,9 @@
 # Copyright (C) 2023 by Lutra Consulting
 from qgis.core import (
     Qgis,
+    QgsExpression,
     QgsFeature,
+    QgsFeatureRequest,
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,
@@ -11,7 +13,8 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
-from threedi_schematisation_editor.utils import get_next_feature_id
+from threedi_schematisation_editor.enumerators import CalculationType
+from threedi_schematisation_editor.utils import get_features_by_expression, get_next_feature_id
 
 
 class GenerateExchangeLines(QgsProcessingAlgorithm):
@@ -45,7 +48,10 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterFeatureSource(
-                self.INPUT_CHANNELS, self.tr("Input Channel layer"), [QgsProcessing.TypeVectorLine]
+                self.INPUT_CHANNELS,
+                self.tr("Input Channel layer"),
+                [QgsProcessing.TypeVectorLine],
+                defaultValue="Channel",
             )
         )
 
@@ -54,9 +60,35 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
         self.addParameter(offset_param)
         self.addParameter(
             QgsProcessingParameterVectorLayer(
-                self.EXCHANGE_LINES, self.tr("Exchange lines layer"), [QgsProcessing.TypeVectorLine]
+                self.EXCHANGE_LINES,
+                self.tr("Exchange lines layer"),
+                [QgsProcessing.TypeVectorLine],
+                defaultValue="Exchange line",
             )
         )
+
+    def checkParameterValues(self, parameters, context):
+        success, msg = super().checkParameterValues(parameters, context)
+        if success:
+            invalid_parameters_messages = []
+            channels = self.parameterAsSource(parameters, self.INPUT_CHANNELS, context)
+            required_channel_fields = {"id", "calculation_type"}
+            channels_field_names = {f.name() for f in channels.fields()}
+            if not required_channel_fields.issubset(channels_field_names):
+                invalid_parameters_messages.append(
+                    "Channel layer is missing required fields ('id' and/or 'calculation_type')"
+                )
+            offset_distance = self.parameterAsDouble(parameters, self.OFFSET_DISTANCE, context)
+            if offset_distance == 0:
+                invalid_parameters_messages.append("Offset distance cannot be 0")
+            exchange_lines_lyr = self.parameterAsLayer(parameters, self.EXCHANGE_LINES, context)
+            exchange_lines_names = {f.name() for f in exchange_lines_lyr.fields()}
+            if "channel_id" not in exchange_lines_names:
+                invalid_parameters_messages.append("Exchange line layer is missing required 'channel_id' field")
+            if invalid_parameters_messages:
+                success = False
+                msg = "\n".join(invalid_parameters_messages)
+        return success, msg
 
     def processAlgorithm(self, parameters, context, feedback):
         channels = self.parameterAsSource(parameters, self.INPUT_CHANNELS, context)
@@ -66,12 +98,41 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
         if offset_distance is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OFFSET_DISTANCE))
         exchange_lines_lyr = self.parameterAsLayer(parameters, self.EXCHANGE_LINES, context)
-        if exchange_lines_lyr is None or "channel_id" not in {f.name() for f in exchange_lines_lyr.fields()}:
+        if exchange_lines_lyr is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.EXCHANGE_LINES))
         exchange_line_feats = []
         exchange_lines_fields = exchange_lines_lyr.fields()
         current_exchange_line_id = get_next_feature_id(exchange_lines_lyr)
+        calculation_type_max_exchange_lines = {
+            CalculationType.ISOLATED.value: 0,
+            CalculationType.EMBEDDED.value: 0,
+            CalculationType.CONNECTED.value: 1,
+            CalculationType.DOUBLE_CONNECTED.value: 2,
+        }
+        error_template = (
+            "Error: channel {} with calculation type {} ({}) already has a maximum of {} exchange lines. "
+            "Change the calculation type or remove exchange lines for this channel and try again."
+        )
         for channel_feat in channels.getFeatures():
+            channel_fid = channel_feat.id()
+            channel_id = channel_feat["id"]
+            if not channel_id:
+                feedback.reportError(f"Error: invalid channel ID. Processing feature with FID {channel_fid} skipped.")
+                continue
+            calculation_type = channel_feat["calculation_type"]
+            if calculation_type not in calculation_type_max_exchange_lines:
+                feedback.reportError(
+                    f"Error: invalid channel calculation type. Processing feature with FID {channel_fid} skipped."
+                )
+                continue
+            calculation_type_name = CalculationType(calculation_type).name
+            channel_expression_text = f'"channel_id" = {channel_id}'
+            channel_exchange_lines = list(get_features_by_expression(exchange_lines_lyr, channel_expression_text))
+            calc_type_limit = calculation_type_max_exchange_lines[calculation_type]
+            if len(channel_exchange_lines) >= calc_type_limit:
+                error_msg = error_template.format(channel_id, calculation_type, calculation_type_name, calc_type_limit)
+                feedback.reportError(error_msg)
+                continue
             channel_geom = channel_feat.geometry()
             offset_geom = channel_geom.offsetCurve(offset_distance, 8, Qgis.JoinStyle.Bevel, 0.0)
             new_exchange_line = QgsFeature(exchange_lines_fields)
@@ -83,5 +144,9 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
         if exchange_line_feats:
             exchange_lines_lyr.startEditing()
             exchange_lines_lyr.addFeatures(exchange_line_feats)
-            exchange_lines_lyr.commitChanges()
+            success = exchange_lines_lyr.commitChanges()
+            if not success:
+                commit_errors = exchange_lines_lyr.commitErrors()
+                commit_errors_message = "\n".join(commit_errors)
+                feedback.reportError(commit_errors_message)
         return {}

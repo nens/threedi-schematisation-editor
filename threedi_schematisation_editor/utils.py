@@ -14,7 +14,9 @@ from qgis.core import (
     QgsCoordinateTransform,
     QgsDataSourceUri,
     QgsEditorWidgetSetup,
+    QgsExpression,
     QgsFeature,
+    QgsFeatureRequest,
     QgsField,
     QgsGeometry,
     QgsHillshadeRenderer,
@@ -662,6 +664,16 @@ def get_next_feature_id(layer):
         # this is the first feature
         next_id = 1
     return next_id
+
+
+def get_features_by_expression(layer, expression_text, with_geometry=False):
+    """Return iterator of the layer features matching to the given expression."""
+    expression = QgsExpression(expression_text)
+    request = QgsFeatureRequest(expression)
+    if not with_geometry:
+        request.setFlags(QgsFeatureRequest.NoGeometry)
+    feat_iterator = layer.getFeatures(request)
+    return feat_iterator
 
 
 def add_settings_entry(gpkg_path, **initial_fields_values):
