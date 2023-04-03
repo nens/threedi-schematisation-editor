@@ -414,7 +414,22 @@ def cross_section_table_values(cross_section_table, shape_value):
 
 @qgsfunction(args="auto", group="3Di")
 def cross_section_max_height(feature, parent):
-    """Get max height value."""
+    """
+    <p>Get maximum height of the cross-section.</p>
+    <br>
+    <p>Features must have the fields <i>cross_section_shape</i>, <i>cross_section_height</i>, and
+    <i>cross_section_table</i>.</p>
+    <br>
+    <p>The value returned depends on <i>cross_section_shape</i>:
+    <ul>
+        <li><i>None</i> for "Open rectangle"</li>
+        <li><i>cross_section_height</i> for "Closed rectangle"</li>
+        <li><i>cross_section_width</i> for "Circle"</li>
+        <li>1.5 * <i>cross_section_width</i> for "Egg" and "Inverted egg"</li>
+        <li>the maximum height value in <i>cross_section_table</i> for "Tabulated trapezium" and "Tabulated rectangle"</li>
+        <li>the maximum Z value in the <i>cross_section_table</i> for "YZ"</li>
+    </ul>
+    """
     shape_value = feature["cross_section_shape"]
     if shape_value not in dm.TABLE_SHAPES:
         return feature["cross_section_height"]
