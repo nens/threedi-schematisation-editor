@@ -43,13 +43,24 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
         return "1d2d"
 
     def shortHelpString(self):
-        return self.tr("Generate exchange lines from channel geometries")
+        return self.tr(
+            """
+            <p>This processing algorithm generates exchange lines for (a selection of) channels. The resulting exchange line's geometry is a copy of the input channel's geometry, at user specified distance from that channel (the GIS term for this is 'offset curve'). The resulting exchange lines is added to the exchange line layer, and the attribute 'channel_id' refers to the channel it was derived from.</p>
+            <h3>Parameters</h3>
+            <h4>Input channel layer</h4>
+            <p>Usually this is the Channel layer that is added to the project with the 3Di Schematisation Editor. Technically, any layer with a line geometry and the fields 'id' and 'calculation_type' can be used as input.</p>
+            <h4>Distance</h4>
+            <p>Offset distance in meters. A positive value will place the output exchange line to the left of the line, negative values will place it to the right.</p>
+            <h4>Exchange lines layer</h4>
+            <p>The layer to which the results are written. Usually this is the 'Exchange line' layer that is added to the project with the 3Di Schematisation Editor. Technically, any layer with a line geometry and the field 'channel_id' can be used.</p>
+            """
+        )
 
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterFeatureSource(
                 self.INPUT_CHANNELS,
-                self.tr("Input Channel layer"),
+                self.tr("Input channel layer"),
                 [QgsProcessing.TypeVectorLine],
                 defaultValue="Channel",
             )
