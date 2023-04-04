@@ -413,7 +413,7 @@ def cross_section_table_values(cross_section_table, shape_value):
 
 
 @qgsfunction(args="auto", group="3Di")
-def cross_section_max_height(feature, parent):
+def cross_section_max_height(feature, parent, shape, width, height, table):
     """
     <p>Get maximum height of the cross-section.</p>
     <br>
@@ -438,20 +438,48 @@ def cross_section_max_height(feature, parent):
     return max(height_list)
 
 
-@qgsfunction(args="auto", group="3Di")
-def cross_section_max_width(feature, parent):
-    """Get max width value."""
-    shape_value = feature["cross_section_shape"]
-    if shape_value not in dm.TABLE_SHAPES:
-        return feature["cross_section_width"]
-    table = feature["cross_section_table"]
-    height_list, width_list = cross_section_table_values(table, shape_value)
+@qgsfunction(args="auto", group="3Di", helpText="something")
+def cross_section_max_width(feature, parent, shape: int, width: float, table: str):
+    """
+    <p>Get maximum width of the cross-section.</p>
+    <br>
+    <p>Features must have the fields <i>cross_section_shape</i>, <i>cross_section_width</i>, and
+    <i>cross_section_table</i>.</p>
+    <br>
+    <p>The value returned depends on <i>cross_section_shape</i>:
+    <ul>
+        <li>
+            <i>cross_section_width</i> for <i>"Open rectangle"</i>, <i>"Closed rectangle"</i>, <i>"Circle"</i>,
+            <i>"Egg"</i> and "Inverted egg"</i>
+        </li>
+        <li>
+            the maximum width value in <i>cross_section_table</i> for "Tabulated trapezium" and "Tabulated rectangle"
+        </li>
+        <li>
+            the maximum Y value in the <i>cross_section_table</i> for "YZ"
+        </li>
+    </ul>
+    """
+    if shape not in dm.TABLE_SHAPES:
+        return width
+    height_list, width_list = cross_section_table_values(table, shape)
     return max(width_list)
 
 
 @qgsfunction(args="auto", group="3Di")
 def cross_section_label(feature, parent):
-    """Create label with max height and max width out of cross-section table values."""
+    """
+    <p>Create a multi-line label with the cross-section shape, max height and max width of the cross-section</p>
+    <br>
+    <p>
+        Features must have the fields <i>cross_section_shape</i>, <i>cross_section_width</i>,
+        <i>cross_section_height</i>, and <i>cross_section_table</i>.
+    </p>
+    <br>
+    <p>
+        If the shape value is invalid, an empty string is returned.
+    </p>
+    """
     label = ""
     shape_value = feature["cross_section_shape"]
     if shape_value not in dm.ALL_SHAPES:
@@ -482,7 +510,18 @@ def cross_section_label(feature, parent):
 
 @qgsfunction(args="auto", group="3Di")
 def diameter_label(feature, parent):
-    """Create label with diameter value."""
+    """
+    <p>Create a single line label describing the cross-section</p>
+    <br>
+    <p>
+        Features must have the fields <i>cross_section_shape</i>, <i>cross_section_width</i>,
+        <i>cross_section_height</i>, and <i>cross_section_table</i>.
+    </p>
+    <br>
+    <p>
+        If the shape value is invalid, an empty string is returned.
+    </p>
+    """
     label = ""
     shape_value = feature["cross_section_shape"]
     if shape_value not in dm.ALL_SHAPES:
@@ -497,6 +536,58 @@ def diameter_label(feature, parent):
         label += f"Ø{width*1000:.0f}"
     elif shape_value == en.CrossSectionShape.EGG.value:
         label += f"egg {width*1000:.0f}/{width * 1000 * 1.5:.3f}"
+    elif shape_value in dm.TABLE_SHAPES:
+        table = feature["cross_section_table"]
+        height_list, width_list = cross_section_table_values(table, shape_value)
+        max_height = max(height_list)
+        max_width = max(width_list)
+        label += "tab " if shape_value != en.CrossSectionShape.YZ.value else "yz "
+        label += f"{max_width*1000:.0f}/{max_height*1000:.0f}"
+    return label
+
+
+@qgsfunction(args="auto", group="3Di")
+def cross_section_label_single_line(feature, parent, units: str):
+    """
+    <p>Create a single line label describing the cross-section</p>
+    <br>
+    <p>
+        Features must have the fields <i>cross_section_shape</i>, <i>cross_section_width</i>,
+        <i>cross_section_height</i>, and <i>cross_section_table</i>.
+    </p>
+    <br>
+    <p>
+        If the shape value is invalid, an empty string is returned.
+    </p>
+    <h4>Syntax</h4>
+    <p>cross_section_label_single_line(units)</p>
+    <h4>Arguments</h4>
+    <p>units: 'mm' for millimeters or 'm' for meters</p>
+    """
+    label = ""
+    shape_value = feature["cross_section_shape"]
+    if shape_value not in dm.ALL_SHAPES:
+        return label
+    width = feature["cross_section_width"]
+    height = feature["cross_section_height"]
+    if units == "m":
+        width_text = f"{width:.2f}" if width else ""
+        height_text = f"{height:.2f}" if height else ""
+        height_text_egg = f"{1.5 * width:.2f}" if width else ""
+    elif units == "mm":
+        width_text = f"{width * 1000:.0f}" if width else ""
+        height_text = f"{height * 1000:.0f}" if height else ""
+        height_text_egg = f"{1.5 * width * 1000:.0f}" if width else ""
+    if shape_value == en.CrossSectionShape.CLOSED_RECTANGLE.value:
+        label += f"w x h: {width_text} x {height_text} {units} (closed rect)"
+    elif shape_value == en.CrossSectionShape.OPEN_RECTANGLE.value:
+        label += f"w: {width_text} {units} (open rect)"
+    elif shape_value == en.CrossSectionShape.CIRCLE.value:
+        label += f"Ø{width_text} {units} (circle)"
+    elif shape_value == en.CrossSectionShape.EGG.value:
+        label += f"w x h: {width_text} x {height_text_egg} {units} (egg)"
+    elif shape_value == en.CrossSectionShape.INVERTED_EGG.value:
+        label += f"w x h: {width_text} x {height_text_egg} {units} (inv egg)"
     elif shape_value in dm.TABLE_SHAPES:
         table = feature["cross_section_table"]
         height_list, width_list = cross_section_table_values(table, shape_value)
