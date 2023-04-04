@@ -43,13 +43,13 @@ class ModelObject:
     RELATED_RASTERS = tuple()
 
     @classmethod
-    def fields_namespace(cls):
+    def fields_namespace(cls) -> SimpleNamespace:
         field_names_dict = {k: k for k in cls.__annotations__.keys()}
         namespace = SimpleNamespace(**field_names_dict)
         return namespace
 
     @classmethod
-    def hidden_fields(cls):
+    def hidden_fields(cls) -> set:
         return set()
 
 
@@ -147,7 +147,7 @@ class Manhole(ModelObject):
     hydraulic_conductivity_out: Optional[float]
 
     @classmethod
-    def hidden_fields(cls):
+    def hidden_fields(cls) -> set:
         n = cls.fields_namespace()
         return {n.exchange_thickness, n.hydraulic_conductivity_in, n.hydraulic_conductivity_out}
 
@@ -415,7 +415,7 @@ class Pipe(ModelObject):
     hydraulic_conductivity_out: Optional[float]
 
     @classmethod
-    def hidden_fields(cls):
+    def hidden_fields(cls) -> set:
         n = cls.fields_namespace()
         return {n.exchange_thickness, n.hydraulic_conductivity_in, n.hydraulic_conductivity_out}
 
@@ -476,7 +476,7 @@ class Channel(ModelObject):
     hydraulic_conductivity_out: Optional[float]
 
     @classmethod
-    def hidden_fields(cls):
+    def hidden_fields(cls) -> set:
         n = cls.fields_namespace()
         return {n.exchange_thickness, n.hydraulic_conductivity_in, n.hydraulic_conductivity_out}
 
@@ -778,7 +778,7 @@ class GlobalSettings(ModelObject):
     vegetation_drag_settings_id: Optional[int]
 
     @classmethod
-    def hidden_fields(cls):
+    def hidden_fields(cls) -> set:
         n = cls.fields_namespace()
         return {n.vegetation_drag_settings_id}
 

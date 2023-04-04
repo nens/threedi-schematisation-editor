@@ -280,9 +280,6 @@ def set_initial_layer_configuration(layer, model_cls):
 
     model_hidden_fields = model_cls.hidden_fields()
     model_hidden_fields.add("fid")
-    print(model_hidden_fields)
-    if len(model_hidden_fields) > 1:
-        print([c.name for c in columns])
     for column in columns:
         column_name = column.name
         if column_name in model_hidden_fields:
