@@ -186,8 +186,3 @@ class ZoomCategories(Enum):
     MEDIUM_VISIBILITY = 3
     HIGH_VISIBILITY = 4
     HIGHEST_VISIBILITY = 5
-
-
-class ObstacleType(Enum):
-    OTHER = 0
-    LEVEE = 1
