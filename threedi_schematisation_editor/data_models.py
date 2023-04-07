@@ -1128,7 +1128,7 @@ class VegetationDrag(ModelObject):
     __layername__ = "Vegetation drag"
     __geometrytype__ = GeometryType.NoGeometry
 
-    SQLITE_SOURCES = ("v2_vegetation_drag ",)
+    SQLITE_SOURCES = ("v2_vegetation_drag",)
     SQLITE_TARGETS = SQLITE_SOURCES
 
     id: int
