@@ -36,8 +36,6 @@ from threedi_schematisation_editor.expressions import (
     cross_section_label,
     cross_section_max_height,
     cross_section_max_width,
-    diameter_label,
-    width_label,
 )
 
 
@@ -234,8 +232,6 @@ class LayersManager:
     def register_custom_functions():
         """Register custom expression functions"""
         QgsExpression.registerFunction(cross_section_label)
-        QgsExpression.registerFunction(diameter_label)
-        QgsExpression.registerFunction(width_label)
         QgsExpression.registerFunction(cross_section_max_height)
         QgsExpression.registerFunction(cross_section_max_width)
 
