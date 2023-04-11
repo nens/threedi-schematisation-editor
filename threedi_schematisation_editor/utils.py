@@ -278,9 +278,11 @@ def set_initial_layer_configuration(layer, model_cls):
             formatted_entry_name = entry_name
         return formatted_entry_name
 
+    model_hidden_fields = model_cls.hidden_fields()
+    model_hidden_fields.add("fid")
     for column in columns:
         column_name = column.name
-        if column_name == "fid":
+        if column_name in model_hidden_fields:
             column.hidden = True
             continue
         try:
