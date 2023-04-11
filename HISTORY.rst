@@ -3,6 +3,8 @@ History
 
 1.4 (unreleased)
 ----------------
+
+- Compatibility with schema 216 (#451).
 - Fixed issues: #126 and #129
 - Added processing algorithm to generate exchange lines
 - Added handling of the "Inverted egg" and "XY" cross-section shape types. (#89, #91)

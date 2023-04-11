@@ -1,6 +1,6 @@
 # Copyright (C) 2023 by Lutra Consulting
 from dataclasses import dataclass
-from types import MappingProxyType
+from types import MappingProxyType, SimpleNamespace
 from typing import Optional
 
 from threedi_schematisation_editor.enumerators import (
@@ -21,7 +21,6 @@ from threedi_schematisation_editor.enumerators import (
     ManholeIndicator,
     ManholeShape,
     Material,
-    ObstacleType,
     PipeCalculationType,
     PipeMaterial,
     PumpType,
@@ -42,6 +41,16 @@ class ModelObject:
     IMPORT_FIELD_MAPPINGS = MappingProxyType({})
     EXPORT_FIELD_MAPPINGS = MappingProxyType({})
     RELATED_RASTERS = tuple()
+
+    @classmethod
+    def fields_namespace(cls) -> SimpleNamespace:
+        field_names_dict = {k: k for k in cls.__annotations__.keys()}
+        namespace = SimpleNamespace(**field_names_dict)
+        return namespace
+
+    @classmethod
+    def hidden_fields(cls) -> set:
+        return set()
 
 
 @dataclass
@@ -113,6 +122,9 @@ class Manhole(ModelObject):
             "manhole_indicator": "manh_manhole_indicator",
             "zoom_category": "manh_zoom_category",
             "connection_node_id": "manh_connection_node_id",
+            "exchange_thickness": "manh_exchange_thickness",
+            "hydraulic_conductivity_in": "manh_hydraulic_conductivity_in",
+            "hydraulic_conductivity_out": "manh_hydraulic_conductivity_out",
         }
     )
 
@@ -130,6 +142,14 @@ class Manhole(ModelObject):
     manhole_indicator: Optional[ManholeIndicator]
     zoom_category: Optional[ZoomCategories]
     connection_node_id: int
+    exchange_thickness: Optional[float]
+    hydraulic_conductivity_in: Optional[float]
+    hydraulic_conductivity_out: Optional[float]
+
+    @classmethod
+    def hidden_fields(cls) -> set:
+        n = cls.fields_namespace()
+        return {n.exchange_thickness, n.hydraulic_conductivity_in, n.hydraulic_conductivity_out}
 
 
 @dataclass
@@ -363,6 +383,9 @@ class Pipe(ModelObject):
             "original_length": "pipe_original_length",
             "connection_node_start_id": "pipe_connection_node_start_id",
             "connection_node_end_id": "pipe_connection_node_end_id",
+            "exchange_thickness": "pipe_exchange_thickness",
+            "hydraulic_conductivity_in": "pipe_hydraulic_conductivity_in",
+            "hydraulic_conductivity_out": "pipe_hydraulic_conductivity_out",
         }
     )
 
@@ -387,6 +410,14 @@ class Pipe(ModelObject):
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
     cross_section_table: Optional[str]
+    exchange_thickness: Optional[float]
+    hydraulic_conductivity_in: Optional[float]
+    hydraulic_conductivity_out: Optional[float]
+
+    @classmethod
+    def hidden_fields(cls) -> set:
+        n = cls.fields_namespace()
+        return {n.exchange_thickness, n.hydraulic_conductivity_in, n.hydraulic_conductivity_out}
 
 
 @dataclass
@@ -440,6 +471,14 @@ class Channel(ModelObject):
     zoom_category: Optional[ZoomCategories]
     connection_node_start_id: int
     connection_node_end_id: int
+    exchange_thickness: Optional[float]
+    hydraulic_conductivity_in: Optional[float]
+    hydraulic_conductivity_out: Optional[float]
+
+    @classmethod
+    def hidden_fields(cls) -> set:
+        n = cls.fields_namespace()
+        return {n.exchange_thickness, n.hydraulic_conductivity_in, n.hydraulic_conductivity_out}
 
 
 @dataclass
@@ -736,6 +775,12 @@ class GlobalSettings(ModelObject):
     simple_infiltration_settings_id: int
     groundwater_settings_id: int
     maximum_table_step_size: float
+    vegetation_drag_settings_id: Optional[int]
+
+    @classmethod
+    def hidden_fields(cls) -> set:
+        n = cls.fields_namespace()
+        return {n.vegetation_drag_settings_id}
 
 
 @dataclass
@@ -1077,6 +1122,27 @@ class ControlTimed(ModelObject):
     target_id: Optional[int]
 
 
+@dataclass
+class VegetationDrag(ModelObject):
+    __tablename__ = "vegetation_drag"
+    __layername__ = "Vegetation drag"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    SQLITE_SOURCES = ("v2_vegetation_drag",)
+    SQLITE_TARGETS = SQLITE_SOURCES
+
+    id: int
+    display_name: Optional[str]
+    height: Optional[float]
+    height_file: Optional[str]
+    stem_count: Optional[float]
+    stem_count_file: Optional[str]
+    stem_diameter: Optional[float]
+    stem_diameter_file: Optional[str]
+    drag_coefficient: Optional[float]
+    drag_coefficient_file: Optional[str]
+
+
 MODEL_1D_ELEMENTS = (
     ConnectionNode,
     BoundaryCondition1D,
@@ -1137,12 +1203,14 @@ CONTROL_STRUCTURES_ELEMENTS = (
     ControlTimed,
 )
 
+HIDDEN_ELEMENTS = (VegetationDrag,)
+
 ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + MODEL_1D2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS
 ALL_MODELS = ALL_MODELS + (
     Timeseries,
     CrossSectionDefinition,
 )
-ALL_MODELS = ALL_MODELS + CONTROL_STRUCTURES_ELEMENTS
+ALL_MODELS = ALL_MODELS + CONTROL_STRUCTURES_ELEMENTS + HIDDEN_ELEMENTS
 
 ELEMENTS_WITH_XS_DEF = (
     Weir,
