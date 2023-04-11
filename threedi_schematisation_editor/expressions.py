@@ -159,7 +159,6 @@ def cross_section_label(
     Get a string describing the cross-section, that can be used as a label in QGIS
     """
     if shape not in dm.ALL_SHAPES:
-        print("shape not in dm.ALL_SHAPES")
         return ""
     max_width = _cross_section_max_width(shape, width, table)
     max_height = _cross_section_max_height(shape, width, height, table)
@@ -178,7 +177,6 @@ def cross_section_label(
                 "height_text": f"{max_height * 1000:.0f}" if max_height else ""
             }
         )
-    print(f"format_args: {format_args}")
     if single_line:
         label_templates = {
             en.CrossSectionShape.CLOSED_RECTANGLE.value: "w x h: {width_text} x {height_text} {units} (closed rect)",
@@ -232,8 +230,5 @@ def cross_section_label(
                 "shape_name": shape_name,
             }
         )
-    print(f"format_args: {format_args}")
-    print(f"label_templates[shape]: {label_templates[shape]}")
     label = label_templates[shape].format(**format_args)
-    print(f"label: {label}")
     return label
