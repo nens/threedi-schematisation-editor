@@ -15,6 +15,11 @@ from qgis.core import (
 from qgis.PyQt.QtCore import QCoreApplication
 
 import threedi_schematisation_editor.data_models as dm
+from threedi_schematisation_editor.expressions import (
+    cross_section_label,
+    cross_section_max_height,
+    cross_section_max_width,
+)
 from threedi_schematisation_editor.user_layer_forms import LayerEditFormFactory
 from threedi_schematisation_editor.user_layer_handlers import MODEL_HANDLERS
 from threedi_schematisation_editor.utils import (
@@ -31,11 +36,6 @@ from threedi_schematisation_editor.utils import (
     set_field_default_value,
     set_initial_layer_configuration,
     validation_errors_summary,
-)
-from threedi_schematisation_editor.expressions import (
-    cross_section_label,
-    cross_section_max_height,
-    cross_section_max_width,
 )
 
 

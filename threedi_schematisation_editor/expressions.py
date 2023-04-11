@@ -1,7 +1,7 @@
 from qgis.utils import qgsfunction
+
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.enumerators as en
-
 
 CROSS_SECTION_MAX_WIDTH_HELPTEXT = """
     <p>Get maximum width of the cross-section.</p>
@@ -146,14 +146,7 @@ def cross_section_max_width(shape: int, width: float, table: str, feature, paren
 
 @qgsfunction(args="auto", group="3Di", handlesnull=True, helpText=CROSS_SECTION_LABEL_HELPTEXT)
 def cross_section_label(
-        shape: int,
-        width: float,
-        height: float,
-        table: str,
-        units: str,
-        single_line: bool,
-        feature,
-        parent
+    shape: int, width: float, height: float, table: str, units: str, single_line: bool, feature, parent
 ) -> str:
     """
     Get a string describing the cross-section, that can be used as a label in QGIS
@@ -167,14 +160,14 @@ def cross_section_label(
         format_args.update(
             {
                 "width_text": f"{max_width:.2f}" if max_width else "",
-                "height_text": f"{max_height:.2f}" if max_height else ""
+                "height_text": f"{max_height:.2f}" if max_height else "",
             }
         )
     elif units == "mm":
         format_args.update(
             {
                 "width_text": f"{max_width * 1000:.0f}" if max_width else "",
-                "height_text": f"{max_height * 1000:.0f}" if max_height else ""
+                "height_text": f"{max_height * 1000:.0f}" if max_height else "",
             }
         )
     if single_line:
@@ -190,36 +183,26 @@ def cross_section_label(
         }
     else:
         label_templates = {
-            en.CrossSectionShape.CLOSED_RECTANGLE.value:
-                "{shape_value}: {shape_name}\n"
-                "w: {width_text} {units}\n"
-                "h: {height_text} {units}",
-            en.CrossSectionShape.OPEN_RECTANGLE.value:
-                "{shape_value}: {shape_name}\n"
-                "w: {width_text} {units}",
-            en.CrossSectionShape.CIRCLE.value:
-                "{shape_value}: {shape_name}\n"
-                "Ø: {width_text} {units}",
-            en.CrossSectionShape.EGG.value:
-                "{shape_value}: {shape_name}\n"
-                "w: {width_text} {units}\n"
-                "h: {height_text} {units}",
-            en.CrossSectionShape.INVERTED_EGG.value:
-                "{shape_value}: {shape_name}\n"
-                "w: {width_text} {units}\n"
-                "h: {height_text} {units}",
-            en.CrossSectionShape.TABULATED_RECTANGLE.value:
-                "{shape_value}: {shape_name}\n"
-                "w: {width_text} {units}\n"
-                "h: {height_text} {units}",
-            en.CrossSectionShape.TABULATED_TRAPEZIUM.value:
-                "{shape_value}: {shape_name}\n"
-                "w: {width_text} {units}\n"
-                "h: {height_text} {units}",
-            en.CrossSectionShape.YZ.value:
-                "{shape_value}: {shape_name}\n"
-                "w: {width_text} {units}\n"
-                "h: {height_text} {units}",
+            en.CrossSectionShape.CLOSED_RECTANGLE.value: "{shape_value}: {shape_name}\n"
+            "w: {width_text} {units}\n"
+            "h: {height_text} {units}",
+            en.CrossSectionShape.OPEN_RECTANGLE.value: "{shape_value}: {shape_name}\n" "w: {width_text} {units}",
+            en.CrossSectionShape.CIRCLE.value: "{shape_value}: {shape_name}\n" "Ø: {width_text} {units}",
+            en.CrossSectionShape.EGG.value: "{shape_value}: {shape_name}\n"
+            "w: {width_text} {units}\n"
+            "h: {height_text} {units}",
+            en.CrossSectionShape.INVERTED_EGG.value: "{shape_value}: {shape_name}\n"
+            "w: {width_text} {units}\n"
+            "h: {height_text} {units}",
+            en.CrossSectionShape.TABULATED_RECTANGLE.value: "{shape_value}: {shape_name}\n"
+            "w: {width_text} {units}\n"
+            "h: {height_text} {units}",
+            en.CrossSectionShape.TABULATED_TRAPEZIUM.value: "{shape_value}: {shape_name}\n"
+            "w: {width_text} {units}\n"
+            "h: {height_text} {units}",
+            en.CrossSectionShape.YZ.value: "{shape_value}: {shape_name}\n"
+            "w: {width_text} {units}\n"
+            "h: {height_text} {units}",
         }
         shape_name = en.CrossSectionShape(shape).name.replace("_", " ")
         if shape != en.CrossSectionShape.YZ.value:
