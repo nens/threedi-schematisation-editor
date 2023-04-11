@@ -25,7 +25,7 @@ CROSS_SECTION_MAX_WIDTH_HELPTEXT = """
     <p>width: cross section width (float)</p>
     <p>table: cross section table describing tabulated and YZ cross sections (string) </p>
     <h4>Examples</h4>
-    <p>cross_section_max_width(cross_section_shape, cross_section_width, cross_section_table)  &#8594;  4.32</p> 
+    <p>cross_section_max_width(cross_section_shape, cross_section_width, cross_section_table)  &#8594;  4.32</p>
 """
 
 
@@ -51,7 +51,7 @@ CROSS_SECTION_MAX_HEIGHT_HELPTEXT = """
     <p>
         cross_section_max_height(cross_section_shape, cross_section_width, cross_section_height, cross_section_table)  
         &#8594; 4.32
-    </p> 
+    </p>
 """
 
 
