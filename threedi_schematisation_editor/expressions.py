@@ -183,7 +183,7 @@ def cross_section_label(
         label_templates = {
             en.CrossSectionShape.CLOSED_RECTANGLE.value: "w x h: {width_text} x {height_text} {units} (closed rect)",
             en.CrossSectionShape.OPEN_RECTANGLE.value: "w: {width_text} {units} (open rect)",
-            en.CrossSectionShape.CIRCLE.value: "Ø: {width_text} {units} (circle)",
+            en.CrossSectionShape.CIRCLE.value: "Ø: {width_text} {units}",
             en.CrossSectionShape.EGG.value: "w x h: {width_text} x {height_text} {units} (egg)",
             en.CrossSectionShape.INVERTED_EGG.value: "w x h: {width_text} x {height_text} {units} (inv egg)",
             en.CrossSectionShape.TABULATED_RECTANGLE.value: "w x h: {width_text} x {height_text} {units} (tab rect)",
