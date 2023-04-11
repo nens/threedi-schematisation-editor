@@ -20,10 +20,6 @@ from threedi_schematisation_editor.user_layer_handlers import MODEL_HANDLERS
 from threedi_schematisation_editor.utils import (
     add_layer_to_group,
     create_tree_group,
-    cross_section_label,
-    cross_section_max_height,
-    cross_section_max_width,
-    diameter_label,
     get_form_ui_path,
     get_multiple_qml_style_paths,
     get_qml_style_path,
@@ -35,7 +31,11 @@ from threedi_schematisation_editor.utils import (
     set_field_default_value,
     set_initial_layer_configuration,
     validation_errors_summary,
-    width_label,
+)
+from threedi_schematisation_editor.expressions import (
+    cross_section_label,
+    cross_section_max_height,
+    cross_section_max_width,
 )
 
 
@@ -232,8 +232,6 @@ class LayersManager:
     def register_custom_functions():
         """Register custom expression functions"""
         QgsExpression.registerFunction(cross_section_label)
-        QgsExpression.registerFunction(diameter_label)
-        QgsExpression.registerFunction(width_label)
         QgsExpression.registerFunction(cross_section_max_height)
         QgsExpression.registerFunction(cross_section_max_width)
 
