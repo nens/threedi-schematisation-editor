@@ -174,6 +174,8 @@ class ModelDataConverter:
             def transfer_geometry(source_feat, destination_feat):
                 src_geom = source_feat.geometry()
                 new_geom = QgsGeometry(src_geom)
+                if new_geom.isMultipart():
+                    new_geom.convertToSingleType()
                 geometry_transform(new_geom)
                 destination_feat.setGeometry(new_geom)
 
