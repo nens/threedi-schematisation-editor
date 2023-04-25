@@ -21,7 +21,7 @@ tags=3di, edit, 1D, hydraulics
 homepage=https://www.3diwatermanagement.com
 category=Plugins
 icon=icon.png
-experimental=True
+experimental=False
 hasProcessingProvider=no
 
 # deprecated flag (applies to the whole plugin, not just a single version)
