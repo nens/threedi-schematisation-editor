@@ -1,6 +1,12 @@
 History
 =======
 
+1.5 (unreleased)
+----------------
+
+- Nothing changed yet.
+
+
 1.4 (2023-04-26)
 ----------------
 - Compatibility with schema 216 (#451).
