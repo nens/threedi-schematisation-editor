@@ -4,7 +4,7 @@ History
 1.5 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Fixed issue #139.
 
 
 1.4 (2023-04-26)
