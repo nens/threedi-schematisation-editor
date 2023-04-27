@@ -186,7 +186,8 @@ class BaseForm(QObject):
                 if issubclass(real_field_type, Enum) and widget.count() == 0:
                     cbo_items = {t.name.capitalize().replace("_", " "): t.value for t in real_field_type}
                     self.populate_combo(widget, cbo_items)
-            self.set_widget_value(widget, feature[field_name], var_type=real_field_type)
+            is_foreign = data_model_cls != self.MODEL
+            self.set_widget_value(widget, feature[field_name], var_type=real_field_type, is_foreign=is_foreign)
             self.set_validation_background(widget, field_type)
             self.main_widgets[widget_name] = widget
             clear_value_button_name = f"{widget_name}_clear"
@@ -228,7 +229,8 @@ class BaseForm(QObject):
                 fid = feature.id()
                 if not layer.isEditable():
                     layer.startEditing()
-                widget.setValue(widget.maximum())  # workaround for the issue #129
+                if model_cls != self.MODEL:
+                    widget.setValue(widget.maximum())  # workaround for the issue #129
                 widget.clear()
                 layer.changeAttributeValue(fid, field_idx, NULL)
                 field_type = model_cls.__annotations__[field_name]
@@ -249,7 +251,7 @@ class BaseForm(QObject):
         for text, data in sorted(value_map.items(), key=itemgetter(0)):
             combo_widget.addItem(text, data)
 
-    def set_widget_value(self, widget, value, var_type=None):
+    def set_widget_value(self, widget, value, var_type=None, is_foreign=False):
         """Setting widget value."""
         if isinstance(widget, QLineEdit):
             widget.setText(str(value) if value is not None else "")
@@ -263,7 +265,8 @@ class BaseForm(QObject):
             else:
                 if isinstance(widget, (QgsSpinBox, QgsDoubleSpinBox)):
                     widget.setClearValueMode(widget.__class__.CustomValue, "")
-                widget.setValue(widget.maximum())  # workaround for the issue #129
+                if is_foreign:
+                    widget.setValue(widget.maximum())  # workaround for the issue #129
                 widget.clear()
         elif isinstance(widget, QComboBox):
             item_idx = widget.findData(value if value != NULL else None)
