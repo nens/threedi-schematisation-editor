@@ -338,15 +338,15 @@ class ModelDataConverter:
             commit_errors = surface_map_layer.commitErrors()
             self.conversion_errors[dm.Surface.__layername__] += commit_errors
 
-    def import_model_data(self, annotated_model_csl):
+    def import_model_data(self, annotated_model_cls):
         """Converting Spatialite layer into GeoPackage User Layer based on model data class."""
-        dst_table = annotated_model_csl.__tablename__
-        dst_layer_name = annotated_model_csl.__layername__
+        dst_table = annotated_model_cls.__tablename__
+        dst_layer_name = annotated_model_cls.__layername__
         dst_layer = gpkg_layer(self.dst_gpkg, dst_table, dst_layer_name)
-        field_mappings = {k: k for k in annotated_model_csl.__annotations__.keys()}
-        if annotated_model_csl.IMPORT_FIELD_MAPPINGS:
-            field_mappings.update(annotated_model_csl.IMPORT_FIELD_MAPPINGS)
-        for src_table in annotated_model_csl.SQLITE_SOURCES:
+        field_mappings = {k: k for k in annotated_model_cls.__annotations__.keys()}
+        if annotated_model_cls.IMPORT_FIELD_MAPPINGS:
+            field_mappings.update(annotated_model_cls.IMPORT_FIELD_MAPPINGS)
+        for src_table in annotated_model_cls.SQLITE_SOURCES:
             src_layer = sqlite_layer(self.src_sqlite, src_table)
             if not src_layer.isValid():
                 src_layer = sqlite_layer(self.src_sqlite, src_table, geom_column=None)
@@ -365,13 +365,13 @@ class ModelDataConverter:
                 commit_errors = dst_layer.commitErrors()
                 self.conversion_errors[dst_layer_name] += commit_errors
 
-    def collect_src_dst_ids(self, annotated_model_csl):
+    def collect_src_dst_ids(self, annotated_model_cls):
         """Getting unique feature IDs of source and destination layers."""
         src_feat_ids, dst_feat_ids = set(), set()
         src_expr = None
-        if annotated_model_csl == dm.Pumpstation:
+        if annotated_model_cls == dm.Pumpstation:
             src_expr = QgsExpression('"connection_node_start_id" IS NOT NULL')
-        elif annotated_model_csl == dm.PumpstationMap:
+        elif annotated_model_cls == dm.PumpstationMap:
             src_expr = QgsExpression('"connection_node_start_id" IS NOT NULL AND "connection_node_end_id" IS NOT NULL')
         if src_expr is None:
             src_request = QgsFeatureRequest()
@@ -380,13 +380,13 @@ class ModelDataConverter:
         src_request.setFlags(QgsFeatureRequest.NoGeometry)
         dst_request = QgsFeatureRequest()
         dst_request.setFlags(QgsFeatureRequest.NoGeometry)
-        for src_table in annotated_model_csl.SQLITE_TARGETS:
+        for src_table in annotated_model_cls.SQLITE_TARGETS:
             src_target_layer = sqlite_layer(self.src_sqlite, src_table)
             if not src_target_layer.isValid():
                 src_target_layer = sqlite_layer(self.src_sqlite, src_table, geom_column=None)
             # Let's assume that ids are unique across multiple sqlite targets
             src_feat_ids |= {src_feat["id"] for src_feat in src_target_layer.getFeatures(src_request)}
-        dst_table = annotated_model_csl.__tablename__
+        dst_table = annotated_model_cls.__tablename__
         dst_layer = gpkg_layer(self.dst_gpkg, dst_table)
         dst_id_idx = dst_layer.fields().indexFromName("id")
         dst_feat_ids |= set(dst_layer.uniqueValues(dst_id_idx))
@@ -532,16 +532,16 @@ class ModelDataConverter:
             self.uc.show_warn(warn)
         self.report_conversion_errors()
 
-    def export_model_data(self, annotated_model_csl):
+    def export_model_data(self, annotated_model_cls):
         """Converting GeoPackage User Layer into Spatialite layer based on model data class."""
-        src_table = annotated_model_csl.__tablename__
-        src_layer_name = annotated_model_csl.__layername__
+        src_table = annotated_model_cls.__tablename__
+        src_layer_name = annotated_model_cls.__layername__
         src_layer = gpkg_layer(self.dst_gpkg, src_table, src_layer_name)
-        field_mappings = {k: k for k in annotated_model_csl.__annotations__.keys()}
-        if annotated_model_csl.EXPORT_FIELD_MAPPINGS:
-            field_mappings.update(annotated_model_csl.EXPORT_FIELD_MAPPINGS)
+        field_mappings = {k: k for k in annotated_model_cls.__annotations__.keys()}
+        if annotated_model_cls.EXPORT_FIELD_MAPPINGS:
+            field_mappings.update(annotated_model_cls.EXPORT_FIELD_MAPPINGS)
         switched_map = {v: k for k, v in field_mappings.items()}
-        dst_table = next(iter(annotated_model_csl.SQLITE_TARGETS))
+        dst_table = next(iter(annotated_model_cls.SQLITE_TARGETS))
         dst_layer = sqlite_layer(self.src_sqlite, dst_table)
         if not dst_layer.isValid():
             dst_layer = sqlite_layer(self.src_sqlite, dst_table, geom_column=None)
