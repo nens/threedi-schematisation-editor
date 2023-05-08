@@ -22,7 +22,7 @@ from threedi_schematisation_editor.utils import find_line_endpoints_nodes, get_n
 
 class ColumnImportMethod(Enum):
     AUTO = "auto"
-    ATTRIBUTE = "attribute"
+    ATTRIBUTE = "source_attribute"
     DEFAULT = "default"
     IGNORE = "ignore"
 
@@ -94,8 +94,8 @@ class ImportCulverts(QgsProcessingAlgorithm):
             import_config = json.loads(import_config_json.read())
         node_layer = gpkg_layer(target_gpkg, dm.ConnectionNode.__tablename__)
         conversion_settings = import_config["conversion_settings"]
-        use_snapping = getattr(conversion_settings, "use_snapping", False)
-        snapping_distance = getattr(conversion_settings, "snapping_distance", 0.1)
+        use_snapping = conversion_settings.get("use_snapping", False)
+        snapping_distance = conversion_settings.get("snapping_distance", 0.1)
         fields_config = import_config["fields"]
         culvert_fields = culvert_layer.fields()
         node_fields = node_layer.fields()
@@ -127,6 +127,7 @@ class ImportCulverts(QgsProcessingAlgorithm):
                     new_start_node_feat = QgsFeature(node_fields)
                     new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
                     new_start_node_feat["id"] = next_connection_node_id
+                    new_culvert_feat["connection_node_start_id"] = next_connection_node_id
                     next_connection_node_id += 1
                     new_nodes.append(new_start_node_feat)
                 if node_end_feat:
@@ -139,6 +140,7 @@ class ImportCulverts(QgsProcessingAlgorithm):
                     new_end_node_feat = QgsFeature(node_fields)
                     new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
                     new_end_node_feat["id"] = next_connection_node_id
+                    new_culvert_feat["connection_node_end_id"] = next_connection_node_id
                     next_connection_node_id += 1
                     new_nodes.append(new_end_node_feat)
             else:
@@ -146,18 +148,20 @@ class ImportCulverts(QgsProcessingAlgorithm):
                 new_start_node_feat = QgsFeature(node_fields)
                 new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
                 new_start_node_feat["id"] = next_connection_node_id
+                new_culvert_feat["connection_node_start_id"] = next_connection_node_id
                 next_connection_node_id += 1
                 node_end_point = polyline[-1]
                 new_end_node_feat = QgsFeature(node_fields)
                 new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
                 new_end_node_feat["id"] = next_connection_node_id
+                new_culvert_feat["connection_node_end_id"] = next_connection_node_id
                 next_connection_node_id += 1
                 new_nodes += [new_start_node_feat, new_end_node_feat]
             new_culvert_feat.setGeometry(new_geom)
             fields_to_process = [
                 field_name
                 for field_name in dm.Culvert.__annotations__.keys()
-                if field_name != "id" and not field_name.startswith("cross_section_")
+                if field_name != "id" and not field_name.startswith("connection_node_")
             ]
             for field_name in fields_to_process:
                 try:
