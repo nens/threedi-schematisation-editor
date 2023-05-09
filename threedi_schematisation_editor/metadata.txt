@@ -10,6 +10,13 @@ about=View and edit 3Di schematisations in the Modeller Interface.
 
     For questions on 3Di or the use of this plugin please contact us via
     servicedesk@nelen-schuurmans.nl
+    
+    ***UPDATE INSTRUCTIONS***
+    - Before updating, use 'Save to Spatialite'
+    - Always update all 3Di plugins for which an update is available, restarting when prompted
+    - After the update is complete, use 'Load from spatialite' to continue your work
+    - Do not use 'Open 3Di Geopackage' at any point during or immediately after the update process
+
 tracker=https://github.com/nens/threedi-schematisation-editor/issues
 repository=https://github.com/nens/threedi-schematisation-editor/issues
 
