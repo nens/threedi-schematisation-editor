@@ -13,12 +13,14 @@ from qgis.core import (
     QgsProcessingException,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterFile,
+    QgsProcessingParameterFileDestination,
     QgsProject,
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import find_line_endpoints_nodes, get_next_feature_id, gpkg_layer
+from threedi_schematisation_editor.mike.mike_model_converter import MIKEConverter
 
 
 class ColumnImportMethod(Enum):
@@ -206,4 +208,57 @@ class ImportCulverts(QgsProcessingAlgorithm):
     def postProcessAlgorithm(self, context, feedback):
         for layer in QgsProject.instance().mapLayers().values():
             layer.triggerRepaint()
+        return {}
+
+
+class ImportFromMike11(QgsProcessingAlgorithm):
+    INPUT_SIM11 = "INPUT_SIM11"
+    OUTPUT_GPKG = "OUTPUT_GPKG"
+
+    def tr(self, string):
+        return QCoreApplication.translate("Processing", string)
+
+    def createInstance(self):
+        return ImportFromMike11()
+
+    def name(self):
+        return "threedi_import_from_mike11"
+
+    def displayName(self):
+        return self.tr("Import data from MIKE11 model")
+
+    def shortHelpString(self):
+        return self.tr("""Import MIKE11 model data into 3Di schematisation structure.""")
+
+    def group(self):
+        return self.tr("Conversion")
+
+    def groupId(self):
+        return "conversion"
+
+    def initAlgorithm(self, config=None):
+        sim11_filepath = QgsProcessingParameterFile(
+            self.INPUT_SIM11,
+            self.tr("Mike11 simulation file"),
+            extension="sim11",
+            behavior=QgsProcessingParameterFile.File,
+        )
+        self.addParameter(sim11_filepath)
+        output_gpkg_filepath = QgsProcessingParameterFileDestination(
+            self.OUTPUT_GPKG,
+            self.tr("Target Schematisation Editor GeoPackage file"),
+            fileFilter="*.gpkg",
+        )
+        self.addParameter(output_gpkg_filepath)
+
+    def processAlgorithm(self, parameters, context, feedback):
+        sim11_filepath = self.parameterAsFile(parameters, self.INPUT_SIM11, context)
+        if sim11_filepath is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT_SIM11))
+        output_gpkg_filepath = self.parameterAsFileOutput(parameters, self.OUTPUT_GPKG, context)
+        if output_gpkg_filepath is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT_GPKG))
+        mc = MIKEConverter(sim11_filepath, output_gpkg_filepath)
+        mc.mike2threedi()
+        feedback.pushInfo("Mike11 data import finished!")
         return {}
