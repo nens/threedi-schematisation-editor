@@ -4,7 +4,7 @@ History
 1.4.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fixed issues: #141, #142
 
 
 1.4.1 (2023-04-28)

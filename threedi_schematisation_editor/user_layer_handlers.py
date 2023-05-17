@@ -45,12 +45,14 @@ class UserLayerHandler:
         self.form_factory = self.layer_manager.form_factory
         self.layer = layer
         self.layer_modified = False
+        self.fields_to_nullify = {}
 
     def connect_handler_signals(self):
         """Connecting layer signals."""
         self.layer.editingStarted.connect(self.on_editing_started)
         self.layer.beforeRollBack.connect(self.on_rollback)
         self.layer.beforeCommitChanges.connect(self.on_commit_changes)
+        self.layer.featureAdded.connect(self.on_added_feature)
         self.layer.featuresDeleted.connect(self.on_delete_features)
         self.connect_additional_signals()
 
@@ -59,6 +61,7 @@ class UserLayerHandler:
         self.layer.editingStarted.disconnect(self.on_editing_started)
         self.layer.beforeRollBack.disconnect(self.on_rollback)
         self.layer.beforeCommitChanges.disconnect(self.on_commit_changes)
+        self.layer.featureAdded.disconnect(self.on_added_feature)
         self.layer.featuresDeleted.disconnect(self.on_delete_features)
         self.disconnect_additional_signals()
 
@@ -185,6 +188,14 @@ class UserLayerHandler:
     def on_commit_changes(self):
         """Action on commit changes signal."""
         self.multi_commit_changes()
+
+    def on_added_feature(self, feature_id):
+        """Action on feature added signal."""
+        if self.fields_to_nullify and not self.layer.isEditable():
+            self.layer.startEditing()
+        for field_idx, changes in self.fields_to_nullify.items():
+            self.layer.changeAttributeValues(feature_id, changes)
+        self.fields_to_nullify.clear()
 
     def on_delete_features(self, feature_ids):
         """Action on delete features signal."""

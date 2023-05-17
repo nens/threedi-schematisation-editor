@@ -69,13 +69,14 @@ class BaseForm(QObject):
         self.custom_widgets = {}
         self.set_foreign_widgets()
         self.extra_features = defaultdict(list)
+        self.extra_logic = {}
         self.layer.editingStarted.connect(self.toggle_edit_mode)
         self.layer.editingStopped.connect(self.toggle_edit_mode)
         self.button_box = self.dialog.findChild(QObject, "buttonBox")
-        self.button_box.accepted.connect(self.add_related_features)
+        self.button_box.accepted.connect(self.postprocess_on_acceptance)
         self.dialog.active_form_signals.add((self.layer.editingStarted, self.toggle_edit_mode))
         self.dialog.active_form_signals.add((self.layer.editingStopped, self.toggle_edit_mode))
-        self.dialog.active_form_signals.add((self.button_box.accepted, self.add_related_features))
+        self.dialog.active_form_signals.add((self.button_box.accepted, self.postprocess_on_acceptance))
 
     @property
     def foreign_models_features(self):
@@ -232,9 +233,19 @@ class BaseForm(QObject):
                 if model_cls != self.MODEL:
                     widget.setValue(widget.maximum())  # workaround for the issue #129
                 widget.clear()
-                layer.changeAttributeValue(fid, field_idx, NULL)
+                if fid == self.MIN_FID:
+                    # We need to postpone changing field value to NULL as it needs to be done after accepting form
+                    if field_idx not in self.extra_logic:
+                        self.extra_logic[field_idx] = partial(self.mark_null_field, widget, field_idx)
+                else:
+                    layer.changeAttributeValue(fid, field_idx, NULL)
                 field_type = model_cls.__annotations__[field_name]
                 self.set_validation_background(widget, field_type=field_type)
+
+    def mark_null_field(self, widget, field_idx):
+        """Mark field which supposed to be set to NULL after accepting creation form."""
+        if not widget.text():
+            self.handler.fields_to_nullify[field_idx] = {field_idx: NULL}
 
     def populate_foreign_widgets(self):
         """Populating values within foreign layers widgets."""
@@ -346,14 +357,16 @@ class BaseForm(QObject):
                     feat["id"] = feat["id"] + increment_by
                     increment_by += 1
 
-    def add_related_features(self):
-        """Adding related features that should be added along currently added feature."""
+    def postprocess_on_acceptance(self):
+        """Adding related features and triggering extra logic after form acceptance."""
         for handler, features_to_add in self.extra_features.items():
             layer = handler.layer
             if not layer.isEditable():
                 layer.startEditing()
             layer.addFeatures(features_to_add)
         self.extra_features.clear()
+        for postprocess_fn in self.extra_logic.values():
+            postprocess_fn()
 
     def fill_related_attributes(self):
         """Filling attributes referring to the other layers features."""
@@ -1310,16 +1323,18 @@ class CrossSectionLocationForm(FormWithXSTable):
                 cross_sections_with_distance.append(new_feat_with_distance)
                 cross_sections_with_distance.sort(key=itemgetter(-1))
                 new_feat_index = cross_sections_with_distance.index(new_feat_with_distance)
+                near_cross_sections_fields = ["reference_level", "bank_level", "friction_value"]
+                near_cross_sections_values = {}
                 if new_feat_index == 0:
                     # New cross-section is first along channel
                     closest_existing_cross_section, closest_xs_distance = cross_sections_with_distance[1]
-                    reference_level = closest_existing_cross_section["reference_level"]
-                    bank_level = closest_existing_cross_section["bank_level"]
+                    for field_name in near_cross_sections_fields:
+                        near_cross_sections_values[field_name] = closest_existing_cross_section[field_name]
                 elif new_feat_index == other_cross_sections_num:
                     # New cross-section is last along channel
                     closest_existing_cross_section, closest_xs_distance = cross_sections_with_distance[-2]
-                    reference_level = closest_existing_cross_section["reference_level"]
-                    bank_level = closest_existing_cross_section["bank_level"]
+                    for field_name in near_cross_sections_fields:
+                        near_cross_sections_values[field_name] = closest_existing_cross_section[field_name]
                 else:
                     # New cross-section is somewhere in the middle
                     before_xs, before_xs_distance = cross_sections_with_distance[new_feat_index - 1]
@@ -1332,38 +1347,31 @@ class CrossSectionLocationForm(FormWithXSTable):
                         closest_existing_cross_section, closest_xs_distance = after_xs, after_xs_distance
                     before_to_after_distance = after_xs_distance - before_xs_distance
                     interpolation_coefficient = point_distance_to_before / before_to_after_distance
-                    before_reference_level = before_xs["reference_level"]
-                    before_bank_level = before_xs["bank_level"]
-                    after_reference_level = after_xs["reference_level"]
-                    after_bank_level = after_xs["bank_level"]
-                    if before_reference_level != NULL and after_reference_level != NULL:
-                        reference_level = round(
-                            before_reference_level
-                            + ((after_reference_level - before_reference_level) * interpolation_coefficient),
-                            3,
-                        )
-                    elif before_reference_level != NULL and after_reference_level == NULL:
-                        reference_level = before_reference_level
-                    elif before_reference_level == NULL and after_reference_level != NULL:
-                        reference_level = after_reference_level
-                    else:
-                        reference_level = NULL
-                    if before_bank_level != NULL and after_bank_level != NULL:
-                        bank_level = round(
-                            before_bank_level + ((after_bank_level - before_bank_level) * interpolation_coefficient), 3
-                        )
-                    elif before_bank_level != NULL and after_bank_level == NULL:
-                        bank_level = before_bank_level
-                    elif before_bank_level == NULL and after_bank_level != NULL:
-                        bank_level = after_bank_level
-                    else:
-                        bank_level = NULL
-                self.feature["reference_level"] = reference_level
-                self.feature["bank_level"] = bank_level
-                self.feature["cross_section_shape"] = closest_existing_cross_section["cross_section_shape"]
-                self.feature["cross_section_width"] = closest_existing_cross_section["cross_section_width"]
-                self.feature["cross_section_height"] = closest_existing_cross_section["cross_section_height"]
-                self.feature["cross_section_table"] = closest_existing_cross_section["cross_section_table"]
+                    for field_name in near_cross_sections_fields:
+                        before_value = before_xs[field_name]
+                        after_value = after_xs[field_name]
+                        if before_value != NULL and after_value != NULL:
+                            value = round(
+                                before_value + ((after_value - before_value) * interpolation_coefficient),
+                                3,
+                            )
+                        elif before_value != NULL and after_value == NULL:
+                            value = before_value
+                        elif before_value == NULL and after_value != NULL:
+                            value = after_value
+                        else:
+                            value = NULL
+                        near_cross_sections_values[field_name] = value
+                # Set selected values based on near cross-section characteristics
+                for field_name, field_value in near_cross_sections_values.items():
+                    self.feature[field_name] = field_value
+                for xs_field_name in [
+                    "cross_section_shape",
+                    "cross_section_width",
+                    "cross_section_height",
+                    "cross_section_table",
+                ]:
+                    self.feature[xs_field_name] = closest_existing_cross_section[xs_field_name]
         try:
             global_settings_feat = next(global_settings_layer.getFeatures())
             self.feature["friction_type"] = global_settings_feat["frict_type"]
