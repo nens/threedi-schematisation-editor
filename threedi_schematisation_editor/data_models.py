@@ -1139,14 +1139,14 @@ class VegetationDrag(ModelObject):
 
     id: int
     display_name: Optional[str]
-    height: Optional[float]
-    height_file: Optional[str]
-    stem_count: Optional[float]
-    stem_count_file: Optional[str]
-    stem_diameter: Optional[float]
-    stem_diameter_file: Optional[str]
-    drag_coefficient: Optional[float]
-    drag_coefficient_file: Optional[str]
+    vegetation_height: Optional[float]
+    vegetation_height_file: Optional[str]
+    vegetation_stem_count: Optional[float]
+    vegetation_stem_count_file: Optional[str]
+    vegetation_stem_diameter: Optional[float]
+    vegetation_stem_diameter_file: Optional[str]
+    vegetation_drag_coefficient: Optional[float]
+    vegetation_drag_coefficient_file: Optional[str]
 
 
 MODEL_1D_ELEMENTS = (
