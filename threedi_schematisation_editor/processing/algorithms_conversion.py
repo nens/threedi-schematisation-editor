@@ -13,6 +13,7 @@ from qgis.core import (
     QgsProcessingException,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterFile,
+    QgsProject,
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
@@ -107,11 +108,14 @@ class ImportCulverts(QgsProcessingAlgorithm):
         next_culvert_id = get_next_feature_id(culvert_layer)
         next_connection_node_id = get_next_feature_id(node_layer)
         locator = QgsPointLocator(node_layer, dst_crs, transform_ctx)
-        new_nodes, new_culverts = [], []
+        new_culverts = []
+        node_layer.startEditing()
+        culvert_layer.startEditing()
         for src_feat in source_layer.getFeatures():
+            new_nodes = []
             new_culvert_feat = QgsFeature(culvert_fields)
             new_culvert_feat["id"] = next_culvert_id
-            new_geom = QgsGeometry(src_feat.geometry())
+            new_geom = QgsGeometry.fromPolylineXY(src_feat.geometry().asPolyline())
             if transformation:
                 new_geom.transform(transformation)
             polyline = new_geom.asPolyline()
@@ -157,6 +161,9 @@ class ImportCulverts(QgsProcessingAlgorithm):
                 new_culvert_feat["connection_node_end_id"] = next_connection_node_id
                 next_connection_node_id += 1
                 new_nodes += [new_start_node_feat, new_end_node_feat]
+            if new_nodes:
+                node_layer.addFeatures(new_nodes)
+                locator = QgsPointLocator(node_layer, dst_crs, transform_ctx)
             new_culvert_feat.setGeometry(new_geom)
             fields_to_process = [
                 field_name
@@ -185,10 +192,12 @@ class ImportCulverts(QgsProcessingAlgorithm):
                     new_culvert_feat[field_name] = NULL
             next_culvert_id += 1
             new_culverts.append(new_culvert_feat)
-            node_layer.startEditing()
-            node_layer.addFeatures(new_nodes)
-            node_layer.commitChanges()
-            culvert_layer.startEditing()
-            culvert_layer.addFeatures(new_culverts)
-            culvert_layer.commitChanges()
+        node_layer.commitChanges()
+        culvert_layer.addFeatures(new_culverts)
+        culvert_layer.commitChanges()
+        return {}
+
+    def postProcessAlgorithm(self, context, feedback):
+        for layer in QgsProject.instance().mapLayers().values():
+            layer.triggerRepaint()
         return {}
