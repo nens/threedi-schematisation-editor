@@ -1,9 +1,7 @@
 # Copyright (C) 2023 by Lutra Consulting
 from qgis.core import (
     Qgis,
-    QgsExpression,
     QgsFeature,
-    QgsFeatureRequest,
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,

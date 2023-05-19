@@ -15,8 +15,8 @@ def test_data_import_export_integrity(data_conversion_setup):
     exporter.trim_sqlite_targets()
     exporter.export_all_model_data()
 
-    for annotated_model_csl in ALL_MODELS:
-        for src_table in annotated_model_csl.SQLITE_SOURCES or []:
+    for annotated_model_cls in ALL_MODELS:
+        for src_table in annotated_model_cls.SQLITE_SOURCES or []:
             ie_layer = sqlite_layer(import_export_sqlite, src_table)
             ref_layer = sqlite_layer(reference_sqlite, src_table)
             if not ie_layer.isValid():
@@ -25,7 +25,7 @@ def test_data_import_export_integrity(data_conversion_setup):
                 ref_layer = sqlite_layer(reference_sqlite, src_table, geom_column=None)
             ie_lyr_count, ref_lyr_count = ie_layer.featureCount(), ref_layer.featureCount()
             assert ref_lyr_count == ie_lyr_count
-            id_field = annotated_model_csl.IMPORT_FIELD_MAPPINGS.get("id", "id")
+            id_field = annotated_model_cls.IMPORT_FIELD_MAPPINGS.get("id", "id")
             ie_feats = {f[id_field]: f for f in ie_layer.getFeatures()}
             ref_feats = {f[id_field]: f for f in ref_layer.getFeatures()}
             ie_field_types = {field.name(): field.typeName() for field in ie_layer.fields()}
