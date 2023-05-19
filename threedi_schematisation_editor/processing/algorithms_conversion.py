@@ -19,8 +19,8 @@ from qgis.core import (
 from qgis.PyQt.QtCore import QCoreApplication
 
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.utils import find_line_endpoints_nodes, get_next_feature_id, gpkg_layer
 from threedi_schematisation_editor.mike.mike_model_converter import MIKEConverter
+from threedi_schematisation_editor.utils import find_line_endpoints_nodes, get_next_feature_id, gpkg_layer
 
 
 class ColumnImportMethod(Enum):
