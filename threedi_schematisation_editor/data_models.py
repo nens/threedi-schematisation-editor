@@ -1125,22 +1125,28 @@ class ControlTimed(ModelObject):
 @dataclass
 class VegetationDrag(ModelObject):
     __tablename__ = "vegetation_drag"
-    __layername__ = "Vegetation drag"
+    __layername__ = "Vegetation drag settings"
     __geometrytype__ = GeometryType.NoGeometry
 
     SQLITE_SOURCES = ("v2_vegetation_drag",)
     SQLITE_TARGETS = SQLITE_SOURCES
+    RELATED_RASTERS = (
+        ("vegetation_height_file", "Vegetation height [m]"),
+        ("vegetation_stem_count_file", "Vegetation stem count [-]"),
+        ("vegetation_stem_diameter_file", "Vegetation stem diameter [m]"),
+        ("vegetation_drag_coefficient_file", "Vegetation drag coefficient [-]"),
+    )
 
     id: int
     display_name: Optional[str]
-    height: Optional[float]
-    height_file: Optional[str]
-    stem_count: Optional[float]
-    stem_count_file: Optional[str]
-    stem_diameter: Optional[float]
-    stem_diameter_file: Optional[str]
-    drag_coefficient: Optional[float]
-    drag_coefficient_file: Optional[str]
+    vegetation_height: Optional[float]
+    vegetation_height_file: Optional[str]
+    vegetation_stem_count: Optional[float]
+    vegetation_stem_count_file: Optional[str]
+    vegetation_stem_diameter: Optional[float]
+    vegetation_stem_diameter_file: Optional[str]
+    vegetation_drag_coefficient: Optional[float]
+    vegetation_drag_coefficient_file: Optional[str]
 
 
 MODEL_1D_ELEMENTS = (
@@ -1189,6 +1195,7 @@ SETTINGS_ELEMENTS = (
     InterflowSettings,
     NumericalSettings,
     SchemaVersion,
+    VegetationDrag,
 )
 
 CONTROL_STRUCTURES_ELEMENTS = (
@@ -1203,7 +1210,7 @@ CONTROL_STRUCTURES_ELEMENTS = (
     ControlTimed,
 )
 
-HIDDEN_ELEMENTS = (VegetationDrag,)
+HIDDEN_ELEMENTS = tuple()
 
 ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + MODEL_1D2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS
 ALL_MODELS = ALL_MODELS + (

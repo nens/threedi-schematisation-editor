@@ -33,7 +33,7 @@ from threedi_schematisation_editor.utils import (
 class ModelDataConverter:
     """Class with methods Spatialite <==> GeoPackage conversion of the 3Di model layers."""
 
-    SUPPORTED_SCHEMA_VERSION = 216
+    SUPPORTED_SCHEMA_VERSION = 217
 
     def __init__(self, src_sqlite, dst_gpkg, epsg_code=4326, user_communication=None):
         self.src_sqlite = src_sqlite

@@ -1023,6 +1023,10 @@ class SchemaVersionHandler(UserLayerHandler):
     MODEL = dm.SchemaVersion
 
 
+class VegetationDragHandler(UserLayerHandler):
+    MODEL = dm.VegetationDrag
+
+
 ALL_HANDLERS = (
     ConnectionNodeHandler,
     BoundaryCondition1DHandler,
@@ -1057,6 +1061,7 @@ ALL_HANDLERS = (
     InterflowSettingsHandler,
     NumericalSettingsHandler,
     SchemaVersionHandler,
+    VegetationDragHandler,
 )
 
 MODEL_HANDLERS = MappingProxyType({handler.MODEL: handler for handler in ALL_HANDLERS})
