@@ -97,6 +97,7 @@ class ImportCulverts(QgsProcessingAlgorithm):
         conversion_settings = import_config["conversion_settings"]
         use_snapping = conversion_settings.get("use_snapping", False)
         snapping_distance = conversion_settings.get("snapping_distance", 0.1)
+        create_connection_nodes = conversion_settings.get("create_connection_nodes", False)
         fields_config = import_config["fields"]
         culvert_fields = culvert_layer.fields()
         node_fields = node_layer.fields()
@@ -127,40 +128,43 @@ class ImportCulverts(QgsProcessingAlgorithm):
                     new_culvert_feat["connection_node_start_id"] = node_start_feat["id"]
                     new_geom = QgsGeometry.fromPolylineXY(polyline)
                 else:
-                    node_start_point = polyline[0]
-                    new_start_node_feat = QgsFeature(node_fields)
-                    new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
-                    new_start_node_feat["id"] = next_connection_node_id
-                    new_culvert_feat["connection_node_start_id"] = next_connection_node_id
-                    next_connection_node_id += 1
-                    new_nodes.append(new_start_node_feat)
+                    if create_connection_nodes:
+                        node_start_point = polyline[0]
+                        new_start_node_feat = QgsFeature(node_fields)
+                        new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
+                        new_start_node_feat["id"] = next_connection_node_id
+                        new_culvert_feat["connection_node_start_id"] = next_connection_node_id
+                        next_connection_node_id += 1
+                        new_nodes.append(new_start_node_feat)
                 if node_end_feat:
                     node_end_point = node_end_feat.geometry().asPoint()
                     polyline[-1] = node_end_point
                     new_culvert_feat["connection_node_end_id"] = node_end_feat["id"]
                     new_geom = QgsGeometry.fromPolylineXY(polyline)
                 else:
+                    if create_connection_nodes:
+                        node_end_point = polyline[-1]
+                        new_end_node_feat = QgsFeature(node_fields)
+                        new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
+                        new_end_node_feat["id"] = next_connection_node_id
+                        new_culvert_feat["connection_node_end_id"] = next_connection_node_id
+                        next_connection_node_id += 1
+                        new_nodes.append(new_end_node_feat)
+            else:
+                if create_connection_nodes:
+                    node_start_point = polyline[0]
+                    new_start_node_feat = QgsFeature(node_fields)
+                    new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
+                    new_start_node_feat["id"] = next_connection_node_id
+                    new_culvert_feat["connection_node_start_id"] = next_connection_node_id
+                    next_connection_node_id += 1
                     node_end_point = polyline[-1]
                     new_end_node_feat = QgsFeature(node_fields)
                     new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
                     new_end_node_feat["id"] = next_connection_node_id
                     new_culvert_feat["connection_node_end_id"] = next_connection_node_id
                     next_connection_node_id += 1
-                    new_nodes.append(new_end_node_feat)
-            else:
-                node_start_point = polyline[0]
-                new_start_node_feat = QgsFeature(node_fields)
-                new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
-                new_start_node_feat["id"] = next_connection_node_id
-                new_culvert_feat["connection_node_start_id"] = next_connection_node_id
-                next_connection_node_id += 1
-                node_end_point = polyline[-1]
-                new_end_node_feat = QgsFeature(node_fields)
-                new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
-                new_end_node_feat["id"] = next_connection_node_id
-                new_culvert_feat["connection_node_end_id"] = next_connection_node_id
-                next_connection_node_id += 1
-                new_nodes += [new_start_node_feat, new_end_node_feat]
+                    new_nodes += [new_start_node_feat, new_end_node_feat]
             if new_nodes:
                 node_layer.addFeatures(new_nodes)
                 locator = QgsPointLocator(node_layer, dst_crs, transform_ctx)
@@ -184,6 +188,8 @@ class ImportCulverts(QgsProcessingAlgorithm):
                         field_value = value_map[src_value]
                     except KeyError:
                         field_value = src_value
+                    if field_value == NULL:
+                        field_value = field_config.get("default_value", NULL)
                     new_culvert_feat[field_name] = field_value
                 elif method == ColumnImportMethod.DEFAULT:
                     default_value = field_config["default_value"]
