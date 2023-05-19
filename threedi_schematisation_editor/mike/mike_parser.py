@@ -72,11 +72,11 @@ class NWKComponent(MikeComponent):
         for branch_txt in branch_txt_list:
             branch_rows = [row.split("=")[-1].strip().replace("'", "") for row in branch_txt.split("\n") if "=" in row]
             definition_txt, connections_txt, points_txt = branch_rows
-            river_name, topo_id, definition_leftovers = [i.strip() for i in definition_txt.split(",", 2)]
+            topo_id, river_name, definition_leftovers = [i.strip() for i in definition_txt.split(",", 2)]
             point_ids = [int(pid_txt) for pid_txt in points_txt.split(",")]
             points = [self.points[pid] for pid in point_ids]
             branch = branch_cls(river_name, topo_id, points)
-            self.branches[branch.river_name, branch.topo_id] = branch
+            self.branches[topo_id] = branch
 
     def parse_component_data(self):
         if not self.is_available:
@@ -156,7 +156,7 @@ class XSComponent(MikeComponent):
                     line_values = [val.strip() for val in line.split()]
                     profile.append(line_values)
                 xs = xs_cls(river_name, topo_id, chainage, profile)
-                self.cross_section_data[river_name, topo_id].append(xs)
+                self.cross_section_data[topo_id].append(xs)
 
     def discover_component_path(self, text_to_search):
         super().discover_component_path(text_to_search)
