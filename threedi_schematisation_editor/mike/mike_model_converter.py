@@ -41,7 +41,7 @@ class MIKEConverter:
         xs_component = self.parser.components[XSComponent]
         current_node_id, current_channel_id, current_xs_id = 1, 1, 1
         visited_node_values = {}
-        for branch in nwk_component.branches.values():
+        for branch_topo_id, branch in nwk_component.branches.items():
             channel_feature = ogr.Feature(channel_layer.GetLayerDefn())
             branch_points = branch.points
             start_point, end_point = branch_points[0], branch_points[-1]
@@ -64,8 +64,8 @@ class MIKEConverter:
 
             channel_values = {
                 "id": current_channel_id,
-                "code": branch.river_name,
-                "display_name": f"{branch.river_name} {start_point.chainage:.0f} - {end_point.chainage:.0f}",
+                "code": branch.topo_id,
+                "display_name": f"{branch.river_name}_{branch_topo_id}",
                 "connection_node_start_id": start_node_values["id"],
                 "connection_node_end_id": end_node_values["id"],
             }
@@ -77,8 +77,7 @@ class MIKEConverter:
             channel_feature.SetGeometry(channel_geom)
             channel_layer.CreateFeature(channel_feature)
             channel_feature = None
-            branch_id = (branch.river_name.upper(), branch.topo_id.upper())
-            branch_cross_sections = xs_component.cross_section_data[branch_id]
+            branch_cross_sections = xs_component.cross_section_data[branch_topo_id.upper()]
             for xs in branch_cross_sections:
                 xs_feature = ogr.Feature(cross_section_layer.GetLayerDefn())
                 xs_chainage = float(xs.chainage)
@@ -87,7 +86,7 @@ class MIKEConverter:
                 xs_geom = channel_geom.Value(xs_chainage)
                 xs_values = {
                     "id": current_xs_id,
-                    "code": f"{xs.river_name}_{xs.topo_id}_{xs.chainage}",
+                    "code": f"{branch_topo_id}_{xs.chainage}",
                     "channel_id": current_channel_id,
                     "friction_type": en.FrictionType.MANNING.value,
                     "cross_section_shape": en.CrossSectionShape.TABULATED_TRAPEZIUM.value,
