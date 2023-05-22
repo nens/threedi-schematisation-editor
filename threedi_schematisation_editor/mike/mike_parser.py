@@ -96,10 +96,16 @@ class NWKComponent(MikeComponent):
             self.branches[name] = branch
 
     def interpolate_chainage_point(self, branch, chainage):
-        real_chainage = float(chainage) - float(branch.upstream_chainage)
         points_txt = ", ".join(f"{point.x} {point.y}" for point in branch.points)
         branch_geom = ogr.CreateGeometryFromWkt(f"LINESTRING ({points_txt})")
-        chainage_point_geom = branch_geom.Value(real_chainage)
+        chainage_float, up_chainage_float, down_chainage_float = (
+            float(chainage),
+            float(branch.upstream_chainage),
+            float(branch.downstream_chainage),
+        )
+        real_chainage = chainage_float - float(branch.upstream_chainage)
+        chainage_coefficient = branch_geom.Length() / (down_chainage_float - up_chainage_float)
+        chainage_point_geom = branch_geom.Value(real_chainage * chainage_coefficient)
         new_point_id = max(self.points.keys()) + 1 if self.points else 1
         new_point = self.point_cls(new_point_id, chainage_point_geom.GetX(), chainage_point_geom.GetY(), chainage)
         return new_point
