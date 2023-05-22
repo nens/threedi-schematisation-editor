@@ -41,7 +41,7 @@ class MIKEConverter:
         xs_component = self.parser.components[XSComponent]
         current_node_id, current_channel_id, current_xs_id = 1, 1, 1
         visited_node_values = {}
-        for branch_topo_id, branch in nwk_component.branches.items():
+        for branch_name, branch in nwk_component.branches.items():
             channel_feature = ogr.Feature(channel_layer.GetLayerDefn())
             branch_points = branch.points
             start_point, end_point = branch_points[0], branch_points[-1]
@@ -51,21 +51,21 @@ class MIKEConverter:
             try:
                 start_node_values = visited_node_values[start_point_id]
             except KeyError:
-                start_node_values = {"id": current_node_id, "code": str(start_point.chainage)}
+                start_node_values = {"id": current_node_id, "code": start_point.chainage}
                 current_node_id += 1
                 visited_node_values[start_point_id] = start_node_values
 
             try:
                 end_node_values = visited_node_values[end_point_id]
             except KeyError:
-                end_node_values = {"id": current_node_id, "code": str(end_point.chainage)}
+                end_node_values = {"id": current_node_id, "code": end_point.chainage}
                 current_node_id += 1
                 visited_node_values[end_point_id] = end_node_values
 
             channel_values = {
                 "id": current_channel_id,
-                "code": branch.topo_id,
-                "display_name": f"{branch.river_name}_{branch_topo_id}",
+                "code": branch.name,
+                "display_name": f"{branch.name} ({branch.topo_id})",
                 "connection_node_start_id": start_node_values["id"],
                 "connection_node_end_id": end_node_values["id"],
             }
@@ -77,7 +77,7 @@ class MIKEConverter:
             channel_feature.SetGeometry(channel_geom)
             channel_layer.CreateFeature(channel_feature)
             channel_feature = None
-            branch_cross_sections = xs_component.cross_section_data[branch_topo_id.upper()]
+            branch_cross_sections = xs_component.cross_section_data[branch_name]
             for xs in branch_cross_sections:
                 xs_feature = ogr.Feature(cross_section_layer.GetLayerDefn())
                 xs_chainage = float(xs.chainage)
@@ -86,7 +86,7 @@ class MIKEConverter:
                 xs_geom = channel_geom.Value(xs_chainage)
                 xs_values = {
                     "id": current_xs_id,
-                    "code": f"{branch_topo_id}_{xs.chainage}",
+                    "code": f"{branch_name}_{xs.chainage}",
                     "channel_id": current_channel_id,
                     "friction_type": en.FrictionType.MANNING.value,
                     "cross_section_shape": en.CrossSectionShape.TABULATED_TRAPEZIUM.value,
@@ -98,7 +98,7 @@ class MIKEConverter:
                 cross_section_layer.CreateFeature(xs_feature)
                 current_xs_id += 1
                 xs_feature = None
-        current_channel_id += 1
+            current_channel_id += 1
         for node_point_id, node_values in visited_node_values.items():
             node_feature = ogr.Feature(node_layer.GetLayerDefn())
             for field_name, field_value in node_values.items():

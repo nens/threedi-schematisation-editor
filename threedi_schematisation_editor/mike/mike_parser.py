@@ -2,6 +2,7 @@
 import os.path
 import re
 from collections import OrderedDict, defaultdict, namedtuple
+from osgeo import ogr
 
 
 class MikeComponent:
@@ -41,7 +42,13 @@ class NWKComponent(MikeComponent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.points = {}
+        self.chainage_points = {}
         self.branches = {}
+        self.point_cls = namedtuple("point", ["id", "x", "y", "chainage"])
+        self.branch_cls = namedtuple(
+            "branch",
+            ["name", "topo_id", "upstream_chainage", "downstream_chainage", "connections", "points", "is_link"],
+        )
 
     def _parse_projection(self, nwk_txt):
         data_area_txt = self.parser.extract_sections(nwk_txt, "DATA_AREA")[0]
@@ -52,31 +59,95 @@ class NWKComponent(MikeComponent):
     def _parse_points(self, nwk_txt):
         points_txt = self.parser.extract_sections(nwk_txt, "POINTS")[0]
         point_prefix = "point = "
-        point_cls = namedtuple("Point", ["id", "x", "y", "user_defined", "chainage"])
         point_rows = [row.strip().replace(point_prefix, "") for row in points_txt.split("\n") if "=" in row]
         for point_row in point_rows:
-            pid_str, x_str, y_str, user_defined_str, chainage_str = point_row.split(",")[:-1]
-            pid, x, y, user_defined, chainage = (
+            pid_str, x_str, y_str, user_defined_str, chainage = [i.strip() for i in point_row.split(",")][:-1]
+            pid, x, y, user_defined = (
                 int(pid_str),
                 float(x_str),
                 float(y_str),
                 bool(int(user_defined_str)),
-                float(chainage_str),
             )
-            point = point_cls(pid, x, y, user_defined, chainage)
+            point = self.point_cls(pid, x, y, chainage)
             self.points[point.id] = point
 
     def _parse_branches(self, nwk_txt):
         branch_txt_list = self.parser.extract_sections(nwk_txt, "branch")
-        branch_cls = namedtuple("branch", ["river_name", "topo_id", "points"])
         for branch_txt in branch_txt_list:
             branch_rows = [row.split("=")[-1].strip().replace("'", "") for row in branch_txt.split("\n") if "=" in row]
             definition_txt, connections_txt, points_txt = branch_rows
-            topo_id, river_name, definition_leftovers = [i.strip() for i in definition_txt.split(",", 2)]
-            point_ids = [int(pid_txt) for pid_txt in points_txt.split(",")]
-            points = [self.points[pid] for pid in point_ids]
-            branch = branch_cls(river_name, topo_id, points)
-            self.branches[topo_id] = branch
+            name, topo_id, up_chainage, down_chainage, definition_leftovers = [
+                i.strip().upper() for i in definition_txt.split(",", 4)
+            ]
+            up_link_name, up_link_chainage, down_link_name, down_link_chainage = [
+                i.strip().upper() for i in connections_txt.split(",")
+            ]
+            connections = {
+                "upstream": (up_link_name, up_link_chainage),
+                "downstream": (down_link_name, down_link_chainage),
+            }
+            points = []
+            for pid_txt in points_txt.split(","):
+                pid = int(pid_txt)
+                point = self.points[pid]
+                points.append(point)
+                self.chainage_points[name, point.chainage] = pid
+            branch = self.branch_cls(name, topo_id, up_chainage, down_chainage, connections, points, False)
+            self.branches[name] = branch
+
+    def interpolate_chainage_point(self, branch, chainage):
+        real_chainage = float(chainage) - float(branch.upstream_chainage)
+        points_txt = ", ".join(f"{point.x} {point.y}" for point in branch.points)
+        branch_geom = ogr.CreateGeometryFromWkt(f"LINESTRING ({points_txt})")
+        chainage_point_geom = branch_geom.Value(real_chainage)
+        new_point_id = max(self.points.keys()) + 1 if self.points else 1
+        new_point = self.point_cls(new_point_id, chainage_point_geom.GetX(), chainage_point_geom.GetY(), chainage)
+        return new_point
+
+    def _add_connections_as_branches(self):
+        connection_branches = {}
+        for branch in self.branches.values():
+            connections = branch.connections
+            up_link_name, up_link_chainage = connections["upstream"]
+            down_link_name, down_link_chainage = connections["downstream"]
+            if up_link_name:
+                from_branch = self.branches[up_link_name]
+                to_branch = branch
+                try:
+                    from_pid = self.chainage_points[up_link_name, up_link_chainage]
+                    from_point = self.points[from_pid]
+                except KeyError:
+                    from_point = self.interpolate_chainage_point(from_branch, up_link_chainage)
+                    self.points[from_point.id] = from_point
+                    self.chainage_points[up_link_name, up_link_chainage] = from_point
+                to_point = branch.points[0]
+                up_link_points = [from_point, to_point]
+                up_link_branch_name = f"link_{from_branch.name}_{to_branch.name}"
+                up_link_branch_topo_id = f"link_{from_branch.topo_id}_{to_branch.topo_id}"
+                up_link_branch = self.branch_cls(
+                    up_link_branch_name, up_link_branch_topo_id, 0.0, 0.0, [], up_link_points, True
+                )
+                connection_branches[up_link_branch_name] = up_link_branch
+
+            if down_link_name:
+                from_branch = branch
+                to_branch = self.branches[down_link_name]
+                try:
+                    to_pid = self.chainage_points[down_link_name, down_link_chainage]
+                    to_point = self.points[to_pid]
+                except KeyError:
+                    to_point = self.interpolate_chainage_point(to_branch, down_link_chainage)
+                    self.points[to_point.id] = to_point
+                    self.chainage_points[down_link_name, down_link_chainage] = to_point
+                from_point = branch.points[-1]
+                down_link_points = [from_point, to_point]
+                down_link_branch_name = f"link_{from_branch.name}_{to_branch.name}"
+                down_link_branch_topo_id = f"link_{from_branch.topo_id}_{to_branch.topo_id}"
+                down_link_branch = self.branch_cls(
+                    down_link_branch_name, down_link_branch_topo_id, 0.0, 0.0, [], down_link_points, True
+                )
+                connection_branches[down_link_branch_name] = down_link_branch
+        self.branches.update(connection_branches)
 
     def parse_component_data(self):
         if not self.is_available:
@@ -86,6 +157,7 @@ class NWKComponent(MikeComponent):
             self._parse_projection(nwk_txt)
             self._parse_points(nwk_txt)
             self._parse_branches(nwk_txt)
+            self._add_connections_as_branches()
 
 
 class XSComponent(MikeComponent):
@@ -142,21 +214,21 @@ class XSComponent(MikeComponent):
     def parse_component_data(self):
         if not self.is_available:
             return
-        xs_cls = namedtuple("cross_section", ["river_name", "topo_id", "chainage", "profile"])
+        xs_cls = namedtuple("cross_section", ["name", "topo_id", "chainage", "profile"])
         with open(self.rawdata_filepath) as xs_file:
             for xs_txt_raw in xs_file.read().split("*******************************"):
                 xs_txt = xs_txt_raw.strip()
                 if not xs_txt:
                     continue
                 rawdata_segments = self.segmentize_xs_rawdata(xs_txt)
-                river_name, topo_id, chainage = [row.strip() for row in rawdata_segments["CHANNEL"].split("\n")]
+                topo_id, name, chainage = [row.strip() for row in rawdata_segments["CHANNEL"].split("\n")]
                 profile_lines = (row.strip() for row in rawdata_segments["PROFILE"].split("\n")[1:])
                 profile = []
                 for line in profile_lines:
                     line_values = [val.strip() for val in line.split()]
                     profile.append(line_values)
-                xs = xs_cls(river_name, topo_id, chainage, profile)
-                self.cross_section_data[topo_id].append(xs)
+                xs = xs_cls(name, topo_id, chainage, profile)
+                self.cross_section_data[name].append(xs)
 
     def discover_component_path(self, text_to_search):
         super().discover_component_path(text_to_search)
