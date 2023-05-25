@@ -1,4 +1,6 @@
 # Copyright (C) 2023 by Lutra Consulting
+import statistics
+
 from osgeo import gdal, ogr, osr
 
 from threedi_schematisation_editor import data_models as dm
@@ -65,6 +67,7 @@ class MIKEConverter:
             channel_values = {
                 "id": current_channel_id,
                 "code": branch.name,
+                "calculation_type": en.CalculationType.CONNECTED.value,
                 "display_name": f"{branch.name} ({branch.topo_id})",
                 "connection_node_start_id": start_node_values["id"],
                 "connection_node_end_id": end_node_values["id"],
@@ -78,18 +81,52 @@ class MIKEConverter:
             channel_layer.CreateFeature(channel_feature)
             channel_feature = None
             branch_cross_sections = xs_component.cross_section_data[branch_name]
+
             for xs in branch_cross_sections:
                 xs_feature = ogr.Feature(cross_section_layer.GetLayerDefn())
                 xs_chainage = float(xs.chainage)
-                xs_table = "\n".join(f"{row[0]}, {row[1]}" for row in xs.profile)
+                resistance_type = XSComponent.ResistanceTypes(xs.resistance_type)
+                lowest_level = 0.0
+                if resistance_type in [XSComponent.ResistanceTypes.MANNING_N, XSComponent.ResistanceTypes.MANNING_M]:
+                    friction_type = en.FrictionType.MANNING.value
+                elif resistance_type == XSComponent.ResistanceTypes.CHEZY:
+                    friction_type = en.FrictionType.CHEZY.value
+                else:
+                    friction_type = None
+                distances, elevation_levels, resistance_values, bank_levels = [], [], [], []
+                for distance, elevation, resistance, marker in xs.profile:
+                    distances.append(distance)
+                    elevation_float = float(elevation)
+                    resistance_float = (
+                        1 / float(resistance)
+                        if resistance_type == XSComponent.ResistanceTypes.MANNING_M
+                        else float(resistance)
+                    )
+                    elevation_levels.append(elevation_float)
+                    resistance_values.append(resistance_float)
+                    if marker in xs_component.levee_banks_markers:
+                        bank_levels.append(elevation_float)
+                    elif marker == xs_component.lowest_point_marker:
+                        lowest_level = elevation_float
+                if lowest_level < 0.0:
+                    elevation_levels = [elevation - lowest_level for elevation in elevation_levels]
 
-                xs_geom = channel_geom.Value(xs_chainage)
+                xs_table = "\n".join(
+                    f"{distance}, {elevation:.3f}" for distance, elevation in zip(distances, elevation_levels)
+                )
+                reference_level = lowest_level if lowest_level > 0.0 else 0.0
+                bank_level = min(bank_levels) if bank_levels else None
+                friction_value = round(statistics.fmean(resistance_values), 3)
+                xs_geom = nwk_component.interpolate_chainage_point(branch, xs_chainage)
                 xs_values = {
                     "id": current_xs_id,
                     "code": f"{branch_name}_{xs.chainage}",
                     "channel_id": current_channel_id,
-                    "friction_type": en.FrictionType.MANNING.value,
-                    "cross_section_shape": en.CrossSectionShape.TABULATED_TRAPEZIUM.value,
+                    "reference_level": reference_level,
+                    "bank_level": bank_level,
+                    "friction_value": friction_value,
+                    "friction_type": friction_type,
+                    "cross_section_shape": en.CrossSectionShape.YZ.value,
                     "cross_section_table": xs_table,
                 }
                 for xs_field_name, xs_field_value in xs_values.items():
