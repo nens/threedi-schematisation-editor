@@ -110,6 +110,7 @@ class MIKEConverter:
                         lowest_level = elevation_float
                 if lowest_level < 0.0:
                     elevation_levels = [elevation - lowest_level for elevation in elevation_levels]
+                    bank_levels = [elevation - lowest_level for elevation in bank_levels]
 
                 xs_table = "\n".join(
                     f"{distance}, {elevation:.3f}" for distance, elevation in zip(distances, elevation_levels)
