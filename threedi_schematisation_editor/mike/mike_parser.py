@@ -2,6 +2,9 @@
 import os.path
 import re
 from collections import OrderedDict, defaultdict, namedtuple
+from enum import Enum
+from functools import cached_property
+
 from osgeo import ogr
 
 
@@ -95,7 +98,8 @@ class NWKComponent(MikeComponent):
             branch = self.branch_cls(name, topo_id, up_chainage, down_chainage, connections, points, False)
             self.branches[name] = branch
 
-    def interpolate_chainage_point(self, branch, chainage):
+    @staticmethod
+    def interpolate_chainage_point(branch, chainage):
         points_txt = ", ".join(f"{point.x} {point.y}" for point in branch.points)
         branch_geom = ogr.CreateGeometryFromWkt(f"LINESTRING ({points_txt})")
         chainage_float, up_chainage_float, down_chainage_float = (
@@ -106,6 +110,10 @@ class NWKComponent(MikeComponent):
         real_chainage = chainage_float - float(branch.upstream_chainage)
         chainage_coefficient = branch_geom.Length() / (down_chainage_float - up_chainage_float)
         chainage_point_geom = branch_geom.Value(real_chainage * chainage_coefficient)
+        return chainage_point_geom
+
+    def add_chainage_point(self, branch, chainage):
+        chainage_point_geom = self.interpolate_chainage_point(branch, chainage)
         new_point_id = max(self.points.keys()) + 1 if self.points else 1
         new_point = self.point_cls(new_point_id, chainage_point_geom.GetX(), chainage_point_geom.GetY(), chainage)
         return new_point
@@ -123,7 +131,7 @@ class NWKComponent(MikeComponent):
                     from_pid = self.chainage_points[up_link_name, up_link_chainage]
                     from_point = self.points[from_pid]
                 except KeyError:
-                    from_point = self.interpolate_chainage_point(from_branch, up_link_chainage)
+                    from_point = self.add_chainage_point(from_branch, up_link_chainage)
                     self.points[from_point.id] = from_point
                     self.chainage_points[up_link_name, up_link_chainage] = from_point
                 to_point = branch.points[0]
@@ -142,7 +150,7 @@ class NWKComponent(MikeComponent):
                     to_pid = self.chainage_points[down_link_name, down_link_chainage]
                     to_point = self.points[to_pid]
                 except KeyError:
-                    to_point = self.interpolate_chainage_point(to_branch, down_link_chainage)
+                    to_point = self.add_chainage_point(to_branch, down_link_chainage)
                     self.points[to_point.id] = to_point
                     self.chainage_points[down_link_name, down_link_chainage] = to_point
                 from_point = branch.points[-1]
@@ -169,6 +177,13 @@ class NWKComponent(MikeComponent):
 class XSComponent(MikeComponent):
     NAME = "xs"
 
+    class ResistanceTypes(Enum):
+        RELATIVE = 0
+        MANNING_N = 1
+        MANNING_M = 2
+        CHEZY = 3
+        DARCY_WEISBACH = 4
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.rawdata_filepath = None
@@ -180,6 +195,14 @@ class XSComponent(MikeComponent):
             return self.rawdata_filepath and os.path.exists(self.rawdata_filepath)
         else:
             return False
+
+    @cached_property
+    def levee_banks_markers(self):
+        return {"<#1>", "<#4>"}
+
+    @cached_property
+    def lowest_point_marker(self):
+        return "<#2>"
 
     def _discover_rawdata_path(self):
         if self.filepath:
@@ -220,7 +243,7 @@ class XSComponent(MikeComponent):
     def parse_component_data(self):
         if not self.is_available:
             return
-        xs_cls = namedtuple("cross_section", ["name", "topo_id", "chainage", "profile"])
+        xs_cls = namedtuple("cross_section", ["name", "topo_id", "chainage", "resistance_type", "profile"])
         with open(self.rawdata_filepath) as xs_file:
             for xs_txt_raw in xs_file.read().split("*******************************"):
                 xs_txt = xs_txt_raw.strip()
@@ -228,12 +251,14 @@ class XSComponent(MikeComponent):
                     continue
                 rawdata_segments = self.segmentize_xs_rawdata(xs_txt)
                 topo_id, name, chainage = [row.strip() for row in rawdata_segments["CHANNEL"].split("\n")]
+                resistance_numbers = [number.strip() for number in rawdata_segments["RESISTANCE NUMBERS"].split()]
+                resistance_type = int(resistance_numbers[1])
                 profile_lines = (row.strip() for row in rawdata_segments["PROFILE"].split("\n")[1:])
                 profile = []
                 for line in profile_lines:
-                    line_values = [val.strip() for val in line.split()]
+                    line_values = [val.strip() for val in line.split()][:4]
                     profile.append(line_values)
-                xs = xs_cls(name, topo_id, chainage, profile)
+                xs = xs_cls(name, topo_id, chainage, resistance_type, profile)
                 self.cross_section_data[name].append(xs)
 
     def discover_component_path(self, text_to_search):
