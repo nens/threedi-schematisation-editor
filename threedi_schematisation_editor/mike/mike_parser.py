@@ -3,8 +3,10 @@ import os.path
 import re
 from collections import OrderedDict, defaultdict, namedtuple
 from functools import cached_property
-from threedi_schematisation_editor.mike.utils import interpolate_chainage_point
+
 from osgeo import ogr
+
+from threedi_schematisation_editor.mike.utils import interpolate_chainage_point
 
 
 class MikeComponent:
@@ -99,19 +101,8 @@ class NWKComponent(MikeComponent):
             branch = self.branch_cls(name, topo_id, up_chainage, down_chainage, connections, points, False)
             self.branches[name] = branch
 
-    @staticmethod
-    def interpolate_chainage_point(branch, chainage):
-        points_txt = ", ".join(f"{point.x} {point.y}" for point in branch.points)
-        branch_geom = ogr.CreateGeometryFromWkt(f"LINESTRING ({points_txt})")
-
-        up_chainage, down_chainage = branch.upstream_chainage, branch.downstream_chainage
-        real_chainage = chainage - up_chainage
-        chainage_coefficient = branch_geom.Length() / (down_chainage - up_chainage)
-        chainage_point_geom = branch_geom.Value(real_chainage * chainage_coefficient)
-        return chainage_point_geom
-
     def add_chainage_point(self, branch, chainage):
-        chainage_point_geom = self.interpolate_chainage_point(branch, chainage)
+        chainage_point_geom = interpolate_chainage_point(branch, chainage)
         new_point_id = max(self.points.keys()) + 1 if self.points else 1
         x, y, m = chainage_point_geom.GetX(), chainage_point_geom.GetY(), chainage
         new_point = self.point_cls(new_point_id, x, y, m)
