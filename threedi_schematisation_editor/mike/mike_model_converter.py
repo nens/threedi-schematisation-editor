@@ -6,7 +6,7 @@ from osgeo import gdal, ogr, osr
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor import enumerators as en
 from threedi_schematisation_editor.mike.mike_parser import MikeParser, NWKComponent, XSComponent
-from threedi_schematisation_editor.mike.utils import create_data_model_layer
+from threedi_schematisation_editor.mike.utils import create_data_model_layer, ResistanceTypes
 
 gdal.SetConfigOption("OGR_SQLITE_SYNCHRONOUS", "OFF")  # Speed up the runtime on EXT4 filesystems
 
@@ -16,6 +16,9 @@ class MIKEConverter:
         self.parser = MikeParser(sim11_filepath)
         self.threedi_gpkg_filepath = threedi_gpkg_filepath
         self.crs = osr.SpatialReference()
+        self.nwk_component = None
+        self.xs_component = None
+        self.visited_node_values = {}
 
     def mike2threedi(self):
         self.parser.detect_components()
@@ -35,34 +38,83 @@ class MIKEConverter:
             create_data_model_layer(model_cls, threedi_dataset, self.crs)
         threedi_dataset = None
 
+    def cross_section_feature(self, cross_section_layer, xs, current_xs_id, branch, current_channel_id):
+        xs_feature = ogr.Feature(cross_section_layer.GetLayerDefn())
+        resistance_type = ResistanceTypes(xs.resistance_type)
+        lowest_level = 0.0
+        if resistance_type in [ResistanceTypes.MANNING_N, ResistanceTypes.MANNING_M]:
+            friction_type = en.FrictionType.MANNING.value
+        elif resistance_type == ResistanceTypes.CHEZY:
+            friction_type = en.FrictionType.CHEZY.value
+        else:
+            friction_type = None
+        distances, elevation_levels, resistance_values, bank_levels = [], [], [], []
+        for distance, elevation, resistance, marker in xs.profile:
+            distances.append(distance)
+            elevation_float = float(elevation)
+            resistance_float = (
+                1 / float(resistance) if resistance_type == ResistanceTypes.MANNING_M else float(resistance)
+            )
+            elevation_levels.append(elevation_float)
+            resistance_values.append(resistance_float)
+            if marker in self.xs_component.levee_banks_markers:
+                bank_levels.append(elevation_float)
+            elif marker == self.xs_component.lowest_point_marker:
+                lowest_level = elevation_float
+        if lowest_level < 0.0:
+            elevation_levels = [elevation - lowest_level for elevation in elevation_levels]
+            bank_levels = [elevation - lowest_level for elevation in bank_levels]
+
+        xs_table = "\n".join(f"{distance}, {elevation:.3f}" for distance, elevation in zip(distances, elevation_levels))
+        reference_level = lowest_level if lowest_level > 0.0 else 0.0
+        bank_level = min(bank_levels) if bank_levels else None
+        friction_value = round(statistics.fmean(resistance_values), 3)
+        xs_geom = self.nwk_component.interpolate_chainage_point(branch, xs.chainage)
+        xs_values = {
+            "id": current_xs_id,
+            "code": f"{branch.name}_{xs.chainage}",
+            "channel_id": current_channel_id,
+            "reference_level": reference_level,
+            "bank_level": bank_level,
+            "friction_value": friction_value,
+            "friction_type": friction_type,
+            "cross_section_shape": en.CrossSectionShape.YZ.value,
+            "cross_section_table": xs_table,
+        }
+        for xs_field_name, xs_field_value in xs_values.items():
+            xs_feature.SetField(xs_field_name, xs_field_value)
+        xs_feature.SetGeometry(xs_geom)
+        return xs_feature
+
     def process_network(self, threedi_dataset):
         node_layer = threedi_dataset.GetLayerByName(dm.ConnectionNode.__tablename__)
         channel_layer = threedi_dataset.GetLayerByName(dm.Channel.__tablename__)
         cross_section_layer = threedi_dataset.GetLayerByName(dm.CrossSectionLocation.__tablename__)
-        nwk_component = self.parser.components[NWKComponent]
-        xs_component = self.parser.components[XSComponent]
+        self.nwk_component = self.parser.components[NWKComponent]
+        self.xs_component = self.parser.components[XSComponent]
         current_node_id, current_channel_id, current_xs_id = 1, 1, 1
-        visited_node_values = {}
-        for branch_name, branch in nwk_component.branches.items():
+        self.visited_node_values.clear()
+
+        for branch_name, branch in self.nwk_component.branches.items():
             channel_feature = ogr.Feature(channel_layer.GetLayerDefn())
             branch_points = branch.points
             start_point, end_point = branch_points[0], branch_points[-1]
             start_point_id, end_point_id = start_point.id, end_point.id
-            start_point = nwk_component.points[start_point_id]
-            end_point = nwk_component.points[end_point_id]
+            start_point = self.nwk_component.points[start_point_id]
+            end_point = self.nwk_component.points[end_point_id]
             try:
-                start_node_values = visited_node_values[start_point_id]
+                start_node_values = self.visited_node_values[start_point_id]
             except KeyError:
-                start_node_values = {"id": current_node_id, "code": start_point.chainage}
+                start_node_values = {"id": current_node_id, "code": str(start_point.m)}
                 current_node_id += 1
-                visited_node_values[start_point_id] = start_node_values
+                self.visited_node_values[start_point_id] = start_node_values
 
             try:
-                end_node_values = visited_node_values[end_point_id]
+                end_node_values = self.visited_node_values[end_point_id]
             except KeyError:
-                end_node_values = {"id": current_node_id, "code": end_point.chainage}
+                end_node_values = {"id": current_node_id, "code": str(end_point.m)}
                 current_node_id += 1
-                visited_node_values[end_point_id] = end_node_values
+                self.visited_node_values[end_point_id] = end_node_values
 
             channel_values = {
                 "id": current_channel_id,
@@ -80,68 +132,20 @@ class MIKEConverter:
             channel_feature.SetGeometry(channel_geom)
             channel_layer.CreateFeature(channel_feature)
             channel_feature = None
-            branch_cross_sections = xs_component.cross_section_data[branch_name]
-
+            branch_cross_sections = self.xs_component.cross_section_data[branch_name]
             for xs in branch_cross_sections:
-                xs_feature = ogr.Feature(cross_section_layer.GetLayerDefn())
-                xs_chainage = float(xs.chainage)
-                resistance_type = XSComponent.ResistanceTypes(xs.resistance_type)
-                lowest_level = 0.0
-                if resistance_type in [XSComponent.ResistanceTypes.MANNING_N, XSComponent.ResistanceTypes.MANNING_M]:
-                    friction_type = en.FrictionType.MANNING.value
-                elif resistance_type == XSComponent.ResistanceTypes.CHEZY:
-                    friction_type = en.FrictionType.CHEZY.value
-                else:
-                    friction_type = None
-                distances, elevation_levels, resistance_values, bank_levels = [], [], [], []
-                for distance, elevation, resistance, marker in xs.profile:
-                    distances.append(distance)
-                    elevation_float = float(elevation)
-                    resistance_float = (
-                        1 / float(resistance)
-                        if resistance_type == XSComponent.ResistanceTypes.MANNING_M
-                        else float(resistance)
-                    )
-                    elevation_levels.append(elevation_float)
-                    resistance_values.append(resistance_float)
-                    if marker in xs_component.levee_banks_markers:
-                        bank_levels.append(elevation_float)
-                    elif marker == xs_component.lowest_point_marker:
-                        lowest_level = elevation_float
-                if lowest_level < 0.0:
-                    elevation_levels = [elevation - lowest_level for elevation in elevation_levels]
-                    bank_levels = [elevation - lowest_level for elevation in bank_levels]
-
-                xs_table = "\n".join(
-                    f"{distance}, {elevation:.3f}" for distance, elevation in zip(distances, elevation_levels)
+                xs_feature = self.cross_section_feature(
+                    cross_section_layer, xs, current_xs_id, branch, current_channel_id
                 )
-                reference_level = lowest_level if lowest_level > 0.0 else 0.0
-                bank_level = min(bank_levels) if bank_levels else None
-                friction_value = round(statistics.fmean(resistance_values), 3)
-                xs_geom = nwk_component.interpolate_chainage_point(branch, xs_chainage)
-                xs_values = {
-                    "id": current_xs_id,
-                    "code": f"{branch_name}_{xs.chainage}",
-                    "channel_id": current_channel_id,
-                    "reference_level": reference_level,
-                    "bank_level": bank_level,
-                    "friction_value": friction_value,
-                    "friction_type": friction_type,
-                    "cross_section_shape": en.CrossSectionShape.YZ.value,
-                    "cross_section_table": xs_table,
-                }
-                for xs_field_name, xs_field_value in xs_values.items():
-                    xs_feature.SetField(xs_field_name, xs_field_value)
-                xs_feature.SetGeometry(xs_geom)
                 cross_section_layer.CreateFeature(xs_feature)
                 current_xs_id += 1
                 xs_feature = None
             current_channel_id += 1
-        for node_point_id, node_values in visited_node_values.items():
+        for node_point_id, node_values in self.visited_node_values.items():
             node_feature = ogr.Feature(node_layer.GetLayerDefn())
             for field_name, field_value in node_values.items():
                 node_feature.SetField(field_name, field_value)
-            point = nwk_component.points[node_point_id]
+            point = self.nwk_component.points[node_point_id]
             node_geom_wkt = f"POINT ({point.x} {point.y})"
             node_geom = ogr.CreateGeometryFromWkt(node_geom_wkt)
             node_feature.SetGeometry(node_geom)

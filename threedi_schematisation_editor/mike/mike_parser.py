@@ -2,9 +2,8 @@
 import os.path
 import re
 from collections import OrderedDict, defaultdict, namedtuple
-from enum import Enum
 from functools import cached_property
-
+from threedi_schematisation_editor.mike.utils import interpolate_chainage_point
 from osgeo import ogr
 
 
@@ -47,7 +46,7 @@ class NWKComponent(MikeComponent):
         self.points = {}
         self.chainage_points = {}
         self.branches = {}
-        self.point_cls = namedtuple("point", ["id", "x", "y", "chainage"])
+        self.point_cls = namedtuple("point", ["id", "x", "y", "m"])
         self.branch_cls = namedtuple(
             "branch",
             ["name", "topo_id", "upstream_chainage", "downstream_chainage", "connections", "points", "is_link"],
@@ -64,14 +63,14 @@ class NWKComponent(MikeComponent):
         point_prefix = "point = "
         point_rows = [row.strip().replace(point_prefix, "") for row in points_txt.split("\n") if "=" in row]
         for point_row in point_rows:
-            pid_str, x_str, y_str, user_defined_str, chainage = [i.strip() for i in point_row.split(",")][:-1]
-            pid, x, y, user_defined = (
+            pid_str, x_str, y_str, user_defined_str, chainage_str = [i.strip() for i in point_row.split(",")][:-1]
+            pid, x, y, m = (
                 int(pid_str),
                 float(x_str),
                 float(y_str),
-                bool(int(user_defined_str)),
+                float(chainage_str),
             )
-            point = self.point_cls(pid, x, y, chainage)
+            point = self.point_cls(pid, x, y, m)
             self.points[point.id] = point
 
     def _parse_branches(self, nwk_txt):
@@ -79,12 +78,14 @@ class NWKComponent(MikeComponent):
         for branch_txt in branch_txt_list:
             branch_rows = [row.split("=")[-1].strip().replace("'", "") for row in branch_txt.split("\n") if "=" in row]
             definition_txt, connections_txt, points_txt = branch_rows
-            name, topo_id, up_chainage, down_chainage, definition_leftovers = [
+            name, topo_id, up_chainage_str, down_chainage_str, definition_leftovers = [
                 i.strip().upper() for i in definition_txt.split(",", 4)
             ]
-            up_link_name, up_link_chainage, down_link_name, down_link_chainage = [
+            up_link_name, up_link_chainage_str, down_link_name, down_link_chainage_str = [
                 i.strip().upper() for i in connections_txt.split(",")
             ]
+            up_chainage, down_chainage = float(up_chainage_str), float(down_chainage_str)
+            up_link_chainage, down_link_chainage = float(up_link_chainage_str), float(down_link_chainage_str)
             connections = {
                 "upstream": (up_link_name, up_link_chainage),
                 "downstream": (down_link_name, down_link_chainage),
@@ -94,7 +95,7 @@ class NWKComponent(MikeComponent):
                 pid = int(pid_txt)
                 point = self.points[pid]
                 points.append(point)
-                self.chainage_points[name, point.chainage] = pid
+                self.chainage_points[name, point.m] = pid
             branch = self.branch_cls(name, topo_id, up_chainage, down_chainage, connections, points, False)
             self.branches[name] = branch
 
@@ -102,20 +103,18 @@ class NWKComponent(MikeComponent):
     def interpolate_chainage_point(branch, chainage):
         points_txt = ", ".join(f"{point.x} {point.y}" for point in branch.points)
         branch_geom = ogr.CreateGeometryFromWkt(f"LINESTRING ({points_txt})")
-        chainage_float, up_chainage_float, down_chainage_float = (
-            float(chainage),
-            float(branch.upstream_chainage),
-            float(branch.downstream_chainage),
-        )
-        real_chainage = chainage_float - float(branch.upstream_chainage)
-        chainage_coefficient = branch_geom.Length() / (down_chainage_float - up_chainage_float)
+
+        up_chainage, down_chainage = branch.upstream_chainage, branch.downstream_chainage
+        real_chainage = chainage - up_chainage
+        chainage_coefficient = branch_geom.Length() / (down_chainage - up_chainage)
         chainage_point_geom = branch_geom.Value(real_chainage * chainage_coefficient)
         return chainage_point_geom
 
     def add_chainage_point(self, branch, chainage):
         chainage_point_geom = self.interpolate_chainage_point(branch, chainage)
         new_point_id = max(self.points.keys()) + 1 if self.points else 1
-        new_point = self.point_cls(new_point_id, chainage_point_geom.GetX(), chainage_point_geom.GetY(), chainage)
+        x, y, m = chainage_point_geom.GetX(), chainage_point_geom.GetY(), chainage
+        new_point = self.point_cls(new_point_id, x, y, m)
         return new_point
 
     def _add_connections_as_branches(self):
@@ -176,13 +175,6 @@ class NWKComponent(MikeComponent):
 
 class XSComponent(MikeComponent):
     NAME = "xs"
-
-    class ResistanceTypes(Enum):
-        RELATIVE = 0
-        MANNING_N = 1
-        MANNING_M = 2
-        CHEZY = 3
-        DARCY_WEISBACH = 4
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -250,7 +242,8 @@ class XSComponent(MikeComponent):
                 if not xs_txt:
                     continue
                 rawdata_segments = self.segmentize_xs_rawdata(xs_txt)
-                topo_id, name, chainage = [row.strip() for row in rawdata_segments["CHANNEL"].split("\n")]
+                topo_id, name, chainage_str = [row.strip() for row in rawdata_segments["CHANNEL"].split("\n")]
+                chainage = float(chainage_str)
                 resistance_numbers = [number.strip() for number in rawdata_segments["RESISTANCE NUMBERS"].split()]
                 resistance_type = int(resistance_numbers[1])
                 profile_lines = (row.strip() for row in rawdata_segments["PROFILE"].split("\n")[1:])
@@ -276,6 +269,12 @@ class RRComponent(MikeComponent):
 
 class HDComponent(MikeComponent):
     NAME = "hd"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.global_values = {}
+        self.initial_conditions = {}
+        self.global_values_cls = namedtuple("global_values", [])
 
 
 class ADComponent(MikeComponent):
