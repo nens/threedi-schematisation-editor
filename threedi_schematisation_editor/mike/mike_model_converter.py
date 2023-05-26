@@ -6,7 +6,13 @@ from osgeo import gdal, ogr, osr
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor import enumerators as en
 from threedi_schematisation_editor.mike.mike_parser import MikeParser, NWKComponent, XSComponent
-from threedi_schematisation_editor.mike.utils import create_data_model_layer, ResistanceTypes
+from threedi_schematisation_editor.mike.utils import (
+    ResistanceTypes,
+    create_data_model_layer,
+    gdal_linestring,
+    gdal_point,
+    interpolate_chainage_point,
+)
 
 gdal.SetConfigOption("OGR_SQLITE_SYNCHRONOUS", "OFF")  # Speed up the runtime on EXT4 filesystems
 
@@ -69,7 +75,8 @@ class MIKEConverter:
         reference_level = lowest_level if lowest_level > 0.0 else 0.0
         bank_level = min(bank_levels) if bank_levels else None
         friction_value = round(statistics.fmean(resistance_values), 3)
-        xs_geom = self.nwk_component.interpolate_chainage_point(branch, xs.chainage)
+        xs_geom = interpolate_chainage_point(branch, xs.chainage)
+        xs_geom.SetMeasured(False)
         xs_values = {
             "id": current_xs_id,
             "code": f"{branch.name}_{xs.chainage}",
@@ -126,9 +133,7 @@ class MIKEConverter:
             }
             for field_name, field_value in channel_values.items():
                 channel_feature.SetField(field_name, field_value)
-            points_txt = ", ".join(f"{point.x} {point.y}" for point in branch_points)
-            channel_geom_wkt = f"LINESTRING ({points_txt})"
-            channel_geom = ogr.CreateGeometryFromWkt(channel_geom_wkt)
+            channel_geom = gdal_linestring(branch_points)
             channel_feature.SetGeometry(channel_geom)
             channel_layer.CreateFeature(channel_feature)
             channel_feature = None
@@ -146,8 +151,7 @@ class MIKEConverter:
             for field_name, field_value in node_values.items():
                 node_feature.SetField(field_name, field_value)
             point = self.nwk_component.points[node_point_id]
-            node_geom_wkt = f"POINT ({point.x} {point.y})"
-            node_geom = ogr.CreateGeometryFromWkt(node_geom_wkt)
+            node_geom = gdal_point(point)
             node_feature.SetGeometry(node_geom)
             node_layer.CreateFeature(node_feature)
             node_feature = None
