@@ -46,6 +46,8 @@ class NWKComponent(MikeComponent):
         self.points = {}
         self.chainage_points = {}
         self.branches = {}
+        self.node_replacements = {}
+        self.extra_branch_points = defaultdict(set)
         self.point_cls = namedtuple("point", ["id", "x", "y", "m"])
         self.branch_cls = namedtuple(
             "branch",
@@ -99,7 +101,7 @@ class NWKComponent(MikeComponent):
             branch = self.branch_cls(name, topo_id, up_chainage, down_chainage, connections, points, False)
             self.branches[name] = branch
 
-    def add_chainage_point(self, branch, chainage):
+    def generate_chainage_point(self, branch, chainage):
         chainage_point_geom = interpolate_chainage_point(branch, chainage)
         new_point_id = max(self.points.keys()) + 1 if self.points else 1
         x, y, m = chainage_point_geom.GetX(), chainage_point_geom.GetY(), chainage
@@ -115,36 +117,39 @@ class NWKComponent(MikeComponent):
             if up_link_name:
                 from_branch = self.branches[up_link_name]
                 to_branch = branch
+                to_point = to_branch.points[0]
                 try:
                     from_pid = self.chainage_points[up_link_name, up_link_chainage]
                     from_point = self.points[from_pid]
                 except KeyError:
-                    from_point = self.add_chainage_point(from_branch, up_link_chainage)
+                    from_point = self.generate_chainage_point(from_branch, up_link_chainage)
                     self.points[from_point.id] = from_point
                     self.chainage_points[up_link_name, up_link_chainage] = from_point
-                to_point = branch.points[0]
+                    self.extra_branch_points[up_link_name].add(from_point)
+                self.node_replacements[to_point.id] = from_point.id
                 up_link_points = [from_point, to_point]
-                up_link_branch_name = f"link_{from_branch.name}_{to_branch.name}"
-                up_link_branch_topo_id = f"link_{from_branch.topo_id}_{to_branch.topo_id}"
+                up_link_branch_name = f"{from_branch.name}_{to_branch.name}"
+                up_link_branch_topo_id = f"{from_branch.topo_id}_{to_branch.topo_id}"
                 up_link_branch = self.branch_cls(
                     up_link_branch_name, up_link_branch_topo_id, 0.0, 0.0, [], up_link_points, True
                 )
                 connection_branches[up_link_branch_name] = up_link_branch
-
             if down_link_name:
                 from_branch = branch
                 to_branch = self.branches[down_link_name]
+                from_point = branch.points[-1]
                 try:
                     to_pid = self.chainage_points[down_link_name, down_link_chainage]
                     to_point = self.points[to_pid]
                 except KeyError:
-                    to_point = self.add_chainage_point(to_branch, down_link_chainage)
+                    to_point = self.generate_chainage_point(to_branch, down_link_chainage)
                     self.points[to_point.id] = to_point
                     self.chainage_points[down_link_name, down_link_chainage] = to_point
-                from_point = branch.points[-1]
+                    self.extra_branch_points[down_link_name].add(to_point)
+                self.node_replacements[from_point.id] = to_point.id
                 down_link_points = [from_point, to_point]
-                down_link_branch_name = f"link_{from_branch.name}_{to_branch.name}"
-                down_link_branch_topo_id = f"link_{from_branch.topo_id}_{to_branch.topo_id}"
+                down_link_branch_name = f"{from_branch.name}_{to_branch.name}"
+                down_link_branch_topo_id = f"{from_branch.topo_id}_{to_branch.topo_id}"
                 down_link_branch = self.branch_cls(
                     down_link_branch_name, down_link_branch_topo_id, 0.0, 0.0, [], down_link_points, True
                 )
