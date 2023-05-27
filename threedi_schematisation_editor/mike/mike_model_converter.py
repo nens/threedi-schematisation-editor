@@ -83,7 +83,6 @@ class MIKEConverter:
             xs_geom = gdal_point(xs_chainage_point)
         except KeyError:
             xs_geom = interpolate_chainage_point(branch, xs.chainage)
-            xs_geom.SetMeasured(False)
         xs_values = {
             "id": current_xs_id,
             "code": f"{branch.name}_{xs.chainage}",
