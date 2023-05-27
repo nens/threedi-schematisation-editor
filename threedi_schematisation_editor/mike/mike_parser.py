@@ -4,8 +4,6 @@ import re
 from collections import OrderedDict, defaultdict, namedtuple
 from functools import cached_property
 
-from osgeo import ogr
-
 from threedi_schematisation_editor.mike.utils import interpolate_chainage_point
 
 

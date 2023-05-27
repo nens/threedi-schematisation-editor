@@ -45,6 +45,8 @@ class MIKEConverter:
         threedi_dataset = None
 
     def cross_section_feature(self, cross_section_layer, xs, current_xs_id, branch, current_channel_id):
+        if branch.downstream_chainage < xs.chainage:  # Skip cross-section with chainage beyond branch range
+            return None
         xs_feature = ogr.Feature(cross_section_layer.GetLayerDefn())
         resistance_type = ResistanceTypes(xs.resistance_type)
         lowest_level = 0.0
@@ -75,8 +77,13 @@ class MIKEConverter:
         reference_level = lowest_level if lowest_level > 0.0 else 0.0
         bank_level = min(bank_levels) if bank_levels else None
         friction_value = round(statistics.fmean(resistance_values), 3)
-        xs_geom = interpolate_chainage_point(branch, xs.chainage)
-        xs_geom.SetMeasured(False)
+        try:
+            xs_chainage_pid = self.nwk_component.chainage_points[branch.name, xs.chainage]
+            xs_chainage_point = self.nwk_component.points[xs_chainage_pid]
+            xs_geom = gdal_point(xs_chainage_point)
+        except KeyError:
+            xs_geom = interpolate_chainage_point(branch, xs.chainage)
+            xs_geom.SetMeasured(False)
         xs_values = {
             "id": current_xs_id,
             "code": f"{branch.name}_{xs.chainage}",
@@ -142,6 +149,8 @@ class MIKEConverter:
                 xs_feature = self.cross_section_feature(
                     cross_section_layer, xs, current_xs_id, branch, current_channel_id
                 )
+                if xs_feature is None:
+                    continue
                 cross_section_layer.CreateFeature(xs_feature)
                 current_xs_id += 1
                 xs_feature = None

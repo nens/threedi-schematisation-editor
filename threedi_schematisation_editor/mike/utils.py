@@ -70,24 +70,15 @@ def gdal_linestring(points, skip_m=True):
 
 
 def interpolate_chainage_point(branch, chainage):
-    branch_geom = gdal_linestring(branch.points)
-    real_chainage = chainage - float(branch.upstream_chainage)
-    chainage_coefficient = branch_geom.Length() / (branch.down_chainage - branch.up_chainage)
-    chainage_point_geom = branch_geom.Value(real_chainage * chainage_coefficient)
-    return chainage_point_geom
-
-
-def interpolate_chainage_point_bisect(branch, chainage):
     branch_points = branch.points
     branch_points_chainages = [point.m for point in branch_points]
-    max_idx = len(branch_points_chainages) - 1
     idx = bisect.bisect_left(branch_points_chainages, chainage)
-    up_point = branch_points[idx - 1] if idx > 0 else branch_points[0]
-    down_point = branch_points[idx + 1] if idx < max_idx else branch_points[max_idx]
+    up_point = branch_points[idx - 1]
+    down_point = branch_points[idx]
     segment_geom = gdal_linestring([up_point, down_point])
     segment_chainage = chainage - up_point.m
-    segment_distance = segment_geom.Length()
-    segment_m_distance = down_point.m - up_point.m
-    segment_m_coefficient = segment_distance / segment_m_distance if segment_m_distance else 0.0
-    chainage_point_geom = segment_geom.Value(segment_chainage * segment_m_coefficient)
+    segment_length = segment_geom.Length()
+    segment_chainage_distance = down_point.m - up_point.m
+    chainage_to_length_coefficient = segment_length / segment_chainage_distance
+    chainage_point_geom = segment_geom.Value(segment_chainage * chainage_to_length_coefficient)
     return chainage_point_geom
