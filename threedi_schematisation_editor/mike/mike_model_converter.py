@@ -1,5 +1,6 @@
 # Copyright (C) 2023 by Lutra Consulting
 import statistics
+from operator import attrgetter
 
 from osgeo import gdal, ogr, osr
 
@@ -44,7 +45,52 @@ class MIKEConverter:
             create_data_model_layer(model_cls, threedi_dataset, self.crs)
         threedi_dataset = None
 
-    def cross_section_feature(self, cross_section_layer, xs, current_xs_id, branch, current_channel_id):
+    def _create_channel_feature(self, channel_layer, branch, current_channel_id, current_node_id):
+        channel_feature = ogr.Feature(channel_layer.GetLayerDefn())
+        branch_points = branch.points[:]
+        branch_points.extend(self.nwk_component.extra_branch_points[branch.name])
+        branch_points.sort(key=attrgetter("m"))
+        start_point, end_point = branch_points[0], branch_points[-1]
+        start_point_id, end_point_id = start_point.id, end_point.id
+        try:
+            start_point_id = self.nwk_component.node_replacements[start_point_id]
+            start_point = self.nwk_component.points[start_point_id]
+            branch_points.insert(0, start_point)
+        except KeyError:
+            pass
+        try:
+            end_point_id = self.nwk_component.node_replacements[end_point_id]
+            end_point = self.nwk_component.points[end_point_id]
+            branch_points.append(end_point)
+        except KeyError:
+            pass
+        try:
+            start_node_values = self.visited_node_values[start_point_id]
+        except KeyError:
+            start_node_values = {"id": current_node_id, "code": str(start_point_id)}
+            current_node_id += 1
+            self.visited_node_values[start_point_id] = start_node_values
+        try:
+            end_node_values = self.visited_node_values[end_point_id]
+        except KeyError:
+            end_node_values = {"id": current_node_id, "code": str(end_point_id)}
+            current_node_id += 1
+            self.visited_node_values[end_point_id] = end_node_values
+        channel_values = {
+            "id": current_channel_id,
+            "code": branch.name,
+            "calculation_type": en.CalculationType.CONNECTED.value,
+            "display_name": f"{branch.name} ({branch.topo_id})",
+            "connection_node_start_id": start_node_values["id"],
+            "connection_node_end_id": end_node_values["id"],
+        }
+        for field_name, field_value in channel_values.items():
+            channel_feature.SetField(field_name, field_value)
+        channel_geom = gdal_linestring(branch_points)
+        channel_feature.SetGeometry(channel_geom)
+        return channel_feature, current_node_id
+
+    def _create_cross_section_feature(self, cross_section_layer, xs, current_xs_id, branch, current_channel_id):
         if branch.downstream_chainage < xs.chainage:  # Skip cross-section with chainage beyond branch range
             return None
         xs_feature = ogr.Feature(cross_section_layer.GetLayerDefn())
@@ -72,7 +118,6 @@ class MIKEConverter:
         if lowest_level < 0.0:
             elevation_levels = [elevation - lowest_level for elevation in elevation_levels]
             bank_levels = [elevation - lowest_level for elevation in bank_levels]
-
         xs_table = "\n".join(f"{distance}, {elevation:.3f}" for distance, elevation in zip(distances, elevation_levels))
         reference_level = lowest_level if lowest_level > 0.0 else 0.0
         bank_level = min(bank_levels) if bank_levels else None
@@ -107,45 +152,17 @@ class MIKEConverter:
         self.xs_component = self.parser.components[XSComponent]
         current_node_id, current_channel_id, current_xs_id = 1, 1, 1
         self.visited_node_values.clear()
-
         for branch_name, branch in self.nwk_component.branches.items():
-            channel_feature = ogr.Feature(channel_layer.GetLayerDefn())
-            branch_points = branch.points
-            start_point, end_point = branch_points[0], branch_points[-1]
-            start_point_id, end_point_id = start_point.id, end_point.id
-            start_point = self.nwk_component.points[start_point_id]
-            end_point = self.nwk_component.points[end_point_id]
-            try:
-                start_node_values = self.visited_node_values[start_point_id]
-            except KeyError:
-                start_node_values = {"id": current_node_id, "code": str(start_point.m)}
-                current_node_id += 1
-                self.visited_node_values[start_point_id] = start_node_values
-
-            try:
-                end_node_values = self.visited_node_values[end_point_id]
-            except KeyError:
-                end_node_values = {"id": current_node_id, "code": str(end_point.m)}
-                current_node_id += 1
-                self.visited_node_values[end_point_id] = end_node_values
-
-            channel_values = {
-                "id": current_channel_id,
-                "code": branch.name,
-                "calculation_type": en.CalculationType.CONNECTED.value,
-                "display_name": f"{branch.name} ({branch.topo_id})",
-                "connection_node_start_id": start_node_values["id"],
-                "connection_node_end_id": end_node_values["id"],
-            }
-            for field_name, field_value in channel_values.items():
-                channel_feature.SetField(field_name, field_value)
-            channel_geom = gdal_linestring(branch_points)
-            channel_feature.SetGeometry(channel_geom)
+            if branch.is_link:
+                continue
+            channel_feature, current_node_id = self._create_channel_feature(
+                channel_layer, branch, current_channel_id, current_node_id
+            )
             channel_layer.CreateFeature(channel_feature)
             channel_feature = None
             branch_cross_sections = self.xs_component.cross_section_data[branch_name]
             for xs in branch_cross_sections:
-                xs_feature = self.cross_section_feature(
+                xs_feature = self._create_cross_section_feature(
                     cross_section_layer, xs, current_xs_id, branch, current_channel_id
                 )
                 if xs_feature is None:
