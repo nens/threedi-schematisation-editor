@@ -45,25 +45,53 @@ class MIKEConverter:
             create_data_model_layer(model_cls, threedi_dataset, self.crs)
         threedi_dataset = None
 
-    def _create_channel_feature(self, channel_layer, branch, current_channel_id, current_node_id):
-        channel_feature = ogr.Feature(channel_layer.GetLayerDefn())
-        branch_points = branch.points[:]
-        branch_points.extend(self.nwk_component.extra_branch_points[branch.name])
-        branch_points.sort(key=attrgetter("m"))
-        start_point, end_point = branch_points[0], branch_points[-1]
+    def _enriched_branch(self, branch):
+        branch_points_copy = list(branch.points)
+        branch_points_copy.extend(self.nwk_component.extra_branch_points[branch.name])
+        branch_points_copy.sort(key=attrgetter("m"))
+        start_point, end_point = branch_points_copy[0], branch_points_copy[-1]
         start_point_id, end_point_id = start_point.id, end_point.id
         try:
             start_point_id = self.nwk_component.node_replacements[start_point_id]
             start_point = self.nwk_component.points[start_point_id]
-            branch_points.insert(0, start_point)
+            branch_points_copy.insert(0, start_point)
         except KeyError:
             pass
         try:
             end_point_id = self.nwk_component.node_replacements[end_point_id]
             end_point = self.nwk_component.points[end_point_id]
-            branch_points.append(end_point)
+            branch_points_copy.append(end_point)
         except KeyError:
             pass
+        branch_attributes = branch._asdict()
+        branch_attributes["points"] = tuple(branch_points_copy)
+        enriched_branch = self.nwk_component.branch_cls(**branch_attributes)
+        return enriched_branch
+
+    def _split_branch(self, branch):
+        branch_split_points = list(sorted(self.nwk_component.branch_split_points[branch.name], key=attrgetter("m")))
+        branch_points = list(branch.points)
+        branch_points_ids = [p.id for p in branch_points]
+        separated_branches = []
+        branch_attributes = branch._asdict()
+        for split_point in branch_split_points:
+            split_point_idx = branch_points_ids.index(split_point.id)
+            sub_branch_points = branch_points[: split_point_idx + 1]
+            del branch_points[:split_point_idx]
+            del branch_points_ids[:split_point_idx]
+            branch_attributes["points"] = tuple(sub_branch_points)
+            sub_branch = self.nwk_component.branch_cls(**branch_attributes)
+            separated_branches.append(sub_branch)
+        branch_attributes["points"] = tuple(branch_points)
+        last_branch = self.nwk_component.branch_cls(**branch_attributes)
+        separated_branches.append(last_branch)
+        return separated_branches
+
+    def _create_channel_feature(self, channel_layer, branch, current_channel_id, current_node_id):
+        channel_feature = ogr.Feature(channel_layer.GetLayerDefn())
+        branch_points = branch.points
+        start_point, end_point = branch_points[0], branch_points[-1]
+        start_point_id, end_point_id = start_point.id, end_point.id
         try:
             start_node_values = self.visited_node_values[start_point_id]
         except KeyError:
@@ -155,11 +183,14 @@ class MIKEConverter:
         for branch_name, branch in self.nwk_component.branches.items():
             if branch.is_link:
                 continue
-            channel_feature, current_node_id = self._create_channel_feature(
-                channel_layer, branch, current_channel_id, current_node_id
-            )
-            channel_layer.CreateFeature(channel_feature)
-            channel_feature = None
+            enriched_branch = self._enriched_branch(branch)
+            for sub_branch in self._split_branch(enriched_branch):
+                channel_feature, current_node_id = self._create_channel_feature(
+                    channel_layer, sub_branch, current_channel_id, current_node_id
+                )
+                channel_layer.CreateFeature(channel_feature)
+                current_channel_id += 1
+                channel_feature = None
             branch_cross_sections = self.xs_component.cross_section_data[branch_name]
             for xs in branch_cross_sections:
                 xs_feature = self._create_cross_section_feature(
@@ -170,7 +201,6 @@ class MIKEConverter:
                 cross_section_layer.CreateFeature(xs_feature)
                 current_xs_id += 1
                 xs_feature = None
-            current_channel_id += 1
         for node_point_id, node_values in self.visited_node_values.items():
             node_feature = ogr.Feature(node_layer.GetLayerDefn())
             for field_name, field_value in node_values.items():
