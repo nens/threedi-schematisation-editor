@@ -45,13 +45,23 @@ class NWKComponent(MikeComponent):
         super().__init__(*args, **kwargs)
         self.points = {}
         self.chainage_points = {}
-        self.branches = {}
         self.node_replacements = {}
+        self.branches = {}
         self.extra_branch_points = defaultdict(set)
+        self.branch_split_points = defaultdict(set)
         self.point_cls = namedtuple("point", ["id", "x", "y", "m"])
         self.branch_cls = namedtuple(
             "branch",
-            ["name", "topo_id", "upstream_chainage", "downstream_chainage", "connections", "points", "is_link"],
+            [
+                "name",
+                "topo_id",
+                "upstream_chainage",
+                "downstream_chainage",
+                "upstream_connection",
+                "downstream_connection",
+                "points",
+                "is_link",
+            ],
         )
 
     def _parse_projection(self, nwk_txt):
@@ -88,17 +98,24 @@ class NWKComponent(MikeComponent):
             ]
             up_chainage, down_chainage = float(up_chainage_str), float(down_chainage_str)
             up_link_chainage, down_link_chainage = float(up_link_chainage_str), float(down_link_chainage_str)
-            connections = {
-                "upstream": (up_link_name, up_link_chainage),
-                "downstream": (down_link_name, down_link_chainage),
-            }
+            upstream_connection = (up_link_name, up_link_chainage)
+            downstream_connection = (down_link_name, down_link_chainage)
             points = []
             for pid_txt in points_txt.split(","):
                 pid = int(pid_txt)
                 point = self.points[pid]
                 points.append(point)
                 self.chainage_points[name, point.m] = pid
-            branch = self.branch_cls(name, topo_id, up_chainage, down_chainage, connections, points, False)
+            branch = self.branch_cls(
+                name,
+                topo_id,
+                up_chainage,
+                down_chainage,
+                upstream_connection,
+                downstream_connection,
+                tuple(points),
+                False,
+            )
             self.branches[name] = branch
 
     def generate_chainage_point(self, branch, chainage):
@@ -111,9 +128,8 @@ class NWKComponent(MikeComponent):
     def _add_connections_as_branches(self):
         connection_branches = {}
         for branch in self.branches.values():
-            connections = branch.connections
-            up_link_name, up_link_chainage = connections["upstream"]
-            down_link_name, down_link_chainage = connections["downstream"]
+            up_link_name, up_link_chainage = branch.upstream_connection
+            down_link_name, down_link_chainage = branch.downstream_connection
             if up_link_name:
                 from_branch = self.branches[up_link_name]
                 to_branch = branch
@@ -124,14 +140,18 @@ class NWKComponent(MikeComponent):
                 except KeyError:
                     from_point = self.generate_chainage_point(from_branch, up_link_chainage)
                     self.points[from_point.id] = from_point
-                    self.chainage_points[up_link_name, up_link_chainage] = from_point
+                    self.chainage_points[up_link_name, up_link_chainage] = from_point.id
                     self.extra_branch_points[up_link_name].add(from_point)
-                self.node_replacements[to_point.id] = from_point.id
-                up_link_points = [from_point, to_point]
+                upstream_replacement_point = self.point_cls(-from_point.id, from_point.x, from_point.y, float("-inf"))
+                self.points[upstream_replacement_point.id] = upstream_replacement_point
+                self.node_replacements[to_point.id] = upstream_replacement_point.id
+                if from_point != from_branch.points[-1]:
+                    self.branch_split_points[up_link_name].add(from_point)
+                up_link_points = (from_point, to_point)
                 up_link_branch_name = f"{from_branch.name}_{to_branch.name}"
                 up_link_branch_topo_id = f"{from_branch.topo_id}_{to_branch.topo_id}"
                 up_link_branch = self.branch_cls(
-                    up_link_branch_name, up_link_branch_topo_id, 0.0, 0.0, [], up_link_points, True
+                    up_link_branch_name, up_link_branch_topo_id, 0.0, 0.0, None, None, up_link_points, True
                 )
                 connection_branches[up_link_branch_name] = up_link_branch
             if down_link_name:
@@ -144,14 +164,18 @@ class NWKComponent(MikeComponent):
                 except KeyError:
                     to_point = self.generate_chainage_point(to_branch, down_link_chainage)
                     self.points[to_point.id] = to_point
-                    self.chainage_points[down_link_name, down_link_chainage] = to_point
+                    self.chainage_points[down_link_name, down_link_chainage] = to_point.id
                     self.extra_branch_points[down_link_name].add(to_point)
-                self.node_replacements[from_point.id] = to_point.id
-                down_link_points = [from_point, to_point]
+                downstream_replacement_point = self.point_cls(-to_point.id, to_point.x, to_point.y, float("inf"))
+                self.points[downstream_replacement_point.id] = downstream_replacement_point
+                self.node_replacements[from_point.id] = downstream_replacement_point.id
+                if to_point != to_branch.points[0]:
+                    self.branch_split_points[down_link_name].add(to_point)
+                down_link_points = (from_point, to_point)
                 down_link_branch_name = f"{from_branch.name}_{to_branch.name}"
                 down_link_branch_topo_id = f"{from_branch.topo_id}_{to_branch.topo_id}"
                 down_link_branch = self.branch_cls(
-                    down_link_branch_name, down_link_branch_topo_id, 0.0, 0.0, [], down_link_points, True
+                    down_link_branch_name, down_link_branch_topo_id, 0.0, 0.0, None, None, down_link_points, True
                 )
                 connection_branches[down_link_branch_name] = down_link_branch
         self.branches.update(connection_branches)
