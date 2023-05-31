@@ -8,7 +8,7 @@ from osgeo import gdal, ogr, osr
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor import enumerators as en
-from threedi_schematisation_editor.mike.mike_parser import MikeParser, NWKComponent, XSComponent
+from threedi_schematisation_editor.mike.mike_parser import HDComponent, MikeParser, NWKComponent, XSComponent
 from threedi_schematisation_editor.mike.utils import (
     ResistanceTypes,
     create_data_model_layer,
@@ -27,6 +27,7 @@ class MIKEConverter:
         self.crs = osr.SpatialReference()
         self.nwk_component = None
         self.xs_component = None
+        self.hd_component = None
         self.visited_node_values = {}
 
     def mike2threedi(self):
@@ -152,8 +153,25 @@ class MIKEConverter:
             multiplied_cross_sections[sub_branch].append(cloned_xs)
         return multiplied_cross_sections
 
+    def _branch_chainage_resistance(self, branch_name, chainage):
+        branch_bed_resistance = self.hd_component.bed_resistance[branch_name]
+        if not branch_bed_resistance:
+            return 1.0
+        branch_bed_resistance_chainages = [bed_resistance.chainage for bed_resistance in branch_bed_resistance]
+        branch_bed_resistance_values = [bed_resistance.resistance for bed_resistance in branch_bed_resistance]
+        max_idx = len(branch_bed_resistance) - 1
+        resistance_idx = bisect.bisect_left(branch_bed_resistance_chainages, chainage)
+        resistance_value = (
+            branch_bed_resistance_values[resistance_idx]
+            if resistance_idx < max_idx
+            else branch_bed_resistance_values[max_idx]
+        )
+        return resistance_value
+
     def _create_cross_section_feature(self, cross_section_layer, xs, current_xs_id, branch, current_channel_id):
-        if branch.downstream_chainage < xs.chainage:  # Skip cross-section with chainage beyond branch range
+        xs_chainage = xs.chainage
+        branch_name = branch.name
+        if branch.downstream_chainage < xs_chainage:  # Skip cross-section with chainage beyond branch range
             return None
         xs_feature = ogr.Feature(cross_section_layer.GetLayerDefn())
         resistance_type = ResistanceTypes(xs.resistance_type)
@@ -162,15 +180,23 @@ class MIKEConverter:
             friction_type = en.FrictionType.MANNING.value
         elif resistance_type == ResistanceTypes.CHEZY:
             friction_type = en.FrictionType.CHEZY.value
+        elif resistance_type == ResistanceTypes.RELATIVE:
+            friction_type = en.FrictionType.MANNING.value
         else:
             friction_type = None
         distances, elevation_levels, resistance_values, bank_levels = [], [], [], []
+        branch_chainage_resistance = self._branch_chainage_resistance(branch_name, xs_chainage)
         for distance, elevation, resistance, marker in xs.profile:
             distances.append(distance)
             elevation_float = float(elevation)
-            resistance_float = (
-                1 / float(resistance) if resistance_type == ResistanceTypes.MANNING_M else float(resistance)
-            )
+            if resistance_type == ResistanceTypes.MANNING_N:
+                resistance_float = float(resistance)
+            elif resistance_type == ResistanceTypes.MANNING_M:
+                resistance_float = 1 / float(resistance)
+            elif resistance_type == ResistanceTypes.RELATIVE:
+                resistance_float = branch_chainage_resistance
+            else:
+                resistance_float = 1.0
             elevation_levels.append(elevation_float)
             resistance_values.append(resistance_float)
             if marker in self.xs_component.levee_banks_markers:
@@ -185,14 +211,14 @@ class MIKEConverter:
         bank_level = min(bank_levels) if bank_levels else None
         friction_value = round(statistics.fmean(resistance_values), 3)
         try:
-            xs_chainage_pid = self.nwk_component.chainage_points[branch.name, xs.chainage]
+            xs_chainage_pid = self.nwk_component.chainage_points[branch_name, xs_chainage]
             xs_chainage_point = self.nwk_component.points[xs_chainage_pid]
             xs_geom = gdal_point(xs_chainage_point)
         except KeyError:
             xs_geom = interpolate_chainage_point(branch, xs.chainage)
         xs_values = {
             "id": current_xs_id,
-            "code": f"{xs.name}_{xs.chainage}",
+            "code": f"{xs.name}_{xs_chainage}",
             "channel_id": current_channel_id,
             "reference_level": reference_level,
             "bank_level": bank_level,
@@ -212,6 +238,7 @@ class MIKEConverter:
         cross_section_layer = threedi_dataset.GetLayerByName(dm.CrossSectionLocation.__tablename__)
         self.nwk_component = self.parser.components[NWKComponent]
         self.xs_component = self.parser.components[XSComponent]
+        self.hd_component = self.parser.components[HDComponent]
         current_node_id, current_channel_id, current_xs_id = 1, 1, 1
         self.visited_node_values.clear()
         for branch_name, branch in self.nwk_component.branches.items():

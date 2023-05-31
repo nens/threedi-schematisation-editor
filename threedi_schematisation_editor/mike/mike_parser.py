@@ -3,6 +3,7 @@ import os.path
 import re
 from collections import OrderedDict, defaultdict, namedtuple
 from functools import cached_property
+from operator import attrgetter
 
 from threedi_schematisation_editor.mike.utils import interpolate_chainage_point
 
@@ -290,9 +291,45 @@ class HDComponent(MikeComponent):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.global_values = {}
-        self.initial_conditions = {}
-        self.global_values_cls = namedtuple("global_values", [])
+        self.initial_conditions = defaultdict(list)
+        self.bed_resistance = defaultdict(list)
+        self.initial_conditions_cls = namedtuple("initial_conditions", ["river_name", "chainage", "h", "q"])
+        self.bed_resistance_cls = namedtuple("bed_resistance", ["river_name", "chainage", "resistance"])
+
+    def _parse_init_list(self, hd_txt):
+        init_txt = self.parser.extract_sections(hd_txt, "InitList")[0]
+        init_rows = [row.split("=")[-1].strip().replace("'", "") for row in init_txt.split("\n") if "=" in row]
+        for init_row in init_rows:
+            river_name, chainage_str, h_str, q_str = [i.strip() for i in init_row.split(",")]
+            river_name = river_name.upper()
+            chainage = float(chainage_str)
+            h = float(h_str)
+            q = float(q_str)
+            initial_conditions = self.initial_conditions_cls(river_name, chainage, h, q)
+            self.initial_conditions[river_name].append(initial_conditions)
+        for river_initial_conditions in self.initial_conditions.values():
+            river_initial_conditions.sort(key=attrgetter("chainage"))
+
+    def _parse_bed_list(self, hd_txt):
+        bed_txt = self.parser.extract_sections(hd_txt, "BedList")[0]
+        bed_rows = [row.split("=")[-1].strip().replace("'", "") for row in bed_txt.split("\n") if "=" in row]
+        for bed_row in bed_rows:
+            river_name, chainage_str, resistance_str = [i.strip() for i in bed_row.split(",")][:3]
+            river_name = river_name.upper()
+            chainage = float(chainage_str)
+            resistance = float(resistance_str)
+            bed_resistance = self.bed_resistance_cls(river_name, chainage, resistance)
+            self.bed_resistance[river_name].append(bed_resistance)
+        for river_bed_resistance in self.bed_resistance.values():
+            river_bed_resistance.sort(key=attrgetter("chainage"))
+
+    def parse_component_data(self):
+        if not self.is_available:
+            return
+        with open(self.filepath) as hd_file:
+            hd_txt = hd_file.read()
+            self._parse_init_list(hd_txt)
+            self._parse_bed_list(hd_txt)
 
 
 class ADComponent(MikeComponent):
