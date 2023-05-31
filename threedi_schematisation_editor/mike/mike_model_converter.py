@@ -1,5 +1,7 @@
 # Copyright (C) 2023 by Lutra Consulting
+import bisect
 import statistics
+from collections import defaultdict
 from operator import attrgetter
 
 from osgeo import gdal, ogr, osr
@@ -69,10 +71,10 @@ class MIKEConverter:
         return enriched_branch
 
     def _split_branch(self, branch):
+        separated_branches = []
         branch_split_points = list(sorted(self.nwk_component.branch_split_points[branch.name], key=attrgetter("m")))
         branch_points = list(branch.points)
         branch_points_ids = [p.id for p in branch_points]
-        separated_branches = []
         branch_attributes = branch._asdict()
         for split_point in branch_split_points:
             split_point_idx = branch_points_ids.index(split_point.id)
@@ -118,6 +120,38 @@ class MIKEConverter:
         channel_feature.SetGeometry(channel_geom)
         return channel_feature, current_node_id
 
+    def _multiply_branch_cross_sections(self, separated_branches, branch_cross_sections):
+        multiplied_cross_sections = defaultdict(list)
+        branches_without_xs = {}
+        ignore_m_values = {float("-inf"), float("inf")}
+        available_xs_chainages = [xs.chainage for xs in branch_cross_sections]
+        max_xs_idx = len(branch_cross_sections) - 1
+        for sub_branch in separated_branches:
+            no_xs = True
+            sub_branch_points = [p for p in sub_branch.points if p.m not in ignore_m_values]
+            start_point, end_point = sub_branch_points[0], sub_branch_points[-1]
+            start_m, end_m = start_point.m, end_point.m
+            for xs, xs_chainage in zip(branch_cross_sections, available_xs_chainages):
+                if start_m <= xs_chainage <= end_m:
+                    no_xs = False
+                    multiplied_cross_sections[sub_branch].append(xs)
+            if no_xs:
+                branches_without_xs[start_m, end_m] = sub_branch
+        for (start_m, end_m), sub_branch in branches_without_xs.items():
+            additional_chainage = round(start_m + ((end_m - start_m) * 0.5), 3)
+            closest_xs_idx = bisect.bisect_left(available_xs_chainages, additional_chainage)
+            closest_xs = (
+                branch_cross_sections[closest_xs_idx]
+                if closest_xs_idx <= max_xs_idx
+                else branch_cross_sections[max_xs_idx]
+            )
+            closest_xs_attributes = closest_xs._asdict()
+            closest_xs_attributes["chainage"] = additional_chainage
+            closest_xs_attributes["name"] = f"cloned_{closest_xs.name}"
+            cloned_xs = self.xs_component.xs_cls(**closest_xs_attributes)
+            multiplied_cross_sections[sub_branch].append(cloned_xs)
+        return multiplied_cross_sections
+
     def _create_cross_section_feature(self, cross_section_layer, xs, current_xs_id, branch, current_channel_id):
         if branch.downstream_chainage < xs.chainage:  # Skip cross-section with chainage beyond branch range
             return None
@@ -158,7 +192,7 @@ class MIKEConverter:
             xs_geom = interpolate_chainage_point(branch, xs.chainage)
         xs_values = {
             "id": current_xs_id,
-            "code": f"{branch.name}_{xs.chainage}",
+            "code": f"{xs.name}_{xs.chainage}",
             "channel_id": current_channel_id,
             "reference_level": reference_level,
             "bank_level": bank_level,
@@ -184,23 +218,25 @@ class MIKEConverter:
             if branch.is_link:
                 continue
             enriched_branch = self._enriched_branch(branch)
-            for sub_branch in self._split_branch(enriched_branch):
+            separated_branches = self._split_branch(enriched_branch)
+            branch_cross_sections = self.xs_component.cross_section_data[branch_name]
+            multiplied_cross_sections = self._multiply_branch_cross_sections(separated_branches, branch_cross_sections)
+            for sub_branch, sub_branch_cross_sections in multiplied_cross_sections.items():
                 channel_feature, current_node_id = self._create_channel_feature(
                     channel_layer, sub_branch, current_channel_id, current_node_id
                 )
+                for xs in sub_branch_cross_sections:
+                    xs_feature = self._create_cross_section_feature(
+                        cross_section_layer, xs, current_xs_id, branch, current_channel_id
+                    )
+                    if xs_feature is None:
+                        continue
+                    cross_section_layer.CreateFeature(xs_feature)
+                    current_xs_id += 1
+                    xs_feature = None
                 channel_layer.CreateFeature(channel_feature)
                 current_channel_id += 1
                 channel_feature = None
-            branch_cross_sections = self.xs_component.cross_section_data[branch_name]
-            for xs in branch_cross_sections:
-                xs_feature = self._create_cross_section_feature(
-                    cross_section_layer, xs, current_xs_id, branch, current_channel_id
-                )
-                if xs_feature is None:
-                    continue
-                cross_section_layer.CreateFeature(xs_feature)
-                current_xs_id += 1
-                xs_feature = None
         for node_point_id, node_values in self.visited_node_values.items():
             node_feature = ogr.Feature(node_layer.GetLayerDefn())
             for field_name, field_value in node_values.items():

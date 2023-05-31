@@ -198,6 +198,7 @@ class XSComponent(MikeComponent):
         super().__init__(*args, **kwargs)
         self.rawdata_filepath = None
         self.cross_section_data = defaultdict(list)
+        self.xs_cls = namedtuple("cross_section", ["name", "topo_id", "chainage", "resistance_type", "profile"])
 
     @property
     def is_available(self):
@@ -253,7 +254,6 @@ class XSComponent(MikeComponent):
     def parse_component_data(self):
         if not self.is_available:
             return
-        xs_cls = namedtuple("cross_section", ["name", "topo_id", "chainage", "resistance_type", "profile"])
         with open(self.rawdata_filepath) as xs_file:
             for xs_txt_raw in xs_file.read().split("*******************************"):
                 xs_txt = xs_txt_raw.strip()
@@ -269,7 +269,7 @@ class XSComponent(MikeComponent):
                 for line in profile_lines:
                     line_values = [val.strip() for val in line.split()][:4]
                     profile.append(line_values)
-                xs = xs_cls(name, topo_id, chainage, resistance_type, profile)
+                xs = self.xs_cls(name, topo_id, chainage, resistance_type, profile)
                 self.cross_section_data[name].append(xs)
 
     def discover_component_path(self, text_to_search):
