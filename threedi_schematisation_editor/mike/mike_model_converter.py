@@ -95,18 +95,43 @@ class MIKEConverter:
         branch_points = branch.points
         start_point, end_point = branch_points[0], branch_points[-1]
         start_point_id, end_point_id = start_point.id, end_point.id
+        src_start_point_id, src_end_point_id = abs(start_point_id), abs(end_point_id)  # Switch to source point IDs
         try:
-            start_node_values = self.visited_node_values[start_point_id]
+            start_node_values = self.visited_node_values[src_start_point_id]
         except KeyError:
-            start_node_values = {"id": current_node_id, "code": str(start_point_id)}
+            if start_point_id > 0:
+                origin_branch = branch
+                origin_point = start_point
+            else:
+                up_link_name, up_link_chainage = branch.upstream_connection
+                origin_branch = self.nwk_component.branches[up_link_name]
+                origin_point = self.nwk_component.points[src_start_point_id]
+            initial_waterlevel = self._node_initial_waterlevel(origin_branch, origin_point)
+            start_node_values = {
+                "id": current_node_id,
+                "code": str(src_start_point_id),
+                "initial_waterlevel": initial_waterlevel,
+            }
             current_node_id += 1
-            self.visited_node_values[start_point_id] = start_node_values
+            self.visited_node_values[src_start_point_id] = start_node_values
         try:
-            end_node_values = self.visited_node_values[end_point_id]
+            end_node_values = self.visited_node_values[src_end_point_id]
         except KeyError:
-            end_node_values = {"id": current_node_id, "code": str(end_point_id)}
+            if end_point_id > 0:
+                origin_branch = branch
+                origin_point = end_point
+            else:
+                down_link_name, down_link_chainage = branch.downstream_connection
+                origin_branch = self.nwk_component.branches[down_link_name]
+                origin_point = self.nwk_component.points[src_end_point_id]
+            initial_waterlevel = self._node_initial_waterlevel(origin_branch, origin_point)
+            end_node_values = {
+                "id": current_node_id,
+                "code": str(src_end_point_id),
+                "initial_waterlevel": initial_waterlevel,
+            }
             current_node_id += 1
-            self.visited_node_values[end_point_id] = end_node_values
+            self.visited_node_values[src_end_point_id] = end_node_values
         channel_values = {
             "id": current_channel_id,
             "code": branch.name,
@@ -124,12 +149,11 @@ class MIKEConverter:
     def _multiply_branch_cross_sections(self, separated_branches, branch_cross_sections):
         multiplied_cross_sections = defaultdict(list)
         branches_without_xs = {}
-        ignore_m_values = {float("-inf"), float("inf")}
         available_xs_chainages = [xs.chainage for xs in branch_cross_sections]
         max_xs_idx = len(branch_cross_sections) - 1
         for sub_branch in separated_branches:
             no_xs = True
-            sub_branch_points = [p for p in sub_branch.points if p.m not in ignore_m_values]
+            sub_branch_points = [p for p in sub_branch.points if p.id > 0]  # Skip points with a negative ID
             start_point, end_point = sub_branch_points[0], sub_branch_points[-1]
             start_m, end_m = start_point.m, end_point.m
             for xs, xs_chainage in zip(branch_cross_sections, available_xs_chainages):
@@ -153,24 +177,8 @@ class MIKEConverter:
             multiplied_cross_sections[sub_branch].append(cloned_xs)
         return multiplied_cross_sections
 
-    def _branch_chainage_resistance(self, branch_name, chainage):
-        branch_bed_resistance = self.hd_component.bed_resistance[branch_name]
-        if not branch_bed_resistance:
-            return 1.0
-        branch_bed_resistance_chainages = [bed_resistance.chainage for bed_resistance in branch_bed_resistance]
-        branch_bed_resistance_values = [bed_resistance.resistance for bed_resistance in branch_bed_resistance]
-        max_idx = len(branch_bed_resistance) - 1
-        resistance_idx = bisect.bisect_left(branch_bed_resistance_chainages, chainage)
-        resistance_value = (
-            branch_bed_resistance_values[resistance_idx]
-            if resistance_idx < max_idx
-            else branch_bed_resistance_values[max_idx]
-        )
-        return resistance_value
-
     def _create_cross_section_feature(self, cross_section_layer, xs, current_xs_id, branch, current_channel_id):
         xs_chainage = xs.chainage
-        branch_name = branch.name
         if branch.downstream_chainage < xs_chainage:  # Skip cross-section with chainage beyond branch range
             return None
         xs_feature = ogr.Feature(cross_section_layer.GetLayerDefn())
@@ -185,7 +193,7 @@ class MIKEConverter:
         else:
             friction_type = None
         distances, elevation_levels, resistance_values, bank_levels = [], [], [], []
-        branch_chainage_resistance = self._branch_chainage_resistance(branch_name, xs_chainage)
+        branch_chainage_resistance = self._branch_chainage_resistance(branch, xs_chainage)
         for distance, elevation, resistance, marker in xs.profile:
             distances.append(distance)
             elevation_float = float(elevation)
@@ -211,7 +219,7 @@ class MIKEConverter:
         bank_level = min(bank_levels) if bank_levels else None
         friction_value = round(statistics.fmean(resistance_values), 3)
         try:
-            xs_chainage_pid = self.nwk_component.chainage_points[branch_name, xs_chainage]
+            xs_chainage_pid = self.nwk_component.chainage_points[branch.name, xs_chainage]
             xs_chainage_point = self.nwk_component.points[xs_chainage_pid]
             xs_geom = gdal_point(xs_chainage_point)
         except KeyError:
@@ -231,6 +239,37 @@ class MIKEConverter:
             xs_feature.SetField(xs_field_name, xs_field_value)
         xs_feature.SetGeometry(xs_geom)
         return xs_feature
+
+    def _branch_chainage_resistance(self, branch, chainage):
+        branch_name = branch.name
+        branch_bed_resistance = self.hd_component.bed_resistance[branch_name]
+        if not branch_bed_resistance:
+            return 1.0
+        branch_bed_resistance_chainages = [bed_resistance.chainage for bed_resistance in branch_bed_resistance]
+        branch_bed_resistance_values = [bed_resistance.resistance for bed_resistance in branch_bed_resistance]
+        max_idx = len(branch_bed_resistance) - 1
+        resistance_idx = bisect.bisect_left(branch_bed_resistance_chainages, chainage)
+        resistance_value = (
+            branch_bed_resistance_values[resistance_idx]
+            if resistance_idx < max_idx
+            else branch_bed_resistance_values[max_idx]
+        )
+        return resistance_value
+
+    def _node_initial_waterlevel(self, branch, point):
+        branch_initial_conditions = self.hd_component.initial_conditions[branch.name]
+        if not branch_initial_conditions:
+            return None
+        branch_initials_chainages = [initial_conditions.chainage for initial_conditions in branch_initial_conditions]
+        branch_initial_waterlevels = [initial_conditions.h for initial_conditions in branch_initial_conditions]
+        max_idx = len(branch_initial_conditions) - 1
+        initial_conditions_idx = bisect.bisect_left(branch_initials_chainages, point.m)
+        initial_waterlevel_value = (
+            branch_initial_waterlevels[initial_conditions_idx]
+            if initial_conditions_idx < max_idx
+            else branch_initial_waterlevels[max_idx]
+        )
+        return initial_waterlevel_value
 
     def process_network(self, threedi_dataset):
         node_layer = threedi_dataset.GetLayerByName(dm.ConnectionNode.__tablename__)
