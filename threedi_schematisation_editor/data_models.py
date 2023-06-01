@@ -146,11 +146,6 @@ class Manhole(ModelObject):
     hydraulic_conductivity_in: Optional[float]
     hydraulic_conductivity_out: Optional[float]
 
-    @classmethod
-    def hidden_fields(cls) -> set:
-        n = cls.fields_namespace()
-        return {n.exchange_thickness, n.hydraulic_conductivity_in, n.hydraulic_conductivity_out}
-
 
 @dataclass
 class Pumpstation(ModelObject):
@@ -414,11 +409,6 @@ class Pipe(ModelObject):
     hydraulic_conductivity_in: Optional[float]
     hydraulic_conductivity_out: Optional[float]
 
-    @classmethod
-    def hidden_fields(cls) -> set:
-        n = cls.fields_namespace()
-        return {n.exchange_thickness, n.hydraulic_conductivity_in, n.hydraulic_conductivity_out}
-
 
 @dataclass
 class CrossSectionLocation(ModelObject):
@@ -474,11 +464,6 @@ class Channel(ModelObject):
     exchange_thickness: Optional[float]
     hydraulic_conductivity_in: Optional[float]
     hydraulic_conductivity_out: Optional[float]
-
-    @classmethod
-    def hidden_fields(cls) -> set:
-        n = cls.fields_namespace()
-        return {n.exchange_thickness, n.hydraulic_conductivity_in, n.hydraulic_conductivity_out}
 
 
 @dataclass
@@ -776,11 +761,6 @@ class GlobalSettings(ModelObject):
     groundwater_settings_id: int
     maximum_table_step_size: float
     vegetation_drag_settings_id: Optional[int]
-
-    @classmethod
-    def hidden_fields(cls) -> set:
-        n = cls.fields_namespace()
-        return {n.vegetation_drag_settings_id}
 
 
 @dataclass

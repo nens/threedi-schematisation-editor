@@ -14,6 +14,8 @@ class BoundaryType(Enum):
     VELOCITY = 2
     DISCHARGE = 3
     SOMMERFELD = 5
+    GROUNDWATER_LEVEL = 6
+    GROUNDWATER_DISCHARGE = 7
 
 
 class Later2DType(Enum):
