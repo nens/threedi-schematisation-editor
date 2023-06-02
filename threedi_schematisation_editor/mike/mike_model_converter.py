@@ -147,6 +147,8 @@ class MIKEConverter:
         return channel_feature, current_node_id
 
     def _multiply_branch_cross_sections(self, separated_branches, branch_cross_sections):
+        if not branch_cross_sections:  # Handling "linkchannel" branches
+            return {sub_branch: [] for sub_branch in separated_branches}
         multiplied_cross_sections = defaultdict(list)
         branches_without_xs = {}
         available_xs_chainages = [xs.chainage for xs in branch_cross_sections]

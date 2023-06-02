@@ -90,7 +90,7 @@ class NWKComponent(MikeComponent):
         branch_txt_list = self.parser.extract_sections(nwk_txt, "branch")
         for branch_txt in branch_txt_list:
             branch_rows = [row.split("=")[-1].strip().replace("'", "") for row in branch_txt.split("\n") if "=" in row]
-            definition_txt, connections_txt, points_txt = branch_rows
+            definition_txt, connections_txt, points_txt = branch_rows[:3]
             name, topo_id, up_chainage_str, down_chainage_str, definition_leftovers = [
                 i.strip().upper() for i in definition_txt.split(",", 4)
             ]
