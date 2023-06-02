@@ -439,7 +439,7 @@
        <item row="2" column="0">
         <widget class="QGroupBox" name="grp_groundwater">
          <property name="title">
-          <string>Groundwater</string>
+          <string>Groundwater exchange</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_8">
           <item row="0" column="1">
@@ -477,7 +477,7 @@
              <locale language="English" country="UnitedStates"/>
             </property>
             <property name="text">
-             <string>Exchange thickness</string>
+             <string>Exchange thickness [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -490,7 +490,7 @@
              <locale language="English" country="UnitedStates"/>
             </property>
             <property name="text">
-             <string>Hydraulic conductivity in</string>
+             <string>Hydraulic conductivity in [m/d]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -532,7 +532,7 @@
              <locale language="English" country="UnitedStates"/>
             </property>
             <property name="text">
-             <string>Hydraulic conductivity out</string>
+             <string>Hydraulic conductivity out [m/d]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>

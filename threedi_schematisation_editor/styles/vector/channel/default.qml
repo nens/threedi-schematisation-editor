@@ -533,9 +533,9 @@
       <column hidden="0" type="field" width="-1" name="zoom_category"/>
       <column hidden="0" type="field" width="-1" name="connection_node_start_id"/>
       <column hidden="0" type="field" width="-1" name="connection_node_end_id"/>
-      <column hidden="1" type="field" width="-1" name="exchange_thickness"/>
-      <column hidden="1" type="field" width="-1" name="hydraulic_conductivity_in"/>
-      <column hidden="1" type="field" width="-1" name="hydraulic_conductivity_out"/>
+      <column hidden="0" type="field" width="-1" name="exchange_thickness"/>
+      <column hidden="0" type="field" width="-1" name="hydraulic_conductivity_in"/>
+      <column hidden="0" type="field" width="-1" name="hydraulic_conductivity_out"/>
       <column hidden="1" type="actions" width="-1"/>
     </columns>
   </attributetableconfig>
