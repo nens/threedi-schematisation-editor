@@ -958,6 +958,8 @@ class SchemaVersion(ModelObject):
     SQLITE_SOURCES = ("schema_version",)
     SQLITE_TARGETS = SQLITE_SOURCES
 
+    SUPPORTED_SCHEMA_VERSION = 217
+
     version_num: str
 
 
