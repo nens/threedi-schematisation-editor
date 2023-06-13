@@ -9,6 +9,8 @@ from threedi_schematisation_editor.mike.utils import interpolate_chainage_point
 
 
 class MikeComponent:
+    """MIKE11 component base class."""
+
     NAME = None
 
     def __init__(self, parser, filepath=None):
@@ -18,16 +20,19 @@ class MikeComponent:
         self.data = OrderedDict()
 
     def parse_component_data(self):
+        """Method for parsing component data."""
         pass
 
     @property
     def is_available(self):
+        """Check if component file is available."""
         if self.filepath and os.path.exists(self.filepath):
             return True
         else:
             return False
 
     def discover_component_path(self, text_to_search):
+        """Discover component data file paths."""
         if self.search_pattern is None:
             return
         match = re.search(self.search_pattern, text_to_search)
@@ -40,6 +45,8 @@ class MikeComponent:
 
 
 class NWKComponent(MikeComponent):
+    """MIKE11 network component class."""
+
     NAME = "nwk"
 
     def __init__(self, *args, **kwargs):
@@ -66,12 +73,14 @@ class NWKComponent(MikeComponent):
         )
 
     def _parse_projection(self, nwk_txt):
+        """Parse projection information."""
         data_area_txt = self.parser.extract_sections(nwk_txt, "DATA_AREA")[0]
         projection_prefix = "projection = "
         projection_definition = data_area_txt.split(projection_prefix)[-1]
         self.parser.projection = projection_definition.strip("'")
 
     def _parse_points(self, nwk_txt):
+        """Parse network points."""
         points_txt = self.parser.extract_sections(nwk_txt, "POINTS")[0]
         point_prefix = "point = "
         point_rows = [row.strip().replace(point_prefix, "") for row in points_txt.split("\n") if "=" in row]
@@ -87,6 +96,7 @@ class NWKComponent(MikeComponent):
             self.points[point.id] = point
 
     def _parse_branches(self, nwk_txt):
+        """Parse branches data."""
         branch_txt_list = self.parser.extract_sections(nwk_txt, "branch")
         for branch_txt in branch_txt_list:
             branch_rows = [row.split("=")[-1].strip().replace("'", "") for row in branch_txt.split("\n") if "=" in row]
@@ -120,6 +130,7 @@ class NWKComponent(MikeComponent):
             self.branches[name] = branch
 
     def generate_chainage_point(self, branch, chainage):
+        """Create branch chainage point."""
         chainage_point_geom = interpolate_chainage_point(branch, chainage)
         new_point_id = max(self.points.keys()) + 1 if self.points else 1
         x, y, m = chainage_point_geom.GetX(), chainage_point_geom.GetY(), chainage
@@ -127,6 +138,7 @@ class NWKComponent(MikeComponent):
         return new_point
 
     def _add_connections_as_branches(self):
+        """Add branch connections as additional branches."""
         connection_branches = {}
         for branch in self.branches.values():
             up_link_name, up_link_chainage = branch.upstream_connection
@@ -182,6 +194,7 @@ class NWKComponent(MikeComponent):
         self.branches.update(connection_branches)
 
     def parse_component_data(self):
+        """Parse full component data."""
         if not self.is_available:
             return
         with open(self.filepath) as nwk_file:
@@ -193,6 +206,8 @@ class NWKComponent(MikeComponent):
 
 
 class XSComponent(MikeComponent):
+    """MIKE11 cross-sections component class."""
+
     NAME = "xs"
 
     def __init__(self, *args, **kwargs):
@@ -203,6 +218,7 @@ class XSComponent(MikeComponent):
 
     @property
     def is_available(self):
+        """Check if component file is available."""
         if super().is_available:
             return self.rawdata_filepath and os.path.exists(self.rawdata_filepath)
         else:
@@ -210,13 +226,16 @@ class XSComponent(MikeComponent):
 
     @cached_property
     def levee_banks_markers(self):
+        """Return cross-section levee banks markers."""
         return {"<#1>", "<#4>"}
 
     @cached_property
     def lowest_point_marker(self):
+        """Return cross-section lowest point marker."""
         return "<#2>"
 
     def _discover_rawdata_path(self):
+        """Discover path of the cross-sections raw data file."""
         if self.filepath:
             rawdata_filepath = self.filepath.rsplit(".", 1)[0] + ".txt"
             if os.path.exists(rawdata_filepath):
@@ -224,6 +243,7 @@ class XSComponent(MikeComponent):
 
     @staticmethod
     def segmentize_xs_rawdata(single_xs_rawdata):
+        """Split cross-section raw data sections."""
         rawdata_segments = OrderedDict()
         current_segment_identifier = "CHANNEL"
         rawdata_identifiers = [
@@ -253,6 +273,7 @@ class XSComponent(MikeComponent):
         return rawdata_segments
 
     def parse_component_data(self):
+        """Parse full component data."""
         if not self.is_available:
             return
         with open(self.rawdata_filepath) as xs_file:
@@ -274,6 +295,7 @@ class XSComponent(MikeComponent):
                 self.cross_section_data[name].append(xs)
 
     def discover_component_path(self, text_to_search):
+        """Discover component data file paths."""
         super().discover_component_path(text_to_search)
         self._discover_rawdata_path()
 
@@ -287,6 +309,8 @@ class RRComponent(MikeComponent):
 
 
 class HDComponent(MikeComponent):
+    """MIKE11 HD component class."""
+
     NAME = "hd"
 
     def __init__(self, *args, **kwargs):
@@ -297,6 +321,7 @@ class HDComponent(MikeComponent):
         self.bed_resistance_cls = namedtuple("bed_resistance", ["river_name", "chainage", "resistance"])
 
     def _parse_init_list(self, hd_txt):
+        """Parse initial conditions data."""
         init_txt = self.parser.extract_sections(hd_txt, "InitList")[0]
         init_rows = [row.split("=")[-1].strip().replace("'", "") for row in init_txt.split("\n") if "=" in row]
         for init_row in init_rows:
@@ -311,6 +336,7 @@ class HDComponent(MikeComponent):
             river_initial_conditions.sort(key=attrgetter("chainage"))
 
     def _parse_bed_list(self, hd_txt):
+        """Parse bed resistance data."""
         bed_txt = self.parser.extract_sections(hd_txt, "BedList")[0]
         bed_rows = [row.split("=")[-1].strip().replace("'", "") for row in bed_txt.split("\n") if "=" in row]
         for bed_row in bed_rows:
@@ -324,6 +350,7 @@ class HDComponent(MikeComponent):
             river_bed_resistance.sort(key=attrgetter("chainage"))
 
     def parse_component_data(self):
+        """Parse full component data."""
         if not self.is_available:
             return
         with open(self.filepath) as hd_file:
@@ -365,6 +392,8 @@ class ICEComponent(MikeComponent):
 
 
 class MikeParser:
+    """Main MIKE11 components parsing class."""
+
     COMPONENT_CLASSES = (
         NWKComponent,
         XSComponent,
@@ -388,15 +417,18 @@ class MikeParser:
 
     @staticmethod
     def extract_sections(text, split_token):
+        """Split and extract component data section."""
         section_pattern = re.compile(rf"\[{split_token}\].+?EndSect  // {split_token}", re.M | re.S)
         match_list = re.findall(section_pattern, text)
         return match_list
 
     @property
     def sim11_dir(self):
+        """Return simulation filepath."""
         return os.path.dirname(self.sim11_filepath)
 
     def detect_components(self):
+        """Detect all available components filepaths."""
         with open(self.sim11_filepath) as sim11_file:
             sim11_text = sim11_file.read()
             inputs_text = self.extract_sections(sim11_text, "Input")[0]

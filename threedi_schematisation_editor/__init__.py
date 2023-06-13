@@ -6,6 +6,7 @@ from qgis.PyQt.QtWidgets import QAction
 
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.conversion import ModelDataConverter
+from threedi_schematisation_editor.data_models import SchemaVersion
 from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager
 from threedi_schematisation_editor.utils import (
@@ -154,7 +155,7 @@ class ThreediSchematisationEditorPlugin:
             self.uc.show_warn(warn_msg)
             return
         schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
-        if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
+        if schema_version != SchemaVersion.SUPPORTED_SCHEMA_VERSION:
             warn_and_ask_msg = (
                 "The selected spatialite cannot be used because its database schema version is out of date. "
                 "Would you like to migrate your spatialite to the current schema version?"
@@ -231,7 +232,7 @@ class ThreediSchematisationEditorPlugin:
             self.uc.show_warn(warn_msg)
             return
         schema_version = ModelDataConverter.spatialite_schema_version(dst_sqlite)
-        if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
+        if schema_version != SchemaVersion.SUPPORTED_SCHEMA_VERSION:
             schema_version_str = f" ({schema_version}) " if schema_version else " "
             warn_msg = (
                 "The spatialite you have selected could not be used for saving, "

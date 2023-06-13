@@ -23,6 +23,8 @@ gdal_geometry_types_mapping = {
 
 
 class ResistanceTypes(Enum):
+    """MIKE resistance types."""
+
     RELATIVE = 0
     MANNING_N = 1
     MANNING_M = 2
@@ -51,6 +53,7 @@ def create_data_model_layer(annotated_model_cls, dataset, crs):
 
 
 def gdal_point(point, skip_m=True):
+    """Create OGR point geometry."""
     if skip_m:
         point_wkt = f"POINT ({point.x} {point.y} {point.m})"
     else:
@@ -60,6 +63,7 @@ def gdal_point(point, skip_m=True):
 
 
 def gdal_linestring(points, skip_m=True):
+    """Create OGR LineString geometry."""
     if skip_m:
         points_txt = ", ".join(f"{point.x} {point.y}" for point in points)
     else:
@@ -70,6 +74,7 @@ def gdal_linestring(points, skip_m=True):
 
 
 def interpolate_chainage_point(branch, chainage):
+    """Interpolate MIKE11 branch chainage point."""
     branch_points = branch.points
     branch_points_chainages = [point.m for point in branch_points]
     idx = bisect.bisect_left(branch_points_chainages, chainage)

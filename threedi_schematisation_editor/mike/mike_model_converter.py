@@ -21,6 +21,8 @@ gdal.SetConfigOption("OGR_SQLITE_SYNCHRONOUS", "OFF")  # Speed up the runtime on
 
 
 class MIKEConverter:
+    """MIKE11 -> 3Di models conversion class."""
+
     def __init__(self, sim11_filepath, threedi_gpkg_filepath):
         self.parser = MikeParser(sim11_filepath)
         self.threedi_gpkg_filepath = threedi_gpkg_filepath
@@ -31,6 +33,7 @@ class MIKEConverter:
         self.visited_node_values = {}
 
     def mike2threedi(self):
+        """Handle parsing and conversion MIKE11 model data."""
         self.parser.detect_components()
         for component in self.parser.components.values():
             component.parse_component_data()
@@ -40,15 +43,29 @@ class MIKEConverter:
         threedi_dataset = None
 
     def initialize_threedi_dataset(self):
+        """Initialize GeoPackage with 3Di model structure."""
         projection = self.parser.projection
         self.crs.ImportFromProj4(projection)
+        self.crs.AutoIdentifyEPSG()
+        authority_code = self.crs.GetAttrValue("AUTHORITY", 1)
         ogr.GetDriverByName("GPKG").CreateDataSource(self.threedi_gpkg_filepath)
         threedi_dataset = gdal.OpenEx(self.threedi_gpkg_filepath, gdal.OF_UPDATE)
         for model_cls in dm.ALL_MODELS:
             create_data_model_layer(model_cls, threedi_dataset, self.crs)
+        schema_version_layer = threedi_dataset.GetLayerByName(dm.SchemaVersion.__tablename__)
+        schema_version_feature = ogr.Feature(schema_version_layer.GetLayerDefn())
+        schema_version_feature.SetField("version_num", dm.SchemaVersion.SUPPORTED_SCHEMA_VERSION)
+        schema_version_layer.CreateFeature(schema_version_feature)
+        schema_version_feature = None
+        global_settings_layer = threedi_dataset.GetLayerByName(dm.GlobalSettings.__tablename__)
+        global_settings_feature = ogr.Feature(global_settings_layer.GetLayerDefn())
+        global_settings_feature.SetField("epsg_code", authority_code)
+        global_settings_layer.CreateFeature(global_settings_feature)
+        global_settings_feature = None
         threedi_dataset = None
 
     def _enriched_branch(self, branch):
+        """Add extra branch points."""
         branch_points_copy = list(branch.points)
         branch_points_copy.extend(self.nwk_component.extra_branch_points[branch.name])
         branch_points_copy.sort(key=attrgetter("m"))
@@ -72,6 +89,7 @@ class MIKEConverter:
         return enriched_branch
 
     def _split_branch(self, branch):
+        """Split branches at crossings."""
         separated_branches = []
         branch_split_points = list(sorted(self.nwk_component.branch_split_points[branch.name], key=attrgetter("m")))
         branch_points = list(branch.points)
@@ -91,6 +109,7 @@ class MIKEConverter:
         return separated_branches
 
     def _create_channel_feature(self, channel_layer, branch, current_channel_id, current_node_id):
+        """Create 3Di channel feature out of the branch object."""
         channel_feature = ogr.Feature(channel_layer.GetLayerDefn())
         branch_points = branch.points
         start_point, end_point = branch_points[0], branch_points[-1]
@@ -147,6 +166,7 @@ class MIKEConverter:
         return channel_feature, current_node_id
 
     def _multiply_branch_cross_sections(self, separated_branches, branch_cross_sections):
+        """Multiply neighbouring cross-sections on branches without any."""
         if not branch_cross_sections:  # Handling "linkchannel" branches
             return {sub_branch: [] for sub_branch in separated_branches}
         multiplied_cross_sections = defaultdict(list)
@@ -180,6 +200,7 @@ class MIKEConverter:
         return multiplied_cross_sections
 
     def _create_cross_section_feature(self, cross_section_layer, xs, current_xs_id, branch, current_channel_id):
+        """Create cross-section location features."""
         xs_chainage = xs.chainage
         if branch.downstream_chainage < xs_chainage:  # Skip cross-section with chainage beyond branch range
             return None
@@ -243,6 +264,7 @@ class MIKEConverter:
         return xs_feature
 
     def _branch_chainage_resistance(self, branch, chainage):
+        """Apply resistance values to the cross-sections."""
         branch_name = branch.name
         branch_bed_resistance = self.hd_component.bed_resistance[branch_name]
         if not branch_bed_resistance:
@@ -259,6 +281,7 @@ class MIKEConverter:
         return resistance_value
 
     def _node_initial_waterlevel(self, branch, point):
+        """Apply initial waterlevel values to the nodes."""
         branch_initial_conditions = self.hd_component.initial_conditions[branch.name]
         if not branch_initial_conditions:
             return None
@@ -274,6 +297,7 @@ class MIKEConverter:
         return initial_waterlevel_value
 
     def process_network(self, threedi_dataset):
+        """Convert parsed MIKE11 model data into 3Di GeoPackage schematization structure."""
         node_layer = threedi_dataset.GetLayerByName(dm.ConnectionNode.__tablename__)
         channel_layer = threedi_dataset.GetLayerByName(dm.Channel.__tablename__)
         cross_section_layer = threedi_dataset.GetLayerByName(dm.CrossSectionLocation.__tablename__)
