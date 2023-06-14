@@ -7,7 +7,7 @@ History
 - Fixed issues: #141, #142
 - Compatibility with schema 217 (#148)
 - Added Vegetation drag settings table with associated raster layers (#145)
-
+- Add set_views() to spatialite schema migration routine
 
 1.4.1 (2023-04-28)
 ------------------
