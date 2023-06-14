@@ -682,6 +682,7 @@ def migrate_spatialite_schema(sqlite_filepath):
         schema = threedi_db.schema
         backup_filepath = backup_sqlite(sqlite_filepath)
         schema.upgrade(backup=False, upgrade_spatialite_version=True)
+        schema.set_views()
         schema.set_spatial_indexes()
         shutil.rmtree(os.path.dirname(backup_filepath))
         migration_succeed = True
