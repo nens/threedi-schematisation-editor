@@ -8,6 +8,7 @@ History
 - Compatibility with schema 217 (#148)
 - Added Vegetation drag settings table with associated raster layers (#145)
 - Add "Import culverts" processing algorithm (#127)
+- Exposing attributes for vegetation and groundwater exchange (#151, #153)
 
 
 1.4.1 (2023-04-28)
