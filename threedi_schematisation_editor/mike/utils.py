@@ -32,6 +32,23 @@ class ResistanceTypes(Enum):
     DARCY_WEISBACH = 4
 
 
+class CulvertGeometryTypes(Enum):
+    """MIKE culvert geometry types."""
+
+    RECTANGULAR = 0
+    CIRCULAR = 1
+    IRREGULAR_LEVEL_WIDTH = 2
+    IRREGULAR_DEPTH_WIDTH = 3
+    CROSS_SECTION_DB = 4
+
+
+class StructureTypes(Enum):
+    """MIKE structure types."""
+
+    OVERFLOW = 0
+    UNDERFLOW = 1
+
+
 def create_data_model_layer(annotated_model_cls, dataset, crs):
     """Function that creates GDAL layer based on annotated data model class."""
     geometry_type = gdal_geometry_types_mapping[annotated_model_cls.__geometrytype__]

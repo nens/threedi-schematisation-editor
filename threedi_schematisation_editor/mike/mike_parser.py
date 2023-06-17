@@ -5,7 +5,7 @@ from collections import OrderedDict, defaultdict, namedtuple
 from functools import cached_property
 from operator import attrgetter
 
-from threedi_schematisation_editor.mike.utils import interpolate_chainage_point
+from threedi_schematisation_editor.mike.utils import CulvertGeometryTypes, StructureTypes, interpolate_chainage_point
 
 
 class MikeComponent:
@@ -55,6 +55,7 @@ class NWKComponent(MikeComponent):
         self.chainage_points = {}
         self.node_replacements = {}
         self.branches = {}
+        self.structures = defaultdict(set)
         self.extra_branch_points = defaultdict(set)
         self.branch_split_points = defaultdict(set)
         self.point_cls = namedtuple("point", ["id", "x", "y", "m"])
@@ -69,6 +70,33 @@ class NWKComponent(MikeComponent):
                 "downstream_connection",
                 "points",
                 "is_link",
+            ],
+        )
+        self.weir_cls = namedtuple("weir", ["river_name", "chainage", "geometry_data"])
+        self.culvert_cls = namedtuple(
+            "culvert",
+            [
+                "river_name",
+                "chainage",
+                "upstream_invert",
+                "downstream_invert",
+                "length",
+                "friction",
+                "geometry_type",
+                "geometry_data",
+            ],
+        )
+        self.control_structure_cls = namedtuple(
+            "control_structure",
+            [
+                "river_name",
+                "chainage",
+                "structure_type",
+                "no_gates",
+                "underflow_cc",
+                "gate_width",
+                "sill_level",
+                "max_speed",
             ],
         )
 
@@ -128,6 +156,83 @@ class NWKComponent(MikeComponent):
                 False,
             )
             self.branches[name] = branch
+
+    def _parse_structures(self, nwk_txt):
+        """Parse structures data."""
+
+        def get_prefixed_row(section_text, prefix):
+            prefix_txt = f"{prefix} = "
+            prefixed_row_text = section_text.split(prefix_txt, 1)[-1].split("\n", 1)[0].strip().replace("'", "").upper()
+            return prefixed_row_text
+
+        def get_data_values(data_section):
+            data_prefix_txt = "Data = "
+            data_rows = [row.strip().replace(data_prefix_txt, "") for row in data_section.split("\n") if "=" in row]
+            data_values = tuple(tuple(float(val) for val in row.split(",")) for row in data_rows)
+            return data_values
+
+        location_prefix = "Location"
+        attributes_prefix = "Attributes"
+        # Parse weirs
+        weirs_txt_list = self.parser.extract_sections(nwk_txt, "weir_data")
+        for weir_txt in weirs_txt_list:
+            location_txt = get_prefixed_row(weir_txt, location_prefix)
+            river_name, chainage_str = [i.strip() for i in location_txt.split(",", 2)[:-1]]
+            chainage = float(chainage_str)
+            level_width_section = self.parser.extract_sections(weir_txt, "Level_Width")[0]
+            level_width_values = get_data_values(level_width_section)
+            weir = self.weir_cls(river_name, chainage, level_width_values)
+            self.structures["weirs"].add(weir)
+        # Parse culverts
+        geometry_type_prefix = "Type"
+        rectangular_prefix = "Rectangular"
+        circular_prefix = "Circular_Diameter"
+        culverts_txt_list = self.parser.extract_sections(nwk_txt, "culvert_data")
+        for culvert_txt in culverts_txt_list:
+            location_txt = get_prefixed_row(culvert_txt, location_prefix)
+            culvert_data = [i.strip() for i in location_txt.split(",", 2)[:-1]]
+            attributes_txt = get_prefixed_row(culvert_txt, attributes_prefix)
+            culvert_data += [float(i) for i in attributes_txt.split(",")[:4]]
+            geometry_section = self.parser.extract_sections(culvert_txt, "Geometry")[0]
+            geometry_type_txt = get_prefixed_row(geometry_section, geometry_type_prefix)
+            geometry_type = CulvertGeometryTypes(int(geometry_type_txt))
+            if geometry_type == CulvertGeometryTypes.RECTANGULAR:
+                rectangular_txt = get_prefixed_row(geometry_section, rectangular_prefix)
+                geometry_data = (tuple(float(i) for i in rectangular_txt.split(",")),)
+            elif geometry_type == CulvertGeometryTypes.CIRCULAR:
+                circular_txt = get_prefixed_row(geometry_section, circular_prefix)
+                geometry_data = (float(circular_txt),)
+            elif geometry_type in {
+                CulvertGeometryTypes.IRREGULAR_DEPTH_WIDTH,
+                CulvertGeometryTypes.IRREGULAR_LEVEL_WIDTH,
+            }:
+                irregular_section = self.parser.extract_sections(culvert_txt, "Irregular")[0]
+                geometry_data = get_data_values(irregular_section)
+            else:
+                geometry_data = tuple()
+            river_name, chainage_str, upstream_invert, downstream_invert, length, friction = culvert_data
+            chainage = float(chainage_str)
+            culvert = self.culvert_cls(
+                river_name, chainage, upstream_invert, downstream_invert, length, friction, geometry_type, geometry_data
+            )
+            self.structures["culverts"].add(culvert)
+        # Parse control structures
+        control_str_txt_list = self.parser.extract_sections(nwk_txt, "control_str_data")
+        for control_str_txt in control_str_txt_list:
+            location_txt = get_prefixed_row(control_str_txt, location_prefix)
+            control_str_data = [i.strip() for i in location_txt.split(",", 2)[:-1]]
+            attributes_txt = get_prefixed_row(control_str_txt, attributes_prefix)
+            attributes_data = attributes_txt.split(",")[:6]
+            structure_type_str = attributes_data.pop(0)
+            structure_type = StructureTypes(int(structure_type_str))
+            no_gates = int(attributes_data.pop(0))
+            control_str_data += [float(i) for i in attributes_data]
+            river_name, chainage_str, underflow_cc, gate_width, sill_level, max_speed = control_str_data
+            chainage = float(chainage_str)
+            control_str = self.control_structure_cls(
+                river_name, chainage, structure_type, no_gates, underflow_cc, gate_width, sill_level, max_speed
+            )
+            self.structures["control_structures"].add(control_str)
 
     def generate_chainage_point(self, branch, chainage):
         """Create branch chainage point."""
@@ -202,6 +307,7 @@ class NWKComponent(MikeComponent):
             self._parse_projection(nwk_txt)
             self._parse_points(nwk_txt)
             self._parse_branches(nwk_txt)
+            self._parse_structures(nwk_txt)
             self._add_connections_as_branches()
 
 
