@@ -241,20 +241,19 @@ class StructuresLineation(QgsProcessingAlgorithm):
         branch_erased_geometries = defaultdict(list)
 
         for structure_layer in structure_point_layers:
+            structures_to_add = []
             structure_layer_name = structure_layer.name()
             structure_id = get_next_feature_id(structure_layer)
             target_layer, target_fields = target_structures_mapping[structure_layer_name]
-            target_layer.startEditing()
             for structure_feat in structure_layer.getFeatures():
                 structure_geometry = structure_feat.geometry()
-                structure_buffer = structure_geometry.buffer(0.1, 5)
                 channel_fids = channels_index.intersects(structure_geometry.boundingBox())
                 if not channel_fids:
-                    print(structure_feat)
                     continue
+                structure_buffer = structure_geometry.buffer(0.1, 5)
                 structure_length = getattr(structure_feat, "length", default_structure_length)
                 half_structure_length = structure_length * 0.5
-                structure_attributes = structure_feat.attributes()[:-1]
+                structure_attributes = structure_feat.attributes()
                 for channel_fid in channel_fids:
                     channel_feat = channels_feat_map[channel_fid]
                     channel_geometry = channel_feat.geometry()
@@ -270,15 +269,18 @@ class StructuresLineation(QgsProcessingAlgorithm):
                     start_cut_point, end_cut_point = structure_points[0], structure_points[-1]
                     if structure_layer_name == "culvert":
                         structure_geometry = structure_line
+                        structure_attributes.pop()
                     else:
                         structure_geometry = QgsGeometry.fromPolylineXY([start_cut_point, end_cut_point])
                     linear_structure_feat = QgsFeature(target_fields)
                     structure_attributes[0] = structure_id
                     linear_structure_feat.setAttributes(structure_attributes)
                     linear_structure_feat.setGeometry(structure_geometry)
-                    target_layer.addFeature(linear_structure_feat)
+                    structures_to_add.append(linear_structure_feat)
                     structure_id += 1
                     branch_erased_geometries[channel_fid] += [before_structure_line, after_structure_line]
+            target_layer.startEditing()
+            target_layer.addFeatures(structures_to_add)
             success = target_layer.commitChanges()
             if not success:
                 commit_errors = target_layer.commitErrors()
