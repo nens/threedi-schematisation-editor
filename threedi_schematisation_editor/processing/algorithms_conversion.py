@@ -1,19 +1,29 @@
 # Copyright (C) 2023 by Lutra Consulting
 import json
+from collections import defaultdict
 
 from qgis.core import (
+    QgsFeature,
+    QgsGeometry,
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterFile,
     QgsProcessingParameterFileDestination,
+    QgsProcessingParameterNumber,
     QgsProject,
 )
 from qgis.PyQt.QtCore import QCoreApplication
-
+from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.custom_tools import CulvertsImporter
 from threedi_schematisation_editor.mike.mike_model_converter import MIKEConverter
+from threedi_schematisation_editor.utils import (
+    extract_substring,
+    get_next_feature_id,
+    gpkg_layer,
+    spatial_index,
+)
 
 
 class ImportCulverts(QgsProcessingAlgorithm):
@@ -141,4 +151,159 @@ class ImportFromMike11(QgsProcessingAlgorithm):
         mc = MIKEConverter(sim11_filepath, output_gpkg_filepath)
         mc.mike2threedi()
         feedback.pushInfo("Mike11 data import finished!")
+        return {}
+
+
+class StructuresLineation(QgsProcessingAlgorithm):
+    SCHEMATISATION_GPKG = "SCHEMATISATION_GPKG"
+    STRUCTURES_GPKG = "STRUCTURES_GPKG"
+    STRUCTURE_LENGTH = "STRUCTURE_LENGTH"
+
+    def tr(self, string):
+        return QCoreApplication.translate("Processing", string)
+
+    def createInstance(self):
+        return StructuresLineation()
+
+    def name(self):
+        return "threedi_import_point_structures"
+
+    def displayName(self):
+        return self.tr("Import point structures")
+
+    def shortHelpString(self):
+        return self.tr("""Import point structures and convert them into 3Di compliant linestring structures.""")
+
+    def group(self):
+        return self.tr("Conversion")
+
+    def groupId(self):
+        return "conversion"
+
+    def initAlgorithm(self, config=None):
+        schematisation_gpkg_filepath = QgsProcessingParameterFile(
+            self.SCHEMATISATION_GPKG,
+            self.tr("3Di schematisation Geopackage file"),
+            extension="gpkg",
+            behavior=QgsProcessingParameterFile.File,
+        )
+        self.addParameter(schematisation_gpkg_filepath)
+        structures_gpkg_filepath = QgsProcessingParameterFile(
+            self.STRUCTURES_GPKG,
+            self.tr("Point structures Geopackage file"),
+            extension="gpkg",
+            behavior=QgsProcessingParameterFile.File,
+        )
+        self.addParameter(structures_gpkg_filepath)
+        structure_length = QgsProcessingParameterNumber(
+            self.STRUCTURE_LENGTH, self.tr("Structure inline length (m)"), type=1, defaultValue=10.0
+        )
+        structure_length.setMetadata({"widget_wrapper": {"decimals": 2}})
+        structure_length.setMinimum(0.0)
+        self.addParameter(structure_length)
+
+    def processAlgorithm(self, parameters, context, feedback):
+        schematisation_gpkg_filepath = self.parameterAsFile(parameters, self.SCHEMATISATION_GPKG, context)
+        if schematisation_gpkg_filepath is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.SCHEMATISATION_GPKG))
+        structures_gpkg_filepath = self.parameterAsFile(parameters, self.STRUCTURES_GPKG, context)
+        if structures_gpkg_filepath is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRUCTURES_GPKG))
+        default_structure_length = self.parameterAsDouble(parameters, self.STRUCTURE_LENGTH, context)
+        if default_structure_length is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRUCTURE_LENGTH))
+
+        node_layer = gpkg_layer(schematisation_gpkg_filepath, dm.ConnectionNode.__tablename__)
+        channel_layer = gpkg_layer(schematisation_gpkg_filepath, dm.Channel.__tablename__)
+        weir_layer = gpkg_layer(schematisation_gpkg_filepath, dm.Weir.__tablename__)
+        culvert_layer = gpkg_layer(schematisation_gpkg_filepath, dm.Culvert.__tablename__)
+        orifice_layer = gpkg_layer(schematisation_gpkg_filepath, dm.Orifice.__tablename__)
+
+        node_fields = node_layer.fields()
+        channel_fields = channel_layer.fields()
+        weir_fields = weir_layer.fields()
+        culvert_fields = culvert_layer.fields()
+        orifice_fields = orifice_layer.fields()
+
+        point_weir_layer = gpkg_layer(structures_gpkg_filepath, dm.Weir.__tablename__)
+        point_culvert_layer = gpkg_layer(structures_gpkg_filepath, dm.Culvert.__tablename__)
+        point_orifice_layer = gpkg_layer(structures_gpkg_filepath, dm.Orifice.__tablename__)
+        structure_point_layers = [point_weir_layer, point_culvert_layer, point_orifice_layer]
+
+        target_structures_mapping = {
+            "weir": (weir_layer, weir_fields),
+            "culvert": (culvert_layer, culvert_fields),
+            "orifice": (orifice_layer, orifice_fields),
+        }
+
+        nodes_index, nodes_feat_map = spatial_index(node_layer)
+        channels_index, channels_feat_map = spatial_index(channel_layer)
+        branch_erased_geometries = defaultdict(list)
+
+        for structure_layer in structure_point_layers:
+            structure_layer_name = structure_layer.name()
+            structure_id = get_next_feature_id(structure_layer)
+            target_layer, target_fields = target_structures_mapping[structure_layer_name]
+            target_layer.startEditing()
+            for structure_feat in structure_layer.getFeatures():
+                structure_geometry = structure_feat.geometry()
+                structure_buffer = structure_geometry.buffer(0.1, 5)
+                channel_fids = channels_index.intersects(structure_geometry.boundingBox())
+                if not channel_fids:
+                    print(structure_feat)
+                    continue
+                structure_length = getattr(structure_feat, "length", default_structure_length)
+                half_structure_length = structure_length * 0.5
+                structure_attributes = structure_feat.attributes()[:-1]
+                for channel_fid in channel_fids:
+                    channel_feat = channels_feat_map[channel_fid]
+                    channel_geometry = channel_feat.geometry()
+                    if not channel_geometry.intersects(structure_buffer):
+                        continue
+                    intersection_m = channel_geometry.lineLocatePoint(structure_geometry)
+                    start_structure_m = intersection_m - half_structure_length
+                    end_structure_m = intersection_m + half_structure_length
+                    structure_line, before_structure_line, after_structure_line = extract_substring(
+                        channel_geometry, start_structure_m, end_structure_m
+                    )
+                    structure_points = structure_line.asPolyline()
+                    start_cut_point, end_cut_point = structure_points[0], structure_points[-1]
+                    if structure_layer_name == "culvert":
+                        structure_geometry = structure_line
+                    else:
+                        structure_geometry = QgsGeometry.fromPolylineXY([start_cut_point, end_cut_point])
+                    linear_structure_feat = QgsFeature(target_fields)
+                    structure_attributes[0] = structure_id
+                    linear_structure_feat.setAttributes(structure_attributes)
+                    linear_structure_feat.setGeometry(structure_geometry)
+                    target_layer.addFeature(linear_structure_feat)
+                    structure_id += 1
+                    branch_erased_geometries[channel_fid] += [before_structure_line, after_structure_line]
+            success = target_layer.commitChanges()
+            if not success:
+                commit_errors = target_layer.commitErrors()
+                commit_errors_message = "\n".join(commit_errors)
+                feedback.reportError(commit_errors_message)
+        next_channel_id = get_next_feature_id(channel_layer)
+        channel_layer.startEditing()
+        new_channels = []
+        for channel_fid, channel_geometries in branch_erased_geometries.items():
+            channel_feat = channels_feat_map[channel_fid]
+            channel_attributes = channel_feat.attributes()
+            main_geom = channel_geometries.pop(0)
+            for new_channel_geom in channel_geometries:
+                new_channel = QgsFeature(channel_fields)
+                channel_attributes[0] = next_channel_id
+                channel_attributes[1] = next_channel_id
+                next_channel_id += 1
+                new_channel.setAttributes(channel_attributes)
+                new_channel.setGeometry(new_channel_geom)
+                new_channels.append(new_channel)
+            channel_layer.changeGeometry(channel_fid, main_geom)
+        channel_layer.addFeatures(new_channels)
+        success = channel_layer.commitChanges()
+        if not success:
+            commit_errors = channel_layer.commitErrors()
+            commit_errors_message = "\n".join(commit_errors)
+            feedback.reportError(commit_errors_message)
         return {}

@@ -80,10 +80,10 @@ class NWKComponent(MikeComponent):
                 "chainage",
                 "upstream_invert",
                 "downstream_invert",
-                "length",
                 "friction",
                 "geometry_type",
                 "geometry_data",
+                "length",
             ],
         )
         self.control_structure_cls = namedtuple(
@@ -96,7 +96,7 @@ class NWKComponent(MikeComponent):
                 "underflow_cc",
                 "gate_width",
                 "sill_level",
-                "max_speed",
+                "max_value",
             ],
         )
 
@@ -213,7 +213,7 @@ class NWKComponent(MikeComponent):
             river_name, chainage_str, upstream_invert, downstream_invert, length, friction = culvert_data
             chainage = float(chainage_str)
             culvert = self.culvert_cls(
-                river_name, chainage, upstream_invert, downstream_invert, length, friction, geometry_type, geometry_data
+                river_name, chainage, upstream_invert, downstream_invert, friction, geometry_type, geometry_data, length
             )
             self.structures["culverts"].add(culvert)
         # Parse control structures
@@ -222,7 +222,9 @@ class NWKComponent(MikeComponent):
             location_txt = get_prefixed_row(control_str_txt, location_prefix)
             control_str_data = [i.strip() for i in location_txt.split(",", 2)[:-1]]
             attributes_txt = get_prefixed_row(control_str_txt, attributes_prefix)
-            attributes_data = attributes_txt.split(",")[:6]
+            attributes_data = attributes_txt.split(",")
+            max_value = float(attributes_data[-2])
+            attributes_data = attributes_data[:6]
             structure_type_str = attributes_data.pop(0)
             structure_type = StructureTypes(int(structure_type_str))
             no_gates = int(attributes_data.pop(0))
@@ -230,7 +232,7 @@ class NWKComponent(MikeComponent):
             river_name, chainage_str, underflow_cc, gate_width, sill_level, max_speed = control_str_data
             chainage = float(chainage_str)
             control_str = self.control_structure_cls(
-                river_name, chainage, structure_type, no_gates, underflow_cc, gate_width, sill_level, max_speed
+                river_name, chainage, structure_type, no_gates, underflow_cc, gate_width, sill_level, max_value
             )
             self.structures["control_structures"].add(control_str)
 

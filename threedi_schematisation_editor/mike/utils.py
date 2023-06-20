@@ -67,6 +67,7 @@ def create_data_model_layer(annotated_model_cls, dataset, crs):
         else:
             field_definition = ogr.FieldDefn(field_name, gdal_field_type)
         layer.CreateField(field_definition)
+    return layer
 
 
 def gdal_point(point, skip_m=True):

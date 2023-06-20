@@ -85,7 +85,10 @@ class MIKEConverter:
         intermediate_structures_dataset = gdal.OpenEx(self.intermediate_structures_filepath, gdal.OF_UPDATE)
         for model_cls in [dm.Culvert, dm.Orifice, dm.Weir]:
             model_cls.__geometrytype__ = en.GeometryType.Point
-            create_data_model_layer(model_cls, intermediate_structures_dataset, self.crs)
+            layer = create_data_model_layer(model_cls, intermediate_structures_dataset, self.crs)
+            if model_cls == dm.Culvert:
+                length_field_definition = ogr.FieldDefn("length", ogr.OFTReal)
+                layer.CreateField(length_field_definition)
             model_cls.__geometrytype__ = en.GeometryType.Linestring
         intermediate_structures_dataset = None
 
@@ -422,6 +425,7 @@ class MIKEConverter:
                 culvert_feature.SetField("cross_section_shape", en.CrossSectionShape.YZ.value)
                 culvert_table = "\n".join(f"{y}, {z:.3f}" for y, z in culvert.geometry_data)
                 culvert_feature.SetField("cross_section_table", culvert_table)
+            culvert_feature.SetField("length", culvert.length)
             culvert_feature.SetGeometry(culvert_geom)
             culvert_layer.CreateFeature(culvert_feature)
             culvert_id += 1
@@ -435,9 +439,11 @@ class MIKEConverter:
                 weir_feature.SetField("id", weir_id)
                 weir_feature.SetField("code", control_structure.chainage)
                 weir_feature.SetField("display_name", f"{control_structure.river_name} {control_structure.chainage}")
+                weir_feature.SetField("crest_level", control_structure.sill_level)
+                weir_feature.SetField("discharge_coefficient_positive", control_structure.underflow_cc)
+                weir_feature.SetField("discharge_coefficient_negative", control_structure.underflow_cc)
                 weir_feature.SetField("cross_section_shape", en.CrossSectionShape.OPEN_RECTANGLE.value)
                 weir_feature.SetField("cross_section_width", control_structure.gate_width)
-                weir_feature.SetField("cross_section_height", control_structure.sill_level)
                 weir_feature.SetGeometry(control_structure_geom)
                 weir_layer.CreateFeature(weir_feature)
                 weir_id += 1
@@ -448,9 +454,11 @@ class MIKEConverter:
                 orifice_feature.SetField("code", control_structure.chainage)
                 orifice_feature.SetField("display_name", f"{control_structure.river_name} {control_structure.chainage}")
                 orifice_feature.SetField("crest_level", control_structure.sill_level)
-                orifice_feature.SetField("cross_section_shape", en.CrossSectionShape.OPEN_RECTANGLE.value)
+                orifice_feature.SetField("discharge_coefficient_positive", control_structure.underflow_cc)
+                orifice_feature.SetField("discharge_coefficient_negative", control_structure.underflow_cc)
+                orifice_feature.SetField("cross_section_shape", en.CrossSectionShape.CLOSED_RECTANGLE.value)
                 orifice_feature.SetField("cross_section_width", control_structure.gate_width)
-                orifice_feature.SetField("cross_section_height", control_structure.sill_level)
+                orifice_feature.SetField("cross_section_height", control_structure.max_value)
                 orifice_feature.SetGeometry(control_structure_geom)
                 orifice_layer.CreateFeature(orifice_feature)
                 orifice_id += 1
