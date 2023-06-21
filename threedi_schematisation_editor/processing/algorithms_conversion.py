@@ -216,11 +216,13 @@ class StructuresLineation(QgsProcessingAlgorithm):
 
         node_layer = gpkg_layer(schematisation_gpkg_filepath, dm.ConnectionNode.__tablename__)
         channel_layer = gpkg_layer(schematisation_gpkg_filepath, dm.Channel.__tablename__)
+        cross_section_location_layer = gpkg_layer(schematisation_gpkg_filepath, dm.CrossSectionLocation.__tablename__)
         weir_layer = gpkg_layer(schematisation_gpkg_filepath, dm.Weir.__tablename__)
         culvert_layer = gpkg_layer(schematisation_gpkg_filepath, dm.Culvert.__tablename__)
         orifice_layer = gpkg_layer(schematisation_gpkg_filepath, dm.Orifice.__tablename__)
 
         node_fields = node_layer.fields()
+        cross_section_location_fields = cross_section_location_layer.fields()
         channel_fields = channel_layer.fields()
         weir_fields = weir_layer.fields()
         culvert_fields = culvert_layer.fields()
@@ -296,10 +298,14 @@ class StructuresLineation(QgsProcessingAlgorithm):
                 commit_errors = target_layer.commitErrors()
                 commit_errors_message = "\n".join(commit_errors)
                 feedback.reportError(commit_errors_message)
+
+        cross_section_location_index, cross_section_location_feat_map = spatial_index(cross_section_location_layer)
         next_channel_id = get_next_feature_id(channel_layer)
         node_layer.startEditing()
+        cross_section_location_layer.startEditing()
         channel_layer.startEditing()
         node_end_id_idx = channel_fields.lookupField("connection_node_end_id")
+        channel_id_idx = cross_section_location_fields.lookupField("channel_id")
         new_channels, new_nodes = [], []
         for channel_fid, channel_geometries in branch_erased_geometries.items():
             structure_start_node_id, structure_end_node_id = channels_extra_node_ids[channel_fid]
@@ -337,21 +343,24 @@ class StructuresLineation(QgsProcessingAlgorithm):
             new_channel.setAttributes(channel_attributes)
             new_channel["connection_node_start_id"] = connection_node_start_attrs[0]
             new_channel.setGeometry(new_channel_geom)
+            xs_fids = cross_section_location_index.intersects(new_channel_geom.boundingBox())
+            for xs_fid in xs_fids:
+                xs_feat = cross_section_location_feat_map[xs_fid]
+                xs_geom = xs_feat.geometry()
+                xs_buffer = xs_geom.buffer(0.1, 5)
+                if new_channel_geom.intersects(xs_buffer):
+                    cross_section_location_layer.changeAttributeValue(xs_fid, channel_id_idx, next_channel_id)
             next_channel_id += 1
             channel_layer.changeGeometry(channel_fid, main_geom)
             channel_layer.changeAttributeValue(channel_fid, node_end_id_idx, connection_node_end_attrs[0])
             new_channels.append(new_channel)
             new_nodes += [new_connection_node_end_feat, new_connection_node_start_feat]
         node_layer.addFeatures(new_nodes)
-        success = node_layer.commitChanges()
-        if not success:
-            commit_errors = node_layer.commitErrors()
-            commit_errors_message = "\n".join(commit_errors)
-            feedback.reportError(commit_errors_message)
         channel_layer.addFeatures(new_channels)
-        success = channel_layer.commitChanges()
-        if not success:
-            commit_errors = channel_layer.commitErrors()
-            commit_errors_message = "\n".join(commit_errors)
-            feedback.reportError(commit_errors_message)
+        for layer in [node_layer, channel_layer, cross_section_location_layer]:
+            success = layer.commitChanges()
+            if not success:
+                commit_errors = layer.commitErrors()
+                commit_errors_message = "\n".join(commit_errors)
+                feedback.reportError(commit_errors_message)
         return {}
