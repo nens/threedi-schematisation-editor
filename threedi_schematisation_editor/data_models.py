@@ -13,6 +13,7 @@ from threedi_schematisation_editor.enumerators import (
     CrossSectionShape,
     FlowVariable,
     FrictionType,
+    FrictionTypeExtended,
     GeometryType,
     InfiltrationSurfaceOption,
     InitializationType,
@@ -480,7 +481,7 @@ class CrossSectionLocation(ModelObject):
     id: int
     code: str
     reference_level: float
-    friction_type: FrictionType
+    friction_type: FrictionTypeExtended
     friction_value: float
     bank_level: Optional[float]
     channel_id: int
