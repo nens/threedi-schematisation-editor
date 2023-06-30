@@ -6,6 +6,7 @@ History
 
 - Fixes/enhancements: #67, #103, #161, #162, #169
 - Added Import Culverts GUI (#119)
+- Added new friction types. (#159)
 
 
 1.5.0 (2023-06-16)
