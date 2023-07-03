@@ -887,7 +887,7 @@ class PointStructuresWelder:
     def update_feature_endpoints(self, linear_feature, **template_node_attributes):
         linear_geom = linear_feature.geometry()
         channel_polyline = linear_geom.asPolyline()
-        start_node_point, end_node_point = channel_polyline[0], channel_polyline[0]
+        start_node_point, end_node_point = channel_polyline[0], channel_polyline[-1]
         node_layer_name = self.node_layer.name()
         try:
             start_node_id = self.node_by_location[start_node_point]
