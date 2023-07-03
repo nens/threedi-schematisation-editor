@@ -2,10 +2,10 @@
 import os
 import shutil
 import sys
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict, namedtuple
 from enum import Enum
 from itertools import groupby
-from operator import attrgetter
+from operator import attrgetter, itemgetter
 from typing import Union
 from uuid import uuid4
 
@@ -571,9 +571,9 @@ def check_enable_macros_option():
     return option
 
 
-def get_next_feature_id(layer):
+def get_next_feature_id(layer, id_field="id"):
     """Return first available ID within layer features."""
-    id_idx = layer.fields().indexFromName("id")
+    id_idx = layer.fields().indexFromName(id_field)
     # Ensure the id attribute is unique
     try:
         next_id = max(layer.uniqueValues(id_idx)) + 1
@@ -796,6 +796,274 @@ def validation_errors_summary(validation_errors):
     summary_per_model.sort()
     summary_message = "\n".join(summary_per_model)
     return summary_message
+
+
+class PointStructuresWelder:
+    DEFAULT_STRUCTURE_LENGTH = 10.0
+
+    def __init__(
+        self,
+        channel_layer,
+        node_layer,
+        culvert_layer,
+        orifice_layer,
+        weir_layer,
+        culvert_point_layer,
+        orifice_point_layer,
+        weir_point_layer,
+    ):
+        self.channel_layer = channel_layer
+        self.node_layer = node_layer
+        self.culvert_layer = culvert_layer
+        self.orifice_layer = orifice_layer
+        self.weir_layer = weir_layer
+        self.culvert_point_layer = culvert_point_layer
+        self.orifice_point_layer = orifice_point_layer
+        self.weir_point_layer = weir_point_layer
+        self.fields_mapping = {}
+        self.field_names_mapping = {}
+        self.spatial_indexes_map = {}
+        self.node_by_location = {}
+        self.next_node_id = 0
+        self.features_to_add = defaultdict(list)
+        self.setup_fields_map()
+        self.setup_spatial_indexes()
+        self.setup_node_by_location()
+        self.channel_structure_cls = namedtuple(
+            "channel_structure", ["channel_id", "layer_name", "feature", "m", "length"]
+        )
+
+    @property
+    def structure_point_layers(self):
+        return [self.culvert_point_layer, self.orifice_point_layer, self.weir_point_layer]
+
+    @property
+    def structure_layers(self):
+        return [self.culvert_layer, self.orifice_layer, self.weir_layer]
+
+    def setup_fields_map(self):
+        self.fields_mapping.clear()
+        for layer in self.structure_layers + [self.node_layer, self.channel_layer]:
+            layer_name = layer.name()
+            layer_fields = layer.fields()
+            self.fields_mapping[layer_name] = layer_fields
+            self.field_names_mapping[layer_name] = [field.name() for field in layer_fields.toList()]
+
+    def setup_spatial_indexes(self):
+        self.spatial_indexes_map.clear()
+        for layer in self.structure_point_layers + [self.node_layer]:
+            self.spatial_indexes_map[layer.name()] = spatial_index(layer)
+
+    def setup_node_by_location(self):
+        self.node_by_location.clear()
+        for node_feat in self.node_layer.getFeatures():
+            node_geom = node_feat.geometry()
+            node_point = node_geom.asPoint()
+            self.node_by_location[node_point] = node_feat["id"]
+        self.next_node_id = get_next_feature_id(self.node_layer)
+
+    def get_channel_structures_data(self, channel_feat):
+        channel_structures = []
+        channel_id = channel_feat["id"]
+        channel_geometry = channel_feat.geometry()
+        for structure_layer in self.structure_point_layers:
+            structure_layer_name = structure_layer.name()
+            structure_index, structure_features_map = self.spatial_indexes_map[structure_layer_name]
+            structure_fids = structure_index.intersects(channel_geometry.boundingBox())
+            for structure_fid in structure_fids:
+                structure_feat = structure_features_map[structure_fid]
+                structure_geom = structure_feat.geometry()
+                structure_buffer = structure_geom.buffer(0.1, 5)
+                if structure_buffer.intersects(channel_geometry):
+                    structure_length = getattr(structure_feat, "length", self.DEFAULT_STRUCTURE_LENGTH)
+                    intersection_m = channel_geometry.lineLocatePoint(structure_geom)
+                    channel_structure = self.channel_structure_cls(
+                        channel_id, structure_layer_name, structure_feat, intersection_m, structure_length
+                    )
+                    channel_structures.append(channel_structure)
+        channel_structures.sort(key=attrgetter("m"))
+        return channel_structures
+
+    def update_feature_endpoints(self, linear_feature, **template_node_attributes):
+        linear_geom = linear_feature.geometry()
+        channel_polyline = linear_geom.asPolyline()
+        start_node_point, end_node_point = channel_polyline[0], channel_polyline[0]
+        node_layer_name = self.node_layer.name()
+        try:
+            start_node_id = self.node_by_location[start_node_point]
+        except KeyError:
+            start_node_id = self.next_node_id
+            start_node_feat = QgsFeature(self.fields_mapping[node_layer_name])
+            start_node = QgsGeometry.fromPointXY(start_node_point)
+            start_node_feat.setGeometry(start_node)
+            for field_name, field_value in template_node_attributes.items():
+                start_node_feat[field_name] = field_value
+
+            start_node_feat["fid"] = start_node_id
+            start_node_feat["id"] = start_node_id
+            self.next_node_id += 1
+            self.node_by_location[start_node_point] = start_node_id
+            self.features_to_add[node_layer_name].append(start_node_feat)
+        try:
+            end_node_id = self.node_by_location[end_node_point]
+        except KeyError:
+            end_node_id = self.next_node_id
+            end_node_feat = QgsFeature(self.fields_mapping[node_layer_name])
+            end_node = QgsGeometry.fromPointXY(end_node_point)
+            end_node_feat.setGeometry(end_node)
+            for field_name, field_value in template_node_attributes.items():
+                end_node_feat[field_name] = field_value
+            end_node_feat["fid"] = end_node_id
+            end_node_feat["id"] = end_node_id
+            self.next_node_id += 1
+            self.node_by_location[end_node_point] = end_node_id
+            self.features_to_add[node_layer_name].append(end_node_feat)
+        linear_feature["connection_node_start_id"] = start_node_id
+        linear_feature["connection_node_end_id"] = end_node_id
+
+    @staticmethod
+    def substring_feature(curve, start_distance, end_distance, fields, simplify=False, **attributes):
+        curve_substring = curve.curveSubstring(start_distance, end_distance)
+        substring_feat = QgsFeature(fields)
+        substring_geometry = QgsGeometry(curve_substring)
+        if simplify:
+            substring_polyline = substring_geometry.asPolyline()
+            substring_geometry = QgsGeometry.fromPolylineXY([substring_polyline[0], substring_polyline[-1]])
+        substring_feat.setGeometry(substring_geometry)
+        for field_name, field_value in attributes.items():
+            substring_feat[field_name] = field_value
+        return substring_feat
+
+    def weld_structures_into_network(self, channel_feat, channel_structures):
+        channel_layer_name = self.channel_layer.name()
+        channel_fields = self.fields_mapping[channel_layer_name]
+        channel_field_names = self.field_names_mapping[channel_layer_name]
+        channel_attributes = {field_name: channel_feat[field_name] for field_name in channel_field_names}
+        del channel_attributes["fid"]
+        channel_geom = channel_feat.geometry()
+        channel_polyline = channel_geom.asPolyline()
+        first_point = channel_polyline[0]
+        first_node_id = self.node_by_location[first_point]
+        first_node_feat = next(get_features_by_expression(self.node_layer, f'"id" = {first_node_id}'))
+        node_field_names = self.field_names_mapping[self.node_layer.name()]
+        node_attributes = {field_name: first_node_feat[field_name] for field_name in node_field_names}
+        channel_curve = channel_geom.constGet()
+        before_substring_start, before_substring_end = 0, 0
+        culvert_layer_name = self.culvert_layer.name()
+        for channel_structure in channel_structures:
+            structure_layer_name = channel_structure.layer_name
+            simplify_structure_geometry = structure_layer_name != culvert_layer_name
+            structure_feat = channel_structure.feature
+            structure_fields = self.fields_mapping[structure_layer_name]
+            structure_field_names = self.field_names_mapping[structure_layer_name]
+            structure_attributes = {field_name: structure_feat[field_name] for field_name in structure_field_names}
+            del structure_attributes["fid"]
+            structure_length = channel_structure.length
+            half_length = structure_length * 0.5
+            structure_m = channel_structure.m
+            start_distance = structure_m - half_length
+            end_distance = structure_m + half_length
+            # Setup structure feature
+            substring_feat = self.substring_feature(
+                channel_curve,
+                start_distance,
+                end_distance,
+                structure_fields,
+                simplify_structure_geometry,
+                **structure_attributes,
+            )
+            self.update_feature_endpoints(substring_feat, **node_attributes)
+            self.features_to_add[structure_layer_name].append(substring_feat)
+            # Setup channel leftover feature
+            before_substring_end = start_distance
+            before_substring_feat = self.substring_feature(
+                channel_curve, before_substring_start, before_substring_end, channel_fields, False, **channel_attributes
+            )
+            self.update_feature_endpoints(before_substring_feat, **node_attributes)
+            self.features_to_add[channel_layer_name].append(before_substring_feat)
+            before_substring_start = end_distance
+        # Setup last channel leftover feature
+        last_substring_feat = self.substring_feature(
+            channel_curve, before_substring_start, channel_geom.length(), channel_fields, False, **channel_attributes
+        )
+        self.update_feature_endpoints(last_substring_feat, **node_attributes)
+        self.features_to_add[channel_layer_name].append(last_substring_feat)
+
+    def integrate_structures_with_network(self):
+        for channel_feature in self.channel_layer.getFeatures():
+            channel_structures = self.get_channel_structures_data(channel_feature)
+            self.weld_structures_into_network(channel_feature, channel_structures)
+        # Process nodes
+        self.node_layer.startEditing()
+        self.node_layer.addFeatures(self.features_to_add[self.node_layer.name()])
+        success = self.node_layer.commitChanges()
+        if not success:
+            commit_errors = self.node_layer.commitErrors()
+            commit_errors_message = "\n".join(commit_errors)
+            return commit_errors_message
+        # Process channels
+        next_channel_id = get_next_feature_id(self.channel_layer)
+        self.channel_layer.startEditing()
+        visited_channel_ids = set()
+        channels_to_add = []
+        for channel_feat in self.features_to_add[self.channel_layer.name()]:
+            channel_id = channel_feat["id"]
+            if channel_id not in visited_channel_ids:
+                source_channel_feat = next(get_features_by_expression(self.channel_layer, f'"id" = {channel_id}'))
+                self.channel_layer.deleteFeature(source_channel_feat.id())
+                visited_channel_ids.add(channel_id)
+                channel_feat["fid"] = source_channel_feat["fid"]
+                channel_feat["id"] = source_channel_feat["id"]
+            else:
+                channel_feat["fid"] = next_channel_id
+                channel_feat["id"] = next_channel_id
+                next_channel_id += 1
+            channels_to_add.append(channel_feat)
+        self.channel_layer.addFeatures(channels_to_add)
+        success = self.channel_layer.commitChanges()
+        if not success:
+            commit_errors = self.channel_layer.commitErrors()
+            commit_errors_message = "\n".join(commit_errors)
+            return commit_errors_message
+        # Process structures
+        for structure_layer in self.structure_layers:
+            structure_layer_name = structure_layer.name()
+            structures_to_add = []
+            for structure_id, structure_feat in enumerate(self.features_to_add[structure_layer_name], start=1):
+                structure_feat["fid"] = structure_id
+                structure_feat["id"] = structure_id
+                structures_to_add.append(structure_feat)
+            structure_layer.startEditing()
+            structure_layer.addFeatures(structures_to_add)
+            success = structure_layer.commitChanges()
+            if not success:
+                commit_errors = structure_layer.commitErrors()
+                commit_errors_message = "\n".join(commit_errors)
+                return commit_errors_message
+        return ""
+
+
+def extract_multiple_substrings(linestring_geometry, *start_end_distances):
+    """
+    Cut out line segments between given start and end distances along the line and return them with a line leftovers.
+    """
+    curve = linestring_geometry.constGet()
+    start_end_distances.sort(key=itemgetter(0))
+    substring_geometries, linestring_parts_left = [], []
+    before_substring_start, before_substring_end = 0, 0
+    for start_distance, end_distance in start_end_distances:
+        curve_substring = curve.curveSubstring(start_distance, end_distance)
+        substring_geometry = QgsGeometry(curve_substring)
+        substring_geometries.append(substring_geometry)
+        before_substring_end = start_distance
+        before_substring_curve = curve.curveSubstring(before_substring_start, before_substring_end)
+        before_substring_geometry = QgsGeometry(before_substring_curve)
+        before_substring_start = end_distance
+        linestring_parts_left.append(before_substring_geometry)
+    last_substring_curve = curve.curveSubstring(before_substring_start, linestring_geometry.length())
+    last_substring_geometry = QgsGeometry(last_substring_curve)
+    linestring_parts_left.append(last_substring_geometry)
+    return substring_geometries, linestring_parts_left
 
 
 def extract_substring(linestring_geometry, start_distance, end_distance):
