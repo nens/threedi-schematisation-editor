@@ -342,6 +342,11 @@ class UserLayerHandler:
                 changes[start_pump_id_idx] = start_pump_id
             self.layer.changeAttributeValues(feat_id, changes)
 
+    def trigger_update_node_references(self, feat_id, geometry):
+        """Triggering update of the node references after feature geometry change."""
+        update_node_references_method = partial(self.update_node_references, feat_id, geometry)
+        QTimer.singleShot(0, update_node_references_method)
+
 
 class ConnectionNodeHandler(UserLayerHandler):
     MODEL = dm.ConnectionNode
@@ -426,12 +431,12 @@ class PumpstationHandler(UserLayerHandler):
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.adjust_manhole_indicator)
-        self.layer.geometryChanged.connect(self.update_node_references)
+        self.layer.geometryChanged.connect(self.trigger_update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.adjust_manhole_indicator)
-        self.layer.geometryChanged.disconnect(self.update_node_references)
+        self.layer.geometryChanged.disconnect(self.trigger_update_node_references)
 
     def adjust_manhole_indicator(self, feat_id):
         """Adjusting underlying manhole attributes."""
@@ -489,12 +494,12 @@ class PumpstationMapHandler(UserLayerHandler):
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_pumpstation_map)
-        self.layer.geometryChanged.connect(self.update_node_references)
+        self.layer.geometryChanged.connect(self.trigger_update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_simplify_pumpstation_map)
-        self.layer.geometryChanged.disconnect(self.update_node_references)
+        self.layer.geometryChanged.disconnect(self.trigger_update_node_references)
 
     def trigger_simplify_pumpstation_map(self, pumpstation_map_id):
         """Triggering geometry simplification on newly added feature."""
@@ -529,12 +534,12 @@ class WeirHandler(UserLayerHandler):
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_weir)
-        self.layer.geometryChanged.connect(self.update_node_references)
+        self.layer.geometryChanged.connect(self.trigger_update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_simplify_weir)
-        self.layer.geometryChanged.disconnect(self.update_node_references)
+        self.layer.geometryChanged.disconnect(self.trigger_update_node_references)
 
     def trigger_simplify_weir(self, weir_feat_id):
         """Triggering geometry simplification on newly added feature."""
@@ -569,11 +574,11 @@ class CulvertHandler(UserLayerHandler):
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.connect(self.update_node_references)
+        self.layer.geometryChanged.connect(self.trigger_update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.disconnect(self.update_node_references)
+        self.layer.geometryChanged.disconnect(self.trigger_update_node_references)
 
 
 class OrificeHandler(UserLayerHandler):
@@ -603,12 +608,12 @@ class OrificeHandler(UserLayerHandler):
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_simplify_orifice)
-        self.layer.geometryChanged.connect(self.update_node_references)
+        self.layer.geometryChanged.connect(self.trigger_update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_simplify_orifice)
-        self.layer.geometryChanged.disconnect(self.update_node_references)
+        self.layer.geometryChanged.disconnect(self.trigger_update_node_references)
 
     def trigger_simplify_orifice(self, orifice_feat_id):
         """Triggering geometry simplification on newly added feature."""
@@ -643,12 +648,12 @@ class PipeHandler(UserLayerHandler):
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_segmentize_pipe)
-        self.layer.geometryChanged.connect(self.update_node_references)
+        self.layer.geometryChanged.connect(self.trigger_update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_segmentize_pipe)
-        self.layer.geometryChanged.disconnect(self.update_node_references)
+        self.layer.geometryChanged.disconnect(self.trigger_update_node_references)
 
     def trigger_segmentize_pipe(self, pipe_feat_id):
         """
@@ -771,12 +776,12 @@ class ChannelHandler(UserLayerHandler):
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_fulfill_geometry_requirements)
-        self.layer.geometryChanged.connect(self.update_node_references)
+        self.layer.geometryChanged.connect(self.trigger_update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_fulfill_geometry_requirements)
-        self.layer.geometryChanged.disconnect(self.update_node_references)
+        self.layer.geometryChanged.disconnect(self.trigger_update_node_references)
 
     def trigger_fulfill_geometry_requirements(self, channel_fet_id):
         """Triggering geometry modifications on newly added feature."""
