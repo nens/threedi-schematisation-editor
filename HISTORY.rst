@@ -4,7 +4,7 @@ History
 1.5.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fixed issues: #161
 
 
 1.5.0 (2023-06-16)
