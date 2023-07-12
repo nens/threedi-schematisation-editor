@@ -932,11 +932,16 @@ class ImperviousSurfaceMapHandler(UserLayerHandler):
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.connect(self.update_link_references)
+        self.layer.geometryChanged.connect(self.trigger_update_link_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.disconnect(self.update_link_references)
+        self.layer.geometryChanged.disconnect(self.trigger_update_link_references)
+
+    def trigger_update_link_references(self, feat_id, geometry):
+        """Triggering update of the references to the connections nodes and surfaces after geometry change."""
+        update_link_references_method = partial(self.update_link_references, feat_id, geometry)
+        QTimer.singleShot(0, update_link_references_method)
 
     def update_link_references(self, feat_id, geometry):
         """Update references to the connections nodes and surfaces after geometry change."""
@@ -969,11 +974,16 @@ class SurfaceMapHandler(UserLayerHandler):
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.connect(self.update_link_references)
+        self.layer.geometryChanged.connect(self.trigger_update_link_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.disconnect(self.update_link_references)
+        self.layer.geometryChanged.disconnect(self.trigger_update_link_references)
+
+    def trigger_update_link_references(self, feat_id, geometry):
+        """Triggering update of the references to the connections nodes and surfaces after geometry change."""
+        update_link_references_method = partial(self.update_link_references, feat_id, geometry)
+        QTimer.singleShot(0, update_link_references_method)
 
     def update_link_references(self, feat_id, geometry):
         """Update references to the connections nodes and surfaces after geometry change."""
