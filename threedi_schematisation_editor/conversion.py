@@ -285,6 +285,13 @@ class ModelDataConverter:
         impervious_surface_map_geoms, surface_map_geoms = {}, {}
         for feat in impervious_surface_map_layer.getFeatures():
             fid, node_id, surface_id = feat.id(), feat["connection_node_id"], feat["impervious_surface_id"]
+            if not surface_id:
+                missing_surface_error = (
+                    f"Impervious Surface link ({fid}) with an invalid 'impervious_surface_id'. "
+                    f"Impervious surface ID reference is missing."
+                )
+                self.conversion_errors[dm.ImperviousSurface.__layername__].append(missing_surface_error)
+                continue
             try:
                 connection_node_geom = connection_node_points[node_id]
             except KeyError:
@@ -305,6 +312,12 @@ class ModelDataConverter:
             impervious_surface_map_geoms[fid] = link_geom
         for feat in surface_map_layer.getFeatures():
             fid, node_id, surface_id = feat.id(), feat["connection_node_id"], feat["surface_id"]
+            if not surface_id:
+                missing_surface_error = (
+                    f"Surface link ({fid}) with an invalid 'surface_id'. Surface ID reference is missing."
+                )
+                self.conversion_errors[dm.Surface.__layername__].append(missing_surface_error)
+                continue
             try:
                 connection_node_geom = connection_node_points[node_id]
             except KeyError:
