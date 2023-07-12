@@ -220,8 +220,9 @@ class StructuresLineation(QgsProcessingAlgorithm):
         point_orifice_layer = gpkg_layer(structures_gpkg_filepath, dm.Orifice.__tablename__)
 
         welder = PointStructuresWelder(
-            channel_layer,
             node_layer,
+            channel_layer,
+            cross_section_location_layer,
             culvert_layer,
             orifice_layer,
             weir_layer,

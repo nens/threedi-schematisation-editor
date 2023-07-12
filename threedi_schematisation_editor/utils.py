@@ -803,8 +803,9 @@ class PointStructuresWelder:
 
     def __init__(
         self,
-        channel_layer,
         node_layer,
+        channel_layer,
+        cross_section_location_layer,
         culvert_layer,
         orifice_layer,
         weir_layer,
@@ -812,8 +813,9 @@ class PointStructuresWelder:
         orifice_point_layer,
         weir_point_layer,
     ):
-        self.channel_layer = channel_layer
         self.node_layer = node_layer
+        self.channel_layer = channel_layer
+        self.cross_section_location_layer = cross_section_location_layer
         self.culvert_layer = culvert_layer
         self.orifice_layer = orifice_layer
         self.weir_layer = weir_layer
@@ -843,7 +845,7 @@ class PointStructuresWelder:
 
     def setup_fields_map(self):
         self.fields_mapping.clear()
-        for layer in self.structure_layers + [self.node_layer, self.channel_layer]:
+        for layer in self.structure_layers + [self.node_layer, self.channel_layer, self.cross_section_location_layer]:
             layer_name = layer.name()
             layer_fields = layer.fields()
             self.fields_mapping[layer_name] = layer_fields
@@ -851,7 +853,7 @@ class PointStructuresWelder:
 
     def setup_spatial_indexes(self):
         self.spatial_indexes_map.clear()
-        for layer in self.structure_point_layers + [self.node_layer]:
+        for layer in self.structure_point_layers + [self.node_layer, self.cross_section_location_layer]:
             self.spatial_indexes_map[layer.name()] = spatial_index(layer)
 
     def setup_node_by_location(self):
@@ -921,6 +923,26 @@ class PointStructuresWelder:
         linear_feature["connection_node_start_id"] = start_node_id
         linear_feature["connection_node_end_id"] = end_node_id
 
+    def update_channel_cross_section_references(self, channels):
+        xs_location_layer_name = self.cross_section_location_layer.name()
+        xs_location_index, xs_location_features_map = self.spatial_indexes_map[xs_location_layer_name]
+        xs_fields = self.fields_mapping[xs_location_layer_name]
+        channel_id_idx = xs_fields.lookupField("channel_id")
+        for channel_feat in channels:
+            channel_id = channel_feat["id"]
+            channel_code = channel_feat["code"]
+            channel_geometry = channel_feat.geometry()
+            xs_fids = xs_location_index.intersects(channel_geometry.boundingBox())
+            for xs_fid in xs_fids:
+                xs_feat = xs_location_features_map[xs_fid]
+                xs_code = xs_feat["code"]
+                if not xs_code.startswith(channel_code):
+                    continue
+                xs_geom = xs_feat.geometry()
+                xs_buffer = xs_geom.buffer(0.1, 5)
+                if channel_geometry.intersects(xs_buffer):
+                    self.cross_section_location_layer.changeAttributeValue(xs_fid, channel_id_idx, channel_id)
+
     @staticmethod
     def substring_feature(curve, start_distance, end_distance, fields, simplify=False, **attributes):
         curve_substring = curve.curveSubstring(start_distance, end_distance)
@@ -983,11 +1005,13 @@ class PointStructuresWelder:
             self.features_to_add[channel_layer_name].append(before_substring_feat)
             before_substring_start = end_distance
         # Setup last channel leftover feature
-        last_substring_feat = self.substring_feature(
-            channel_curve, before_substring_start, channel_geom.length(), channel_fields, False, **channel_attributes
-        )
-        self.update_feature_endpoints(last_substring_feat, **node_attributes)
-        self.features_to_add[channel_layer_name].append(last_substring_feat)
+        last_substring_end = channel_geom.length()
+        if last_substring_end - before_substring_start > 0:
+            last_substring_feat = self.substring_feature(
+                channel_curve, before_substring_start, last_substring_end, channel_fields, False, **channel_attributes
+            )
+            self.update_feature_endpoints(last_substring_feat, **node_attributes)
+            self.features_to_add[channel_layer_name].append(last_substring_feat)
 
     def integrate_structures_with_network(self):
         for channel_feature in self.channel_layer.getFeatures():
@@ -998,9 +1022,7 @@ class PointStructuresWelder:
         self.node_layer.addFeatures(self.features_to_add[self.node_layer.name()])
         success = self.node_layer.commitChanges()
         if not success:
-            commit_errors = self.node_layer.commitErrors()
-            commit_errors_message = "\n".join(commit_errors)
-            return commit_errors_message
+            return self.process_commit_errors(self.node_layer)
         # Process channels
         next_channel_id = get_next_feature_id(self.channel_layer)
         self.channel_layer.startEditing()
@@ -1022,9 +1044,13 @@ class PointStructuresWelder:
         self.channel_layer.addFeatures(channels_to_add)
         success = self.channel_layer.commitChanges()
         if not success:
-            commit_errors = self.channel_layer.commitErrors()
-            commit_errors_message = "\n".join(commit_errors)
-            return commit_errors_message
+            return self.process_commit_errors(self.channel_layer)
+        # Update cross-section location features
+        self.cross_section_location_layer.startEditing()
+        self.update_channel_cross_section_references(channels_to_add)
+        success = self.cross_section_location_layer.commitChanges()
+        if not success:
+            return self.process_commit_errors(self.cross_section_location_layer)
         # Process structures
         for structure_layer in self.structure_layers:
             structure_layer_name = structure_layer.name()
@@ -1037,10 +1063,14 @@ class PointStructuresWelder:
             structure_layer.addFeatures(structures_to_add)
             success = structure_layer.commitChanges()
             if not success:
-                commit_errors = structure_layer.commitErrors()
-                commit_errors_message = "\n".join(commit_errors)
-                return commit_errors_message
+                return self.process_commit_errors(structure_layer)
         return ""
+
+    @staticmethod
+    def process_commit_errors(layer):
+        commit_errors = layer.commitErrors()
+        commit_errors_message = "\n".join(commit_errors)
+        return commit_errors_message
 
 
 def extract_multiple_substrings(linestring_geometry, *start_end_distances):
