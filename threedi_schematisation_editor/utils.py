@@ -705,6 +705,71 @@ def migrate_spatialite_schema(sqlite_filepath):
     return migration_succeed, migration_feedback_msg
 
 
+def bypass_max_path_limit(path, is_file=False):
+    """Check and modify path to bypass Windows MAX_PATH limitation."""
+    dir_max_path = 248
+    file_max_path = 260
+    unc_prefix = "\\\\?\\"
+    path_str = str(path)
+    if path_str.startswith(unc_prefix):
+        valid_path = path_str
+    else:
+        if is_file:
+            if len(path_str) >= file_max_path:
+                valid_path = f"{unc_prefix}{path_str}"
+            else:
+                valid_path = path_str
+        else:
+            if len(path_str) > dir_max_path:
+                valid_path = f"{unc_prefix}{path_str}"
+            else:
+                valid_path = path_str
+    return valid_path
+
+
+def ensure_valid_schema(schematisation_sqlite, communication):
+    """Check if schema version is up-to-date and migrate it if needed."""
+    try:
+        from threedi_schema import ThreediDatabase, errors
+    except ImportError:
+        return
+    schematisation_dirname = os.path.dirname(schematisation_sqlite)
+    schematisation_filename = os.path.basename(schematisation_sqlite)
+    backup_folder = os.path.join(schematisation_dirname, "_backup")
+    os.makedirs(bypass_max_path_limit(backup_folder), exist_ok=True)
+    prefix = str(uuid4())[:8]
+    backup_sqlite_path = os.path.join(backup_folder, f"{prefix}_{schematisation_filename}")
+    shutil.copyfile(schematisation_sqlite, bypass_max_path_limit(backup_sqlite_path, is_file=True))
+    threedi_db = ThreediDatabase(schematisation_sqlite)
+    schema = threedi_db.schema
+    try:
+        schema.validate_schema()
+        schema.set_spatial_indexes()
+    except errors.MigrationMissingError:
+        warn_and_ask_msg = (
+            "The selected spatialite cannot be used because its database schema version is out of date. "
+            "Would you like to migrate your spatialite to the current schema version?"
+        )
+        do_migration = communication.ask(None, "Missing migration", warn_and_ask_msg)
+        if not do_migration:
+            return False
+        schema.upgrade(backup=False, upgrade_spatialite_version=True)
+        schema.set_spatial_indexes()
+        shutil.rmtree(backup_folder)
+    except errors.UpgradeFailedError:
+        error_msg = (
+            "There are errors in the spatialite. Please re-open this file in QGIS 3.16, run the model checker and "
+            "fix error messages. Then attempt to upgrade again. For questions please contact the servicedesk."
+        )
+        communication.show_error(error_msg)
+        return False
+    except Exception as e:
+        error_msg = f"{e}"
+        communication.show_error(error_msg)
+        return False
+    return True
+
+
 def validation_errors_summary(validation_errors):
     """Create validation summary message grouped by the data model class."""
     summary_per_model = []

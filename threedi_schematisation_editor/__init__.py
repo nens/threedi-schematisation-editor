@@ -17,9 +17,9 @@ from threedi_schematisation_editor.utils import (
     can_write_in_dir,
     check_enable_macros_option,
     create_empty_model,
+    ensure_valid_schema,
     get_filepath,
     is_gpkg_connection_exists,
-    migrate_spatialite_schema,
     remove_user_layers,
 )
 
@@ -192,18 +192,16 @@ class ThreediSchematisationEditorPlugin:
             self.uc.show_warn(warn_msg)
             return
         schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
-        if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
-            warn_and_ask_msg = (
-                "The selected spatialite cannot be used because its database schema version is out of date. "
-                "Would you like to migrate your spatialite to the current schema version?"
+        if schema_version > ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
+            warn_msg = (
+                "The selected spatialite cannot be used because its database schema version newer than expected. "
+                "Please upgrade the 3Di Schematisation Editor and try again."
             )
-            do_migration = self.uc.ask(None, "Missing migration", warn_and_ask_msg)
-            if do_migration:
-                migration_succeed, migration_feedback_msg = migrate_spatialite_schema(src_sqlite)
-                if not migration_succeed:
-                    self.uc.show_warn(migration_feedback_msg)
-                    return
-            else:
+            self.uc.show_warn(warn_msg)
+            self.uc.bar_warn("Loading from the Spatialite aborted!")
+        else:
+            schema_is_valid = ensure_valid_schema(src_sqlite, self.uc)
+            if schema_is_valid is False:
                 self.uc.bar_warn("Loading from the Spatialite aborted!")
                 return
         if self.layer_manager is not None:
@@ -269,16 +267,17 @@ class ThreediSchematisationEditorPlugin:
             self.uc.show_warn(warn_msg)
             return
         schema_version = ModelDataConverter.spatialite_schema_version(dst_sqlite)
-        if schema_version != ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
-            schema_version_str = f" ({schema_version}) " if schema_version else " "
+        if schema_version > ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
             warn_msg = (
-                "The spatialite you have selected could not be used for saving, "
-                f"because its database schema version{schema_version_str}is not up to date. "
-                "Please find your model revision on 3di.lizard.net/models, "
-                "download the spatialite from there and try again."
+                "The selected spatialite cannot be used because its database schema version newer than expected. "
+                "Please upgrade the 3Di Schematisation Editor and try again."
             )
             self.uc.show_warn(warn_msg)
             return
+        else:
+            schema_is_valid = ensure_valid_schema(dst_sqlite, self.uc)
+            if schema_is_valid is False:
+                return
         converter = ModelDataConverter(dst_sqlite, self.model_gpkg, user_communication=self.uc)
         known_epsg = converter.set_epsg_from_gpkg()
         if known_epsg is False:
