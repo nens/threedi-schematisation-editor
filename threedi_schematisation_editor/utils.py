@@ -265,19 +265,19 @@ def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
     return ews
 
 
+def enum_entry_name_format(entry_name):
+    if entry_name != "YZ":
+        formatted_entry_name = entry_name.capitalize().replace("_", " ")
+    else:
+        formatted_entry_name = entry_name
+    return formatted_entry_name
+
+
 def set_initial_layer_configuration(layer, model_cls):
     """Set initial vector layer configuration that should be set within currently active style."""
     attr_table_config = layer.attributeTableConfig()
     fields = layer.dataProvider().fields()
     columns = attr_table_config.columns()
-
-    def enum_entry_name_format(entry_name):
-        if entry_name != "YZ":
-            formatted_entry_name = entry_name.capitalize().replace("_", " ")
-        else:
-            formatted_entry_name = entry_name
-        return formatted_entry_name
-
     model_hidden_fields = model_cls.hidden_fields()
     model_hidden_fields.add("fid")
     for column in columns:
