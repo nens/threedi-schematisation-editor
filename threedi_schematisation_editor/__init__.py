@@ -285,8 +285,8 @@ class ThreediSchematisationEditorPlugin:
     def import_external_culverts(self):
         if not self.model_gpkg:
             return
-        import_culverts_dlg = ImportCulvertsDialog(self.model_gpkg)
-        res = import_culverts_dlg.exec_()
+        import_culverts_dlg = ImportCulvertsDialog(self.uc, self.model_gpkg)
+        import_culverts_dlg.exec_()
 
     def on_project_close(self):
         if self.layer_manager is None:

@@ -76,7 +76,10 @@ class ImportCulverts(QgsProcessingAlgorithm):
             raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
-        import_culverts(source_layer, target_gpkg, import_config, context)
+        success, commit_errors = import_culverts(source_layer, target_gpkg, import_config, context)
+        if not success:
+            commit_errors_message = "\n".join(commit_errors)
+            feedback.reportError(commit_errors_message)
         return {}
 
     def postProcessAlgorithm(self, context, feedback):

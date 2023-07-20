@@ -26,6 +26,8 @@ class ColumnImportMethod(Enum):
 
 
 class CulvertImportSettings:
+    """Culvert import tool settings class."""
+
     def __init__(self):
         self.culvert_cls = dm.Culvert
         self.nodes_cls = dm.ConnectionNode
@@ -33,6 +35,11 @@ class CulvertImportSettings:
     @property
     def config_header(self):
         header = ["Field name", "Method", "Source attribute", "Value map", "Default value"]
+        return header
+
+    @property
+    def config_keys(self):
+        header = ["method", "source_attribute", "value_map", "default_value"]
         return header
 
     @cached_property
@@ -65,21 +72,27 @@ class CulvertImportSettings:
                     field_type = optional_type(field_type)
                 for column_idx, column_name in enumerate(self.config_header):
                     if column_idx == 0:
-                        widget = QLabel(model_fields_display_names[field_name])
+                        field_display_name = model_fields_display_names[field_name]
+                        label_text = f"{field_display_name}\t"
+                        widget = QLabel(label_text)
                     elif column_idx == 1:
                         widget = QComboBox()
-                        widget.addItems([method.value for method in field_methods])
+                        for method in field_methods:
+                            widget.addItem(method.name.capitalize(), method.value)
                     else:
                         if issubclass(field_type, Enum) and column_name == "Default value":
                             widget = QComboBox()
-                            widget.addItems([""] + [enum_entry_name_format(e.name) for e in field_type])
+                            widget.addItem("NULL", "NULL")
+                            for e in field_type:
+                                widget.addItem(enum_entry_name_format(e.name), e.value)
                         else:
                             widget = QLineEdit()
                     widgets_to_add[model_cls][row_idx, column_idx] = widget
         return widgets_to_add
 
 
-def import_culverts(source_culvert_layer, target_gpkg, import_config, context=None):
+def import_culverts(culvert_source, target_gpkg, import_config, context=None, selected_ids=None):
+    """Function responsible for the importing culverts from the external feature source."""
     conversion_settings = import_config["conversion_settings"]
     use_snapping = conversion_settings.get("use_snapping", False)
     snapping_distance = conversion_settings.get("snapping_distance", 0.1)
@@ -90,7 +103,7 @@ def import_culverts(source_culvert_layer, target_gpkg, import_config, context=No
     culvert_fields = culvert_layer.fields()
     node_fields = node_layer.fields()
     project = context.project() if context else QgsProject.instance()
-    src_crs = source_culvert_layer.sourceCrs()
+    src_crs = culvert_source.sourceCrs()
     dst_crs = culvert_layer.crs()
     transform_ctx = project.transformContext()
     transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx) if src_crs != dst_crs else None
@@ -100,7 +113,7 @@ def import_culverts(source_culvert_layer, target_gpkg, import_config, context=No
     new_culverts = []
     node_layer.startEditing()
     culvert_layer.startEditing()
-    for src_feat in source_culvert_layer.getFeatures():
+    for src_feat in culvert_source.getFeatures(selected_ids) if selected_ids else culvert_source.getFeatures():
         new_nodes = []
         new_culvert_feat = QgsFeature(culvert_fields)
         new_culvert_feat["id"] = next_culvert_id
@@ -186,6 +199,12 @@ def import_culverts(source_culvert_layer, target_gpkg, import_config, context=No
                 new_culvert_feat[field_name] = NULL
         next_culvert_id += 1
         new_culverts.append(new_culvert_feat)
-    node_layer.commitChanges()
+    commit_errors = []
+    success = node_layer.commitChanges()
+    if not success:
+        commit_errors.append(node_layer.commitErrors())
     culvert_layer.addFeatures(new_culverts)
-    culvert_layer.commitChanges()
+    success = culvert_layer.commitChanges()
+    if not success:
+        commit_errors.append(culvert_layer.commitErrors())
+    return success, commit_errors
