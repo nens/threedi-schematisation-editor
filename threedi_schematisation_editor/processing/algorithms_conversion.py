@@ -11,7 +11,7 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
-from threedi_schematisation_editor.custom_tools import import_culverts
+from threedi_schematisation_editor.custom_tools import CulvertsImporter
 
 
 class ImportCulverts(QgsProcessingAlgorithm):
@@ -76,7 +76,8 @@ class ImportCulverts(QgsProcessingAlgorithm):
             raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
-        success, commit_errors = import_culverts(source_layer, target_gpkg, import_config, context)
+        culverts_importer = CulvertsImporter(source_layer, target_gpkg, import_config)
+        success, commit_errors = culverts_importer.import_culverts(context=context)
         if not success:
             commit_errors_message = "\n".join(commit_errors)
             feedback.reportError(commit_errors_message)

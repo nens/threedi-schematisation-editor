@@ -2,6 +2,7 @@
 import os.path
 
 from qgis.core import QgsApplication, QgsProject
+from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 
 from threedi_schematisation_editor.communication import UICommunication
@@ -61,7 +62,9 @@ class ThreediSchematisationEditorPlugin:
         self.action_export_as.triggered.connect(self.save_to_selected)
         self.action_remove = QAction("Remove 3Di model", self.iface.mainWindow())
         self.action_remove.triggered.connect(self.remove_model_from_project)
-        self.action_import_culverts = QAction("Import culverts", self.iface.mainWindow())
+        import_culverts_icon_path = os.path.join(os.path.dirname(__file__), "import.png")
+        import_culverts_icon = QIcon(import_culverts_icon_path)
+        self.action_import_culverts = QAction(import_culverts_icon, "Import culverts", self.iface.mainWindow())
         self.action_import_culverts.triggered.connect(self.import_external_culverts)
         self.iface.addToolBarIcon(self.action_open)
         self.iface.addToolBarIcon(self.action_import)
@@ -285,7 +288,7 @@ class ThreediSchematisationEditorPlugin:
     def import_external_culverts(self):
         if not self.model_gpkg:
             return
-        import_culverts_dlg = ImportCulvertsDialog(self.uc, self.model_gpkg)
+        import_culverts_dlg = ImportCulvertsDialog(self.model_gpkg, self.layer_manager, self.uc)
         import_culverts_dlg.exec_()
 
     def on_project_close(self):

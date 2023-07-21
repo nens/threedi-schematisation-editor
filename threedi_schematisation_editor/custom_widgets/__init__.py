@@ -9,7 +9,7 @@ from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
 from qgis.PyQt.QtWidgets import QComboBox
 
 import threedi_schematisation_editor.data_models as dm
-from threedi_schematisation_editor.custom_tools import ColumnImportMethod, CulvertImportSettings, import_culverts
+from threedi_schematisation_editor.custom_tools import ColumnImportMethod, CulvertImportConfiguration, CulvertsImporter
 from threedi_schematisation_editor.utils import (
     core_field_type,
     enum_entry_name_format,
@@ -33,12 +33,13 @@ class ProjectionSelectionDialog(ps_basecls, ps_uicls):
 class ImportCulvertsDialog(ic_basecls, ic_uicls):
     """Dialog for the importing culverts tool."""
 
-    def __init__(self, uc, model_gpkg, parent=None):
+    def __init__(self, model_gpkg, layer_manager, uc, parent=None):
         super().__init__(parent)
         self.setupUi(self)
-        self.uc = uc
         self.model_gpkg = model_gpkg
-        self.import_settings = CulvertImportSettings()
+        self.layer_manager = layer_manager
+        self.uc = uc
+        self.import_configuration = CulvertImportConfiguration()
         self.culvert_model = QStandardItemModel()
         self.culvert_tv.setModel(self.culvert_model)
         self.connection_node_model = QStandardItemModel()
@@ -55,15 +56,15 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         self.close_pb.clicked.connect(self.close)
 
     def populate_conversion_settings_widgets(self):
-        widgets_to_add = self.import_settings.culvert_widgets()
+        widgets_to_add = self.import_configuration.culvert_widgets()
         for model_cls, (tree_view, tree_view_model) in self.data_models_tree_views.items():
             tree_view_model.clear()
-            tree_view_model.setHorizontalHeaderLabels(self.import_settings.config_header)
+            tree_view_model.setHorizontalHeaderLabels(self.import_configuration.config_header)
             model_widgets = widgets_to_add[model_cls]
             for (row_idx, column_idx), widget in model_widgets.items():
                 tree_view_model.setItem(row_idx, column_idx, QStandardItem(""))
                 tree_view.setIndexWidget(tree_view_model.index(row_idx, column_idx), widget)
-            for i in range(len(self.import_settings.config_header)):
+            for i in range(len(self.import_configuration.config_header)):
                 tree_view.resizeColumnToContents(i)
 
     def collect_settings(self):
@@ -85,7 +86,7 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         for row_idx, (field_name, field_type) in enumerate(model_cls.__annotations__.items()):
             single_field_config = {}
             field_type = core_field_type(field_type)
-            for column_idx, key_name in enumerate(self.import_settings.config_keys, start=1):
+            for column_idx, key_name in enumerate(self.import_configuration.config_keys, start=1):
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
@@ -109,7 +110,7 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
             if is_optional(field_type):
                 field_type = optional_type(field_type)
             field_config = fields_setting.get(field_name, {})
-            for column_idx, key_name in enumerate(self.import_settings.config_keys, start=1):
+            for column_idx, key_name in enumerate(self.import_configuration.config_keys, start=1):
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
@@ -135,6 +136,7 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         import_settings = self.collect_settings()
         with open(template_filepath, "w") as template_file:
             json.dump(import_settings, template_file, indent=2)
+        self.uc.show_info(f"Settings saved to the template.", self)
 
     def load_import_settings(self):
         extension_filter = "JSON (*.json)"
@@ -151,18 +153,34 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         except KeyError:
             return
         self.update_fields_settings(dm.ConnectionNode, connection_node_fields)
+        self.uc.show_info(f"Settings loaded from the template.", self)
 
     def run_import_culverts(self):
         source_layer = self.culvert_layer_cbo.currentLayer()
+        culvert_handler = self.layer_manager.model_handlers[dm.Culvert]
+        node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        culvert_layer = culvert_handler.layer
+        node_layer = node_handler.layer
         selected_feat_ids = None
         if self.selected_only_cb.isChecked():
             selected_feat_ids = source_layer.selectedFeatureIds()
         import_settings = self.collect_settings()
-        success, commit_errors = import_culverts(
-            source_layer, self.model_gpkg, import_settings, selected_ids=selected_feat_ids
-        )
-        if not success:
-            commit_errors_message = "\n".join(commit_errors)
-            self.uc.show_warn(f"Import failed due to the following errors:\n{commit_errors_message}")
-        else:
-            self.uc.show_info(f"Culverts successfully imported.")
+        try:
+            culvert_handler.disconnect_handler_signals()
+            node_handler.disconnect_handler_signals()
+            culverts_importer = CulvertsImporter(
+                source_layer, self.model_gpkg, import_settings, culvert_layer=culvert_layer, node_layer=node_layer
+            )
+            success, commit_errors = culverts_importer.import_culverts(selected_ids=selected_feat_ids)
+            if not success:
+                commit_errors_message = "\n".join(commit_errors)
+                self.uc.show_warn(f"Import failed due to the following errors:\n{commit_errors_message}")
+            else:
+                self.uc.show_info(f"Culverts successfully imported.", self)
+        except Exception as e:
+            self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
+        finally:
+            culvert_handler.connect_handler_signals()
+            node_handler.connect_handler_signals()
+        for layer in [culvert_layer, node_layer]:
+            layer.triggerRepaint()
