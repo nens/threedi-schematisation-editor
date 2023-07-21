@@ -131,29 +131,35 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                     widget.setCursorPosition(0)
 
     def save_import_settings(self):
-        extension_filter = "JSON (*.json)"
-        template_filepath = get_filepath(self, extension_filter)
-        import_settings = self.collect_settings()
-        with open(template_filepath, "w") as template_file:
-            json.dump(import_settings, template_file, indent=2)
-        self.uc.show_info(f"Settings saved to the template.", self)
+        try:
+            extension_filter = "JSON (*.json)"
+            template_filepath = get_filepath(self, extension_filter)
+            import_settings = self.collect_settings()
+            with open(template_filepath, "w") as template_file:
+                json.dump(import_settings, template_file, indent=2)
+            self.uc.show_info(f"Settings saved to the template.", self)
+        except Exception as e:
+            self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
 
     def load_import_settings(self):
-        extension_filter = "JSON (*.json)"
-        template_filepath = get_filepath(self, extension_filter, save=False)
-        with open(template_filepath, "r") as template_file:
-            import_settings = json.loads(template_file.read())
-        conversion_settings = import_settings["conversion_settings"]
-        self.snap_gb.setChecked(conversion_settings.get("use_snapping", False))
-        self.snap_dsb.setValue(conversion_settings.get("snapping_distance", 0.1))
-        self.create_nodes_cb.setChecked(conversion_settings.get("create_connection_nodes", False))
-        self.update_fields_settings(dm.Culvert, import_settings["fields"])
         try:
-            connection_node_fields = import_settings["connection_node_fields"]
-        except KeyError:
-            return
-        self.update_fields_settings(dm.ConnectionNode, connection_node_fields)
-        self.uc.show_info(f"Settings loaded from the template.", self)
+            extension_filter = "JSON (*.json)"
+            template_filepath = get_filepath(self, extension_filter, save=False)
+            with open(template_filepath, "r") as template_file:
+                import_settings = json.loads(template_file.read())
+            conversion_settings = import_settings["conversion_settings"]
+            self.snap_gb.setChecked(conversion_settings.get("use_snapping", False))
+            self.snap_dsb.setValue(conversion_settings.get("snapping_distance", 0.1))
+            self.create_nodes_cb.setChecked(conversion_settings.get("create_connection_nodes", False))
+            self.update_fields_settings(dm.Culvert, import_settings["fields"])
+            try:
+                connection_node_fields = import_settings["connection_node_fields"]
+                self.update_fields_settings(dm.ConnectionNode, connection_node_fields)
+            except KeyError:
+                pass
+            self.uc.show_info(f"Settings loaded from the template.", self)
+        except Exception as e:
+            self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
 
     def run_import_culverts(self):
         source_layer = self.culvert_layer_cbo.currentLayer()
