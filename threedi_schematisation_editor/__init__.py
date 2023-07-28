@@ -199,6 +199,7 @@ class ThreediSchematisationEditorPlugin:
             )
             self.uc.show_warn(warn_msg)
             self.uc.bar_warn("Loading from the Spatialite aborted!")
+            return
         else:
             schema_is_valid = ensure_valid_schema(src_sqlite, self.uc)
             if schema_is_valid is False:

@@ -753,9 +753,20 @@ def ensure_valid_schema(schematisation_sqlite, communication):
         do_migration = communication.ask(None, "Missing migration", warn_and_ask_msg)
         if not do_migration:
             return False
-        schema.upgrade(backup=False, upgrade_spatialite_version=True)
-        schema.set_spatial_indexes()
-        shutil.rmtree(backup_folder)
+        try:
+            schema.upgrade(backup=False, upgrade_spatialite_version=True)
+            schema.set_spatial_indexes()
+            shutil.rmtree(backup_folder)
+        except errors.MigrationMissingError as e:
+            if "This tool cannot update versions below 160" in str(e):
+                error_msg = (
+                    "This tool cannot update versions below 160. "
+                    "Please consult the 3Di documentation on how to update legacy databases."
+                )
+                communication.show_error(error_msg)
+                return False
+            else:
+                raise e
     except errors.UpgradeFailedError:
         error_msg = (
             "There are errors in the spatialite. Please re-open this file in QGIS 3.16, run the model checker and "
