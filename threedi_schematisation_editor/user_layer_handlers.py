@@ -198,17 +198,19 @@ class UserLayerHandler:
             self.layer.changeAttributeValues(feature_id, changes)
         self.fields_to_nullify.clear()
 
-    def detect_dependent_features(self, fid, model_cls):
+    def detect_dependent_features(self, fid, model_cls, visited_features):
         """Recursively detect all dependent features of the model element with given FID."""
         dependent_features = set()
-        if model_cls not in dm.MODEL_DEPENDENCIES:
+        feature_unique_key = (model_cls, fid)
+        if model_cls not in dm.MODEL_DEPENDENCIES or feature_unique_key in visited_features:
             return dependent_features
+        visited_features.add(feature_unique_key)
         handler = self.layer_manager.model_handlers[model_cls]
         request = QgsFeatureRequest(fid)
         request.setFlags(QgsFeatureRequest.NoGeometry)
         try:
             feat_real = next(handler.layer_dt.getFeatures(request))
-        except StopIteration:
+        except StopIteration:  # Feature not committed
             return dependent_features
         feat_real_id = feat_real["id"]
         for dependent_data_model, dependent_fields in dm.MODEL_DEPENDENCIES[model_cls].items():
@@ -218,24 +220,24 @@ class UserLayerHandler:
             for dependent_feat in dependent_layer.getFeatures(QgsFeatureRequest(expr)):
                 dependent_fid = dependent_feat.id()
                 dependent_feat_key = (dependent_data_model, dependent_fid)
-                if dependent_feat_key in dependent_features:
+                if dependent_feat_key in visited_features:
                     continue
                 dependent_features.add(dependent_feat_key)
         if dependent_features:
             sub_dependent_features = set()
             for dep_model_cls, dep_fid in dependent_features:
-                sub_dependent_features |= self.detect_dependent_features(dep_fid, dep_model_cls)
+                sub_dependent_features |= self.detect_dependent_features(dep_fid, dep_model_cls, visited_features)
             dependent_features |= sub_dependent_features
-        dependent_features.add((model_cls, fid))
+        dependent_features.add(feature_unique_key)
         return dependent_features
 
     def on_delete_features(self, feature_ids):
         """Action on delete features signal."""
         if self.MODEL not in dm.MODEL_DEPENDENCIES:
             return
-        features_to_delete, grouped_features_to_delete = set(), defaultdict(list)
+        features_to_delete, visited_features, grouped_features_to_delete = set(), set(), defaultdict(list)
         for deleted_fid in feature_ids:
-            features_to_delete |= self.detect_dependent_features(deleted_fid, self.MODEL)
+            features_to_delete |= self.detect_dependent_features(deleted_fid, self.MODEL, visited_features)
         for model_cls, feat_id in features_to_delete:
             grouped_features_to_delete[model_cls].append(feat_id)
         if len(features_to_delete) > len(feature_ids):
