@@ -1042,6 +1042,42 @@ class VegetationDragHandler(UserLayerHandler):
     MODEL = dm.VegetationDrag
 
 
+class ControlHandler(UserLayerHandler):
+    MODEL = dm.Control
+
+
+class ControlDeltaHandler(UserLayerHandler):
+    MODEL = dm.ControlDelta
+
+
+class ControlGroupHandler(UserLayerHandler):
+    MODEL = dm.ControlGroup
+
+
+class ControlMeasureGroupHandler(UserLayerHandler):
+    MODEL = dm.ControlMeasureGroup
+
+
+class ControlMeasureMapHandler(UserLayerHandler):
+    MODEL = dm.ControlMeasureMap
+
+
+class ControlMemoryHandler(UserLayerHandler):
+    MODEL = dm.ControlMemory
+
+
+class ControlPIDHandler(UserLayerHandler):
+    MODEL = dm.ControlPID
+
+
+class ControlTableHandler(UserLayerHandler):
+    MODEL = dm.ControlTable
+
+
+class ControlTimedHandler(UserLayerHandler):
+    MODEL = dm.ControlTimed
+
+
 ALL_HANDLERS = (
     ConnectionNodeHandler,
     BoundaryCondition1DHandler,
@@ -1077,6 +1113,15 @@ ALL_HANDLERS = (
     NumericalSettingsHandler,
     SchemaVersionHandler,
     VegetationDragHandler,
+    ControlHandler,
+    ControlDeltaHandler,
+    ControlGroupHandler,
+    ControlMeasureGroupHandler,
+    ControlMeasureMapHandler,
+    ControlMemoryHandler,
+    ControlPIDHandler,
+    ControlTableHandler,
+    ControlTimedHandler,
 )
 
 MODEL_HANDLERS = MappingProxyType({handler.MODEL: handler for handler in ALL_HANDLERS})
