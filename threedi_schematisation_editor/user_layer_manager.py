@@ -47,6 +47,7 @@ class LayersManager:
         ("1D2D", dm.MODEL_1D2D_ELEMENTS),
         ("2D", dm.MODEL_2D_ELEMENTS),
         ("Inflow", dm.INFLOW_ELEMENTS),
+        ("Control structures", dm.CONTROL_STRUCTURES_ELEMENTS),
         ("Settings", dm.SETTINGS_ELEMENTS),
     )
     RASTER_GROUPS = (("Model rasters", dm.ELEMENTS_WITH_RASTERS),)
