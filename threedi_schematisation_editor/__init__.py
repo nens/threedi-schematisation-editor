@@ -194,7 +194,7 @@ class ThreediSchematisationEditorPlugin:
         schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
         if schema_version > ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
             warn_msg = (
-                "The selected spatialite cannot be used because its database schema version newer than expected. "
+                "The selected spatialite cannot be used because its database schema version is newer than expected. "
                 "Please upgrade the 3Di Schematisation Editor and try again."
             )
             self.uc.show_warn(warn_msg)
@@ -270,7 +270,7 @@ class ThreediSchematisationEditorPlugin:
         schema_version = ModelDataConverter.spatialite_schema_version(dst_sqlite)
         if schema_version > ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
             warn_msg = (
-                "The selected spatialite cannot be used because its database schema version newer than expected. "
+                "The selected spatialite cannot be used because its database schema version is newer than expected. "
                 "Please upgrade the 3Di Schematisation Editor and try again."
             )
             self.uc.show_warn(warn_msg)
