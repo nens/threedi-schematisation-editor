@@ -761,7 +761,7 @@ def ensure_valid_schema(schematisation_sqlite, communication):
             if "This tool cannot update versions below 160" in str(e):
                 error_msg = (
                     "This tool cannot update versions below 160. "
-                    "Please consult the 3Di documentation on how to update legacy databases."
+                    "Please contact the service desk for assistance."
                 )
                 communication.show_error(error_msg)
                 return False
@@ -769,8 +769,7 @@ def ensure_valid_schema(schematisation_sqlite, communication):
                 raise e
     except errors.UpgradeFailedError:
         error_msg = (
-            "There are errors in the spatialite. Please re-open this file in QGIS 3.16, run the model checker and "
-            "fix error messages. Then attempt to upgrade again. For questions please contact the servicedesk."
+            "There are errors in the spatialite. Please run the schematisation checker, fix the errors it reports and try again."
         )
         communication.show_error(error_msg)
         return False
