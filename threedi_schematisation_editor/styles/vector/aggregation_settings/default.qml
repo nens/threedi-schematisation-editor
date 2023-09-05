@@ -66,40 +66,43 @@
           <Option type="Map">
             <Option type="List" name="map">
               <Option type="Map">
-                <Option value="discharge" type="QString" name="discharge"/>
+                <Option value="discharge" type="QString" name="Discharge"/>
               </Option>
               <Option type="Map">
-                <Option value="flow_velocity" type="QString" name="flow velocity"/>
+                <Option value="flow_velocity" type="QString" name="Flow velocity"/>
               </Option>
               <Option type="Map">
-                <Option value="pump_discharge" type="QString" name="pump discharge"/>
+                <Option value="pump_discharge" type="QString" name="Pump discharge"/>
               </Option>
               <Option type="Map">
-                <Option value="rain" type="QString" name="rain"/>
+                <Option value="rain" type="QString" name="Rain"/>
               </Option>
               <Option type="Map">
-                <Option value="waterlevel" type="QString" name="waterlevel"/>
+                <Option value="waterlevel" type="QString" name="Water level"/>
               </Option>
               <Option type="Map">
-                <Option value="wet_cross-section" type="QString" name="wet cross section"/>
+                <Option value="wet_cross-section" type="QString" name="Wet cross-sectional area"/>
               </Option>
               <Option type="Map">
-                <Option value="wet_surface" type="QString" name="wet surface"/>
+                <Option value="wet_surface" type="QString" name="Wet surface area"/>
               </Option>
               <Option type="Map">
-                <Option value="lateral_discharge" type="QString" name="lateral discharge"/>
+                <Option value="lateral_discharge" type="QString" name="Lateral discharge"/>
               </Option>
               <Option type="Map">
-                <Option value="volume" type="QString" name="volume"/>
+                <Option value="volume" type="QString" name="Volume"/>
               </Option>
               <Option type="Map">
-                <Option value="simple_infiltration" type="QString" name="infiltration"/>
+                <Option value="simple_infiltration" type="QString" name="Infiltration"/>
               </Option>
               <Option type="Map">
-                <Option value="leakage" type="QString" name="leakage"/>
+                <Option value="leakage" type="QString" name="Leakage"/>
               </Option>
               <Option type="Map">
-                <Option value="interception" type="QString" name="interception"/>
+                <Option value="interception" type="QString" name="Interception"/>
+              </Option>
+              <Option type="Map">
+                <Option value="surface_source_sink_discharge" type="QString" name="Surface sources & sinks discharge"/>
               </Option>
             </Option>
           </Option>
@@ -112,28 +115,28 @@
           <Option type="Map">
             <Option type="List" name="map">
               <Option type="Map">
-                <Option value="avg" type="QString" name="average"/>
+                <Option value="avg" type="QString" name="Average"/>
               </Option>
               <Option type="Map">
-                <Option value="min" type="QString" name="minimum"/>
+                <Option value="min" type="QString" name="Minimum"/>
               </Option>
               <Option type="Map">
-                <Option value="max" type="QString" name="maximum"/>
+                <Option value="max" type="QString" name="Maximum"/>
               </Option>
               <Option type="Map">
-                <Option value="cum" type="QString" name="cumulative"/>
+                <Option value="cum" type="QString" name="Cumulative"/>
               </Option>
               <Option type="Map">
-                <Option value="med" type="QString" name="median"/>
+                <Option value="med" type="QString" name="Median"/>
               </Option>
               <Option type="Map">
-                <Option value="cum_negative" type="QString" name="cumulative negative"/>
+                <Option value="cum_negative" type="QString" name="Cumulative negative"/>
               </Option>
               <Option type="Map">
-                <Option value="cum_positive" type="QString" name="cumulative positive"/>
+                <Option value="cum_positive" type="QString" name="Cumulative positive"/>
               </Option>
               <Option type="Map">
-                <Option value="current" type="QString" name="current"/>
+                <Option value="current" type="QString" name="Current"/>
               </Option>
             </Option>
           </Option>
