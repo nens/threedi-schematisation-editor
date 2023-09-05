@@ -268,10 +268,10 @@
           <Option type="Map">
             <Option type="List" name="map">
               <Option type="Map">
-                <Option value="0" type="QString" name="0: When the schematisation does not include 1D-elements with closed-profiles"/>
+                <Option value="0" type="QString" name="0: When the schematisation does not include 1D-elements with closed cross-sections"/>
               </Option>
               <Option type="Map">
-                <Option value="1" type="QString" name="1: When the schematisation  includes 1D-elements with closed-profiles"/>
+                <Option value="1" type="QString" name="1: When the schematisation includes 1D-elements with closed cross-sections"/>
               </Option>
             </Option>
           </Option>
