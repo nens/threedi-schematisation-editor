@@ -25,8 +25,14 @@ class ColumnImportMethod(Enum):
     IGNORE = "ignore"
 
 
-class CulvertImportConfiguration:
+class CulvertImportConfig:
     """Culvert import tool configuration class."""
+
+    FIELD_NAME_COLUMN_IDX = 0
+    METHOD_COLUMN_IDX = 1
+    SOURCE_ATTRIBUTE_COLUMN_IDX = 2
+    VALUE_MAP_COLUMN_IDX = 3
+    DEFAULT_VALUE_COLUMN_IDX = 4
 
     def __init__(self):
         self.culvert_cls = dm.Culvert
@@ -64,6 +70,7 @@ class CulvertImportConfiguration:
 
     def culvert_widgets(self):
         widgets_to_add = defaultdict(dict)
+        combobox_column_indexes = {self.METHOD_COLUMN_IDX, self.SOURCE_ATTRIBUTE_COLUMN_IDX}
         for model_cls, field_methods_mapping in self.field_methods_mapping.items():
             model_fields_display_names = model_cls.fields_display_names()
             for row_idx, (field_name, field_methods) in enumerate(field_methods_mapping.items()):
@@ -71,16 +78,17 @@ class CulvertImportConfiguration:
                 if is_optional(field_type):
                     field_type = optional_type(field_type)
                 for column_idx, column_name in enumerate(self.config_header):
-                    if column_idx == 0:
+                    if column_idx == self.FIELD_NAME_COLUMN_IDX:
                         field_display_name = model_fields_display_names[field_name]
                         label_text = f"{field_display_name}\t"
                         widget = QLabel(label_text)
-                    elif column_idx == 1:
+                    elif column_idx in combobox_column_indexes:
                         widget = QComboBox()
-                        for method in field_methods:
-                            widget.addItem(method.name.capitalize(), method.value)
+                        if column_idx == self.METHOD_COLUMN_IDX:
+                            for method in field_methods:
+                                widget.addItem(method.name.capitalize(), method.value)
                     else:
-                        if issubclass(field_type, Enum) and column_name == "Default value":
+                        if issubclass(field_type, Enum) and column_idx == self.DEFAULT_VALUE_COLUMN_IDX:
                             widget = QComboBox()
                             widget.addItem("NULL", "NULL")
                             for e in field_type:

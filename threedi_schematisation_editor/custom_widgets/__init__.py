@@ -2,6 +2,7 @@
 import ast
 import json
 import os
+from functools import partial
 
 from qgis.core import QgsMapLayerProxyModel
 from qgis.PyQt import uic
@@ -9,7 +10,7 @@ from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
 from qgis.PyQt.QtWidgets import QComboBox
 
 import threedi_schematisation_editor.data_models as dm
-from threedi_schematisation_editor.custom_tools import ColumnImportMethod, CulvertImportConfiguration, CulvertsImporter
+from threedi_schematisation_editor.custom_tools import ColumnImportMethod, CulvertImportConfig, CulvertsImporter
 from threedi_schematisation_editor.utils import (
     core_field_type,
     enum_entry_name_format,
@@ -33,13 +34,15 @@ class ProjectionSelectionDialog(ps_basecls, ps_uicls):
 class ImportCulvertsDialog(ic_basecls, ic_uicls):
     """Dialog for the importing culverts tool."""
 
+    REQUIRED_VALUE_STYLESHEET = "background-color: rgb(255, 224, 178);"
+
     def __init__(self, model_gpkg, layer_manager, uc, parent=None):
         super().__init__(parent)
         self.setupUi(self)
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self.uc = uc
-        self.import_configuration = CulvertImportConfiguration()
+        self.import_configuration = CulvertImportConfig()
         self.culvert_model = QStandardItemModel()
         self.culvert_tv.setModel(self.culvert_model)
         self.connection_node_model = QStandardItemModel()
@@ -50,10 +53,55 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         }
         self.culvert_layer_cbo.setFilters(QgsMapLayerProxyModel.LineLayer)
         self.populate_conversion_settings_widgets()
+        self.culvert_layer_cbo.layerChanged.connect(self.on_layer_changed)
+        self.create_nodes_cb.stateChanged.connect(self.on_create_nodes_change)
         self.save_pb.clicked.connect(self.save_import_settings)
         self.load_pb.clicked.connect(self.load_import_settings)
         self.run_pb.clicked.connect(self.run_import_culverts)
         self.close_pb.clicked.connect(self.close)
+
+    def on_create_nodes_change(self, is_checked):
+        self.connection_node_tab.setEnabled(is_checked)
+
+    def on_layer_changed(self, layer):
+        layer_field_names = [""]
+        if layer:
+            layer_field_names += [field.name() for field in layer.fields()]
+        for combobox in self.get_column_widgets(
+            CulvertImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, dm.Culvert, dm.ConnectionNode
+        ):
+            combobox.clear()
+            combobox.addItems(layer_field_names)
+
+    def on_method_changed(self, source_attribute_combobox, value_map_widget, current_text):
+        if current_text != ColumnImportMethod.ATTRIBUTE.name.capitalize():
+            source_attribute_combobox.setDisabled(True)
+            value_map_widget.setDisabled(True)
+            source_attribute_combobox.setStyleSheet("")
+        else:
+            source_attribute_combobox.setEnabled(True)
+            value_map_widget.setEnabled(True)
+            if source_attribute_combobox.currentText():
+                source_attribute_combobox.setStyleSheet("")
+            else:
+                source_attribute_combobox.setStyleSheet(self.REQUIRED_VALUE_STYLESHEET)
+
+    def on_source_attribute_value_changed(self, method_combobox, source_attribute_combobox, current_text):
+        if method_combobox.currentText() == ColumnImportMethod.ATTRIBUTE.name.capitalize() and not current_text:
+            source_attribute_combobox.setStyleSheet(self.REQUIRED_VALUE_STYLESHEET)
+        else:
+            source_attribute_combobox.setStyleSheet("")
+
+    def get_column_widgets(self, column_idx, *data_models):
+        column_widgets = []
+        for model_cls in data_models:
+            tree_view, tree_view_model = self.data_models_tree_views[model_cls]
+            for row_idx, field_name in enumerate(model_cls.__annotations__.keys()):
+                item = tree_view_model.item(row_idx, column_idx)
+                index = item.index()
+                widget = tree_view.indexWidget(index)
+                column_widgets.append(widget)
+        return column_widgets
 
     def populate_conversion_settings_widgets(self):
         widgets_to_add = self.import_configuration.culvert_widgets()
@@ -66,6 +114,29 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                 tree_view.setIndexWidget(tree_view_model.index(row_idx, column_idx), widget)
             for i in range(len(self.import_configuration.config_header)):
                 tree_view.resizeColumnToContents(i)
+        self.connect_configuration_widgets()
+        self.on_layer_changed(self.culvert_layer_cbo.currentLayer())
+
+    def connect_configuration_widgets(self):
+        for model_cls in [dm.Culvert, dm.ConnectionNode]:
+            tree_view, tree_view_model = self.data_models_tree_views[model_cls]
+            for row_idx, field_name in enumerate(model_cls.__annotations__.keys()):
+                method_item = tree_view_model.item(row_idx, CulvertImportConfig.METHOD_COLUMN_IDX)
+                method_index = method_item.index()
+                method_combobox = tree_view.indexWidget(method_index)
+                source_attribute_item = tree_view_model.item(row_idx, CulvertImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX)
+                source_attribute_index = source_attribute_item.index()
+                source_attribute_combobox = tree_view.indexWidget(source_attribute_index)
+                value_map_item = tree_view_model.item(row_idx, CulvertImportConfig.VALUE_MAP_COLUMN_IDX)
+                value_map_index = value_map_item.index()
+                value_map_widget = tree_view.indexWidget(value_map_index)
+                method_combobox.currentTextChanged.connect(
+                    partial(self.on_method_changed, source_attribute_combobox, value_map_widget)
+                )
+                method_combobox.currentTextChanged.emit(method_combobox.currentText())
+                source_attribute_combobox.currentTextChanged.connect(
+                    partial(self.on_source_attribute_value_changed, method_combobox, source_attribute_combobox)
+                )
 
     def collect_settings(self):
         import_settings = {
@@ -91,14 +162,18 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                 index = item.index()
                 widget = tree_view.indexWidget(index)
                 if isinstance(widget, QComboBox):
-                    key_value = widget.currentData()
+                    key_value = (
+                        widget.currentText()
+                        if column_idx == CulvertImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX
+                        else widget.currentData()
+                    )
                 else:
                     key_value = widget.text()
                     if not key_value:
                         continue
-                    if key_name == "default_value" and key_name != "NULL":
+                    if column_idx == CulvertImportConfig.DEFAULT_VALUE_COLUMN_IDX and key_name != "NULL":
                         key_value = field_type(key_value)
-                    elif key_name == "value_map":
+                    elif column_idx == CulvertImportConfig.VALUE_MAP_COLUMN_IDX:
                         key_value = ast.literal_eval(key_value)
                 single_field_config[key_name] = key_value
             fields_settings[field_name] = single_field_config
@@ -122,10 +197,12 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                     if key_value == "NULL":
                         widget.setCurrentText(key_value)
                     else:
-                        if key_name == "default_value":
+                        if key_name == "method":
+                            widget.setCurrentText(enum_entry_name_format(ColumnImportMethod(key_value).name))
+                        elif key_name == "default_value":
                             widget.setCurrentText(enum_entry_name_format(field_type(key_value).name))
                         else:
-                            widget.setCurrentText(enum_entry_name_format(ColumnImportMethod(key_value).name))
+                            widget.setCurrentText(str(key_value))
                 else:
                     widget.setText(str(key_value))
                     widget.setCursorPosition(0)
@@ -161,7 +238,34 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         except Exception as e:
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
 
+    def missing_source_fields(self):
+        data_models = [dm.Culvert]
+        if self.create_nodes_cb.isChecked():
+            data_models.append(dm.ConnectionNode)
+        field_labels = self.get_column_widgets(CulvertImportConfig.FIELD_NAME_COLUMN_IDX, *data_models)
+        method_widgets = self.get_column_widgets(CulvertImportConfig.METHOD_COLUMN_IDX, *data_models)
+        source_attribute_widgets = self.get_column_widgets(
+            CulvertImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, *data_models
+        )
+        missing_fields = []
+        for field_lbl, method_cbo, source_attribute_cbo in zip(field_labels, method_widgets, source_attribute_widgets):
+            field_name, method_txt, source_attribute_txt = (
+                field_lbl.text().strip(),
+                method_cbo.currentText(),
+                source_attribute_cbo.currentText(),
+            )
+            if method_txt == ColumnImportMethod.ATTRIBUTE.name.capitalize() and not source_attribute_txt:
+                missing_fields.append(field_name)
+        return missing_fields
+
     def run_import_culverts(self):
+        missing_fields = self.missing_source_fields()
+        if missing_fields:
+            missing_fields_txt = "\n".join(missing_fields)
+            self.uc.show_warn(
+                f"Please specify a source field for a following attribute(s) and try again:\n{missing_fields_txt}", self
+            )
+            return
         source_layer = self.culvert_layer_cbo.currentLayer()
         culvert_handler = self.layer_manager.model_handlers[dm.Culvert]
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]

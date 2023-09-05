@@ -78,7 +78,7 @@
     </layout>
    </item>
    <item row="3" column="0" rowspan="5" colspan="4">
-    <widget class="QTabWidget" name="connection_nodes_tv">
+    <widget class="QTabWidget" name="tab_widget">
      <property name="font">
       <font>
        <pointsize>10</pointsize>
@@ -87,7 +87,7 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tab">
+     <widget class="QWidget" name="culvert_tab">
       <attribute name="title">
        <string>Culvert</string>
       </attribute>
@@ -97,7 +97,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_2">
+     <widget class="QWidget" name="connection_node_tab">
       <attribute name="title">
        <string>Connection nodes</string>
       </attribute>
@@ -171,6 +171,9 @@
      </property>
      <property name="text">
       <string>Create connection nodes</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
