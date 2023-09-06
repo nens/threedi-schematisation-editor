@@ -75,10 +75,7 @@ def vector_layer_factory(annotated_model_cls, epsg=4326):
     uri = f"{geometry_type}?crs=EPSG:{epsg}"
     layer = QgsVectorLayer(uri, layer_name, "memory")
     for field_name, field_type in annotated_model_cls.__annotations__.items():
-        if is_optional(field_type):
-            field_type = optional_type(field_type)
-        if issubclass(field_type, Enum):
-            field_type = enum_type(field_type)
+        field_type = core_field_type(field_type)
         try:
             field_variant = field_types_mapping[field_type]
         except KeyError:
@@ -89,6 +86,16 @@ def vector_layer_factory(annotated_model_cls, epsg=4326):
     layer_dt.addAttributes(fields)
     layer.updateFields()
     return layer
+
+
+def core_field_type(field_type):
+    """Return a core field type of the field type."""
+    real_field_type = field_type
+    if is_optional(real_field_type):
+        real_field_type = optional_type(real_field_type)
+    if issubclass(real_field_type, Enum):
+        real_field_type = enum_type(real_field_type)
+    return real_field_type
 
 
 def is_optional(field_type):
@@ -232,9 +239,9 @@ def get_filepath(parent, extension_filter=None, extension=None, save=True, dialo
         extension_filter = "All Files (*.*)"
 
     if dialog_title is None:
-        dialog_title = "Choose file"
+        dialog_title = "Save to file" if save else "Choose file"
 
-    starting_dir = QSettings().value("threedi_mb/last_folder", os.path.expanduser("~"), type=str)
+    starting_dir = QSettings().value("schematisation_editor/last_folder", os.path.expanduser("~"), type=str)
     if save is True:
         file_name, __ = QFileDialog.getSaveFileName(parent, dialog_title, starting_dir, extension_filter)
     else:
@@ -246,7 +253,7 @@ def get_filepath(parent, extension_filter=None, extension=None, save=True, dialo
         if not file_name.endswith(extension):
             file_name += extension
 
-    QSettings().setValue("threedi_mb/last_folder", os.path.dirname(file_name))
+    QSettings().setValue("schematisation_editor/last_folder", os.path.dirname(file_name))
     return file_name
 
 
@@ -265,19 +272,19 @@ def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
     return ews
 
 
+def enum_entry_name_format(entry_name):
+    if entry_name != "YZ":
+        formatted_entry_name = entry_name.capitalize().replace("_", " ")
+    else:
+        formatted_entry_name = entry_name
+    return formatted_entry_name
+
+
 def set_initial_layer_configuration(layer, model_cls):
     """Set initial vector layer configuration that should be set within currently active style."""
     attr_table_config = layer.attributeTableConfig()
     fields = layer.dataProvider().fields()
     columns = attr_table_config.columns()
-
-    def enum_entry_name_format(entry_name):
-        if entry_name != "YZ":
-            formatted_entry_name = entry_name.capitalize().replace("_", " ")
-        else:
-            formatted_entry_name = entry_name
-        return formatted_entry_name
-
     model_hidden_fields = model_cls.hidden_fields()
     model_hidden_fields.add("fid")
     for column in columns:

@@ -52,6 +52,18 @@ class ModelObject:
     def hidden_fields(cls) -> set:
         return set()
 
+    @staticmethod
+    def display_names() -> list:
+        return list()
+
+    @classmethod
+    def fields_display_names(cls) -> dict:
+        display_names_mapping = {
+            field_name: display_name
+            for field_name, display_name in zip(cls.__annotations__.keys(), cls.display_names())
+        }
+        return display_names_mapping
+
 
 @dataclass
 class ConnectionNode(ModelObject):
@@ -66,6 +78,16 @@ class ConnectionNode(ModelObject):
     code: str
     initial_waterlevel: Optional[float]
     storage_area: Optional[float]
+
+    @staticmethod
+    def display_names() -> list:
+        display_names_list = [
+            "ID",
+            "Code",
+            "Initial water level [m]",
+            "Storage area [m²]",
+        ]
+        return display_names_list
 
 
 @dataclass
@@ -302,6 +324,30 @@ class Culvert(ModelObject):
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
     cross_section_table: Optional[str]
+
+    @staticmethod
+    def display_names() -> list:
+        display_names_list = [
+            "ID",
+            "Code",
+            "Display name",
+            "Calculation type",
+            "Calculation point distance [m]",
+            "Invert level start point",
+            "Invert level end point",
+            "Discharge coefficient positive",
+            "Discharge coefficient negative",
+            "Friction value",
+            "Friction type",
+            "Zoom category",
+            "Connection node start ID",
+            "Connection node end ID",
+            "Cross section shape",
+            "Cross section width [m]",
+            "Cross section height [m]",
+            "Cross section table",
+        ]
+        return display_names_list
 
 
 @dataclass

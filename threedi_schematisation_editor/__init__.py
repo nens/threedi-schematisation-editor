@@ -2,10 +2,12 @@
 import os.path
 
 from qgis.core import QgsApplication, QgsProject
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QAction, QMenu
 
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.conversion import ModelDataConverter
+from threedi_schematisation_editor.custom_widgets import ImportCulvertsDialog
 from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager
 from threedi_schematisation_editor.utils import (
@@ -38,6 +40,7 @@ class ThreediSchematisationEditorPlugin:
         self.action_export = None
         self.action_export_as = None
         self.action_remove = None
+        self.action_import_culverts = None
         self.model_gpkg = None
         self.layer_manager = None
         self.form_factory = None
@@ -59,11 +62,23 @@ class ThreediSchematisationEditorPlugin:
         self.action_export_as.triggered.connect(self.save_to_selected)
         self.action_remove = QAction("Remove 3Di model", self.iface.mainWindow())
         self.action_remove.triggered.connect(self.remove_model_from_project)
+        import_culverts_icon_path = os.path.join(os.path.dirname(__file__), "import.png")
+        import_actions_spec = [
+            ("Culverts", self.import_external_culverts, None),
+            ("Orifices", self.import_external_orifices, None),
+            ("Weirs", self.import_external_weirs, None),
+            ("Pipes", self.import_external_pipes, None),
+            ("Pumping stations", self.import_external_pumpstations, None),
+        ]
+        self.action_import_culverts = self.add_multi_action_button(
+            "Import schematisation objects", import_culverts_icon_path, import_actions_spec
+        )
         self.iface.addToolBarIcon(self.action_open)
         self.iface.addToolBarIcon(self.action_import)
         self.iface.addToolBarIcon(self.action_export)
         self.iface.addToolBarIcon(self.action_export_as)
         self.iface.addToolBarIcon(self.action_remove)
+        self.iface.addToolBarIcon(self.action_import_culverts)
         self.toggle_active_project_actions()
 
     def unload(self):
@@ -78,16 +93,39 @@ class ThreediSchematisationEditorPlugin:
         del self.action_export_as
         self.iface.removeToolBarIcon(self.action_remove)
         del self.action_remove
+        self.iface.removeToolBarIcon(self.action_import_culverts)
+        del self.action_import_culverts
+
+    def add_multi_action_button(self, name, icon_path, actions_specification):
+        parent_window = self.iface.mainWindow()
+        action_arguments = [name, parent_window]
+        if icon_path:
+            icon = QIcon(icon_path)
+            action_arguments.insert(0, icon)
+        main_action = QAction(*action_arguments)
+        menu = QMenu()
+        for sub_action_name, sub_action_callback, sub_icon_path in actions_specification:
+            sub_action_arguments = [sub_action_name, parent_window]
+            if sub_icon_path:
+                sub_icon = QIcon(sub_icon_path)
+                sub_action_arguments.insert(0, sub_icon)
+            sub_action = QAction(*sub_action_arguments)
+            sub_action.triggered.connect(sub_action_callback)
+            menu.addAction(sub_action)
+        main_action.setMenu(menu)
+        return main_action
 
     def toggle_active_project_actions(self):
         if self.model_gpkg is None:
             self.action_export.setDisabled(True)
             self.action_export_as.setDisabled(True)
             self.action_remove.setDisabled(True)
+            self.action_import_culverts.setDisabled(True)
         else:
             self.action_export.setEnabled(True)
             self.action_export_as.setEnabled(True)
             self.action_remove.setEnabled(True)
+            self.action_import_culverts.setEnabled(True)
 
     def check_macros_status(self):
         macros_status = check_enable_macros_option()
@@ -272,6 +310,24 @@ class ThreediSchematisationEditorPlugin:
             self.project.setCustomVariables(custom_vars)
         self.toggle_active_project_actions()
         self.iface.mapCanvas().refresh()
+
+    def import_external_culverts(self):
+        if not self.model_gpkg:
+            return
+        import_culverts_dlg = ImportCulvertsDialog(self.model_gpkg, self.layer_manager, self.uc)
+        import_culverts_dlg.exec_()
+
+    def import_external_orifices(self):
+        self.uc.bar_info("Not implemented...")
+
+    def import_external_weirs(self):
+        self.uc.bar_info("Not implemented...")
+
+    def import_external_pipes(self):
+        self.uc.bar_info("Not implemented...")
+
+    def import_external_pumpstations(self):
+        self.uc.bar_info("Not implemented...")
 
     def on_project_close(self):
         if self.layer_manager is None:
