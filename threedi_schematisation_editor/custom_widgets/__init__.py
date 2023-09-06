@@ -3,6 +3,7 @@ import ast
 import json
 import os
 from functools import partial
+from itertools import chain
 
 from qgis.core import QgsMapLayerProxyModel
 from qgis.PyQt import uic
@@ -67,9 +68,10 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         layer_field_names = [""]
         if layer:
             layer_field_names += [field.name() for field in layer.fields()]
-        for combobox in self.get_column_widgets(
+        source_attribute_widgets = self.get_column_widgets(
             CulvertImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, dm.Culvert, dm.ConnectionNode
-        ):
+        )
+        for combobox in chain.from_iterable(source_attribute_widgets.values()):
             combobox.clear()
             combobox.addItems(layer_field_names)
 
@@ -93,14 +95,16 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
             source_attribute_combobox.setStyleSheet("")
 
     def get_column_widgets(self, column_idx, *data_models):
-        column_widgets = []
+        column_widgets = {}
         for model_cls in data_models:
+            model_widgets = []
             tree_view, tree_view_model = self.data_models_tree_views[model_cls]
             for row_idx, field_name in enumerate(model_cls.__annotations__.keys()):
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
-                column_widgets.append(widget)
+                model_widgets.append(widget)
+            column_widgets[model_cls] = model_widgets
         return column_widgets
 
     def populate_conversion_settings_widgets(self):
@@ -247,21 +251,34 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         source_attribute_widgets = self.get_column_widgets(
             CulvertImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, *data_models
         )
-        missing_fields = []
-        for field_lbl, method_cbo, source_attribute_cbo in zip(field_labels, method_widgets, source_attribute_widgets):
-            field_name, method_txt, source_attribute_txt = (
-                field_lbl.text().strip(),
-                method_cbo.currentText(),
-                source_attribute_cbo.currentText(),
-            )
-            if method_txt == ColumnImportMethod.ATTRIBUTE.name.capitalize() and not source_attribute_txt:
-                missing_fields.append(field_name)
+        missing_fields = {}
+        for model_cls in data_models:
+            model_missing_fields = []
+            model_field_labels, model_method_widgets, model_source_attribute_widgets = [
+                column_widgets[model_cls] for column_widgets in [field_labels, method_widgets, source_attribute_widgets]
+            ]
+            for field_lbl, method_cbo, source_attribute_cbo in zip(
+                model_field_labels, model_method_widgets, model_source_attribute_widgets
+            ):
+                field_name, method_txt, source_attribute_txt = (
+                    field_lbl.text().strip(),
+                    method_cbo.currentText(),
+                    source_attribute_cbo.currentText(),
+                )
+                if method_txt == ColumnImportMethod.ATTRIBUTE.name.capitalize() and not source_attribute_txt:
+                    model_missing_fields.append(field_name)
+            missing_fields[model_cls] = model_missing_fields
         return missing_fields
 
     def run_import_culverts(self):
         missing_fields = self.missing_source_fields()
         if missing_fields:
-            missing_fields_txt = "\n".join(missing_fields)
+            missing_fields_lines = []
+            for model_cls, model_missing_fields in missing_fields.items():
+                model_name = model_cls.__layername__
+                for missing_field in model_missing_fields:
+                    missing_fields_lines.append(f"{model_name}: {missing_field}")
+            missing_fields_txt = "\n".join(missing_fields_lines)
             self.uc.show_warn(
                 f"Please specify a source field for a following attribute(s) and try again:\n{missing_fields_txt}", self
             )
