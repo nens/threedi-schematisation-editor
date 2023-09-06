@@ -27,15 +27,15 @@ class FlowVariable(Enum):
     FLOW_VELOCITY = "flow_velocity"
     PUMP_DISCHARGE = "pump_discharge"
     RAIN = "rain"
-    WATERLEVEL = "waterlevel"
-    WET_CROSS_SECTION = "wet_cross-section"
-    WET_SURFACE = "wet_surface"
+    WATER_LEVEL = "waterlevel"
+    WET_CROSS_SECTIONAL_AREA = "wet_cross-section"
+    WET_SURFACE_AREA = "wet_surface"
     LATERAL_DISCHARGE = "lateral_discharge"
-    VOLUM = "volume"
+    VOLUME = "volume"
     SIMPLE_INFILTRATION = "simple_infiltration"
     LEAKAGE = "leakage"
     INTERCEPTION = "interception"
-    SURFACE_SOURCE_SINK_DISCHARGE = "surface_source_sink_discharge"
+    SURFACE_SOURCES_AND_SINKS_DISCHARGE = "surface_source_sink_discharge"
 
 
 class AggregationMethod(Enum):
