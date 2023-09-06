@@ -44,6 +44,7 @@ class UserLayerHandler:
         self.layer_manager = layer_manager
         self.form_factory = self.layer_manager.form_factory
         self.layer = layer
+        self.layer_dt = layer.dataProvider()
         self.layer_modified = False
         self.fields_to_nullify = {}
 
@@ -197,22 +198,49 @@ class UserLayerHandler:
             self.layer.changeAttributeValues(feature_id, changes)
         self.fields_to_nullify.clear()
 
+    def detect_dependent_features(self, fid, model_cls, visited_features):
+        """Recursively detect all dependent features of the model element with given FID."""
+        dependent_features = set()
+        feature_unique_key = (model_cls, fid)
+        if model_cls not in dm.MODEL_DEPENDENCIES or feature_unique_key in visited_features:
+            return dependent_features
+        visited_features.add(feature_unique_key)
+        handler = self.layer_manager.model_handlers[model_cls]
+        request = QgsFeatureRequest(fid)
+        request.setFlags(QgsFeatureRequest.NoGeometry)
+        try:
+            feat_real = next(handler.layer_dt.getFeatures(request))
+        except StopIteration:  # Feature not committed
+            return dependent_features
+        feat_real_id = feat_real["id"]
+        for dependent_data_model, dependent_fields in dm.MODEL_DEPENDENCIES[model_cls].items():
+            dependent_layer = self.layer_manager.model_handlers[dependent_data_model].layer
+            expr_str = " OR ".join(f'"{field_name}" = {feat_real_id}' for field_name in dependent_fields)
+            expr = QgsExpression(expr_str)
+            for dependent_feat in dependent_layer.getFeatures(QgsFeatureRequest(expr)):
+                dependent_fid = dependent_feat.id()
+                dependent_feat_key = (dependent_data_model, dependent_fid)
+                if dependent_feat_key in visited_features:
+                    continue
+                dependent_features.add(dependent_feat_key)
+        if dependent_features:
+            sub_dependent_features = set()
+            for dep_model_cls, dep_fid in dependent_features:
+                sub_dependent_features |= self.detect_dependent_features(dep_fid, dep_model_cls, visited_features)
+            dependent_features |= sub_dependent_features
+        dependent_features.add(feature_unique_key)
+        return dependent_features
+
     def on_delete_features(self, feature_ids):
         """Action on delete features signal."""
         if self.MODEL not in dm.MODEL_DEPENDENCIES:
             return
-        request = QgsFeatureRequest(feature_ids)
-        request.setFlags(QgsFeatureRequest.NoGeometry)
-        deleted_features_real_ids = [feat["id"] for feat in self.layer.dataProvider().getFeatures(request)]
-        dependent_features = defaultdict(list)
-        for deleted_feat_id in deleted_features_real_ids:
-            for dependent_data_model, dependent_fields in dm.MODEL_DEPENDENCIES[self.MODEL].items():
-                dependent_layer = self.layer_manager.model_handlers[dependent_data_model].layer
-                expr_str = " OR ".join(f'"{field_name}" = {deleted_feat_id}' for field_name in dependent_fields)
-                expr = QgsExpression(expr_str)
-                dependent_feats = [feat.id() for feat in dependent_layer.getFeatures(QgsFeatureRequest(expr))]
-                dependent_features[dependent_data_model] += dependent_feats
-        if dependent_features:
+        features_to_delete, visited_features, grouped_features_to_delete = set(), set(), defaultdict(list)
+        for deleted_fid in feature_ids:
+            features_to_delete |= self.detect_dependent_features(deleted_fid, self.MODEL, visited_features)
+        for model_cls, feat_id in features_to_delete:
+            grouped_features_to_delete[model_cls].append(feat_id)
+        if len(features_to_delete) > len(feature_ids):
             title = "Referenced features"
             msg = (
                 f"There are other features referencing to the deleted '{self.MODEL.__layername__}' element(s). "
@@ -223,11 +251,16 @@ class UserLayerHandler:
             if clicked_button == delete_feat:
                 pass
             elif clicked_button == delete_all:
-                for dependent_model, dependent_feat_ids in dependent_features.items():
-                    dependent_layer = self.layer_manager.model_handlers[dependent_model].layer
-                    if not dependent_layer.isEditable():
-                        dependent_layer.startEditing()
-                    dependent_layer.deleteFeatures(dependent_feat_ids)
+                for dependent_model, dependent_feat_ids in grouped_features_to_delete.items():
+                    dependent_handler = self.layer_manager.model_handlers[dependent_model]
+                    try:
+                        dependent_handler.disconnect_handler_signals()
+                        dependent_layer = dependent_handler.layer
+                        if not dependent_layer.isEditable():
+                            dependent_layer.startEditing()
+                        dependent_layer.deleteFeatures(dependent_feat_ids)
+                    finally:
+                        dependent_handler.connect_handler_signals()
                 self.layer_manager.iface.mapCanvas().refresh()
             else:
                 self.layer.rollBack()
