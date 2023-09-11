@@ -8,11 +8,12 @@ from itertools import chain
 from qgis.core import QgsMapLayerProxyModel
 from qgis.PyQt import uic
 from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
-from qgis.PyQt.QtWidgets import QComboBox
+from qgis.PyQt.QtWidgets import QComboBox, QInputDialog, QTableWidgetItem
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.custom_tools import ColumnImportMethod, CulvertImportConfig, CulvertsImporter
 from threedi_schematisation_editor.utils import (
+    REQUIRED_VALUE_STYLESHEET,
     core_field_type,
     enum_entry_name_format,
     get_filepath,
@@ -22,6 +23,7 @@ from threedi_schematisation_editor.utils import (
 
 ps_basecls, ps_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "projection_selection.ui"))
 ic_basecls, ic_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "import_culverts.ui"))
+vm_basecls, vm_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "attribute_value_map.ui"))
 
 
 class ProjectionSelectionDialog(ps_basecls, ps_uicls):
@@ -32,10 +34,82 @@ class ProjectionSelectionDialog(ps_basecls, ps_uicls):
         self.setupUi(self)
 
 
+class AttributeValueMapDialog(vm_basecls, vm_uicls):
+
+    """Dialog for setting attribute value mappings."""
+
+    SRC_COLUMN_IDX = 0
+    DST_COLUMN_IDX = 1
+
+    def __init__(self, pressed_button, source_layer, parent=None):
+        super().__init__(parent)
+        self.setupUi(self)
+        self.pressed_button = pressed_button
+        self.source_layer = source_layer
+        self.add_pb.clicked.connect(self.add_value_map_row)
+        self.delete_pb.clicked.connect(self.delete_value_map_rows)
+        self.load_pb.clicked.connect(self.load_from_source_layer)
+        self.header = ["Source attribute value", "Target attribute value"]
+        self.populate_data()
+
+    def populate_data(self):
+        """Populate attribute value map data in the table widget."""
+        self.value_map_table.clearContents()
+        self.value_map_table.setRowCount(0)
+        self.value_map_table.setColumnCount(2)
+        self.value_map_table.setHorizontalHeaderLabels(self.header)
+        for row_number, (source_value, target_value) in enumerate(self.pressed_button.value_map.items()):
+            self.value_map_table.insertRow(row_number)
+            self.value_map_table.setItem(row_number, self.SRC_COLUMN_IDX, QTableWidgetItem(source_value))
+            self.value_map_table.setItem(row_number, self.DST_COLUMN_IDX, QTableWidgetItem(target_value))
+
+    def add_value_map_row(self):
+        """Slot for handling new row addition."""
+        selected_rows = {idx.row() for idx in self.value_map_table.selectedIndexes()}
+        if selected_rows:
+            last_row_number = max(selected_rows) + 1
+        else:
+            last_row_number = self.value_map_table.rowCount()
+        self.value_map_table.insertRow(last_row_number)
+
+    def delete_value_map_rows(self):
+        """Slot for handling deletion of the selected rows."""
+        selected_rows = {idx.row() for idx in self.value_map_table.selectedIndexes()}
+        for row in sorted(selected_rows, reverse=True):
+            self.value_map_table.removeRow(row)
+
+    def load_from_source_layer(self):
+        """Slot for handling adding rows based on the source layer unique field values."""
+        fields = self.source_layer.fields()
+        src_layer_field_names = [field.name() for field in fields]
+        title = "Load source layer values"
+        message = "Unique values source field"
+        selected_field_name, accept = QInputDialog.getItem(self, title, message, src_layer_field_names, editable=False)
+        if accept is True:
+            selected_field_name_idx = fields.lookupField(selected_field_name)
+            selected_rows = {idx.row() for idx in self.value_map_table.selectedIndexes()}
+            if selected_rows:
+                last_row_number = max(selected_rows) + 1
+            else:
+                last_row_number = self.value_map_table.rowCount()
+            unique_values = self.source_layer.uniqueValues(selected_field_name_idx)
+            for row_number, source_value in enumerate(sorted(unique_values), start=last_row_number):
+                self.value_map_table.insertRow(row_number)
+                self.value_map_table.setItem(row_number, self.SRC_COLUMN_IDX, QTableWidgetItem(source_value))
+
+    def update_value_map(self):
+        """Update value map with dictionary with defined data."""
+        num_of_rows = self.value_map_table.rowCount()
+        new_value_map = {}
+        for row_num in range(num_of_rows):
+            src_item = self.value_map_table.item(row_num, self.SRC_COLUMN_IDX)
+            dst_item = self.value_map_table.item(row_num, self.DST_COLUMN_IDX)
+            new_value_map[src_item] = dst_item
+        self.pressed_button.value_map = new_value_map
+
+
 class ImportCulvertsDialog(ic_basecls, ic_uicls):
     """Dialog for the importing culverts tool."""
-
-    REQUIRED_VALUE_STYLESHEET = "background-color: rgb(255, 224, 178);"
 
     def __init__(self, model_gpkg, layer_manager, uc, parent=None):
         super().__init__(parent)
@@ -61,6 +135,10 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         self.run_pb.clicked.connect(self.run_import_culverts)
         self.close_pb.clicked.connect(self.close)
 
+    @property
+    def source_layer(self):
+        return self.culvert_layer_cbo.currentLayer()
+
     def on_create_nodes_change(self, is_checked):
         self.connection_node_tab.setEnabled(is_checked)
 
@@ -75,7 +153,8 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
             combobox.clear()
             combobox.addItems(layer_field_names)
 
-    def on_method_changed(self, source_attribute_combobox, value_map_widget, current_text):
+    @staticmethod
+    def on_method_changed(source_attribute_combobox, value_map_widget, current_text):
         if current_text != ColumnImportMethod.ATTRIBUTE.name.capitalize():
             source_attribute_combobox.setDisabled(True)
             value_map_widget.setDisabled(True)
@@ -86,13 +165,20 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
             if source_attribute_combobox.currentText():
                 source_attribute_combobox.setStyleSheet("")
             else:
-                source_attribute_combobox.setStyleSheet(self.REQUIRED_VALUE_STYLESHEET)
+                source_attribute_combobox.setStyleSheet(REQUIRED_VALUE_STYLESHEET)
 
-    def on_source_attribute_value_changed(self, method_combobox, source_attribute_combobox, current_text):
+    @staticmethod
+    def on_source_attribute_value_changed(method_combobox, source_attribute_combobox, current_text):
         if method_combobox.currentText() == ColumnImportMethod.ATTRIBUTE.name.capitalize() and not current_text:
-            source_attribute_combobox.setStyleSheet(self.REQUIRED_VALUE_STYLESHEET)
+            source_attribute_combobox.setStyleSheet(REQUIRED_VALUE_STYLESHEET)
         else:
             source_attribute_combobox.setStyleSheet("")
+
+    def on_value_map_clicked(self, pressed_button):
+        value_map_dlg = AttributeValueMapDialog(pressed_button, self.source_layer, self)
+        accepted = value_map_dlg.exec_()
+        if accepted:
+            value_map_dlg.updated_value_map()
 
     def get_column_widgets(self, column_idx, *data_models):
         column_widgets = {}
@@ -119,7 +205,7 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
             for i in range(len(self.import_configuration.config_header)):
                 tree_view.resizeColumnToContents(i)
         self.connect_configuration_widgets()
-        self.on_layer_changed(self.culvert_layer_cbo.currentLayer())
+        self.on_layer_changed(self.source_layer)
 
     def connect_configuration_widgets(self):
         for model_cls in [dm.Culvert, dm.ConnectionNode]:
@@ -133,14 +219,15 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                 source_attribute_combobox = tree_view.indexWidget(source_attribute_index)
                 value_map_item = tree_view_model.item(row_idx, CulvertImportConfig.VALUE_MAP_COLUMN_IDX)
                 value_map_index = value_map_item.index()
-                value_map_widget = tree_view.indexWidget(value_map_index)
+                value_map_button = tree_view.indexWidget(value_map_index)
                 method_combobox.currentTextChanged.connect(
-                    partial(self.on_method_changed, source_attribute_combobox, value_map_widget)
+                    partial(self.on_method_changed, source_attribute_combobox, value_map_button)
                 )
                 method_combobox.currentTextChanged.emit(method_combobox.currentText())
                 source_attribute_combobox.currentTextChanged.connect(
                     partial(self.on_source_attribute_value_changed, method_combobox, source_attribute_combobox)
                 )
+                value_map_button.clicked.connect(partial(self.on_value_map_clicked, value_map_button))
 
     def collect_settings(self):
         import_settings = {
@@ -283,7 +370,7 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                 f"Please specify a source field for a following attribute(s) and try again:\n{missing_fields_txt}", self
             )
             return
-        source_layer = self.culvert_layer_cbo.currentLayer()
+        source_layer = self.source_layer
         culvert_handler = self.layer_manager.model_handlers[dm.Culvert]
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         culvert_layer = culvert_handler.layer

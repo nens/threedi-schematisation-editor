@@ -40,6 +40,8 @@ from qgis.utils import plugins
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.enumerators as en
 
+REQUIRED_VALUE_STYLESHEET = "background-color: rgb(255, 224, 178);"
+
 field_types_mapping = {
     bool: QVariant.Bool,
     int: QVariant.Int,
@@ -760,8 +762,7 @@ def ensure_valid_schema(schematisation_sqlite, communication):
         except errors.MigrationMissingError as e:
             if "This tool cannot update versions below 160" in str(e):
                 error_msg = (
-                    "This tool cannot update versions below 160. "
-                    "Please contact the service desk for assistance."
+                    "This tool cannot update versions below 160. " "Please contact the service desk for assistance."
                 )
                 communication.show_error(error_msg)
                 return False
