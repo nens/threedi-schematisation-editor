@@ -701,9 +701,7 @@ def migrate_spatialite_schema(sqlite_filepath):
     except ImportError:
         migration_feedback_msg = "Missing threedi-schema library. Schema migration failed."
     except errors.UpgradeFailedError:
-        migration_feedback_msg = (
-            "The spatialite database schema cannot be migrated to the current version. Please contact the service desk for assistance."
-        )
+        migration_feedback_msg = "The spatialite database schema cannot be migrated to the current version. Please contact the service desk for assistance."
     except Exception as e:
         migration_feedback_msg = f"{e}"
     return migration_succeed, migration_feedback_msg
@@ -771,9 +769,7 @@ def ensure_valid_schema(schematisation_sqlite, communication):
             else:
                 raise e
     except errors.UpgradeFailedError:
-        error_msg = (
-            "The spatialite database schema cannot be migrated to the current version. Please contact the service desk for assistance."
-        )
+        error_msg = "The spatialite database schema cannot be migrated to the current version. Please contact the service desk for assistance."
         communication.show_error(error_msg)
         return False
     except Exception as e:
