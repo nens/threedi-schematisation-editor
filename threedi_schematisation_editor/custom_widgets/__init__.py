@@ -5,7 +5,7 @@ import os
 from functools import partial
 from itertools import chain
 
-from qgis.core import QgsMapLayerProxyModel
+from qgis.core import NULL, QgsMapLayerProxyModel
 from qgis.PyQt import uic
 from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
 from qgis.PyQt.QtWidgets import QComboBox, QInputDialog, QTableWidgetItem
@@ -13,6 +13,8 @@ from qgis.PyQt.QtWidgets import QComboBox, QInputDialog, QTableWidgetItem
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.custom_tools import ColumnImportMethod, CulvertImportConfig, CulvertsImporter
 from threedi_schematisation_editor.utils import (
+    NULL_STR,
+    QUOTED_NULL,
     REQUIRED_VALUE_STYLESHEET,
     core_field_type,
     enum_entry_name_format,
@@ -35,7 +37,6 @@ class ProjectionSelectionDialog(ps_basecls, ps_uicls):
 
 
 class AttributeValueMapDialog(vm_basecls, vm_uicls):
-
     """Dialog for setting attribute value mappings."""
 
     SRC_COLUMN_IDX = 0
@@ -52,6 +53,17 @@ class AttributeValueMapDialog(vm_basecls, vm_uicls):
         self.header = ["Source attribute value", "Target attribute value"]
         self.populate_data()
 
+    @staticmethod
+    def format_value_map_data(data):
+        """Create valid data string representation."""
+        if isinstance(data, str):
+            data_representation = f'"{data}"'
+        elif data == NULL:
+            data_representation = QUOTED_NULL
+        else:
+            data_representation = str(data)
+        return data_representation
+
     def populate_data(self):
         """Populate attribute value map data in the table widget."""
         self.value_map_table.clearContents()
@@ -59,9 +71,12 @@ class AttributeValueMapDialog(vm_basecls, vm_uicls):
         self.value_map_table.setColumnCount(2)
         self.value_map_table.setHorizontalHeaderLabels(self.header)
         for row_number, (source_value, target_value) in enumerate(self.pressed_button.value_map.items()):
+            source_value = self.format_value_map_data(source_value)
+            target_value = self.format_value_map_data(target_value)
             self.value_map_table.insertRow(row_number)
             self.value_map_table.setItem(row_number, self.SRC_COLUMN_IDX, QTableWidgetItem(source_value))
             self.value_map_table.setItem(row_number, self.DST_COLUMN_IDX, QTableWidgetItem(target_value))
+        self.value_map_table.resizeColumnsToContents()
 
     def add_value_map_row(self):
         """Slot for handling new row addition."""
@@ -94,8 +109,26 @@ class AttributeValueMapDialog(vm_basecls, vm_uicls):
                 last_row_number = self.value_map_table.rowCount()
             unique_values = self.source_layer.uniqueValues(selected_field_name_idx)
             for row_number, source_value in enumerate(sorted(unique_values), start=last_row_number):
+                source_value_str = self.format_value_map_data(source_value)
+                if isinstance(source_value, str):
+                    source_value = source_value_str
+                elif source_value == NULL:
+                    source_value = source_value_str
+                else:
+                    source_value = source_value_str
                 self.value_map_table.insertRow(row_number)
                 self.value_map_table.setItem(row_number, self.SRC_COLUMN_IDX, QTableWidgetItem(source_value))
+                self.value_map_table.setItem(row_number, self.DST_COLUMN_IDX, QTableWidgetItem(QUOTED_NULL))
+
+    @staticmethod
+    def update_value_map_button(pressed_button, value_map):
+        """Update value map button attributes."""
+        pressed_button.value_map = value_map
+        if value_map:
+            value_map_str = str(value_map)[:10] + ".."
+            pressed_button.setText(value_map_str)
+        else:
+            pressed_button.setText("Set..")
 
     def update_value_map(self):
         """Update value map with dictionary with defined data."""
@@ -104,8 +137,10 @@ class AttributeValueMapDialog(vm_basecls, vm_uicls):
         for row_num in range(num_of_rows):
             src_item = self.value_map_table.item(row_num, self.SRC_COLUMN_IDX)
             dst_item = self.value_map_table.item(row_num, self.DST_COLUMN_IDX)
-            new_value_map[src_item] = dst_item
-        self.pressed_button.value_map = new_value_map
+            src_value = ast.literal_eval(src_item.text())
+            dst_value = ast.literal_eval(dst_item.text())
+            new_value_map[src_value] = dst_value
+        self.update_value_map_button(self.pressed_button, new_value_map)
 
 
 class ImportCulvertsDialog(ic_basecls, ic_uicls):
@@ -178,7 +213,10 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         value_map_dlg = AttributeValueMapDialog(pressed_button, self.source_layer, self)
         accepted = value_map_dlg.exec_()
         if accepted:
-            value_map_dlg.updated_value_map()
+            try:
+                value_map_dlg.update_value_map()
+            except (SyntaxError, ValueError):
+                self.uc.show_error(f"Invalid value map. Action aborted.", self)
 
     def get_column_widgets(self, column_idx, *data_models):
         column_widgets = {}
@@ -258,14 +296,16 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                         if column_idx == CulvertImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX
                         else widget.currentData()
                     )
+                elif column_idx == CulvertImportConfig.VALUE_MAP_COLUMN_IDX:
+                    key_value = widget.value_map
+                    if not key_value:
+                        continue
                 else:
                     key_value = widget.text()
                     if not key_value:
                         continue
-                    if column_idx == CulvertImportConfig.DEFAULT_VALUE_COLUMN_IDX and key_name != "NULL":
+                    if column_idx == CulvertImportConfig.DEFAULT_VALUE_COLUMN_IDX and key_name != NULL_STR:
                         key_value = field_type(key_value)
-                    elif column_idx == CulvertImportConfig.VALUE_MAP_COLUMN_IDX:
-                        key_value = ast.literal_eval(key_value)
                 single_field_config[key_name] = key_value
             fields_settings[field_name] = single_field_config
         return fields_settings
@@ -285,7 +325,7 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                 except KeyError:
                     continue
                 if isinstance(widget, QComboBox):
-                    if key_value == "NULL":
+                    if key_value == NULL_STR:
                         widget.setCurrentText(key_value)
                     else:
                         if key_name == "method":
@@ -294,6 +334,8 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                             widget.setCurrentText(enum_entry_name_format(field_type(key_value).name))
                         else:
                             widget.setCurrentText(str(key_value))
+                elif key_name == "value_map":
+                    AttributeValueMapDialog.update_value_map_button(widget, key_value)
                 else:
                     widget.setText(str(key_value))
                     widget.setCursorPosition(0)

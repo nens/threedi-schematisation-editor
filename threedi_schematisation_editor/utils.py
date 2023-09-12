@@ -40,6 +40,8 @@ from qgis.utils import plugins
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.enumerators as en
 
+NULL_STR = "NULL"
+QUOTED_NULL = '"NULL"'
 REQUIRED_VALUE_STYLESHEET = "background-color: rgb(255, 224, 178);"
 
 field_types_mapping = {
