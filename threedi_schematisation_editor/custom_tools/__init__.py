@@ -98,7 +98,6 @@ class CulvertImportConfig:
                                 widget.addItem(enum_entry_name_format(e.name), e.value)
                         else:
                             widget = QLineEdit()
-                    widget.field_name = field_name
                     widgets_to_add[model_cls][row_idx, column_idx] = widget
         return widgets_to_add
 
