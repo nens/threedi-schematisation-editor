@@ -341,9 +341,11 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                     widget.setCursorPosition(0)
 
     def save_import_settings(self):
+        extension_filter = "JSON (*.json)"
+        template_filepath = get_filepath(self, extension_filter)
+        if not template_filepath:
+            return
         try:
-            extension_filter = "JSON (*.json)"
-            template_filepath = get_filepath(self, extension_filter)
             import_settings = self.collect_settings()
             with open(template_filepath, "w") as template_file:
                 json.dump(import_settings, template_file, indent=2)
@@ -352,9 +354,11 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
 
     def load_import_settings(self):
+        extension_filter = "JSON (*.json)"
+        template_filepath = get_filepath(self, extension_filter, save=False)
+        if not template_filepath:
+            return
         try:
-            extension_filter = "JSON (*.json)"
-            template_filepath = get_filepath(self, extension_filter, save=False)
             with open(template_filepath, "r") as template_file:
                 import_settings = json.loads(template_file.read())
             conversion_settings = import_settings["conversion_settings"]
