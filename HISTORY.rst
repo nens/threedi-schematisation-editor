@@ -4,7 +4,7 @@ History
 1.5.1 (unreleased)
 ------------------
 
-- Fixes/enhancements: #67, #103, #158, #161, #162, #169
+- Fixes/enhancements: #67, #103, #158, #161, #162, #169, #174
 - Added Import Culverts GUI (#119)
 - Added new friction types. (#159)
 

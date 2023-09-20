@@ -5,7 +5,7 @@ from functools import cached_property
 from itertools import chain
 
 from qgis.core import NULL, QgsCoordinateTransform, QgsFeature, QgsGeometry, QgsPointLocator, QgsProject
-from qgis.PyQt.QtWidgets import QComboBox, QLabel, QLineEdit
+from qgis.PyQt.QtWidgets import QComboBox, QLabel, QLineEdit, QPushButton
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
@@ -87,6 +87,9 @@ class CulvertImportConfig:
                         if column_idx == self.METHOD_COLUMN_IDX:
                             for method in field_methods:
                                 widget.addItem(method.name.capitalize(), method.value)
+                    elif column_idx == self.VALUE_MAP_COLUMN_IDX:
+                        widget = QPushButton("Set...")
+                        widget.value_map = {}
                     else:
                         if issubclass(field_type, Enum) and column_idx == self.DEFAULT_VALUE_COLUMN_IDX:
                             widget = QComboBox()

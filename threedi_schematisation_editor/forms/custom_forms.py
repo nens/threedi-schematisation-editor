@@ -26,6 +26,7 @@ from qgis.PyQt.QtWidgets import (
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.enumerators as en
 from threedi_schematisation_editor.utils import (
+    REQUIRED_VALUE_STYLESHEET,
     NumericItemDelegate,
     connect_signal,
     disconnect_signal,
@@ -204,7 +205,6 @@ class BaseForm(QObject):
     def set_validation_background(self, widget, field_type):
         """Setting validation color background if required value is empty."""
         widget_value = self.get_widget_value(widget)
-        required_value_stylesheet = "background-color: rgb(255, 224, 178);"
         if is_optional(field_type):
             widget.setStyleSheet("")
         else:
@@ -213,12 +213,12 @@ class BaseForm(QObject):
                 if widget_value in valid_values:
                     widget.setStyleSheet("")
                 else:
-                    widget.setStyleSheet(required_value_stylesheet)
+                    widget.setStyleSheet(REQUIRED_VALUE_STYLESHEET)
             else:
                 if widget_value not in [None, NULL, ""]:
                     widget.setStyleSheet("")
                 else:
-                    widget.setStyleSheet(required_value_stylesheet)
+                    widget.setStyleSheet(REQUIRED_VALUE_STYLESHEET)
 
     def handle_clear_value(self, widget, feature, model_cls, field_name):
         """Handling custom clear value action."""

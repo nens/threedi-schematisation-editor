@@ -40,6 +40,10 @@ from qgis.utils import plugins
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.enumerators as en
 
+NULL_STR = "NULL"
+QUOTED_NULL = '"NULL"'
+REQUIRED_VALUE_STYLESHEET = "background-color: rgb(255, 224, 178);"
+
 field_types_mapping = {
     bool: QVariant.Bool,
     int: QVariant.Int,
@@ -698,7 +702,8 @@ def migrate_spatialite_schema(sqlite_filepath):
         migration_feedback_msg = "Missing threedi-schema library. Schema migration failed."
     except errors.UpgradeFailedError:
         migration_feedback_msg = (
-            "The spatialite database schema cannot be migrated to the current version. Please contact the service desk for assistance."
+            "The spatialite database schema cannot be migrated to the current version. "
+            "Please contact the service desk for assistance."
         )
     except Exception as e:
         migration_feedback_msg = f"{e}"
@@ -760,8 +765,7 @@ def ensure_valid_schema(schematisation_sqlite, communication):
         except errors.MigrationMissingError as e:
             if "This tool cannot update versions below 160" in str(e):
                 error_msg = (
-                    "This tool cannot update versions below 160. "
-                    "Please contact the service desk for assistance."
+                    "This tool cannot update versions below 160. " "Please contact the service desk for assistance."
                 )
                 communication.show_error(error_msg)
                 return False
@@ -769,7 +773,8 @@ def ensure_valid_schema(schematisation_sqlite, communication):
                 raise e
     except errors.UpgradeFailedError:
         error_msg = (
-            "The spatialite database schema cannot be migrated to the current version. Please contact the service desk for assistance."
+            "The spatialite database schema cannot be migrated to the current version. "
+            "Please contact the service desk for assistance."
         )
         communication.show_error(error_msg)
         return False
