@@ -97,6 +97,13 @@ class FrictionType(Enum):
     MANNING = 2
 
 
+class FrictionTypeExtended(Enum):
+    CHEZY = 1
+    MANNING = 2
+    CHEZY_WITH_CONVEYANCE = 3
+    MANNING_WITH_CONVEYANCE = 4
+
+
 class InitializationType(Enum):
     MAX = 0
     MIN = 1
