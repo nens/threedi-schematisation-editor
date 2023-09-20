@@ -42,10 +42,11 @@ class AttributeValueMapDialog(vm_basecls, vm_uicls):
     SRC_COLUMN_IDX = 0
     DST_COLUMN_IDX = 1
 
-    def __init__(self, pressed_button, source_layer, parent=None):
+    def __init__(self, pressed_button, source_attribute_combobox, source_layer, parent=None):
         super().__init__(parent)
         self.setupUi(self)
         self.pressed_button = pressed_button
+        self.source_attribute_combobox = source_attribute_combobox
         self.source_layer = source_layer
         self.add_pb.clicked.connect(self.add_value_map_row)
         self.delete_pb.clicked.connect(self.delete_value_map_rows)
@@ -99,16 +100,23 @@ class AttributeValueMapDialog(vm_basecls, vm_uicls):
         src_layer_field_names = [field.name() for field in fields]
         title = "Load source layer values"
         message = "Unique values source field"
-        selected_field_name, accept = QInputDialog.getItem(self, title, message, src_layer_field_names, editable=False)
+        source_attribute_idx = self.source_attribute_combobox.currentIndex()
+        current_idx = source_attribute_idx - 1 if source_attribute_idx > 0 else 0
+        selected_field_name, accept = QInputDialog.getItem(
+            self, title, message, src_layer_field_names, current_idx, editable=False
+        )
         if accept is True:
+            row_count = self.value_map_table.rowCount()
             selected_field_name_idx = fields.lookupField(selected_field_name)
             selected_rows = {idx.row() for idx in self.value_map_table.selectedIndexes()}
             if selected_rows:
                 last_row_number = max(selected_rows) + 1
             else:
-                last_row_number = self.value_map_table.rowCount()
+                last_row_number = row_count
             unique_values = self.source_layer.uniqueValues(selected_field_name_idx)
-            for row_number, source_value in enumerate(sorted(unique_values), start=last_row_number):
+            existing_values = {self.value_map_table.item(row, self.SRC_COLUMN_IDX).text() for row in range(row_count)}
+            skipped_rows = 0
+            for i, source_value in enumerate(sorted(unique_values), start=last_row_number):
                 source_value_str = self.format_value_map_data(source_value)
                 if isinstance(source_value, str):
                     source_value = source_value_str
@@ -116,9 +124,13 @@ class AttributeValueMapDialog(vm_basecls, vm_uicls):
                     source_value = source_value_str
                 else:
                     source_value = source_value_str
-                self.value_map_table.insertRow(row_number)
-                self.value_map_table.setItem(row_number, self.SRC_COLUMN_IDX, QTableWidgetItem(source_value))
-                self.value_map_table.setItem(row_number, self.DST_COLUMN_IDX, QTableWidgetItem(QUOTED_NULL))
+                if source_value in existing_values:
+                    skipped_rows += 1
+                    continue
+                new_row_number = i - skipped_rows
+                self.value_map_table.insertRow(new_row_number)
+                self.value_map_table.setItem(new_row_number, self.SRC_COLUMN_IDX, QTableWidgetItem(source_value))
+                self.value_map_table.setItem(new_row_number, self.DST_COLUMN_IDX, QTableWidgetItem(QUOTED_NULL))
 
     @staticmethod
     def update_value_map_button(pressed_button, value_map):
@@ -209,8 +221,8 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         else:
             source_attribute_combobox.setStyleSheet("")
 
-    def on_value_map_clicked(self, pressed_button):
-        value_map_dlg = AttributeValueMapDialog(pressed_button, self.source_layer, self)
+    def on_value_map_clicked(self, source_attribute_combobox, pressed_button):
+        value_map_dlg = AttributeValueMapDialog(pressed_button, source_attribute_combobox, self.source_layer, self)
         accepted = value_map_dlg.exec_()
         if accepted:
             try:
@@ -265,7 +277,9 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                 source_attribute_combobox.currentTextChanged.connect(
                     partial(self.on_source_attribute_value_changed, method_combobox, source_attribute_combobox)
                 )
-                value_map_button.clicked.connect(partial(self.on_value_map_clicked, value_map_button))
+                value_map_button.clicked.connect(
+                    partial(self.on_value_map_clicked, source_attribute_combobox, value_map_button)
+                )
 
     def collect_settings(self):
         import_settings = {
@@ -400,7 +414,8 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                 )
                 if method_txt == ColumnImportMethod.ATTRIBUTE.name.capitalize() and not source_attribute_txt:
                     model_missing_fields.append(field_name)
-            missing_fields[model_cls] = model_missing_fields
+            if model_missing_fields:
+                missing_fields[model_cls] = model_missing_fields
         return missing_fields
 
     def run_import_culverts(self):
