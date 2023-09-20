@@ -27,11 +27,12 @@ from qgis.core import (
     QgsProject,
     QgsRasterLayer,
     QgsRasterMinMaxOrigin,
+    QgsSettings,
     QgsValueMapFieldFormatter,
     QgsVectorFileWriter,
     QgsVectorLayer,
 )
-from qgis.PyQt.QtCore import QObject, QSettings, QVariant
+from qgis.PyQt.QtCore import QObject, QVariant
 from qgis.PyQt.QtGui import QDoubleValidator, QPainter
 from qgis.PyQt.QtWidgets import QFileDialog, QItemDelegate, QLineEdit
 from qgis.utils import plugins
@@ -241,7 +242,7 @@ def get_filepath(parent, extension_filter=None, extension=None, save=True, dialo
     if dialog_title is None:
         dialog_title = "Save to file" if save else "Choose file"
 
-    starting_dir = QSettings().value("schematisation_editor/last_folder", os.path.expanduser("~"), type=str)
+    starting_dir = QgsSettings().value("schematisation_editor/last_folder", os.path.expanduser("~"), type=str)
     if save is True:
         file_name, __ = QFileDialog.getSaveFileName(parent, dialog_title, starting_dir, extension_filter)
     else:
@@ -253,7 +254,7 @@ def get_filepath(parent, extension_filter=None, extension=None, save=True, dialo
         if not file_name.endswith(extension):
             file_name += extension
 
-    QSettings().setValue("schematisation_editor/last_folder", os.path.dirname(file_name))
+    QgsSettings().setValue("schematisation_editor/last_folder", os.path.dirname(file_name))
     return file_name
 
 
@@ -560,7 +561,7 @@ def count_vertices(geometry):
 
 def check_enable_macros_option():
     """Check if macros are enabled."""
-    settings = QSettings()
+    settings = QgsSettings()
     option = settings.value("/qgis/enableMacros", type=str)
     return option
 
@@ -626,7 +627,7 @@ class ConversionError(Exception):
 def is_gpkg_connection_exists(gpkg_path):
     """Check if GeoPackage connection exists in settings."""
     gpkg_path = gpkg_path.replace("\\", "/")
-    settings = QSettings()
+    settings = QgsSettings()
     settings.beginGroup("providers/ogr/GPKG/connections")
     for connection in settings.allKeys():
         connection_path = settings.value(connection, type=str)
@@ -653,7 +654,7 @@ def add_gpkg_connection(gpkg_path, iface=None):
     """Write GeoPackage connection into the settings."""
     connection_name = os.path.basename(gpkg_path)
     gpkg_path = gpkg_path.replace("\\", "/")
-    settings = QSettings()
+    settings = QgsSettings()
     settings.setValue(f"providers/ogr/GPKG/connections/{connection_name}/path", gpkg_path)
     if iface is not None:
         iface.mainWindow().connectionsChanged.emit()
