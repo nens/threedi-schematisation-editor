@@ -8,6 +8,7 @@ from qgis.PyQt.QtWidgets import QAction, QMenu
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.conversion import ModelDataConverter
 from threedi_schematisation_editor.custom_widgets import ImportStructuresDialog
+from threedi_schematisation_editor.data_models import Culvert
 from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager
 from threedi_schematisation_editor.utils import (
@@ -314,7 +315,7 @@ class ThreediSchematisationEditorPlugin:
     def import_external_culverts(self):
         if not self.model_gpkg:
             return
-        import_culverts_dlg = ImportStructuresDialog(self.model_gpkg, self.layer_manager, self.uc)
+        import_culverts_dlg = ImportStructuresDialog(Culvert, self.model_gpkg, self.layer_manager, self.uc)
         import_culverts_dlg.exec_()
 
     def import_external_orifices(self):
