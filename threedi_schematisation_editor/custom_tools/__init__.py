@@ -25,8 +25,8 @@ class ColumnImportMethod(Enum):
     IGNORE = "ignore"
 
 
-class CulvertImportConfig:
-    """Culvert import tool configuration class."""
+class StructuresImportConfig:
+    """Structures import tool configuration class."""
 
     FIELD_NAME_COLUMN_IDX = 0
     METHOD_COLUMN_IDX = 1
@@ -34,8 +34,8 @@ class CulvertImportConfig:
     VALUE_MAP_COLUMN_IDX = 3
     DEFAULT_VALUE_COLUMN_IDX = 4
 
-    def __init__(self):
-        self.culvert_cls = dm.Culvert
+    def __init__(self, structures_model_cls):
+        self.structures_model_cls = structures_model_cls
         self.nodes_cls = dm.ConnectionNode
 
     @property
@@ -53,7 +53,7 @@ class CulvertImportConfig:
         methods_mapping = defaultdict(dict)
         auto_fields = {"id"}
         auto_attribute_fields = {"connection_node_start_id", "connection_node_end_id"}
-        culvert_fields = ((k, self.culvert_cls) for k in self.culvert_cls.__annotations__.keys())
+        culvert_fields = ((k, self.structures_model_cls) for k in self.structures_model_cls.__annotations__.keys())
         node_fields = ((k, self.nodes_cls) for k in self.nodes_cls.__annotations__.keys())
         for field_name, model_cls in chain(culvert_fields, node_fields):
             if field_name in auto_fields:
@@ -109,7 +109,23 @@ class ExternalFeaturesImporter:
         self.external_source = external_source
         self.target_gpkg = target_gpkg
         self.import_settings = import_settings
+        self.structure_layer = None
+        self.node_layer = None
         self.fields_configurations = {}
+
+    def setup_target_layers(self, structure_model_cls, structure_layer=None, node_layer=None):
+        self.structure_layer = (
+            gpkg_layer(self.target_gpkg, structure_model_cls.__tablename__)
+            if structure_layer is None
+            else structure_layer
+        )
+        self.node_layer = (
+            gpkg_layer(self.target_gpkg, dm.ConnectionNode.__tablename__) if node_layer is None else node_layer
+        )
+        self.fields_configurations = {
+            structure_model_cls: self.import_settings.get("fields", {}),
+            dm.ConnectionNode: self.import_settings.get("connection_node_fields", {}),
+        }
 
     def update_attributes(self, model_cls, source_feat, *new_features):
         fields_config = self.fields_configurations[model_cls]
@@ -139,48 +155,31 @@ class ExternalFeaturesImporter:
                 else:
                     new_feat[field_name] = NULL
 
-
-class CulvertsImporter(ExternalFeaturesImporter):
-    """Class with methods responsible for the importing culverts from the external data source."""
-
-    def __init__(self, *args, culvert_layer=None, node_layer=None):
-        super().__init__(*args)
-        self.culvert_layer = (
-            gpkg_layer(self.target_gpkg, dm.Culvert.__tablename__) if culvert_layer is None else culvert_layer
-        )
-        self.node_layer = (
-            gpkg_layer(self.target_gpkg, dm.ConnectionNode.__tablename__) if node_layer is None else node_layer
-        )
-        self.fields_configurations = {
-            dm.Culvert: self.import_settings.get("fields", {}),
-            dm.ConnectionNode: self.import_settings.get("connection_node_fields", {}),
-        }
-
-    def import_culverts(self, context=None, selected_ids=None):
-        """Method responsible for the importing culverts from the external feature source."""
+    def import_structures(self, context=None, selected_ids=None):
+        """Method responsible for the importing structures from the external feature source."""
         conversion_settings = self.import_settings["conversion_settings"]
         use_snapping = conversion_settings.get("use_snapping", False)
         snapping_distance = conversion_settings.get("snapping_distance", 0.1)
         create_connection_nodes = conversion_settings.get("create_connection_nodes", False)
-        culvert_fields = self.culvert_layer.fields()
+        structure_fields = self.structure_layer.fields()
         node_fields = self.node_layer.fields()
         project = context.project() if context else QgsProject.instance()
         src_crs = self.external_source.sourceCrs()
-        dst_crs = self.culvert_layer.crs()
+        dst_crs = self.structure_layer.crs()
         transform_ctx = project.transformContext()
         transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx) if src_crs != dst_crs else None
-        next_culvert_id = get_next_feature_id(self.culvert_layer)
+        next_structure_id = get_next_feature_id(self.structure_layer)
         next_connection_node_id = get_next_feature_id(self.node_layer)
         locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
-        new_culverts = []
+        new_structures = []
         self.node_layer.startEditing()
-        self.culvert_layer.startEditing()
+        self.structure_layer.startEditing()
         for src_feat in (
             self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
         ):
             new_nodes = []
-            new_culvert_feat = QgsFeature(culvert_fields)
-            new_culvert_feat["id"] = next_culvert_id
+            new_structure_feat = QgsFeature(structure_fields)
+            new_structure_feat["id"] = next_structure_id
             new_geom = QgsGeometry.fromPolylineXY(src_feat.geometry().asPolyline())
             if transformation:
                 new_geom.transform(transformation)
@@ -190,7 +189,7 @@ class CulvertsImporter(ExternalFeaturesImporter):
                 if node_start_feat:
                     node_start_point = node_start_feat.geometry().asPoint()
                     polyline[0] = node_start_point
-                    new_culvert_feat["connection_node_start_id"] = node_start_feat["id"]
+                    new_structure_feat["connection_node_start_id"] = node_start_feat["id"]
                     new_geom = QgsGeometry.fromPolylineXY(polyline)
                 else:
                     if create_connection_nodes:
@@ -199,13 +198,13 @@ class CulvertsImporter(ExternalFeaturesImporter):
                         new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
                         new_start_node_feat["id"] = next_connection_node_id
 
-                        new_culvert_feat["connection_node_start_id"] = next_connection_node_id
+                        new_structure_feat["connection_node_start_id"] = next_connection_node_id
                         next_connection_node_id += 1
                         new_nodes.append(new_start_node_feat)
                 if node_end_feat:
                     node_end_point = node_end_feat.geometry().asPoint()
                     polyline[-1] = node_end_point
-                    new_culvert_feat["connection_node_end_id"] = node_end_feat["id"]
+                    new_structure_feat["connection_node_end_id"] = node_end_feat["id"]
                     new_geom = QgsGeometry.fromPolylineXY(polyline)
                 else:
                     if create_connection_nodes:
@@ -213,7 +212,7 @@ class CulvertsImporter(ExternalFeaturesImporter):
                         new_end_node_feat = QgsFeature(node_fields)
                         new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
                         new_end_node_feat["id"] = next_connection_node_id
-                        new_culvert_feat["connection_node_end_id"] = next_connection_node_id
+                        new_structure_feat["connection_node_end_id"] = next_connection_node_id
                         next_connection_node_id += 1
                         new_nodes.append(new_end_node_feat)
             else:
@@ -222,29 +221,53 @@ class CulvertsImporter(ExternalFeaturesImporter):
                     new_start_node_feat = QgsFeature(node_fields)
                     new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
                     new_start_node_feat["id"] = next_connection_node_id
-                    new_culvert_feat["connection_node_start_id"] = next_connection_node_id
+                    new_structure_feat["connection_node_start_id"] = next_connection_node_id
                     next_connection_node_id += 1
                     node_end_point = polyline[-1]
                     new_end_node_feat = QgsFeature(node_fields)
                     new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
                     new_end_node_feat["id"] = next_connection_node_id
-                    new_culvert_feat["connection_node_end_id"] = next_connection_node_id
+                    new_structure_feat["connection_node_end_id"] = next_connection_node_id
                     next_connection_node_id += 1
                     new_nodes += [new_start_node_feat, new_end_node_feat]
             if new_nodes:
                 self.update_attributes(dm.ConnectionNode, src_feat, *new_nodes)
                 self.node_layer.addFeatures(new_nodes)
                 locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
-            new_culvert_feat.setGeometry(new_geom)
-            self.update_attributes(dm.Culvert, src_feat, new_culvert_feat)
-            next_culvert_id += 1
-            new_culverts.append(new_culvert_feat)
+            new_structure_feat.setGeometry(new_geom)
+            self.update_attributes(dm.Culvert, src_feat, new_structure_feat)
+            next_structure_id += 1
+            new_structures.append(new_structure_feat)
         commit_errors = []
         success = self.node_layer.commitChanges()
         if not success:
             commit_errors += self.node_layer.commitErrors()
-        self.culvert_layer.addFeatures(new_culverts)
-        success = self.culvert_layer.commitChanges()
+        self.structure_layer.addFeatures(new_structures)
+        success = self.structure_layer.commitChanges()
         if not success:
-            commit_errors += self.culvert_layer.commitErrors()
+            commit_errors += self.structure_layer.commitErrors()
         return success, commit_errors
+
+
+class CulvertsImporter(ExternalFeaturesImporter):
+    """Class with methods responsible for the importing culverts from the external data source."""
+
+    def __init__(self, *args, structure_layer=None, node_layer=None):
+        super().__init__(*args)
+        self.setup_target_layers(dm.Culvert, structure_layer, node_layer)
+
+
+class OrificesImporter(ExternalFeaturesImporter):
+    """Class with methods responsible for the importing orifices from the external data source."""
+
+    def __init__(self, *args, structure_layer=None, node_layer=None):
+        super().__init__(*args)
+        self.setup_target_layers(dm.Orifice, structure_layer, node_layer)
+
+
+class WeirsImporter(ExternalFeaturesImporter):
+    """Class with methods responsible for the importing weirs from the external data source."""
+
+    def __init__(self, *args, structure_layer=None, node_layer=None):
+        super().__init__(*args)
+        self.setup_target_layers(dm.Weir, structure_layer, node_layer)

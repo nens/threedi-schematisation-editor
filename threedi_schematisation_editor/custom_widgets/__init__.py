@@ -11,7 +11,13 @@ from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
 from qgis.PyQt.QtWidgets import QComboBox, QInputDialog, QTableWidgetItem
 
 import threedi_schematisation_editor.data_models as dm
-from threedi_schematisation_editor.custom_tools import ColumnImportMethod, CulvertImportConfig, CulvertsImporter
+from threedi_schematisation_editor.custom_tools import (
+    ColumnImportMethod,
+    CulvertsImporter,
+    OrificesImporter,
+    StructuresImportConfig,
+    WeirsImporter,
+)
 from threedi_schematisation_editor.utils import (
     NULL_STR,
     QUOTED_NULL,
@@ -24,7 +30,7 @@ from threedi_schematisation_editor.utils import (
 )
 
 ps_basecls, ps_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "projection_selection.ui"))
-ic_basecls, ic_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "import_culverts.ui"))
+ic_basecls, ic_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "import_structures.ui"))
 vm_basecls, vm_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "attribute_value_map.ui"))
 
 
@@ -155,36 +161,44 @@ class AttributeValueMapDialog(vm_basecls, vm_uicls):
         self.update_value_map_button(self.pressed_button, new_value_map)
 
 
-class ImportCulvertsDialog(ic_basecls, ic_uicls):
-    """Dialog for the importing culverts tool."""
+class ImportStructuresDialog(ic_basecls, ic_uicls):
+    """Dialog for the importing structures tool."""
 
-    def __init__(self, model_gpkg, layer_manager, uc, parent=None):
+    STRUCTURE_IMPORTERS = {
+        dm.Culvert: CulvertsImporter,
+        dm.Orifice: OrificesImporter,
+        dm.Weir: WeirsImporter,
+    }
+
+    def __init__(self, structures_model_cls, model_gpkg, layer_manager, uc, parent=None):
         super().__init__(parent)
         self.setupUi(self)
+        self.structures_model_cls = structures_model_cls
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self.uc = uc
-        self.import_configuration = CulvertImportConfig()
-        self.culvert_model = QStandardItemModel()
-        self.culvert_tv.setModel(self.culvert_model)
+        self.import_configuration = StructuresImportConfig(self.structures_model_cls)
+        self.structure_importer_cls = self.STRUCTURE_IMPORTERS[structures_model_cls]
+        self.structure_model = QStandardItemModel()
+        self.structure_tv.setModel(self.structure_model)
         self.connection_node_model = QStandardItemModel()
         self.connection_node_tv.setModel(self.connection_node_model)
         self.data_models_tree_views = {
-            dm.Culvert: (self.culvert_tv, self.culvert_model),
+            self.structures_model_cls: (self.structure_tv, self.structure_model),
             dm.ConnectionNode: (self.connection_node_tv, self.connection_node_model),
         }
-        self.culvert_layer_cbo.setFilters(QgsMapLayerProxyModel.LineLayer)
+        self.structure_layer_cbo.setFilters(QgsMapLayerProxyModel.LineLayer)
         self.populate_conversion_settings_widgets()
-        self.culvert_layer_cbo.layerChanged.connect(self.on_layer_changed)
+        self.structure_layer_cbo.layerChanged.connect(self.on_layer_changed)
         self.create_nodes_cb.stateChanged.connect(self.on_create_nodes_change)
         self.save_pb.clicked.connect(self.save_import_settings)
         self.load_pb.clicked.connect(self.load_import_settings)
-        self.run_pb.clicked.connect(self.run_import_culverts)
+        self.run_pb.clicked.connect(self.run_import_structures)
         self.close_pb.clicked.connect(self.close)
 
     @property
     def source_layer(self):
-        return self.culvert_layer_cbo.currentLayer()
+        return self.structure_layer_cbo.currentLayer()
 
     def on_create_nodes_change(self, is_checked):
         self.connection_node_tab.setEnabled(is_checked)
@@ -194,7 +208,7 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         if layer:
             layer_field_names += [field.name() for field in layer.fields()]
         source_attribute_widgets = self.get_column_widgets(
-            CulvertImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, dm.Culvert, dm.ConnectionNode
+            StructuresImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, self.structures_model_cls, dm.ConnectionNode
         )
         for combobox in chain.from_iterable(source_attribute_widgets.values()):
             combobox.clear()
@@ -258,16 +272,18 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         self.on_layer_changed(self.source_layer)
 
     def connect_configuration_widgets(self):
-        for model_cls in [dm.Culvert, dm.ConnectionNode]:
+        for model_cls in [self.structures_model_cls, dm.ConnectionNode]:
             tree_view, tree_view_model = self.data_models_tree_views[model_cls]
             for row_idx, field_name in enumerate(model_cls.__annotations__.keys()):
-                method_item = tree_view_model.item(row_idx, CulvertImportConfig.METHOD_COLUMN_IDX)
+                method_item = tree_view_model.item(row_idx, StructuresImportConfig.METHOD_COLUMN_IDX)
                 method_index = method_item.index()
                 method_combobox = tree_view.indexWidget(method_index)
-                source_attribute_item = tree_view_model.item(row_idx, CulvertImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX)
+                source_attribute_item = tree_view_model.item(
+                    row_idx, StructuresImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX
+                )
                 source_attribute_index = source_attribute_item.index()
                 source_attribute_combobox = tree_view.indexWidget(source_attribute_index)
-                value_map_item = tree_view_model.item(row_idx, CulvertImportConfig.VALUE_MAP_COLUMN_IDX)
+                value_map_item = tree_view_model.item(row_idx, StructuresImportConfig.VALUE_MAP_COLUMN_IDX)
                 value_map_index = value_map_item.index()
                 value_map_button = tree_view.indexWidget(value_map_index)
                 method_combobox.currentTextChanged.connect(
@@ -283,13 +299,13 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
 
     def collect_settings(self):
         import_settings = {
-            "target_layer": dm.Culvert.__tablename__,
+            "target_layer": self.structures_model_cls.__tablename__,
             "conversion_settings": {
                 "use_snapping": self.snap_gb.isChecked(),
                 "snapping_distance": self.snap_dsb.value(),
                 "create_connection_nodes": self.create_nodes_cb.isChecked(),
             },
-            "fields": self.collect_fields_settings(dm.Culvert),
+            "fields": self.collect_fields_settings(self.structures_model_cls),
             "connection_node_fields": self.collect_fields_settings(dm.ConnectionNode),
         }
         return import_settings
@@ -307,10 +323,10 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                 if isinstance(widget, QComboBox):
                     key_value = (
                         widget.currentText()
-                        if column_idx == CulvertImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX
+                        if column_idx == StructuresImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX
                         else widget.currentData()
                     )
-                elif column_idx == CulvertImportConfig.VALUE_MAP_COLUMN_IDX:
+                elif column_idx == StructuresImportConfig.VALUE_MAP_COLUMN_IDX:
                     key_value = widget.value_map
                     if not key_value:
                         continue
@@ -318,7 +334,7 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                     key_value = widget.text()
                     if not key_value:
                         continue
-                    if column_idx == CulvertImportConfig.DEFAULT_VALUE_COLUMN_IDX and key_name != NULL_STR:
+                    if column_idx == StructuresImportConfig.DEFAULT_VALUE_COLUMN_IDX and key_name != NULL_STR:
                         key_value = field_type(key_value)
                 single_field_config[key_name] = key_value
             fields_settings[field_name] = single_field_config
@@ -393,10 +409,10 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
         data_models = [dm.Culvert]
         if self.create_nodes_cb.isChecked():
             data_models.append(dm.ConnectionNode)
-        field_labels = self.get_column_widgets(CulvertImportConfig.FIELD_NAME_COLUMN_IDX, *data_models)
-        method_widgets = self.get_column_widgets(CulvertImportConfig.METHOD_COLUMN_IDX, *data_models)
+        field_labels = self.get_column_widgets(StructuresImportConfig.FIELD_NAME_COLUMN_IDX, *data_models)
+        method_widgets = self.get_column_widgets(StructuresImportConfig.METHOD_COLUMN_IDX, *data_models)
         source_attribute_widgets = self.get_column_widgets(
-            CulvertImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, *data_models
+            StructuresImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, *data_models
         )
         missing_fields = {}
         for model_cls in data_models:
@@ -418,7 +434,7 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
                 missing_fields[model_cls] = model_missing_fields
         return missing_fields
 
-    def run_import_culverts(self):
+    def run_import_structures(self):
         missing_fields = self.missing_source_fields()
         if missing_fields:
             missing_fields_lines = []
@@ -432,30 +448,30 @@ class ImportCulvertsDialog(ic_basecls, ic_uicls):
             )
             return
         source_layer = self.source_layer
-        culvert_handler = self.layer_manager.model_handlers[dm.Culvert]
+        structures_handler = self.layer_manager.model_handlers[self.structures_model_cls]
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        culvert_layer = culvert_handler.layer
+        structure_layer = structures_handler.layer
         node_layer = node_handler.layer
         selected_feat_ids = None
         if self.selected_only_cb.isChecked():
             selected_feat_ids = source_layer.selectedFeatureIds()
         import_settings = self.collect_settings()
         try:
-            culvert_handler.disconnect_handler_signals()
+            structures_handler.disconnect_handler_signals()
             node_handler.disconnect_handler_signals()
-            culverts_importer = CulvertsImporter(
-                source_layer, self.model_gpkg, import_settings, culvert_layer=culvert_layer, node_layer=node_layer
+            structures_importer = self.structure_importer_cls(
+                source_layer, self.model_gpkg, import_settings, structure_layer=structure_layer, node_layer=node_layer
             )
-            success, commit_errors = culverts_importer.import_culverts(selected_ids=selected_feat_ids)
+            success, commit_errors = structures_importer.import_structures(selected_ids=selected_feat_ids)
             if not success:
                 commit_errors_message = "\n".join(commit_errors)
                 self.uc.show_warn(f"Import failed due to the following errors:\n{commit_errors_message}")
             else:
-                self.uc.show_info(f"Culverts successfully imported.", self)
+                self.uc.show_info(f"Features successfully imported.", self)
         except Exception as e:
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
         finally:
-            culvert_handler.connect_handler_signals()
+            structures_handler.connect_handler_signals()
             node_handler.connect_handler_signals()
-        for layer in [culvert_layer, node_layer]:
+        for layer in [structure_layer, node_layer]:
             layer.triggerRepaint()

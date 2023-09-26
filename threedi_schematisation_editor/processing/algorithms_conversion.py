@@ -77,7 +77,7 @@ class ImportCulverts(QgsProcessingAlgorithm):
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
         culverts_importer = CulvertsImporter(source_layer, target_gpkg, import_config)
-        success, commit_errors = culverts_importer.import_culverts(context=context)
+        success, commit_errors = culverts_importer.import_structures(context=context)
         if not success:
             commit_errors_message = "\n".join(commit_errors)
             feedback.reportError(commit_errors_message)
