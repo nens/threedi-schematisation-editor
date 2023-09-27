@@ -4,7 +4,7 @@ History
 1.6.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fixes/enhancements: #170
 
 
 1.6.0 (2023-09-21)
@@ -12,7 +12,7 @@ History
 
 - Fixes/enhancements: #67, #103, #158, #161, #162, #169, #174
 - Added Import Culverts GUI (#119)
-- Added new friction types. (#159)
+- Added new friction types (#159)
 
 
 1.5.0 (2023-06-16)
