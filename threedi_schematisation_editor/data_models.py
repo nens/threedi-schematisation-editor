@@ -259,6 +259,30 @@ class Weir(ModelObject):
         }
     )
 
+    @staticmethod
+    def display_names() -> list:
+        display_names_list = [
+            "ID",
+            "Code",
+            "Display name",
+            "Crest level",
+            "Crest type",
+            "Discharge coefficient positive",
+            "Discharge coefficient negative",
+            "Friction value",
+            "Friction type",
+            "Sewerage",
+            "External",
+            "Zoom category",
+            "Connection node start ID",
+            "Connection node end ID",
+            "Cross section shape",
+            "Cross section width [m]",
+            "Cross section height [m]",
+            "Cross section table",
+        ]
+        return display_names_list
+
     id: int
     code: str
     display_name: str
@@ -395,6 +419,29 @@ class Orifice(ModelObject):
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
     cross_section_table: Optional[str]
+
+    @staticmethod
+    def display_names() -> list:
+        display_names_list = [
+            "ID",
+            "Code",
+            "Display name",
+            "Crest level",
+            "Crest type",
+            "Discharge coefficient positive",
+            "Discharge coefficient negative",
+            "Friction value",
+            "Friction type",
+            "Sewerage",
+            "Zoom category",
+            "Connection node start ID",
+            "Connection node end ID",
+            "Cross section shape",
+            "Cross section width [m]",
+            "Cross section height [m]",
+            "Cross section table",
+        ]
+        return display_names_list
 
 
 @dataclass

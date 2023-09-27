@@ -68,7 +68,7 @@ class StructuresImportConfig:
                 ]
         return methods_mapping
 
-    def culvert_widgets(self):
+    def structure_widgets(self):
         widgets_to_add = defaultdict(dict)
         combobox_column_indexes = {self.METHOD_COLUMN_IDX, self.SOURCE_ATTRIBUTE_COLUMN_IDX}
         for model_cls, field_methods_mapping in self.field_methods_mapping.items():
@@ -109,6 +109,7 @@ class ExternalFeaturesImporter:
         self.external_source = external_source
         self.target_gpkg = target_gpkg
         self.import_settings = import_settings
+        self.structure_model_cls = None
         self.structure_layer = None
         self.node_layer = None
         self.fields_configurations = {}
@@ -126,6 +127,7 @@ class ExternalFeaturesImporter:
             structure_model_cls: self.import_settings.get("fields", {}),
             dm.ConnectionNode: self.import_settings.get("connection_node_fields", {}),
         }
+        self.structure_model_cls = structure_model_cls
 
     def update_attributes(self, model_cls, source_feat, *new_features):
         fields_config = self.fields_configurations[model_cls]
@@ -155,6 +157,14 @@ class ExternalFeaturesImporter:
                 else:
                     new_feat[field_name] = NULL
 
+    def new_structure_geometry(self, src_structure_feat):
+        """Create new structure geometry based on the source structure feature."""
+        src_geometry = src_structure_feat.geometry()
+        src_polyline = src_geometry.asPolyline()
+        dst_polyline = src_polyline if self.structure_model_cls == dm.Culvert else [src_polyline[0], src_polyline[-1]]
+        dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
+        return dst_geometry
+
     def import_structures(self, context=None, selected_ids=None):
         """Method responsible for the importing structures from the external feature source."""
         conversion_settings = self.import_settings["conversion_settings"]
@@ -180,7 +190,7 @@ class ExternalFeaturesImporter:
             new_nodes = []
             new_structure_feat = QgsFeature(structure_fields)
             new_structure_feat["id"] = next_structure_id
-            new_geom = QgsGeometry.fromPolylineXY(src_feat.geometry().asPolyline())
+            new_geom = self.new_structure_geometry(src_feat)
             if transformation:
                 new_geom.transform(transformation)
             polyline = new_geom.asPolyline()
@@ -235,7 +245,7 @@ class ExternalFeaturesImporter:
                 self.node_layer.addFeatures(new_nodes)
                 locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
             new_structure_feat.setGeometry(new_geom)
-            self.update_attributes(dm.Culvert, src_feat, new_structure_feat)
+            self.update_attributes(self.structure_model_cls, src_feat, new_structure_feat)
             next_structure_id += 1
             new_structures.append(new_structure_feat)
         commit_errors = []

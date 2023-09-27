@@ -170,21 +170,21 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         dm.Weir: WeirsImporter,
     }
 
-    def __init__(self, structures_model_cls, model_gpkg, layer_manager, uc, parent=None):
+    def __init__(self, structure_model_cls, model_gpkg, layer_manager, uc, parent=None):
         super().__init__(parent)
         self.setupUi(self)
-        self.structures_model_cls = structures_model_cls
+        self.structure_model_cls = structure_model_cls
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self.uc = uc
-        self.import_configuration = StructuresImportConfig(self.structures_model_cls)
-        self.structure_importer_cls = self.STRUCTURE_IMPORTERS[structures_model_cls]
+        self.import_configuration = StructuresImportConfig(self.structure_model_cls)
+        self.structure_importer_cls = self.STRUCTURE_IMPORTERS[structure_model_cls]
         self.structure_model = QStandardItemModel()
         self.structure_tv.setModel(self.structure_model)
         self.connection_node_model = QStandardItemModel()
         self.connection_node_tv.setModel(self.connection_node_model)
         self.data_models_tree_views = {
-            self.structures_model_cls: (self.structure_tv, self.structure_model),
+            self.structure_model_cls: (self.structure_tv, self.structure_model),
             dm.ConnectionNode: (self.connection_node_tv, self.connection_node_model),
         }
         self.structure_layer_cbo.setFilters(QgsMapLayerProxyModel.LineLayer)
@@ -195,6 +195,14 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.load_pb.clicked.connect(self.load_import_settings)
         self.run_pb.clicked.connect(self.run_import_structures)
         self.close_pb.clicked.connect(self.close)
+        self.setup_labels()
+
+    def setup_labels(self):
+        structure_name = self.structure_model_cls.__layername__
+        structure_name_lower = structure_name.lower()
+        self.setWindowTitle(self.windowTitle().format(structure_name_lower))
+        self.structure_layer_label.setText(self.structure_layer_label.text().format(structure_name_lower))
+        self.tab_widget.setTabText(0, self.tab_widget.tabText(0).format(structure_name))
 
     @property
     def source_layer(self):
@@ -208,7 +216,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         if layer:
             layer_field_names += [field.name() for field in layer.fields()]
         source_attribute_widgets = self.get_column_widgets(
-            StructuresImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, self.structures_model_cls, dm.ConnectionNode
+            StructuresImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, self.structure_model_cls, dm.ConnectionNode
         )
         for combobox in chain.from_iterable(source_attribute_widgets.values()):
             combobox.clear()
@@ -258,7 +266,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         return column_widgets
 
     def populate_conversion_settings_widgets(self):
-        widgets_to_add = self.import_configuration.culvert_widgets()
+        widgets_to_add = self.import_configuration.structure_widgets()
         for model_cls, (tree_view, tree_view_model) in self.data_models_tree_views.items():
             tree_view_model.clear()
             tree_view_model.setHorizontalHeaderLabels(self.import_configuration.config_header)
@@ -272,7 +280,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.on_layer_changed(self.source_layer)
 
     def connect_configuration_widgets(self):
-        for model_cls in [self.structures_model_cls, dm.ConnectionNode]:
+        for model_cls in [self.structure_model_cls, dm.ConnectionNode]:
             tree_view, tree_view_model = self.data_models_tree_views[model_cls]
             for row_idx, field_name in enumerate(model_cls.__annotations__.keys()):
                 method_item = tree_view_model.item(row_idx, StructuresImportConfig.METHOD_COLUMN_IDX)
@@ -299,13 +307,13 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
 
     def collect_settings(self):
         import_settings = {
-            "target_layer": self.structures_model_cls.__tablename__,
+            "target_layer": self.structure_model_cls.__tablename__,
             "conversion_settings": {
                 "use_snapping": self.snap_gb.isChecked(),
                 "snapping_distance": self.snap_dsb.value(),
                 "create_connection_nodes": self.create_nodes_cb.isChecked(),
             },
-            "fields": self.collect_fields_settings(self.structures_model_cls),
+            "fields": self.collect_fields_settings(self.structure_model_cls),
             "connection_node_fields": self.collect_fields_settings(dm.ConnectionNode),
         }
         return import_settings
@@ -395,7 +403,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             self.snap_gb.setChecked(conversion_settings.get("use_snapping", False))
             self.snap_dsb.setValue(conversion_settings.get("snapping_distance", 0.1))
             self.create_nodes_cb.setChecked(conversion_settings.get("create_connection_nodes", False))
-            self.update_fields_settings(dm.Culvert, import_settings["fields"])
+            self.update_fields_settings(self.structure_model_cls, import_settings["fields"])
             try:
                 connection_node_fields = import_settings["connection_node_fields"]
                 self.update_fields_settings(dm.ConnectionNode, connection_node_fields)
@@ -406,7 +414,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
 
     def missing_source_fields(self):
-        data_models = [dm.Culvert]
+        data_models = [self.structure_model_cls]
         if self.create_nodes_cb.isChecked():
             data_models.append(dm.ConnectionNode)
         field_labels = self.get_column_widgets(StructuresImportConfig.FIELD_NAME_COLUMN_IDX, *data_models)
@@ -448,7 +456,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             )
             return
         source_layer = self.source_layer
-        structures_handler = self.layer_manager.model_handlers[self.structures_model_cls]
+        structures_handler = self.layer_manager.model_handlers[self.structure_model_cls]
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         structure_layer = structures_handler.layer
         node_layer = node_handler.layer
