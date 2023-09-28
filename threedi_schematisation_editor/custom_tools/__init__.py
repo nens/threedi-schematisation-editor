@@ -91,11 +91,18 @@ class StructuresImportConfig:
                         widget = QPushButton("Set...")
                         widget.value_map = {}
                     else:
-                        if issubclass(field_type, Enum) and column_idx == self.DEFAULT_VALUE_COLUMN_IDX:
+                        if column_idx == self.DEFAULT_VALUE_COLUMN_IDX and (
+                            issubclass(field_type, Enum) or field_type == bool
+                        ):
                             widget = QComboBox()
-                            widget.addItem("NULL", "NULL")
-                            for e in field_type:
-                                widget.addItem(enum_entry_name_format(e.name), e.value)
+                            items = (
+                                [["False", False], ["True", True]]
+                                if field_type == bool
+                                else [["NULL", "NULL"]]
+                                + [[enum_entry_name_format(e.name), e.value] for e in field_type]
+                            )
+                            for item_str, item_data in items:
+                                widget.addItem(item_str, item_data)
                         else:
                             widget = QLineEdit()
                     widgets_to_add[model_cls][row_idx, column_idx] = widget

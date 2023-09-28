@@ -124,18 +124,12 @@ class AttributeValueMapDialog(vm_basecls, vm_uicls):
             skipped_rows = 0
             for i, source_value in enumerate(sorted(unique_values), start=last_row_number):
                 source_value_str = self.format_value_map_data(source_value)
-                if isinstance(source_value, str):
-                    source_value = source_value_str
-                elif source_value == NULL:
-                    source_value = source_value_str
-                else:
-                    source_value = source_value_str
-                if source_value in existing_values:
+                if source_value_str in existing_values:
                     skipped_rows += 1
                     continue
                 new_row_number = i - skipped_rows
                 self.value_map_table.insertRow(new_row_number)
-                self.value_map_table.setItem(new_row_number, self.SRC_COLUMN_IDX, QTableWidgetItem(source_value))
+                self.value_map_table.setItem(new_row_number, self.SRC_COLUMN_IDX, QTableWidgetItem(source_value_str))
                 self.value_map_table.setItem(new_row_number, self.DST_COLUMN_IDX, QTableWidgetItem(QUOTED_NULL))
 
     @staticmethod
@@ -368,7 +362,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                     else:
                         if key_name == "method":
                             widget.setCurrentText(enum_entry_name_format(ColumnImportMethod(key_value).name))
-                        elif key_name == "default_value":
+                        elif key_name == "default_value" and field_type != bool:
                             widget.setCurrentText(enum_entry_name_format(field_type(key_value).name))
                         else:
                             widget.setCurrentText(str(key_value))
