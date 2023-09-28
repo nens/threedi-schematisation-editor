@@ -11,7 +11,7 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
-from threedi_schematisation_editor.custom_tools import CulvertsImporter
+from threedi_schematisation_editor.custom_tools import CulvertsImporter, OrificesImporter, WeirsImporter
 
 
 class ImportCulverts(QgsProcessingAlgorithm):
@@ -77,7 +77,157 @@ class ImportCulverts(QgsProcessingAlgorithm):
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
         culverts_importer = CulvertsImporter(source_layer, target_gpkg, import_config)
-        success, commit_errors = culverts_importer.import_culverts(context=context)
+        success, commit_errors = culverts_importer.import_structures(context=context)
+        if not success:
+            commit_errors_message = "\n".join(commit_errors)
+            feedback.reportError(commit_errors_message)
+        return {}
+
+    def postProcessAlgorithm(self, context, feedback):
+        for layer in QgsProject.instance().mapLayers().values():
+            layer.triggerRepaint()
+        return {}
+
+
+class ImportOrifices(QgsProcessingAlgorithm):
+    """Import orifices."""
+
+    SOURCE_LAYER = "SOURCE_LAYER"
+    IMPORT_CONFIG = "IMPORT_CONFIG"
+    TARGET_GPKG = "TARGET_GPKG"
+
+    def tr(self, string):
+        return QCoreApplication.translate("Processing", string)
+
+    def createInstance(self):
+        return ImportOrifices()
+
+    def name(self):
+        return "threedi_import_orifices"
+
+    def displayName(self):
+        return self.tr("Import orifices")
+
+    def group(self):
+        return self.tr("Conversion")
+
+    def groupId(self):
+        return "conversion"
+
+    def shortHelpString(self):
+        return self.tr("""Import orifices from external source layer.""")
+
+    def initAlgorithm(self, config=None):
+        source_layer = QgsProcessingParameterFeatureSource(
+            self.SOURCE_LAYER,
+            self.tr("Source orifice layer"),
+            [QgsProcessing.TypeVectorLine],
+        )
+        self.addParameter(source_layer)
+        import_config_file = QgsProcessingParameterFile(
+            self.IMPORT_CONFIG,
+            self.tr("Orifice import configuration file"),
+            extension="json",
+            behavior=QgsProcessingParameterFile.File,
+        )
+        self.addParameter(import_config_file)
+        target_gpkg = QgsProcessingParameterFile(
+            self.TARGET_GPKG,
+            self.tr("Target Schematisation Editor GeoPackage file"),
+            extension="gpkg",
+            behavior=QgsProcessingParameterFile.File,
+        )
+        self.addParameter(target_gpkg)
+
+    def processAlgorithm(self, parameters, context, feedback):
+        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        if source_layer is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
+        import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
+        if import_config_file is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.IMPORT_CONFIG))
+        target_gpkg = self.parameterAsFile(parameters, self.TARGET_GPKG, context)
+        if target_gpkg is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
+        with open(import_config_file) as import_config_json:
+            import_config = json.loads(import_config_json.read())
+        orifices_importer = OrificesImporter(source_layer, target_gpkg, import_config)
+        success, commit_errors = orifices_importer.import_structures(context=context)
+        if not success:
+            commit_errors_message = "\n".join(commit_errors)
+            feedback.reportError(commit_errors_message)
+        return {}
+
+    def postProcessAlgorithm(self, context, feedback):
+        for layer in QgsProject.instance().mapLayers().values():
+            layer.triggerRepaint()
+        return {}
+
+
+class ImportWeirs(QgsProcessingAlgorithm):
+    """Import weirs."""
+
+    SOURCE_LAYER = "SOURCE_LAYER"
+    IMPORT_CONFIG = "IMPORT_CONFIG"
+    TARGET_GPKG = "TARGET_GPKG"
+
+    def tr(self, string):
+        return QCoreApplication.translate("Processing", string)
+
+    def createInstance(self):
+        return ImportWeirs()
+
+    def name(self):
+        return "threedi_import_weirs"
+
+    def displayName(self):
+        return self.tr("Import weirs")
+
+    def group(self):
+        return self.tr("Conversion")
+
+    def groupId(self):
+        return "conversion"
+
+    def shortHelpString(self):
+        return self.tr("""Import weirs from external source layer.""")
+
+    def initAlgorithm(self, config=None):
+        source_layer = QgsProcessingParameterFeatureSource(
+            self.SOURCE_LAYER,
+            self.tr("Source weir layer"),
+            [QgsProcessing.TypeVectorLine],
+        )
+        self.addParameter(source_layer)
+        import_config_file = QgsProcessingParameterFile(
+            self.IMPORT_CONFIG,
+            self.tr("Weir import configuration file"),
+            extension="json",
+            behavior=QgsProcessingParameterFile.File,
+        )
+        self.addParameter(import_config_file)
+        target_gpkg = QgsProcessingParameterFile(
+            self.TARGET_GPKG,
+            self.tr("Target Schematisation Editor GeoPackage file"),
+            extension="gpkg",
+            behavior=QgsProcessingParameterFile.File,
+        )
+        self.addParameter(target_gpkg)
+
+    def processAlgorithm(self, parameters, context, feedback):
+        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        if source_layer is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
+        import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
+        if import_config_file is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.IMPORT_CONFIG))
+        target_gpkg = self.parameterAsFile(parameters, self.TARGET_GPKG, context)
+        if target_gpkg is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
+        with open(import_config_file) as import_config_json:
+            import_config = json.loads(import_config_json.read())
+        weirs_importer = WeirsImporter(source_layer, target_gpkg, import_config)
+        success, commit_errors = weirs_importer.import_structures(context=context)
         if not success:
             commit_errors_message = "\n".join(commit_errors)
             feedback.reportError(commit_errors_message)

@@ -5,6 +5,8 @@ History
 ------------------
 
 - Fixes/enhancements: #170
+- Added Import Weirs tool (#178, #179)
+- Added Import Orifices tool (#180, #181)
 
 
 1.6.0 (2023-09-21)

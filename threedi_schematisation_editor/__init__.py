@@ -5,9 +5,10 @@ from qgis.core import QgsApplication, QgsProject
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QMenu
 
+import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.conversion import ModelDataConverter
-from threedi_schematisation_editor.custom_widgets import ImportCulvertsDialog
+from threedi_schematisation_editor.custom_widgets import ImportStructuresDialog
 from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager
 from threedi_schematisation_editor.utils import (
@@ -314,14 +315,20 @@ class ThreediSchematisationEditorPlugin:
     def import_external_culverts(self):
         if not self.model_gpkg:
             return
-        import_culverts_dlg = ImportCulvertsDialog(self.model_gpkg, self.layer_manager, self.uc)
+        import_culverts_dlg = ImportStructuresDialog(dm.Culvert, self.model_gpkg, self.layer_manager, self.uc)
         import_culverts_dlg.exec_()
 
     def import_external_orifices(self):
-        self.uc.bar_info("Not implemented...")
+        if not self.model_gpkg:
+            return
+        import_orifices_dlg = ImportStructuresDialog(dm.Orifice, self.model_gpkg, self.layer_manager, self.uc)
+        import_orifices_dlg.exec_()
 
     def import_external_weirs(self):
-        self.uc.bar_info("Not implemented...")
+        if not self.model_gpkg:
+            return
+        import_weirs_dlg = ImportStructuresDialog(dm.Weir, self.model_gpkg, self.layer_manager, self.uc)
+        import_weirs_dlg.exec_()
 
     def import_external_pipes(self):
         self.uc.bar_info("Not implemented...")

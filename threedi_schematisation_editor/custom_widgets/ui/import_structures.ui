@@ -11,23 +11,23 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Import culverts</string>
+   <string>Import {}s</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
-    <widget class="QLabel" name="label">
+    <widget class="QLabel" name="structure_layer_label">
      <property name="font">
       <font>
        <pointsize>10</pointsize>
       </font>
      </property>
      <property name="text">
-      <string>Source culvert layer</string>
+      <string>Source {} layer</string>
      </property>
     </widget>
    </item>
    <item row="0" column="1">
-    <widget class="QgsMapLayerComboBox" name="culvert_layer_cbo">
+    <widget class="QgsMapLayerComboBox" name="structure_layer_cbo">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -87,13 +87,13 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="culvert_tab">
+     <widget class="QWidget" name="structure_tab">
       <attribute name="title">
-       <string>Culvert</string>
+       <string>{}</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
        <item row="1" column="0">
-        <widget class="QTreeView" name="culvert_tv"/>
+        <widget class="QTreeView" name="structure_tv"/>
        </item>
       </layout>
      </widget>
