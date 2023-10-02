@@ -53,9 +53,9 @@ class StructuresImportConfig:
         methods_mapping = defaultdict(dict)
         auto_fields = {"id"}
         auto_attribute_fields = {"connection_node_start_id", "connection_node_end_id"}
-        culvert_fields = ((k, self.structures_model_cls) for k in self.structures_model_cls.__annotations__.keys())
+        structure_fields = ((k, self.structures_model_cls) for k in self.structures_model_cls.__annotations__.keys())
         node_fields = ((k, self.nodes_cls) for k in self.nodes_cls.__annotations__.keys())
-        for field_name, model_cls in chain(culvert_fields, node_fields):
+        for field_name, model_cls in chain(structure_fields, node_fields):
             if field_name in auto_fields:
                 methods_mapping[model_cls][field_name] = [ColumnImportMethod.AUTO]
             elif field_name in auto_attribute_fields:
