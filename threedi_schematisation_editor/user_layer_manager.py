@@ -144,7 +144,7 @@ class LayersManager:
             snapped_layers += [
                 self.model_handlers[linked_model].layer for linked_model in self.TOPOLOGICAL_EDITING_GROUPS[layer_model]
             ]
-            use_topological_editing = True if layer_model != dm.Channel else False
+            use_topological_editing = True
         else:
             if layer_model != dm.ConnectionNode:
                 connection_node_layer = self.model_handlers[dm.ConnectionNode].layer
