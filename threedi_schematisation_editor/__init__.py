@@ -2,7 +2,7 @@
 import os.path
 
 from qgis.core import QgsApplication, QgsProject
-from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QMenu
 
 import threedi_schematisation_editor.data_models as dm
@@ -114,6 +114,7 @@ class ThreediSchematisationEditorPlugin:
             sub_action.triggered.connect(sub_action_callback)
             menu.addAction(sub_action)
         main_action.setMenu(menu)
+        main_action.triggered.connect(lambda: menu.exec(QCursor.pos()))
         return main_action
 
     def toggle_active_project_actions(self):

@@ -4,7 +4,7 @@ History
 1.7.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fixes/enhancements: #185
 
 
 1.7.0 (2023-09-29)

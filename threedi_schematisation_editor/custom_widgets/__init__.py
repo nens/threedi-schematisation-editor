@@ -182,6 +182,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             dm.ConnectionNode: (self.connection_node_tv, self.connection_node_model),
         }
         self.structure_layer_cbo.setFilters(QgsMapLayerProxyModel.LineLayer)
+        self.structure_layer_cbo.setCurrentIndex(0)
         self.populate_conversion_settings_widgets()
         self.structure_layer_cbo.layerChanged.connect(self.on_layer_changed)
         self.create_nodes_cb.stateChanged.connect(self.on_create_nodes_change)
@@ -202,6 +203,27 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
     def source_layer(self):
         return self.structure_layer_cbo.currentLayer()
 
+    @property
+    def layer_dependent_widgets(self):
+        widgets = [
+            self.tab_widget,
+            self.save_pb,
+            self.load_pb,
+            self.run_pb,
+            self.selected_only_cb,
+            self.create_nodes_cb,
+            self.snap_gb,
+        ]
+        return widgets
+
+    def activate_layer_dependent_widgets(self):
+        for widget in self.layer_dependent_widgets:
+            widget.setEnabled(True)
+
+    def deactivate_layer_dependent_widgets(self):
+        for widget in self.layer_dependent_widgets:
+            widget.setDisabled(True)
+
     def on_create_nodes_change(self, is_checked):
         self.connection_node_tab.setEnabled(is_checked)
 
@@ -209,6 +231,9 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         layer_field_names = [""]
         if layer:
             layer_field_names += [field.name() for field in layer.fields()]
+            self.activate_layer_dependent_widgets()
+        else:
+            self.deactivate_layer_dependent_widgets()
         source_attribute_widgets = self.get_column_widgets(
             StructuresImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, self.structure_model_cls, dm.ConnectionNode
         )

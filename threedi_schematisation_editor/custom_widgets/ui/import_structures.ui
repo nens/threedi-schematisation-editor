@@ -39,6 +39,9 @@
        <pointsize>10</pointsize>
       </font>
      </property>
+     <property name="allowEmptyLayer">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item row="8" column="5">
