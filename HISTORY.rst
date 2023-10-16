@@ -1,7 +1,7 @@
 History
 =======
 
-1.7.1 (unreleased)
+1.7.1 (2023-10-16)
 ------------------
 
 - Fixes/enhancements: #100, #185
