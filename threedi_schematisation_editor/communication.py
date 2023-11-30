@@ -13,7 +13,7 @@ class UICommunication:
         self.message_bar = self.iface.messageBar() if iface is not None else None
 
     def show_info(self, msg, parent=None, context=None):
-        """Showing info dialog."""
+        """Show info dialog."""
         if self.iface is not None:
             parent = parent if parent is not None else self.iface.mainWindow()
             context = self.context if context is None else context
@@ -22,7 +22,7 @@ class UICommunication:
             print(msg)
 
     def show_warn(self, msg, parent=None, context=None):
-        """Showing warning dialog."""
+        """Show warning dialog."""
         if self.iface is not None:
             parent = parent if parent is not None else self.iface.mainWindow()
             context = self.context if context is None else context
@@ -31,7 +31,7 @@ class UICommunication:
             print(msg)
 
     def show_error(self, msg, parent=None, context=None):
-        """Showing error dialog."""
+        """Show error dialog."""
         if self.iface is not None:
             parent = parent if parent is not None else self.iface.mainWindow()
             context = self.context if context is None else context
@@ -40,21 +40,21 @@ class UICommunication:
             print(msg)
 
     def bar_info(self, msg, dur=5):
-        """Showing info message bar."""
+        """Show info message bar."""
         if self.iface is not None:
             self.message_bar.pushMessage(self.context, msg, level=Qgis.Info, duration=dur)
         else:
             print(msg)
 
     def bar_warn(self, msg, dur=5):
-        """Showing warning message bar."""
+        """Show warning message bar."""
         if self.iface is not None:
             self.message_bar.pushMessage(self.context, msg, level=Qgis.Warning, duration=dur)
         else:
             print(msg)
 
     def bar_error(self, msg, dur=5):
-        """Showing error message bar."""
+        """Show error message bar."""
         if self.iface is not None:
             self.message_bar.pushMessage(self.context, msg, level=Qgis.Critical, duration=dur)
         else:

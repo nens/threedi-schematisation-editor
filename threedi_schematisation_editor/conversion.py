@@ -49,17 +49,26 @@ class ModelDataConverter:
         )
         self.conversion_errors = defaultdict(list)
 
-    def report_conversion_errors(self):
+    def report_conversion_errors(self, report_limit=25):
         """Report all caught conversion errors."""
         error_message = ""
         errors_per_data_model = list(self.conversion_errors.items())
         errors_per_data_model.sort(key=itemgetter(0))
+        total_errors_number = sum([len(errors) for layer_name, errors in errors_per_data_model])
         for layer_name, errors in errors_per_data_model:
             errors_str = "\n".join(errors)
             error_message += f"{layer_name} conversion errors:\n{errors_str}\n"
         error_message.strip()
         if error_message:
-            self.uc.show_error(error_message)
+            self.uc.log_warn(error_message)
+            if total_errors_number > report_limit:
+                general_error_message = (
+                    f"More than {report_limit} conversion errors detected. "
+                    f"Please check the QGIS Log Message panel to get the conversion error details."
+                )
+                self.uc.show_error(general_error_message)
+            else:
+                self.uc.show_error(error_message)
 
     @staticmethod
     def spatialite_schema_version(sqlite_path):
@@ -285,7 +294,7 @@ class ModelDataConverter:
         impervious_surface_map_geoms, surface_map_geoms = {}, {}
         for feat in impervious_surface_map_layer.getFeatures():
             fid, node_id, surface_id = feat.id(), feat["connection_node_id"], feat["impervious_surface_id"]
-            if not surface_id:
+            if not surface_id or surface_id not in impervious_surface_points:
                 missing_surface_error = (
                     f"Impervious Surface link ({fid}) with an invalid 'impervious_surface_id'. "
                     f"Impervious surface ID reference is missing."
@@ -312,7 +321,7 @@ class ModelDataConverter:
             impervious_surface_map_geoms[fid] = link_geom
         for feat in surface_map_layer.getFeatures():
             fid, node_id, surface_id = feat.id(), feat["connection_node_id"], feat["surface_id"]
-            if not surface_id:
+            if not surface_id or surface_id not in surface_points:
                 missing_surface_error = (
                     f"Surface link ({fid}) with an invalid 'surface_id'. Surface ID reference is missing."
                 )
