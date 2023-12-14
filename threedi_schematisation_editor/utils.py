@@ -246,7 +246,7 @@ def get_filepath(parent, extension_filter=None, extension=None, save=True, dialo
     if dialog_title is None:
         dialog_title = "Save to file" if save else "Choose file"
 
-    starting_dir = QgsSettings().value("schematisation_editor/last_folder", os.path.expanduser("~"), type=str)
+    starting_dir = QgsSettings().value("threedi/last_schematisation_folder", os.path.expanduser("~"), type=str)
     if save is True:
         file_name, __ = QFileDialog.getSaveFileName(parent, dialog_title, starting_dir, extension_filter)
     else:
@@ -258,7 +258,7 @@ def get_filepath(parent, extension_filter=None, extension=None, save=True, dialo
         if not file_name.endswith(extension):
             file_name += extension
 
-    QgsSettings().setValue("schematisation_editor/last_folder", os.path.dirname(file_name))
+    QgsSettings().setValue("threedi/last_schematisation_folder", os.path.dirname(file_name))
     return file_name
 
 
