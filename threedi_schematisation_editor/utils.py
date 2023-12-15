@@ -238,27 +238,29 @@ def remove_group_with_children(name):
         root.removeChildNode(group)
 
 
-def get_filepath(parent, extension_filter=None, extension=None, save=True, dialog_title=None):
+def get_filepath(
+    parent,
+    extension_filter=None,
+    extension=None,
+    save=True,
+    dialog_title=None,
+    default_settings_entry="threedi/last_schematisation_folder",
+):
     """Opening dialog to get a filepath."""
     if extension_filter is None:
         extension_filter = "All Files (*.*)"
-
     if dialog_title is None:
         dialog_title = "Save to file" if save else "Choose file"
-
-    starting_dir = QgsSettings().value("threedi/last_schematisation_folder", os.path.expanduser("~"), type=str)
+    starting_dir = QgsSettings().value(default_settings_entry, os.path.expanduser("~"), type=str)
     if save is True:
         file_name, __ = QFileDialog.getSaveFileName(parent, dialog_title, starting_dir, extension_filter)
     else:
         file_name, __ = QFileDialog.getOpenFileName(parent, dialog_title, starting_dir, extension_filter)
     if len(file_name) == 0:
         return None
-
     if extension:
         if not file_name.endswith(extension):
             file_name += extension
-
-    QgsSettings().setValue("threedi/last_schematisation_folder", os.path.dirname(file_name))
     return file_name
 
 
