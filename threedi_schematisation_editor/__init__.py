@@ -8,7 +8,7 @@ from qgis.PyQt.QtWidgets import QAction, QMenu
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.conversion import ModelDataConverter
-from threedi_schematisation_editor.custom_widgets import ImportStructuresDialog
+from threedi_schematisation_editor.custom_widgets import ImportStructuresDialog, LoadSchematisationDialog
 from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager
 from threedi_schematisation_editor.utils import (
@@ -186,6 +186,8 @@ class ThreediSchematisationEditorPlugin:
             add_gpkg_connection(self.model_gpkg, self.iface)
 
     def load_from_spatialite(self):
+        schematisation_loader = LoadSchematisationDialog(self.uc)
+        schematisation_loader.exec_()
         src_sqlite = self.select_sqlite_database(title="Select database to load features from")
         if not src_sqlite:
             return

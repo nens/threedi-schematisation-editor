@@ -5,7 +5,7 @@ import os
 from functools import partial
 from itertools import chain
 
-from qgis.core import NULL, QgsMapLayerProxyModel
+from qgis.core import NULL, QgsMapLayerProxyModel, QgsSettings
 from qgis.PyQt import uic
 from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
 from qgis.PyQt.QtWidgets import QComboBox, QInputDialog, QTableWidgetItem
@@ -32,6 +32,7 @@ from threedi_schematisation_editor.utils import (
 ps_basecls, ps_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "projection_selection.ui"))
 ic_basecls, ic_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "import_structures.ui"))
 vm_basecls, vm_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "attribute_value_map.ui"))
+load_basecls, load_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "load_schematisation.ui"))
 
 
 class ProjectionSelectionDialog(ps_basecls, ps_uicls):
@@ -502,3 +503,59 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             node_handler.connect_handler_signals()
         for layer in [structure_layer, node_layer]:
             layer.triggerRepaint()
+
+
+class LoadSchematisationDialog(load_basecls, load_uicls):
+    """Dialog for loading schematisation."""
+
+    def __init__(self, uc, parent=None):
+        super().__init__(parent)
+        self.setupUi(self)
+        self.uc = uc
+        self.schematisation_model = QStandardItemModel()
+        self.schematisation_tv.setModel(self.schematisation_model)
+        self.load_pb.clicked.connect(self.get_selected_schematisation)
+        self.cancle_pb.clicked.connect(self.reject)
+        self.schematisation_list_header = ["Schematisation", "Revision"]
+        self.list_working_dir_schematisations()
+
+    def list_working_dir_schematisations(self):
+        """Populate 3Di Working Directory schematisations."""
+        try:
+            from threedi_mi_utils import WIPRevision, list_local_schematisations, replace_revision_data
+        except ImportError:
+            self.missing_lib_label.setHidden(False)
+            return
+        self.missing_lib_label.setHidden(True)
+        working_dir = QgsSettings().value("threedi/working_dir", "", type=str)
+        if not working_dir:
+            return
+        local_schematisations = list_local_schematisations(working_dir, use_config_for_revisions=False)
+        self.schematisation_model.clear()
+        self.schematisation_model.setHorizontalHeaderLabels(self.schematisation_list_header)
+        for local_schematisation in local_schematisations.values():
+            local_schematisation_name = local_schematisation.name
+            local_wip_revision = local_schematisation.wip_revision
+            try:
+                local_wip_revision_sqlite = local_wip_revision.sqlite
+            except (AttributeError, FileNotFoundError):
+                local_wip_revision_sqlite = None
+            if local_wip_revision_sqlite is not None:
+                schematisation_name_item = QStandardItem(local_schematisation_name)
+                revision_number_str = f"{local_wip_revision.number} (work in progress)"
+                revision_number_item = QStandardItem(revision_number_str)
+                revision_number_item.setData(local_wip_revision_sqlite)
+                self.schematisation_model.appendRow([schematisation_name_item, revision_number_item])
+            for revision_number, revision in local_schematisation.revisions.items():
+                try:
+                    schematisation_name_item = QStandardItem(local_schematisation_name)
+                    revision_number_item = QStandardItem(str(revision.number))
+                    revision_number_item.setData(revision.sqlite)
+                except FileNotFoundError:
+                    continue
+                self.schematisation_model.appendRow([schematisation_name_item, revision_number_item])
+        for i in range(len(self.schematisation_list_header)):
+            self.schematisation_tv.resizeColumnToContents(i)
+
+    def get_selected_schematisation(self):
+        self.accept()
