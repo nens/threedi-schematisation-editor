@@ -3,12 +3,12 @@ import os.path
 
 from qgis.core import QgsApplication, QgsProject
 from qgis.PyQt.QtGui import QCursor, QIcon
-from qgis.PyQt.QtWidgets import QAction, QMenu
+from qgis.PyQt.QtWidgets import QAction, QDialog, QMenu
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.conversion import ModelDataConverter
-from threedi_schematisation_editor.custom_widgets import ImportStructuresDialog
+from threedi_schematisation_editor.custom_widgets import ImportStructuresDialog, LoadSchematisationDialog
 from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager
 from threedi_schematisation_editor.utils import (
@@ -186,14 +186,24 @@ class ThreediSchematisationEditorPlugin:
             add_gpkg_connection(self.model_gpkg, self.iface)
 
     def load_from_spatialite(self):
-        src_sqlite = self.select_sqlite_database(title="Select database to load features from")
-        if not src_sqlite:
+        schematisation_loader = LoadSchematisationDialog(self.uc)
+        result = schematisation_loader.exec_()
+        if result != QDialog.Accepted:
             return
+        src_sqlite = schematisation_loader.selected_schematisation_sqlite
         if not can_write_in_dir(os.path.dirname(src_sqlite)):
             warn_msg = "You don't have required write permissions to load data from the selected spatialite."
             self.uc.show_warn(warn_msg)
             return
         schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
+        if schema_version is None:
+            warn_msg = (
+                "The selected spatialite cannot be used because its schema version information is missing. "
+                "Please upgrade the 3Di Schematisation Editor and try again."
+            )
+            self.uc.show_warn(warn_msg)
+            self.uc.bar_warn("Loading from the Spatialite aborted!")
+            return
         if schema_version > ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
             warn_msg = (
                 "The selected spatialite cannot be used because its database schema version is newer than expected. "
