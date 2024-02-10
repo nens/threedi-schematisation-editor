@@ -15,7 +15,9 @@ import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.custom_tools import (
     ColumnImportMethod,
     CulvertsImporter,
+    ManholesImporter,
     OrificesImporter,
+    PipesImporter,
     StructuresImportConfig,
     WeirsImporter,
 )
@@ -164,6 +166,8 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         dm.Culvert: CulvertsImporter,
         dm.Orifice: OrificesImporter,
         dm.Weir: WeirsImporter,
+        dm.Pipe: PipesImporter,
+        dm.Manhole: ManholesImporter,
     }
 
     def __init__(self, structure_model_cls, model_gpkg, layer_manager, uc, parent=None):
@@ -183,7 +187,11 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             self.structure_model_cls: (self.structure_tv, self.structure_model),
             dm.ConnectionNode: (self.connection_node_tv, self.connection_node_model),
         }
-        self.structure_layer_cbo.setFilters(QgsMapLayerProxyModel.LineLayer)
+        self.structure_layer_cbo.setFilters(
+            QgsMapLayerProxyModel.PointLayer
+            if self.structure_model_cls.__geometrytype__ == dm.GeometryType.Point
+            else QgsMapLayerProxyModel.LineLayer
+        )
         self.structure_layer_cbo.setCurrentIndex(0)
         self.populate_conversion_settings_widgets()
         self.structure_layer_cbo.layerChanged.connect(self.on_layer_changed)

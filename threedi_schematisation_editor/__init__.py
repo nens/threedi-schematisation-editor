@@ -69,7 +69,7 @@ class ThreediSchematisationEditorPlugin:
             ("Orifices", self.import_external_orifices, None),
             ("Weirs", self.import_external_weirs, None),
             ("Pipes", self.import_external_pipes, None),
-            ("Pumping stations", self.import_external_pumpstations, None),
+            ("Manholes", self.import_external_manholes, None),
         ]
         self.action_import_culverts = self.add_multi_action_button(
             "Import schematisation objects", import_culverts_icon_path, import_actions_spec
@@ -342,10 +342,12 @@ class ThreediSchematisationEditorPlugin:
         import_weirs_dlg.exec_()
 
     def import_external_pipes(self):
-        self.uc.bar_info("Not implemented...")
+        import_pipes_dlg = ImportStructuresDialog(dm.Pipe, self.model_gpkg, self.layer_manager, self.uc)
+        import_pipes_dlg.exec_()
 
-    def import_external_pumpstations(self):
-        self.uc.bar_info("Not implemented...")
+    def import_external_manholes(self):
+        import_manholes_dlg = ImportStructuresDialog(dm.Manhole, self.model_gpkg, self.layer_manager, self.uc)
+        import_manholes_dlg.exec_()
 
     def on_project_close(self):
         if self.layer_manager is None:

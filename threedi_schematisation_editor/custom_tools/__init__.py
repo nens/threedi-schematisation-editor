@@ -11,6 +11,7 @@ from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
     enum_entry_name_format,
     find_line_endpoints_nodes,
+    find_point_nodes,
     get_next_feature_id,
     gpkg_layer,
     is_optional,
@@ -52,7 +53,7 @@ class StructuresImportConfig:
     def field_methods_mapping(self):
         methods_mapping = defaultdict(dict)
         auto_fields = {"id"}
-        auto_attribute_fields = {"connection_node_start_id", "connection_node_end_id"}
+        auto_attribute_fields = {"connection_node_id", "connection_node_start_id", "connection_node_end_id"}
         structure_fields = ((k, self.structures_model_cls) for k in self.structures_model_cls.__annotations__.keys())
         node_fields = ((k, self.nodes_cls) for k in self.nodes_cls.__annotations__.keys())
         for field_name, model_cls in chain(structure_fields, node_fields):
@@ -166,11 +167,141 @@ class ExternalFeaturesImporter:
 
     def new_structure_geometry(self, src_structure_feat):
         """Create new structure geometry based on the source structure feature."""
-        src_geometry = src_structure_feat.geometry()
-        src_polyline = src_geometry.asPolyline()
-        dst_polyline = src_polyline if self.structure_model_cls == dm.Culvert else [src_polyline[0], src_polyline[-1]]
-        dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
+        if self.structure_model_cls.__geometrytype__ == dm.GeometryType.Linestring:
+            src_geometry = src_structure_feat.geometry()
+            src_polyline = src_geometry.asPolyline()
+            dst_polyline = (
+                src_polyline
+                if self.structure_model_cls in [dm.Culvert, dm.Pipe]
+                else [src_polyline[0], src_polyline[-1]]
+            )
+            dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
+        elif self.structure_model_cls.__geometrytype__ == dm.GeometryType.Point:
+            src_geometry = src_structure_feat.geometry()
+            src_point = src_geometry.asPoint()
+            dst_point = src_point
+            dst_geometry = QgsGeometry.fromPointXY(dst_point)
+        else:
+            raise NotImplementedError(f"{self.structure_model_cls.__geometrytype__} geometry type is not supported.")
         return dst_geometry
+
+    def process_point_structure_feature(
+        self,
+        src_feat,
+        structure_fields,
+        next_structure_id,
+        node_fields,
+        next_connection_node_id,
+        locator,
+        use_snapping,
+        snapping_distance,
+        create_connection_nodes=False,
+        transformation=None,
+    ):
+        """Process source point structure feature."""
+        new_nodes = []
+        new_structure_feat = QgsFeature(structure_fields)
+        new_structure_feat["id"] = next_structure_id
+        new_geom = self.new_structure_geometry(src_feat)
+        if transformation:
+            new_geom.transform(transformation)
+        point = new_geom.asPoint()
+        if use_snapping:
+            node_feat = find_point_nodes(point, self.node_layer, snapping_distance, False, locator)
+            if node_feat:
+                node_point = node_feat.geometry().asPoint()
+                new_structure_feat["connection_node_id"] = node_feat["id"]
+                new_geom = QgsGeometry.fromPolylineXY(node_point)
+            else:
+                if create_connection_nodes:
+                    node_point = point
+                    new_node_feat = QgsFeature(node_fields)
+                    new_node_feat.setGeometry(QgsGeometry.fromPointXY(node_point))
+                    new_node_feat["id"] = next_connection_node_id
+                    new_structure_feat["connection_node_id"] = next_connection_node_id
+                    next_connection_node_id += 1
+                    new_nodes.append(new_node_feat)
+        else:
+            if create_connection_nodes:
+                node_point = point
+                new_node_feat = QgsFeature(node_fields)
+                new_node_feat.setGeometry(QgsGeometry.fromPointXY(node_point))
+                new_node_feat["id"] = next_connection_node_id
+                new_structure_feat["connection_node_id"] = next_connection_node_id
+                next_connection_node_id += 1
+                new_nodes.append(new_node_feat)
+        new_structure_feat.setGeometry(new_geom)
+        return new_structure_feat, new_nodes, next_connection_node_id
+
+    def process_linear_structure_feature(
+        self,
+        src_feat,
+        structure_fields,
+        next_structure_id,
+        node_fields,
+        next_connection_node_id,
+        locator,
+        use_snapping,
+        snapping_distance,
+        create_connection_nodes=False,
+        transformation=None,
+    ):
+        """Process source linear structure feature."""
+        new_nodes = []
+        new_structure_feat = QgsFeature(structure_fields)
+        new_structure_feat["id"] = next_structure_id
+        new_geom = self.new_structure_geometry(src_feat)
+        if transformation:
+            new_geom.transform(transformation)
+        polyline = new_geom.asPolyline()
+        if use_snapping:
+            node_start_feat, node_end_feat = find_line_endpoints_nodes(polyline, locator, snapping_distance)
+            if node_start_feat:
+                node_start_point = node_start_feat.geometry().asPoint()
+                polyline[0] = node_start_point
+                new_structure_feat["connection_node_start_id"] = node_start_feat["id"]
+                new_geom = QgsGeometry.fromPolylineXY(polyline)
+            else:
+                if create_connection_nodes:
+                    node_start_point = polyline[0]
+                    new_start_node_feat = QgsFeature(node_fields)
+                    new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
+                    new_start_node_feat["id"] = next_connection_node_id
+
+                    new_structure_feat["connection_node_start_id"] = next_connection_node_id
+                    next_connection_node_id += 1
+                    new_nodes.append(new_start_node_feat)
+            if node_end_feat:
+                node_end_point = node_end_feat.geometry().asPoint()
+                polyline[-1] = node_end_point
+                new_structure_feat["connection_node_end_id"] = node_end_feat["id"]
+                new_geom = QgsGeometry.fromPolylineXY(polyline)
+            else:
+                if create_connection_nodes:
+                    node_end_point = polyline[-1]
+                    new_end_node_feat = QgsFeature(node_fields)
+                    new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
+                    new_end_node_feat["id"] = next_connection_node_id
+                    new_structure_feat["connection_node_end_id"] = next_connection_node_id
+                    next_connection_node_id += 1
+                    new_nodes.append(new_end_node_feat)
+        else:
+            if create_connection_nodes:
+                node_start_point = polyline[0]
+                new_start_node_feat = QgsFeature(node_fields)
+                new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
+                new_start_node_feat["id"] = next_connection_node_id
+                new_structure_feat["connection_node_start_id"] = next_connection_node_id
+                next_connection_node_id += 1
+                node_end_point = polyline[-1]
+                new_end_node_feat = QgsFeature(node_fields)
+                new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
+                new_end_node_feat["id"] = next_connection_node_id
+                new_structure_feat["connection_node_end_id"] = next_connection_node_id
+                next_connection_node_id += 1
+                new_nodes += [new_start_node_feat, new_end_node_feat]
+        new_structure_feat.setGeometry(new_geom)
+        return new_structure_feat, new_nodes, next_connection_node_id
 
     def import_structures(self, context=None, selected_ids=None):
         """Method responsible for the importing structures from the external feature source."""
@@ -191,67 +322,44 @@ class ExternalFeaturesImporter:
         new_structures = []
         self.node_layer.startEditing()
         self.structure_layer.startEditing()
-        for src_feat in (
+        features_iterator = (
             self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
-        ):
-            new_nodes = []
-            new_structure_feat = QgsFeature(structure_fields)
-            new_structure_feat["id"] = next_structure_id
-            new_geom = self.new_structure_geometry(src_feat)
-            if transformation:
-                new_geom.transform(transformation)
-            polyline = new_geom.asPolyline()
-            if use_snapping:
-                node_start_feat, node_end_feat = find_line_endpoints_nodes(polyline, locator, snapping_distance)
-                if node_start_feat:
-                    node_start_point = node_start_feat.geometry().asPoint()
-                    polyline[0] = node_start_point
-                    new_structure_feat["connection_node_start_id"] = node_start_feat["id"]
-                    new_geom = QgsGeometry.fromPolylineXY(polyline)
-                else:
-                    if create_connection_nodes:
-                        node_start_point = polyline[0]
-                        new_start_node_feat = QgsFeature(node_fields)
-                        new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
-                        new_start_node_feat["id"] = next_connection_node_id
-
-                        new_structure_feat["connection_node_start_id"] = next_connection_node_id
-                        next_connection_node_id += 1
-                        new_nodes.append(new_start_node_feat)
-                if node_end_feat:
-                    node_end_point = node_end_feat.geometry().asPoint()
-                    polyline[-1] = node_end_point
-                    new_structure_feat["connection_node_end_id"] = node_end_feat["id"]
-                    new_geom = QgsGeometry.fromPolylineXY(polyline)
-                else:
-                    if create_connection_nodes:
-                        node_end_point = polyline[-1]
-                        new_end_node_feat = QgsFeature(node_fields)
-                        new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
-                        new_end_node_feat["id"] = next_connection_node_id
-                        new_structure_feat["connection_node_end_id"] = next_connection_node_id
-                        next_connection_node_id += 1
-                        new_nodes.append(new_end_node_feat)
+        )
+        for src_feat in features_iterator:
+            if self.structure_model_cls.isValid(src_feat) == dm.GeometryType.Linestring:
+                new_structure_feat, new_nodes, next_connection_node_id = self.process_linear_structure_feature(
+                    src_feat,
+                    structure_fields,
+                    next_structure_id,
+                    node_fields,
+                    next_connection_node_id,
+                    locator,
+                    use_snapping,
+                    snapping_distance,
+                    create_connection_nodes,
+                    transformation,
+                )
+            elif self.structure_model_cls.isValid(src_feat) == dm.GeometryType.Point:
+                new_structure_feat, new_nodes, next_connection_node_id = self.process_point_structure_feature(
+                    src_feat,
+                    structure_fields,
+                    next_structure_id,
+                    node_fields,
+                    next_connection_node_id,
+                    locator,
+                    use_snapping,
+                    snapping_distance,
+                    create_connection_nodes,
+                    transformation,
+                )
             else:
-                if create_connection_nodes:
-                    node_start_point = polyline[0]
-                    new_start_node_feat = QgsFeature(node_fields)
-                    new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
-                    new_start_node_feat["id"] = next_connection_node_id
-                    new_structure_feat["connection_node_start_id"] = next_connection_node_id
-                    next_connection_node_id += 1
-                    node_end_point = polyline[-1]
-                    new_end_node_feat = QgsFeature(node_fields)
-                    new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
-                    new_end_node_feat["id"] = next_connection_node_id
-                    new_structure_feat["connection_node_end_id"] = next_connection_node_id
-                    next_connection_node_id += 1
-                    new_nodes += [new_start_node_feat, new_end_node_feat]
+                raise NotImplementedError(
+                    f"{self.structure_model_cls.__geometrytype__} geometry type is not supported."
+                )
             if new_nodes:
                 self.update_attributes(dm.ConnectionNode, src_feat, *new_nodes)
                 self.node_layer.addFeatures(new_nodes)
                 locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
-            new_structure_feat.setGeometry(new_geom)
             self.update_attributes(self.structure_model_cls, src_feat, new_structure_feat)
             next_structure_id += 1
             new_structures.append(new_structure_feat)
@@ -288,3 +396,19 @@ class WeirsImporter(ExternalFeaturesImporter):
     def __init__(self, *args, structure_layer=None, node_layer=None):
         super().__init__(*args)
         self.setup_target_layers(dm.Weir, structure_layer, node_layer)
+
+
+class PipesImporter(ExternalFeaturesImporter):
+    """Class with methods responsible for the importing pipes from the external data source."""
+
+    def __init__(self, *args, structure_layer=None, node_layer=None):
+        super().__init__(*args)
+        self.setup_target_layers(dm.Pipe, structure_layer, node_layer)
+
+
+class ManholesImporter(ExternalFeaturesImporter):
+    """Class with methods responsible for the importing manholes from the external data source."""
+
+    def __init__(self, *args, structure_layer=None, node_layer=None):
+        super().__init__(*args)
+        self.setup_target_layers(dm.Manhole, structure_layer, node_layer)

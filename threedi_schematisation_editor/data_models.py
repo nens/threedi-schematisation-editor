@@ -169,6 +169,29 @@ class Manhole(ModelObject):
     hydraulic_conductivity_in: Optional[float]
     hydraulic_conductivity_out: Optional[float]
 
+    @staticmethod
+    def display_names() -> list:
+        display_names_list = [
+            "ID",
+            "Code",
+            "Display name",
+            "Calculation type",
+            "Shape",
+            "Width [m]",
+            "Length [m]",
+            "Bottom level [m MSL]",
+            "Surface level [m MSL]",
+            "Drain level [m MSL]",
+            "Sediment level [m MSL]",
+            "Manhole indicator",
+            "Zoom category",
+            "Connection node ID",
+            "Exchange thickness [m]",
+            "Hydraulic conductivity in [m/d]",
+            "Hydraulic conductivity out [m/d]",
+        ]
+        return display_names_list
+
 
 @dataclass
 class Pumpstation(ModelObject):
@@ -502,6 +525,36 @@ class Pipe(ModelObject):
     exchange_thickness: Optional[float]
     hydraulic_conductivity_in: Optional[float]
     hydraulic_conductivity_out: Optional[float]
+
+    @staticmethod
+    def display_names() -> list:
+        display_names_list = [
+            "ID",
+            "Code",
+            "Display name",
+            "Calculation type",
+            "Calculation point distance [m]",
+            "Invert level start point",
+            "Invert level end point",
+            "Friction value",
+            "Friction type",
+            "Material",
+            "Pipe quality",
+            "Sewerage type",
+            "Zoom category",
+            "Profile number",
+            "Original length",
+            "Connection node start ID",
+            "Connection node end ID",
+            "Cross section shape",
+            "Cross section width [m]",
+            "Cross section height [m]",
+            "Cross section table",
+            "Exchange thickness [m]",
+            "Hydraulic conductivity in [m/d]",
+            "Hydraulic conductivity out [m/d]",
+        ]
+        return display_names_list
 
 
 @dataclass
