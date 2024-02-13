@@ -211,7 +211,7 @@ class ExternalFeaturesImporter:
             if node_feat:
                 node_point = node_feat.geometry().asPoint()
                 new_structure_feat["connection_node_id"] = node_feat["id"]
-                new_geom = QgsGeometry.fromPolylineXY(node_point)
+                new_geom = QgsGeometry.fromPointXY(node_point)
             else:
                 if create_connection_nodes:
                     node_point = point
@@ -326,7 +326,7 @@ class ExternalFeaturesImporter:
             self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
         )
         for src_feat in features_iterator:
-            if self.structure_model_cls.isValid(src_feat) == dm.GeometryType.Linestring:
+            if self.structure_model_cls.__geometrytype__ == dm.GeometryType.Linestring:
                 new_structure_feat, new_nodes, next_connection_node_id = self.process_linear_structure_feature(
                     src_feat,
                     structure_fields,
@@ -339,7 +339,7 @@ class ExternalFeaturesImporter:
                     create_connection_nodes,
                     transformation,
                 )
-            elif self.structure_model_cls.isValid(src_feat) == dm.GeometryType.Point:
+            elif self.structure_model_cls.__geometrytype__ == dm.GeometryType.Point:
                 new_structure_feat, new_nodes, next_connection_node_id = self.process_point_structure_feature(
                     src_feat,
                     structure_fields,
