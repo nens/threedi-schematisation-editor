@@ -431,6 +431,7 @@ class LinearFeaturesImporterWithManholes(LinearFeaturesImporter):
                 start_manhole_feat["connection_node_id"] = start_node_id
                 self.update_attributes(dm.Manhole, external_src_feat, start_manhole_feat)
                 new_manholes.append(start_manhole_feat)
+                manholes_at_nodes.add(start_node_id)
                 next_manhole_id += 1
             if end_node_id not in manholes_at_nodes:
                 end_manhole_feat = QgsFeature(manhole_fields)
@@ -441,6 +442,7 @@ class LinearFeaturesImporterWithManholes(LinearFeaturesImporter):
                 end_manhole_feat["connection_node_id"] = end_node_id
                 self.update_attributes(dm.Manhole, external_src_feat, end_manhole_feat)
                 new_manholes.append(end_manhole_feat)
+                manholes_at_nodes.add(end_node_id)
                 next_manhole_id += 1
         return new_manholes
 
