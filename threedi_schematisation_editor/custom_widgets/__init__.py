@@ -170,6 +170,8 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         dm.Manhole: ManholesImporter,
     }
 
+    STRUCTURES_WITH_MANHOLES = (dm.Culvert, dm.Orifice, dm.Weir, dm.Pipe)
+
     def __init__(self, structure_model_cls, model_gpkg, layer_manager, uc, parent=None):
         super().__init__(parent)
         self.setupUi(self)
@@ -178,15 +180,21 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.layer_manager = layer_manager
         self.uc = uc
         self.import_configuration = StructuresImportConfig(self.structure_model_cls)
+        if self.include_manholes:
+            self.import_configuration.add_related_model_class(dm.Manhole)
         self.structure_importer_cls = self.STRUCTURE_IMPORTERS[structure_model_cls]
         self.structure_model = QStandardItemModel()
         self.structure_tv.setModel(self.structure_model)
         self.connection_node_model = QStandardItemModel()
         self.connection_node_tv.setModel(self.connection_node_model)
+        self.manhole_model = QStandardItemModel()
+        self.manhole_tv.setModel(self.manhole_model)
         self.data_models_tree_views = {
             self.structure_model_cls: (self.structure_tv, self.structure_model),
             dm.ConnectionNode: (self.connection_node_tv, self.connection_node_model),
         }
+        if self.include_manholes:
+            self.data_models_tree_views[dm.Manhole] = (self.manhole_tv, self.manhole_model)
         self.structure_layer_cbo.setFilters(
             QgsMapLayerProxyModel.PointLayer
             if self.structure_model_cls.__geometrytype__ == dm.GeometryType.Point
@@ -196,11 +204,16 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.populate_conversion_settings_widgets()
         self.structure_layer_cbo.layerChanged.connect(self.on_layer_changed)
         self.create_nodes_cb.stateChanged.connect(self.on_create_nodes_change)
+        self.create_manholes_cb.stateChanged.connect(self.on_create_manholes_change)
         self.save_pb.clicked.connect(self.save_import_settings)
         self.load_pb.clicked.connect(self.load_import_settings)
         self.run_pb.clicked.connect(self.run_import_structures)
         self.close_pb.clicked.connect(self.close)
         self.setup_labels()
+        if self.structure_model_cls not in self.STRUCTURES_WITH_MANHOLES:
+            self.create_manholes_cb.setChecked(False)
+            self.create_manholes_cb.hide()
+            self.tab_widget.setTabVisible(2, False)
 
     def setup_labels(self):
         structure_name = self.structure_model_cls.__layername__
@@ -208,6 +221,10 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.setWindowTitle(self.windowTitle().format(structure_name_lower))
         self.structure_layer_label.setText(self.structure_layer_label.text().format(structure_name_lower))
         self.tab_widget.setTabText(0, self.tab_widget.tabText(0).format(structure_name))
+
+    @property
+    def include_manholes(self):
+        return self.structure_model_cls in self.STRUCTURES_WITH_MANHOLES
 
     @property
     def source_layer(self):
@@ -224,6 +241,8 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             self.create_nodes_cb,
             self.snap_gb,
         ]
+        if self.include_manholes:
+            widgets.append(self.create_manholes_cb)
         return widgets
 
     def activate_layer_dependent_widgets(self):
@@ -236,6 +255,13 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
 
     def on_create_nodes_change(self, is_checked):
         self.connection_node_tab.setEnabled(is_checked)
+        if is_checked is False and self.include_manholes:
+            self.create_manholes_cb.setChecked(is_checked)
+            self.manhole_tab.setEnabled(is_checked)
+
+    def on_create_manholes_change(self, is_checked):
+        if self.include_manholes:
+            self.manhole_tab.setEnabled(is_checked)
 
     def on_layer_changed(self, layer):
         layer_field_names = [""]
@@ -244,8 +270,11 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             self.activate_layer_dependent_widgets()
         else:
             self.deactivate_layer_dependent_widgets()
+        data_models = [self.structure_model_cls, dm.ConnectionNode]
+        if self.include_manholes:
+            data_models.append(dm.Manhole)
         source_attribute_widgets = self.get_column_widgets(
-            StructuresImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, self.structure_model_cls, dm.ConnectionNode
+            StructuresImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, *data_models
         )
         for combobox in chain.from_iterable(source_attribute_widgets.values()):
             combobox.clear()
@@ -309,7 +338,10 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.on_layer_changed(self.source_layer)
 
     def connect_configuration_widgets(self):
-        for model_cls in [self.structure_model_cls, dm.ConnectionNode]:
+        data_models = [self.structure_model_cls, dm.ConnectionNode]
+        if self.include_manholes:
+            data_models.append(dm.Manhole)
+        for model_cls in data_models:
             tree_view, tree_view_model = self.data_models_tree_views[model_cls]
             for row_idx, field_name in enumerate(model_cls.__annotations__.keys()):
                 method_item = tree_view_model.item(row_idx, StructuresImportConfig.METHOD_COLUMN_IDX)
@@ -341,10 +373,13 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 "use_snapping": self.snap_gb.isChecked(),
                 "snapping_distance": self.snap_dsb.value(),
                 "create_connection_nodes": self.create_nodes_cb.isChecked(),
+                "create_manholes": self.create_manholes_cb.isChecked(),
             },
             "fields": self.collect_fields_settings(self.structure_model_cls),
             "connection_node_fields": self.collect_fields_settings(dm.ConnectionNode),
         }
+        if self.include_manholes:
+            import_settings["manhole_fields"] = self.collect_fields_settings(dm.Manhole)
         return import_settings
 
     def collect_fields_settings(self, model_cls):
@@ -438,6 +473,12 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 self.update_fields_settings(dm.ConnectionNode, connection_node_fields)
             except KeyError:
                 pass
+            if self.include_manholes:
+                self.create_manholes_cb.setChecked(conversion_settings.get("create_manholes", False))
+                try:
+                    self.update_fields_settings(dm.Manhole, import_settings["manhole_fields"])
+                except KeyError:
+                    pass
             self.uc.show_info(f"Settings loaded from the template.", self)
         except Exception as e:
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
@@ -446,6 +487,8 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         data_models = [self.structure_model_cls]
         if self.create_nodes_cb.isChecked():
             data_models.append(dm.ConnectionNode)
+            if self.include_manholes and self.create_manholes_cb.isChecked():
+                data_models.append(dm.Manhole)
         field_labels = self.get_column_widgets(StructuresImportConfig.FIELD_NAME_COLUMN_IDX, *data_models)
         method_widgets = self.get_column_widgets(StructuresImportConfig.METHOD_COLUMN_IDX, *data_models)
         source_attribute_widgets = self.get_column_widgets(
@@ -487,18 +530,39 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         source_layer = self.source_layer
         structures_handler = self.layer_manager.model_handlers[self.structure_model_cls]
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
         structure_layer = structures_handler.layer
         node_layer = node_handler.layer
+        manhole_layer = manhole_handler.layer
         selected_feat_ids = None
         if self.selected_only_cb.isChecked():
             selected_feat_ids = source_layer.selectedFeatureIds()
         import_settings = self.collect_settings()
+        processed_handlers = [structures_handler, node_handler]
+        processed_layers = [structure_layer, node_layer]
+        if self.include_manholes:
+            processed_handlers.append(manhole_handler)
+            processed_layers.append(manhole_layer)
         try:
-            structures_handler.disconnect_handler_signals()
-            node_handler.disconnect_handler_signals()
-            structures_importer = self.structure_importer_cls(
-                source_layer, self.model_gpkg, import_settings, structure_layer=structure_layer, node_layer=node_layer
-            )
+            for handler in processed_handlers:
+                handler.disconnect_handler_signals()
+            if self.include_manholes:
+                structures_importer = self.structure_importer_cls(
+                    source_layer,
+                    self.model_gpkg,
+                    import_settings,
+                    structure_layer=structure_layer,
+                    node_layer=node_layer,
+                    manhole_layer=manhole_layer,
+                )
+            else:
+                structures_importer = self.structure_importer_cls(
+                    source_layer,
+                    self.model_gpkg,
+                    import_settings,
+                    structure_layer=structure_layer,
+                    node_layer=node_layer,
+                )
             success, commit_errors = structures_importer.import_structures(selected_ids=selected_feat_ids)
             if not success:
                 commit_errors_message = "\n".join(commit_errors)
@@ -508,9 +572,9 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         except Exception as e:
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
         finally:
-            structures_handler.connect_handler_signals()
-            node_handler.connect_handler_signals()
-        for layer in [structure_layer, node_layer]:
+            for handler in processed_handlers:
+                handler.connect_handler_signals()
+        for layer in processed_layers:
             layer.triggerRepaint()
 
 
