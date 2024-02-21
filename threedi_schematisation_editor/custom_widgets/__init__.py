@@ -255,9 +255,10 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
 
     def on_create_nodes_change(self, is_checked):
         self.connection_node_tab.setEnabled(is_checked)
-        if is_checked is False and self.include_manholes:
-            self.create_manholes_cb.setChecked(is_checked)
-            self.manhole_tab.setEnabled(is_checked)
+        if self.include_manholes:
+            if not is_checked:
+                self.create_manholes_cb.setChecked(is_checked)
+                self.manhole_tab.setEnabled(is_checked)
 
     def on_create_manholes_change(self, is_checked):
         if self.include_manholes:

@@ -135,6 +135,7 @@ class AbstractFeaturesImporter:
         self.fields_configurations = {}
 
     def setup_target_layers(self, structure_model_cls, structure_layer=None, node_layer=None):
+        self.structure_model_cls = structure_model_cls
         self.structure_layer = (
             gpkg_layer(self.target_gpkg, structure_model_cls.__tablename__)
             if structure_layer is None
@@ -147,7 +148,6 @@ class AbstractFeaturesImporter:
             structure_model_cls: self.import_settings.get("fields", {}),
             dm.ConnectionNode: self.import_settings.get("connection_node_fields", {}),
         }
-        self.structure_model_cls = structure_model_cls
 
     def update_attributes(self, model_cls, source_feat, *new_features):
         fields_config = self.fields_configurations[model_cls]
@@ -179,75 +179,15 @@ class AbstractFeaturesImporter:
 
     def new_structure_geometry(self, src_structure_feat):
         """Create new structure geometry based on the source structure feature."""
-        raise NotImplementedError
+        raise NotImplementedError("Function called from the abstract class.")
 
-    def process_structure_feature(
-        self,
-        src_feat,
-        structure_fields,
-        next_structure_id,
-        node_fields,
-        next_connection_node_id,
-        locator,
-        use_snapping,
-        snapping_distance,
-        create_connection_nodes=False,
-        transformation=None,
-    ):
+    def process_structure_feature(self, *args, **kwargs):
         """Process source structure feature."""
-        raise NotImplementedError
+        raise NotImplementedError("Function called from the abstract class.")
 
     def import_structures(self, context=None, selected_ids=None):
         """Method responsible for the importing structures from the external feature source."""
-        conversion_settings = self.import_settings["conversion_settings"]
-        use_snapping = conversion_settings.get("use_snapping", False)
-        snapping_distance = conversion_settings.get("snapping_distance", 0.1)
-        create_connection_nodes = conversion_settings.get("create_connection_nodes", False)
-        structure_fields = self.structure_layer.fields()
-        node_fields = self.node_layer.fields()
-        project = context.project() if context else QgsProject.instance()
-        src_crs = self.external_source.sourceCrs()
-        dst_crs = self.structure_layer.crs()
-        transform_ctx = project.transformContext()
-        transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx) if src_crs != dst_crs else None
-        next_structure_id = get_next_feature_id(self.structure_layer)
-        next_connection_node_id = get_next_feature_id(self.node_layer)
-        locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
-        new_structures = []
-        self.node_layer.startEditing()
-        self.structure_layer.startEditing()
-        features_iterator = (
-            self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
-        )
-        for external_src_feat in features_iterator:
-            new_structure_feat, new_nodes, next_connection_node_id = self.process_structure_feature(
-                external_src_feat,
-                structure_fields,
-                next_structure_id,
-                node_fields,
-                next_connection_node_id,
-                locator,
-                use_snapping,
-                snapping_distance,
-                create_connection_nodes,
-                transformation,
-            )
-            if new_nodes:
-                self.update_attributes(dm.ConnectionNode, external_src_feat, *new_nodes)
-                self.node_layer.addFeatures(new_nodes)
-                locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
-            self.update_attributes(self.structure_model_cls, external_src_feat, new_structure_feat)
-            next_structure_id += 1
-            new_structures.append(new_structure_feat)
-        commit_errors = []
-        success = self.node_layer.commitChanges()
-        if not success:
-            commit_errors += self.node_layer.commitErrors()
-        self.structure_layer.addFeatures(new_structures)
-        success = self.structure_layer.commitChanges()
-        if not success:
-            commit_errors += self.structure_layer.commitErrors()
-        return success, commit_errors
+        raise NotImplementedError("Function called from the abstract class.")
 
 
 class PointFeaturesImporter(AbstractFeaturesImporter):
@@ -309,9 +249,73 @@ class PointFeaturesImporter(AbstractFeaturesImporter):
         new_structure_feat.setGeometry(new_geom)
         return new_structure_feat, new_nodes, next_connection_node_id
 
+    def import_structures(self, context=None, selected_ids=None):
+        """Method responsible for the importing structures from the external feature source."""
+        conversion_settings = self.import_settings["conversion_settings"]
+        use_snapping = conversion_settings.get("use_snapping", False)
+        snapping_distance = conversion_settings.get("snapping_distance", 0.1)
+        create_connection_nodes = conversion_settings.get("create_connection_nodes", False)
+        structure_fields = self.structure_layer.fields()
+        node_fields = self.node_layer.fields()
+        project = context.project() if context else QgsProject.instance()
+        src_crs = self.external_source.sourceCrs()
+        dst_crs = self.structure_layer.crs()
+        transform_ctx = project.transformContext()
+        transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx) if src_crs != dst_crs else None
+        next_structure_id = get_next_feature_id(self.structure_layer)
+        next_connection_node_id = get_next_feature_id(self.node_layer)
+        locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
+        new_structures = []
+        self.node_layer.startEditing()
+        self.structure_layer.startEditing()
+        features_iterator = (
+            self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
+        )
+        for external_src_feat in features_iterator:
+            new_structure_feat, new_nodes, next_connection_node_id = self.process_structure_feature(
+                external_src_feat,
+                structure_fields,
+                next_structure_id,
+                node_fields,
+                next_connection_node_id,
+                locator,
+                use_snapping,
+                snapping_distance,
+                create_connection_nodes,
+                transformation,
+            )
+            if new_nodes:
+                self.update_attributes(dm.ConnectionNode, external_src_feat, *new_nodes)
+                self.node_layer.addFeatures(new_nodes)
+                locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
+            self.update_attributes(self.structure_model_cls, external_src_feat, new_structure_feat)
+            next_structure_id += 1
+            new_structures.append(new_structure_feat)
+        commit_errors = []
+        success = self.node_layer.commitChanges()
+        if not success:
+            commit_errors += self.node_layer.commitErrors()
+        self.structure_layer.addFeatures(new_structures)
+        success = self.structure_layer.commitChanges()
+        if not success:
+            commit_errors += self.structure_layer.commitErrors()
+        return success, commit_errors
+
 
 class LinearFeaturesImporter(AbstractFeaturesImporter):
     """Linear features importer class."""
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.manhole_layer = None
+
+    def setup_target_layers(self, structure_model_cls, structure_layer=None, node_layer=None, manhole_layer=None):
+        """Setup target layers with fields configuration."""
+        super().setup_target_layers(structure_model_cls, structure_layer, node_layer)
+        self.manhole_layer = (
+            gpkg_layer(self.target_gpkg, dm.Manhole.__tablename__) if manhole_layer is None else manhole_layer
+        )
+        self.fields_configurations[dm.Manhole] = self.import_settings.get("manhole_fields", {})
 
     def new_structure_geometry(self, src_structure_feat):
         """Create new structure geometry based on the source structure feature."""
@@ -397,21 +401,6 @@ class LinearFeaturesImporter(AbstractFeaturesImporter):
                 new_nodes += [new_start_node_feat, new_end_node_feat]
         new_structure_feat.setGeometry(new_geom)
         return new_structure_feat, new_nodes, next_connection_node_id
-
-
-class LinearFeaturesImporterWithManholes(LinearFeaturesImporter):
-    """Base class for the importing features from the external data source with optional manholes creation."""
-
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.manhole_layer = None
-
-    def setup_target_layers(self, structure_model_cls, structure_layer=None, node_layer=None, manhole_layer=None):
-        super().setup_target_layers(structure_model_cls, structure_layer, node_layer)
-        self.manhole_layer = (
-            gpkg_layer(self.target_gpkg, dm.Manhole.__tablename__) if manhole_layer is None else manhole_layer
-        )
-        self.fields_configurations[dm.Manhole] = self.import_settings.get("manhole_fields", {})
 
     def manholes_for_structures(self, external_source_features, new_structure_features):
         """Create manholes for the structures."""
@@ -508,7 +497,7 @@ class LinearFeaturesImporterWithManholes(LinearFeaturesImporter):
         return success, commit_errors
 
 
-class CulvertsImporter(LinearFeaturesImporterWithManholes):
+class CulvertsImporter(LinearFeaturesImporter):
     """Class with methods responsible for the importing culverts from the external data source."""
 
     def __init__(self, *args, structure_layer=None, node_layer=None, manhole_layer=None):
@@ -516,7 +505,7 @@ class CulvertsImporter(LinearFeaturesImporterWithManholes):
         self.setup_target_layers(dm.Culvert, structure_layer, node_layer, manhole_layer)
 
 
-class OrificesImporter(LinearFeaturesImporterWithManholes):
+class OrificesImporter(LinearFeaturesImporter):
     """Class with methods responsible for the importing orifices from the external data source."""
 
     def __init__(self, *args, structure_layer=None, node_layer=None, manhole_layer=None):
@@ -524,7 +513,7 @@ class OrificesImporter(LinearFeaturesImporterWithManholes):
         self.setup_target_layers(dm.Orifice, structure_layer, node_layer, manhole_layer)
 
 
-class WeirsImporter(LinearFeaturesImporterWithManholes):
+class WeirsImporter(LinearFeaturesImporter):
     """Class with methods responsible for the importing weirs from the external data source."""
 
     def __init__(self, *args, structure_layer=None, node_layer=None, manhole_layer=None):
@@ -532,7 +521,7 @@ class WeirsImporter(LinearFeaturesImporterWithManholes):
         self.setup_target_layers(dm.Weir, structure_layer, node_layer, manhole_layer)
 
 
-class PipesImporter(LinearFeaturesImporterWithManholes):
+class PipesImporter(LinearFeaturesImporter):
     """Class with methods responsible for the importing pipes from the external data source."""
 
     def __init__(self, *args, structure_layer=None, node_layer=None, manhole_layer=None):
