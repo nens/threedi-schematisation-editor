@@ -65,6 +65,10 @@ class ModelObject:
         }
         return display_names_mapping
 
+    @staticmethod
+    def obsolete_fields() -> set:
+        return set()
+
 
 @dataclass
 class ConnectionNode(ModelObject):
@@ -555,6 +559,11 @@ class Pipe(ModelObject):
             "Hydraulic conductivity out [m/d]",
         ]
         return display_names_list
+
+    @staticmethod
+    def obsolete_fields() -> set:
+        obsolete_fields_set = {"pipe_quality", "profile_num", "original_length"}
+        return obsolete_fields_set
 
 
 @dataclass

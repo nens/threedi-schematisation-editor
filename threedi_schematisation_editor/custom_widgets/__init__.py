@@ -169,7 +169,6 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         dm.Pipe: PipesImporter,
         dm.Manhole: ManholesImporter,
     }
-
     STRUCTURES_WITH_MANHOLES = (dm.Culvert, dm.Orifice, dm.Weir, dm.Pipe)
 
     def __init__(self, structure_model_cls, model_gpkg, layer_manager, uc, parent=None):
@@ -221,6 +220,10 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.setWindowTitle(self.windowTitle().format(structure_name_lower))
         self.structure_layer_label.setText(self.structure_layer_label.text().format(structure_name_lower))
         self.tab_widget.setTabText(0, self.tab_widget.tabText(0).format(structure_name))
+
+    @staticmethod
+    def is_obsolete_field(model_cls, field_name):
+        return field_name in model_cls.obsolete_fields()
 
     @property
     def include_manholes(self):
@@ -316,12 +319,16 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         for model_cls in data_models:
             model_widgets = []
             tree_view, tree_view_model = self.data_models_tree_views[model_cls]
-            for row_idx, field_name in enumerate(model_cls.__annotations__.keys()):
+            row_idx = 0
+            for field_name in model_cls.__annotations__.keys():
+                if self.is_obsolete_field(model_cls, field_name):
+                    continue
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
                 model_widgets.append(widget)
             column_widgets[model_cls] = model_widgets
+            row_idx += 1
         return column_widgets
 
     def populate_conversion_settings_widgets(self):
@@ -344,7 +351,10 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             data_models.append(dm.Manhole)
         for model_cls in data_models:
             tree_view, tree_view_model = self.data_models_tree_views[model_cls]
-            for row_idx, field_name in enumerate(model_cls.__annotations__.keys()):
+            row_idx = 0
+            for field_name in model_cls.__annotations__.keys():
+                if self.is_obsolete_field(model_cls, field_name):
+                    continue
                 method_item = tree_view_model.item(row_idx, StructuresImportConfig.METHOD_COLUMN_IDX)
                 method_index = method_item.index()
                 method_combobox = tree_view.indexWidget(method_index)
@@ -366,6 +376,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 value_map_button.clicked.connect(
                     partial(self.on_value_map_clicked, source_attribute_combobox, value_map_button)
                 )
+                row_idx += 1
 
     def collect_settings(self):
         import_settings = {
@@ -386,7 +397,10 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
     def collect_fields_settings(self, model_cls):
         fields_settings = {}
         tree_view, tree_view_model = self.data_models_tree_views[model_cls]
-        for row_idx, (field_name, field_type) in enumerate(model_cls.__annotations__.items()):
+        row_idx = 0
+        for field_name, field_type in model_cls.__annotations__.items():
+            if self.is_obsolete_field(model_cls, field_name):
+                continue
             single_field_config = {}
             field_type = core_field_type(field_type)
             for column_idx, key_name in enumerate(self.import_configuration.config_keys, start=1):
@@ -411,11 +425,15 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                         key_value = field_type(key_value)
                 single_field_config[key_name] = key_value
             fields_settings[field_name] = single_field_config
+            row_idx += 1
         return fields_settings
 
     def update_fields_settings(self, model_cls, fields_setting):
         tree_view, tree_view_model = self.data_models_tree_views[model_cls]
-        for row_idx, (field_name, field_type) in enumerate(model_cls.__annotations__.items()):
+        row_idx = 0
+        for field_name, field_type in model_cls.__annotations__.items():
+            if self.is_obsolete_field(model_cls, field_name):
+                continue
             if is_optional(field_type):
                 field_type = optional_type(field_type)
             field_config = fields_setting.get(field_name, {})
@@ -442,6 +460,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 else:
                     widget.setText(str(key_value))
                     widget.setCursorPosition(0)
+            row_idx += 1
 
     def save_import_settings(self):
         extension_filter = "JSON (*.json)"

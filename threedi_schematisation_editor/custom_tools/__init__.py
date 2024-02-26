@@ -85,8 +85,12 @@ class StructuresImportConfig:
         widgets_to_add = defaultdict(dict)
         combobox_column_indexes = {self.METHOD_COLUMN_IDX, self.SOURCE_ATTRIBUTE_COLUMN_IDX}
         for model_cls, field_methods_mapping in self.field_methods_mapping.items():
+            model_obsolete_fields = model_cls.obsolete_fields()
             model_fields_display_names = model_cls.fields_display_names()
-            for row_idx, (field_name, field_methods) in enumerate(field_methods_mapping.items()):
+            row_idx = 0
+            for field_name, field_methods in field_methods_mapping.items():
+                if field_name in model_obsolete_fields:
+                    continue
                 field_type = model_cls.__annotations__[field_name]
                 if is_optional(field_type):
                     field_type = optional_type(field_type)
@@ -119,6 +123,7 @@ class StructuresImportConfig:
                         else:
                             widget = QLineEdit()
                     widgets_to_add[model_cls][row_idx, column_idx] = widget
+                row_idx += 1
         return widgets_to_add
 
 
@@ -321,9 +326,7 @@ class LinearFeaturesImporter(AbstractFeaturesImporter):
         """Create new structure geometry based on the source structure feature."""
         src_geometry = src_structure_feat.geometry()
         src_polyline = src_geometry.asPolyline()
-        dst_polyline = (
-            src_polyline if self.structure_model_cls in [dm.Culvert, dm.Pipe] else [src_polyline[0], src_polyline[-1]]
-        )
+        dst_polyline = src_polyline if self.structure_model_cls == dm.Culvert else [src_polyline[0], src_polyline[-1]]
         dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
         return dst_geometry
 
