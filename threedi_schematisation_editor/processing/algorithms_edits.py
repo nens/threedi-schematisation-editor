@@ -96,7 +96,9 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
             invert_level_end_point = pipe_feat["invert_level_end_point"]
             if invert_level_start_point != NULL:
                 node_adjacent_invert_levels[pipe_start_node_id].add(invert_level_start_point)
+                node_adjacent_invert_levels[pipe_end_node_id].add(invert_level_start_point)
             if invert_level_end_point != NULL:
+                node_adjacent_invert_levels[pipe_start_node_id].add(invert_level_end_point)
                 node_adjacent_invert_levels[pipe_end_node_id].add(invert_level_end_point)
         bottom_level_changes = {}
         for manhole_feat in manhole_lyr.getFeatures(request):
