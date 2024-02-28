@@ -327,8 +327,8 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 index = item.index()
                 widget = tree_view.indexWidget(index)
                 model_widgets.append(widget)
+                row_idx += 1
             column_widgets[model_cls] = model_widgets
-            row_idx += 1
         return column_widgets
 
     def populate_conversion_settings_widgets(self):
