@@ -73,25 +73,25 @@
           <Option type="Map">
             <Option type="List" name="map">
               <Option type="Map">
-                <Option value="1" type="QString" name="1: rectangle"/>
+                <Option value="1" type="QString" name="1: Rectangle"/>
               </Option>
               <Option type="Map">
-                <Option value="2" type="QString" name="2: round"/>
+                <Option value="2" type="QString" name="2: Round"/>
               </Option>
               <Option type="Map">
-                <Option value="3" type="QString" name="3: egg"/>
+                <Option value="3" type="QString" name="3: Egg"/>
               </Option>
               <Option type="Map">
-                <Option value="5" type="QString" name="5: tabulated rectangle"/>
+                <Option value="5" type="QString" name="5: Tabulated rectangle"/>
               </Option>
               <Option type="Map">
-                <Option value="6" type="QString" name="6: tabulated trapezium"/>
+                <Option value="6" type="QString" name="6: Tabulated trapezium"/>
               </Option>
               <Option type="Map">
-                <Option value="7" type="QString" name="7: yz"/>
+                <Option value="7" type="QString" name="7: YZ"/>
               </Option>
               <Option type="Map">
-                <Option value="8" type="QString" name="8: inverted egg"/>
+                <Option value="8" type="QString" name="8: Inverted egg"/>
               </Option>
             </Option>
           </Option>

@@ -142,16 +142,16 @@
           <Option type="Map">
             <Option type="List" name="map">
               <Option type="Map">
-                <Option type="QString" value="1" name="1: waterlevel"/>
+                <Option type="QString" value="1" name="1: Water level"/>
               </Option>
               <Option type="Map">
-                <Option type="QString" value="2" name="2: velocity"/>
+                <Option type="QString" value="2" name="2: Velocity"/>
               </Option>
               <Option type="Map">
-                <Option type="QString" value="3" name="3: discharge"/>
+                <Option type="QString" value="3" name="3: Discharge"/>
               </Option>
               <Option type="Map">
-                <Option type="QString" value="5" name="5: sommerfeld"/>
+                <Option type="QString" value="5" name="5: Sommerfeld"/>
               </Option>
             </Option>
           </Option>

@@ -572,16 +572,16 @@
           <Option type="Map">
             <Option type="List" name="map">
               <Option type="Map">
-                <Option value="100" type="int" name="Embedded"/>
+                <Option value="100" type="int" name="100: Embedded"/>
               </Option>
               <Option type="Map">
-                <Option value="101" type="int" name="Isolated"/>
+                <Option value="101" type="int" name="101: Isolated"/>
               </Option>
               <Option type="Map">
-                <Option value="102" type="int" name="Connected"/>
+                <Option value="102" type="int" name="102: Connected"/>
               </Option>
               <Option type="Map">
-                <Option value="105" type="int" name="Double connected"/>
+                <Option value="105" type="int" name="105: Double connected"/>
               </Option>
             </Option>
           </Option>
@@ -607,22 +607,22 @@
                 <Option value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString" name=""/>
               </Option>
               <Option type="Map">
-                <Option value="0" type="int" name="Lowest visibility"/>
+                <Option value="0" type="int" name="0: Lowest visibility"/>
               </Option>
               <Option type="Map">
-                <Option value="1" type="int" name="Low visibility"/>
+                <Option value="1" type="int" name="1: Low visibility"/>
               </Option>
               <Option type="Map">
-                <Option value="2" type="int" name="Medium low visibility"/>
+                <Option value="2" type="int" name="2: Medium low visibility"/>
               </Option>
               <Option type="Map">
-                <Option value="3" type="int" name="Medium visibility"/>
+                <Option value="3" type="int" name="3: Medium visibility"/>
               </Option>
               <Option type="Map">
-                <Option value="4" type="int" name="High visibility"/>
+                <Option value="4" type="int" name="4: High visibility"/>
               </Option>
               <Option type="Map">
-                <Option value="5" type="int" name="Highest visibility"/>
+                <Option value="5" type="int" name="5: Highest visibility"/>
               </Option>
             </Option>
           </Option>

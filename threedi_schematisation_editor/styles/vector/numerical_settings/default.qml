@@ -176,16 +176,16 @@
           <Option type="Map">
             <Option type="List" name="map">
               <Option type="Map">
-                <Option value="5" type="QString" name="5: for surface 2D flow only"/>
+                <Option value="5" type="QString" name="5: For surface 2D flow only"/>
               </Option>
               <Option type="Map">
-                <Option value="7" type="QString" name="7: for 1D and 2D flow"/>
+                <Option value="7" type="QString" name="7: For 1D and 2D flow"/>
               </Option>
               <Option type="Map">
-                <Option value="70" type="QString" name="70: for surface 1D, 2D surface and groundwater flow or higher"/>
+                <Option value="70" type="QString" name="70: For surface 1D, 2D surface and groundwater flow or higher"/>
               </Option>
               <Option type="Map">
-                <Option value="700" type="QString" name="700: for 1D flow"/>
+                <Option value="700" type="QString" name="700: For 1D flow"/>
               </Option>
             </Option>
           </Option>
