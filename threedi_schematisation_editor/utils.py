@@ -280,7 +280,7 @@ def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
 
 
 def enum_entry_name_format(entry_name):
-    if entry_name != "YZ":
+    if entry_name not in ["YZ", "HPE", "HDPE", "PVC"]:
         formatted_entry_name = entry_name.capitalize().replace("_", " ")
     else:
         formatted_entry_name = entry_name
