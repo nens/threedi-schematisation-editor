@@ -5,7 +5,13 @@ from qgis.core import QgsProcessingProvider
 from qgis.PyQt.QtGui import QIcon
 
 from threedi_schematisation_editor.processing.algorithms_1d2d import GenerateExchangeLines
-from threedi_schematisation_editor.processing.algorithms_conversion import ImportCulverts, ImportOrifices, ImportWeirs
+from threedi_schematisation_editor.processing.algorithms_conversion import (
+    ImportCulverts,
+    ImportManholes,
+    ImportOrifices,
+    ImportPipes,
+    ImportWeirs,
+)
 
 
 class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
@@ -33,6 +39,13 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
         self.algorithms_list = None
 
     def loadAlgorithms(self):
-        self.algorithms_list = [GenerateExchangeLines(), ImportCulverts(), ImportOrifices(), ImportWeirs()]
+        self.algorithms_list = [
+            GenerateExchangeLines(),
+            ImportCulverts(),
+            ImportOrifices(),
+            ImportWeirs(),
+            ImportPipes(),
+            ImportManholes(),
+        ]
         for alg in self.algorithms_list:
             self.addAlgorithm(alg)

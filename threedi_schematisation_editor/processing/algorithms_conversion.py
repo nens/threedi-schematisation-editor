@@ -11,7 +11,13 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
-from threedi_schematisation_editor.custom_tools import CulvertsImporter, OrificesImporter, WeirsImporter
+from threedi_schematisation_editor.custom_tools import (
+    CulvertsImporter,
+    ManholesImporter,
+    OrificesImporter,
+    PipesImporter,
+    WeirsImporter,
+)
 
 
 class ImportCulverts(QgsProcessingAlgorithm):
@@ -40,7 +46,7 @@ class ImportCulverts(QgsProcessingAlgorithm):
         return "conversion"
 
     def shortHelpString(self):
-        return self.tr("""Import culverts from external source layer.""")
+        return self.tr("""Import culverts from the external source layer.""")
 
     def initAlgorithm(self, config=None):
         source_layer = QgsProcessingParameterFeatureSource(
@@ -115,7 +121,7 @@ class ImportOrifices(QgsProcessingAlgorithm):
         return "conversion"
 
     def shortHelpString(self):
-        return self.tr("""Import orifices from external source layer.""")
+        return self.tr("""Import orifices from the external source layer.""")
 
     def initAlgorithm(self, config=None):
         source_layer = QgsProcessingParameterFeatureSource(
@@ -190,7 +196,7 @@ class ImportWeirs(QgsProcessingAlgorithm):
         return "conversion"
 
     def shortHelpString(self):
-        return self.tr("""Import weirs from external source layer.""")
+        return self.tr("""Import weirs from the external source layer.""")
 
     def initAlgorithm(self, config=None):
         source_layer = QgsProcessingParameterFeatureSource(
@@ -228,6 +234,156 @@ class ImportWeirs(QgsProcessingAlgorithm):
             import_config = json.loads(import_config_json.read())
         weirs_importer = WeirsImporter(source_layer, target_gpkg, import_config)
         success, commit_errors = weirs_importer.import_structures(context=context)
+        if not success:
+            commit_errors_message = "\n".join(commit_errors)
+            feedback.reportError(commit_errors_message)
+        return {}
+
+    def postProcessAlgorithm(self, context, feedback):
+        for layer in QgsProject.instance().mapLayers().values():
+            layer.triggerRepaint()
+        return {}
+
+
+class ImportPipes(QgsProcessingAlgorithm):
+    """Import pipes."""
+
+    SOURCE_LAYER = "SOURCE_LAYER"
+    IMPORT_CONFIG = "IMPORT_CONFIG"
+    TARGET_GPKG = "TARGET_GPKG"
+
+    def tr(self, string):
+        return QCoreApplication.translate("Processing", string)
+
+    def createInstance(self):
+        return ImportPipes()
+
+    def name(self):
+        return "threedi_import_pipes"
+
+    def displayName(self):
+        return self.tr("Import pipes")
+
+    def group(self):
+        return self.tr("Conversion")
+
+    def groupId(self):
+        return "conversion"
+
+    def shortHelpString(self):
+        return self.tr("""Import pipes from the external source layer.""")
+
+    def initAlgorithm(self, config=None):
+        source_layer = QgsProcessingParameterFeatureSource(
+            self.SOURCE_LAYER,
+            self.tr("Source pipes layer"),
+            [QgsProcessing.TypeVectorLine],
+        )
+        self.addParameter(source_layer)
+        import_config_file = QgsProcessingParameterFile(
+            self.IMPORT_CONFIG,
+            self.tr("Pipes import configuration file"),
+            extension="json",
+            behavior=QgsProcessingParameterFile.File,
+        )
+        self.addParameter(import_config_file)
+        target_gpkg = QgsProcessingParameterFile(
+            self.TARGET_GPKG,
+            self.tr("Target Schematisation Editor GeoPackage file"),
+            extension="gpkg",
+            behavior=QgsProcessingParameterFile.File,
+        )
+        self.addParameter(target_gpkg)
+
+    def processAlgorithm(self, parameters, context, feedback):
+        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        if source_layer is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
+        import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
+        if import_config_file is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.IMPORT_CONFIG))
+        target_gpkg = self.parameterAsFile(parameters, self.TARGET_GPKG, context)
+        if target_gpkg is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
+        with open(import_config_file) as import_config_json:
+            import_config = json.loads(import_config_json.read())
+        pipes_importer = PipesImporter(source_layer, target_gpkg, import_config)
+        success, commit_errors = pipes_importer.import_structures(context=context)
+        if not success:
+            commit_errors_message = "\n".join(commit_errors)
+            feedback.reportError(commit_errors_message)
+        return {}
+
+    def postProcessAlgorithm(self, context, feedback):
+        for layer in QgsProject.instance().mapLayers().values():
+            layer.triggerRepaint()
+        return {}
+
+
+class ImportManholes(QgsProcessingAlgorithm):
+    """Import manholes."""
+
+    SOURCE_LAYER = "SOURCE_LAYER"
+    IMPORT_CONFIG = "IMPORT_CONFIG"
+    TARGET_GPKG = "TARGET_GPKG"
+
+    def tr(self, string):
+        return QCoreApplication.translate("Processing", string)
+
+    def createInstance(self):
+        return ImportManholes()
+
+    def name(self):
+        return "threedi_import_manholes"
+
+    def displayName(self):
+        return self.tr("Import manholes")
+
+    def group(self):
+        return self.tr("Conversion")
+
+    def groupId(self):
+        return "conversion"
+
+    def shortHelpString(self):
+        return self.tr("""Import manholes from the external source layer.""")
+
+    def initAlgorithm(self, config=None):
+        source_layer = QgsProcessingParameterFeatureSource(
+            self.SOURCE_LAYER,
+            self.tr("Source manholes layer"),
+            [QgsProcessing.TypeVectorPoint],
+        )
+        self.addParameter(source_layer)
+        import_config_file = QgsProcessingParameterFile(
+            self.IMPORT_CONFIG,
+            self.tr("Manholes import configuration file"),
+            extension="json",
+            behavior=QgsProcessingParameterFile.File,
+        )
+        self.addParameter(import_config_file)
+        target_gpkg = QgsProcessingParameterFile(
+            self.TARGET_GPKG,
+            self.tr("Target Schematisation Editor GeoPackage file"),
+            extension="gpkg",
+            behavior=QgsProcessingParameterFile.File,
+        )
+        self.addParameter(target_gpkg)
+
+    def processAlgorithm(self, parameters, context, feedback):
+        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        if source_layer is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
+        import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
+        if import_config_file is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.IMPORT_CONFIG))
+        target_gpkg = self.parameterAsFile(parameters, self.TARGET_GPKG, context)
+        if target_gpkg is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
+        with open(import_config_file) as import_config_json:
+            import_config = json.loads(import_config_json.read())
+        manholes_importer = ManholesImporter(source_layer, target_gpkg, import_config)
+        success, commit_errors = manholes_importer.import_structures(context=context)
         if not success:
             commit_errors_message = "\n".join(commit_errors)
             feedback.reportError(commit_errors_message)
