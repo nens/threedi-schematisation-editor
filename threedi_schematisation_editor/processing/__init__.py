@@ -12,6 +12,7 @@ from threedi_schematisation_editor.processing.algorithms_conversion import (
     ImportPipes,
     ImportWeirs,
 )
+from threedi_schematisation_editor.processing.algorithms_1d import BottomLevelCalculator
 
 
 class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
@@ -46,6 +47,7 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
             ImportWeirs(),
             ImportPipes(),
             ImportManholes(),
+            BottomLevelCalculator(),
         ]
         for alg in self.algorithms_list:
             self.addAlgorithm(alg)
