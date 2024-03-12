@@ -271,7 +271,7 @@ def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
         def enum_name_format_fn(entry_name):
             return entry_name
 
-    value_map = [{enum_name_format_fn(entry.name): entry.value} for entry in enum]
+    value_map = [{f"{entry.value}: {enum_name_format_fn(entry.name)}": entry.value} for entry in enum]
     if optional:
         null_value = QgsValueMapFieldFormatter.NULL_VALUE
         value_map.insert(0, {"": null_value})
@@ -280,7 +280,7 @@ def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
 
 
 def enum_entry_name_format(entry_name):
-    if entry_name != "YZ":
+    if entry_name not in ["YZ", "HPE", "HDPE", "PVC"]:
         formatted_entry_name = entry_name.capitalize().replace("_", " ")
     else:
         formatted_entry_name = entry_name

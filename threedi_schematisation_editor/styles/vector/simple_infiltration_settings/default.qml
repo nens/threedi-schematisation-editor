@@ -79,13 +79,13 @@
                 <Option type="QString" name="" value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}"/>
               </Option>
               <Option type="Map">
-                <Option type="QString" name="Rain" value="0"/>
+                <Option type="QString" name="0: Whole surface when it's raining" value="0"/>
               </Option>
               <Option type="Map">
-                <Option type="QString" name="Whole surface" value="1"/>
+                <Option type="QString" name="1: Always whole surface" value="1"/>
               </Option>
               <Option type="Map">
-                <Option type="QString" name="Wet surface" value="2"/>
+                <Option type="QString" name="2: Always wet surface only" value="2"/>
               </Option>
             </Option>
           </Option>

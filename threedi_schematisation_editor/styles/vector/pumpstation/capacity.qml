@@ -636,10 +636,10 @@
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option name="1: pump reacts only on suction side" type="QString" value="1"/>
+                <Option name="1: Pump reacts only on suction side" type="QString" value="1"/>
               </Option>
               <Option type="Map">
-                <Option name="2: pump reacts only on delivery side" type="QString" value="2"/>
+                <Option name="2: Pump reacts only on delivery side" type="QString" value="2"/>
               </Option>
             </Option>
           </Option>

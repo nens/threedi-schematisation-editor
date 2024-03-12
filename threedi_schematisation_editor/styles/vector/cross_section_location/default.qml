@@ -243,10 +243,10 @@
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option value="1" name="Chezy" type="int"/>
+                <Option value="1" name="1: Chézy" type="int"/>
               </Option>
               <Option type="Map">
-                <Option value="2" name="Manning" type="int"/>
+                <Option value="2" name="2: Manning" type="int"/>
               </Option>
             </Option>
           </Option>
@@ -301,28 +301,28 @@
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option value="0" name="Closed rectangle" type="int"/>
+                <Option name="0: Closed rectangle" type="int" value="0"/>
               </Option>
               <Option type="Map">
-                <Option value="1" name="Open rectangle" type="int"/>
+                <Option name="1: Open rectangle" type="int" value="1"/>
               </Option>
               <Option type="Map">
-                <Option value="2" name="Circle" type="int"/>
+                <Option name="2: Circle" type="int" value="2"/>
               </Option>
               <Option type="Map">
-                <Option value="3" name="Egg" type="int"/>
+                <Option name="3: Egg" type="int" value="3"/>
               </Option>
               <Option type="Map">
-                <Option value="5" name="Tabulated rectangle" type="int"/>
+                <Option name="5: Tabulated rectangle" type="int" value="5"/>
               </Option>
               <Option type="Map">
-                <Option value="6" name="Tabulated trapezium" type="int"/>
+                <Option name="6: Tabulated trapezium" type="int" value="6"/>
               </Option>
               <Option type="Map">
-                <Option name="YZ" type="int" value="7"/>
+                <Option name="7: YZ" type="int" value="7"/>
               </Option>
               <Option type="Map">
-                <Option name="Inverted egg" type="int" value="8"/>
+                <Option name="8: Inverted egg" type="int" value="8"/>
               </Option>
             </Option>
           </Option>

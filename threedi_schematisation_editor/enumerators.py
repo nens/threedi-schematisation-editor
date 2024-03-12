@@ -10,7 +10,7 @@ class GeometryType(Enum):
 
 
 class BoundaryType(Enum):
-    WATERLEVEL = 1
+    WATER_LEVEL = 1
     VELOCITY = 2
     DISCHARGE = 3
     SOMMERFELD = 5
@@ -160,19 +160,17 @@ class PipeCalculationType(Enum):
     EMBEDDED = 0
     ISOLATED = 1
     CONNECTED = 2
-    BROAD_CRESTED = 3
-    SHORT_CRESTED = 4
 
 
 class SewerageType(Enum):
-    MIXED = 0
-    RAIN_WATER = 1
-    DRY_WEATHER_FLOW = 2
+    COMBINED_SEWER = 0
+    STORM_DRAIN = 1
+    SANITARY_SEWER = 2
     TRANSPORT = 3
     SPILLWAY = 4
-    ZINKER = 5
+    SYPHON = 5
     STORAGE = 6
-    STORAGE_TANK = 7
+    STORAGE_AND_SETTLEMENT_TANK = 7
 
 
 class PumpType(Enum):
@@ -181,9 +179,9 @@ class PumpType(Enum):
 
 
 class InfiltrationSurfaceOption(Enum):
-    RAIN = 0
-    WHOLE_SURFACE = 1
-    WET_SURFACE = 2
+    WHOLE_SURFACE_WHEN_RAINING = 0
+    ALWAYS_WHOLE_SURFACE = 1
+    WET_SURFACE_ONLY = 2
 
 
 class ZoomCategories(Enum):

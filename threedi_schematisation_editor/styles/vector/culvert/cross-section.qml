@@ -1051,16 +1051,16 @@
                 <Option name="" type="QString" value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}"/>
               </Option>
               <Option type="Map">
-                <Option name="Embedded" type="int" value="100"/>
+                <Option value="100" type="int" name="100: Embedded"/>
               </Option>
               <Option type="Map">
-                <Option name="Isolated" type="int" value="101"/>
+                <Option value="101" type="int" name="101: Isolated"/>
               </Option>
               <Option type="Map">
-                <Option name="Connected" type="int" value="102"/>
+                <Option value="102" type="int" name="102: Connected"/>
               </Option>
               <Option type="Map">
-                <Option name="Double connected" type="int" value="105"/>
+                <Option value="105" type="int" name="105: Double connected"/>
               </Option>
             </Option>
           </Option>
@@ -1157,10 +1157,10 @@
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option name="Chezy" type="int" value="1"/>
+                <Option name="1: Chézy" type="int" value="1"/>
               </Option>
               <Option type="Map">
-                <Option name="Manning" type="int" value="2"/>
+                <Option name="2: Manning" type="int" value="2"/>
               </Option>
             </Option>
           </Option>
@@ -1171,27 +1171,27 @@
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
-            <Option name="map" type="List">
+            <Option type="List" name="map">
               <Option type="Map">
-                <Option name="" type="QString" value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}"/>
+                <Option value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString" name=""/>
               </Option>
               <Option type="Map">
-                <Option name="Lowest visibility" type="int" value="0"/>
+                <Option value="0" type="int" name="0: Lowest visibility"/>
               </Option>
               <Option type="Map">
-                <Option name="Low visibility" type="int" value="1"/>
+                <Option value="1" type="int" name="1: Low visibility"/>
               </Option>
               <Option type="Map">
-                <Option name="Medium low visibility" type="int" value="2"/>
+                <Option value="2" type="int" name="2: Medium low visibility"/>
               </Option>
               <Option type="Map">
-                <Option name="Medium visibility" type="int" value="3"/>
+                <Option value="3" type="int" name="3: Medium visibility"/>
               </Option>
               <Option type="Map">
-                <Option name="High visibility" type="int" value="4"/>
+                <Option value="4" type="int" name="4: High visibility"/>
               </Option>
               <Option type="Map">
-                <Option name="Highest visibility" type="int" value="5"/>
+                <Option value="5" type="int" name="5: Highest visibility"/>
               </Option>
             </Option>
           </Option>
@@ -1218,28 +1218,28 @@
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option name="Closed rectangle" type="int" value="0"/>
+                <Option name="0: Closed rectangle" type="int" value="0"/>
               </Option>
               <Option type="Map">
-                <Option name="Open rectangle" type="int" value="1"/>
+                <Option name="1: Open rectangle" type="int" value="1"/>
               </Option>
               <Option type="Map">
-                <Option name="Circle" type="int" value="2"/>
+                <Option name="2: Circle" type="int" value="2"/>
               </Option>
               <Option type="Map">
-                <Option name="Egg" type="int" value="3"/>
+                <Option name="3: Egg" type="int" value="3"/>
               </Option>
               <Option type="Map">
-                <Option name="Tabulated rectangle" type="int" value="5"/>
+                <Option name="5: Tabulated rectangle" type="int" value="5"/>
               </Option>
               <Option type="Map">
-                <Option name="Tabulated trapezium" type="int" value="6"/>
+                <Option name="6: Tabulated trapezium" type="int" value="6"/>
               </Option>
               <Option type="Map">
-                <Option name="YZ" type="int" value="7"/>
+                <Option name="7: YZ" type="int" value="7"/>
               </Option>
               <Option type="Map">
-                <Option name="Inverted egg" type="int" value="8"/>
+                <Option name="8: Inverted egg" type="int" value="8"/>
               </Option>
             </Option>
           </Option>

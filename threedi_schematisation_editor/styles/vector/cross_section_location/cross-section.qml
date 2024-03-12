@@ -370,7 +370,7 @@
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option name="Chezy" type="int" value="1"/>
+                <Option name="Chézy" type="int" value="1"/>
               </Option>
               <Option type="Map">
                 <Option name="Manning" type="int" value="2"/>
@@ -428,28 +428,28 @@
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option name="Closed rectangle" type="int" value="0"/>
+                <Option name="0: Closed rectangle" type="int" value="0"/>
               </Option>
               <Option type="Map">
-                <Option name="Open rectangle" type="int" value="1"/>
+                <Option name="1: Open rectangle" type="int" value="1"/>
               </Option>
               <Option type="Map">
-                <Option name="Circle" type="int" value="2"/>
+                <Option name="2: Circle" type="int" value="2"/>
               </Option>
               <Option type="Map">
-                <Option name="Egg" type="int" value="3"/>
+                <Option name="3: Egg" type="int" value="3"/>
               </Option>
               <Option type="Map">
-                <Option name="Tabulated rectangle" type="int" value="5"/>
+                <Option name="5: Tabulated rectangle" type="int" value="5"/>
               </Option>
               <Option type="Map">
-                <Option name="Tabulated trapezium" type="int" value="6"/>
+                <Option name="6: Tabulated trapezium" type="int" value="6"/>
               </Option>
               <Option type="Map">
-                <Option name="YZ" type="int" value="7"/>
+                <Option name="7: YZ" type="int" value="7"/>
               </Option>
               <Option type="Map">
-                <Option name="Inverted egg" type="int" value="8"/>
+                <Option name="8: Inverted egg" type="int" value="8"/>
               </Option>
             </Option>
           </Option>

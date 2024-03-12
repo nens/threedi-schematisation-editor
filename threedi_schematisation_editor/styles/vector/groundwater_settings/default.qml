@@ -63,13 +63,13 @@
           <Option type="Map">
             <Option type="List" name="map">
               <Option type="Map">
-                <Option value="0" type="QString" name="maximum"/>
+                <Option value="0" type="QString" name="0: Maximum"/>
               </Option>
               <Option type="Map">
-                <Option value="1" type="QString" name="minimum"/>
+                <Option value="1" type="QString" name="1: Minimum"/>
               </Option>
               <Option type="Map">
-                <Option value="2" type="QString" name="average"/>
+                <Option value="2" type="QString" name="2: Average"/>
               </Option>
             </Option>
           </Option>
@@ -102,13 +102,13 @@
           <Option type="Map">
             <Option type="List" name="map">
               <Option type="Map">
-                <Option value="0" type="QString" name="maximum"/>
+                <Option value="0" type="QString" name="0: Maximum"/>
               </Option>
               <Option type="Map">
-                <Option value="1" type="QString" name="minimum"/>
+                <Option value="1" type="QString" name="1: Minimum"/>
               </Option>
               <Option type="Map">
-                <Option value="2" type="QString" name="average"/>
+                <Option value="2" type="QString" name="2: Average"/>
               </Option>
             </Option>
           </Option>
@@ -135,13 +135,13 @@
           <Option type="Map">
             <Option type="List" name="map">
               <Option type="Map">
-                <Option value="0" type="QString" name="maximum"/>
+                <Option value="0" type="QString" name="0: Maximum"/>
               </Option>
               <Option type="Map">
-                <Option value="1" type="QString" name="minimum"/>
+                <Option value="1" type="QString" name="1: Minimum"/>
               </Option>
               <Option type="Map">
-                <Option value="2" type="QString" name="average"/>
+                <Option value="2" type="QString" name="2: Average"/>
               </Option>
             </Option>
           </Option>
@@ -171,13 +171,13 @@
           <Option type="Map">
             <Option type="List" name="map">
               <Option type="Map">
-                <Option value="0" type="QString" name="maximum"/>
+                <Option value="0" type="QString" name="0: Maximum"/>
               </Option>
               <Option type="Map">
-                <Option value="1" type="QString" name="minimum"/>
+                <Option value="1" type="QString" name="1: Minimum"/>
               </Option>
               <Option type="Map">
-                <Option value="2" type="QString" name="average"/>
+                <Option value="2" type="QString" name="2: Average"/>
               </Option>
             </Option>
           </Option>
@@ -210,13 +210,13 @@
           <Option type="Map">
             <Option type="List" name="map">
               <Option type="Map">
-                <Option value="0" type="QString" name="maximum"/>
+                <Option value="0" type="QString" name="0: Maximum"/>
               </Option>
               <Option type="Map">
-                <Option value="1" type="QString" name="minimum"/>
+                <Option value="1" type="QString" name="1: Minimum"/>
               </Option>
               <Option type="Map">
-                <Option value="2" type="QString" name="average"/>
+                <Option value="2" type="QString" name="2: Average"/>
               </Option>
             </Option>
           </Option>
@@ -249,13 +249,13 @@
           <Option type="Map">
             <Option type="List" name="map">
               <Option type="Map">
-                <Option value="0" type="QString" name="maximum"/>
+                <Option value="0" type="QString" name="0: Maximum"/>
               </Option>
               <Option type="Map">
-                <Option value="1" type="QString" name="minimum"/>
+                <Option value="1" type="QString" name="1: Minimum"/>
               </Option>
               <Option type="Map">
-                <Option value="2" type="QString" name="average"/>
+                <Option value="2" type="QString" name="2: Average"/>
               </Option>
             </Option>
           </Option>

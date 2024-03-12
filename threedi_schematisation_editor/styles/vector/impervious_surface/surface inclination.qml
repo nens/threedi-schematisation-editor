@@ -307,7 +307,7 @@
                 <Option value="hellend" name="inclined (hellend)" type="QString"/>
               </Option>
               <Option type="Map">
-                <Option value="uitgestrekt" name="elongated&#xa; (uitgestrekt)" type="QString"/>
+                <Option value="uitgestrekt" name="elongated (uitgestrekt)" type="QString"/>
               </Option>
             </Option>
           </Option>

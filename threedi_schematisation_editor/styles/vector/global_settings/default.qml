@@ -394,7 +394,7 @@
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option name="1: Chèzy" type="QString" value="1"/>
+                <Option name="1: Chézy" type="QString" value="1"/>
               </Option>
               <Option type="Map">
                 <Option name="2: Manning" type="QString" value="2"/>
@@ -433,13 +433,13 @@
                 <Option name="" type="QString" value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}"/>
               </Option>
               <Option type="Map">
-                <Option name="Max" type="int" value="0"/>
+                <Option name="0: Max" type="int" value="0"/>
               </Option>
               <Option type="Map">
-                <Option name="Min" type="int" value="1"/>
+                <Option name="1: Min" type="int" value="1"/>
               </Option>
               <Option type="Map">
-                <Option name="Average" type="int" value="2"/>
+                <Option name="2: Average" type="int" value="2"/>
               </Option>
             </Option>
           </Option>
@@ -586,13 +586,13 @@
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option name="0: do not use 0d inflow" type="QString" value="0"/>
+                <Option name="0: Do not use 0d inflow" type="QString" value="0"/>
               </Option>
               <Option type="Map">
-                <Option name="1: use v2_impervious_surface" type="QString" value="1"/>
+                <Option name="1: Use v2_impervious_surface" type="QString" value="1"/>
               </Option>
               <Option type="Map">
-                <Option name="2: use v2_surface" type="QString" value="2"/>
+                <Option name="2: Use v2_surface" type="QString" value="2"/>
               </Option>
             </Option>
           </Option>
@@ -648,13 +648,13 @@
                 <Option name="" type="QString" value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}"/>
               </Option>
               <Option type="Map">
-                <Option name="Max" type="int" value="0"/>
+                <Option name="0: Max" type="int" value="0"/>
               </Option>
               <Option type="Map">
-                <Option name="Min" type="int" value="1"/>
+                <Option name="1: Min" type="int" value="1"/>
               </Option>
               <Option type="Map">
-                <Option name="Average" type="int" value="2"/>
+                <Option name="2: Average" type="int" value="2"/>
               </Option>
             </Option>
           </Option>

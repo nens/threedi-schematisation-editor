@@ -868,13 +868,13 @@
                 <Option value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString" name=""/>
               </Option>
               <Option type="Map">
-                <Option value="0" type="int" name="Embedded"/>
+                <Option value="0" type="int" name="0: Embedded"/>
               </Option>
               <Option type="Map">
-                <Option value="1" type="int" name="Isolated"/>
+                <Option value="1" type="int" name="1: Isolated"/>
               </Option>
               <Option type="Map">
-                <Option value="2" type="int" name="Connected"/>
+                <Option value="2" type="int" name="2: Connected"/>
               </Option>
             </Option>
           </Option>
@@ -890,13 +890,13 @@
                 <Option value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString" name=""/>
               </Option>
               <Option type="Map">
-                <Option value="00" type="QString" name="Square"/>
+                <Option value="00" type="QString" name="00: Square"/>
               </Option>
               <Option type="Map">
-                <Option value="01" type="QString" name="Round"/>
+                <Option value="01" type="QString" name="01: Round"/>
               </Option>
               <Option type="Map">
-                <Option value="02" type="QString" name="Rectangle"/>
+                <Option value="02" type="QString" name="02: Rectangle"/>
               </Option>
             </Option>
           </Option>
@@ -996,13 +996,13 @@
                 <Option value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString" name=""/>
               </Option>
               <Option type="Map">
-                <Option value="0" type="int" name="Inspection"/>
+                <Option value="0" type="int" name="0: Inspection"/>
               </Option>
               <Option type="Map">
-                <Option value="1" type="int" name="Outlet"/>
+                <Option value="1" type="int" name="1: Outlet"/>
               </Option>
               <Option type="Map">
-                <Option value="2" type="int" name="Pump"/>
+                <Option value="2" type="int" name="2: Pump"/>
               </Option>
             </Option>
           </Option>
@@ -1018,22 +1018,22 @@
                 <Option value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" type="QString" name=""/>
               </Option>
               <Option type="Map">
-                <Option value="0" type="int" name="Lowest visibility"/>
+                <Option value="0" type="int" name="0: Lowest visibility"/>
               </Option>
               <Option type="Map">
-                <Option value="1" type="int" name="Low visibility"/>
+                <Option value="1" type="int" name="1: Low visibility"/>
               </Option>
               <Option type="Map">
-                <Option value="2" type="int" name="Medium low visibility"/>
+                <Option value="2" type="int" name="2: Medium low visibility"/>
               </Option>
               <Option type="Map">
-                <Option value="3" type="int" name="Medium visibility"/>
+                <Option value="3" type="int" name="3: Medium visibility"/>
               </Option>
               <Option type="Map">
-                <Option value="4" type="int" name="High visibility"/>
+                <Option value="4" type="int" name="4: High visibility"/>
               </Option>
               <Option type="Map">
-                <Option value="5" type="int" name="Highest visibility"/>
+                <Option value="5" type="int" name="5: Highest visibility"/>
               </Option>
             </Option>
           </Option>

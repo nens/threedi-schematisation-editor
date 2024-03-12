@@ -460,10 +460,10 @@
                 <Option value="{2839923C-8B7D-419E-B84B-CA2FE9B80EC7}" name="" type="QString"/>
               </Option>
               <Option type="Map">
-                <Option value="1" name="Sand" type="int"/>
+                <Option value="1" name="1: Sand" type="int"/>
               </Option>
               <Option type="Map">
-                <Option value="2" name="Clay" type="int"/>
+                <Option value="2" name="2: Clay" type="int"/>
               </Option>
             </Option>
           </Option>
