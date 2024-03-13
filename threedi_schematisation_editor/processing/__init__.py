@@ -4,6 +4,7 @@ import os
 from qgis.core import QgsProcessingProvider
 from qgis.PyQt.QtGui import QIcon
 
+from threedi_schematisation_editor.processing.algorithms_1d import BottomLevelCalculator
 from threedi_schematisation_editor.processing.algorithms_1d2d import GenerateExchangeLines
 from threedi_schematisation_editor.processing.algorithms_conversion import (
     ImportCulverts,
@@ -12,7 +13,6 @@ from threedi_schematisation_editor.processing.algorithms_conversion import (
     ImportPipes,
     ImportWeirs,
 )
-from threedi_schematisation_editor.processing.algorithms_1d import BottomLevelCalculator
 
 
 class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
