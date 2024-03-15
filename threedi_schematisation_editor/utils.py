@@ -10,6 +10,7 @@ from typing import Union
 from uuid import uuid4
 
 from qgis.core import (
+    NULL,
     QgsBilinearRasterResampler,
     QgsCoordinateTransform,
     QgsDataSourceUri,
@@ -592,6 +593,20 @@ def get_features_by_expression(layer, expression_text, with_geometry=False):
         request.setFlags(QgsFeatureRequest.NoGeometry)
     feat_iterator = layer.getFeatures(request)
     return feat_iterator
+
+
+def get_feature_by_id(layer, object_id, id_field="id"):
+    """Return layer feature with the given id."""
+    feat = None
+    if object_id not in (None, NULL):
+        expression = QgsExpression(f'"{id_field}" = {object_id}')
+        request = QgsFeatureRequest(expression)
+        feats = layer.getFeatures(request)
+        try:
+            feat = next(feats)
+        except StopIteration:
+            pass
+    return feat
 
 
 def add_settings_entry(gpkg_path, **initial_fields_values):

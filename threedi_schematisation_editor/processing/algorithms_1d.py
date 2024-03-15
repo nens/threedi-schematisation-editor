@@ -3,7 +3,6 @@ from collections import defaultdict
 
 from qgis.core import (
     NULL,
-    QgsFeatureRequest,
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,
