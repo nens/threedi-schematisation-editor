@@ -82,7 +82,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
                 self.NODE_LAYER,
                 self.tr("Connection node layer"),
                 [QgsProcessing.TypeVectorPoint],
-                defaultValue="Connection node",
+                defaultValue="Connection Node",
             )
         )
         self.addParameter(
@@ -126,10 +126,9 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
         node_lyr = self.parameterAsLayer(parameters, self.NODE_LAYER, context)
         if node_lyr is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NODE_LAYER))
-        sewerage_types = self.parameterAsEnum(parameters, self.SEWERAGE_TYPES, context)
+        sewerage_types = self.parameterAsEnums(parameters, self.SEWERAGE_TYPES, context)
         if sewerage_types is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SEWERAGE_TYPES))
-        picked_sewerage_types = {e.value for e in SewerageType if e.name in sewerage_types}
         storm_pref = self.parameterAsDouble(parameters, self.STORMWATER_SEWER_PREFERENCE, context)
         if storm_pref is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STORMWATER_SEWER_PREFERENCE))
@@ -140,7 +139,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
         if search_distance is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SEARCH_DISTANCE))
         surface_to_pipes_distances = defaultdict(list)
-        pipe_features = [feat for feat in pipe_lyr.getFeatures() if feat["sewerage_type"] in picked_sewerage_types]
+        pipe_features = [feat for feat in pipe_lyr.getFeatures() if feat["sewerage_type"] in sewerage_types]
         for surface_feat in surface_lyr.getFeatures():
             surface_fid = surface_feat.id()
             surface_geom = surface_feat.geometry()
