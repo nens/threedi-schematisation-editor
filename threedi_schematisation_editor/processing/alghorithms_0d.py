@@ -58,7 +58,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
                 self.SURFACE_LAYER,
                 self.tr("(Impervious) surface layer"),
                 [QgsProcessing.TypeVectorPolygon],
-                defaultValue="Surface",
+                defaultValue="Impervious Surface",
             )
         )
         self.addParameter(
@@ -66,7 +66,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
                 self.SURFACE_MAP_LAYER,
                 self.tr("(Impervious) surface map layer"),
                 [QgsProcessing.TypeVectorLine],
-                defaultValue="Surface map",
+                defaultValue="Impervious surface map",
             )
         )
         self.addParameter(
@@ -91,7 +91,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
                 self.tr("Sewerage types"),
                 allowMultiple=True,
                 options=[e.name for e in SewerageType],
-                defaultValue=SewerageType.COMBINED_SEWER.name,
+                defaultValue=SewerageType.STORM_DRAIN.name,
             )
         )
         storm_pref = QgsProcessingParameterNumber(
@@ -143,6 +143,8 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
         for surface_feat in surface_lyr.getFeatures():
             surface_fid = surface_feat.id()
             surface_geom = surface_feat.geometry()
+            if surface_geom.isNull():
+                continue
             for pipe_feat in pipe_features:
                 pipe_sewerage_type = pipe_feat["sewerage_type"]
                 pipe_geometry = pipe_feat.geometry()
@@ -156,7 +158,9 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
                 surface_to_pipes_distances[surface_fid].append((pipe_feat.id(), surface_pipe_distance))
         surface_map_feats = []
         surface_map_fields = surface_map_lyr.fields()
+        surface_map_field_names = {fld.name() for fld in surface_map_fields}
         next_surface_map_id = get_next_feature_id(surface_map_lyr)
+        surface_id_field = "surface_id" if "surface_id" in surface_map_field_names else "impervious_surface_id"
         for surface_id, surface_pipes in surface_to_pipes_distances.items():
             surface_pipes.sort(key=itemgetter(1))
             surface_feat = surface_lyr.getFeature(surface_id)
@@ -179,12 +183,12 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
                 surface_node_id = end_node_id
                 node_geom = end_node_geom
             surface_map_feat = QgsFeature(surface_map_fields)
-            surface_map_geom = QgsGeometry.fromPolylineXY([surface_centroid.asPoint(), node_geom.asPoint()])
-            surface_map_feat.setGeometry(surface_map_geom)
             surface_map_feat["id"] = next_surface_map_id
-            surface_map_feat["surface_id"] = surface_feat["id"]
+            surface_map_feat[surface_id_field] = surface_feat["id"]
             surface_map_feat["connection_node_id"] = surface_node_id
             surface_map_feat["percentage"] = 100.0
+            surface_map_geom = QgsGeometry.fromPolylineXY([surface_centroid.asPoint(), node_geom.asPoint()])
+            surface_map_feat.setGeometry(surface_map_geom)
             surface_map_feats.append(surface_map_feat)
             next_surface_map_id += 1
         if surface_map_feats:
