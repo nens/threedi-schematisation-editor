@@ -29,6 +29,7 @@ from qgis.core import (
     QgsRasterLayer,
     QgsRasterMinMaxOrigin,
     QgsSettings,
+    QgsSpatialIndex,
     QgsValueMapFieldFormatter,
     QgsVectorFileWriter,
     QgsVectorLayer,
@@ -812,6 +813,17 @@ def validation_errors_summary(validation_errors):
     summary_per_model.sort()
     summary_message = "\n".join(summary_per_model)
     return summary_message
+
+
+def spatial_index(layer, request=None):
+    """Creating spatial index over layer features."""
+    features = {}
+    index = QgsSpatialIndex()
+    for feat in layer.getFeatures() if request is None else layer.getFeatures(request):
+        feat_copy = QgsFeature(feat)
+        features[feat.id()] = feat_copy
+        index.insertFeature(feat_copy)
+    return features, index
 
 
 class FormCustomizations:

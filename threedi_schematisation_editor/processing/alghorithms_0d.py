@@ -4,6 +4,7 @@ from operator import itemgetter
 
 from qgis.core import (
     QgsFeature,
+    QgsFeatureRequest,
     QgsGeometry,
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -16,7 +17,7 @@ from qgis.core import (
 from qgis.PyQt.QtCore import QCoreApplication
 
 from threedi_schematisation_editor.enumerators import SewerageType
-from threedi_schematisation_editor.utils import get_feature_by_id, get_next_feature_id
+from threedi_schematisation_editor.utils import get_feature_by_id, get_next_feature_id, spatial_index
 
 
 class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
@@ -41,7 +42,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
         return "threedi_link_surfaces_with_nodes"
 
     def displayName(self):
-        return self.tr("Link surfaces with nodes")
+        return self.tr("Map (impervious) surfaces to connection nodes")
 
     def group(self):
         return self.tr("0D")
@@ -91,7 +92,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
                 self.tr("Sewerage types"),
                 allowMultiple=True,
                 options=[e.name for e in SewerageType],
-                defaultValue=SewerageType.STORM_DRAIN.name,
+                defaultValue=[SewerageType.COMBINED_SEWER.value, SewerageType.STORM_DRAIN.value],
             )
         )
         storm_pref = QgsProcessingParameterNumber(
@@ -139,13 +140,27 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
         if search_distance is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SEARCH_DISTANCE))
         surface_to_pipes_distances = defaultdict(list)
-        pipe_features = [feat for feat in pipe_lyr.getFeatures() if feat["sewerage_type"] in sewerage_types]
+        pipe_filter_request = QgsFeatureRequest(
+            [feat.id() for feat in pipe_lyr.getFeatures() if feat["sewerage_type"] in sewerage_types]
+        )
+        pipe_features, pipe_index = spatial_index(pipe_lyr, pipe_filter_request)
+        feedback.setProgress(0)
+        number_of_surfaces = surface_lyr.featureCount()
+        number_of_steps = number_of_surfaces * 2
+        step = 1
         for surface_feat in surface_lyr.getFeatures():
+            if feedback.isCanceled():
+                return {}
             surface_fid = surface_feat.id()
             surface_geom = surface_feat.geometry()
             if surface_geom.isNull():
+                surface_to_pipes_distances[surface_fid] = []
+                feedback.setProgress(100 * step / number_of_steps)
+                step += 1
                 continue
-            for pipe_feat in pipe_features:
+            surface_buffer = surface_geom.buffer(search_distance, 5)
+            for pipe_id in pipe_index.intersects(surface_buffer.boundingBox()):
+                pipe_feat = pipe_features[pipe_id]
                 pipe_sewerage_type = pipe_feat["sewerage_type"]
                 pipe_geometry = pipe_feat.geometry()
                 surface_pipe_distance = surface_geom.distance(pipe_geometry)
@@ -156,18 +171,26 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
                 elif pipe_sewerage_type == SewerageType.SANITARY_SEWER.value:
                     surface_pipe_distance -= sanitary_pref
                 surface_to_pipes_distances[surface_fid].append((pipe_feat.id(), surface_pipe_distance))
+            feedback.setProgress(100 * step / number_of_steps)
+            step += 1
         surface_map_feats = []
         surface_map_fields = surface_map_lyr.fields()
         surface_map_field_names = {fld.name() for fld in surface_map_fields}
         next_surface_map_id = get_next_feature_id(surface_map_lyr)
         surface_id_field = "surface_id" if "surface_id" in surface_map_field_names else "impervious_surface_id"
         for surface_id, surface_pipes in surface_to_pipes_distances.items():
+            if feedback.isCanceled():
+                return {}
+            if not surface_pipes:
+                feedback.setProgress(100 * step / number_of_steps)
+                step += 1
+                continue
             surface_pipes.sort(key=itemgetter(1))
             surface_feat = surface_lyr.getFeature(surface_id)
             surface_geom = surface_feat.geometry()
             surface_centroid = surface_geom.centroid()
             pipe_id, surface_pipe_distance = surface_pipes[0]
-            pipe_feat = pipe_lyr.getFeature(pipe_id)
+            pipe_feat = pipe_features[pipe_id]
             start_node_id = pipe_feat["connection_node_start_id"]
             end_node_id = pipe_feat["connection_node_end_id"]
             start_node = get_feature_by_id(node_lyr, start_node_id)
@@ -191,6 +214,10 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
             surface_map_feat.setGeometry(surface_map_geom)
             surface_map_feats.append(surface_map_feat)
             next_surface_map_id += 1
+            feedback.setProgress(100 * step / number_of_steps)
+            step += 1
+        if feedback.isCanceled():
+            return {}
         if surface_map_feats:
             surface_map_lyr.startEditing()
             surface_map_lyr.addFeatures(surface_map_feats)
@@ -199,6 +226,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
                 commit_errors = surface_map_lyr.commitErrors()
                 commit_errors_message = "\n".join(commit_errors)
                 feedback.reportError(commit_errors_message)
+        feedback.setProgress(100)
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
