@@ -39,19 +39,42 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
         return LinkSurfacesWithNodes()
 
     def name(self):
-        return "threedi_link_surfaces_with_nodes"
+        return "threedi_map_surfaces_to_connection_nodes"
 
     def displayName(self):
         return self.tr("Map (impervious) surfaces to connection nodes")
 
     def group(self):
-        return self.tr("0D")
+        return self.tr("Inflow")
 
     def groupId(self):
         return "0d"
 
     def shortHelpString(self):
-        return self.tr("""Link (impervious) surfaces to connection nodes.""")
+        return self.tr(
+            """
+            <p>Connect (impervious) surfaces to the sewer system by creating (impervious) surface map features. The new features are added to the (impervious) surface layer directly.</p>
+            <p>For each (impervious) surface, the nearest pipe is found; the surface is mapped to the the nearest of this pipe's connection nodes.</p>
+            <p>In some cases, you may want to prefer e.g. stormwater drains over combined sewers. This can be done by setting the stormwater sewer preference to a value greater than zero.</p>
+            <h3>Parameters</h3>
+            <h4>(Impervious) surface layer</h4>
+            <p>Surface or Impervious surface layer that is added to the project with the 3Di Schematisation Editor.</p>
+            <h4>(Impervious) surface map layer</h4>
+            <p>Surface map or Impervious surface map layer that is added to the project with the 3Di Schematisation Editor.</p>
+            <h4>Pipe layer</h4>
+            <p>Pipe layer that is added to the project with the 3Di Schematisation Editor.</p>
+            <h4>Connection node layer</h4>
+            <p>Connection node layer that is added to the project with the 3Di Schematisation Editor.</p>
+            <h4>Sewerage types</h4>
+            <p>Only pipes of the selected sewerage types will be used in the algorithm</p>
+            <h4>Stormwater sewer preference</h4>
+            <p>This value (in meters) will be subtracted from the distance between the (impervious) surface and the stormwater drain. For example: there is a combined sewer within 10 meters from the (impervious) surface, and a stormwater drain within 11 meters; if the stormwater sewer preference is 2 m, the algorithm will use 11 - 2 = 9 m as distance to the stormwater sewer, so the (impervious) surface will be mapped to one of the stormwater drain's connection nodes, instead of to the combined sewer's connection nodes.</p>
+            <h4>Sanitary sewer preference</h4>
+            <p>This value (in meters) will be subtracted from the distance between the (impervious) surface and the sanitary sewer. See 'stormwater sewer preference' for further explanation.</p>
+            <h4>Search distance</h4>
+            <p>Only pipes within search distance (m) from the (impervious) surface will be used in the algorithm.</p>
+            """
+        )
 
     def initAlgorithm(self, config=None):
         self.addParameter(
