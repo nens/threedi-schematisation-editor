@@ -1,5 +1,4 @@
 # Copyright (C) 2023 by Lutra Consulting
-from collections import defaultdict
 from operator import itemgetter
 
 from qgis.core import (
@@ -162,7 +161,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
         search_distance = self.parameterAsDouble(parameters, self.SEARCH_DISTANCE, context)
         if search_distance is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SEARCH_DISTANCE))
-        surface_to_pipes_distances = defaultdict(list)
+        surface_to_pipes_distances = {}
         pipe_filter_request = QgsFeatureRequest(
             [feat.id() for feat in pipe_lyr.getFeatures() if feat["sewerage_type"] in sewerage_types]
         )
@@ -175,9 +174,9 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
             if feedback.isCanceled():
                 return {}
             surface_fid = surface_feat.id()
+            surface_to_pipes_distances[surface_fid] = []
             surface_geom = surface_feat.geometry()
             if surface_geom.isNull():
-                surface_to_pipes_distances[surface_fid] = []
                 feedback.setProgress(100 * step / number_of_steps)
                 step += 1
                 continue
