@@ -10,6 +10,7 @@ from typing import Union
 from uuid import uuid4
 
 from qgis.core import (
+    NULL,
     QgsBilinearRasterResampler,
     QgsCoordinateTransform,
     QgsDataSourceUri,
@@ -28,6 +29,7 @@ from qgis.core import (
     QgsRasterLayer,
     QgsRasterMinMaxOrigin,
     QgsSettings,
+    QgsSpatialIndex,
     QgsValueMapFieldFormatter,
     QgsVectorFileWriter,
     QgsVectorLayer,
@@ -594,6 +596,20 @@ def get_features_by_expression(layer, expression_text, with_geometry=False):
     return feat_iterator
 
 
+def get_feature_by_id(layer, object_id, id_field="id"):
+    """Return layer feature with the given id."""
+    feat = None
+    if object_id not in (None, NULL):
+        expression = QgsExpression(f'"{id_field}" = {object_id}')
+        request = QgsFeatureRequest(expression)
+        feats = layer.getFeatures(request)
+        try:
+            feat = next(feats)
+        except StopIteration:
+            pass
+    return feat
+
+
 def add_settings_entry(gpkg_path, **initial_fields_values):
     """Adding initial settings entry with defined fields values."""
     settings_layer = gpkg_layer(gpkg_path, dm.GlobalSettings.__tablename__)
@@ -797,6 +813,17 @@ def validation_errors_summary(validation_errors):
     summary_per_model.sort()
     summary_message = "\n".join(summary_per_model)
     return summary_message
+
+
+def spatial_index(layer, request=None):
+    """Creating spatial index over layer features."""
+    features = {}
+    index = QgsSpatialIndex()
+    for feat in layer.getFeatures() if request is None else layer.getFeatures(request):
+        feat_copy = QgsFeature(feat)
+        features[feat.id()] = feat_copy
+        index.insertFeature(feat_copy)
+    return features, index
 
 
 class FormCustomizations:

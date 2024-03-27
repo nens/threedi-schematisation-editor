@@ -4,7 +4,7 @@ History
 1.10 (unreleased)
 -----------------
 
-- Nothing changed yet.
+- Fixes/enhancements: #191
 
 
 1.9 (2024-03-14)
