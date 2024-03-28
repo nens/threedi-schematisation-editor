@@ -584,6 +584,10 @@ class CrossSectionLocation(ModelObject):
             "friction_type": "loc_friction_type",
             "bank_level": "loc_bank_level",
             "channel_id": "loc_channel_id",
+            "vegetation_stem_density": "loc_vegetation_stem_density",
+            "vegetation_stem_diameter": "loc_vegetation_stem_diameter",
+            "vegetation_height": "loc_vegetation_height",
+            "vegetation_drag_coefficient": "loc_vegetation_drag_coefficient",
         }
     )
 
@@ -594,10 +598,16 @@ class CrossSectionLocation(ModelObject):
     friction_value: float
     bank_level: Optional[float]
     channel_id: int
+    vegetation_stem_density: Optional[float]
+    vegetation_stem_diameter: Optional[float]
+    vegetation_height: Optional[float]
+    vegetation_drag_coefficient: Optional[float]
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
     cross_section_table: Optional[str]
+    cross_section_friction_table: Optional[str]
+    cross_section_vegetation_table: Optional[str]
 
 
 @dataclass
@@ -1084,6 +1094,11 @@ class CrossSectionDefinition(ModelObject):
     width: Optional[str]
     height: Optional[str]
     shape: Optional[CrossSectionShape]
+    friction_values: Optional[str]
+    vegetation_stem_densities: Optional[str]
+    vegetation_stem_diameters: Optional[str]
+    vegetation_heights: Optional[str]
+    vegetation_drag_coefficients: Optional[str]
 
 
 @dataclass
