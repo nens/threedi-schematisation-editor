@@ -526,7 +526,9 @@ class ModelDataConverter:
                 dst_feat_id = dst_feat["id"]
                 xs_def_id = feat_to_xs_def[dst_feat_id]
                 xs_def_data = xs_definitions[xs_def_id]
-                xs_def_data_changes[fid] = {field_indexes[fld]: xs_def_data[fld] for fld in xs_def_data.keys()}
+                xs_def_data_changes[fid] = {
+                    field_indexes[fld]: xs_def_data[fld] for fld in xs_def_data.keys() if fld in dst_layer_field_names
+                }
             # Update User Layers with cross-section definition data
             dst_xs_def_lyr.startEditing()
             for fid, changes in xs_def_data_changes.items():
@@ -645,21 +647,11 @@ class ModelDataConverter:
                 src_xs_def_width = feat_with_xs_def["cross_section_width"]
                 src_xs_def_table = feat_with_xs_def["cross_section_table"]
                 if model_cls == dm.CrossSectionLocation:
-                    src_xs_def_vegetation_stem_densities = feat_with_xs_def["cross_section_vegetation_stem_densities"]
-                    src_xs_def_vegetation_stem_diameters = feat_with_xs_def["cross_section_vegetation_stem_diameters"]
-                    src_xs_def_vegetation_heights = feat_with_xs_def["cross_section_vegetation_heights"]
-                    src_xs_def_vegetation_drag_coefficients = feat_with_xs_def[
-                        "cross_section_vegetation_drag_coefficients"
-                    ]
                     src_xs_def_friction_table = feat_with_xs_def["cross_section_friction_table"]
                     src_xs_def_vegetation_table = feat_with_xs_def["cross_section_vegetation_table"]
-                    all_src_vegetation = [
-                        src_xs_def_vegetation_stem_densities,
-                        src_xs_def_vegetation_stem_diameters,
-                        src_xs_def_vegetation_heights,
-                        src_xs_def_vegetation_drag_coefficients,
-                    ]
-                    xs_def_friction_values = " ".join(src_xs_def_friction_table.split("\n"))
+                    xs_def_friction_values = (
+                        " ".join(src_xs_def_friction_table.split("\n")) if src_xs_def_friction_table else None
+                    )
                     if src_xs_def_vegetation_table:
                         parsed_vegetation_table = [row.split(",") for row in src_xs_def_vegetation_table.split("\n")]
                         (
@@ -680,8 +672,7 @@ class ModelDataConverter:
                             xs_def_vegetation_stem_diameters,
                             xs_def_vegetation_heights,
                             xs_def_vegetation_drag_coefficients,
-                        ) = [str(val) if val not in (None, NULL) else "" for val in all_src_vegetation]
-
+                        ) = (None,) * 4
                 else:
                     (
                         xs_def_friction_values,
