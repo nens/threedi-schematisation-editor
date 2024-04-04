@@ -289,7 +289,7 @@
          </property>
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="0" column="0">
-           <widget class="QLabel" name="label_11">
+           <widget class="QLabel" name="friction_type_label">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
@@ -342,7 +342,7 @@
            </widget>
           </item>
           <item row="0" column="2">
-           <widget class="QLabel" name="label_10">
+           <widget class="QLabel" name="friction_value_label">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
@@ -384,7 +384,7 @@
            </widget>
           </item>
           <item row="1" column="0" colspan="5">
-           <widget class="QLabel" name="cross_section_table_label_2">
+           <widget class="QLabel" name="cross_section_friction_label">
             <property name="text">
              <string>Friction coefficients per segment</string>
             </property>
@@ -646,7 +646,7 @@
            </widget>
           </item>
           <item row="0" column="4">
-           <widget class="QLabel" name="label_13">
+           <widget class="QLabel" name="vegetation_height_label">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
@@ -705,7 +705,7 @@
            </widget>
           </item>
           <item row="0" column="0">
-           <widget class="QLabel" name="label_12">
+           <widget class="QLabel" name="vegetation_stem_density_label">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
@@ -718,7 +718,7 @@
            </widget>
           </item>
           <item row="1" column="4">
-           <widget class="QLabel" name="label_14">
+           <widget class="QLabel" name="vegetation_drag_coefficient_label">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
@@ -737,7 +737,7 @@
            </widget>
           </item>
           <item row="1" column="0">
-           <widget class="QLabel" name="label_7">
+           <widget class="QLabel" name="vegetation_stem_diameter_label">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
@@ -829,7 +829,7 @@
            </widget>
           </item>
           <item row="2" column="0" colspan="7">
-           <widget class="QLabel" name="cross_section_table_label_3">
+           <widget class="QLabel" name="cross_section_vegetation_label">
             <property name="text">
              <string>Vegetation parameters per segment</string>
             </property>

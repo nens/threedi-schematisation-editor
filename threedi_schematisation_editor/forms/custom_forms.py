@@ -37,6 +37,7 @@ from threedi_schematisation_editor.utils import (
     is_optional,
     optional_type,
     setup_cross_section_widgets,
+    setup_friction_and_vegetation_widgets,
 )
 
 field_types_widgets = MappingProxyType(
@@ -151,6 +152,9 @@ class BaseForm(QObject):
             widget.setEnabled(editing_active)
         if hasattr(self, "cross_section_shape"):
             setup_cross_section_widgets(self, self.cross_section_shape, self.cross_section_prefix)
+            friction_type = self.dialog.findChild(QObject, "friction_type")
+            if friction_type is not None:
+                setup_friction_and_vegetation_widgets(self, self.cross_section_shape, friction_type)
 
     def populate_widgets(self, data_model_cls=None, feature=None, start_end_modifier=None):
         """
@@ -392,12 +396,18 @@ class FormWithXSTable(BaseForm):
         super().__init__(*args, *kwargs)
         self.cross_section_shape = None
         self.cross_section_table = None
+        self.cross_section_friction = None
+        self.cross_section_vegetation = None
         self.cross_section_table_edit = None
         self.cross_section_table_add = None
         self.cross_section_table_delete = None
         self.cross_section_table_paste = None
-        self.cell_changed_signal = None
-        self.cell_changed_slot = None
+        self.cross_section_table_cell_changed_signal = None
+        self.cross_section_friction_cell_changed_signal = None
+        self.cross_section_vegetation_cell_changed_signal = None
+        self.cross_section_table_cell_changed_slot = None
+        self.cross_section_friction_cell_changed_slot = None
+        self.cross_section_vegetation_cell_changed_slot = None
         if self.MODEL == dm.Channel:
             self.cross_section_prefix = "cross_section_location_"
             self.current_cross_section_location = None
@@ -408,6 +418,24 @@ class FormWithXSTable(BaseForm):
             self.layer_with_xs = self.layer
         self.layer_with_xs_fields = self.layer_with_xs.fields()
         self.setup_cross_section_table_widgets()
+
+    @property
+    def cross_section_table_field_widget_map(self):
+        field_map = {
+            "cross_section_table": self.cross_section_table,
+            "cross_section_friction_table": self.cross_section_friction,
+            "cross_section_vegetation_table": self.cross_section_vegetation,
+        }
+        return field_map
+
+    @property
+    def cross_section_table_edit_slot_signal_pairs(self):
+        slot_signal_pairs = [
+            (self.cross_section_table_cell_changed_signal, self.cross_section_table_cell_changed_slot),
+            (self.cross_section_friction_cell_changed_signal, self.cross_section_friction_cell_changed_slot),
+            (self.cross_section_vegetation_cell_changed_signal, self.cross_section_vegetation_cell_changed_slot),
+        ]
+        return slot_signal_pairs
 
     def setup_cross_section_table_widgets(self):
         """Setup cross-section table widgets."""
@@ -424,21 +452,31 @@ class FormWithXSTable(BaseForm):
         self.custom_widgets[xs_table_add] = self.cross_section_table_add
         self.custom_widgets[xs_table_delete] = self.cross_section_table_delete
         self.custom_widgets[xs_table_paste] = self.cross_section_table_paste
+        if self.MODEL == dm.CrossSectionLocation:
+            xs_friction = "cross_section_friction_widget"
+            xs_vegetation = "cross_section_vegetation_widget"
+            self.cross_section_friction = self.dialog.findChild(QTableWidget, xs_friction)
+            self.cross_section_vegetation = self.dialog.findChild(QTableWidget, xs_vegetation)
+            self.custom_widgets[xs_friction] = self.cross_section_friction
+            self.custom_widgets[xs_vegetation] = self.cross_section_vegetation
 
     def setup_form_widgets(self):
         """Setting up all form widgets."""
         super().setup_form_widgets()
         setup_cross_section_widgets(self, self.cross_section_shape, self.cross_section_prefix)
+        friction_type = self.dialog.findChild(QObject, "friction_type")
+        if friction_type is not None:
+            setup_friction_and_vegetation_widgets(self, self.cross_section_shape, friction_type)
 
     def connect_custom_widgets(self):
         """Connect other widgets."""
         super().connect_custom_widgets()
-        edit_signal = self.cross_section_table.cellChanged
-        edit_slot = self.edit_table_row
-        connect_signal(edit_signal, edit_slot)
-        self.dialog.active_form_signals.add((edit_signal, edit_slot))
-        self.cell_changed_signal = edit_signal
-        self.cell_changed_slot = edit_slot
+        cross_section_table_edit_signal = self.cross_section_table.cellChanged
+        cross_section_table_edit_slot = partial(self.edit_table_row, "cross_section_table")
+        connect_signal(cross_section_table_edit_signal, cross_section_table_edit_slot)
+        self.dialog.active_form_signals.add((cross_section_table_edit_signal, cross_section_table_edit_slot))
+        self.cross_section_table_cell_changed_signal = cross_section_table_edit_signal
+        self.cross_section_table_cell_changed_slot = cross_section_table_edit_slot
 
         add_signal = self.cross_section_table_add.clicked
         add_slot = self.add_table_row
@@ -454,25 +492,55 @@ class FormWithXSTable(BaseForm):
         paste_slot = self.paste_table_rows
         connect_signal(paste_signal, paste_slot)
         self.dialog.active_form_signals.add((paste_signal, paste_slot))
+        if self.MODEL == dm.CrossSectionLocation:
+            cross_section_friction_edit_signal = self.cross_section_friction.cellChanged
+            cross_section_vegetation_edit_signal = self.cross_section_vegetation.cellChanged
+            cross_section_friction_edit_slot = partial(self.edit_table_row, "cross_section_friction_table")
+            cross_section_vegetation_edit_slot = partial(self.edit_table_row, "cross_section_vegetation_table")
+            connect_signal(cross_section_friction_edit_signal, cross_section_friction_edit_slot)
+            connect_signal(cross_section_vegetation_edit_signal, cross_section_vegetation_edit_slot)
+            self.dialog.active_form_signals.add((cross_section_friction_edit_signal, cross_section_friction_edit_slot))
+            self.dialog.active_form_signals.add(
+                (cross_section_vegetation_edit_signal, cross_section_vegetation_edit_slot)
+            )
+            self.cross_section_friction_cell_changed_signal = cross_section_friction_edit_signal
+            self.cross_section_friction_cell_changed_slot = cross_section_friction_edit_slot
+            self.cross_section_vegetation_cell_changed_signal = cross_section_vegetation_edit_signal
+            self.cross_section_vegetation_cell_changed_slot = cross_section_vegetation_edit_slot
 
-    def update_cross_section_table_header(self):
-        """Update cross-section table header based on selected shape."""
-        shape = self.get_widget_value(self.cross_section_shape)
-        if shape == en.CrossSectionShape.YZ.value:
-            cross_section_table_header = ["Y [m]", "Z [m]"]
+    def get_cross_section_table_header(self, table_field_name):
+        """Get the proper cross-section table header."""
+        table_header = []
+        if table_field_name == "cross_section_table":
+            shape = self.get_widget_value(self.cross_section_shape)
+            if shape == en.CrossSectionShape.YZ.value:
+                table_header += ["Y [m]", "Z [m]"]
+            else:
+                table_header += ["Height [m]", "Width [m]"]
+        elif table_field_name == "cross_section_friction_table":
+            table_header += ["Friction coefficient"]
+        elif table_field_name == "cross_section_vegetation_table":
+            table_header += ["Stem density[m-2]", "Stem diameter[m]", "Height [m]", "Drag coefficient [-]"]
         else:
-            cross_section_table_header = ["Height [m]", "Width [m]"]
-        self.cross_section_table.setHorizontalHeaderLabels(cross_section_table_header)
+            pass
+        return table_header
 
-    def get_cross_section_table_text(self):
+    def update_cross_section_table_header(self, table_field_name="cross_section_table"):
+        """Update cross-section table headers."""
+        table_widget = self.cross_section_table_field_widget_map[table_field_name]
+        table_header = self.get_cross_section_table_header(table_field_name)
+        table_widget.setHorizontalHeaderLabels(table_header)
+
+    def get_cross_section_table_text(self, table_field_name="cross_section_table"):
         """Get cross-section table data as a string representation."""
-        num_of_rows = self.cross_section_table.rowCount()
-        num_of_cols = self.cross_section_table.columnCount()
+        table_widget = self.cross_section_table_field_widget_map[table_field_name]
+        num_of_rows = table_widget.rowCount()
+        num_of_cols = table_widget.columnCount()
         cross_section_table_values = []
         for row_num in range(num_of_rows):
             values = []
             for col_num in range(num_of_cols):
-                item = self.cross_section_table.item(row_num, col_num)
+                item = table_widget.item(row_num, col_num)
                 if item is not None:
                     item_text = item.text().strip()
                 else:
@@ -483,19 +551,19 @@ class FormWithXSTable(BaseForm):
         cross_section_table_str = "\n".join(", ".join(row) for row in cross_section_table_values)
         return cross_section_table_str
 
-    def save_cross_section_table_edits(self):
+    def save_cross_section_table_edits(self, table_field_name="cross_section_table"):
         """Save cross-section table value to the feature attribute."""
-        cross_section_table_str = self.get_cross_section_table_text()
+        cross_section_table_str = self.get_cross_section_table_text(table_field_name)
         if self.creation is True:
-            self.current_cross_section_location["cross_section_table"] = cross_section_table_str
+            self.current_cross_section_location[table_field_name] = cross_section_table_str
         else:
-            cross_section_table_idx = self.layer_with_xs_fields.lookupField("cross_section_table")
+            cross_section_table_idx = self.layer_with_xs_fields.lookupField(table_field_name)
             changes = {cross_section_table_idx: cross_section_table_str}
             self.layer_with_xs.changeAttributeValues(self.current_cross_section_location.id(), changes)
 
-    def edit_table_row(self):
+    def edit_table_row(self, table_field_name):
         """Slot for handling table cells edits."""
-        self.save_cross_section_table_edits()
+        self.save_cross_section_table_edits(table_field_name)
 
     def add_table_row(self):
         """Slot for handling new row addition."""
@@ -505,21 +573,31 @@ class FormWithXSTable(BaseForm):
         else:
             last_row_number = self.cross_section_table.rowCount()
         self.cross_section_table.insertRow(last_row_number)
+        if self.MODEL == dm.CrossSectionLocation:
+            self.cross_section_friction.insertRow(last_row_number)
+            self.cross_section_vegetation.insertRow(last_row_number)
 
     def delete_table_rows(self):
         """Slot for handling deletion of the selected rows."""
         selected_rows = {idx.row() for idx in self.cross_section_table.selectedIndexes()}
         for row in sorted(selected_rows, reverse=True):
             self.cross_section_table.removeRow(row)
+            if self.MODEL == dm.CrossSectionLocation:
+                self.cross_section_friction.removeRow(row)
+                self.cross_section_vegetation.removeRow(row)
         self.save_cross_section_table_edits()
+        if self.MODEL == dm.CrossSectionLocation:
+            self.save_cross_section_table_edits("cross_section_friction_table")
+            self.save_cross_section_table_edits("cross_section_vegetation_table")
 
     def paste_table_rows(self):
         """Handling pasting new rows from the clipboard."""
         text = QApplication.clipboard().text()
         rows = text.split("\n")
         last_row_num = self.cross_section_table.rowCount()
-        if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
-            disconnect_signal(self.cell_changed_signal, self.cell_changed_slot)
+        for cell_changed_signal, cell_changed_slot in self.cross_section_table_edit_slot_signal_pairs:
+            if cell_changed_signal is not None and cell_changed_slot is not None:
+                disconnect_signal(cell_changed_signal, cell_changed_slot)
         for row in rows:
             try:
                 height_str, width_str = row.replace(" ", "").split(",")
@@ -528,35 +606,45 @@ class FormWithXSTable(BaseForm):
             self.cross_section_table.insertRow(last_row_num)
             self.cross_section_table.setItem(last_row_num, 0, QTableWidgetItem(height_str))
             self.cross_section_table.setItem(last_row_num, 1, QTableWidgetItem(width_str))
+            if self.MODEL == dm.CrossSectionLocation:
+                self.cross_section_friction.insertRow(last_row_num)
+                self.cross_section_vegetation.insertRow(last_row_num)
             last_row_num += 1
-        if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
-            connect_signal(self.cell_changed_signal, self.cell_changed_slot)
+        for cell_changed_signal, cell_changed_slot in self.cross_section_table_edit_slot_signal_pairs:
+            if cell_changed_signal is not None and cell_changed_slot is not None:
+                connect_signal(cell_changed_signal, cell_changed_slot)
         self.save_cross_section_table_edits()
 
     def populate_cross_section_table_data(self):
         """Populate cross-section tabular data in the table widget."""
-        if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
-            disconnect_signal(self.cell_changed_signal, self.cell_changed_slot)
-        self.cross_section_table.clearContents()
-        self.cross_section_table.setRowCount(0)
-        self.cross_section_table.setColumnCount(2)
-        self.update_cross_section_table_header()
-        self.cross_section_table.setItemDelegateForColumn(0, NumericItemDelegate(self.cross_section_table))
-        self.cross_section_table.setItemDelegateForColumn(1, NumericItemDelegate(self.cross_section_table))
-        if self.current_cross_section_location is not None:
-            table = self.current_cross_section_location["cross_section_table"] or ""
-        else:
-            table = ""
-        for row_number, row in enumerate(table.split("\n")):
-            try:
-                height_str, width_str = row.replace(" ", "").split(",")
-            except ValueError:
+        for cell_changed_signal, cell_changed_slot in self.cross_section_table_edit_slot_signal_pairs:
+            if cell_changed_signal is not None and cell_changed_slot is not None:
+                disconnect_signal(cell_changed_signal, cell_changed_slot)
+        for table_field_name, table_widget in self.cross_section_table_field_widget_map.items():
+            if table_widget is None:
                 continue
-            self.cross_section_table.insertRow(row_number)
-            self.cross_section_table.setItem(row_number, 0, QTableWidgetItem(height_str))
-            self.cross_section_table.setItem(row_number, 1, QTableWidgetItem(width_str))
-        if self.cell_changed_signal is not None and self.cell_changed_slot is not None:
-            connect_signal(self.cell_changed_signal, self.cell_changed_slot)
+            table_header = self.get_cross_section_table_header(table_field_name)
+            table_columns_count = len(table_header)
+            table_widget.clearContents()
+            table_widget.setRowCount(0)
+            table_widget.setColumnCount(table_columns_count)
+            self.update_cross_section_table_header(table_field_name)
+            for column_idx in range(table_columns_count):
+                table_widget.setItemDelegateForColumn(column_idx, NumericItemDelegate(table_widget))
+            if self.current_cross_section_location is not None:
+                table = self.current_cross_section_location[table_field_name] or ""
+            else:
+                table = ""
+            for row_number, row in enumerate(table.split("\n")):
+                row_values = [val for val in row.replace(" ", "").split(",") if val]
+                if len(row_values) != table_columns_count:
+                    continue
+                table_widget.insertRow(row_number)
+                for col_idx, row_value in enumerate(row_values):
+                    table_widget.setItem(row_number, col_idx, QTableWidgetItem(row_value))
+        for cell_changed_signal, cell_changed_slot in self.cross_section_table_edit_slot_signal_pairs:
+            if cell_changed_signal is not None and cell_changed_slot is not None:
+                connect_signal(cell_changed_signal, cell_changed_slot)
 
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
@@ -1370,6 +1458,8 @@ class CrossSectionLocationForm(FormWithXSTable):
                     "cross_section_width",
                     "cross_section_height",
                     "cross_section_table",
+                    "cross_section_friction",
+                    "cross_section_vegetation",
                 ]:
                     self.feature[xs_field_name] = closest_existing_cross_section[xs_field_name]
         try:

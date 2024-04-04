@@ -280,7 +280,6 @@ class ThreediSchematisationEditorPlugin:
             self.uc.show_warn(warn_msg)
             return
         schema_version = ModelDataConverter.spatialite_schema_version(dst_sqlite)
-        print(schema_version)
         if schema_version > ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
             warn_msg = (
                 "The selected spatialite cannot be used because its database schema version is newer than expected. "
