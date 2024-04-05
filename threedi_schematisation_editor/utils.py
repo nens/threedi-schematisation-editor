@@ -905,31 +905,41 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
             pass
 
 
-def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widget, friction_widget):
+def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widget, friction_widget, prefix=""):
     """Adjust friction and vegetation characteristic widgets availability based on the selected shape type."""
-    friction_value_label_widget = custom_form.dialog.findChild(QObject, "friction_value_label")
-    friction_value_widget = custom_form.dialog.findChild(QObject, "friction_value")
-    friction_value_clear_widget = custom_form.dialog.findChild(QObject, "friction_value_clear")
-    cross_section_friction_label_widget = custom_form.dialog.findChild(QObject, "cross_section_friction_label")
-    cross_section_friction_widget = custom_form.dialog.findChild(QObject, "cross_section_friction_widget")
-    vegetation_stem_density_label_widget = custom_form.dialog.findChild(QObject, "vegetation_stem_density_label")
-    vegetation_stem_density_widget = custom_form.dialog.findChild(QObject, "vegetation_stem_density")
-    vegetation_stem_density_clear_widget = custom_form.dialog.findChild(QObject, "vegetation_stem_density_clear")
-    vegetation_stem_diameter_label_widget = custom_form.dialog.findChild(QObject, "vegetation_stem_diameter_label")
-    vegetation_stem_diameter_widget = custom_form.dialog.findChild(QObject, "vegetation_stem_diameter")
-    vegetation_stem_diameter_clear_widget = custom_form.dialog.findChild(QObject, "vegetation_stem_diameter_clear")
-    vegetation_height_label_widget = custom_form.dialog.findChild(QObject, "vegetation_height_label")
-    vegetation_height_widget = custom_form.dialog.findChild(QObject, "vegetation_height")
-    vegetation_height_clear_widget = custom_form.dialog.findChild(QObject, "vegetation_height_clear")
+    friction_value_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}friction_value_label")
+    friction_value_widget = custom_form.dialog.findChild(QObject, f"{prefix}friction_value")
+    friction_value_clear_widget = custom_form.dialog.findChild(QObject, f"{prefix}friction_value_clear")
+    cross_section_friction_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_label")
+    cross_section_friction_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_widget")
+    vegetation_stem_density_label_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}vegetation_stem_density_label"
+    )
+    vegetation_stem_density_widget = custom_form.dialog.findChild(QObject, f"{prefix}vegetation_stem_density")
+    vegetation_stem_density_clear_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}vegetation_stem_density_clear"
+    )
+    vegetation_stem_diameter_label_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}vegetation_stem_diameter_label"
+    )
+    vegetation_stem_diameter_widget = custom_form.dialog.findChild(QObject, f"{prefix}vegetation_stem_diameter")
+    vegetation_stem_diameter_clear_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}vegetation_stem_diameter_clear"
+    )
+    vegetation_height_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}vegetation_height_label")
+    vegetation_height_widget = custom_form.dialog.findChild(QObject, f"{prefix}vegetation_height")
+    vegetation_height_clear_widget = custom_form.dialog.findChild(QObject, f"{prefix}vegetation_height_clear")
     vegetation_drag_coefficient_label_widget = custom_form.dialog.findChild(
-        QObject, "vegetation_drag_coefficient_label"
+        QObject, f"{prefix}vegetation_drag_coefficient_label"
     )
-    vegetation_drag_coefficient_widget = custom_form.dialog.findChild(QObject, "vegetation_drag_coefficient")
+    vegetation_drag_coefficient_widget = custom_form.dialog.findChild(QObject, f"{prefix}vegetation_drag_coefficient")
     vegetation_drag_coefficient_clear_widget = custom_form.dialog.findChild(
-        QObject, "vegetation_drag_coefficient_clear"
+        QObject, f"{prefix}vegetation_drag_coefficient_clear"
     )
-    cross_section_vegetation_label_widget = custom_form.dialog.findChild(QObject, "cross_section_vegetation_label")
-    cross_section_vegetation_widget = custom_form.dialog.findChild(QObject, "cross_section_vegetation_widget")
+    cross_section_vegetation_label_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_vegetation_label"
+    )
+    cross_section_vegetation_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_widget")
     non_table_friction_widgets = [friction_value_label_widget, friction_value_widget, friction_value_clear_widget]
     table_friction_widgets = [cross_section_friction_label_widget, cross_section_friction_widget]
     non_table_vegetation_widgets = [
@@ -966,6 +976,14 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
         else:
             for related_widget in chain(non_table_friction_widgets, non_table_vegetation_widgets):
                 related_widget.setEnabled(True)
+
+
+def setup_cross_section_definition_widgets(custom_form, shape_widget, friction_widget, prefix=""):
+    """Setup cross section definition dependent widgets."""
+    if shape_widget is not None:
+        setup_cross_section_widgets(custom_form, shape_widget, prefix)
+    if custom_form.MODEL in [dm.CrossSectionLocation, dm.Channel]:
+        setup_friction_and_vegetation_widgets(custom_form, shape_widget, friction_widget, prefix)
 
 
 class NumericItemDelegate(QItemDelegate):

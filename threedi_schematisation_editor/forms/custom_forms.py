@@ -38,6 +38,7 @@ from threedi_schematisation_editor.utils import (
     optional_type,
     setup_cross_section_widgets,
     setup_friction_and_vegetation_widgets,
+    setup_cross_section_definition_widgets,
 )
 
 field_types_widgets = MappingProxyType(
@@ -152,9 +153,11 @@ class BaseForm(QObject):
             widget.setEnabled(editing_active)
         if hasattr(self, "cross_section_shape"):
             setup_cross_section_widgets(self, self.cross_section_shape, self.cross_section_prefix)
-            friction_type = self.dialog.findChild(QObject, "friction_type")
-            if friction_type is not None:
-                setup_friction_and_vegetation_widgets(self, self.cross_section_shape, friction_type)
+            if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
+                friction_type = self.dialog.findChild(QObject, "friction_type")
+                setup_friction_and_vegetation_widgets(
+                    self, self.cross_section_shape, friction_type, self.cross_section_prefix
+                )
 
     def populate_widgets(self, data_model_cls=None, feature=None, start_end_modifier=None):
         """
@@ -452,9 +455,9 @@ class FormWithXSTable(BaseForm):
         self.custom_widgets[xs_table_add] = self.cross_section_table_add
         self.custom_widgets[xs_table_delete] = self.cross_section_table_delete
         self.custom_widgets[xs_table_paste] = self.cross_section_table_paste
-        if self.MODEL == dm.CrossSectionLocation:
-            xs_friction = "cross_section_friction_widget"
-            xs_vegetation = "cross_section_vegetation_widget"
+        if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
+            xs_friction = f"{self.cross_section_prefix}cross_section_friction_widget"
+            xs_vegetation = f"{self.cross_section_prefix}cross_section_vegetation_widget"
             self.cross_section_friction = self.dialog.findChild(QTableWidget, xs_friction)
             self.cross_section_vegetation = self.dialog.findChild(QTableWidget, xs_vegetation)
             self.custom_widgets[xs_friction] = self.cross_section_friction
@@ -464,9 +467,11 @@ class FormWithXSTable(BaseForm):
         """Setting up all form widgets."""
         super().setup_form_widgets()
         setup_cross_section_widgets(self, self.cross_section_shape, self.cross_section_prefix)
-        friction_type = self.dialog.findChild(QObject, "friction_type")
-        if friction_type is not None:
-            setup_friction_and_vegetation_widgets(self, self.cross_section_shape, friction_type)
+        friction_type = self.dialog.findChild(QObject, f"{self.cross_section_prefix}friction_type")
+        if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
+            setup_friction_and_vegetation_widgets(
+                self, self.cross_section_shape, friction_type, self.cross_section_prefix
+            )
 
     def connect_custom_widgets(self):
         """Connect other widgets."""
@@ -492,7 +497,7 @@ class FormWithXSTable(BaseForm):
         paste_slot = self.paste_table_rows
         connect_signal(paste_signal, paste_slot)
         self.dialog.active_form_signals.add((paste_signal, paste_slot))
-        if self.MODEL == dm.CrossSectionLocation:
+        if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
             cross_section_friction_edit_signal = self.cross_section_friction.cellChanged
             cross_section_vegetation_edit_signal = self.cross_section_vegetation.cellChanged
             cross_section_friction_edit_slot = partial(self.edit_table_row, "cross_section_friction_table")
@@ -573,7 +578,7 @@ class FormWithXSTable(BaseForm):
         else:
             last_row_number = self.cross_section_table.rowCount()
         self.cross_section_table.insertRow(last_row_number)
-        if self.MODEL == dm.CrossSectionLocation:
+        if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
             self.cross_section_friction.insertRow(last_row_number)
             self.cross_section_vegetation.insertRow(last_row_number)
 
@@ -582,11 +587,11 @@ class FormWithXSTable(BaseForm):
         selected_rows = {idx.row() for idx in self.cross_section_table.selectedIndexes()}
         for row in sorted(selected_rows, reverse=True):
             self.cross_section_table.removeRow(row)
-            if self.MODEL == dm.CrossSectionLocation:
+            if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
                 self.cross_section_friction.removeRow(row)
                 self.cross_section_vegetation.removeRow(row)
         self.save_cross_section_table_edits()
-        if self.MODEL == dm.CrossSectionLocation:
+        if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
             self.save_cross_section_table_edits("cross_section_friction_table")
             self.save_cross_section_table_edits("cross_section_vegetation_table")
 
@@ -606,7 +611,7 @@ class FormWithXSTable(BaseForm):
             self.cross_section_table.insertRow(last_row_num)
             self.cross_section_table.setItem(last_row_num, 0, QTableWidgetItem(height_str))
             self.cross_section_table.setItem(last_row_num, 1, QTableWidgetItem(width_str))
-            if self.MODEL == dm.CrossSectionLocation:
+            if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
                 self.cross_section_friction.insertRow(last_row_num)
                 self.cross_section_vegetation.insertRow(last_row_num)
             last_row_num += 1
@@ -655,12 +660,26 @@ class FormWithXSTable(BaseForm):
 
     def activate_field_based_conditions(self):
         """Activate filed based conditions."""
-        widget = self.dialog.findChild(QObject, f"{self.cross_section_prefix}cross_section_shape")
-        if widget is not None:
-            edit_signal = self.get_widget_editing_signal(widget)
-            edit_slot = partial(setup_cross_section_widgets, self, widget, self.cross_section_prefix)
-            connect_signal(edit_signal, edit_slot)
-            self.dialog.active_form_signals.add((edit_signal, edit_slot))
+        shape_widget = self.dialog.findChild(QObject, f"{self.cross_section_prefix}cross_section_shape")
+        friction_widget = self.dialog.findChild(QObject, f"{self.cross_section_prefix}friction_type")
+        if shape_widget is not None:
+            shape_edit_signal = self.get_widget_editing_signal(shape_widget)
+            shape_edit_slot = partial(
+                setup_cross_section_definition_widgets, self, shape_widget, friction_widget, self.cross_section_prefix
+            )
+            connect_signal(shape_edit_signal, shape_edit_slot)
+            self.dialog.active_form_signals.add((shape_edit_signal, shape_edit_slot))
+        if friction_widget is not None:
+            friction_edit_signal = self.get_widget_editing_signal(friction_widget)
+            friction_edit_slot = partial(
+                setup_friction_and_vegetation_widgets,
+                self,
+                shape_widget,
+                friction_widget,
+                self.cross_section_prefix,
+            )
+            connect_signal(friction_edit_signal, friction_edit_slot)
+            self.dialog.active_form_signals.add((friction_edit_signal, friction_edit_slot))
 
 
 class FormWithNode(BaseForm):
@@ -1458,8 +1477,8 @@ class CrossSectionLocationForm(FormWithXSTable):
                     "cross_section_width",
                     "cross_section_height",
                     "cross_section_table",
-                    "cross_section_friction",
-                    "cross_section_vegetation",
+                    "cross_section_friction_table",
+                    "cross_section_vegetation_table",
                 ]:
                     self.feature[xs_field_name] = closest_existing_cross_section[xs_field_name]
         try:
