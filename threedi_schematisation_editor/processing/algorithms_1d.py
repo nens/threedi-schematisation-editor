@@ -45,7 +45,7 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
         return self.tr(
         """
         <p>Calculate manhole bottom level from the invert levels of pipes or culverts.</p>
-        <p>For each manhole, the algorithm determines which sides of which pipes (or culverts) are connected to it, and what is the invert level at that side. It than takes the lowest of these invert levels as bottom level for the manhole.</p>
+        <p>For each manhole, the algorithm determines which sides of which pipes (or culverts) are connected to it, and what the invert level is at that side. It than takes the lowest of these invert levels as bottom level for the manhole.</p>
         <h3>Parameters</h3>
         <h4>Manhole layer</h4>
         <p>Manhole layer that is added to the project with the 3Di Schematisation Editor.</p>
@@ -54,7 +54,7 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
         <p>Pipe or Culvert layer that is added to the project with the 3Di Schematisation Editor.</p>
         <p>If "Selected pipes only" is checked, only the selected pipes will be used in the algorithm.</p>
         <h4>Overwrite existing bottom levels</h4>
-        <p>If checked, bottom levels will be recalculated for manholes that already have a bottom level filled in</p> 
+        <p>If checked, bottom levels will be recalculated for manholes that already have a bottom level filled in.</p> 
         <h4>Do not raise existing bottom levels</h4>
         <p>This is only relevant if "Overwrite existing bottom levels" is checked.</p>
         <p>If checked, bottom levels will only be updated for manholes where the calculated value is lower than the existing value.</p>
