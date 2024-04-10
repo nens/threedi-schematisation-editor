@@ -43,7 +43,7 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
 
     def shortHelpString(self):
         return self.tr(
-        """
+            """
         <p>Calculate manhole bottom level from the invert levels of pipes or culverts.</p>
         <p>For each manhole, the algorithm determines which sides of which pipes (or culverts) are connected to it, and what the invert level is at that side. It than takes the lowest of these invert levels as bottom level for the manhole.</p>
         <h3>Parameters</h3>
@@ -58,7 +58,8 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
         <h4>Do not raise existing bottom levels</h4>
         <p>This is only relevant if "Overwrite existing bottom levels" is checked.</p>
         <p>If checked, bottom levels will only be updated for manholes where the calculated value is lower than the existing value.</p>
-        """)
+        """
+        )
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -129,7 +130,7 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
             if invert_level_end_point != NULL:
                 node_adjacent_invert_levels[pipe_end_node_id].add(invert_level_end_point)
             processed_pipes += 1
-            feedback.setProgress(100/3 * processed_pipes / num_pipes)
+            feedback.setProgress(100 / 3 * processed_pipes / num_pipes)
             if feedback.isCanceled():
                 return {}
         bottom_level_changes = {}
@@ -152,7 +153,7 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
                     continue
             bottom_level_changes[manhole_fid] = min_invert_level
             processed_manholes += 1
-            feedback.setProgress(100/3 + 100/3 * processed_manholes / num_manholes)
+            feedback.setProgress(100 / 3 + 100 / 3 * processed_manholes / num_manholes)
             if feedback.isCanceled():
                 return {}
         if bottom_level_changes:
@@ -162,7 +163,7 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
                 if feedback.isCanceled():
                     return {}
                 manhole_lyr.changeAttributeValue(manhole_fid, bottom_level_field_idx, bottom_level)
-                feedback.setProgress(200/3 + 100/3 * (i + 1) / len(bottom_level_changes))
+                feedback.setProgress(200 / 3 + 100 / 3 * (i + 1) / len(bottom_level_changes))
                 if feedback.isCanceled():
                     return {}
             success = manhole_lyr.commitChanges()

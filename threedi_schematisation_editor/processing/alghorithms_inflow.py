@@ -243,11 +243,6 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
         if surface_map_feats:
             surface_map_lyr.startEditing()
             surface_map_lyr.addFeatures(surface_map_feats)
-            success = surface_map_lyr.commitChanges()
-            if not success:
-                commit_errors = surface_map_lyr.commitErrors()
-                commit_errors_message = "\n".join(commit_errors)
-                feedback.reportError(commit_errors_message)
         feedback.setProgress(100)
         return {}
 
