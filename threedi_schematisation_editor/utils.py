@@ -914,3 +914,12 @@ class NumericItemDelegate(QItemDelegate):
         validator.setNotation(QDoubleValidator.StandardNotation)
         editor.setValidator(validator)
         return editor
+
+
+def get_plugin_instance(plugin_name="threedi_schematisation_editor"):
+    """Return given plugin name instance."""
+    try:
+        plugin_intance = plugins[plugin_name]
+    except AttributeError:
+        plugin_intance = None
+    return plugin_intance
