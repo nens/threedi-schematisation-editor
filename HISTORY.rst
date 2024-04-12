@@ -1,7 +1,7 @@
 History
 =======
 
-1.10 (unreleased)
+1.10 (2024-04-12)
 -----------------
 
 - Fixes/enhancements: #191
