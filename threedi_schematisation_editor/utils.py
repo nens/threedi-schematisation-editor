@@ -912,6 +912,7 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
     friction_value_clear_widget = custom_form.dialog.findChild(QObject, f"{prefix}friction_value_clear")
     cross_section_friction_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_label")
     cross_section_friction_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_widget")
+    cross_section_friction_clear = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_clear")
     vegetation_stem_density_label_widget = custom_form.dialog.findChild(
         QObject, f"{prefix}vegetation_stem_density_label"
     )
@@ -940,8 +941,13 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
         QObject, f"{prefix}cross_section_vegetation_label"
     )
     cross_section_vegetation_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_widget")
+    cross_section_vegetation_clear = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_clear")
     non_table_friction_widgets = [friction_value_label_widget, friction_value_widget, friction_value_clear_widget]
-    table_friction_widgets = [cross_section_friction_label_widget, cross_section_friction_widget]
+    table_friction_widgets = non_table_friction_widgets + [
+        cross_section_friction_label_widget,
+        cross_section_friction_widget,
+        cross_section_friction_clear,
+    ]
     non_table_vegetation_widgets = [
         vegetation_stem_density_label_widget,
         vegetation_stem_density_widget,
@@ -956,7 +962,11 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
         vegetation_drag_coefficient_widget,
         vegetation_drag_coefficient_clear_widget,
     ]
-    table_vegetation_widgets = [cross_section_vegetation_label_widget, cross_section_vegetation_widget]
+    table_vegetation_widgets = non_table_vegetation_widgets + [
+        cross_section_vegetation_label_widget,
+        cross_section_vegetation_widget,
+        cross_section_vegetation_clear,
+    ]
     all_related_widgets = (
         non_table_friction_widgets + table_friction_widgets + non_table_vegetation_widgets + table_vegetation_widgets
     )

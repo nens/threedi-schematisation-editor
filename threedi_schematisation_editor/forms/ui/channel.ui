@@ -28,7 +28,7 @@
         <x>0</x>
         <y>0</y>
         <width>515</width>
-        <height>705</height>
+        <height>763</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
@@ -941,8 +941,15 @@
               <string>Friction</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_10">
-              <item row="0" column="0">
-               <widget class="QLabel" name="cross_section_location_friction_type_label">
+              <item row="0" column="4">
+               <widget class="QToolButton" name="cross_section_location_friction_value_clear">
+                <property name="text">
+                 <string>x</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <widget class="QLabel" name="cross_section_location_friction_value_label">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
@@ -950,13 +957,36 @@
                  <set>Qt::ImhNone</set>
                 </property>
                 <property name="text">
-                 <string>Friction type</string>
+                 <string>Friction value</string>
                 </property>
                 <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
                 </property>
                 <property name="indent">
                  <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0" colspan="5">
+               <widget class="QLabel" name="cross_section_location_cross_section_friction_label">
+                <property name="text">
+                 <string>Friction coefficients per segment</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="cross_section_location_friction_type">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
                 </property>
                </widget>
               </item>
@@ -994,8 +1024,8 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="2">
-               <widget class="QLabel" name="cross_section_location_friction_value_label">
+              <item row="0" column="0">
+               <widget class="QLabel" name="cross_section_location_friction_type_label">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
@@ -1003,43 +1033,13 @@
                  <set>Qt::ImhNone</set>
                 </property>
                 <property name="text">
-                 <string>Friction value</string>
+                 <string>Friction type</string>
                 </property>
                 <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
                 <property name="indent">
                  <number>10</number>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="4">
-               <widget class="QToolButton" name="cross_section_location_friction_value_clear">
-                <property name="text">
-                 <string>x</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QComboBox" name="cross_section_location_friction_type">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0" colspan="5">
-               <widget class="QLabel" name="cross_section_location_cross_section_friction_label">
-                <property name="text">
-                 <string>Friction coefficients per segment</string>
                 </property>
                </widget>
               </item>
@@ -1050,6 +1050,13 @@
                 </property>
                 <property name="selectionBehavior">
                  <enum>QAbstractItemView::SelectRows</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="5">
+               <widget class="QPushButton" name="cross_section_location_cross_section_friction_clear">
+                <property name="text">
+                 <string>Clear segment values</string>
                 </property>
                </widget>
               </item>
@@ -1464,6 +1471,43 @@
               <string>Vegetation</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_11">
+              <item row="0" column="6">
+               <widget class="QToolButton" name="cross_section_location_vegetation_height_clear">
+                <property name="text">
+                 <string>x</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="7">
+               <widget class="QTableWidget" name="cross_section_location_cross_section_vegetation_widget">
+                <property name="inputMethodHints">
+                 <set>Qt::ImhDigitsOnly</set>
+                </property>
+                <property name="selectionBehavior">
+                 <enum>QAbstractItemView::SelectRows</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="3">
+               <widget class="QToolButton" name="cross_section_location_vegetation_stem_diameter_clear">
+                <property name="text">
+                 <string>x</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="cross_section_location_vegetation_stem_diameter_label">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="text">
+                 <string>Stem diameter[m]</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
               <item row="1" column="6">
                <widget class="QToolButton" name="cross_section_location_vegetation_drag_coefficient_clear">
                 <property name="text">
@@ -1471,8 +1515,30 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="2">
-               <widget class="QDoubleSpinBox" name="cross_section_location_vegetation_stem_density">
+              <item row="0" column="4">
+               <widget class="QLabel" name="cross_section_location_vegetation_height_label">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+                <property name="text">
+                 <string>Height [m]</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="margin">
+                 <number>0</number>
+                </property>
+                <property name="indent">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="5">
+               <widget class="QDoubleSpinBox" name="cross_section_location_vegetation_height">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1502,72 +1568,6 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="6">
-               <widget class="QToolButton" name="cross_section_location_vegetation_height_clear">
-                <property name="text">
-                 <string>x</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="4">
-               <widget class="QLabel" name="cross_section_location_vegetation_height_label">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="text">
-                 <string>Height [m]</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="margin">
-                 <number>0</number>
-                </property>
-                <property name="indent">
-                 <number>10</number>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="2">
-               <widget class="QDoubleSpinBox" name="cross_section_location_vegetation_stem_diameter">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="buttonSymbols">
-                 <enum>QAbstractSpinBox::NoButtons</enum>
-                </property>
-                <property name="decimals">
-                 <number>3</number>
-                </property>
-                <property name="minimum">
-                 <double>-9999999999.000000000000000</double>
-                </property>
-                <property name="maximum">
-                 <double>9999999999.000000000000000</double>
-                </property>
-                <property name="showClearButton" stdset="0">
-                 <bool>true</bool>
-                </property>
-                <property name="clearValue" stdset="0">
-                 <bool>true</bool>
-                </property>
-                <property name="expressionsEnabled" stdset="0">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
               <item row="0" column="0">
                <widget class="QLabel" name="cross_section_location_vegetation_stem_density_label">
                 <property name="locale">
@@ -1575,38 +1575,6 @@
                 </property>
                 <property name="text">
                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stem density[m&lt;span style=&quot; vertical-align:super;&quot;&gt;-2&lt;/span&gt;]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="4">
-               <widget class="QLabel" name="cross_section_location_vegetation_drag_coefficient_label">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="text">
-                 <string>Drag coefficient [-]</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>10</number>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="cross_section_location_vegetation_stem_diameter_label">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="text">
-                 <string>Stem diameter[m]</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1647,15 +1615,34 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="3">
-               <widget class="QToolButton" name="cross_section_location_vegetation_stem_density_clear">
+              <item row="2" column="0" colspan="7">
+               <widget class="QLabel" name="cross_section_location_cross_section_vegetation_label">
                 <property name="text">
-                 <string>x</string>
+                 <string>Vegetation parameters per segment</string>
                 </property>
                </widget>
               </item>
-              <item row="0" column="5">
-               <widget class="QDoubleSpinBox" name="cross_section_location_vegetation_height">
+              <item row="1" column="4">
+               <widget class="QLabel" name="cross_section_location_vegetation_drag_coefficient_label">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+                <property name="text">
+                 <string>Drag coefficient [-]</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="indent">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <widget class="QDoubleSpinBox" name="cross_section_location_vegetation_stem_density">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1685,27 +1672,54 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="3">
-               <widget class="QToolButton" name="cross_section_location_vegetation_stem_diameter_clear">
+              <item row="0" column="3">
+               <widget class="QToolButton" name="cross_section_location_vegetation_stem_density_clear">
                 <property name="text">
                  <string>x</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="0" colspan="7">
-               <widget class="QLabel" name="cross_section_location_cross_section_vegetation_label">
-                <property name="text">
-                 <string>Vegetation parameters per segment</string>
+              <item row="1" column="2">
+               <widget class="QDoubleSpinBox" name="cross_section_location_vegetation_stem_diameter">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+                <property name="buttonSymbols">
+                 <enum>QAbstractSpinBox::NoButtons</enum>
+                </property>
+                <property name="decimals">
+                 <number>3</number>
+                </property>
+                <property name="minimum">
+                 <double>-9999999999.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>9999999999.000000000000000</double>
+                </property>
+                <property name="showClearButton" stdset="0">
+                 <bool>true</bool>
+                </property>
+                <property name="clearValue" stdset="0">
+                 <bool>true</bool>
+                </property>
+                <property name="expressionsEnabled" stdset="0">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
-              <item row="3" column="0" colspan="7">
-               <widget class="QTableWidget" name="cross_section_location_cross_section_vegetation_widget">
-                <property name="inputMethodHints">
-                 <set>Qt::ImhDigitsOnly</set>
-                </property>
-                <property name="selectionBehavior">
-                 <enum>QAbstractItemView::SelectRows</enum>
+              <item row="4" column="0" colspan="7">
+               <widget class="QPushButton" name="cross_section_location_cross_section_vegetation_clear">
+                <property name="text">
+                 <string>Clear segment values</string>
                 </property>
                </widget>
               </item>
