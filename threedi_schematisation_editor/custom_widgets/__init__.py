@@ -283,6 +283,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         for combobox in chain.from_iterable(source_attribute_widgets.values()):
             combobox.clear()
             combobox.addItems(layer_field_names)
+            combobox.setCurrentText(combobox.data_model_field_name)
 
     @staticmethod
     def on_method_changed(source_attribute_combobox, value_map_widget, current_text):
@@ -326,6 +327,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
+                widget.data_model_field_name = field_name
                 model_widgets.append(widget)
                 row_idx += 1
             column_widgets[model_cls] = model_widgets
