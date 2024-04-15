@@ -119,7 +119,7 @@
              <locale language="English" country="UnitedStates"/>
             </property>
             <property name="text">
-             <string>Stem diameter[m]</string>
+             <string>Stem diameter [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -279,7 +279,7 @@
              <locale language="English" country="UnitedStates"/>
             </property>
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stem density[m&lt;span style=&quot; vertical-align:super;&quot;&gt;-2&lt;/span&gt;]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stem density [m&lt;span style=&quot; vertical-align:super;&quot;&gt;-2&lt;/span&gt;]&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -289,7 +289,7 @@
           <item row="2" column="0" colspan="7">
            <widget class="QLabel" name="cross_section_vegetation_label">
             <property name="text">
-             <string>Vegetation parameters per segment</string>
+             <string>Vegetation parameters per segment (overrides single vegetation values)</string>
             </property>
            </widget>
           </item>
@@ -416,7 +416,7 @@
           <item row="1" column="0" colspan="5">
            <widget class="QLabel" name="cross_section_friction_label">
             <property name="text">
-             <string>Friction coefficients per segment</string>
+             <string>Friction coefficients per segment (overrides single friction value)</string>
             </property>
            </widget>
           </item>

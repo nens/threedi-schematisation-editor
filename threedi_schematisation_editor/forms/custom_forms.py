@@ -553,7 +553,7 @@ class FormWithXSTable(BaseForm):
         elif table_field_name == "cross_section_friction_table":
             table_header += ["Friction coefficient"]
         elif table_field_name == "cross_section_vegetation_table":
-            table_header += ["Stem density[m-2]", "Stem diameter[m]", "Height [m]", "Drag coefficient [-]"]
+            table_header += ["Stem density [m-2]", "Stem diameter [m]", "Height [m]", "Drag coefficient [-]"]
         else:
             pass
         return table_header
