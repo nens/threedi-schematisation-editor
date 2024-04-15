@@ -28,7 +28,7 @@
         <x>0</x>
         <y>0</y>
         <width>515</width>
-        <height>749</height>
+        <height>911</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
@@ -238,12 +238,32 @@
           </item>
           <item row="3" column="0" colspan="7">
            <widget class="QTableWidget" name="cross_section_vegetation_widget">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>125</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>8</pointsize>
+             </font>
+            </property>
             <property name="inputMethodHints">
              <set>Qt::ImhDigitsOnly</set>
+            </property>
+            <property name="verticalScrollBarPolicy">
+             <enum>Qt::ScrollBarAlwaysOff</enum>
+            </property>
+            <property name="sizeAdjustPolicy">
+             <enum>QAbstractScrollArea::AdjustToContents</enum>
             </property>
             <property name="selectionBehavior">
              <enum>QAbstractItemView::SelectRows</enum>
             </property>
+            <attribute name="verticalHeaderDefaultSectionSize">
+             <number>21</number>
+            </attribute>
            </widget>
           </item>
           <item row="0" column="3">
@@ -402,12 +422,32 @@
           </item>
           <item row="2" column="0" colspan="5">
            <widget class="QTableWidget" name="cross_section_friction_widget">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>125</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>8</pointsize>
+             </font>
+            </property>
             <property name="inputMethodHints">
              <set>Qt::ImhDigitsOnly</set>
+            </property>
+            <property name="verticalScrollBarPolicy">
+             <enum>Qt::ScrollBarAlwaysOff</enum>
+            </property>
+            <property name="sizeAdjustPolicy">
+             <enum>QAbstractScrollArea::AdjustToContents</enum>
             </property>
             <property name="selectionBehavior">
              <enum>QAbstractItemView::SelectRows</enum>
             </property>
+            <attribute name="verticalHeaderDefaultSectionSize">
+             <number>21</number>
+            </attribute>
            </widget>
           </item>
           <item row="0" column="1">
@@ -717,12 +757,32 @@
           </item>
           <item row="5" column="1" colspan="5">
            <widget class="QTableWidget" name="cross_section_table_widget">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>125</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>8</pointsize>
+             </font>
+            </property>
             <property name="inputMethodHints">
              <set>Qt::ImhDigitsOnly</set>
+            </property>
+            <property name="verticalScrollBarPolicy">
+             <enum>Qt::ScrollBarAlwaysOff</enum>
+            </property>
+            <property name="sizeAdjustPolicy">
+             <enum>QAbstractScrollArea::AdjustToContents</enum>
             </property>
             <property name="selectionBehavior">
              <enum>QAbstractItemView::SelectRows</enum>
             </property>
+            <attribute name="verticalHeaderDefaultSectionSize">
+             <number>21</number>
+            </attribute>
            </widget>
           </item>
           <item row="3" column="5">
