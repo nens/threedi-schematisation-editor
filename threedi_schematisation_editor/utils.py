@@ -4,7 +4,7 @@ import shutil
 import sys
 from collections import OrderedDict
 from enum import Enum
-from itertools import chain, groupby
+from itertools import groupby
 from operator import attrgetter
 from typing import Union
 from uuid import uuid4
