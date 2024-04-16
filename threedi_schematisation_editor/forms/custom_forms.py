@@ -607,17 +607,19 @@ class FormWithXSTable(BaseForm):
             last_row_number = self.cross_section_table.rowCount()
         self.cross_section_table.insertRow(last_row_number)
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
-            self.cross_section_friction.insertRow(last_row_number)
-            self.cross_section_vegetation.insertRow(last_row_number)
+            frict_vege_last_row_number = last_row_number - 1
+            self.cross_section_friction.insertRow(frict_vege_last_row_number)
+            self.cross_section_vegetation.insertRow(frict_vege_last_row_number)
 
     def delete_table_rows(self):
         """Slot for handling deletion of the selected rows."""
         selected_rows = {idx.row() for idx in self.cross_section_table.selectedIndexes()}
-        for row in sorted(selected_rows, reverse=True):
-            self.cross_section_table.removeRow(row)
+        for row_number in sorted(selected_rows, reverse=True):
+            self.cross_section_table.removeRow(row_number)
             if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
-                self.cross_section_friction.removeRow(row)
-                self.cross_section_vegetation.removeRow(row)
+                frict_vege_last_row_number = row_number - 1
+                self.cross_section_friction.removeRow(frict_vege_last_row_number)
+                self.cross_section_vegetation.removeRow(frict_vege_last_row_number)
         self.save_cross_section_table_edits()
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
             self.save_cross_section_table_edits("cross_section_friction_table")
@@ -640,8 +642,9 @@ class FormWithXSTable(BaseForm):
             self.cross_section_table.setItem(last_row_num, 0, QTableWidgetItem(height_str))
             self.cross_section_table.setItem(last_row_num, 1, QTableWidgetItem(width_str))
             if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
-                self.cross_section_friction.insertRow(last_row_num)
-                self.cross_section_vegetation.insertRow(last_row_num)
+                frict_vege_last_row_number = last_row_num - 1
+                self.cross_section_friction.insertRow(frict_vege_last_row_number)
+                self.cross_section_vegetation.insertRow(frict_vege_last_row_number)
             last_row_num += 1
         for cell_changed_signal, cell_changed_slot in self.cross_section_table_edit_slot_signal_pairs:
             if cell_changed_signal is not None and cell_changed_slot is not None:
@@ -669,7 +672,8 @@ class FormWithXSTable(BaseForm):
         for cell_changed_signal, cell_changed_slot in self.cross_section_table_edit_slot_signal_pairs:
             if cell_changed_signal is not None and cell_changed_slot is not None:
                 disconnect_signal(cell_changed_signal, cell_changed_slot)
-        table = self.current_cross_section_location["cross_section_table"] or ""
+        leading_table_name = "cross_section_table"
+        table = self.current_cross_section_location[leading_table_name] or ""
         number_of_rows_main = len(table.split("\n"))
         for table_field_name, table_widget in self.cross_section_table_field_widget_map.items():
             if table_widget is None:
@@ -683,7 +687,7 @@ class FormWithXSTable(BaseForm):
             for column_idx in range(table_columns_count):
                 table_widget.setItemDelegateForColumn(column_idx, NumericItemDelegate(table_widget))
             for row_num_main in range(number_of_rows_main):
-                table_widget.insertRow(row_num_main)
+                table_widget.insertRow(row_num_main if table_field_name == leading_table_name else row_num_main - 1)
             if self.current_cross_section_location is not None:
                 table = self.current_cross_section_location[table_field_name] or ""
             else:

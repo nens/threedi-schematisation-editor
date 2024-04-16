@@ -942,13 +942,13 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
     )
     cross_section_vegetation_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_widget")
     cross_section_vegetation_clear = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_clear")
-    non_table_friction_widgets = [friction_value_label_widget, friction_value_widget, friction_value_clear_widget]
-    table_friction_widgets = non_table_friction_widgets + [
+    single_friction_widgets = [friction_value_label_widget, friction_value_widget, friction_value_clear_widget]
+    multi_friction_widgets = [
         cross_section_friction_label_widget,
         cross_section_friction_widget,
         cross_section_friction_clear,
     ]
-    non_table_vegetation_widgets = [
+    single_vege_widgets = [
         vegetation_stem_density_label_widget,
         vegetation_stem_density_widget,
         vegetation_stem_density_clear_widget,
@@ -962,30 +962,49 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
         vegetation_drag_coefficient_widget,
         vegetation_drag_coefficient_clear_widget,
     ]
-    table_vegetation_widgets = non_table_vegetation_widgets + [
+    multi_vege_widgets = [
         cross_section_vegetation_label_widget,
         cross_section_vegetation_widget,
         cross_section_vegetation_clear,
     ]
-    all_related_widgets = (
-        non_table_friction_widgets + table_friction_widgets + non_table_vegetation_widgets + table_vegetation_widgets
-    )
+    all_related_widgets = single_friction_widgets + multi_friction_widgets + single_vege_widgets + multi_vege_widgets
     for related_widget in all_related_widgets:
         related_widget.setDisabled(True)
     cross_section_shape = custom_form.get_widget_value(cross_section_shape_widget)
     friction_value = custom_form.get_widget_value(friction_widget)
     custom_form.update_cross_section_table_header("cross_section_friction_table")
     custom_form.update_cross_section_table_header("cross_section_vegetation_table")
-    if custom_form.layer.isEditable():
-        if (
-            cross_section_shape == en.CrossSectionShape.YZ.value
-            and friction_value == en.FrictionTypeExtended.CHEZY_WITH_CONVEYANCE.value
-        ):
-            for related_widget in chain(table_friction_widgets, table_vegetation_widgets):
-                related_widget.setEnabled(True)
+    if not custom_form.layer.isEditable():
+        return
+    if cross_section_shape == en.CrossSectionShape.YZ.value:
+        if friction_value == en.FrictionTypeExtended.CHEZY.value:
+            related_widgets = single_friction_widgets + single_vege_widgets
+        elif friction_value == en.FrictionTypeExtended.MANNING.value:
+            related_widgets = single_friction_widgets
+        elif friction_value == en.FrictionTypeExtended.CHEZY_WITH_CONVEYANCE.value:
+            related_widgets = single_friction_widgets + multi_friction_widgets + multi_vege_widgets
+        elif friction_value == en.FrictionTypeExtended.MANNING_WITH_CONVEYANCE.value:
+            related_widgets = single_friction_widgets + multi_friction_widgets
         else:
-            for related_widget in chain(non_table_friction_widgets, non_table_vegetation_widgets):
-                related_widget.setEnabled(True)
+            related_widgets = []
+    elif cross_section_shape in {
+        en.CrossSectionShape.TABULATED_RECTANGLE.value,
+        en.CrossSectionShape.TABULATED_TRAPEZIUM.value,
+    }:
+        if friction_value == en.FrictionTypeExtended.CHEZY.value:
+            related_widgets = single_friction_widgets
+        elif friction_value == en.FrictionTypeExtended.MANNING.value:
+            related_widgets = single_friction_widgets
+        elif friction_value == en.FrictionTypeExtended.CHEZY_WITH_CONVEYANCE.value:
+            related_widgets = single_friction_widgets + single_vege_widgets
+        elif friction_value == en.FrictionTypeExtended.MANNING_WITH_CONVEYANCE.value:
+            related_widgets = single_friction_widgets
+        else:
+            related_widgets = []
+    else:
+        related_widgets = single_friction_widgets
+    for related_widget in related_widgets:
+        related_widget.setEnabled(True)
 
 
 def setup_cross_section_definition_widgets(custom_form, shape_widget, friction_widget, prefix=""):

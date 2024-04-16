@@ -28,7 +28,7 @@
         <x>0</x>
         <y>0</y>
         <width>515</width>
-        <height>737</height>
+        <height>670</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_7">
@@ -701,7 +701,7 @@ coefficient positive</string>
                  <set>Qt::ImhDigitsOnly</set>
                 </property>
                 <property name="verticalScrollBarPolicy">
-                 <enum>Qt::ScrollBarAlwaysOff</enum>
+                 <enum>Qt::ScrollBarAsNeeded</enum>
                 </property>
                 <property name="sizeAdjustPolicy">
                  <enum>QAbstractScrollArea::AdjustToContents</enum>
