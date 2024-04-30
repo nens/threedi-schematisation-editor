@@ -71,7 +71,6 @@ class LayersManager:
                 dm.BoundaryCondition1D,
             ),
             dm.Manhole: (
-                dm.ConnectionNode,
                 dm.Pipe,
                 dm.Weir,
                 dm.Orifice,
@@ -85,12 +84,9 @@ class LayersManager:
                 dm.BoundaryCondition1D,
             ),
             dm.Channel: (
-                dm.ConnectionNode,
                 dm.CrossSectionLocation,
                 dm.PotentialBreach,
             ),
-            dm.CrossSectionLocation: (dm.Channel,),
-            dm.PotentialBreach: (dm.Channel,),
         }
     )
 
@@ -149,6 +145,9 @@ class LayersManager:
             if layer_model != dm.ConnectionNode:
                 connection_node_layer = self.model_handlers[dm.ConnectionNode].layer
                 snapped_layers.append(connection_node_layer)
+                if layer_model in self.TOPOLOGICAL_EDITING_GROUPS[dm.Channel]:
+                    channel_layer = self.model_handlers[dm.Channel].layer
+                    snapped_layers.append(channel_layer)
             use_topological_editing = False
         project = QgsProject.instance()
         project.setTopologicalEditing(use_topological_editing)
@@ -159,14 +158,14 @@ class LayersManager:
         try:
             snap_type = (
                 Qgis.SnappingTypes(Qgis.SnappingType.Vertex | Qgis.SnappingType.Segment)
-                if layer_model == dm.PotentialBreach
+                if layer_model in self.TOPOLOGICAL_EDITING_GROUPS[dm.Channel]
                 else Qgis.SnappingType.Vertex
             )
         except AttributeError:
             # Backward compatibility for QGIS versions before introducing `Qgis.SnappingTypes`
             snap_type = (
                 QgsSnappingConfig.VertexFlag | QgsSnappingConfig.SegmentFlag
-                if layer_model == dm.PotentialBreach
+                if layer_model in self.TOPOLOGICAL_EDITING_GROUPS[dm.Channel]
                 else QgsSnappingConfig.VertexFlag
             )
         for layer in snapped_layers:

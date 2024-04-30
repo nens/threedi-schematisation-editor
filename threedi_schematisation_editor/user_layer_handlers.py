@@ -26,6 +26,7 @@ from threedi_schematisation_editor.utils import (
     find_linestring_nodes,
     find_point_nodes,
     find_point_polygons,
+    find_point_polyline,
     get_next_feature_id,
 )
 from threedi_schematisation_editor.validators import CrossSectionTableValidator
@@ -790,6 +791,31 @@ class CrossSectionLocationHandler(UserLayerHandler):
     )
 
     VALIDATORS = (CrossSectionTableValidator,)
+
+    def connect_additional_signals(self):
+        """Connecting signals to action specific for the particular layers."""
+        self.layer.geometryChanged.connect(self.trigger_update_channel_references)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to action specific for the particular layers."""
+        self.layer.geometryChanged.disconnect(self.trigger_update_channel_references)
+
+    def trigger_update_channel_references(self, feat_id, geometry):
+        """Triggering update of the channel references after feature geometry change."""
+        update_channel_references_method = partial(self.update_channel_references, feat_id, geometry)
+        QTimer.singleShot(0, update_channel_references_method)
+
+    def update_channel_references(self, feat_id, geometry):
+        """Update references to the channel after geometry change."""
+        channel_handler = self.layer_manager.model_handlers[dm.Channel]
+        channel_layer = channel_handler.layer
+        layer_fields = self.layer.fields()
+        point = geometry.asPoint()
+        channel_feat = find_point_polyline(point, channel_layer)
+        channel_id = channel_feat["id"] if channel_feat else None
+        channel_id_idx = layer_fields.lookupField("channel_id")
+        changes = {channel_id_idx: channel_id}
+        self.layer.changeAttributeValues(feat_id, changes)
 
 
 class ChannelHandler(UserLayerHandler):
