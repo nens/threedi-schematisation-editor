@@ -1,5 +1,6 @@
 # Copyright (C) 2023 by Lutra Consulting
 import os
+from functools import cached_property
 from types import MappingProxyType
 
 from qgis.core import (
@@ -15,6 +16,7 @@ from qgis.core import (
 from qgis.PyQt.QtCore import QCoreApplication
 
 import threedi_schematisation_editor.data_models as dm
+import threedi_schematisation_editor.enumerators as en
 from threedi_schematisation_editor.expressions import (
     cross_section_label,
     cross_section_max_height,
@@ -51,12 +53,23 @@ class LayersManager:
         ("Settings", dm.SETTINGS_ELEMENTS),
     )
     RASTER_GROUPS = (("Model rasters", dm.ELEMENTS_WITH_RASTERS),)
-
     LAYER_JOINS = MappingProxyType({})
 
-    TOPOLOGICAL_EDITING_GROUPS = MappingProxyType(
-        {
-            dm.ConnectionNode: (
+    def __init__(self, iface, user_communication, model_gpkg_path):
+        self.iface = iface
+        self.uc = user_communication
+        self.model_gpkg_path = model_gpkg_path
+        self.form_factory = LayerEditFormFactory(self)
+        self.model_handlers = {}
+        self.layer_handlers = {}
+        self.spawned_groups = {}
+        self.active_form_signals = set()
+        self.iface.currentLayerChanged.connect(self.on_active_layer_changed)
+
+    @cached_property
+    def snapping_groups(self):
+        snap_groups = {
+            dm.ConnectionNode: {
                 dm.Manhole,
                 dm.Pipe,
                 dm.Weir,
@@ -69,37 +82,19 @@ class LayersManager:
                 dm.ImperviousSurfaceMap,
                 dm.Lateral1D,
                 dm.BoundaryCondition1D,
-            ),
-            dm.Manhole: (
-                dm.Pipe,
-                dm.Weir,
-                dm.Orifice,
-                dm.Culvert,
-                dm.Pumpstation,
-                dm.PumpstationMap,
-                dm.Channel,
-                dm.SurfaceMap,
-                dm.ImperviousSurfaceMap,
-                dm.Lateral1D,
-                dm.BoundaryCondition1D,
-            ),
-            dm.Channel: (
-                dm.CrossSectionLocation,
-                dm.PotentialBreach,
-            ),
+            },
+            dm.Channel: {dm.ConnectionNode, dm.CrossSectionLocation, dm.PotentialBreach},
+            dm.CrossSectionLocation: {dm.Channel},
+            dm.PotentialBreach: {dm.Channel},
         }
-    )
-
-    def __init__(self, iface, user_communication, model_gpkg_path):
-        self.iface = iface
-        self.uc = user_communication
-        self.model_gpkg_path = model_gpkg_path
-        self.form_factory = LayerEditFormFactory(self)
-        self.model_handlers = {}
-        self.layer_handlers = {}
-        self.spawned_groups = {}
-        self.active_form_signals = set()
-        self.iface.currentLayerChanged.connect(self.on_active_layer_changed)
+        for model_cls in dm.ALL_MODELS:
+            if model_cls.__geometrytype__ == en.GeometryType.NoGeometry:
+                continue
+            if model_cls not in snap_groups:
+                snap_groups[model_cls] = {model_cls, dm.ConnectionNode}
+            else:
+                snap_groups[model_cls].add(model_cls)
+        return snap_groups
 
     def validate_layers(self, return_raw_errors=False):
         """Validate all layers registered within handlers."""
@@ -133,22 +128,11 @@ class LayersManager:
 
     def set_layers_snapping(self, layer_handler):
         """Setting snapping rules."""
-        active_layer = layer_handler.layer
         layer_model = layer_handler.MODEL
-        snapped_layers = [active_layer]
-        if layer_model in self.TOPOLOGICAL_EDITING_GROUPS:
-            snapped_layers += [
-                self.model_handlers[linked_model].layer for linked_model in self.TOPOLOGICAL_EDITING_GROUPS[layer_model]
-            ]
-            use_topological_editing = True
-        else:
-            if layer_model != dm.ConnectionNode:
-                connection_node_layer = self.model_handlers[dm.ConnectionNode].layer
-                snapped_layers.append(connection_node_layer)
-                if layer_model in self.TOPOLOGICAL_EDITING_GROUPS[dm.Channel]:
-                    channel_layer = self.model_handlers[dm.Channel].layer
-                    snapped_layers.append(channel_layer)
-            use_topological_editing = False
+        if layer_model not in self.snapping_groups:
+            return
+        snapped_layers = [self.model_handlers[linked_model].layer for linked_model in self.snapping_groups[layer_model]]
+        use_topological_editing = layer_model == dm.ConnectionNode
         project = QgsProject.instance()
         project.setTopologicalEditing(use_topological_editing)
         snap_config = project.snappingConfig()
@@ -158,14 +142,14 @@ class LayersManager:
         try:
             snap_type = (
                 Qgis.SnappingTypes(Qgis.SnappingType.Vertex | Qgis.SnappingType.Segment)
-                if layer_model in self.TOPOLOGICAL_EDITING_GROUPS[dm.Channel]
+                if layer_model in {dm.CrossSectionLocation, dm.PotentialBreach}
                 else Qgis.SnappingType.Vertex
             )
         except AttributeError:
             # Backward compatibility for QGIS versions before introducing `Qgis.SnappingTypes`
             snap_type = (
                 QgsSnappingConfig.VertexFlag | QgsSnappingConfig.SegmentFlag
-                if layer_model in self.TOPOLOGICAL_EDITING_GROUPS[dm.Channel]
+                if layer_model in {dm.CrossSectionLocation, dm.PotentialBreach}
                 else QgsSnappingConfig.VertexFlag
             )
         for layer in snapped_layers:

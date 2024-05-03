@@ -835,21 +835,26 @@ class ChannelHandler(UserLayerHandler):
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
         self.layer.featureAdded.connect(self.trigger_fulfill_geometry_requirements)
-        self.layer.geometryChanged.connect(self.trigger_update_node_references)
+        self.layer.geometryChanged.connect(self.trigger_on_channel_geometry_change)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
         self.layer.featureAdded.disconnect(self.trigger_fulfill_geometry_requirements)
-        self.layer.geometryChanged.disconnect(self.trigger_update_node_references)
+        self.layer.geometryChanged.disconnect(self.trigger_on_channel_geometry_change)
 
-    def trigger_fulfill_geometry_requirements(self, channel_fet_id):
+    def trigger_fulfill_geometry_requirements(self, channel_fid):
         """Triggering geometry modifications on newly added feature."""
-        modify_geometry_method = partial(self.fulfill_geometry_requirements, channel_fet_id)
+        modify_geometry_method = partial(self.fulfill_geometry_requirements, channel_fid)
         QTimer.singleShot(0, modify_geometry_method)
 
-    def fulfill_geometry_requirements(self, channel_feat_id):
+    def trigger_on_channel_geometry_change(self, channel_fid, new_geometry):
+        """Triggering geometry modifications on newly added feature."""
+        on_channel_geometry_change_method = partial(self.on_channel_geometry_change, channel_fid, new_geometry)
+        QTimer.singleShot(0, on_channel_geometry_change_method)
+
+    def fulfill_geometry_requirements(self, channel_fid):
         """Fulfill geometry requirements for newly added channel."""
-        feat = self.layer.getFeature(channel_feat_id)
+        feat = self.layer.getFeature(channel_fid)
         geom = feat.geometry()
         vertices_count = count_vertices(geom)
         linestring = geom.asPolyline()
@@ -859,6 +864,49 @@ class ChannelHandler(UserLayerHandler):
             new_source_geom = QgsGeometry.fromPolylineXY(linestring)
             feat.setGeometry(new_source_geom)
             self.layer.updateFeature(feat)
+
+    def on_channel_geometry_change(self, channel_fid, new_geometry):
+        """Update channel node references and dependent features geometry."""
+        self.update_node_references(channel_fid, new_geometry)
+        feat = self.layer.getFeature(channel_fid)
+        channel_id = feat["id"]
+        try:
+            feat_real = next(self.layer_dt.getFeatures(QgsFeatureRequest(QgsExpression(f'"id" = {channel_id}'))))
+        except StopIteration:  # Feature not committed
+            return
+        old_geometry = feat_real.geometry()
+        old_geometry_length, new_geometry_length = old_geometry.length(), new_geometry.length()
+        channel_request = QgsFeatureRequest(QgsExpression(f'"channel_id" = {channel_id}'))
+        # Adjust cross-section locations
+        cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
+        cross_section_location_layer = cross_section_location_handler.layer
+        channel_cross_section_locations = list(cross_section_location_handler.layer_dt.getFeatures(channel_request))
+        for xs_feat in channel_cross_section_locations:
+            xs_fid = xs_feat.id()
+            xs_geometry = xs_feat.geometry()
+            xs_fractional_milage = old_geometry.lineLocatePoint(xs_geometry) / old_geometry_length
+            if xs_fractional_milage < 0:
+                continue
+            new_xs_position = new_geometry.interpolate(xs_fractional_milage * new_geometry_length)
+            cross_section_location_layer.changeGeometry(xs_fid, new_xs_position)
+        # Adjust potential breaches
+        potential_breach_handler = self.layer_manager.model_handlers[dm.PotentialBreach]
+        potential_breach_layer = potential_breach_handler.layer
+        channel_potential_breaches = list(potential_breach_handler.layer_dt.getFeatures(channel_request))
+        for breach_feat in channel_potential_breaches:
+            breach_fid = breach_feat.id()
+            breach_geometry = breach_feat.geometry()
+            breach_start_point, breach_end_point = breach_geometry.asPolyline()
+            breach_point_geom = QgsGeometry.fromPointXY(breach_start_point)
+            if not old_geometry.intersects(breach_point_geom.buffer(0.0000001, 5)):
+                continue
+            breach_fractional_milage = old_geometry.lineLocatePoint(breach_point_geom) / old_geometry_length
+            if breach_fractional_milage < 0:
+                continue
+            new_breach_adjacent_position = new_geometry.interpolate(breach_fractional_milage * new_geometry_length)
+            breach_start_point = new_breach_adjacent_position.asPoint()
+            new_breach_geometry = QgsGeometry.fromPolylineXY([breach_start_point, breach_end_point])
+            potential_breach_layer.changeGeometry(breach_fid, new_breach_geometry)
 
 
 class BoundaryCondition2DHandler(UserLayerHandler):
