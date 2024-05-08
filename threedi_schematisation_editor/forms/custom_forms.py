@@ -1302,19 +1302,19 @@ class CrossSectionLocationForm(FormWithXSTable):
         point = point_geom.asPoint()
         if find_point_nodes(point, connection_node_handler.layer) is not None:
             self.uc.show_warn("WARNING: Cross-section shouldn't be placed at connection node location!")
-        channel_node_feat = find_point_nodes(point, channel_layer)
-        if channel_node_feat:
-            channel_id = channel_node_feat["id"]
-            channel_geom = channel_node_feat.geometry()
+        channel_feat = find_point_polyline(point, channel_layer)
+        if channel_feat:
+            channel_id = channel_feat["id"]
+            channel_geom = channel_feat.geometry()
             point_distance_on_channel = channel_geom.lineLocatePoint(point_geom)
             other_cross_sections = self.handler.get_multiple_feats_by_id(channel_id, "channel_id")
             other_cross_sections_num = len(other_cross_sections)
             cross_section_num = other_cross_sections_num + 1
-            channel_code = channel_node_feat["code"]
+            channel_code = channel_feat["code"]
             cross_section_location_code = f"{channel_code}_cross_section_{cross_section_num}"
             self.feature["channel_id"] = channel_id
             self.feature["code"] = cross_section_location_code
-            self.channel = channel_node_feat
+            self.channel = channel_feat
             if other_cross_sections:
                 new_feat_with_distance = (self.feature, point_distance_on_channel)
                 cross_sections_with_distance = [
