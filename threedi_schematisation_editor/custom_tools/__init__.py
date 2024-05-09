@@ -200,7 +200,9 @@ class PointFeaturesImporter(AbstractFeaturesImporter):
 
     def new_structure_geometry(self, src_structure_feat):
         """Create new structure geometry based on the source structure feature."""
-        src_geometry = src_structure_feat.geometry()
+        src_geometry = QgsGeometry(src_structure_feat.geometry())
+        if src_geometry.isMultipart():
+            src_geometry.convertToSingleType()
         src_point = src_geometry.asPoint()
         dst_point = src_point
         dst_geometry = QgsGeometry.fromPointXY(dst_point)
@@ -289,6 +291,9 @@ class PointFeaturesImporter(AbstractFeaturesImporter):
                 create_connection_nodes,
                 transformation,
             )
+            new_structure_geom = new_structure_feat.geometry()
+            if find_point_nodes(new_structure_geom.asPoint(), self.structure_layer) is not None:
+                continue
             if new_nodes:
                 self.update_attributes(dm.ConnectionNode, external_src_feat, *new_nodes)
                 self.node_layer.addFeatures(new_nodes)
@@ -296,15 +301,7 @@ class PointFeaturesImporter(AbstractFeaturesImporter):
             self.update_attributes(self.structure_model_cls, external_src_feat, new_structure_feat)
             next_structure_id += 1
             new_structures.append(new_structure_feat)
-        commit_errors = []
-        success = self.node_layer.commitChanges()
-        if not success:
-            commit_errors += self.node_layer.commitErrors()
         self.structure_layer.addFeatures(new_structures)
-        success = self.structure_layer.commitChanges()
-        if not success:
-            commit_errors += self.structure_layer.commitErrors()
-        return success, commit_errors
 
 
 class LinearFeaturesImporter(AbstractFeaturesImporter):
@@ -324,7 +321,9 @@ class LinearFeaturesImporter(AbstractFeaturesImporter):
 
     def new_structure_geometry(self, src_structure_feat):
         """Create new structure geometry based on the source structure feature."""
-        src_geometry = src_structure_feat.geometry()
+        src_geometry = QgsGeometry(src_structure_feat.geometry())
+        if src_geometry.isMultipart():
+            src_geometry.convertToSingleType()
         src_polyline = src_geometry.asPolyline()
         dst_polyline = src_polyline if self.structure_model_cls == dm.Culvert else [src_polyline[0], src_polyline[-1]]
         dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
@@ -482,22 +481,11 @@ class LinearFeaturesImporter(AbstractFeaturesImporter):
             next_structure_id += 1
             new_structures.append(new_structure_feat)
             external_source_structures.append(external_src_feat)
-        commit_errors = []
-        success = self.node_layer.commitChanges()
-        if not success:
-            commit_errors += self.node_layer.commitErrors()
         if create_manholes:
             self.manhole_layer.startEditing()
             new_manholes = self.manholes_for_structures(external_source_structures, new_structures)
             self.manhole_layer.addFeatures(new_manholes)
-            success = self.manhole_layer.commitChanges()
-            if not success:
-                commit_errors += self.manhole_layer.commitErrors()
         self.structure_layer.addFeatures(new_structures)
-        success = self.structure_layer.commitChanges()
-        if not success:
-            commit_errors += self.structure_layer.commitErrors()
-        return success, commit_errors
 
 
 class CulvertsImporter(LinearFeaturesImporter):

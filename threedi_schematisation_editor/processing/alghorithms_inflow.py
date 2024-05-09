@@ -8,6 +8,7 @@ from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,
+    QgsProcessingParameterBoolean,
     QgsProcessingParameterEnum,
     QgsProcessingParameterNumber,
     QgsProcessingParameterVectorLayer,
@@ -23,8 +24,10 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
     """Link (impervious) surfaces to connection nodes."""
 
     SURFACE_LAYER = "SURFACE_LAYER"
+    SELECTED_SURFACES = "SELECTED_SURFACES"
     SURFACE_MAP_LAYER = "SURFACE_MAP_LAYER"
     PIPE_LAYER = "PIPE_LAYER"
+    SELECTED_PIPES = "SELECTED_PIPES"
     NODE_LAYER = "NODE_LAYER"
     SEWERAGE_TYPES = "SEWERAGE_TYPES"
     STORMWATER_SEWER_PREFERENCE = "STORMWATER_SEWER_PREFERENCE"
@@ -85,6 +88,12 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
             )
         )
         self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.SELECTED_SURFACES,
+                self.tr("Selected (impervious) surfaces only"),
+            )
+        )
+        self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.SURFACE_MAP_LAYER,
                 self.tr("(Impervious) surface map layer"),
@@ -98,6 +107,12 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
                 self.tr("Pipe layer"),
                 [QgsProcessing.TypeVectorLine],
                 defaultValue="Pipe",
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.SELECTED_PIPES,
+                self.tr("Selected pipes only"),
             )
         )
         self.addParameter(
@@ -143,9 +158,11 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
         surface_map_lyr = self.parameterAsLayer(parameters, self.SURFACE_MAP_LAYER, context)
         if surface_map_lyr is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SURFACE_MAP_LAYER))
+        selected_surfaces = self.parameterAsBool(parameters, self.SELECTED_SURFACES, context)
         pipe_lyr = self.parameterAsLayer(parameters, self.PIPE_LAYER, context)
         if pipe_lyr is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.PIPE_LAYER))
+        selected_pipes = self.parameterAsBool(parameters, self.SELECTED_PIPES, context)
         node_lyr = self.parameterAsLayer(parameters, self.NODE_LAYER, context)
         if node_lyr is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NODE_LAYER))
@@ -162,15 +179,16 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
         if search_distance is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SEARCH_DISTANCE))
         surface_to_pipes_distances = {}
+        pipe_iterator = pipe_lyr.selectedFeatures() if selected_pipes else pipe_lyr.getFeatures()
         pipe_filter_request = QgsFeatureRequest(
-            [feat.id() for feat in pipe_lyr.getFeatures() if feat["sewerage_type"] in sewerage_types]
+            [feat.id() for feat in pipe_iterator if feat["sewerage_type"] in sewerage_types]
         )
         pipe_features, pipe_index = spatial_index(pipe_lyr, pipe_filter_request)
         feedback.setProgress(0)
-        number_of_surfaces = surface_lyr.featureCount()
+        number_of_surfaces = surface_lyr.selectedFeatureCount() if selected_surfaces else surface_lyr.featureCount()
         number_of_steps = number_of_surfaces * 2
         step = 1
-        for surface_feat in surface_lyr.getFeatures():
+        for surface_feat in surface_lyr.selectedFeatures() if selected_surfaces else surface_lyr.getFeatures():
             if feedback.isCanceled():
                 return {}
             surface_fid = surface_feat.id()
