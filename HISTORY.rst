@@ -4,7 +4,7 @@ History
 1.11 (unreleased)
 -----------------
 
-- Fixes/enhancements: #190
+- Fixes/enhancements: #190, #196, #219, #220, #221, #230, #232
 
 
 1.10 (2024-04-12)
