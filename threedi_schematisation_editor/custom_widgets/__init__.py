@@ -586,7 +586,11 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                     node_layer=node_layer,
                 )
             structures_importer.import_structures(selected_ids=selected_feat_ids)
-            self.uc.show_info(f"Features successfully imported.", self)
+            success_msg = (
+                "Features imported successfully.\n\nThe layers to which the features have been added are "
+                "still in editing mode, so you can review the changes before saving them to the layers."
+            )
+            self.uc.show_info(success_msg, self)
         except Exception as e:
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
         finally:
