@@ -587,8 +587,9 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 )
             structures_importer.import_structures(selected_ids=selected_feat_ids)
             success_msg = (
-                "Features imported successfully.\n\nThe layers to which the features have been added are "
-                "still in editing mode, so you can review the changes before saving them to the layers."
+                "Features imported successfully.\n\n"
+                "The layers to which the features have been added are still in editing mode, "
+                "so you can review the changes before saving them to the layers."
             )
             self.uc.show_info(success_msg, self)
         except Exception as e:
