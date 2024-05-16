@@ -83,10 +83,7 @@ class ImportCulverts(QgsProcessingAlgorithm):
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
         culverts_importer = CulvertsImporter(source_layer, target_gpkg, import_config)
-        success, commit_errors = culverts_importer.import_structures(context=context)
-        if not success:
-            commit_errors_message = "\n".join(commit_errors)
-            feedback.reportError(commit_errors_message)
+        culverts_importer.import_structures(context=context)
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
@@ -158,10 +155,7 @@ class ImportOrifices(QgsProcessingAlgorithm):
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
         orifices_importer = OrificesImporter(source_layer, target_gpkg, import_config)
-        success, commit_errors = orifices_importer.import_structures(context=context)
-        if not success:
-            commit_errors_message = "\n".join(commit_errors)
-            feedback.reportError(commit_errors_message)
+        orifices_importer.import_structures(context=context)
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
@@ -233,10 +227,7 @@ class ImportWeirs(QgsProcessingAlgorithm):
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
         weirs_importer = WeirsImporter(source_layer, target_gpkg, import_config)
-        success, commit_errors = weirs_importer.import_structures(context=context)
-        if not success:
-            commit_errors_message = "\n".join(commit_errors)
-            feedback.reportError(commit_errors_message)
+        weirs_importer.import_structures(context=context)
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
@@ -308,10 +299,7 @@ class ImportPipes(QgsProcessingAlgorithm):
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
         pipes_importer = PipesImporter(source_layer, target_gpkg, import_config)
-        success, commit_errors = pipes_importer.import_structures(context=context)
-        if not success:
-            commit_errors_message = "\n".join(commit_errors)
-            feedback.reportError(commit_errors_message)
+        pipes_importer.import_structures(context=context)
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
@@ -383,10 +371,7 @@ class ImportManholes(QgsProcessingAlgorithm):
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
         manholes_importer = ManholesImporter(source_layer, target_gpkg, import_config)
-        success, commit_errors = manholes_importer.import_structures(context=context)
-        if not success:
-            commit_errors_message = "\n".join(commit_errors)
-            feedback.reportError(commit_errors_message)
+        manholes_importer.import_structures(context=context)
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
