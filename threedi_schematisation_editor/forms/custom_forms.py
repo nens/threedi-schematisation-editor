@@ -405,18 +405,25 @@ class FormWithXSTable(BaseForm):
         self.cross_section_table_add = None
         self.cross_section_table_delete = None
         self.cross_section_table_paste = None
+        self.cross_section_table_copy = None
         self.cross_section_friction_clear = None
         self.cross_section_vegetation_clear = None
+        self.cross_section_friction_copy = None
+        self.cross_section_vegetation_copy = None
         self.cross_section_table_cell_changed_signal = None
         self.cross_section_friction_cell_changed_signal = None
         self.cross_section_vegetation_cell_changed_signal = None
         self.cross_section_friction_clear_signal = None
         self.cross_section_vegetation_clear_signal = None
+        self.cross_section_friction_copy_signal = None
+        self.cross_section_vegetation_copy_signal = None
         self.cross_section_table_cell_changed_slot = None
         self.cross_section_friction_cell_changed_slot = None
         self.cross_section_vegetation_cell_changed_slot = None
         self.cross_section_friction_clear_slot = None
         self.cross_section_vegetation_clear_slot = None
+        self.cross_section_friction_copy_slot = None
+        self.cross_section_vegetation_copy_slot = None
         if self.MODEL == dm.Channel:
             self.cross_section_prefix = "cross_section_location_"
             self.current_cross_section_location = None
@@ -452,28 +459,37 @@ class FormWithXSTable(BaseForm):
         xs_table_add = f"{self.cross_section_prefix}cross_section_table_add"
         xs_table_delete = f"{self.cross_section_prefix}cross_section_table_delete"
         xs_table_paste = f"{self.cross_section_prefix}cross_section_table_paste"
+        xs_table_copy = f"{self.cross_section_prefix}cross_section_table_copy"
         self.cross_section_shape = self.dialog.findChild(QObject, f"{self.cross_section_prefix}cross_section_shape")
         self.cross_section_table = self.dialog.findChild(QTableWidget, xs_table)
         self.cross_section_table_add = self.dialog.findChild(QPushButton, xs_table_add)
         self.cross_section_table_delete = self.dialog.findChild(QPushButton, xs_table_delete)
         self.cross_section_table_paste = self.dialog.findChild(QPushButton, xs_table_paste)
+        self.cross_section_table_copy = self.dialog.findChild(QPushButton, xs_table_copy)
         self.custom_widgets[xs_table] = self.cross_section_table
         self.custom_widgets[xs_table_add] = self.cross_section_table_add
         self.custom_widgets[xs_table_delete] = self.cross_section_table_delete
         self.custom_widgets[xs_table_paste] = self.cross_section_table_paste
+        self.custom_widgets[xs_table_copy] = self.cross_section_table_copy
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
             xs_friction = f"{self.cross_section_prefix}cross_section_friction_widget"
             xs_vegetation = f"{self.cross_section_prefix}cross_section_vegetation_widget"
             xs_friction_clear = f"{self.cross_section_prefix}cross_section_friction_clear"
             xs_vegetation_clear = f"{self.cross_section_prefix}cross_section_vegetation_clear"
+            xs_friction_copy = f"{self.cross_section_prefix}cross_section_friction_copy"
+            xs_vegetation_copy = f"{self.cross_section_prefix}cross_section_vegetation_copy"
             self.cross_section_friction = self.dialog.findChild(QTableWidget, xs_friction)
             self.cross_section_vegetation = self.dialog.findChild(QTableWidget, xs_vegetation)
             self.cross_section_friction_clear = self.dialog.findChild(QPushButton, xs_friction_clear)
             self.cross_section_vegetation_clear = self.dialog.findChild(QPushButton, xs_vegetation_clear)
+            self.cross_section_friction_copy = self.dialog.findChild(QPushButton, xs_friction_copy)
+            self.cross_section_vegetation_copy = self.dialog.findChild(QPushButton, xs_vegetation_copy)
             self.custom_widgets[xs_friction] = self.cross_section_friction
             self.custom_widgets[xs_vegetation] = self.cross_section_vegetation
             self.custom_widgets[xs_friction_clear] = self.cross_section_friction_clear
             self.custom_widgets[xs_vegetation_clear] = self.cross_section_vegetation_clear
+            self.custom_widgets[xs_friction_copy] = self.cross_section_friction_copy
+            self.custom_widgets[xs_vegetation_copy] = self.cross_section_vegetation_copy
 
     def setup_form_widgets(self):
         """Setting up all form widgets."""
@@ -509,19 +525,31 @@ class FormWithXSTable(BaseForm):
         paste_slot = self.paste_table_rows
         connect_signal(paste_signal, paste_slot)
         self.dialog.active_form_signals.add((paste_signal, paste_slot))
+
+        copy_signal = self.cross_section_table_copy.clicked
+        copy_slot = partial(self.copy_table_rows, "cross_section_table")
+        connect_signal(copy_signal, copy_slot)
+        self.dialog.active_form_signals.add((copy_signal, copy_slot))
+
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
             cross_section_friction_edit_signal = self.cross_section_friction.cellChanged
             cross_section_vegetation_edit_signal = self.cross_section_vegetation.cellChanged
             cross_section_friction_clear_signal = self.cross_section_friction_clear.clicked
             cross_section_vegetation_clear_signal = self.cross_section_vegetation_clear.clicked
+            cross_section_friction_copy_signal = self.cross_section_friction_copy.clicked
+            cross_section_vegetation_copy_signal = self.cross_section_vegetation_copy.clicked
             cross_section_friction_edit_slot = partial(self.edit_table_row, "cross_section_friction_table")
             cross_section_vegetation_edit_slot = partial(self.edit_table_row, "cross_section_vegetation_table")
             cross_section_friction_clear_slot = partial(self.clear_table_row_values, "cross_section_friction_table")
             cross_section_vegetation_clear_slot = partial(self.clear_table_row_values, "cross_section_vegetation_table")
+            cross_section_friction_copy_slot = partial(self.copy_table_row_values, "cross_section_friction_table")
+            cross_section_vegetation_copy_slot = partial(self.copy_table_row_values, "cross_section_vegetation_table")
             connect_signal(cross_section_friction_edit_signal, cross_section_friction_edit_slot)
             connect_signal(cross_section_vegetation_edit_signal, cross_section_vegetation_edit_slot)
             connect_signal(cross_section_friction_clear_signal, cross_section_friction_clear_slot)
             connect_signal(cross_section_vegetation_clear_signal, cross_section_vegetation_clear_slot)
+            connect_signal(cross_section_friction_copy_signal, cross_section_friction_copy_slot)
+            connect_signal(cross_section_vegetation_copy_signal, cross_section_vegetation_copy_slot)
             self.dialog.active_form_signals.add((cross_section_friction_edit_signal, cross_section_friction_edit_slot))
             self.dialog.active_form_signals.add(
                 (cross_section_vegetation_edit_signal, cross_section_vegetation_edit_slot)
@@ -532,6 +560,10 @@ class FormWithXSTable(BaseForm):
             self.dialog.active_form_signals.add(
                 (cross_section_vegetation_clear_signal, cross_section_vegetation_clear_slot)
             )
+            self.dialog.active_form_signals.add((cross_section_friction_copy_signal, cross_section_friction_copy_slot))
+            self.dialog.active_form_signals.add(
+                (cross_section_vegetation_copy_signal, cross_section_vegetation_copy_slot)
+            )
             self.cross_section_friction_cell_changed_signal = cross_section_friction_edit_signal
             self.cross_section_friction_cell_changed_slot = cross_section_friction_edit_slot
             self.cross_section_vegetation_cell_changed_signal = cross_section_vegetation_edit_signal
@@ -540,6 +572,10 @@ class FormWithXSTable(BaseForm):
             self.cross_section_vegetation_clear_signal = cross_section_vegetation_clear_signal
             self.cross_section_friction_clear_slot = cross_section_friction_clear_slot
             self.cross_section_vegetation_clear_slot = cross_section_vegetation_clear_slot
+            self.cross_section_friction_copy_signal = cross_section_friction_copy_signal
+            self.cross_section_vegetation_copy_signal = cross_section_vegetation_copy_signal
+            self.cross_section_friction_copy_slot = cross_section_friction_copy_slot
+            self.cross_section_vegetation_copy_slot = cross_section_vegetation_copy_slot
 
     def get_cross_section_table_header(self, table_field_name):
         """Get the proper cross-section table header."""
@@ -650,6 +686,25 @@ class FormWithXSTable(BaseForm):
             if cell_changed_signal is not None and cell_changed_slot is not None:
                 connect_signal(cell_changed_signal, cell_changed_slot)
         self.save_cross_section_table_edits()
+
+    def copy_table_rows(self, table_field_name):
+        """Slot for copying table values into the clipboard."""
+        table_widget = self.cross_section_table_field_widget_map[table_field_name]
+        num_of_rows = table_widget.rowCount()
+        num_of_cols = table_widget.columnCount()
+        tabular_values = []
+        for row_num in range(num_of_rows):
+            row_values = []
+            for col_num in range(num_of_cols):
+                item = table_widget.item(row_num, col_num)
+                if item is not None:
+                    item_text = item.text().strip()
+                else:
+                    item_text = ""
+                row_values.append(item_text)
+            tabular_values.append("\t".join(row_values))
+        clipboard_values = "\n".join(tabular_values)
+        QApplication.clipboard().setText(clipboard_values)
 
     def clear_table_row_values(self, table_field_name):
         """Slot for clearing table values."""

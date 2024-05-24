@@ -834,6 +834,13 @@ coefficient positive</string>
                  </widget>
                 </item>
                 <item>
+                 <widget class="QPushButton" name="cross_section_table_copy">
+                  <property name="text">
+                   <string>Copy</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
                  <widget class="QPushButton" name="cross_section_table_paste">
                   <property name="toolTip">
                    <string>Paste rows from clipboard</string>
