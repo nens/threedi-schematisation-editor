@@ -284,16 +284,21 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             combobox.clear()
             combobox.addItems(layer_field_names)
             combobox.setCurrentText(combobox.data_model_field_name)
+        expression_widgets = self.get_column_widgets(StructuresImportConfig.EXPRESSION_COLUMN_IDX, *data_models)
+        for expression_widget in chain.from_iterable(expression_widgets.values()):
+            expression_widget.setLayer(layer)
 
     @staticmethod
-    def on_method_changed(source_attribute_combobox, value_map_widget, current_text):
-        if current_text != ColumnImportMethod.ATTRIBUTE.name.capitalize():
+    def on_method_changed(source_attribute_combobox, value_map_widget, expression_widget, current_text):
+        if current_text != str(ColumnImportMethod.ATTRIBUTE):
             source_attribute_combobox.setDisabled(True)
             value_map_widget.setDisabled(True)
             source_attribute_combobox.setStyleSheet("")
+            expression_widget.setEnabled(current_text == str(ColumnImportMethod.EXPRESSION))
         else:
             source_attribute_combobox.setEnabled(True)
             value_map_widget.setEnabled(True)
+            expression_widget.setDisabled(True)
             if source_attribute_combobox.currentText():
                 source_attribute_combobox.setStyleSheet("")
             else:
@@ -301,7 +306,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
 
     @staticmethod
     def on_source_attribute_value_changed(method_combobox, source_attribute_combobox, current_text):
-        if method_combobox.currentText() == ColumnImportMethod.ATTRIBUTE.name.capitalize() and not current_text:
+        if method_combobox.currentText() == str(ColumnImportMethod.ATTRIBUTE) and not current_text:
             source_attribute_combobox.setStyleSheet(REQUIRED_VALUE_STYLESHEET)
         else:
             source_attribute_combobox.setStyleSheet("")
@@ -368,8 +373,11 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 value_map_item = tree_view_model.item(row_idx, StructuresImportConfig.VALUE_MAP_COLUMN_IDX)
                 value_map_index = value_map_item.index()
                 value_map_button = tree_view.indexWidget(value_map_index)
+                expression_item = tree_view_model.item(row_idx, StructuresImportConfig.EXPRESSION_COLUMN_IDX)
+                expression_index = expression_item.index()
+                expression_widget = tree_view.indexWidget(expression_index)
                 method_combobox.currentTextChanged.connect(
-                    partial(self.on_method_changed, source_attribute_combobox, value_map_button)
+                    partial(self.on_method_changed, source_attribute_combobox, value_map_button, expression_widget)
                 )
                 method_combobox.currentTextChanged.emit(method_combobox.currentText())
                 source_attribute_combobox.currentTextChanged.connect(
@@ -419,6 +427,10 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                     key_value = widget.value_map
                     if not key_value:
                         continue
+                elif column_idx == StructuresImportConfig.EXPRESSION_COLUMN_IDX:
+                    if not widget.isValidExpression():
+                        continue
+                    key_value = widget.expression()
                 else:
                     key_value = widget.text()
                     if not key_value:
@@ -459,6 +471,8 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                             widget.setCurrentText(str(key_value))
                 elif key_name == "value_map":
                     AttributeValueMapDialog.update_value_map_button(widget, key_value)
+                elif key_name == "expression":
+                    widget.setExpression(key_value)
                 else:
                     widget.setText(str(key_value))
                     widget.setCursorPosition(0)
@@ -530,7 +544,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                     method_cbo.currentText(),
                     source_attribute_cbo.currentText(),
                 )
-                if method_txt == ColumnImportMethod.ATTRIBUTE.name.capitalize() and not source_attribute_txt:
+                if method_txt == str(ColumnImportMethod.ATTRIBUTE) and not source_attribute_txt:
                     model_missing_fields.append(field_name)
             if model_missing_fields:
                 missing_fields[model_cls] = model_missing_fields
