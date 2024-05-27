@@ -542,8 +542,8 @@ class FormWithXSTable(BaseForm):
             cross_section_vegetation_edit_slot = partial(self.edit_table_row, "cross_section_vegetation_table")
             cross_section_friction_clear_slot = partial(self.clear_table_row_values, "cross_section_friction_table")
             cross_section_vegetation_clear_slot = partial(self.clear_table_row_values, "cross_section_vegetation_table")
-            cross_section_friction_copy_slot = partial(self.copy_table_row_values, "cross_section_friction_table")
-            cross_section_vegetation_copy_slot = partial(self.copy_table_row_values, "cross_section_vegetation_table")
+            cross_section_friction_copy_slot = partial(self.copy_table_rows, "cross_section_friction_table")
+            cross_section_vegetation_copy_slot = partial(self.copy_table_rows, "cross_section_vegetation_table")
             connect_signal(cross_section_friction_edit_signal, cross_section_friction_edit_slot)
             connect_signal(cross_section_vegetation_edit_signal, cross_section_vegetation_edit_slot)
             connect_signal(cross_section_friction_clear_signal, cross_section_friction_clear_slot)
@@ -600,24 +600,28 @@ class FormWithXSTable(BaseForm):
         table_header = self.get_cross_section_table_header(table_field_name)
         table_widget.setHorizontalHeaderLabels(table_header)
 
-    def get_cross_section_table_text(self, table_field_name="cross_section_table"):
-        """Get cross-section table data as a string representation."""
+    def get_cross_section_table_values(self, table_field_name="cross_section_table"):
+        """Get cross-section table values."""
         table_widget = self.cross_section_table_field_widget_map[table_field_name]
         num_of_rows = table_widget.rowCount()
         num_of_cols = table_widget.columnCount()
         cross_section_table_values = []
         for row_num in range(num_of_rows):
-            values = []
+            row_values = []
             for col_num in range(num_of_cols):
                 item = table_widget.item(row_num, col_num)
                 if item is not None:
                     item_text = item.text().strip()
                 else:
                     item_text = ""
-                values.append(item_text)
-            if all(values):
-                cross_section_table_values.append(values)
-        cross_section_table_str = "\n".join(", ".join(row) for row in cross_section_table_values)
+                row_values.append(item_text)
+            cross_section_table_values.append(row_values)
+        return cross_section_table_values
+
+    def get_cross_section_table_text(self, table_field_name="cross_section_table"):
+        """Get cross-section table data as a string representation."""
+        cross_section_table_values = self.get_cross_section_table_values(table_field_name)
+        cross_section_table_str = "\n".join(", ".join(row) for row in cross_section_table_values if all(row))
         return cross_section_table_str
 
     def save_cross_section_table_edits(self, table_field_name="cross_section_table"):
@@ -643,9 +647,9 @@ class FormWithXSTable(BaseForm):
             last_row_number = self.cross_section_table.rowCount()
         self.cross_section_table.insertRow(last_row_number)
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
-            frict_vege_last_row_number = last_row_number - 1
-            self.cross_section_friction.insertRow(frict_vege_last_row_number)
-            self.cross_section_vegetation.insertRow(frict_vege_last_row_number)
+            frict_vegetation_last_row_number = last_row_number - 1
+            self.cross_section_friction.insertRow(frict_vegetation_last_row_number)
+            self.cross_section_vegetation.insertRow(frict_vegetation_last_row_number)
 
     def delete_table_rows(self):
         """Slot for handling deletion of the selected rows."""
@@ -689,21 +693,8 @@ class FormWithXSTable(BaseForm):
 
     def copy_table_rows(self, table_field_name):
         """Slot for copying table values into the clipboard."""
-        table_widget = self.cross_section_table_field_widget_map[table_field_name]
-        num_of_rows = table_widget.rowCount()
-        num_of_cols = table_widget.columnCount()
-        tabular_values = []
-        for row_num in range(num_of_rows):
-            row_values = []
-            for col_num in range(num_of_cols):
-                item = table_widget.item(row_num, col_num)
-                if item is not None:
-                    item_text = item.text().strip()
-                else:
-                    item_text = ""
-                row_values.append(item_text)
-            tabular_values.append("\t".join(row_values))
-        clipboard_values = "\n".join(tabular_values)
+        cross_section_table_values = self.get_cross_section_table_values(table_field_name)
+        clipboard_values = "\n".join(["\t".join(row_values) for row_values in cross_section_table_values])
         QApplication.clipboard().setText(clipboard_values)
 
     def clear_table_row_values(self, table_field_name):
