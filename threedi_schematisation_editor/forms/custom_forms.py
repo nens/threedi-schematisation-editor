@@ -691,10 +691,10 @@ class FormWithXSTable(BaseForm):
                 connect_signal(cell_changed_signal, cell_changed_slot)
         self.save_cross_section_table_edits()
 
-    def copy_table_rows(self, table_field_name):
+    def copy_table_rows(self, table_field_name, separator=","):
         """Slot for copying table values into the clipboard."""
         cross_section_table_values = self.get_cross_section_table_values(table_field_name)
-        clipboard_values = "\n".join(["\t".join(row_values) for row_values in cross_section_table_values])
+        clipboard_values = "\n".join([separator.join(row_values) for row_values in cross_section_table_values])
         QApplication.clipboard().setText(clipboard_values)
 
     def clear_table_row_values(self, table_field_name):
