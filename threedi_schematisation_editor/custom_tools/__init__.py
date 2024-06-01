@@ -3,7 +3,17 @@ from collections import defaultdict
 from enum import Enum
 from itertools import chain
 
-from qgis.core import NULL, QgsCoordinateTransform, QgsFeature, QgsGeometry, QgsPointLocator, QgsProject
+from qgis.core import (
+    NULL,
+    QgsCoordinateTransform,
+    QgsExpression,
+    QgsExpressionContext,
+    QgsFeature,
+    QgsGeometry,
+    QgsPointLocator,
+    QgsProject,
+)
+from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt.QtWidgets import QComboBox, QLabel, QLineEdit, QPushButton
 
 from threedi_schematisation_editor import data_models as dm
@@ -23,7 +33,11 @@ class ColumnImportMethod(Enum):
     AUTO = "auto"
     ATTRIBUTE = "source_attribute"
     DEFAULT = "default"
+    EXPRESSION = "expression"
     IGNORE = "ignore"
+
+    def __str__(self):
+        return self.name.capitalize()
 
 
 class StructuresImportConfig:
@@ -34,6 +48,7 @@ class StructuresImportConfig:
     SOURCE_ATTRIBUTE_COLUMN_IDX = 2
     VALUE_MAP_COLUMN_IDX = 3
     DEFAULT_VALUE_COLUMN_IDX = 4
+    EXPRESSION_COLUMN_IDX = 5
 
     def __init__(self, structures_model_cls):
         self.structures_model_cls = structures_model_cls
@@ -45,12 +60,12 @@ class StructuresImportConfig:
 
     @property
     def config_header(self):
-        header = ["Field name", "Method", "Source attribute", "Value map", "Default value"]
+        header = ["Field name", "Method", "Source attribute", "Value map", "Default value", "Expression"]
         return header
 
     @property
     def config_keys(self):
-        header = ["method", "source_attribute", "value_map", "default_value"]
+        header = ["method", "source_attribute", "value_map", "default_value", "expression"]
         return header
 
     @property
@@ -72,11 +87,16 @@ class StructuresImportConfig:
             if field_name in auto_fields:
                 methods_mapping[model_cls][field_name] = [ColumnImportMethod.AUTO]
             elif field_name in auto_attribute_fields:
-                methods_mapping[model_cls][field_name] = [ColumnImportMethod.AUTO, ColumnImportMethod.ATTRIBUTE]
+                methods_mapping[model_cls][field_name] = [
+                    ColumnImportMethod.AUTO,
+                    ColumnImportMethod.ATTRIBUTE,
+                    ColumnImportMethod.EXPRESSION,
+                ]
             else:
                 methods_mapping[model_cls][field_name] = [
                     ColumnImportMethod.ATTRIBUTE,
                     ColumnImportMethod.DEFAULT,
+                    ColumnImportMethod.EXPRESSION,
                     ColumnImportMethod.IGNORE,
                 ]
         return methods_mapping
@@ -107,6 +127,8 @@ class StructuresImportConfig:
                     elif column_idx == self.VALUE_MAP_COLUMN_IDX:
                         widget = QPushButton("Set...")
                         widget.value_map = {}
+                    elif column_idx == self.EXPRESSION_COLUMN_IDX:
+                        widget = QgsFieldExpressionWidget()
                     else:
                         if column_idx == self.DEFAULT_VALUE_COLUMN_IDX and (
                             issubclass(field_type, Enum) or field_type == bool
@@ -156,6 +178,8 @@ class AbstractFeaturesImporter:
 
     def update_attributes(self, model_cls, source_feat, *new_features):
         fields_config = self.fields_configurations[model_cls]
+        expression_context = QgsExpressionContext()
+        expression_context.setFeature(source_feat)
         for new_feat in new_features:
             for field_name in model_cls.__annotations__.keys():
                 try:
@@ -176,6 +200,10 @@ class AbstractFeaturesImporter:
                     if field_value == NULL:
                         field_value = field_config.get("default_value", NULL)
                     new_feat[field_name] = field_value
+                elif method == ColumnImportMethod.EXPRESSION:
+                    expression_str = field_config["expression"]
+                    expression = QgsExpression(expression_str)
+                    new_feat[field_name] = expression.evaluate(expression_context)
                 elif method == ColumnImportMethod.DEFAULT:
                     default_value = field_config["default_value"]
                     new_feat[field_name] = default_value
