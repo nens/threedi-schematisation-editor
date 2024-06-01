@@ -982,7 +982,9 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
         elif friction_value == en.FrictionTypeExtended.MANNING.value:
             related_widgets = single_friction_widgets
         elif friction_value == en.FrictionTypeExtended.CHEZY_WITH_CONVEYANCE.value:
-            related_widgets = single_friction_widgets + multi_friction_widgets + multi_vege_widgets
+            related_widgets = (
+                single_friction_widgets + multi_friction_widgets + single_vege_widgets + multi_vege_widgets
+            )
         elif friction_value == en.FrictionTypeExtended.MANNING_WITH_CONVEYANCE.value:
             related_widgets = single_friction_widgets + multi_friction_widgets
         else:
