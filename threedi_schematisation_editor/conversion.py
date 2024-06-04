@@ -3,6 +3,7 @@ from collections import OrderedDict, defaultdict
 from operator import itemgetter
 
 from qgis.core import (
+    NULL,
     QgsCoordinateTransform,
     QgsExpression,
     QgsFeature,
@@ -33,7 +34,7 @@ from threedi_schematisation_editor.utils import (
 class ModelDataConverter:
     """Class with methods Spatialite <==> GeoPackage conversion of the 3Di model layers."""
 
-    SUPPORTED_SCHEMA_VERSION = 217
+    SUPPORTED_SCHEMA_VERSION = 219
 
     def __init__(self, src_sqlite, dst_gpkg, epsg_code=4326, user_communication=None):
         self.src_sqlite = src_sqlite
@@ -414,16 +415,30 @@ class ModelDataConverter:
         dst_feat_ids |= set(dst_layer.uniqueValues(dst_id_idx))
         return src_feat_ids, dst_feat_ids
 
+    @staticmethod
+    def tabulate_data(*table_arguments, values_separator=", "):
+        table_rows = zip(*[arg.split() for arg in table_arguments])
+        table_text = "\n".join(values_separator.join(row) for row in table_rows)
+        return table_text
+
+    @staticmethod
+    def text_to_number(text_value):
+        try:
+            value = float(text_value)
+        except (TypeError, ValueError):
+            value = None
+        return value
+
     def import_cross_section_definition_data(self):
         """Importing and splitting cross-section definition data."""
         xs_def_table = next(iter(dm.CrossSectionDefinition.SQLITE_SOURCES))
         xs_def_lyr = sqlite_layer(self.src_sqlite, xs_def_table)
         if not xs_def_lyr.isValid():
             xs_def_lyr = sqlite_layer(self.src_sqlite, xs_def_table, geom_column=None)
-        first_model_with_xs_def = next(iter(dm.ELEMENTS_WITH_XS_DEF))
-        dst_field_names = [
+        model_with_xs_def = dm.CrossSectionLocation
+        dst_model_field_names = [
             field_name
-            for field_name in first_model_with_xs_def.__annotations__.keys()
+            for field_name in model_with_xs_def.__annotations__.keys()
             if field_name.startswith("cross_section_")
         ]
         # Get cross-section definition data and reformat it to fit User Layers structure
@@ -433,29 +448,43 @@ class ModelDataConverter:
             src_xs_def_shape = xs_def_feat["shape"]
             src_xs_def_height = xs_def_feat["height"]
             src_xs_def_width = xs_def_feat["width"]
+            src_xs_def_friction = xs_def_feat["friction_values"]
+            src_xs_def_vegetation_stem_densities = xs_def_feat["vegetation_stem_densities"]
+            src_xs_def_vegetation_stem_diameters = xs_def_feat["vegetation_stem_diameters"]
+            src_xs_def_vegetation_heights = xs_def_feat["vegetation_heights"]
+            src_xs_def_vegetation_vegetation_drag_coefficients = xs_def_feat["vegetation_drag_coefficients"]
+            all_vegetation_fields = [
+                src_xs_def_vegetation_stem_densities,
+                src_xs_def_vegetation_stem_diameters,
+                src_xs_def_vegetation_heights,
+                src_xs_def_vegetation_vegetation_drag_coefficients,
+            ]
             if src_xs_def_shape in dm.TABLE_SHAPES and src_xs_def_height and src_xs_def_width:
-                table_zipp = zip(src_xs_def_height.split(), src_xs_def_width.split())
                 if src_xs_def_shape == en.CrossSectionShape.YZ.value:
-                    xs_def_table = "\n".join(f"{w}, {h}" for h, w in table_zipp)
+                    xs_def_table = self.tabulate_data(src_xs_def_width, src_xs_def_height)
                 else:
-                    xs_def_table = "\n".join(f"{h}, {w}" for h, w in table_zipp)
+                    xs_def_table = self.tabulate_data(src_xs_def_height, src_xs_def_width)
                 xs_def_height = None
                 xs_def_width = None
             else:
-                try:
-                    xs_def_height = float(src_xs_def_height)
-                except (TypeError, ValueError):
-                    xs_def_height = None
-                try:
-                    xs_def_width = float(src_xs_def_width)
-                except (TypeError, ValueError):
-                    xs_def_width = None
+                xs_def_height = self.text_to_number(src_xs_def_height)
+                xs_def_width = self.text_to_number(src_xs_def_width)
                 xs_def_table = None
+            if src_xs_def_friction:
+                xs_def_friction_table = self.tabulate_data(src_xs_def_friction)
+            else:
+                xs_def_friction_table = None
+            if all(all_vegetation_fields):
+                xs_def_vegetation_table = self.tabulate_data(*all_vegetation_fields)
+            else:
+                xs_def_vegetation_table = None
             xs_def_data = {
                 "cross_section_shape": src_xs_def_shape,
                 "cross_section_height": xs_def_height,
                 "cross_section_width": xs_def_width,
                 "cross_section_table": xs_def_table,
+                "cross_section_friction_table": xs_def_friction_table,
+                "cross_section_vegetation_table": xs_def_vegetation_table,
             }
             xs_definitions[src_xs_def_id] = xs_def_data
         # Update User Layers cross-section definition data
@@ -470,7 +499,12 @@ class ModelDataConverter:
             dst_xs_def_lyr = gpkg_layer(self.dst_gpkg, model_cls.__tablename__)
             # Map field names to field indexes
             dst_layer_fields = dst_xs_def_lyr.fields()
-            field_indexes = {fld: dst_layer_fields.lookupField(fld) for fld in dst_field_names}
+            dst_layer_field_names = dst_layer_fields.names()
+            field_indexes = {
+                field_name: dst_layer_fields.lookupField(field_name)
+                for field_name in dst_model_field_names
+                if field_name in dst_layer_field_names
+            }
             # Establish `cross_section_definition_id` field
             src_id_field_name = model_cls.IMPORT_FIELD_MAPPINGS["id"]
             xs_def_id_field_name = None
@@ -492,7 +526,9 @@ class ModelDataConverter:
                 dst_feat_id = dst_feat["id"]
                 xs_def_id = feat_to_xs_def[dst_feat_id]
                 xs_def_data = xs_definitions[xs_def_id]
-                xs_def_data_changes[fid] = {field_indexes[fld]: xs_def_data[fld] for fld in xs_def_data.keys()}
+                xs_def_data_changes[fid] = {
+                    field_indexes[fld]: xs_def_data[fld] for fld in xs_def_data.keys() if fld in dst_layer_field_names
+                }
             # Update User Layers with cross-section definition data
             dst_xs_def_lyr.startEditing()
             for fid, changes in xs_def_data_changes.items():
@@ -610,6 +646,42 @@ class ModelDataConverter:
                 src_xs_def_height = feat_with_xs_def["cross_section_height"]
                 src_xs_def_width = feat_with_xs_def["cross_section_width"]
                 src_xs_def_table = feat_with_xs_def["cross_section_table"]
+                if model_cls == dm.CrossSectionLocation:
+                    src_xs_def_friction_table = feat_with_xs_def["cross_section_friction_table"]
+                    src_xs_def_vegetation_table = feat_with_xs_def["cross_section_vegetation_table"]
+                    xs_def_friction_values = (
+                        " ".join(src_xs_def_friction_table.split("\n")) if src_xs_def_friction_table else None
+                    )
+                    if src_xs_def_vegetation_table:
+                        parsed_vegetation_table = [row.split(",") for row in src_xs_def_vegetation_table.split("\n")]
+                        (
+                            vegetation_stem_densities,
+                            vegetation_stem_diameters,
+                            vegetation_heights,
+                            vegetation_drag_coefficients,
+                        ) = list(zip(*parsed_vegetation_table))
+                        xs_def_vegetation_stem_densities = " ".join(sde.strip() for sde in vegetation_stem_densities)
+                        xs_def_vegetation_stem_diameters = " ".join(sdi.strip() for sdi in vegetation_stem_diameters)
+                        xs_def_vegetation_heights = " ".join(h.strip() for h in vegetation_heights)
+                        xs_def_vegetation_drag_coefficients = " ".join(
+                            dc.strip() for dc in vegetation_drag_coefficients
+                        )
+                    else:
+                        (
+                            xs_def_vegetation_stem_densities,
+                            xs_def_vegetation_stem_diameters,
+                            xs_def_vegetation_heights,
+                            xs_def_vegetation_drag_coefficients,
+                        ) = (None,) * 4
+                else:
+                    (
+                        xs_def_friction_values,
+                        xs_def_vegetation_stem_densities,
+                        xs_def_vegetation_stem_diameters,
+                        xs_def_vegetation_heights,
+                        xs_def_vegetation_drag_coefficients,
+                    ) = (None,) * 5
+
                 if src_xs_def_shape in dm.TABLE_SHAPES and src_xs_def_table:
                     parsed_table = [row.split(",") for row in src_xs_def_table.split("\n")]
                     height_values, width_values = list(zip(*parsed_table))
@@ -624,7 +696,17 @@ class ModelDataConverter:
                     xs_def_height = str(src_xs_def_height) if src_xs_def_height else None
                     xs_def_width = str(src_xs_def_width) if src_xs_def_width else None
                     src_xs_def_code = self.cross_section_definition_code(src_xs_def_shape, src_xs_def_width)
-                xs_def_data = (src_xs_def_code, src_xs_def_shape, xs_def_height, xs_def_width)
+                xs_def_data = (
+                    src_xs_def_code,
+                    src_xs_def_shape,
+                    xs_def_height,
+                    xs_def_width,
+                    xs_def_friction_values,
+                    xs_def_vegetation_stem_densities,
+                    xs_def_vegetation_stem_diameters,
+                    xs_def_vegetation_heights,
+                    xs_def_vegetation_drag_coefficients,
+                )
                 try:
                     xs_def_id = xs_def_data_ids[xs_def_data]
                 except KeyError:
@@ -639,13 +721,28 @@ class ModelDataConverter:
             xs_def_lyr = sqlite_layer(self.src_sqlite, xs_def_table, geom_column=None)
         xs_def_fields = xs_def_lyr.fields()
         new_xs_def_feats = []
-        for (xs_def_code, xs_def_shape, xs_def_height, xs_def_width), xs_def_id in xs_def_data_ids.items():
+        for (
+            xs_def_code,
+            xs_def_shape,
+            xs_def_height,
+            xs_def_width,
+            xs_def_friction_values,
+            xs_def_vegetation_stem_densities,
+            xs_def_vegetation_stem_diameters,
+            xs_def_vegetation_heights,
+            xs_def_vegetation_drag_coefficients,
+        ), xs_def_id in xs_def_data_ids.items():
             new_feat = QgsFeature(xs_def_fields)
             new_feat["id"] = xs_def_id
             new_feat["code"] = xs_def_code
             new_feat["shape"] = xs_def_shape
             new_feat["height"] = xs_def_height
             new_feat["width"] = xs_def_width
+            new_feat["friction_values"] = xs_def_friction_values
+            new_feat["vegetation_stem_densities"] = xs_def_vegetation_stem_densities
+            new_feat["vegetation_stem_diameters"] = xs_def_vegetation_stem_diameters
+            new_feat["vegetation_heights"] = xs_def_vegetation_heights
+            new_feat["vegetation_drag_coefficients"] = xs_def_vegetation_drag_coefficients
             new_xs_def_feats.append(new_feat)
         xs_def_lyr.startEditing()
         xs_def_lyr.addFeatures(new_xs_def_feats)
