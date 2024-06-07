@@ -766,7 +766,7 @@ class FormWithXSTable(BaseForm):
             )
             connect_signal(shape_edit_signal, shape_edit_slot)
             self.dialog.active_form_signals.add((shape_edit_signal, shape_edit_slot))
-        if friction_widget is not None:
+        if friction_widget is not None and self.MODEL in {dm.Channel, dm.CrossSectionLocation}:
             friction_edit_signal = self.get_widget_editing_signal(friction_widget)
             friction_edit_slot = partial(
                 setup_friction_and_vegetation_widgets,
