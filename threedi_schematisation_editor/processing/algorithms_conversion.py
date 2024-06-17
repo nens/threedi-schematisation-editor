@@ -52,7 +52,7 @@ class ImportCulverts(QgsProcessingAlgorithm):
         source_layer = QgsProcessingParameterFeatureSource(
             self.SOURCE_LAYER,
             self.tr("Source culvert layer"),
-            [QgsProcessing.TypeVectorLine],
+            [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
         )
         self.addParameter(source_layer)
         import_config_file = QgsProcessingParameterFile(
