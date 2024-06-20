@@ -211,7 +211,9 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.setup_labels()
         if self.structure_model_cls not in self.STRUCTURES_WITH_MANHOLES:
             self.create_manholes_cb.setChecked(False)
-            self.create_manholes_cb.hide()
+            self.edit_channels_cb.setChecked(False)
+            for widget in self.linear_structure_widgets:
+                widget.hide()
             self.tab_widget.setTabVisible(2, False)
 
     def setup_labels(self):
@@ -230,6 +232,21 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         return self.structure_model_cls in self.STRUCTURES_WITH_MANHOLES
 
     @property
+    def linear_structure_widgets(self):
+        return [
+            self.create_manholes_cb,
+            self.edit_channels_cb,
+            self.length_source_field_lbl,
+            self.length_source_field_cbo,
+            self.length_fallback_value_lbl,
+            self.length_fallback_value_dsb,
+            self.azimuth_source_field_lbl,
+            self.azimuth_source_field_cbo,
+            self.azimuth_fallback_value_lbl,
+            self.azimuth_fallback_value_sb,
+        ]
+
+    @property
     def source_layer(self):
         return self.structure_layer_cbo.currentLayer()
 
@@ -245,7 +262,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             self.snap_gb,
         ]
         if self.include_manholes:
-            widgets.append(self.create_manholes_cb)
+            widgets += self.linear_structure_widgets
         return widgets
 
     def activate_layer_dependent_widgets(self):
@@ -272,8 +289,12 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         if layer:
             layer_field_names += [field.name() for field in layer.fields()]
             self.activate_layer_dependent_widgets()
+            self.length_source_field_cbo.setLayer(layer)
+            self.azimuth_source_field_cbo.setLayer(layer)
         else:
             self.deactivate_layer_dependent_widgets()
+            self.length_source_field_cbo.setLayer(None)
+            self.azimuth_source_field_cbo.setLayer(None)
         data_models = [self.structure_model_cls, dm.ConnectionNode]
         if self.include_manholes:
             data_models.append(dm.Manhole)
@@ -396,6 +417,11 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 "snapping_distance": self.snap_dsb.value(),
                 "create_connection_nodes": self.create_nodes_cb.isChecked(),
                 "create_manholes": self.create_manholes_cb.isChecked(),
+                "length_source_field": self.length_source_cbo.currentField(),
+                "length_fallback_value": self.length_fallback_value_dsb.value(),
+                "azimuth_source_field": self.azimuth_source_cbo.currentField(),
+                "azimuth_fallback_value": self.azimuth_fallback_value_sb.value(),
+                "edit_channels": self.edit_channels_cb.isChecked(),
             },
             "fields": self.collect_fields_settings(self.structure_model_cls),
             "connection_node_fields": self.collect_fields_settings(dm.ConnectionNode),
@@ -503,6 +529,11 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             self.snap_gb.setChecked(conversion_settings.get("use_snapping", False))
             self.snap_dsb.setValue(conversion_settings.get("snapping_distance", 0.1))
             self.create_nodes_cb.setChecked(conversion_settings.get("create_connection_nodes", False))
+            self.edit_channels_cb.setChecked(conversion_settings.get("edit_channels", False))
+            self.length_source_field_cbo.setField(conversion_settings.get("length_source_field", ""))
+            self.length_fallback_value_dsb.setValue(conversion_settings.get("length_fallback_value", 10.0))
+            self.azimuth_source_field_cbo.setField(conversion_settings.get("azimuth_source_field", ""))
+            self.azimuth_fallback_value_sb.setValue(conversion_settings.get("azimuth_fallback_value", 90))
             self.update_fields_settings(self.structure_model_cls, import_settings["fields"])
             try:
                 connection_node_fields = import_settings["connection_node_fields"]
