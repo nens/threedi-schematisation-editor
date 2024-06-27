@@ -75,13 +75,21 @@ class ModelDataConverter:
     def spatialite_schema_version(sqlite_path):
         """Getting Spatialite 3Di model database schema version."""
         schema_version_table = sqlite_layer(sqlite_path, "schema_version", geom_column=None)
-        if not schema_version_table.isValid():
-            return None
-        try:
-            schema_row = next(iter(schema_version_table.getFeatures()))
-            spatialite_schema_id = int(schema_row["version_num"])
-        except (StopIteration, TypeError):
-            spatialite_schema_id = 1
+        if schema_version_table.isValid():
+            try:
+                schema_row = next(iter(schema_version_table.getFeatures()))
+                spatialite_schema_id = int(schema_row["version_num"])
+            except (StopIteration, TypeError):
+                spatialite_schema_id = 1
+        else:
+            schema_version_table = sqlite_layer(sqlite_path, "south_migrationhistory", geom_column=None)
+            if not schema_version_table.isValid() or schema_version_table.featureCount() == 0:
+                return None
+            schema_row = list(schema_version_table.getFeatures())[-1]
+            try:
+                spatialite_schema_id = int(schema_row["migration"].split("_", 1)[0])
+            except (AttributeError, IndexError, TypeError, ValueError):
+                spatialite_schema_id = 1
         return spatialite_schema_id
 
     def set_epsg_from_sqlite(self):
