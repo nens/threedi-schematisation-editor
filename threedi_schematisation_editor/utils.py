@@ -1031,7 +1031,7 @@ class NumericItemDelegate(QItemDelegate):
 def get_plugin_instance(plugin_name="threedi_schematisation_editor"):
     """Return given plugin name instance."""
     try:
-        plugin_intance = plugins[plugin_name]
+        plugin_instance = plugins[plugin_name]
     except AttributeError:
-        plugin_intance = None
-    return plugin_intance
+        plugin_instance = None
+    return plugin_instance
