@@ -36,9 +36,9 @@ from threedi_schematisation_editor.utils import (
     find_point_polyline,
     is_optional,
     optional_type,
+    setup_cross_section_definition_widgets,
     setup_cross_section_widgets,
     setup_friction_and_vegetation_widgets,
-    setup_cross_section_definition_widgets,
 )
 
 field_types_widgets = MappingProxyType(

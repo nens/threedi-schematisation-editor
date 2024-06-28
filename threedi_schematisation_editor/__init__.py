@@ -167,10 +167,11 @@ class ThreediSchematisationEditorPlugin:
         if self.model_gpkg is not None:
             self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAME: self.model_gpkg})
 
-    def open_model_from_geopackage(self):
-        model_gpkg = self.select_user_layers_geopackage()
+    def open_model_from_geopackage(self, model_gpkg=None):
         if not model_gpkg:
-            return
+            model_gpkg = self.select_user_layers_geopackage()
+            if not model_gpkg:
+                return
         if self.layer_manager is not None:
             self.layer_manager.remove_groups()
             self.model_gpkg = None
@@ -185,12 +186,13 @@ class ThreediSchematisationEditorPlugin:
         if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
             add_gpkg_connection(self.model_gpkg, self.iface)
 
-    def load_from_spatialite(self):
-        schematisation_loader = LoadSchematisationDialog(self.uc)
-        result = schematisation_loader.exec_()
-        if result != QDialog.Accepted:
-            return
-        src_sqlite = schematisation_loader.selected_schematisation_sqlite
+    def load_from_spatialite(self, src_sqlite=None):
+        if not src_sqlite:
+            schematisation_loader = LoadSchematisationDialog(self.uc)
+            result = schematisation_loader.exec_()
+            if result != QDialog.Accepted:
+                return
+            src_sqlite = schematisation_loader.selected_schematisation_sqlite
         if not can_write_in_dir(os.path.dirname(src_sqlite)):
             warn_msg = "You don't have required write permissions to load data from the selected spatialite."
             self.uc.show_warn(warn_msg)
