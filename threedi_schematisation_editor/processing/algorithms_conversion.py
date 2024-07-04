@@ -89,11 +89,10 @@ class ImportCulverts(QgsProcessingAlgorithm):
             import_config = json.loads(import_config_json.read())
         conversion_settings = import_config["conversion_settings"]
         edit_channels = conversion_settings.get("edit_channels", False)
-        culverts_importer = (
-            CulvertsIntegrator(source_layer, target_gpkg, import_config)
-            if edit_channels
-            else CulvertsImporter(source_layer, target_gpkg, import_config)
-        )
+        if edit_channels:
+            culverts_importer = CulvertsIntegrator(source_layer, target_gpkg, import_config)
+        else:
+            culverts_importer = CulvertsImporter(source_layer, target_gpkg, import_config)
         culverts_importer.import_structures(context=context)
         return {}
 

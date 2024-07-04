@@ -15,11 +15,15 @@ import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.custom_tools import (
     ColumnImportMethod,
     CulvertsImporter,
+    CulvertsIntegrator,
     ManholesImporter,
     OrificesImporter,
+    OrificesIntegrator,
     PipesImporter,
+    PipesIntegrator,
     StructuresImportConfig,
     WeirsImporter,
+    WeirsIntegrator,
 )
 from threedi_schematisation_editor.utils import (
     NULL_STR,
@@ -169,6 +173,12 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         dm.Pipe: PipesImporter,
         dm.Manhole: ManholesImporter,
     }
+    STRUCTURE_INTEGRATORS = {
+        dm.Culvert: CulvertsIntegrator,
+        dm.Orifice: OrificesIntegrator,
+        dm.Weir: WeirsIntegrator,
+        dm.Pipe: PipesIntegrator,
+    }
     STRUCTURES_WITH_MANHOLES = (dm.Culvert, dm.Orifice, dm.Weir, dm.Pipe)
 
     def __init__(self, structure_model_cls, model_gpkg, layer_manager, uc, parent=None):
@@ -181,7 +191,6 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.import_configuration = StructuresImportConfig(self.structure_model_cls)
         if self.include_manholes:
             self.import_configuration.add_related_model_class(dm.Manhole)
-        self.structure_importer_cls = self.STRUCTURE_IMPORTERS[structure_model_cls]
         self.structure_model = QStandardItemModel()
         self.structure_tv.setModel(self.structure_model)
         self.connection_node_model = QStandardItemModel()
@@ -197,7 +206,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.structure_layer_cbo.setFilters(
             QgsMapLayerProxyModel.PointLayer
             if self.structure_model_cls.__geometrytype__ == dm.GeometryType.Point
-            else QgsMapLayerProxyModel.LineLayer
+            else QgsMapLayerProxyModel.LineLayer | QgsMapLayerProxyModel.PointLayer
         )
         self.structure_layer_cbo.setCurrentIndex(0)
         self.populate_conversion_settings_widgets()
@@ -417,9 +426,9 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 "snapping_distance": self.snap_dsb.value(),
                 "create_connection_nodes": self.create_nodes_cb.isChecked(),
                 "create_manholes": self.create_manholes_cb.isChecked(),
-                "length_source_field": self.length_source_cbo.currentField(),
+                "length_source_field": self.length_source_field_cbo.currentField(),
                 "length_fallback_value": self.length_fallback_value_dsb.value(),
-                "azimuth_source_field": self.azimuth_source_cbo.currentField(),
+                "azimuth_source_field": self.azimuth_source_field_cbo.currentField(),
                 "azimuth_fallback_value": self.azimuth_fallback_value_sb.value(),
                 "edit_channels": self.edit_channels_cb.isChecked(),
             },
@@ -605,6 +614,12 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         if self.selected_only_cb.isChecked():
             selected_feat_ids = source_layer.selectedFeatureIds()
         import_settings = self.collect_settings()
+        conversion_settings = import_settings["conversion_settings"]
+        edit_channels = conversion_settings.get("edit_channels", False)
+        if edit_channels:
+            structure_importer_cls = self.STRUCTURE_INTEGRATORS[self.structure_model_cls]
+        else:
+            structure_importer_cls = self.STRUCTURE_IMPORTERS[self.structure_model_cls]
         processed_handlers = [structures_handler, node_handler]
         processed_layers = [structure_layer, node_layer]
         if self.include_manholes:
@@ -614,7 +629,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             for handler in processed_handlers:
                 handler.disconnect_handler_signals()
             if self.include_manholes:
-                structures_importer = self.structure_importer_cls(
+                structures_importer = structure_importer_cls(
                     source_layer,
                     self.model_gpkg,
                     import_settings,
@@ -623,7 +638,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                     manhole_layer=manhole_layer,
                 )
             else:
-                structures_importer = self.structure_importer_cls(
+                structures_importer = structure_importer_cls(
                     source_layer,
                     self.model_gpkg,
                     import_settings,
