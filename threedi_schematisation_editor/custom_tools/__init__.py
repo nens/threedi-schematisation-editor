@@ -156,6 +156,9 @@ class StructuresImportConfig:
 class AbstractStructuresImporter:
     """Base class for the importing features from the external data source."""
 
+    DEFAULT_INTERSECTION_BUFFER = 0.0000001
+    DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
+
     def __init__(self, external_source, target_gpkg, import_settings):
         self.external_source = external_source
         self.target_gpkg = target_gpkg
@@ -182,17 +185,19 @@ class AbstractStructuresImporter:
 
     @cached_property
     def conversion_settings(self):
-        conversion_settings = self.import_settings["conversion_settings"]
-        use_snapping = conversion_settings.get("use_snapping", False)
-        snapping_distance = conversion_settings.get("snapping_distance", 0.1)
-        create_connection_nodes = conversion_settings.get("create_connection_nodes", False)
-        create_manholes = conversion_settings.get("create_manholes", False)
-
-        length_source_field = conversion_settings.get("length_source_field", None)
-        length_fallback_value = conversion_settings.get("length_fallback_value", 10.0)
-        azimuth_source_field = conversion_settings.get("azimuth_source_field", None)
-        azimuth_fallback_value = conversion_settings.get("azimuth_fallback_value", 90.0)
-        edit_channels = conversion_settings.get("edit_channels", False)
+        conversion_config = self.import_settings["conversion_settings"]
+        use_snapping = conversion_config.get("use_snapping", False)
+        if use_snapping:
+            snapping_distance = conversion_config.get("snapping_distance")
+        else:
+            snapping_distance = self.DEFAULT_INTERSECTION_BUFFER
+        create_connection_nodes = conversion_config.get("create_connection_nodes", False)
+        create_manholes = conversion_config.get("create_manholes", False)
+        length_source_field = conversion_config.get("length_source_field", None)
+        length_fallback_value = conversion_config.get("length_fallback_value", 10.0)
+        azimuth_source_field = conversion_config.get("azimuth_source_field", None)
+        azimuth_fallback_value = conversion_config.get("azimuth_fallback_value", 90.0)
+        edit_channels = conversion_config.get("edit_channels", False)
         cs = self.conversion_settings_cls(
             use_snapping,
             snapping_distance,
@@ -577,9 +582,6 @@ class LinearStructuresImporter(AbstractStructuresImporterWithManholes):
 class StructuresIntegrator(LinearStructuresImporter):
     """External structures integrator class."""
 
-    INTERSECTION_BUFFER = 0.1
-    INTERSECTION_BUFFER_SEGMENTS = 5
-
     def __init__(self, *args):
         super().__init__(*args)
         self.manhole_layer = None
@@ -640,17 +642,19 @@ class StructuresIntegrator(LinearStructuresImporter):
             self.node_by_location[node_point] = node_feat["id"]
         self.next_node_id = get_next_feature_id(self.node_layer)
 
-    def get_channel_structures_data(self, channel_feat, selected_ids):
+    def get_channel_structures_data(self, channel_feat, selected_ids=None):
         """Extract and calculate channel structures data."""
         channel_structures = []
         processed_structure_ids = set()
+        if selected_ids is None:
+            selected_ids = set()
         channel_id = channel_feat["id"]
         channel_geometry = channel_feat.geometry()
-        structure_layer_name = self.structure_layer.name()
-        structure_features_map, structure_index = self.spatial_indexes_map[structure_layer_name]
+        src_structure_layer_name = self.external_source.name()
+        structure_features_map, structure_index = self.spatial_indexes_map[src_structure_layer_name]
         structure_fids = structure_index.intersects(channel_geometry.boundingBox())
         for structure_fid in structure_fids:
-            if structure_fid not in selected_ids:
+            if selected_ids and structure_fid not in selected_ids:
                 continue
             structure_feat = structure_features_map[structure_fid]
             structure_geom = structure_feat.geometry()
@@ -658,14 +662,20 @@ class StructuresIntegrator(LinearStructuresImporter):
             if structure_geom_type == QgsWkbTypes.GeometryType.LineGeometry:
                 start_point, end_point = structure_geom.asPolyline()
                 start_geom, end_geom = QgsGeometry.fromPointXY(start_point), QgsGeometry.fromPointXY(end_point)
-                start_buffer = start_geom.buffer(self.INTERSECTION_BUFFER, self.INTERSECTION_BUFFER_SEGMENTS)
-                end_buffer = end_geom.buffer(self.INTERSECTION_BUFFER, self.INTERSECTION_BUFFER_SEGMENTS)
+                start_buffer = start_geom.buffer(
+                    self.conversion_settings.snapping_distance, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+                )
+                end_buffer = end_geom.buffer(
+                    self.conversion_settings.snapping_distance, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+                )
                 intersection_m = channel_geometry.lineLocatePoint(structure_geom.centroid())
                 structure_length = structure_geom.length()
                 if not all([start_buffer.intersects(channel_geometry), end_buffer.intersects(channel_geometry)]):
                     continue
             elif structure_geom_type == QgsWkbTypes.GeometryType.PointGeometry:
-                structure_buffer = structure_geom.buffer(self.INTERSECTION_BUFFER, self.INTERSECTION_BUFFER_SEGMENTS)
+                structure_buffer = structure_geom.buffer(
+                    self.conversion_settings.snapping_distance, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+                )
                 if not structure_buffer.intersects(channel_geometry):
                     continue
                 intersection_m = channel_geometry.lineLocatePoint(structure_geom)
@@ -738,10 +748,10 @@ class StructuresIntegrator(LinearStructuresImporter):
             for xs_fid in xs_fids:
                 xs_feat = xs_location_features_map[xs_fid]
                 xs_code = xs_feat["code"]
-                if not xs_code.startswith(channel_code):
+                if xs_code and not xs_code.startswith(channel_code):
                     continue
                 xs_geom = xs_feat.geometry()
-                xs_buffer = xs_geom.buffer(self.INTERSECTION_BUFFER, self.INTERSECTION_BUFFER_SEGMENTS)
+                xs_buffer = xs_geom.buffer(self.DEFAULT_INTERSECTION_BUFFER, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
                 if channel_geometry.intersects(xs_buffer):
                     self.cross_section_location_layer.changeAttributeValue(xs_fid, channel_id_idx, channel_id)
 
@@ -825,14 +835,15 @@ class StructuresIntegrator(LinearStructuresImporter):
         """Method responsible for the importing/integrating structures from the external feature source."""
         all_processed_structure_ids = set()
         input_feature_ids = (
-            {feat.id() for feat in self.external_source.getFeatures()} if selected_ids else set(selected_ids)
+            {feat.id() for feat in self.external_source.getFeatures()} if not selected_ids else set(selected_ids)
         )
         for channel_feature in self.channel_layer.getFeatures():
             channel_structures, processed_structures_fids = self.get_channel_structures_data(
                 channel_feature, selected_ids
             )
-            self.integrate_structure_features(channel_feature, channel_structures)
-            all_processed_structure_ids |= processed_structures_fids
+            if channel_structures:
+                self.integrate_structure_features(channel_feature, channel_structures)
+                all_processed_structure_ids |= processed_structures_fids
         # Process nodes
         self.node_layer.startEditing()
         self.node_layer.addFeatures(self.features_to_add[self.node_layer.name()])
@@ -869,7 +880,7 @@ class StructuresIntegrator(LinearStructuresImporter):
         # Fallback import for disconnected structures.
         disconnected_structure_ids = list(input_feature_ids.difference(all_processed_structure_ids))
         if disconnected_structure_ids:
-            new_structures, external_source_structures = [], []
+            disconnected_structures_to_add, external_source_structures = [], []
             structure_fields = self.layer_fields_mapping[self.structure_layer_name]
             node_fields = self.layer_fields_mapping[self.node_layer.name()]
             project = context.project() if context else QgsProject.instance()
@@ -896,11 +907,12 @@ class StructuresIntegrator(LinearStructuresImporter):
                     locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
                 self.update_attributes(self.structure_model_cls, disconnected_structure, new_structure_feat)
                 next_structure_id += 1
-                new_structures.append(new_structure_feat)
+                disconnected_structures_to_add.append(new_structure_feat)
                 external_source_structures.append(disconnected_structure)
+            self.structure_layer.addFeatures(disconnected_structures_to_add)
             if self.conversion_settings.create_manholes:
                 self.manhole_layer.startEditing()
-                new_manholes = self.manholes_for_structures(external_source_structures, new_structures)
+                new_manholes = self.manholes_for_structures(external_source_structures, disconnected_structures_to_add)
                 self.manhole_layer.addFeatures(new_manholes)
 
 
