@@ -1,7 +1,6 @@
 # Copyright (C) 2023 by Lutra Consulting
 import json
 
-from qgis._core import QgsWkbTypes
 from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -89,11 +88,13 @@ class ImportCulverts(QgsProcessingAlgorithm):
             import_config = json.loads(import_config_json.read())
         conversion_settings = import_config["conversion_settings"]
         edit_channels = conversion_settings.get("edit_channels", False)
+
         if edit_channels:
             culverts_importer = CulvertsIntegrator(source_layer, target_gpkg, import_config)
         else:
             culverts_importer = CulvertsImporter(source_layer, target_gpkg, import_config)
         culverts_importer.import_structures(context=context)
+        culverts_importer.commit_pending_changes()
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
@@ -172,6 +173,7 @@ class ImportOrifices(QgsProcessingAlgorithm):
             else OrificesImporter(source_layer, target_gpkg, import_config)
         )
         orifices_importer.import_structures(context=context)
+        orifices_importer.commit_pending_changes()
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
@@ -250,6 +252,7 @@ class ImportWeirs(QgsProcessingAlgorithm):
             else WeirsImporter(source_layer, target_gpkg, import_config)
         )
         weirs_importer.import_structures(context=context)
+        weirs_importer.commit_pending_changes()
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
@@ -328,6 +331,7 @@ class ImportPipes(QgsProcessingAlgorithm):
             else PipesImporter(source_layer, target_gpkg, import_config)
         )
         pipes_importer.import_structures(context=context)
+        pipes_importer.commit_pending_changes()
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
@@ -400,6 +404,7 @@ class ImportManholes(QgsProcessingAlgorithm):
             import_config = json.loads(import_config_json.read())
         manholes_importer = ManholesImporter(source_layer, target_gpkg, import_config)
         manholes_importer.import_structures(context=context)
+        manholes_importer.commit_pending_changes()
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
