@@ -211,6 +211,14 @@ class AbstractStructuresImporter:
         )
         return cs
 
+    @cached_property
+    def external_source_name(self):
+        try:
+            layer_name = self.external_source.name()
+        except AttributeError:
+            layer_name = self.external_source.sourceName()
+        return layer_name
+
     def setup_target_layers(self, structure_model_cls, structure_layer=None, node_layer=None):
         self.structure_model_cls = structure_model_cls
         self.structure_layer = (
@@ -267,6 +275,16 @@ class AbstractStructuresImporter:
         commit_errors_message = "\n".join(commit_errors)
         return commit_errors_message
 
+    def commit_pending_changes(self):
+        for layer in self.modifiable_layers:
+            if layer.isModified():
+                layer.commitChanges()
+
+    @property
+    def modifiable_layers(self):
+        """Return a list of the layers that can be modified."""
+        return [self.structure_layer, self.node_layer]
+
     def new_structure_geometry(self, src_structure_feat):
         """Create new structure geometry based on the source structure feature."""
         raise NotImplementedError("Function called from the abstract class.")
@@ -284,6 +302,11 @@ class AbstractStructuresImporterWithManholes(AbstractStructuresImporter):
     def __init__(self, *args):
         super().__init__(*args)
         self.manhole_layer = None
+
+    @property
+    def modifiable_layers(self):
+        """Return a list of the layers that can be modified."""
+        return super().modifiable_layers + [self.manhole_layer]
 
     def setup_target_layers(self, structure_model_cls, structure_layer=None, node_layer=None, manhole_layer=None):
         """Setup target layers with fields configuration."""
@@ -584,7 +607,6 @@ class StructuresIntegrator(LinearStructuresImporter):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.manhole_layer = None
         self.channel_layer = None
         self.cross_section_location_layer = None
         self.layer_fields_mapping = {}
@@ -594,6 +616,11 @@ class StructuresIntegrator(LinearStructuresImporter):
         self.next_node_id = 0
         self.features_to_add = defaultdict(list)
         self.channel_structure_cls = namedtuple("channel_structure", ["channel_id", "feature", "m", "length"])
+
+    @property
+    def modifiable_layers(self):
+        """Return a list of the layers that can be modified."""
+        return super().modifiable_layers + [self.channel_layer, self.cross_section_location_layer]
 
     def setup_target_layers(
         self,
@@ -630,8 +657,10 @@ class StructuresIntegrator(LinearStructuresImporter):
     def setup_spatial_indexes(self):
         """Setup input layer spatial indexes."""
         self.spatial_indexes_map.clear()
-        for layer in [self.external_source, self.node_layer, self.cross_section_location_layer]:
-            self.spatial_indexes_map[layer.name()] = spatial_index(layer)
+        self.spatial_indexes_map[self.external_source_name] = spatial_index(self.external_source)
+        for layer in [self.node_layer, self.cross_section_location_layer]:
+            layer_name = layer.name()
+            self.spatial_indexes_map[layer_name] = spatial_index(layer)
 
     def setup_node_by_location(self):
         """Setup nodes by location."""
@@ -650,8 +679,7 @@ class StructuresIntegrator(LinearStructuresImporter):
             selected_ids = set()
         channel_id = channel_feat["id"]
         channel_geometry = channel_feat.geometry()
-        src_structure_layer_name = self.external_source.name()
-        structure_features_map, structure_index = self.spatial_indexes_map[src_structure_layer_name]
+        structure_features_map, structure_index = self.spatial_indexes_map[self.external_source_name]
         structure_fids = structure_index.intersects(channel_geometry.boundingBox())
         for structure_fid in structure_fids:
             if selected_ids and structure_fid not in selected_ids:
@@ -927,9 +955,19 @@ class CulvertsImporter(LinearStructuresImporter):
 class CulvertsIntegrator(StructuresIntegrator):
     """Class with methods responsible for the integrating culverts from the external data source."""
 
-    def __init__(self, *args, structure_layer=None, node_layer=None, manhole_layer=None):
+    def __init__(
+        self,
+        *args,
+        structure_layer=None,
+        node_layer=None,
+        manhole_layer=None,
+        channel_layer=None,
+        cross_section_location_layer=None,
+    ):
         super().__init__(*args)
-        self.setup_target_layers(dm.Culvert, structure_layer, node_layer, manhole_layer)
+        self.setup_target_layers(
+            dm.Culvert, structure_layer, node_layer, manhole_layer, channel_layer, cross_section_location_layer
+        )
 
 
 class OrificesImporter(LinearStructuresImporter):
@@ -943,9 +981,19 @@ class OrificesImporter(LinearStructuresImporter):
 class OrificesIntegrator(StructuresIntegrator):
     """Class with methods responsible for the integrating orifices from the external data source."""
 
-    def __init__(self, *args, structure_layer=None, node_layer=None, manhole_layer=None):
+    def __init__(
+        self,
+        *args,
+        structure_layer=None,
+        node_layer=None,
+        manhole_layer=None,
+        channel_layer=None,
+        cross_section_location_layer=None,
+    ):
         super().__init__(*args)
-        self.setup_target_layers(dm.Orifice, structure_layer, node_layer, manhole_layer)
+        self.setup_target_layers(
+            dm.Orifice, structure_layer, node_layer, manhole_layer, channel_layer, cross_section_location_layer
+        )
 
 
 class WeirsImporter(LinearStructuresImporter):
@@ -959,9 +1007,19 @@ class WeirsImporter(LinearStructuresImporter):
 class WeirsIntegrator(StructuresIntegrator):
     """Class with methods responsible for the integrating weirs from the external data source."""
 
-    def __init__(self, *args, structure_layer=None, node_layer=None, manhole_layer=None):
+    def __init__(
+        self,
+        *args,
+        structure_layer=None,
+        node_layer=None,
+        manhole_layer=None,
+        channel_layer=None,
+        cross_section_location_layer=None,
+    ):
         super().__init__(*args)
-        self.setup_target_layers(dm.Weir, structure_layer, node_layer, manhole_layer)
+        self.setup_target_layers(
+            dm.Weir, structure_layer, node_layer, manhole_layer, channel_layer, cross_section_location_layer
+        )
 
 
 class PipesImporter(LinearStructuresImporter):
@@ -975,9 +1033,19 @@ class PipesImporter(LinearStructuresImporter):
 class PipesIntegrator(StructuresIntegrator):
     """Class with methods responsible for the integrating pipes from the external data source."""
 
-    def __init__(self, *args, structure_layer=None, node_layer=None, manhole_layer=None):
+    def __init__(
+        self,
+        *args,
+        structure_layer=None,
+        node_layer=None,
+        manhole_layer=None,
+        channel_layer=None,
+        cross_section_location_layer=None,
+    ):
         super().__init__(*args)
-        self.setup_target_layers(dm.Pipe, structure_layer, node_layer, manhole_layer)
+        self.setup_target_layers(
+            dm.Pipe, structure_layer, node_layer, manhole_layer, channel_layer, cross_section_location_layer
+        )
 
 
 class ManholesImporter(PointStructuresImporter):
