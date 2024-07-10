@@ -688,7 +688,7 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
             self.schematisation_tv.scrollTo(last_used_schematisation_row_idx)
 
     def set_schematisation_sqlite_filepath(self):
-        """Set selected"""
+        """Set selected schematisation filepath."""
         if self.load_tab.currentIndex() == 0:
             index = self.schematisation_tv.currentIndex()
             if not index.isValid():
