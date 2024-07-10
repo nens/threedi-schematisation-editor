@@ -36,6 +36,7 @@ class ThreediSchematisationEditorPlugin:
     def __init__(self, iface):
         self.iface = iface
         self.uc = UICommunication(self.iface, self.PLUGIN_NAME)
+        self.toolbar = None
         self.action_open = None
         self.action_import = None
         self.action_export = None
@@ -53,6 +54,7 @@ class ThreediSchematisationEditorPlugin:
 
     def initGui(self):
         QgsApplication.processingRegistry().addProvider(self.provider)
+        self.toolbar = self.iface.addToolBar("Schematisation Editor")
         self.action_open = QAction("Open 3Di Geopackage", self.iface.mainWindow())
         self.action_open.triggered.connect(self.open_model_from_geopackage)
         self.action_import = QAction("Load from Spatialite", self.iface.mainWindow())
@@ -74,27 +76,22 @@ class ThreediSchematisationEditorPlugin:
         self.action_import_culverts = self.add_multi_action_button(
             "Import schematisation objects", import_culverts_icon_path, import_actions_spec
         )
-        self.iface.addToolBarIcon(self.action_open)
-        self.iface.addToolBarIcon(self.action_import)
-        self.iface.addToolBarIcon(self.action_export)
-        self.iface.addToolBarIcon(self.action_export_as)
-        self.iface.addToolBarIcon(self.action_remove)
-        self.iface.addToolBarIcon(self.action_import_culverts)
+        self.toolbar.addAction(self.action_open)
+        self.toolbar.addAction(self.action_import)
+        self.toolbar.addAction(self.action_export)
+        self.toolbar.addAction(self.action_export_as)
+        self.toolbar.addAction(self.action_remove)
+        self.toolbar.addAction(self.action_import_culverts)
         self.toggle_active_project_actions()
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
-        self.iface.removeToolBarIcon(self.action_open)
+        del self.toolbar
         del self.action_open
-        self.iface.removeToolBarIcon(self.action_import)
         del self.action_import
-        self.iface.removeToolBarIcon(self.action_export)
         del self.action_export
-        self.iface.removeToolBarIcon(self.action_export_as)
         del self.action_export_as
-        self.iface.removeToolBarIcon(self.action_remove)
         del self.action_remove
-        self.iface.removeToolBarIcon(self.action_import_culverts)
         del self.action_import_culverts
 
     def add_multi_action_button(self, name, icon_path, actions_specification):
