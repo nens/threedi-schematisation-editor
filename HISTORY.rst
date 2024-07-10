@@ -12,6 +12,7 @@ History
 -------------------
 
 - Fixes/enhancements: #184, #238, #241
+- Implemented import of the linear structures from the point datasets (#167).
 
 
 1.11.0 (2024-06-21)
