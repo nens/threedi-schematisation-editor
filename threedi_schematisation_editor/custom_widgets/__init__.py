@@ -607,9 +607,13 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         structures_handler = self.layer_manager.model_handlers[self.structure_model_cls]
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
+        channel_handler = self.layer_manager.model_handlers[dm.Channel]
+        cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
         structure_layer = structures_handler.layer
         node_layer = node_handler.layer
         manhole_layer = manhole_handler.layer
+        channel_layer = channel_handler.layer
+        cross_section_location_layer = cross_section_location_handler.layer
         selected_feat_ids = None
         if self.selected_only_cb.isChecked():
             selected_feat_ids = source_layer.selectedFeatureIds()
@@ -621,10 +625,14 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         else:
             structure_importer_cls = self.STRUCTURE_IMPORTERS[self.structure_model_cls]
         processed_handlers = [structures_handler, node_handler]
-        processed_layers = [structure_layer, node_layer]
+        processed_layers = {"structure_layer": structure_layer, "node_layer": node_layer}
         if self.include_manholes:
             processed_handlers.append(manhole_handler)
-            processed_layers.append(manhole_layer)
+            processed_layers["manhole_layer"] = manhole_layer
+        if edit_channels:
+            processed_handlers += [channel_handler, cross_section_location_handler]
+            processed_layers["channel_layer"] = channel_layer
+            processed_layers["cross_section_location_layer"] = cross_section_location_layer
         try:
             for handler in processed_handlers:
                 handler.disconnect_handler_signals()
@@ -633,17 +641,14 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                     source_layer,
                     self.model_gpkg,
                     import_settings,
-                    structure_layer=structure_layer,
-                    node_layer=node_layer,
-                    manhole_layer=manhole_layer,
+                    **processed_layers,
                 )
             else:
                 structures_importer = structure_importer_cls(
                     source_layer,
                     self.model_gpkg,
                     import_settings,
-                    structure_layer=structure_layer,
-                    node_layer=node_layer,
+                    **processed_layers,
                 )
             structures_importer.import_structures(selected_ids=selected_feat_ids)
             success_msg = (
@@ -657,7 +662,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         finally:
             for handler in processed_handlers:
                 handler.connect_handler_signals()
-        for layer in processed_layers:
+        for layer in processed_layers.values():
             layer.triggerRepaint()
 
 
