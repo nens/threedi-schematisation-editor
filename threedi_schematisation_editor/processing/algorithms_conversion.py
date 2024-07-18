@@ -18,7 +18,6 @@ from threedi_schematisation_editor.custom_tools import (
     OrificesImporter,
     OrificesIntegrator,
     PipesImporter,
-    PipesIntegrator,
     WeirsImporter,
     WeirsIntegrator,
 )
@@ -323,13 +322,7 @@ class ImportPipes(QgsProcessingAlgorithm):
             raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
-        conversion_settings = import_config["conversion_settings"]
-        edit_channels = conversion_settings.get("edit_channels", False)
-        pipes_importer = (
-            PipesIntegrator(source_layer, target_gpkg, import_config)
-            if edit_channels
-            else PipesImporter(source_layer, target_gpkg, import_config)
-        )
+        pipes_importer = PipesImporter(source_layer, target_gpkg, import_config)
         pipes_importer.import_structures(context=context)
         pipes_importer.commit_pending_changes()
         return {}
