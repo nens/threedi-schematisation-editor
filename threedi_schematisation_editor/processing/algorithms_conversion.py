@@ -13,10 +13,13 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 from threedi_schematisation_editor.custom_tools import (
     CulvertsImporter,
+    CulvertsIntegrator,
     ManholesImporter,
     OrificesImporter,
+    OrificesIntegrator,
     PipesImporter,
     WeirsImporter,
+    WeirsIntegrator,
 )
 
 
@@ -52,7 +55,7 @@ class ImportCulverts(QgsProcessingAlgorithm):
         source_layer = QgsProcessingParameterFeatureSource(
             self.SOURCE_LAYER,
             self.tr("Source culvert layer"),
-            [QgsProcessing.TypeVectorLine],
+            [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
         )
         self.addParameter(source_layer)
         import_config_file = QgsProcessingParameterFile(
@@ -82,8 +85,15 @@ class ImportCulverts(QgsProcessingAlgorithm):
             raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
-        culverts_importer = CulvertsImporter(source_layer, target_gpkg, import_config)
+        conversion_settings = import_config["conversion_settings"]
+        edit_channels = conversion_settings.get("edit_channels", False)
+
+        if edit_channels:
+            culverts_importer = CulvertsIntegrator(source_layer, target_gpkg, import_config)
+        else:
+            culverts_importer = CulvertsImporter(source_layer, target_gpkg, import_config)
         culverts_importer.import_structures(context=context)
+        culverts_importer.commit_pending_changes()
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
@@ -124,7 +134,7 @@ class ImportOrifices(QgsProcessingAlgorithm):
         source_layer = QgsProcessingParameterFeatureSource(
             self.SOURCE_LAYER,
             self.tr("Source orifice layer"),
-            [QgsProcessing.TypeVectorLine],
+            [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
         )
         self.addParameter(source_layer)
         import_config_file = QgsProcessingParameterFile(
@@ -154,8 +164,15 @@ class ImportOrifices(QgsProcessingAlgorithm):
             raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
-        orifices_importer = OrificesImporter(source_layer, target_gpkg, import_config)
+        conversion_settings = import_config["conversion_settings"]
+        edit_channels = conversion_settings.get("edit_channels", False)
+        orifices_importer = (
+            OrificesIntegrator(source_layer, target_gpkg, import_config)
+            if edit_channels
+            else OrificesImporter(source_layer, target_gpkg, import_config)
+        )
         orifices_importer.import_structures(context=context)
+        orifices_importer.commit_pending_changes()
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
@@ -196,7 +213,7 @@ class ImportWeirs(QgsProcessingAlgorithm):
         source_layer = QgsProcessingParameterFeatureSource(
             self.SOURCE_LAYER,
             self.tr("Source weir layer"),
-            [QgsProcessing.TypeVectorLine],
+            [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
         )
         self.addParameter(source_layer)
         import_config_file = QgsProcessingParameterFile(
@@ -226,8 +243,15 @@ class ImportWeirs(QgsProcessingAlgorithm):
             raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
-        weirs_importer = WeirsImporter(source_layer, target_gpkg, import_config)
+        conversion_settings = import_config["conversion_settings"]
+        edit_channels = conversion_settings.get("edit_channels", False)
+        weirs_importer = (
+            WeirsIntegrator(source_layer, target_gpkg, import_config)
+            if edit_channels
+            else WeirsImporter(source_layer, target_gpkg, import_config)
+        )
         weirs_importer.import_structures(context=context)
+        weirs_importer.commit_pending_changes()
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
@@ -268,7 +292,7 @@ class ImportPipes(QgsProcessingAlgorithm):
         source_layer = QgsProcessingParameterFeatureSource(
             self.SOURCE_LAYER,
             self.tr("Source pipes layer"),
-            [QgsProcessing.TypeVectorLine],
+            [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
         )
         self.addParameter(source_layer)
         import_config_file = QgsProcessingParameterFile(
@@ -300,6 +324,7 @@ class ImportPipes(QgsProcessingAlgorithm):
             import_config = json.loads(import_config_json.read())
         pipes_importer = PipesImporter(source_layer, target_gpkg, import_config)
         pipes_importer.import_structures(context=context)
+        pipes_importer.commit_pending_changes()
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
@@ -372,6 +397,7 @@ class ImportManholes(QgsProcessingAlgorithm):
             import_config = json.loads(import_config_json.read())
         manholes_importer = ManholesImporter(source_layer, target_gpkg, import_config)
         manholes_importer.import_structures(context=context)
+        manholes_importer.commit_pending_changes()
         return {}
 
     def postProcessAlgorithm(self, context, feedback):
