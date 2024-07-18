@@ -3,7 +3,7 @@ from collections import defaultdict, namedtuple
 from enum import Enum
 from functools import cached_property
 from itertools import chain
-from operator import attrgetter
+from operator import attrgetter, itemgetter
 
 from qgis.core import (
     NULL,
@@ -682,6 +682,8 @@ class StructuresIntegrator(LinearStructuresImporter):
         structure_features_map, structure_index = self.spatial_indexes_map[self.external_source_name]
         structure_fids = structure_index.intersects(channel_geometry.boundingBox())
         for structure_fid in structure_fids:
+            if structure_fid in processed_structure_ids:
+                continue
             if selected_ids and structure_fid not in selected_ids:
                 continue
             structure_feat = structure_features_map[structure_fid]
@@ -762,26 +764,52 @@ class StructuresIntegrator(LinearStructuresImporter):
         dst_feature["connection_node_end_id"] = end_node_id
         return new_nodes
 
-    def update_channel_cross_section_references(self, channels):
+    def update_channel_cross_section_references(self, new_channels, source_channel_xs_locations):
         """Update channel cross-section references."""
         xs_location_layer_name = self.cross_section_location_layer.name()
         xs_location_features_map, xs_location_index = self.spatial_indexes_map[xs_location_layer_name]
         xs_fields = self.layer_fields_mapping[xs_location_layer_name]
         channel_id_idx = xs_fields.lookupField("channel_id")
-        for channel_feat in channels:
-            channel_id = channel_feat["id"]
-            channel_code = channel_feat["code"]
-            channel_geometry = channel_feat.geometry()
-            xs_fids = xs_location_index.intersects(channel_geometry.boundingBox())
-            for xs_fid in xs_fids:
-                xs_feat = xs_location_features_map[xs_fid]
-                xs_code = xs_feat["code"]
-                if xs_code and not xs_code.startswith(channel_code):
-                    continue
-                xs_geom = xs_feat.geometry()
-                xs_buffer = xs_geom.buffer(self.DEFAULT_INTERSECTION_BUFFER, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
-                if channel_geometry.intersects(xs_buffer):
-                    self.cross_section_location_layer.changeAttributeValue(xs_fid, channel_id_idx, channel_id)
+        next_cross_section_location_id = get_next_feature_id(self.cross_section_location_layer)
+        cross_section_location_copies = []
+        for src_channel_id, channels in new_channels.items():
+            for channel_feat in channels:
+                channel_xs_count = 0
+                channel_id = channel_feat["id"]
+                channel_code = channel_feat["code"]
+                channel_geometry = channel_feat.geometry()
+                xs_fids = xs_location_index.intersects(channel_geometry.boundingBox())
+                for xs_fid in xs_fids:
+                    xs_feat = xs_location_features_map[xs_fid]
+                    xs_code = xs_feat["code"]
+                    if xs_code and not xs_code.startswith(channel_code):
+                        continue
+                    xs_geom = xs_feat.geometry()
+                    xs_buffer = xs_geom.buffer(
+                        self.DEFAULT_INTERSECTION_BUFFER, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+                    )
+                    if channel_geometry.intersects(xs_buffer):
+                        self.cross_section_location_layer.changeAttributeValue(xs_fid, channel_id_idx, channel_id)
+                        channel_xs_count += 1
+                if channel_xs_count == 0:
+                    src_channel_xs_ids = [str(xs_id) for xs_id in source_channel_xs_locations[src_channel_id]]
+                    if src_channel_xs_ids:
+                        xs_ids_str = ",".join(src_channel_xs_ids)
+                        xs_distance_map = [
+                            (xs_feat, channel_geometry.distance(xs_feat.geometry()))
+                            for xs_feat in get_features_by_expression(
+                                self.cross_section_location_layer, f'"id" in ({xs_ids_str})', with_geometry=True
+                            )
+                        ]
+                        xs_distance_map.sort(key=itemgetter(1))
+                        closest_xs_feat_copy = QgsFeature(xs_distance_map[0][0])
+                        closest_xs_feat_copy.setGeometry(channel_geometry.centroid())
+                        closest_xs_feat_copy["channel_id"] = channel_id
+                        closest_xs_feat_copy["id"] = next_cross_section_location_id
+                        next_cross_section_location_id += 1
+                        cross_section_location_copies.append(closest_xs_feat_copy)
+        if cross_section_location_copies:
+            self.cross_section_location_layer.addFeatures(cross_section_location_copies)
 
     @staticmethod
     def substring_feature(curve, start_distance, end_distance, fields, simplify=False, **attributes):
@@ -862,13 +890,20 @@ class StructuresIntegrator(LinearStructuresImporter):
     def import_structures(self, context=None, selected_ids=None):
         """Method responsible for the importing/integrating structures from the external feature source."""
         all_processed_structure_ids = set()
+        source_channel_xs_locations = defaultdict(set)
         input_feature_ids = (
             {feat.id() for feat in self.external_source.getFeatures()} if not selected_ids else set(selected_ids)
         )
+
         for channel_feature in self.channel_layer.getFeatures():
             channel_structures, processed_structures_fids = self.get_channel_structures_data(
                 channel_feature, selected_ids
             )
+            ch_id = channel_feature["id"]
+            source_channel_xs_locations[ch_id] |= {
+                xs["id"]
+                for xs in get_features_by_expression(self.cross_section_location_layer, f'"channel_id" = {ch_id}')
+            }
             if channel_structures:
                 self.integrate_structure_features(channel_feature, channel_structures)
                 all_processed_structure_ids |= processed_structures_fids
@@ -879,7 +914,7 @@ class StructuresIntegrator(LinearStructuresImporter):
         next_channel_id = get_next_feature_id(self.channel_layer)
         self.channel_layer.startEditing()
         visited_channel_ids = set()
-        channels_to_add = []
+        channels_to_add = defaultdict(list)
         for channel_feat in self.features_to_add[self.channel_layer.name()]:
             channel_id = channel_feat["id"]
             if channel_id not in visited_channel_ids:
@@ -892,11 +927,11 @@ class StructuresIntegrator(LinearStructuresImporter):
                 channel_feat["fid"] = next_channel_id
                 channel_feat["id"] = next_channel_id
                 next_channel_id += 1
-            channels_to_add.append(channel_feat)
-        self.channel_layer.addFeatures(channels_to_add)
+            channels_to_add[channel_id].append(channel_feat)
+        self.channel_layer.addFeatures(list(chain.from_iterable(channels_to_add.values())))
         # Update cross-section location features
         self.cross_section_location_layer.startEditing()
-        self.update_channel_cross_section_references(channels_to_add)
+        self.update_channel_cross_section_references(channels_to_add, source_channel_xs_locations)
         # Process structures
         structures_to_add = []
         for structure_id, structure_feat in enumerate(self.features_to_add[self.structure_layer_name], start=1):
@@ -1028,24 +1063,6 @@ class PipesImporter(LinearStructuresImporter):
     def __init__(self, *args, structure_layer=None, node_layer=None, manhole_layer=None):
         super().__init__(*args)
         self.setup_target_layers(dm.Pipe, structure_layer, node_layer, manhole_layer)
-
-
-class PipesIntegrator(StructuresIntegrator):
-    """Class with methods responsible for the integrating pipes from the external data source."""
-
-    def __init__(
-        self,
-        *args,
-        structure_layer=None,
-        node_layer=None,
-        manhole_layer=None,
-        channel_layer=None,
-        cross_section_location_layer=None,
-    ):
-        super().__init__(*args)
-        self.setup_target_layers(
-            dm.Pipe, structure_layer, node_layer, manhole_layer, channel_layer, cross_section_location_layer
-        )
 
 
 class ManholesImporter(PointStructuresImporter):

@@ -20,7 +20,6 @@ from threedi_schematisation_editor.custom_tools import (
     OrificesImporter,
     OrificesIntegrator,
     PipesImporter,
-    PipesIntegrator,
     StructuresImportConfig,
     WeirsImporter,
     WeirsIntegrator,
@@ -177,7 +176,6 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         dm.Culvert: CulvertsIntegrator,
         dm.Orifice: OrificesIntegrator,
         dm.Weir: WeirsIntegrator,
-        dm.Pipe: PipesIntegrator,
     }
     STRUCTURES_WITH_MANHOLES = (dm.Culvert, dm.Orifice, dm.Weir, dm.Pipe)
 
@@ -218,12 +216,13 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.run_pb.clicked.connect(self.run_import_structures)
         self.close_pb.clicked.connect(self.close)
         self.setup_labels()
-        if self.structure_model_cls not in self.STRUCTURES_WITH_MANHOLES:
+        if not self.include_manholes:
+            self.create_manholes_cb.hide()
             self.create_manholes_cb.setChecked(False)
-            self.edit_channels_cb.setChecked(False)
-            for widget in self.linear_structure_widgets:
-                widget.hide()
             self.tab_widget.setTabVisible(2, False)
+        if not self.enable_structures_integration:
+            for widget in self.structures_integration_widgets:
+                widget.hide()
 
     def setup_labels(self):
         structure_name = self.structure_model_cls.__layername__
@@ -241,9 +240,12 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         return self.structure_model_cls in self.STRUCTURES_WITH_MANHOLES
 
     @property
-    def linear_structure_widgets(self):
+    def enable_structures_integration(self):
+        return self.structure_model_cls in self.STRUCTURE_INTEGRATORS
+
+    @property
+    def structures_integration_widgets(self):
         return [
-            self.create_manholes_cb,
             self.edit_channels_cb,
             self.length_source_field_lbl,
             self.length_source_field_cbo,
@@ -271,7 +273,9 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             self.snap_gb,
         ]
         if self.include_manholes:
-            widgets += self.linear_structure_widgets
+            widgets.append(self.create_manholes_cb)
+        if self.enable_structures_integration:
+            widgets += self.structures_integration_widgets
         return widgets
 
     def activate_layer_dependent_widgets(self):
