@@ -23,6 +23,7 @@ from qgis.core import (
     QgsHillshadeRenderer,
     QgsLayerTreeGroup,
     QgsLayerTreeLayer,
+    QgsLayerTreeNode,
     QgsMapLayer,
     QgsPointLocator,
     QgsProject,
