@@ -110,9 +110,9 @@ class ThreediSchematisationEditorPlugin:
         for node in root_node.children():
             if not (node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup and node.name().startswith("3Di model:")):
                 continue
-            connection_node_tree_layer = root_node.children()[0].children()[0].children()[0]
+            connection_node_tree_layer = node.children()[0].children()[0]
             connection_node_layer = connection_node_tree_layer.layer()
-            model_gpkg = connection_node_layer.source().rsplit("|", 1)[0]
+            model_gpkg = os.path.normpath(connection_node_layer.source().rsplit("|", 1)[0])
             sub_groups = [n for n in node.children() if n.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup]
             for sub_grp in sub_groups:
                 for nested_node in sub_grp.children():
@@ -124,13 +124,13 @@ class ThreediSchematisationEditorPlugin:
     def switch_workspace_context(self, active_layer):
         if not active_layer:
             return
-        expected_layer_source = active_layer.source().rsplit("|", 1)[0]
+        expected_layer_source = os.path.normpath(active_layer.source().rsplit("|", 1)[0])
         if active_layer.id() in self.model_layers_map[expected_layer_source]:
             try:
                 lm = self.workspace_context_manager.layer_managers[expected_layer_source]
             except KeyError:
                 return
-            if lm != self.layer_manager:
+            if lm.model_gpkg_path != self.model_gpkg:
                 self.workspace_context_manager.set_active_layer_manager(lm)
 
     def add_multi_action_button(self, name, icon_path, actions_specification):
@@ -188,12 +188,11 @@ class ThreediSchematisationEditorPlugin:
         self.action_export.setDisabled(True)
         custom_vars = self.project.customVariables()
         try:
-            project_model_gpkgs = custom_vars[self.THREEDI_GPKG_VAR_NAMES]
+            project_model_gpkgs_str = custom_vars[self.THREEDI_GPKG_VAR_NAMES]
+            project_model_gpkgs = project_model_gpkgs_str.split("|")
         except KeyError:
             self.toggle_active_project_actions()
             return
-        if isinstance(project_model_gpkgs, str):
-            project_model_gpkgs = [project_model_gpkgs]
         for model_gpkg in project_model_gpkgs:
             lm = LayersManager(self.iface, self.uc, model_gpkg)
             if lm not in self.workspace_context_manager:
@@ -204,9 +203,9 @@ class ThreediSchematisationEditorPlugin:
         self.toggle_active_project_actions()
 
     def on_3di_project_save(self):
-        project_model_gpkgs = [lm.model_gpkg_path for lm in self.workspace_context_manager]
-        if project_model_gpkgs:
-            self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAMES: project_model_gpkgs})
+        project_model_gpkgs_str = "|".join(lm.model_gpkg_path for lm in self.workspace_context_manager)
+        if project_model_gpkgs_str:
+            self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAMES: project_model_gpkgs_str})
 
     def open_model_from_geopackage(self, model_gpkg=None):
         if not model_gpkg:
@@ -347,12 +346,11 @@ class ThreediSchematisationEditorPlugin:
             return
         if self.layer_manager is not None:
             self.save_to_spatialite_on_action()
+            self.iface.currentLayerChanged.disconnect(self.switch_workspace_context)
             self.layer_manager.remove_groups()
+            self.iface.currentLayerChanged.connect(self.switch_workspace_context)
             self.workspace_context_manager.unregister_layer_manager(self.layer_manager)
-        custom_vars = self.project.customVariables()
-        if self.THREEDI_GPKG_VAR_NAMES in custom_vars:
-            del custom_vars[self.THREEDI_GPKG_VAR_NAMES]
-            self.project.setCustomVariables(custom_vars)
+        self.switch_workspace_context(self.iface.activeLayer())
         self.toggle_active_project_actions()
         self.iface.mapCanvas().refresh()
 
