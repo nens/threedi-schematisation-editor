@@ -213,6 +213,10 @@ class ThreediSchematisationEditorPlugin:
             if not model_gpkg:
                 return
         lm = LayersManager(self.iface, self.uc, model_gpkg)
+        if lm in self.workspace_context_manager:
+            warn_msg = "Selected schematisation is already loaded. Loading canceled."
+            self.uc.show_warn(warn_msg)
+            return
         lm.load_all_layers()
         self.workspace_context_manager.register_layer_manager(lm)
         self.uc.bar_info("3Di User Layers registered!")
