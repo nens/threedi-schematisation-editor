@@ -258,7 +258,11 @@ class ThreediSchematisationEditorPlugin:
             if schema_is_valid is False:
                 self.uc.bar_warn("Loading from the Spatialite aborted!")
                 return
-        dst_gpkg = src_sqlite.replace(".sqlite", ".gpkg")
+        dst_gpkg = os.path.normpath(src_sqlite.replace(".sqlite", ".gpkg"))
+        if dst_gpkg in set(self.workspace_context_manager.layer_managers.keys()):
+            warn_msg = "Selected schematisation is already loaded. Loading canceled."
+            self.uc.show_warn(warn_msg)
+            return
         converter = ModelDataConverter(src_sqlite, dst_gpkg, user_communication=self.uc)
         known_epsg = converter.set_epsg_from_sqlite()
         if known_epsg is False:
