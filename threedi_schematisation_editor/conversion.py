@@ -3,7 +3,6 @@ from collections import OrderedDict, defaultdict
 from operator import itemgetter
 
 from qgis.core import (
-    NULL,
     QgsCoordinateTransform,
     QgsExpression,
     QgsFeature,

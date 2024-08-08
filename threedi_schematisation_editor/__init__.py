@@ -1,7 +1,8 @@
 # Copyright (C) 2023 by Lutra Consulting
 import os.path
+from collections import defaultdict
 
-from qgis.core import QgsApplication, QgsProject
+from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
 from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QDialog, QMenu
 
@@ -23,6 +24,7 @@ from threedi_schematisation_editor.utils import (
     is_gpkg_connection_exists,
     remove_user_layers,
 )
+from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
 
 def classFactory(iface):
@@ -31,7 +33,7 @@ def classFactory(iface):
 
 class ThreediSchematisationEditorPlugin:
     PLUGIN_NAME = "3Di Schematisation Editor"
-    THREEDI_GPKG_VAR_NAME = "threedi_gpkg_var"
+    THREEDI_GPKG_VAR_NAMES = "threedi_gpkg_var"
 
     def __init__(self, iface):
         self.iface = iface
@@ -43,14 +45,13 @@ class ThreediSchematisationEditorPlugin:
         self.action_export_as = None
         self.action_remove = None
         self.action_import_culverts = None
-        self.model_gpkg = None
-        self.layer_manager = None
-        self.form_factory = None
+        self.workspace_context_manager = WorkspaceContextManager()
         self.provider = ThreediSchematisationEditorProcessingProvider()
         self.project = QgsProject.instance()
         self.project.removeAll.connect(self.on_project_close)
         self.project.readProject.connect(self.on_3di_project_read)
         self.project.projectSaved.connect(self.on_3di_project_save)
+        self.iface.currentLayerChanged.connect(self.switch_workspace_context)
 
     def initGui(self):
         QgsApplication.processingRegistry().addProvider(self.provider)
@@ -93,6 +94,44 @@ class ThreediSchematisationEditorPlugin:
         del self.action_export_as
         del self.action_remove
         del self.action_import_culverts
+
+    @property
+    def model_gpkg(self):
+        return self.workspace_context_manager.active_layer_manager_geopackage
+
+    @property
+    def layer_manager(self):
+        return self.workspace_context_manager.active_layer_manager
+
+    @property
+    def model_layers_map(self):
+        model_layers = defaultdict(set)
+        root_node = QgsProject.instance().layerTreeRoot()
+        for node in root_node.children():
+            if not (node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup and node.name().startswith("3Di model:")):
+                continue
+            connection_node_tree_layer = node.children()[0].children()[0]
+            connection_node_layer = connection_node_tree_layer.layer()
+            model_gpkg = os.path.normpath(connection_node_layer.source().rsplit("|", 1)[0])
+            sub_groups = [n for n in node.children() if n.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup]
+            for sub_grp in sub_groups:
+                for nested_node in sub_grp.children():
+                    if nested_node.nodeType() == QgsLayerTreeNode.NodeType.NodeLayer:
+                        model_layer = nested_node.layer()
+                        model_layers[model_gpkg].add(model_layer.id())
+        return model_layers
+
+    def switch_workspace_context(self, active_layer):
+        if not active_layer:
+            return
+        expected_layer_source = os.path.normpath(active_layer.source().rsplit("|", 1)[0])
+        if active_layer.id() in self.model_layers_map[expected_layer_source]:
+            try:
+                lm = self.workspace_context_manager.layer_managers[expected_layer_source]
+            except KeyError:
+                return
+            if lm.model_gpkg_path != self.model_gpkg:
+                self.workspace_context_manager.set_active_layer_manager(lm)
 
     def add_multi_action_button(self, name, icon_path, actions_specification):
         parent_window = self.iface.mainWindow()
@@ -149,36 +188,39 @@ class ThreediSchematisationEditorPlugin:
         self.action_export.setDisabled(True)
         custom_vars = self.project.customVariables()
         try:
-            self.model_gpkg = custom_vars[self.THREEDI_GPKG_VAR_NAME]
+            project_model_gpkgs_str = custom_vars[self.THREEDI_GPKG_VAR_NAMES]
+            project_model_gpkgs = project_model_gpkgs_str.split("|")
         except KeyError:
-            self.model_gpkg = None
             self.toggle_active_project_actions()
             return
-        self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
-        self.layer_manager.load_all_layers(from_project=True)
+        for model_gpkg in project_model_gpkgs:
+            lm = LayersManager(self.iface, self.uc, model_gpkg)
+            if lm not in self.workspace_context_manager:
+                lm.load_all_layers(from_project=True)
+                self.workspace_context_manager.register_layer_manager(lm)
         self.uc.bar_info("3Di User Layers registered!")
         self.check_macros_status()
         self.toggle_active_project_actions()
 
     def on_3di_project_save(self):
-        if self.model_gpkg is not None:
-            self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAME: self.model_gpkg})
+        project_model_gpkgs_str = "|".join(lm.model_gpkg_path for lm in self.workspace_context_manager)
+        if project_model_gpkgs_str:
+            self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAMES: project_model_gpkgs_str})
 
     def open_model_from_geopackage(self, model_gpkg=None):
         if not model_gpkg:
             model_gpkg = self.select_user_layers_geopackage()
             if not model_gpkg:
                 return
-        if self.layer_manager is not None:
-            self.layer_manager.remove_groups()
-            self.model_gpkg = None
-            self.toggle_active_project_actions()
-        self.model_gpkg = model_gpkg
-        self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
-        self.layer_manager.load_all_layers()
+        lm = LayersManager(self.iface, self.uc, model_gpkg)
+        if lm in self.workspace_context_manager:
+            warn_msg = "Selected schematisation is already loaded. Loading canceled."
+            self.uc.show_warn(warn_msg)
+            return
+        lm.load_all_layers()
+        self.workspace_context_manager.register_layer_manager(lm)
         self.uc.bar_info("3Di User Layers registered!")
         self.check_macros_status()
-        self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAME: self.model_gpkg})
         self.toggle_active_project_actions()
         if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
             add_gpkg_connection(self.model_gpkg, self.iface)
@@ -216,11 +258,11 @@ class ThreediSchematisationEditorPlugin:
             if schema_is_valid is False:
                 self.uc.bar_warn("Loading from the Spatialite aborted!")
                 return
-        if self.layer_manager is not None:
-            self.layer_manager.remove_groups()
-            self.model_gpkg = None
-            self.toggle_active_project_actions()
-        dst_gpkg = src_sqlite.replace(".sqlite", ".gpkg")
+        dst_gpkg = os.path.normpath(src_sqlite.replace(".sqlite", ".gpkg"))
+        if dst_gpkg in set(self.workspace_context_manager.layer_managers.keys()):
+            warn_msg = "Selected schematisation is already loaded. Loading canceled."
+            self.uc.show_warn(warn_msg)
+            return
         converter = ModelDataConverter(src_sqlite, dst_gpkg, user_communication=self.uc)
         known_epsg = converter.set_epsg_from_sqlite()
         if known_epsg is False:
@@ -233,12 +275,11 @@ class ThreediSchematisationEditorPlugin:
             return
         if converter.missing_source_settings is True:
             add_settings_entry(dst_gpkg, id=1, epsg_code=converter.epsg_code)
-        self.model_gpkg = dst_gpkg
-        self.layer_manager = LayersManager(self.iface, self.uc, self.model_gpkg)
-        self.layer_manager.load_all_layers()
+        lm = LayersManager(self.iface, self.uc, dst_gpkg)
+        lm.load_all_layers()
+        self.workspace_context_manager.register_layer_manager(lm)
         self.uc.show_info("Loading from the Spatialite finished!")
         self.check_macros_status()
-        self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAME: self.model_gpkg})
         self.toggle_active_project_actions()
         if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
             add_gpkg_connection(self.model_gpkg, self.iface)
@@ -313,12 +354,11 @@ class ThreediSchematisationEditorPlugin:
             return
         if self.layer_manager is not None:
             self.save_to_spatialite_on_action()
+            self.iface.currentLayerChanged.disconnect(self.switch_workspace_context)
             self.layer_manager.remove_groups()
-            self.model_gpkg = None
-        custom_vars = self.project.customVariables()
-        if self.THREEDI_GPKG_VAR_NAME in custom_vars:
-            del custom_vars[self.THREEDI_GPKG_VAR_NAME]
-            self.project.setCustomVariables(custom_vars)
+            self.iface.currentLayerChanged.connect(self.switch_workspace_context)
+            self.workspace_context_manager.unregister_layer_manager(self.layer_manager)
+        self.switch_workspace_context(self.iface.activeLayer())
         self.toggle_active_project_actions()
         self.iface.mapCanvas().refresh()
 
@@ -352,7 +392,7 @@ class ThreediSchematisationEditorPlugin:
         if self.layer_manager is None:
             return
         self.save_to_spatialite_on_action()
-        self.layer_manager.remove_loaded_layers(dry_remove=True)
-        self.layer_manager = None
-        self.model_gpkg = None
+        for lm in self.workspace_context_manager:
+            lm.remove_loaded_layers(dry_remove=True)
+        self.workspace_context_manager.unregister_all()
         self.toggle_active_project_actions()
