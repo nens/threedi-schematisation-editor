@@ -5,6 +5,7 @@ History
 -------------------
 
 - Fixes/enhancements: #116
+- Added handling of the multiple schematisations.
 
 
 1.12.0 (2024-07-17)

@@ -58,7 +58,7 @@ class LayersManager:
     def __init__(self, iface, user_communication, model_gpkg_path):
         self.iface = iface
         self.uc = user_communication
-        self.model_gpkg_path = model_gpkg_path
+        self.model_gpkg_path = os.path.normpath(model_gpkg_path)
         self.form_factory = LayerEditFormFactory(self)
         self.model_handlers = {}
         self.layer_handlers = {}
@@ -375,6 +375,7 @@ class LayersManager:
             self.remove_loaded_layers(dry_remove=True)
             self.register_groups()
             self.register_vector_layers()
+        self.iface.setActiveLayer(self.model_handlers[dm.ConnectionNode].layer)
 
     def remove_loaded_layers(self, dry_remove=False):
         """Removing loaded vector layers."""
