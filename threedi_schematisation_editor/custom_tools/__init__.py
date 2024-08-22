@@ -24,6 +24,7 @@ from threedi_schematisation_editor.utils import (
     enum_entry_name_format,
     find_line_endpoints_nodes,
     find_point_nodes,
+    get_feature_by_id,
     get_features_by_expression,
     get_next_feature_id,
     gpkg_layer,
@@ -811,6 +812,25 @@ class StructuresIntegrator(LinearStructuresImporter):
         if cross_section_location_copies:
             self.cross_section_location_layer.addFeatures(cross_section_location_copies)
 
+    def remove_hanging_cross_sections(self):
+        """Remove cross-sections not aligned with the channels."""
+        xs_leftovers = []
+        channel_feats, channels_spatial_index = spatial_index(self.channel_layer)
+        for xs_feat in self.cross_section_location_layer.getFeatures():
+            xs_geom = xs_feat.geometry()
+            xs_buffer = xs_geom.buffer(self.DEFAULT_INTERSECTION_BUFFER, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
+            channel_fids = channels_spatial_index.intersects(xs_buffer.boundingBox())
+            xs_intersects = False
+            for channel_fid in channel_fids:
+                channel_feat = channel_feats[channel_fid]
+                if xs_buffer.intersects(channel_feat.geometry()):
+                    xs_intersects = True
+                    break
+            if not xs_intersects:
+                xs_leftovers.append(xs_feat.id())
+        if xs_leftovers:
+            self.cross_section_location_layer.deleteFeatures(xs_leftovers)
+
     @staticmethod
     def substring_feature(curve, start_distance, end_distance, fields, simplify=False, **attributes):
         """Extract part of the curve as a new structure feature."""
@@ -932,6 +952,7 @@ class StructuresIntegrator(LinearStructuresImporter):
         # Update cross-section location features
         self.cross_section_location_layer.startEditing()
         self.update_channel_cross_section_references(channels_to_add, source_channel_xs_locations)
+        self.remove_hanging_cross_sections()
         # Process structures
         structures_to_add = []
         for structure_id, structure_feat in enumerate(self.features_to_add[self.structure_layer_name], start=1):
