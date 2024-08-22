@@ -24,7 +24,6 @@ from threedi_schematisation_editor.utils import (
     enum_entry_name_format,
     find_line_endpoints_nodes,
     find_point_nodes,
-    get_feature_by_id,
     get_features_by_expression,
     get_next_feature_id,
     gpkg_layer,
