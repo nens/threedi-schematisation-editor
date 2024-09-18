@@ -15,11 +15,14 @@ import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.custom_tools import (
     ColumnImportMethod,
     CulvertsImporter,
+    CulvertsIntegrator,
     ManholesImporter,
     OrificesImporter,
+    OrificesIntegrator,
     PipesImporter,
     StructuresImportConfig,
     WeirsImporter,
+    WeirsIntegrator,
 )
 from threedi_schematisation_editor.utils import (
     NULL_STR,
@@ -169,6 +172,11 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         dm.Pipe: PipesImporter,
         dm.Manhole: ManholesImporter,
     }
+    STRUCTURE_INTEGRATORS = {
+        dm.Culvert: CulvertsIntegrator,
+        dm.Orifice: OrificesIntegrator,
+        dm.Weir: WeirsIntegrator,
+    }
     STRUCTURES_WITH_MANHOLES = (dm.Culvert, dm.Orifice, dm.Weir, dm.Pipe)
 
     def __init__(self, structure_model_cls, model_gpkg, layer_manager, uc, parent=None):
@@ -181,7 +189,6 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.import_configuration = StructuresImportConfig(self.structure_model_cls)
         if self.include_manholes:
             self.import_configuration.add_related_model_class(dm.Manhole)
-        self.structure_importer_cls = self.STRUCTURE_IMPORTERS[structure_model_cls]
         self.structure_model = QStandardItemModel()
         self.structure_tv.setModel(self.structure_model)
         self.connection_node_model = QStandardItemModel()
@@ -197,7 +204,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.structure_layer_cbo.setFilters(
             QgsMapLayerProxyModel.PointLayer
             if self.structure_model_cls.__geometrytype__ == dm.GeometryType.Point
-            else QgsMapLayerProxyModel.LineLayer
+            else QgsMapLayerProxyModel.LineLayer | QgsMapLayerProxyModel.PointLayer
         )
         self.structure_layer_cbo.setCurrentIndex(0)
         self.populate_conversion_settings_widgets()
@@ -209,10 +216,13 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         self.run_pb.clicked.connect(self.run_import_structures)
         self.close_pb.clicked.connect(self.close)
         self.setup_labels()
-        if self.structure_model_cls not in self.STRUCTURES_WITH_MANHOLES:
-            self.create_manholes_cb.setChecked(False)
+        if not self.include_manholes:
             self.create_manholes_cb.hide()
+            self.create_manholes_cb.setChecked(False)
             self.tab_widget.setTabVisible(2, False)
+        if not self.enable_structures_integration:
+            for widget in self.structures_integration_widgets:
+                widget.hide()
 
     def setup_labels(self):
         structure_name = self.structure_model_cls.__layername__
@@ -228,6 +238,24 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
     @property
     def include_manholes(self):
         return self.structure_model_cls in self.STRUCTURES_WITH_MANHOLES
+
+    @property
+    def enable_structures_integration(self):
+        return self.structure_model_cls in self.STRUCTURE_INTEGRATORS
+
+    @property
+    def structures_integration_widgets(self):
+        return [
+            self.edit_channels_cb,
+            self.length_source_field_lbl,
+            self.length_source_field_cbo,
+            self.length_fallback_value_lbl,
+            self.length_fallback_value_dsb,
+            self.azimuth_source_field_lbl,
+            self.azimuth_source_field_cbo,
+            self.azimuth_fallback_value_lbl,
+            self.azimuth_fallback_value_sb,
+        ]
 
     @property
     def source_layer(self):
@@ -246,6 +274,8 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         ]
         if self.include_manholes:
             widgets.append(self.create_manholes_cb)
+        if self.enable_structures_integration:
+            widgets += self.structures_integration_widgets
         return widgets
 
     def activate_layer_dependent_widgets(self):
@@ -272,8 +302,12 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         if layer:
             layer_field_names += [field.name() for field in layer.fields()]
             self.activate_layer_dependent_widgets()
+            self.length_source_field_cbo.setLayer(layer)
+            self.azimuth_source_field_cbo.setLayer(layer)
         else:
             self.deactivate_layer_dependent_widgets()
+            self.length_source_field_cbo.setLayer(None)
+            self.azimuth_source_field_cbo.setLayer(None)
         data_models = [self.structure_model_cls, dm.ConnectionNode]
         if self.include_manholes:
             data_models.append(dm.Manhole)
@@ -396,6 +430,11 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 "snapping_distance": self.snap_dsb.value(),
                 "create_connection_nodes": self.create_nodes_cb.isChecked(),
                 "create_manholes": self.create_manholes_cb.isChecked(),
+                "length_source_field": self.length_source_field_cbo.currentField(),
+                "length_fallback_value": self.length_fallback_value_dsb.value(),
+                "azimuth_source_field": self.azimuth_source_field_cbo.currentField(),
+                "azimuth_fallback_value": self.azimuth_fallback_value_sb.value(),
+                "edit_channels": self.edit_channels_cb.isChecked(),
             },
             "fields": self.collect_fields_settings(self.structure_model_cls),
             "connection_node_fields": self.collect_fields_settings(dm.ConnectionNode),
@@ -503,6 +542,11 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
             self.snap_gb.setChecked(conversion_settings.get("use_snapping", False))
             self.snap_dsb.setValue(conversion_settings.get("snapping_distance", 0.1))
             self.create_nodes_cb.setChecked(conversion_settings.get("create_connection_nodes", False))
+            self.edit_channels_cb.setChecked(conversion_settings.get("edit_channels", False))
+            self.length_source_field_cbo.setField(conversion_settings.get("length_source_field", ""))
+            self.length_fallback_value_dsb.setValue(conversion_settings.get("length_fallback_value", 10.0))
+            self.azimuth_source_field_cbo.setField(conversion_settings.get("azimuth_source_field", ""))
+            self.azimuth_fallback_value_sb.setValue(conversion_settings.get("azimuth_fallback_value", 90))
             self.update_fields_settings(self.structure_model_cls, import_settings["fields"])
             try:
                 connection_node_fields = import_settings["connection_node_fields"]
@@ -567,37 +611,48 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         structures_handler = self.layer_manager.model_handlers[self.structure_model_cls]
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
+        channel_handler = self.layer_manager.model_handlers[dm.Channel]
+        cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
         structure_layer = structures_handler.layer
         node_layer = node_handler.layer
         manhole_layer = manhole_handler.layer
+        channel_layer = channel_handler.layer
+        cross_section_location_layer = cross_section_location_handler.layer
         selected_feat_ids = None
         if self.selected_only_cb.isChecked():
             selected_feat_ids = source_layer.selectedFeatureIds()
         import_settings = self.collect_settings()
+        conversion_settings = import_settings["conversion_settings"]
+        edit_channels = conversion_settings.get("edit_channels", False)
+        if edit_channels:
+            structure_importer_cls = self.STRUCTURE_INTEGRATORS[self.structure_model_cls]
+        else:
+            structure_importer_cls = self.STRUCTURE_IMPORTERS[self.structure_model_cls]
         processed_handlers = [structures_handler, node_handler]
-        processed_layers = [structure_layer, node_layer]
+        processed_layers = {"structure_layer": structure_layer, "node_layer": node_layer}
         if self.include_manholes:
             processed_handlers.append(manhole_handler)
-            processed_layers.append(manhole_layer)
+            processed_layers["manhole_layer"] = manhole_layer
+        if edit_channels:
+            processed_handlers += [channel_handler, cross_section_location_handler]
+            processed_layers["channel_layer"] = channel_layer
+            processed_layers["cross_section_location_layer"] = cross_section_location_layer
         try:
             for handler in processed_handlers:
                 handler.disconnect_handler_signals()
             if self.include_manholes:
-                structures_importer = self.structure_importer_cls(
+                structures_importer = structure_importer_cls(
                     source_layer,
                     self.model_gpkg,
                     import_settings,
-                    structure_layer=structure_layer,
-                    node_layer=node_layer,
-                    manhole_layer=manhole_layer,
+                    **processed_layers,
                 )
             else:
-                structures_importer = self.structure_importer_cls(
+                structures_importer = structure_importer_cls(
                     source_layer,
                     self.model_gpkg,
                     import_settings,
-                    structure_layer=structure_layer,
-                    node_layer=node_layer,
+                    **processed_layers,
                 )
             structures_importer.import_structures(selected_ids=selected_feat_ids)
             success_msg = (
@@ -611,7 +666,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         finally:
             for handler in processed_handlers:
                 handler.connect_handler_signals()
-        for layer in processed_layers:
+        for layer in processed_layers.values():
             layer.triggerRepaint()
 
 

@@ -6,6 +6,7 @@ History
 
 - Fixes/enhancements: #116
 - Added handling of the multiple schematisations.
+- Implemented import of the linear structures from the point datasets (#167).
 
 
 1.12.0 (2024-07-17)
