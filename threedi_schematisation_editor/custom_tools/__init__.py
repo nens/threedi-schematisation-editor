@@ -778,6 +778,7 @@ class StructuresIntegrator(LinearStructuresImporter):
                 channel_id = channel_feat["id"]
                 channel_code = channel_feat["code"]
                 channel_geometry = channel_feat.geometry()
+                channel_geometry_middle = channel_geometry.interpolate(channel_geometry.length() * 0.5)
                 xs_fids = xs_location_index.intersects(channel_geometry.boundingBox())
                 for xs_fid in xs_fids:
                     xs_feat = xs_location_features_map[xs_fid]
@@ -803,7 +804,7 @@ class StructuresIntegrator(LinearStructuresImporter):
                         ]
                         xs_distance_map.sort(key=itemgetter(1))
                         closest_xs_feat_copy = QgsFeature(xs_distance_map[0][0])
-                        closest_xs_feat_copy.setGeometry(channel_geometry.centroid())
+                        closest_xs_feat_copy.setGeometry(channel_geometry_middle)
                         closest_xs_feat_copy["channel_id"] = channel_id
                         closest_xs_feat_copy["id"] = next_cross_section_location_id
                         next_cross_section_location_id += 1
