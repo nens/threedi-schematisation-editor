@@ -191,7 +191,7 @@ class LayersManager:
 
     @property
     def model_name(self):
-        """Model name"""
+        """Name of the model."""
         return os.path.basename(self.model_gpkg_path).rsplit(".", 1)[0]
 
     @property
