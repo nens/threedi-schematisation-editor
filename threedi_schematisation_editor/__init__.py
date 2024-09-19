@@ -110,6 +110,16 @@ class ThreediSchematisationEditorPlugin:
         for node in root_node.children():
             if not (node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup and node.name().startswith("3Di model:")):
                 continue
+            connection_node_tree_layer = None
+            for child_node in node.children():
+                if (
+                    child_node.nodeType() == QgsLayerTreeNode.NodeType.NodeLayer
+                    and child_node.name() == dm.ConnectionNode.__layername__
+                ):
+                    connection_node_tree_layer = child_node
+                    break
+            if connection_node_tree_layer is None:
+                continue
             connection_node_tree_layer = node.children()[0].children()[0]
             connection_node_layer = connection_node_tree_layer.layer()
             model_gpkg = os.path.normpath(connection_node_layer.source().rsplit("|", 1)[0])
