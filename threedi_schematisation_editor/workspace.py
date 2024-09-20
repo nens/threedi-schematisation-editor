@@ -4,7 +4,8 @@
 class WorkspaceContextManager:
     """Class with methods for managing 3Di model schematisation context."""
 
-    def __init__(self):
+    def __init__(self, plugin):
+        self.plugin = plugin
         self._active_lm_gpkg = None
         self.layer_managers = {}
 
@@ -43,6 +44,7 @@ class WorkspaceContextManager:
         """Register a Layer Manager instance."""
         if layer_manager not in self:
             self.layer_managers[layer_manager.model_gpkg_path] = layer_manager
+            self.plugin.active_schematisation_combo.addItem(layer_manager.model_name, layer_manager.model_gpkg_path)
             if set_active:
                 self.set_active_layer_manager(layer_manager)
 
@@ -52,6 +54,8 @@ class WorkspaceContextManager:
             if layer_manager == self.active_layer_manager:
                 del self.active_layer_manager
             del self.layer_managers[layer_manager.model_gpkg_path]
+            lm_idx = self.plugin.active_schematisation_combo.findData(layer_manager.model_gpkg_path)
+            self.plugin.active_schematisation_combo.removeItem(lm_idx)
         if self.layer_managers:
             self.set_active_layer_manager(next(iter(self.layer_managers.values())))
 
@@ -59,7 +63,10 @@ class WorkspaceContextManager:
         """Unregister all Layer Manager instances."""
         del self.active_layer_manager
         self.layer_managers.clear()
+        self.plugin.active_schematisation_combo.clear()
 
     def set_active_layer_manager(self, layer_manager):
         """Set the active Layer Manager instance."""
         self.active_layer_manager = layer_manager
+        lm_idx = self.plugin.active_schematisation_combo.findData(layer_manager.model_gpkg_path)
+        self.plugin.active_schematisation_combo.setCurrentIndex(lm_idx)
