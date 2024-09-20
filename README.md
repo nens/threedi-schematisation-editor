@@ -8,8 +8,8 @@ Development
 
 Testing happens within a docker container, build (if necessary) and run your docker as follows::
 
-    $ docker-compose build schema
-    $ docker-compose run schema make test
+    $ docker compose build schema
+    $ docker compose run schema make test
 
 
 Deployment
