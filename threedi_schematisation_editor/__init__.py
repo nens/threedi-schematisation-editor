@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
 from qgis.PyQt.QtGui import QCursor, QIcon
-from qgis.PyQt.QtWidgets import QAction, QDialog, QMenu
+from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
@@ -38,6 +38,7 @@ class ThreediSchematisationEditorPlugin:
     def __init__(self, iface):
         self.iface = iface
         self.uc = UICommunication(self.iface, self.PLUGIN_NAME)
+        self.active_schematisation_combo = None
         self.toolbar = None
         self.action_open = None
         self.action_import = None
@@ -45,7 +46,7 @@ class ThreediSchematisationEditorPlugin:
         self.action_export_as = None
         self.action_remove = None
         self.action_import_culverts = None
-        self.workspace_context_manager = WorkspaceContextManager()
+        self.workspace_context_manager = WorkspaceContextManager(self)
         self.provider = ThreediSchematisationEditorProcessingProvider()
         self.project = QgsProject.instance()
         self.project.removeAll.connect(self.on_project_close)
@@ -56,6 +57,11 @@ class ThreediSchematisationEditorPlugin:
     def initGui(self):
         QgsApplication.processingRegistry().addProvider(self.provider)
         self.toolbar = self.iface.addToolBar("Schematisation Editor")
+        self.active_schematisation_combo = QComboBox()
+        self.active_schematisation_combo.setPlaceholderText("No active schematisation")
+        self.active_schematisation_combo.currentIndexChanged.connect(self.active_schematisation_changed)
+        self.toolbar.addWidget(self.active_schematisation_combo)
+        self.toolbar.addSeparator()
         self.action_open = QAction("Open 3Di Geopackage", self.iface.mainWindow())
         self.action_open.triggered.connect(self.open_model_from_geopackage)
         self.action_import = QAction("Load from Spatialite", self.iface.mainWindow())
@@ -84,10 +90,13 @@ class ThreediSchematisationEditorPlugin:
         self.toolbar.addAction(self.action_remove)
         self.toolbar.addAction(self.action_import_culverts)
         self.toggle_active_project_actions()
+        self.active_schematisation_changed()
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
+        self.active_schematisation_combo.currentIndexChanged.disconnect(self.active_schematisation_changed)
         del self.toolbar
+        del self.active_schematisation_combo
         del self.action_open
         del self.action_import
         del self.action_export
@@ -107,14 +116,32 @@ class ThreediSchematisationEditorPlugin:
     def model_layers_map(self):
         model_layers = defaultdict(set)
         root_node = QgsProject.instance().layerTreeRoot()
-        for node in root_node.children():
-            if not (node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup and node.name().startswith("3Di model:")):
+        model_nodes = [
+            node
+            for node in root_node.children()
+            if node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup and node.name().startswith("3Di model:")
+        ]
+        for model_node in model_nodes:
+            model_groups = {
+                node.name(): node
+                for node in model_node.children()
+                if node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup
+            }
+            try:
+                group_1d_node = model_groups["1D"]
+            except KeyError:
                 continue
-            connection_node_tree_layer = node.children()[0].children()[0]
+            layer_1d_nodes = {
+                node.name(): node
+                for node in group_1d_node.children()
+                if node.nodeType() == QgsLayerTreeNode.NodeType.NodeLayer
+            }
+            connection_node_tree_layer = layer_1d_nodes[dm.ConnectionNode.__layername__]
+            if connection_node_tree_layer is None:
+                continue
             connection_node_layer = connection_node_tree_layer.layer()
             model_gpkg = os.path.normpath(connection_node_layer.source().rsplit("|", 1)[0])
-            sub_groups = [n for n in node.children() if n.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup]
-            for sub_grp in sub_groups:
+            for sub_grp in model_groups.values():
                 for nested_node in sub_grp.children():
                     if nested_node.nodeType() == QgsLayerTreeNode.NodeType.NodeLayer:
                         model_layer = nested_node.layer()
@@ -132,6 +159,16 @@ class ThreediSchematisationEditorPlugin:
                 return
             if lm.model_gpkg_path != self.model_gpkg:
                 self.workspace_context_manager.set_active_layer_manager(lm)
+
+    def active_schematisation_changed(self):
+        combo_model_gpkg = self.active_schematisation_combo.currentData()
+        if self.model_gpkg != combo_model_gpkg:
+            lm = self.workspace_context_manager.layer_managers[combo_model_gpkg]
+            self.iface.setActiveLayer(lm.model_handlers[dm.ConnectionNode].layer)
+        if self.model_gpkg is not None:
+            self.active_schematisation_combo.setToolTip(f"Currently active schematisation: {self.model_gpkg}")
+        else:
+            self.active_schematisation_combo.setToolTip("No active schematisation")
 
     def add_multi_action_button(self, name, icon_path, actions_specification):
         parent_window = self.iface.mainWindow()
@@ -185,7 +222,6 @@ class ThreediSchematisationEditorPlugin:
         return filename
 
     def on_3di_project_read(self):
-        self.action_export.setDisabled(True)
         custom_vars = self.project.customVariables()
         try:
             project_model_gpkgs_str = custom_vars[self.THREEDI_GPKG_VAR_NAMES]

@@ -190,11 +190,15 @@ class LayersManager:
         return linked_models
 
     @property
+    def model_name(self):
+        """Name of the model."""
+        return os.path.basename(self.model_gpkg_path).rsplit(".", 1)[0]
+
+    @property
     def main_group(self):
         """Main model group."""
         model_file_dir = os.path.basename(os.path.dirname(self.model_gpkg_path))
-        model_name = os.path.basename(self.model_gpkg_path).rsplit(".", 1)[0]
-        model_group_name = f"3Di model: {model_file_dir}/{model_name}"
+        model_group_name = f"3Di model: {model_file_dir}/{self.model_name}"
         return model_group_name
 
     @property

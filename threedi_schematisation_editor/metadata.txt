@@ -20,7 +20,7 @@ about=View and edit 3Di schematisations in the Modeller Interface.
 tracker=https://github.com/nens/threedi-schematisation-editor/issues
 repository=https://github.com/nens/threedi-schematisation-editor/issues
 
-changelog=https://github.com/nens/threedi-schematisation-editor/blob/master/HISTORY.rst
+changelog=https://docs.3di.live/a_releasenotes_3di_mi.html
 
 # Tags are comma separated with spaces allowed
 tags=3di, edit, 1D, hydraulics

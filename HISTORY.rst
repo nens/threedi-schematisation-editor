@@ -4,7 +4,7 @@ History
 1.12.1 (unreleased)
 -------------------
 
-- Fixes/enhancements: #116
+- Fixes/enhancements: #116, #250, #257
 - Added handling of the multiple schematisations.
 - Implemented import of the linear structures from the point datasets (#167).
 
