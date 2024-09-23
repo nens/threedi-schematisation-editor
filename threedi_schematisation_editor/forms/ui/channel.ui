@@ -26,7 +26,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>0</y>
+        <y>-5</y>
         <width>515</width>
         <height>929</height>
        </rect>
@@ -1839,14 +1839,69 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>scrollArea</tabstop>
+  <tabstop>tabWidget</tabstop>
   <tabstop>id</tabstop>
   <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
   <tabstop>calculation_type</tabstop>
   <tabstop>dist_calc_points</tabstop>
+  <tabstop>dist_calc_points_clear</tabstop>
   <tabstop>zoom_category</tabstop>
+  <tabstop>exchange_thickness</tabstop>
+  <tabstop>exchange_thickness_clear</tabstop>
+  <tabstop>hydraulic_conductivity_in</tabstop>
+  <tabstop>hydraulic_conductivity_in_clear</tabstop>
+  <tabstop>hydraulic_conductivity_out</tabstop>
+  <tabstop>hydraulic_conductivity_out_clear</tabstop>
   <tabstop>connection_node_start_id</tabstop>
   <tabstop>connection_node_end_id</tabstop>
+  <tabstop>connection_node_1_id</tabstop>
+  <tabstop>connection_node_1_code</tabstop>
+  <tabstop>connection_node_1_initial_waterlevel</tabstop>
+  <tabstop>connection_node_1_initial_waterlevel_clear</tabstop>
+  <tabstop>connection_node_1_storage_area</tabstop>
+  <tabstop>connection_node_1_storage_area_clear</tabstop>
+  <tabstop>connection_node_2_id</tabstop>
+  <tabstop>connection_node_2_code</tabstop>
+  <tabstop>connection_node_2_initial_waterlevel</tabstop>
+  <tabstop>connection_node_2_initial_waterlevel_clear</tabstop>
+  <tabstop>connection_node_2_storage_area</tabstop>
+  <tabstop>connection_node_2_storage_area_clear</tabstop>
+  <tabstop>cross_section_locations</tabstop>
+  <tabstop>cross_section_location_id</tabstop>
+  <tabstop>cross_section_location_bank_level</tabstop>
+  <tabstop>cross_section_location_bank_level_clear</tabstop>
+  <tabstop>cross_section_location_code</tabstop>
+  <tabstop>cross_section_location_reference_level</tabstop>
+  <tabstop>cross_section_location_reference_level_clear</tabstop>
+  <tabstop>cross_section_location_cross_section_shape</tabstop>
+  <tabstop>cross_section_location_cross_section_width</tabstop>
+  <tabstop>cross_section_location_cross_section_width_clear</tabstop>
+  <tabstop>cross_section_location_cross_section_height</tabstop>
+  <tabstop>cross_section_location_cross_section_height_clear</tabstop>
+  <tabstop>cross_section_location_cross_section_table_widget</tabstop>
+  <tabstop>cross_section_location_cross_section_table_delete</tabstop>
+  <tabstop>cross_section_location_cross_section_table_copy</tabstop>
+  <tabstop>cross_section_location_cross_section_table_paste</tabstop>
+  <tabstop>cross_section_location_cross_section_table_add</tabstop>
+  <tabstop>cross_section_location_friction_type</tabstop>
+  <tabstop>cross_section_location_friction_value</tabstop>
+  <tabstop>cross_section_location_friction_value_clear</tabstop>
+  <tabstop>cross_section_location_cross_section_friction_widget</tabstop>
+  <tabstop>cross_section_location_cross_section_friction_clear</tabstop>
+  <tabstop>cross_section_location_cross_section_friction_copy</tabstop>
+  <tabstop>cross_section_location_vegetation_stem_density</tabstop>
+  <tabstop>cross_section_location_vegetation_stem_density_clear</tabstop>
+  <tabstop>cross_section_location_vegetation_stem_diameter</tabstop>
+  <tabstop>cross_section_location_vegetation_stem_diameter_clear</tabstop>
+  <tabstop>cross_section_location_vegetation_height</tabstop>
+  <tabstop>cross_section_location_vegetation_height_clear</tabstop>
+  <tabstop>cross_section_location_vegetation_drag_coefficient</tabstop>
+  <tabstop>cross_section_location_vegetation_drag_coefficient_clear</tabstop>
+  <tabstop>cross_section_location_cross_section_vegetation_widget</tabstop>
+  <tabstop>cross_section_location_cross_section_vegetation_clear</tabstop>
+  <tabstop>cross_section_location_cross_section_vegetation_copy</tabstop>
  </tabstops>
  <resources/>
  <connections/>

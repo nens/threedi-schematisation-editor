@@ -127,10 +127,10 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>load_pb</tabstop>
-  <tabstop>cancle_pb</tabstop>
   <tabstop>load_tab</tabstop>
   <tabstop>schematisation_tv</tabstop>
+  <tabstop>cancle_pb</tabstop>
+  <tabstop>load_pb</tabstop>
  </tabstops>
  <resources/>
  <connections/>
