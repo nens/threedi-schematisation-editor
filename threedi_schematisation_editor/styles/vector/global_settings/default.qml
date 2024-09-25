@@ -337,25 +337,16 @@
           <Option type="Map">
             <Option name="map" type="List">
               <Option type="Map">
-                <Option name="0: Do not use advection 1d" type="QString" value="0"/>
+                <Option name="0: Do not use 1D advection" type="QString" value="0"/>
               </Option>
               <Option type="Map">
-                <Option name="1: Use advection 1d" type="QString" value="1"/>
+                <Option name="1: Momentum conservative" type="QString" value="1"/>
               </Option>
               <Option type="Map">
-                <Option name="2: Experimental advection 1d" type="QString" value="2"/>
+                <Option name="2: Energy conservative" type="QString" value="2"/>
               </Option>
               <Option type="Map">
-                <Option name="3: Experimental advection 1d" type="QString" value="3"/>
-              </Option>
-              <Option type="Map">
-                <Option name="4: Experimental advection 1d" type="QString" value="4"/>
-              </Option>
-              <Option type="Map">
-                <Option name="5: Experimental advection 1d" type="QString" value="5"/>
-              </Option>
-              <Option type="Map">
-                <Option name="6: Experimental advection 1d" type="QString" value="6"/>
+                <Option name="3: Combined momentum and energy conservative" type="QString" value="3"/>
               </Option>
             </Option>
           </Option>
