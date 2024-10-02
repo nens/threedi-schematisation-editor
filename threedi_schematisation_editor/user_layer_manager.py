@@ -1,6 +1,8 @@
 # Copyright (C) 2023 by Lutra Consulting
 import os
+import re
 from functools import cached_property
+from pathlib import Path
 from types import MappingProxyType
 
 from qgis.core import (
@@ -197,8 +199,24 @@ class LayersManager:
     @property
     def main_group(self):
         """Main model group."""
-        model_file_dir = os.path.basename(os.path.dirname(self.model_gpkg_path))
-        model_group_name = f"3Di model: {model_file_dir}/{self.model_name}"
+        model_gpkg_path_obj = Path(self.model_gpkg_path)
+        try:
+            from threedi_mi_utils import LocalSchematisation
+
+            model_files_dir = model_gpkg_path_obj.parents[2]  # 3Di model folder structure candidate
+            local_schematisation = LocalSchematisation.initialize_from_location(
+                model_files_dir, use_config_for_revisions=False
+            )
+            if local_schematisation is None or not local_schematisation.revisions:
+                raise ValueError("No revisions found.")
+            revision_folder = os.path.basename(model_gpkg_path_obj.parents[1])
+            if revision_folder == "work in progress":
+                model_group_name = f"3Di schematisation: {self.model_name} WIP"
+            else:
+                revision_number = re.findall(r"^revision (\d+)", revision_folder)[0]
+                model_group_name = f"3Di schematisation: {self.model_name} #{revision_number}"
+        except (ImportError, IndexError, ValueError):
+            model_group_name = f"3Di schematisation: {self.model_gpkg_path}"
         return model_group_name
 
     @property

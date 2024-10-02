@@ -119,7 +119,7 @@ class ThreediSchematisationEditorPlugin:
         model_nodes = [
             node
             for node in root_node.children()
-            if node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup and node.name().startswith("3Di model:")
+            if node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup and node.name().startswith("3Di schematisation:")
         ]
         for model_node in model_nodes:
             model_groups = {
