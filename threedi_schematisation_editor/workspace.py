@@ -44,7 +44,9 @@ class WorkspaceContextManager:
         """Register a Layer Manager instance."""
         if layer_manager not in self:
             self.layer_managers[layer_manager.model_gpkg_path] = layer_manager
-            self.plugin.active_schematisation_combo.addItem(layer_manager.model_name, layer_manager.model_gpkg_path)
+            self.plugin.active_schematisation_combo.addItem(
+                layer_manager.detailed_model_name, layer_manager.model_gpkg_path
+            )
             if set_active:
                 self.set_active_layer_manager(layer_manager)
 

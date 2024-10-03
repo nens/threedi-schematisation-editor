@@ -58,6 +58,7 @@ class ThreediSchematisationEditorPlugin:
         QgsApplication.processingRegistry().addProvider(self.provider)
         self.toolbar = self.iface.addToolBar("Schematisation Editor")
         self.active_schematisation_combo = QComboBox()
+        self.active_schematisation_combo.setMinimumWidth(250)
         self.active_schematisation_combo.setPlaceholderText("No active schematisation")
         self.active_schematisation_combo.currentIndexChanged.connect(self.active_schematisation_changed)
         self.toolbar.addWidget(self.active_schematisation_combo)
