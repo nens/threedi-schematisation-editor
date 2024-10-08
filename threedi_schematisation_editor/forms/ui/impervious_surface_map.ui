@@ -253,6 +253,14 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>scrollArea</tabstop>
+  <tabstop>id</tabstop>
+  <tabstop>connection_node_id</tabstop>
+  <tabstop>percentage</tabstop>
+  <tabstop>percentage_clear</tabstop>
+  <tabstop>impervious_surface_id</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

@@ -1087,6 +1087,8 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>scrollArea</tabstop>
+  <tabstop>tabWidget</tabstop>
   <tabstop>id</tabstop>
   <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
@@ -1094,9 +1096,13 @@
   <tabstop>pumpstation_code</tabstop>
   <tabstop>pumpstation_display_name</tabstop>
   <tabstop>pumpstation_start_level</tabstop>
+  <tabstop>pumpstation_start_level_clear</tabstop>
   <tabstop>pumpstation_lower_stop_level</tabstop>
+  <tabstop>pumpstation_lower_stop_level_clear</tabstop>
   <tabstop>pumpstation_upper_stop_level</tabstop>
+  <tabstop>pumpstation_upper_stop_level_clear</tabstop>
   <tabstop>pumpstation_capacity</tabstop>
+  <tabstop>pumpstation_capacity_clear</tabstop>
   <tabstop>pumpstation_type</tabstop>
   <tabstop>pumpstation_zoom_category</tabstop>
   <tabstop>pumpstation_sewerage</tabstop>
@@ -1105,11 +1111,15 @@
   <tabstop>connection_node_1_id</tabstop>
   <tabstop>connection_node_1_code</tabstop>
   <tabstop>connection_node_1_initial_waterlevel</tabstop>
+  <tabstop>connection_node_1_initial_waterlevel_clear</tabstop>
   <tabstop>connection_node_1_storage_area</tabstop>
+  <tabstop>connection_node_1_storage_area_clear</tabstop>
   <tabstop>connection_node_2_id</tabstop>
   <tabstop>connection_node_2_code</tabstop>
   <tabstop>connection_node_2_initial_waterlevel</tabstop>
+  <tabstop>connection_node_2_initial_waterlevel_clear</tabstop>
   <tabstop>connection_node_2_storage_area</tabstop>
+  <tabstop>connection_node_2_storage_area_clear</tabstop>
  </tabstops>
  <resources/>
  <connections/>

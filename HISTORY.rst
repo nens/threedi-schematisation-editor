@@ -4,7 +4,7 @@ History
 1.13.1 (unreleased)
 -------------------
 
-- Fixes/enhancements: #270
+- Fixes/enhancements: #149, #254, #270
 
 
 1.13.0 (2024-09-24)

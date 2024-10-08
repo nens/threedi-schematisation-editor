@@ -239,6 +239,15 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>scrollArea</tabstop>
+  <tabstop>id</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>initial_waterlevel</tabstop>
+  <tabstop>initial_waterlevel_clear</tabstop>
+  <tabstop>storage_area</tabstop>
+  <tabstop>storage_area_clear</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
