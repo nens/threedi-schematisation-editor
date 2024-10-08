@@ -593,7 +593,7 @@ class ModelDataConverter:
                 warn += f"ID's of missing features: {ids_str}"
                 if miss_no > 10:
                     warn += " ..."
-            warn += "\nPlease run the 3Di schematization checker for more details"
+            warn += "\nPlease run the 3Di schematisation checker for more details"
             self.uc.show_warn(warn)
         self.report_conversion_errors()
 

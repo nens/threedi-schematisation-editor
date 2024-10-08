@@ -1,6 +1,8 @@
 # Copyright (C) 2023 by Lutra Consulting
 import os
+import re
 from functools import cached_property
+from pathlib import Path
 from types import MappingProxyType
 
 from qgis.core import (
@@ -194,11 +196,53 @@ class LayersManager:
         """Name of the model."""
         return os.path.basename(self.model_gpkg_path).rsplit(".", 1)[0]
 
+    @cached_property
+    def model_revision(self):
+        """3Di model schematisation revision."""
+        model_gpkg_path_obj = Path(self.model_gpkg_path)
+        try:
+            from threedi_mi_utils import LocalSchematisation
+
+            model_files_dir = model_gpkg_path_obj.parents[2]  # 3Di model folder structure candidate
+            local_schematisation = LocalSchematisation.initialize_from_location(
+                model_files_dir, use_config_for_revisions=False
+            )
+            if local_schematisation is None or not local_schematisation.revisions:
+                raise ValueError("No revisions found.")
+            revision_folder = os.path.basename(model_gpkg_path_obj.parents[1])
+            if revision_folder == "work in progress":
+                revision = local_schematisation.wip_revision
+            else:
+                revision_number = int(re.findall(r"^revision (\d+)", revision_folder)[0])
+                revision = local_schematisation.revisions[revision_number]
+        except (ImportError, IndexError, ValueError):
+            revision = None
+        return revision
+
+    @cached_property
+    def detailed_model_name(self):
+        """Detailed model name."""
+        try:
+            if self.model_revision is not None:
+                from threedi_mi_utils import WIPRevision
+
+                if isinstance(self.model_revision, WIPRevision):
+                    detailed_name = f"{self.model_name} WIP"
+                else:
+                    detailed_name = f"{self.model_name} #{self.model_revision.number}"
+            else:
+                detailed_name = self.model_name
+        except ImportError:
+            detailed_name = self.model_name
+        return detailed_name
+
     @property
     def main_group(self):
         """Main model group."""
-        model_file_dir = os.path.basename(os.path.dirname(self.model_gpkg_path))
-        model_group_name = f"3Di model: {model_file_dir}/{self.model_name}"
+        if self.model_revision is not None:
+            model_group_name = f"3Di schematisation: {self.detailed_model_name}"
+        else:
+            model_group_name = f"3Di schematisation: {self.model_gpkg_path}"
         return model_group_name
 
     @property
