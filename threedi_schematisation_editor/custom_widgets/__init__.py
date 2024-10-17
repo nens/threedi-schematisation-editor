@@ -179,6 +179,8 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
     }
     STRUCTURES_WITH_MANHOLES = (dm.Culvert, dm.Orifice, dm.Weir, dm.Pipe)
 
+    LAST_CONFIG_DIR_ENTRY = "threedi/last_import_config_dir"
+
     def __init__(self, structure_model_cls, model_gpkg, layer_manager, uc, parent=None):
         super().__init__(parent)
         self.setupUi(self)
@@ -519,9 +521,11 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
 
     def save_import_settings(self):
         extension_filter = "JSON (*.json)"
-        template_filepath = get_filepath(self, extension_filter)
+        template_filepath = get_filepath(self, extension_filter, default_settings_entry=self.LAST_CONFIG_DIR_ENTRY)
         if not template_filepath:
             return
+        settings = QgsSettings()
+        settings.setValue(self.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
         try:
             import_settings = self.collect_settings()
             with open(template_filepath, "w") as template_file:
@@ -532,9 +536,13 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
 
     def load_import_settings(self):
         extension_filter = "JSON (*.json)"
-        template_filepath = get_filepath(self, extension_filter, save=False)
+        template_filepath = get_filepath(
+            self, extension_filter, save=False, default_settings_entry=self.LAST_CONFIG_DIR_ENTRY
+        )
         if not template_filepath:
             return
+        settings = QgsSettings()
+        settings.setValue(self.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
         try:
             with open(template_filepath, "r") as template_file:
                 import_settings = json.loads(template_file.read())

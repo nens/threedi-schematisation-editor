@@ -356,6 +356,18 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>scrollArea</tabstop>
+  <tabstop>id</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>display_name</tabstop>
+  <tabstop>exchange_level</tabstop>
+  <tabstop>exchange_level_clear</tabstop>
+  <tabstop>maximum_breach_depth</tabstop>
+  <tabstop>maximum_breach_depth_clear</tabstop>
+  <tabstop>levee_material</tabstop>
+  <tabstop>channel_id</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

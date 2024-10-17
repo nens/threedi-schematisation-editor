@@ -244,6 +244,14 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>scrollArea</tabstop>
+  <tabstop>id</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>exchange_level</tabstop>
+  <tabstop>exchange_level_clear</tabstop>
+  <tabstop>channel_id</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

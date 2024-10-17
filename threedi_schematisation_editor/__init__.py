@@ -58,6 +58,7 @@ class ThreediSchematisationEditorPlugin:
         QgsApplication.processingRegistry().addProvider(self.provider)
         self.toolbar = self.iface.addToolBar("Schematisation Editor")
         self.active_schematisation_combo = QComboBox()
+        self.active_schematisation_combo.setMinimumWidth(250)
         self.active_schematisation_combo.setPlaceholderText("No active schematisation")
         self.active_schematisation_combo.currentIndexChanged.connect(self.active_schematisation_changed)
         self.toolbar.addWidget(self.active_schematisation_combo)
@@ -119,7 +120,7 @@ class ThreediSchematisationEditorPlugin:
         model_nodes = [
             node
             for node in root_node.children()
-            if node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup and node.name().startswith("3Di model:")
+            if node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup and node.name().startswith("3Di schematisation:")
         ]
         for model_node in model_nodes:
             model_groups = {

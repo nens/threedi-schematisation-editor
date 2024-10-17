@@ -26,7 +26,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-412</y>
+        <y>0</y>
         <width>515</width>
         <height>915</height>
        </rect>
@@ -976,6 +976,43 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>scrollArea</tabstop>
+  <tabstop>id</tabstop>
+  <tabstop>bank_level</tabstop>
+  <tabstop>bank_level_clear</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>reference_level</tabstop>
+  <tabstop>reference_level_clear</tabstop>
+  <tabstop>cross_section_shape</tabstop>
+  <tabstop>cross_section_width</tabstop>
+  <tabstop>cross_section_width_clear</tabstop>
+  <tabstop>cross_section_height</tabstop>
+  <tabstop>cross_section_height_clear</tabstop>
+  <tabstop>cross_section_table_widget</tabstop>
+  <tabstop>cross_section_table_delete</tabstop>
+  <tabstop>cross_section_table_copy</tabstop>
+  <tabstop>cross_section_table_paste</tabstop>
+  <tabstop>cross_section_table_add</tabstop>
+  <tabstop>friction_type</tabstop>
+  <tabstop>friction_value</tabstop>
+  <tabstop>friction_value_clear</tabstop>
+  <tabstop>cross_section_friction_widget</tabstop>
+  <tabstop>cross_section_friction_clear</tabstop>
+  <tabstop>cross_section_friction_copy</tabstop>
+  <tabstop>vegetation_stem_density</tabstop>
+  <tabstop>vegetation_stem_density_clear</tabstop>
+  <tabstop>vegetation_stem_diameter</tabstop>
+  <tabstop>vegetation_stem_diameter_clear</tabstop>
+  <tabstop>vegetation_height</tabstop>
+  <tabstop>vegetation_height_clear</tabstop>
+  <tabstop>vegetation_drag_coefficient</tabstop>
+  <tabstop>vegetation_drag_coefficient_clear</tabstop>
+  <tabstop>cross_section_vegetation_widget</tabstop>
+  <tabstop>cross_section_vegetation_clear</tabstop>
+  <tabstop>cross_section_vegetation_copy</tabstop>
+  <tabstop>channel_id</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

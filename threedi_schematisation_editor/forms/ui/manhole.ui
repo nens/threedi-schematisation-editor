@@ -836,22 +836,36 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>scrollArea</tabstop>
   <tabstop>id</tabstop>
   <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
   <tabstop>calculation_type</tabstop>
   <tabstop>shape</tabstop>
   <tabstop>width</tabstop>
+  <tabstop>width_clear</tabstop>
   <tabstop>length</tabstop>
+  <tabstop>length_clear</tabstop>
   <tabstop>bottom_level</tabstop>
+  <tabstop>bottom_level_clear</tabstop>
   <tabstop>surface_level</tabstop>
+  <tabstop>surface_level_clear</tabstop>
   <tabstop>drain_level</tabstop>
+  <tabstop>drain_level_clear</tabstop>
   <tabstop>zoom_category</tabstop>
   <tabstop>manhole_indicator</tabstop>
+  <tabstop>exchange_thickness</tabstop>
+  <tabstop>exchange_thickness_clear</tabstop>
+  <tabstop>hydraulic_conductivity_in</tabstop>
+  <tabstop>hydraulic_conductivity_in_clear</tabstop>
+  <tabstop>hydraulic_conductivity_out</tabstop>
+  <tabstop>hydraulic_conductivity_out_clear</tabstop>
   <tabstop>connection_node_id</tabstop>
   <tabstop>connection_node_code</tabstop>
   <tabstop>connection_node_initial_waterlevel</tabstop>
+  <tabstop>connection_node_initial_waterlevel_clear</tabstop>
   <tabstop>connection_node_storage_area</tabstop>
+  <tabstop>connection_node_storage_area_clear</tabstop>
  </tabstops>
  <resources/>
  <connections/>

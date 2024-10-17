@@ -410,6 +410,27 @@
    <header>qgsmaplayercombobox.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>structure_layer_cbo</tabstop>
+  <tabstop>edit_channels_cb</tabstop>
+  <tabstop>create_manholes_cb</tabstop>
+  <tabstop>create_nodes_cb</tabstop>
+  <tabstop>selected_only_cb</tabstop>
+  <tabstop>length_source_field_cbo</tabstop>
+  <tabstop>length_fallback_value_dsb</tabstop>
+  <tabstop>azimuth_source_field_cbo</tabstop>
+  <tabstop>azimuth_fallback_value_sb</tabstop>
+  <tabstop>tab_widget</tabstop>
+  <tabstop>structure_tv</tabstop>
+  <tabstop>connection_node_tv</tabstop>
+  <tabstop>manhole_tv</tabstop>
+  <tabstop>save_pb</tabstop>
+  <tabstop>load_pb</tabstop>
+  <tabstop>snap_gb</tabstop>
+  <tabstop>snap_dsb</tabstop>
+  <tabstop>run_pb</tabstop>
+  <tabstop>close_pb</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
