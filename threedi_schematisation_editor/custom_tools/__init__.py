@@ -86,7 +86,7 @@ class StructuresImportConfig:
     def field_methods_mapping(self):
         methods_mapping = defaultdict(dict)
         auto_fields = {"id"}
-        auto_attribute_fields = {"connection_node_id", "connection_node_start_id", "connection_node_end_id"}
+        auto_attribute_fields = {"connection_node_id", "connection_node_id_start", "connection_node_id_end"}
         for field_name, model_cls in self.models_fields_iterator:
             if field_name in auto_fields:
                 methods_mapping[model_cls][field_name] = [ColumnImportMethod.AUTO]
@@ -323,8 +323,8 @@ class AbstractStructuresImporterWithManholes(AbstractStructuresImporter):
         manholes_at_nodes = {manhole_feat["connection_node_id"] for manhole_feat in self.manhole_layer.getFeatures()}
         new_manholes = []
         for external_src_feat, structure_feat in zip(external_source_features, new_structure_features):
-            start_node_id = structure_feat["connection_node_start_id"]
-            end_node_id = structure_feat["connection_node_end_id"]
+            start_node_id = structure_feat["connection_node_id_start"]
+            end_node_id = structure_feat["connection_node_id_end"]
             if start_node_id not in manholes_at_nodes:
                 start_manhole_feat = QgsFeature(manhole_fields)
                 start_node = next(get_features_by_expression(self.node_layer, f'"id" = {start_node_id}', True))
@@ -512,7 +512,7 @@ class LinearStructuresImporter(AbstractStructuresImporterWithManholes):
                 polyline[0] = node_start_point
                 new_geom = QgsGeometry.fromPolylineXY(polyline)
                 node_start_id = node_start_feat["id"]
-                new_structure_feat["connection_node_start_id"] = node_start_id
+                new_structure_feat["connection_node_id_start"] = node_start_id
             else:
                 if self.conversion_settings.create_connection_nodes:
                     new_start_node_feat = QgsFeature(node_fields)
@@ -520,7 +520,7 @@ class LinearStructuresImporter(AbstractStructuresImporterWithManholes):
                     new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
                     new_node_start_id = next_connection_node_id
                     new_start_node_feat["id"] = new_node_start_id
-                    new_structure_feat["connection_node_start_id"] = new_node_start_id
+                    new_structure_feat["connection_node_id_start"] = new_node_start_id
                     next_connection_node_id += 1
                     new_nodes.append(new_start_node_feat)
             if node_end_feat:
@@ -528,7 +528,7 @@ class LinearStructuresImporter(AbstractStructuresImporterWithManholes):
                 polyline[-1] = node_end_point
                 new_geom = QgsGeometry.fromPolylineXY(polyline)
                 node_end_id = node_end_feat["id"]
-                new_structure_feat["connection_node_end_id"] = node_end_id
+                new_structure_feat["connection_node_id_end"] = node_end_id
             else:
                 if self.conversion_settings.create_connection_nodes:
                     new_end_node_feat = QgsFeature(node_fields)
@@ -536,7 +536,7 @@ class LinearStructuresImporter(AbstractStructuresImporterWithManholes):
                     new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
                     new_node_end_id = next_connection_node_id
                     new_end_node_feat["id"] = new_node_end_id
-                    new_structure_feat["connection_node_end_id"] = new_node_end_id
+                    new_structure_feat["connection_node_id_end"] = new_node_end_id
                     next_connection_node_id += 1
                     new_nodes.append(new_end_node_feat)
         else:
@@ -546,14 +546,14 @@ class LinearStructuresImporter(AbstractStructuresImporterWithManholes):
                 new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
                 new_start_node_id = next_connection_node_id
                 new_start_node_feat["id"] = new_start_node_id
-                new_structure_feat["connection_node_start_id"] = new_start_node_id
+                new_structure_feat["connection_node_id_start"] = new_start_node_id
                 next_connection_node_id += 1
                 new_end_node_feat = QgsFeature(node_fields)
                 node_end_point = polyline[-1]
                 new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
                 new_end_node_id = next_connection_node_id
                 new_end_node_feat["id"] = new_end_node_id
-                new_structure_feat["connection_node_end_id"] = new_end_node_id
+                new_structure_feat["connection_node_id_end"] = new_end_node_id
                 next_connection_node_id += 1
                 new_nodes += [new_start_node_feat, new_end_node_feat]
         new_structure_feat.setGeometry(new_geom)
@@ -760,8 +760,8 @@ class StructuresIntegrator(LinearStructuresImporter):
             self.node_by_location[end_node_point] = end_node_id
             self.features_to_add[node_layer_name].append(end_node_feat)
             new_nodes.append(end_node_feat)
-        dst_feature["connection_node_start_id"] = start_node_id
-        dst_feature["connection_node_end_id"] = end_node_id
+        dst_feature["connection_node_id_start"] = start_node_id
+        dst_feature["connection_node_id_end"] = end_node_id
         return new_nodes
 
     def update_channel_cross_section_references(self, new_channels, source_channel_xs_locations):

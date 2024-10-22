@@ -11,7 +11,7 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
-from threedi_schematisation_editor.enumerators import CalculationType
+from threedi_schematisation_editor.enumerators import ExchangeTypeChannel
 from threedi_schematisation_editor.utils import get_features_by_expression, get_next_feature_id
 
 
@@ -113,10 +113,10 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
         exchange_lines_fields = exchange_lines_lyr.fields()
         current_exchange_line_id = get_next_feature_id(exchange_lines_lyr)
         calculation_type_max_exchange_lines = {
-            CalculationType.ISOLATED.value: 0,
-            CalculationType.EMBEDDED.value: 0,
-            CalculationType.CONNECTED.value: 1,
-            CalculationType.DOUBLE_CONNECTED.value: 2,
+            ExchangeTypeChannel.ISOLATED.value: 0,
+            ExchangeTypeChannel.EMBEDDED.value: 0,
+            ExchangeTypeChannel.CONNECTED.value: 1,
+            ExchangeTypeChannel.DOUBLE_CONNECTED.value: 2,
         }
         error_template = (
             "Error: channel {} with calculation type {} ({}) already has a maximum of {} exchange lines. "
@@ -134,7 +134,7 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
                     f"Error: invalid channel calculation type. Processing feature with FID {channel_fid} skipped."
                 )
                 continue
-            calculation_type_name = CalculationType(calculation_type).name
+            calculation_type_name = ExchangeTypeChannel(calculation_type).name
             channel_expression_text = f'"channel_id" = {channel_id}'
             channel_exchange_lines = list(get_features_by_expression(exchange_lines_lyr, channel_expression_text))
             calc_type_limit = calculation_type_max_exchange_lines[calculation_type]

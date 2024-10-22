@@ -16,7 +16,6 @@ from threedi_schematisation_editor.custom_tools import (
     ColumnImportMethod,
     CulvertsImporter,
     CulvertsIntegrator,
-    ManholesImporter,
     OrificesImporter,
     OrificesIntegrator,
     PipesImporter,
@@ -170,7 +169,6 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         dm.Orifice: OrificesImporter,
         dm.Weir: WeirsImporter,
         dm.Pipe: PipesImporter,
-        dm.Manhole: ManholesImporter,
     }
     STRUCTURE_INTEGRATORS = {
         dm.Culvert: CulvertsIntegrator,
