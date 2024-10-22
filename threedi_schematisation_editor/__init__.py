@@ -65,12 +65,6 @@ class ThreediSchematisationEditorPlugin:
         self.toolbar.addSeparator()
         self.action_open = QAction("Open 3Di Geopackage", self.iface.mainWindow())
         self.action_open.triggered.connect(self.open_model_from_geopackage)
-        self.action_import = QAction("Load from Spatialite", self.iface.mainWindow())
-        self.action_import.triggered.connect(self.load_from_spatialite)
-        self.action_export = QAction("Save to Spatialite", self.iface.mainWindow())
-        self.action_export.triggered.connect(self.save_to_default)
-        self.action_export_as = QAction("Save As", self.iface.mainWindow())
-        self.action_export_as.triggered.connect(self.save_to_selected)
         self.action_remove = QAction("Remove 3Di model", self.iface.mainWindow())
         self.action_remove.triggered.connect(self.remove_model_from_project)
         import_culverts_icon_path = os.path.join(os.path.dirname(__file__), "import.png")
@@ -85,9 +79,6 @@ class ThreediSchematisationEditorPlugin:
             "Import schematisation objects", import_culverts_icon_path, import_actions_spec
         )
         self.toolbar.addAction(self.action_open)
-        self.toolbar.addAction(self.action_import)
-        self.toolbar.addAction(self.action_export)
-        self.toolbar.addAction(self.action_export_as)
         self.toolbar.addAction(self.action_remove)
         self.toolbar.addAction(self.action_import_culverts)
         self.toggle_active_project_actions()
@@ -99,9 +90,6 @@ class ThreediSchematisationEditorPlugin:
         del self.toolbar
         del self.active_schematisation_combo
         del self.action_open
-        del self.action_import
-        del self.action_export
-        del self.action_export_as
         del self.action_remove
         del self.action_import_culverts
 
@@ -193,13 +181,9 @@ class ThreediSchematisationEditorPlugin:
 
     def toggle_active_project_actions(self):
         if self.model_gpkg is None:
-            self.action_export.setDisabled(True)
-            self.action_export_as.setDisabled(True)
             self.action_remove.setDisabled(True)
             self.action_import_culverts.setDisabled(True)
         else:
-            self.action_export.setEnabled(True)
-            self.action_export_as.setEnabled(True)
             self.action_remove.setEnabled(True)
             self.action_import_culverts.setEnabled(True)
 

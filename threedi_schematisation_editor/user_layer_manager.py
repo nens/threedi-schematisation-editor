@@ -50,8 +50,8 @@ class LayersManager:
         ("1D", dm.MODEL_1D_ELEMENTS),
         ("1D2D", dm.MODEL_1D2D_ELEMENTS),
         ("2D", dm.MODEL_2D_ELEMENTS),
-        ("Inflow", dm.INFLOW_ELEMENTS),
-        ("Control structures", dm.CONTROL_STRUCTURES_ELEMENTS),
+        ("Inflow", dm.MODEL_0D_INFLOW_ELEMENTS),
+        ("Control structures", dm.STRUCTURE_CONTROL_ELEMENTS),
         ("Settings", dm.SETTINGS_ELEMENTS),
     )
     RASTER_GROUPS = (("Model rasters", dm.ELEMENTS_WITH_RASTERS),)
@@ -72,16 +72,15 @@ class LayersManager:
     def snapping_groups(self):
         snap_groups = {
             dm.ConnectionNode: {
-                dm.Manhole,
                 dm.Pipe,
                 dm.Weir,
                 dm.Orifice,
                 dm.Culvert,
-                dm.Pumpstation,
-                dm.PumpstationMap,
+                dm.Pump,
+                dm.PumpMap,
                 dm.Channel,
                 dm.SurfaceMap,
-                dm.ImperviousSurfaceMap,
+                dm.DryWeatherFlowMap,
                 dm.Lateral1D,
                 dm.BoundaryCondition1D,
             },
@@ -183,8 +182,8 @@ class LayersManager:
             dm.MODEL_1D_ELEMENTS
             + dm.MODEL_1D2D_ELEMENTS
             + (
-                dm.ImperviousSurface,
-                dm.ImperviousSurfaceMap,
+                dm.DryWeatherFlow,
+                dm.DryWeatherFlowMap,
                 dm.Surface,
                 dm.SurfaceMap,
             )
@@ -340,9 +339,8 @@ class LayersManager:
         if form_ui_path:
             default_edit_form_config.setUiForm(form_ui_path)
         else:
-            if model_cls != dm.SchemaVersion:
-                id_increment_expression = "if (maximum(id) is null, 1, maximum(id) + 1)"
-                set_field_default_value(layer, "id", id_increment_expression)
+            id_increment_expression = "if (maximum(id) is null, 1, maximum(id) + 1)"
+            set_field_default_value(layer, "id", id_increment_expression)
         for style in all_styles:
             style_manager.setCurrentStyle(style)
             layer.setEditFormConfig(default_edit_form_config)
