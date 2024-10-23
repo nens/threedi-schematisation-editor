@@ -27,8 +27,8 @@ class FlowVariable(Enum):
     FLOW_VELOCITY = "flow_velocity"
     PUMP_DISCHARGE = "pump_discharge"
     RAIN = "rain"
-    WATER_LEVEL = "waterlevel"
-    WET_CROSS_SECTIONAL_AREA = "wet_cross-section"
+    WATER_LEVEL = "water_level"
+    WET_CROSS_SECTIONAL_AREA = "wet_cross_section"
     WET_SURFACE_AREA = "wet_surface"
     LATERAL_DISCHARGE = "lateral_discharge"
     VOLUME = "volume"
@@ -49,21 +49,27 @@ class AggregationMethod(Enum):
     CURRENT = "current"
 
 
-class CalculationType(Enum):
+class ExchangeTypeChannel(Enum):
     EMBEDDED = 100
     ISOLATED = 101
     CONNECTED = 102
     DOUBLE_CONNECTED = 105
 
 
-class CalculationTypeCulvert(Enum):
+class ExchangeTypeCulvert(Enum):
     EMBEDDED = 100
     ISOLATED = 101
     CONNECTED = 102
     DOUBLE_CONNECTED = 105
 
 
-class CalculationTypeNode(Enum):
+class ExchangeTypeNode(Enum):
+    EMBEDDED = 0
+    ISOLATED = 1
+    CONNECTED = 2
+
+
+class ExchangeTypePipe(Enum):
     EMBEDDED = 0
     ISOLATED = 1
     CONNECTED = 2
@@ -86,10 +92,11 @@ class ManholeShape(Enum):
     RECTANGLE = "02"
 
 
-class ManholeIndicator(Enum):
+class Visualisation(Enum):
     INSPECTION = 0
     OUTLET = 1
     PUMP = 2
+    OTHER = 99
 
 
 class FrictionType(Enum):
@@ -132,7 +139,7 @@ class InterflowType(Enum):
     GLOBAL_DEEPEST_POINT_CONSTANT_POROSITY = 4
 
 
-class Material(Enum):
+class LeveeMaterial(Enum):
     SAND = 1
     CLAY = 2
 
@@ -154,12 +161,6 @@ class PipeMaterial(Enum):
 class CrestType(Enum):
     BROAD_CRESTED = 3
     SHORT_CRESTED = 4
-
-
-class PipeCalculationType(Enum):
-    EMBEDDED = 0
-    ISOLATED = 1
-    CONNECTED = 2
 
 
 class SewerageType(Enum):
@@ -193,3 +194,23 @@ class ZoomCategories(Enum):
     MEDIUM_VISIBILITY = 3
     HIGH_VISIBILITY = 4
     HIGHEST_VISIBILITY = 5
+
+
+class TimeUnit(Enum):
+    SECONDS = "seconds"
+    MINUTES = "minutes"
+    HOURS = "hours"
+
+
+class Unit(Enum):
+    M3_SECONDS = "m3/s"
+
+
+class MeasureVariable(Enum):
+    S1 = "s1"
+    VOL1 = "vol1"
+
+
+class ControlType(Enum):
+    TABLE = "table"
+    MEMORY = "memory"

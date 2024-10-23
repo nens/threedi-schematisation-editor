@@ -121,8 +121,8 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
         num_pipes = pipe_lyr.selectedFeatureCount() if selected_pipes else pipe_lyr.featureCount()
         processed_pipes = 0
         for pipe_feat in pipe_lyr.selectedFeatures() if selected_pipes else pipe_lyr.getFeatures():
-            pipe_start_node_id = pipe_feat["connection_node_start_id"]
-            pipe_end_node_id = pipe_feat["connection_node_end_id"]
+            pipe_start_node_id = pipe_feat["connection_node_id_start"]
+            pipe_end_node_id = pipe_feat["connection_node_id_end"]
             invert_level_start_point = pipe_feat["invert_level_start_point"]
             invert_level_end_point = pipe_feat["invert_level_end_point"]
             if invert_level_start_point != NULL:

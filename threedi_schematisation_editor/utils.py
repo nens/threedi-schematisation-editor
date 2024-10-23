@@ -333,7 +333,7 @@ def load_user_layers(gpkg_path):
     groups = OrderedDict()
     groups["1D"] = dm.MODEL_1D_ELEMENTS
     groups["2D"] = dm.MODEL_2D_ELEMENTS
-    groups["Inflow"] = dm.INFLOW_ELEMENTS
+    groups["Inflow"] = dm.MODEL_0D_INFLOW_ELEMENTS
     groups["Settings"] = dm.SETTINGS_ELEMENTS
     default_style_name = "default"
     for group_name, group_models in groups.items():
@@ -612,7 +612,7 @@ def get_feature_by_id(layer, object_id, id_field="id"):
 
 def add_settings_entry(gpkg_path, **initial_fields_values):
     """Adding initial settings entry with defined fields values."""
-    settings_layer = gpkg_layer(gpkg_path, dm.GlobalSettings.__tablename__)
+    settings_layer = gpkg_layer(gpkg_path, dm.ModelSettings.__tablename__)
     if settings_layer.featureCount() == 0:
         settings_fields = settings_layer.fields()
         settings_feat = QgsFeature(settings_fields)

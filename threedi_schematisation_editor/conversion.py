@@ -93,7 +93,7 @@ class ModelDataConverter:
 
     def set_epsg_from_sqlite(self):
         """Setting EPSG code from SQLITE 3Di model settings table."""
-        settings_table = next(iter(dm.GlobalSettings.SQLITE_SOURCES))
+        settings_table = next(iter(dm.ModelSettings.SQLITE_SOURCES))
         settings_layer = sqlite_layer(self.src_sqlite, settings_table, geom_column=None)
         try:
             settings_feat = next(settings_layer.getFeatures())
@@ -119,12 +119,12 @@ class ModelDataConverter:
 
     def set_epsg_from_gpkg(self):
         """Setting EPSG code from GeoPackage 3Di model settings table."""
-        settings_table = dm.GlobalSettings.__tablename__
+        settings_table = dm.ModelSettings.__tablename__
         settings_layer = gpkg_layer(self.dst_gpkg, settings_table)
         try:
             settings_feat = next(settings_layer.getFeatures())
         except StopIteration:
-            msg = f"'{dm.GlobalSettings.__layername__}' layer is empty. Please add record with EPSG code first."
+            msg = f"'{dm.ModelSettings.__layername__}' layer is empty. Please add record with EPSG code first."
             self.uc.show_error(msg)
             return False
         fetched_epsg = settings_feat["epsg_code"]
@@ -267,16 +267,16 @@ class ModelDataConverter:
         """Filling required attributes during Spatialite <==> GeoPackage conversion."""
         src_layer_name = src_layer.name()
         layers_with_ts = {el.__layername__ for el in dm.ELEMENTS_WITH_TIMESERIES}
-        if src_layer_name == dm.Pumpstation.__layername__:
-            map_table = dm.PumpstationMap.__tablename__
+        if src_layer_name == dm.Pump.__layername__:
+            map_table = dm.PumpMap.__tablename__
             map_layer = gpkg_layer(self.dst_gpkg, map_table)
             connections_ids = {
-                feat["pumpstation_id"]: feat["connection_node_end_id"] for feat in map_layer.getFeatures()
+                feat["pumpstation_id"]: feat["connection_node_id_end"] for feat in map_layer.getFeatures()
             }
             for feat in new_feats:
                 feat_id = feat["id"]
                 try:
-                    feat["connection_node_end_id"] = connections_ids[feat_id]
+                    feat["connection_node_id_end"] = connections_ids[feat_id]
                 except KeyError:
                     continue
         elif src_layer_name in layers_with_ts:
@@ -292,12 +292,12 @@ class ModelDataConverter:
     def add_surface_map_geometries(self):
         """Adding polyline geometries to the surfaces map layers."""
         connection_node_layer = gpkg_layer(self.dst_gpkg, dm.ConnectionNode.__tablename__)
-        impervious_surface_layer = gpkg_layer(self.dst_gpkg, dm.ImperviousSurface.__tablename__)
+        impervious_surface_layer = gpkg_layer(self.dst_gpkg, dm.DryWeatherFlow.__tablename__)
         surface_layer = gpkg_layer(self.dst_gpkg, dm.Surface.__tablename__)
         connection_node_points = {f["id"]: f.geometry() for f in connection_node_layer.getFeatures()}
         impervious_surface_points = {f["id"]: f.geometry().centroid() for f in impervious_surface_layer.getFeatures()}
         surface_points = {f["id"]: f.geometry().centroid() for f in surface_layer.getFeatures()}
-        impervious_surface_map_layer = gpkg_layer(self.dst_gpkg, dm.ImperviousSurfaceMap.__tablename__)
+        impervious_surface_map_layer = gpkg_layer(self.dst_gpkg, dm.DryWeatherFlowMap.__tablename__)
         surface_map_layer = gpkg_layer(self.dst_gpkg, dm.SurfaceMap.__tablename__)
         impervious_surface_map_geoms, surface_map_geoms = {}, {}
         for feat in impervious_surface_map_layer.getFeatures():
@@ -307,7 +307,7 @@ class ModelDataConverter:
                     f"Impervious Surface link ({fid}) with an invalid 'impervious_surface_id'. "
                     f"Impervious surface ID reference is missing."
                 )
-                self.conversion_errors[dm.ImperviousSurface.__layername__].append(missing_surface_error)
+                self.conversion_errors[dm.DryWeatherFlow.__layername__].append(missing_surface_error)
                 continue
             try:
                 connection_node_geom = connection_node_points[node_id]
@@ -316,7 +316,7 @@ class ModelDataConverter:
                     f"Impervious Surface ({fid}) with an invalid 'connection_node_id' reference. "
                     f"Node ({node_id}) doesn't exist."
                 )
-                self.conversion_errors[dm.ImperviousSurface.__layername__].append(missing_node_error)
+                self.conversion_errors[dm.DryWeatherFlow.__layername__].append(missing_node_error)
                 continue
             connection_node_point = connection_node_geom.asPoint()
             isurface_centroid_geom = impervious_surface_points[surface_id]
@@ -359,7 +359,7 @@ class ModelDataConverter:
         success = impervious_surface_map_layer.commitChanges()
         if not success:
             commit_errors = impervious_surface_map_layer.commitErrors()
-            self.conversion_errors[dm.ImperviousSurface.__layername__] += commit_errors
+            self.conversion_errors[dm.DryWeatherFlow.__layername__] += commit_errors
         surface_map_layer.startEditing()
         for fid, link_geom in surface_map_geoms.items():
             surface_map_layer.changeGeometry(fid, link_geom)
@@ -399,9 +399,9 @@ class ModelDataConverter:
         """Getting unique feature IDs of source and destination layers."""
         src_feat_ids, dst_feat_ids = set(), set()
         src_expr = None
-        if annotated_model_cls == dm.Pumpstation:
+        if annotated_model_cls == dm.Pump:
             src_expr = QgsExpression('"connection_node_start_id" IS NOT NULL')
-        elif annotated_model_cls == dm.PumpstationMap:
+        elif annotated_model_cls == dm.PumpMap:
             src_expr = QgsExpression('"connection_node_start_id" IS NOT NULL AND "connection_node_end_id" IS NOT NULL')
         if src_expr is None:
             src_request = QgsFeatureRequest()
@@ -790,7 +790,7 @@ class ModelDataConverter:
         self.conversion_errors.clear()
         models_to_export = list(self.all_models)
         models_to_export.remove(dm.Timeseries)
-        models_to_export.remove(dm.PumpstationMap)
+        models_to_export.remove(dm.PumpMap)
         models_to_export.remove(dm.CrossSectionDefinition)
         number_of_steps = len(models_to_export)
         msg = "Saving data into Spatialite..."
