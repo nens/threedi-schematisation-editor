@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>PumpstationMapEditForm</class>
- <widget class="QDialog" name="PumpstationMapEditForm">
+ <class>PumpMapEditForm</class>
+ <widget class="QDialog" name="PumpMapEditForm">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Pumpstation with end node</string>
+   <string>Pump map</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
@@ -45,7 +45,7 @@
          </property>
          <widget class="QWidget" name="tab">
           <attribute name="title">
-           <string>Pumpstation map</string>
+           <string>Pump map</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_18">
            <item row="6" column="0">
@@ -299,9 +299,86 @@
               <locale language="English" country="UnitedStates"/>
              </property>
              <property name="title">
-              <string>Pumpstation characteristics</string>
+              <string>Pump characteristics</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_4">
+              <item row="0" column="7" colspan="2">
+               <widget class="QLineEdit" name="pumpstation_display_name">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="clearButtonEnabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="7" colspan="2">
+               <widget class="QComboBox" name="pumpstation_type">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="3">
+               <widget class="QLabel" name="label_8">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="text">
+                 <string>Start level [m]</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="5">
+               <widget class="QToolButton" name="pumpstation_start_level_clear">
+                <property name="text">
+                 <string>x</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="4">
+               <widget class="QDoubleSpinBox" name="pumpstation_upper_stop_level">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="buttonSymbols">
+                 <enum>QAbstractSpinBox::NoButtons</enum>
+                </property>
+                <property name="decimals">
+                 <number>3</number>
+                </property>
+                <property name="minimum">
+                 <double>-99999999.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>1000000.000000000000000</double>
+                </property>
+                <property name="showClearButton" stdset="0">
+                 <bool>true</bool>
+                </property>
+                <property name="clearValue" stdset="0">
+                 <bool>true</bool>
+                </property>
+                <property name="expressionsEnabled" stdset="0">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
               <item row="2" column="4">
                <spacer name="verticalSpacer">
                 <property name="orientation">
@@ -325,6 +402,13 @@
                 </property>
                </widget>
               </item>
+              <item row="3" column="8">
+               <widget class="QToolButton" name="pumpstation_capacity_clear">
+                <property name="text">
+                 <string>x</string>
+                </property>
+               </widget>
+              </item>
               <item row="4" column="6">
                <widget class="QLabel" name="label_11">
                 <property name="locale">
@@ -341,118 +425,16 @@
                 </property>
                </widget>
               </item>
-              <item row="4" column="3">
-               <widget class="QLabel" name="label_7">
+              <item row="0" column="3">
+               <widget class="QLabel" name="label_5">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
                 <property name="text">
-                 <string>Lower stop level [m]</string>
+                 <string>ID</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="6" column="4">
-               <spacer name="verticalSpacer_4">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeType">
-                 <enum>QSizePolicy::MinimumExpanding</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>10</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="7" column="7">
-               <widget class="QCheckBox" name="pumpstation_sewerage">
-                <property name="layoutDirection">
-                 <enum>Qt::LeftToRight</enum>
-                </property>
-                <property name="text">
-                 <string>Sewerage</string>
-                </property>
-               </widget>
-              </item>
-              <item row="7" column="3">
-               <widget class="QLabel" name="label_16">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="text">
-                 <string>Zoom category</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>-1</number>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="7">
-               <widget class="QDoubleSpinBox" name="pumpstation_capacity">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="buttonSymbols">
-                 <enum>QAbstractSpinBox::NoButtons</enum>
-                </property>
-                <property name="decimals">
-                 <number>3</number>
-                </property>
-                <property name="minimum">
-                 <double>-9999999999.000000000000000</double>
-                </property>
-                <property name="maximum">
-                 <double>9999999999.000000000000000</double>
-                </property>
-                <property name="showClearButton" stdset="0">
-                 <bool>true</bool>
-                </property>
-                <property name="clearValue" stdset="0">
-                 <bool>true</bool>
-                </property>
-                <property name="expressionsEnabled" stdset="0">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="6">
-               <widget class="QLabel" name="label_4">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="text">
-                 <string>Display name</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>10</number>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="5">
-               <widget class="QToolButton" name="pumpstation_start_level_clear">
-                <property name="text">
-                 <string>x</string>
                 </property>
                </widget>
               </item>
@@ -490,8 +472,8 @@
                 </property>
                </widget>
               </item>
-              <item row="5" column="4">
-               <widget class="QDoubleSpinBox" name="pumpstation_upper_stop_level">
+              <item row="1" column="4" colspan="2">
+               <widget class="QLineEdit" name="pumpstation_code">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -501,17 +483,69 @@
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
+                <property name="clearButtonEnabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="6">
+               <widget class="QLabel" name="label_10">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="text">
+                 <string>Capacity [L/s]</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="indent">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="6">
+               <widget class="QLabel" name="label_4">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="text">
+                 <string>Display name</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="indent">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="3">
+               <widget class="QLabel" name="label_6">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="text">
+                 <string>Code</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="4" colspan="2">
+               <widget class="QSpinBox" name="pumpstation_id">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="readOnly">
+                 <bool>true</bool>
+                </property>
                 <property name="buttonSymbols">
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
-                <property name="decimals">
-                 <number>3</number>
-                </property>
-                <property name="minimum">
-                 <double>-99999999.000000000000000</double>
-                </property>
                 <property name="maximum">
-                 <double>1000000.000000000000000</double>
+                 <number>99999999</number>
                 </property>
                 <property name="showClearButton" stdset="0">
                  <bool>true</bool>
@@ -520,7 +554,43 @@
                  <bool>true</bool>
                 </property>
                 <property name="expressionsEnabled" stdset="0">
-                 <bool>true</bool>
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="7">
+               <widget class="QCheckBox" name="pumpstation_sewerage">
+                <property name="layoutDirection">
+                 <enum>Qt::LeftToRight</enum>
+                </property>
+                <property name="text">
+                 <string>Sewerage</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="3">
+               <widget class="QLabel" name="label_7">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="text">
+                 <string>Lower stop level [m]</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="3">
+               <widget class="QLabel" name="label_9">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="text">
+                 <string>Upper stop level [m]</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
                 </property>
                </widget>
               </item>
@@ -561,101 +631,31 @@
                 </property>
                </widget>
               </item>
-              <item row="3" column="3">
-               <widget class="QLabel" name="label_8">
+              <item row="3" column="7">
+               <widget class="QDoubleSpinBox" name="pumpstation_capacity">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
-                <property name="text">
-                 <string>Start level [m]</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="3">
-               <widget class="QLabel" name="label_6">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="text">
-                 <string>Code</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="5" column="3">
-               <widget class="QLabel" name="label_9">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="text">
-                 <string>Upper stop level [m]</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="6">
-               <widget class="QLabel" name="label_10">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="text">
-                 <string>Capacity [L/s]</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>10</number>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="3">
-               <widget class="QLabel" name="label_5">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="text">
-                 <string>ID</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="5" column="5">
-               <widget class="QToolButton" name="pumpstation_upper_stop_level_clear">
-                <property name="text">
-                 <string>x</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="8">
-               <widget class="QToolButton" name="pumpstation_capacity_clear">
-                <property name="text">
-                 <string>x</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="4" colspan="2">
-               <widget class="QSpinBox" name="pumpstation_id">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="readOnly">
-                 <bool>true</bool>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
                 </property>
                 <property name="buttonSymbols">
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
+                <property name="decimals">
+                 <number>3</number>
+                </property>
+                <property name="minimum">
+                 <double>-9999999999.000000000000000</double>
+                </property>
                 <property name="maximum">
-                 <number>99999999</number>
+                 <double>9999999999.000000000000000</double>
                 </property>
                 <property name="showClearButton" stdset="0">
                  <bool>true</bool>
@@ -664,59 +664,14 @@
                  <bool>true</bool>
                 </property>
                 <property name="expressionsEnabled" stdset="0">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="4" colspan="2">
-               <widget class="QLineEdit" name="pumpstation_code">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="clearButtonEnabled">
                  <bool>true</bool>
                 </property>
                </widget>
               </item>
-              <item row="0" column="7" colspan="2">
-               <widget class="QLineEdit" name="pumpstation_display_name">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="clearButtonEnabled">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="7" colspan="2">
-               <widget class="QComboBox" name="pumpstation_type">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-               </widget>
-              </item>
-              <item row="7" column="4" colspan="2">
-               <widget class="QComboBox" name="pumpstation_zoom_category">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
+              <item row="5" column="5">
+               <widget class="QToolButton" name="pumpstation_upper_stop_level_clear">
+                <property name="text">
+                 <string>x</string>
                 </property>
                </widget>
               </item>
@@ -1104,8 +1059,6 @@
   <tabstop>pumpstation_capacity</tabstop>
   <tabstop>pumpstation_capacity_clear</tabstop>
   <tabstop>pumpstation_type</tabstop>
-  <tabstop>pumpstation_zoom_category</tabstop>
-  <tabstop>pumpstation_sewerage</tabstop>
   <tabstop>connection_node_id_start</tabstop>
   <tabstop>connection_node_id_end</tabstop>
   <tabstop>connection_node_1_id</tabstop>

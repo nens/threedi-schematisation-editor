@@ -73,11 +73,12 @@ class ConnectionNode(ModelObject):
 
     id: int
     code: str
+    display_name: str
     storage_area: Optional[float]
     initial_water_level: Optional[float]
     visualisation: Optional[Visualisation]
     manhole_surface_level: Optional[float]
-    manhole_bottom_level: float
+    bottom_level: float
     exchange_level: Optional[float]
     exchange_type: Optional[ExchangeTypeNode]
     exchange_thickness: Optional[float]
@@ -90,10 +91,11 @@ class ConnectionNode(ModelObject):
         display_names_list = [
             "ID",
             "Code",
+            "Display name",
             "Storage area [m²]",
             "Initial water level [m]",
             "Visualisation",
-            "Manhole bottom level [m MSL]",
+            "Bottom level [m MSL]",
             "Manhole surface level [m MSL]",
             "Exchange level [m MSL]",
             "Exchange type",
@@ -181,7 +183,7 @@ class PumpMap(ModelObject):
     code: str
     display_name: str
     pump_id: int
-    connection_node_id_start: int
+    connection_node_id_end: int
     tags: Optional[str]
 
 
