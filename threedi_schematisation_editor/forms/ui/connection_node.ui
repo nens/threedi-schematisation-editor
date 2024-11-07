@@ -31,212 +31,10 @@
         <x>0</x>
         <y>0</y>
         <width>515</width>
-        <height>528</height>
+        <height>530</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="4" column="0" colspan="2">
-        <widget class="QGroupBox" name="grp_groundwater">
-         <property name="title">
-          <string>Groundwater exchange</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_8">
-          <item row="0" column="1">
-           <widget class="QDoubleSpinBox" name="exchange_thickness">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="buttonSymbols">
-             <enum>QAbstractSpinBox::NoButtons</enum>
-            </property>
-            <property name="decimals">
-             <number>3</number>
-            </property>
-            <property name="maximum">
-             <double>1000000.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QToolButton" name="exchange_thickness_clear">
-            <property name="text">
-             <string>x</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_17">
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="text">
-             <string>Exchange thickness [m]</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_18">
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="text">
-             <string>Hydraulic conductivity in [m/d]</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QDoubleSpinBox" name="hydraulic_conductivity_in">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="buttonSymbols">
-             <enum>QAbstractSpinBox::NoButtons</enum>
-            </property>
-            <property name="decimals">
-             <number>3</number>
-            </property>
-            <property name="maximum">
-             <double>1000000.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QToolButton" name="hydraulic_conductivity_in_clear">
-            <property name="text">
-             <string>x</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_19">
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="text">
-             <string>Hydraulic conductivity out [m/d]</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QDoubleSpinBox" name="hydraulic_conductivity_out">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="buttonSymbols">
-             <enum>QAbstractSpinBox::NoButtons</enum>
-            </property>
-            <property name="decimals">
-             <number>3</number>
-            </property>
-            <property name="maximum">
-             <double>1000000.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QToolButton" name="hydraulic_conductivity_out_clear">
-            <property name="text">
-             <string>x</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="5" column="0" colspan="2">
-        <widget class="QGroupBox" name="grp_administative_properties">
-         <property name="title">
-          <string>Administrative properties</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_7">
-          <item row="0" column="1">
-           <widget class="QDoubleSpinBox" name="manhole_surface_level">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="inputMethodHints">
-             <set>Qt::ImhNone</set>
-            </property>
-            <property name="buttonSymbols">
-             <enum>QAbstractSpinBox::NoButtons</enum>
-            </property>
-            <property name="decimals">
-             <number>3</number>
-            </property>
-            <property name="minimum">
-             <double>-9999999999.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>9999999999.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_11">
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="text">
-             <string>Manhole surface level [m]</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-            </property>
-            <property name="indent">
-             <number>-1</number>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QToolButton" name="manhole_surface_level_clear">
-            <property name="font">
-             <font>
-              <weight>50</weight>
-              <italic>false</italic>
-              <bold>false</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>x</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
        <item row="1" column="0" colspan="2">
         <widget class="QGroupBox" name="grp_dimensions">
          <property name="title">
@@ -471,6 +269,66 @@
          </layout>
         </widget>
        </item>
+       <item row="2" column="0" colspan="2">
+        <widget class="QGroupBox" name="grp_initial_water_level">
+         <property name="title">
+          <string>Initial water level</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_6">
+          <item row="0" column="1">
+           <widget class="QDoubleSpinBox" name="initial_waterlevel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="inputMethodHints">
+             <set>Qt::ImhNone</set>
+            </property>
+            <property name="buttonSymbols">
+             <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="decimals">
+             <number>3</number>
+            </property>
+            <property name="minimum">
+             <double>-99999999.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>999999999.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_13">
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="text">
+             <string>Initial water level [m MSL]</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+            <property name="indent">
+             <number>-1</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QToolButton" name="initial_waterlevel_clear">
+            <property name="text">
+             <string>x</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
        <item row="3" column="0" colspan="2">
         <widget class="QGroupBox" name="grp_2d_exchange">
          <property name="enabled">
@@ -547,14 +405,14 @@
          </layout>
         </widget>
        </item>
-       <item row="2" column="0" colspan="2">
-        <widget class="QGroupBox" name="grp_initial_water_level">
+       <item row="5" column="0" colspan="2">
+        <widget class="QGroupBox" name="grp_administative_properties">
          <property name="title">
-          <string>Initial water level</string>
+          <string>Administrative properties</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_6">
+         <layout class="QGridLayout" name="gridLayout_7">
           <item row="0" column="1">
-           <widget class="QDoubleSpinBox" name="initial_waterlevel">
+           <widget class="QDoubleSpinBox" name="manhole_surface_level">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -574,20 +432,20 @@
              <number>3</number>
             </property>
             <property name="minimum">
-             <double>-99999999.000000000000000</double>
+             <double>-9999999999.000000000000000</double>
             </property>
             <property name="maximum">
-             <double>999999999.000000000000000</double>
+             <double>9999999999.000000000000000</double>
             </property>
            </widget>
           </item>
           <item row="0" column="0">
-           <widget class="QLabel" name="label_13">
+           <widget class="QLabel" name="label_11">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
             <property name="text">
-             <string>Initial water level [m MSL]</string>
+             <string>Manhole surface level [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -598,7 +456,149 @@
            </widget>
           </item>
           <item row="0" column="2">
-           <widget class="QToolButton" name="initial_waterlevel_clear">
+           <widget class="QToolButton" name="manhole_surface_level_clear">
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <italic>false</italic>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>x</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="4" column="0" colspan="2">
+        <widget class="QGroupBox" name="grp_groundwater">
+         <property name="title">
+          <string>Groundwater exchange</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_8">
+          <item row="0" column="1">
+           <widget class="QDoubleSpinBox" name="exchange_thickness">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="buttonSymbols">
+             <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="decimals">
+             <number>3</number>
+            </property>
+            <property name="maximum">
+             <double>1000000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QToolButton" name="exchange_thickness_clear">
+            <property name="text">
+             <string>x</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_17">
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="text">
+             <string>Exchange thickness [m]</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_18">
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="text">
+             <string>Hydraulic conductivity in [m/d]</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QDoubleSpinBox" name="hydraulic_conductivity_in">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="buttonSymbols">
+             <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="decimals">
+             <number>3</number>
+            </property>
+            <property name="maximum">
+             <double>1000000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QToolButton" name="hydraulic_conductivity_in_clear">
+            <property name="text">
+             <string>x</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_19">
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="text">
+             <string>Hydraulic conductivity out [m/d]</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QDoubleSpinBox" name="hydraulic_conductivity_out">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="buttonSymbols">
+             <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="decimals">
+             <number>3</number>
+            </property>
+            <property name="maximum">
+             <double>1000000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QToolButton" name="hydraulic_conductivity_out_clear">
             <property name="text">
              <string>x</string>
             </property>
@@ -620,19 +620,26 @@
          </property>
         </spacer>
        </item>
-       <item row="6" column="1">
-        <widget class="QLineEdit" name="tags">
-         <property name="readOnly">
-          <bool>true</bool>
+       <item row="6" column="0" colspan="2">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <property name="bottomMargin">
+          <number>0</number>
          </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Tags</string>
-         </property>
-        </widget>
+         <item>
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string>Tags</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="tags">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
