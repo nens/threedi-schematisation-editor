@@ -972,7 +972,7 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
         related_widget.setDisabled(True)
     cross_section_shape = custom_form.get_widget_value(cross_section_shape_widget)
     friction_value = custom_form.get_widget_value(friction_widget)
-    custom_form.update_cross_section_table_header("cross_section_friction_table")
+    custom_form.update_cross_section_table_header("cross_section_friction_values")
     custom_form.update_cross_section_table_header("cross_section_vegetation_table")
     if not custom_form.layer.isEditable():
         return

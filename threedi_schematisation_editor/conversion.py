@@ -490,7 +490,7 @@ class ModelDataConverter:
                 "cross_section_height": xs_def_height,
                 "cross_section_width": xs_def_width,
                 "cross_section_table": xs_def_table,
-                "cross_section_friction_table": xs_def_friction_table,
+                "cross_section_friction_values": xs_def_friction_table,
                 "cross_section_vegetation_table": xs_def_vegetation_table,
             }
             xs_definitions[src_xs_def_id] = xs_def_data
@@ -654,7 +654,7 @@ class ModelDataConverter:
                 src_xs_def_width = feat_with_xs_def["cross_section_width"]
                 src_xs_def_table = feat_with_xs_def["cross_section_table"]
                 if model_cls == dm.CrossSectionLocation:
-                    src_xs_def_friction_table = feat_with_xs_def["cross_section_friction_table"]
+                    src_xs_def_friction_table = feat_with_xs_def["cross_section_friction_values"]
                     src_xs_def_vegetation_table = feat_with_xs_def["cross_section_vegetation_table"]
                     xs_def_friction_values = (
                         " ".join(src_xs_def_friction_table.split("\n")) if src_xs_def_friction_table else None

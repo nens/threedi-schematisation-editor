@@ -439,7 +439,7 @@ class FormWithXSTable(BaseForm):
     def cross_section_table_field_widget_map(self):
         field_map = {
             "cross_section_table": self.cross_section_table,
-            "cross_section_friction_table": self.cross_section_friction,
+            "cross_section_friction_values": self.cross_section_friction,
             "cross_section_vegetation_table": self.cross_section_vegetation,
         }
         return field_map
@@ -538,11 +538,11 @@ class FormWithXSTable(BaseForm):
             cross_section_vegetation_clear_signal = self.cross_section_vegetation_clear.clicked
             cross_section_friction_copy_signal = self.cross_section_friction_copy.clicked
             cross_section_vegetation_copy_signal = self.cross_section_vegetation_copy.clicked
-            cross_section_friction_edit_slot = partial(self.edit_table_row, "cross_section_friction_table")
+            cross_section_friction_edit_slot = partial(self.edit_table_row, "cross_section_friction_values")
             cross_section_vegetation_edit_slot = partial(self.edit_table_row, "cross_section_vegetation_table")
-            cross_section_friction_clear_slot = partial(self.clear_table_row_values, "cross_section_friction_table")
+            cross_section_friction_clear_slot = partial(self.clear_table_row_values, "cross_section_friction_values")
             cross_section_vegetation_clear_slot = partial(self.clear_table_row_values, "cross_section_vegetation_table")
-            cross_section_friction_copy_slot = partial(self.copy_table_rows, "cross_section_friction_table")
+            cross_section_friction_copy_slot = partial(self.copy_table_rows, "cross_section_friction_values")
             cross_section_vegetation_copy_slot = partial(self.copy_table_rows, "cross_section_vegetation_table")
             connect_signal(cross_section_friction_edit_signal, cross_section_friction_edit_slot)
             connect_signal(cross_section_vegetation_edit_signal, cross_section_vegetation_edit_slot)
@@ -586,7 +586,7 @@ class FormWithXSTable(BaseForm):
                 table_header += ["Y [m]", "Z [m]"]
             else:
                 table_header += ["Height [m]", "Width [m]"]
-        elif table_field_name == "cross_section_friction_table":
+        elif table_field_name == "cross_section_friction_values":
             table_header += ["Friction coefficient"]
         elif table_field_name == "cross_section_vegetation_table":
             table_header += ["Stem density [m-2]", "Stem diameter [m]", "Height [m]", "Drag coefficient [-]"]
@@ -662,7 +662,7 @@ class FormWithXSTable(BaseForm):
                 self.cross_section_vegetation.removeRow(frict_vege_last_row_number)
         self.save_cross_section_table_edits()
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
-            self.save_cross_section_table_edits("cross_section_friction_table")
+            self.save_cross_section_table_edits("cross_section_friction_values")
             self.save_cross_section_table_edits("cross_section_vegetation_table")
 
     def paste_table_rows(self):
@@ -1568,7 +1568,7 @@ class CrossSectionLocationForm(FormWithXSTable):
                     "cross_section_width",
                     "cross_section_height",
                     "cross_section_table",
-                    "cross_section_friction_table",
+                    "cross_section_friction_values",
                     "cross_section_vegetation_table",
                 ]:
                     self.feature[xs_field_name] = closest_existing_cross_section[xs_field_name]

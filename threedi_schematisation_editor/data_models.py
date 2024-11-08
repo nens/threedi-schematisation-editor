@@ -412,7 +412,7 @@ class CrossSectionLocation(ModelObject):
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
     cross_section_table: Optional[str]
-    cross_section_friction_table: Optional[str]
+    cross_section_friction_values: Optional[str]
     cross_section_vegetation_table: Optional[str]
     vegetation_stem_density: Optional[float]
     vegetation_stem_diameter: Optional[float]

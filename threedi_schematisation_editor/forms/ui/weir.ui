@@ -1078,7 +1078,7 @@ coefficient positive</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_8">
               <item row="0" column="1">
-               <widget class="QDoubleSpinBox" name="connection_node_1_initial_waterlevel">
+               <widget class="QDoubleSpinBox" name="connection_node_1_initial_water_level">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1122,7 +1122,7 @@ coefficient positive</string>
                </widget>
               </item>
               <item row="0" column="2">
-               <widget class="QToolButton" name="connection_node_1_initial_waterlevel_clear">
+               <widget class="QToolButton" name="connection_node_1_initial_water_level_clear">
                 <property name="text">
                  <string>x</string>
                 </property>
@@ -1759,7 +1759,7 @@ coefficient positive</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_21">
               <item row="0" column="1">
-               <widget class="QDoubleSpinBox" name="connection_node_2_initial_waterlevel">
+               <widget class="QDoubleSpinBox" name="connection_node_2_initial_water_level">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1803,7 +1803,7 @@ coefficient positive</string>
                </widget>
               </item>
               <item row="0" column="2">
-               <widget class="QToolButton" name="connection_node_2_initial_waterlevel_clear">
+               <widget class="QToolButton" name="connection_node_2_initial_water_level_clear">
                 <property name="text">
                  <string>x</string>
                 </property>
