@@ -4,11 +4,9 @@ from collections import defaultdict
 
 from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
 from qgis.PyQt.QtGui import QCursor, QIcon
-from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
-
+from qgis.PyQt.QtWidgets import QAction, QComboBox, QMenu
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
-from threedi_schematisation_editor.conversion import ModelDataConverter
 from threedi_schematisation_editor.custom_widgets import ImportStructuresDialog, LoadSchematisationDialog
 from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager
@@ -246,135 +244,10 @@ class ThreediSchematisationEditorPlugin:
         if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
             add_gpkg_connection(self.model_gpkg, self.iface)
 
-    def load_from_spatialite(self, src_sqlite=None):
-        if not src_sqlite:
-            schematisation_loader = LoadSchematisationDialog(self.uc)
-            result = schematisation_loader.exec_()
-            if result != QDialog.Accepted:
-                return
-            src_sqlite = schematisation_loader.selected_schematisation_sqlite
-        if not can_write_in_dir(os.path.dirname(src_sqlite)):
-            warn_msg = "You don't have required write permissions to load data from the selected spatialite."
-            self.uc.show_warn(warn_msg)
-            return
-        schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
-        if schema_version is None:
-            warn_msg = (
-                "The selected spatialite cannot be used because its schema version information is missing. "
-                "Please upgrade the 3Di Schematisation Editor and try again."
-            )
-            self.uc.show_warn(warn_msg)
-            self.uc.bar_warn("Loading from the Spatialite aborted!")
-            return
-        if schema_version > ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
-            warn_msg = (
-                "The selected spatialite cannot be used because its database schema version is newer than expected. "
-                "Please upgrade the 3Di Schematisation Editor and try again."
-            )
-            self.uc.show_warn(warn_msg)
-            self.uc.bar_warn("Loading from the Spatialite aborted!")
-            return
-        else:
-            schema_is_valid = ensure_valid_schema(src_sqlite, self.uc)
-            if schema_is_valid is False:
-                self.uc.bar_warn("Loading from the Spatialite aborted!")
-                return
-        dst_gpkg = os.path.normpath(src_sqlite.replace(".sqlite", ".gpkg"))
-        if dst_gpkg in set(self.workspace_context_manager.layer_managers.keys()):
-            warn_msg = "Selected schematisation is already loaded. Loading canceled."
-            self.uc.show_warn(warn_msg)
-            return
-        converter = ModelDataConverter(src_sqlite, dst_gpkg, user_communication=self.uc)
-        known_epsg = converter.set_epsg_from_sqlite()
-        if known_epsg is False:
-            return
-        try:
-            converter.create_empty_user_layers()
-            converter.import_all_model_data()
-        except ConversionError:
-            self.uc.bar_warn("Loading from the Spatialite failed!")
-            return
-        if converter.missing_source_settings is True:
-            add_settings_entry(dst_gpkg, id=1, epsg_code=converter.epsg_code)
-        lm = LayersManager(self.iface, self.uc, dst_gpkg)
-        lm.load_all_layers()
-        self.workspace_context_manager.register_layer_manager(lm)
-        self.uc.show_info("Loading from the Spatialite finished!")
-        self.check_macros_status()
-        self.toggle_active_project_actions()
-        if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
-            add_gpkg_connection(self.model_gpkg, self.iface)
-
-    def save_to_selected(self):
-        self.save_to_spatialite()
-
-    def save_to_default(self):
-        self.save_to_spatialite(pick_destination=False)
-
-    def save_to_spatialite(self, pick_destination=True):
-        if not self.model_gpkg:
-            return
-        if self.layer_manager is None:
-            return
-        fixed_errors_msg, unsolved_errors_msg = self.layer_manager.validate_layers()
-        if unsolved_errors_msg:
-            warn_msg = (
-                "Saving to Spatialite failed. "
-                "The following features have cross sections with incorrect table inputs:\n"
-            )
-            warn_msg += unsolved_errors_msg
-            self.uc.show_warn(warn_msg)
-            return
-        self.layer_manager.stop_model_editing()
-        if pick_destination:
-            dst_sqlite = self.select_sqlite_database(title="Select database to save features to")
-        else:
-            dst_sqlite = self.model_gpkg.replace(".gpkg", ".sqlite")
-        if not dst_sqlite:
-            return
-        if not os.path.isfile(dst_sqlite):
-            warn_msg = "Target spatialite file doesn't exist. Saving to spatialite canceled."
-            self.uc.show_warn(warn_msg)
-            return
-        if not can_write_in_dir(os.path.dirname(dst_sqlite)):
-            warn_msg = "You don't have required write permissions to save data into the selected spatialite."
-            self.uc.show_warn(warn_msg)
-            return
-        schema_version = ModelDataConverter.spatialite_schema_version(dst_sqlite)
-        if schema_version > ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
-            warn_msg = (
-                "The selected spatialite cannot be used because its database schema version is newer than expected. "
-                "Please upgrade the 3Di Schematisation Editor and try again."
-            )
-            self.uc.show_warn(warn_msg)
-            return
-        else:
-            schema_is_valid = ensure_valid_schema(dst_sqlite, self.uc)
-            if schema_is_valid is False:
-                return
-        converter = ModelDataConverter(dst_sqlite, self.model_gpkg, user_communication=self.uc)
-        known_epsg = converter.set_epsg_from_gpkg()
-        if known_epsg is False:
-            return
-        converter.trim_sqlite_targets()
-        converter.report_conversion_errors()
-        converter.export_all_model_data()
-        self.uc.show_info("Saving to the Spatialite finished!")
-
-    def save_to_spatialite_on_action(self):
-        model_modified = self.layer_manager.model_modified()
-        if model_modified:
-            title = "Save to Spatialite?"
-            question = "Would you like to save model to Spatialite before closing project?"
-            answer = self.uc.ask(None, title, question)
-            if answer is True:
-                self.save_to_spatialite()
-
     def remove_model_from_project(self):
         if not self.model_gpkg:
             return
         if self.layer_manager is not None:
-            self.save_to_spatialite_on_action()
             self.iface.currentLayerChanged.disconnect(self.switch_workspace_context)
             self.layer_manager.remove_groups()
             self.iface.currentLayerChanged.connect(self.switch_workspace_context)
@@ -412,7 +285,6 @@ class ThreediSchematisationEditorPlugin:
     def on_project_close(self):
         if self.layer_manager is None:
             return
-        self.save_to_spatialite_on_action()
         for lm in self.workspace_context_manager:
             lm.remove_loaded_layers(dry_remove=True)
         self.workspace_context_manager.unregister_all()
