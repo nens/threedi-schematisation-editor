@@ -182,7 +182,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="pumpstation_id">
+    <field name="pump_id">
       <editWidget type="Range">
         <config>
           <Option/>
@@ -204,7 +204,7 @@
       </editWidget>
     </field>
   </fieldConfiguration>
-  <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_schematisation_editor\forms\ui\pumpstation_map.ui</editform>
+  <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_schematisation_editor\forms\ui\pump_map.ui</editform>
   <editforminit>open_edit_form</editforminit>
   <editforminitcodesource>2</editforminitcodesource>
   <editforminitfilepath>.</editforminitfilepath>
@@ -212,7 +212,7 @@
   <featformsuppress>0</featformsuppress>
   <editorlayout>uifilelayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer visibilityExpression="" name="Pumpstation view" columnCount="1" groupBox="0" visibilityExpressionEnabled="0" showLabel="1">
+    <attributeEditorContainer visibilityExpression="" name="pump view" columnCount="1" groupBox="0" visibilityExpressionEnabled="0" showLabel="1">
       <attributeEditorContainer visibilityExpression="" name="General" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
         <attributeEditorField name="id" showLabel="1" index="-1"/>
         <attributeEditorField name="display_name" showLabel="1" index="-1"/>
@@ -256,7 +256,7 @@
     <field editable="1" name="type"/>
     <field editable="1" name="upper_stop_level"/>
     <field editable="1" name="zoom_category"/>
-    <field editable="1" name="pumpstation_id"/>
+    <field editable="1" name="pump_id"/>
   </editable>
   <labelOnTop>
     <field name="ROWID" labelOnTop="0"/>
@@ -279,7 +279,7 @@
     <field name="type" labelOnTop="0"/>
     <field name="upper_stop_level" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
-    <field name="pumpstation_id" labelOnTop="0"/>
+    <field name="pump_id" labelOnTop="0"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>
   <widgets/>

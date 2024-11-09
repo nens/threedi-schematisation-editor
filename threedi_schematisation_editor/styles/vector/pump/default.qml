@@ -218,7 +218,7 @@
   <featformsuppress>0</featformsuppress>
   <editorlayout>tablayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer showLabel="1" visibilityExpression="" groupBox="0" visibilityExpressionEnabled="0" columnCount="1" name="Pumpstation point view">
+    <attributeEditorContainer showLabel="1" visibilityExpression="" groupBox="0" visibilityExpressionEnabled="0" columnCount="1" name="pump point view">
       <attributeEditorContainer showLabel="1" visibilityExpression="" groupBox="1" visibilityExpressionEnabled="0" columnCount="1" name="General">
         <attributeEditorField showLabel="1" index="-1" name="id"/>
         <attributeEditorField showLabel="1" index="3" name="display_name"/>

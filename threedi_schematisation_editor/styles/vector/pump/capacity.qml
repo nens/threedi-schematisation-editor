@@ -795,7 +795,7 @@ def my_form_open(dialog, layer, feature):
   <featformsuppress>0</featformsuppress>
   <editorlayout>tablayout</editorlayout>
   <attributeEditorForm>
-    <attributeEditorContainer columnCount="1" name="Pumpstation point view" visibilityExpression="" groupBox="0" visibilityExpressionEnabled="0" showLabel="1">
+    <attributeEditorContainer columnCount="1" name="pump point view" visibilityExpression="" groupBox="0" visibilityExpressionEnabled="0" showLabel="1">
       <attributeEditorContainer columnCount="1" name="General" visibilityExpression="" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
         <attributeEditorField name="id" index="1" showLabel="1"/>
         <attributeEditorField name="display_name" index="2" showLabel="1"/>
