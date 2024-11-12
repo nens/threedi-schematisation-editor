@@ -1740,7 +1740,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="calculation_type">
+    <field configurationFlags="None" name="exchange_type">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
@@ -1759,7 +1759,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="dist_calc_points">
+    <field configurationFlags="None" name="calculation_point_distance">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -2124,8 +2124,8 @@
     <alias field="id" index="1" name=""/>
     <alias field="code" index="2" name=""/>
     <alias field="display_name" index="3" name=""/>
-    <alias field="calculation_type" index="4" name=""/>
-    <alias field="dist_calc_points" index="5" name=""/>
+    <alias field="exchange_type" index="4" name=""/>
+    <alias field="calculation_point_distance" index="5" name=""/>
     <alias field="invert_level_start_point" index="6" name=""/>
     <alias field="invert_level_end_point" index="7" name=""/>
     <alias field="friction_value" index="8" name=""/>
@@ -2151,8 +2151,8 @@
     <default applyOnUpdate="0" field="id" expression=""/>
     <default applyOnUpdate="0" field="code" expression=""/>
     <default applyOnUpdate="0" field="display_name" expression=""/>
-    <default applyOnUpdate="0" field="calculation_type" expression=""/>
-    <default applyOnUpdate="0" field="dist_calc_points" expression=""/>
+    <default applyOnUpdate="0" field="exchange_type" expression=""/>
+    <default applyOnUpdate="0" field="calculation_point_distance" expression=""/>
     <default applyOnUpdate="0" field="invert_level_start_point" expression=""/>
     <default applyOnUpdate="0" field="invert_level_end_point" expression=""/>
     <default applyOnUpdate="0" field="friction_value" expression=""/>
@@ -2178,8 +2178,8 @@
     <constraint field="id" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="code" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="display_name" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
-    <constraint field="calculation_type" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
-    <constraint field="dist_calc_points" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
+    <constraint field="exchange_type" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
+    <constraint field="calculation_point_distance" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="invert_level_start_point" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="invert_level_end_point" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="friction_value" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
@@ -2205,8 +2205,8 @@
     <constraint field="id" exp="" desc=""/>
     <constraint field="code" exp="" desc=""/>
     <constraint field="display_name" exp="" desc=""/>
-    <constraint field="calculation_type" exp="" desc=""/>
-    <constraint field="dist_calc_points" exp="" desc=""/>
+    <constraint field="exchange_type" exp="" desc=""/>
+    <constraint field="calculation_point_distance" exp="" desc=""/>
     <constraint field="invert_level_start_point" exp="" desc=""/>
     <constraint field="invert_level_end_point" exp="" desc=""/>
     <constraint field="friction_value" exp="" desc=""/>
@@ -2237,8 +2237,8 @@
       <column hidden="0" type="field" width="-1" name="id"/>
       <column hidden="0" type="field" width="-1" name="code"/>
       <column hidden="0" type="field" width="-1" name="display_name"/>
-      <column hidden="0" type="field" width="-1" name="calculation_type"/>
-      <column hidden="0" type="field" width="-1" name="dist_calc_points"/>
+      <column hidden="0" type="field" width="-1" name="exchange_type"/>
+      <column hidden="0" type="field" width="-1" name="calculation_point_distance"/>
       <column hidden="0" type="field" width="-1" name="invert_level_start_point"/>
       <column hidden="0" type="field" width="-1" name="invert_level_end_point"/>
       <column hidden="0" type="field" width="-1" name="friction_value"/>
@@ -2300,12 +2300,12 @@
             <labelFont description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" italic="0" strikethrough="0" bold="0" style=""/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" index="4" name="calculation_type">
+        <attributeEditorField showLabel="1" index="4" name="exchange_type">
           <labelStyle labelColor="0,0,0,255" overrideLabelColor="0" overrideLabelFont="0">
             <labelFont description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" italic="0" strikethrough="0" bold="0" style=""/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" index="5" name="dist_calc_points">
+        <attributeEditorField showLabel="1" index="5" name="calculation_point_distance">
           <labelStyle labelColor="0,0,0,255" overrideLabelColor="0" overrideLabelFont="0">
             <labelFont description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" italic="0" strikethrough="0" bold="0" style=""/>
           </labelStyle>
@@ -2395,7 +2395,7 @@
   </attributeEditorForm>
   <editable>
     <field editable="1" name="ROWID"/>
-    <field editable="1" name="calculation_type"/>
+    <field editable="1" name="exchange_type"/>
     <field editable="1" name="code"/>
     <field editable="0" name="connection_node_end_id"/>
     <field editable="0" name="connection_node_start_id"/>
@@ -2404,7 +2404,7 @@
     <field editable="1" name="cross_section_table"/>
     <field editable="1" name="cross_section_width"/>
     <field editable="1" name="display_name"/>
-    <field editable="1" name="dist_calc_points"/>
+    <field editable="1" name="calculation_point_distance"/>
     <field editable="1" name="exchange_thickness"/>
     <field editable="1" name="fid"/>
     <field editable="1" name="friction_type"/>
@@ -2423,7 +2423,7 @@
   </editable>
   <labelOnTop>
     <field labelOnTop="0" name="ROWID"/>
-    <field labelOnTop="0" name="calculation_type"/>
+    <field labelOnTop="0" name="exchange_type"/>
     <field labelOnTop="0" name="code"/>
     <field labelOnTop="0" name="connection_node_end_id"/>
     <field labelOnTop="0" name="connection_node_start_id"/>
@@ -2432,7 +2432,7 @@
     <field labelOnTop="0" name="cross_section_table"/>
     <field labelOnTop="0" name="cross_section_width"/>
     <field labelOnTop="0" name="display_name"/>
-    <field labelOnTop="0" name="dist_calc_points"/>
+    <field labelOnTop="0" name="calculation_point_distance"/>
     <field labelOnTop="0" name="exchange_thickness"/>
     <field labelOnTop="0" name="fid"/>
     <field labelOnTop="0" name="friction_type"/>
@@ -2450,7 +2450,7 @@
     <field labelOnTop="0" name="zoom_category"/>
   </labelOnTop>
   <reuseLastValue>
-    <field reuseLastValue="0" name="calculation_type"/>
+    <field reuseLastValue="0" name="exchange_type"/>
     <field reuseLastValue="0" name="code"/>
     <field reuseLastValue="0" name="connection_node_end_id"/>
     <field reuseLastValue="0" name="connection_node_start_id"/>
@@ -2459,7 +2459,7 @@
     <field reuseLastValue="0" name="cross_section_table"/>
     <field reuseLastValue="0" name="cross_section_width"/>
     <field reuseLastValue="0" name="display_name"/>
-    <field reuseLastValue="0" name="dist_calc_points"/>
+    <field reuseLastValue="0" name="calculation_point_distance"/>
     <field reuseLastValue="0" name="exchange_thickness"/>
     <field reuseLastValue="0" name="fid"/>
     <field reuseLastValue="0" name="friction_type"/>

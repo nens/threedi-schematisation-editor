@@ -373,7 +373,7 @@ class Pipe(ModelObject):
             "ID",
             "Code",
             "Display name",
-            "Calculation type",
+            "exchange type",
             "Calculation point distance [m]",
             "Invert level start point",
             "Invert level end point",

@@ -144,7 +144,7 @@
       </symbol>
     </profileMarkerSymbol>
   </elevation>
-  <renderer-v2 attr="calculation_type" forceraster="0" referencescale="-1" enableorderby="0" symbollevels="0" type="categorizedSymbol">
+  <renderer-v2 attr="exchange_type" forceraster="0" referencescale="-1" enableorderby="0" symbollevels="0" type="categorizedSymbol">
     <categories>
       <category label="0: embedded" value="0" symbol="0" render="true" type="string"/>
       <category label="1: isolated" value="1" symbol="1" render="true" type="string"/>
@@ -472,7 +472,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="calculation_type">
+    <field configurationFlags="None" name="exchange_type">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
@@ -715,7 +715,7 @@
     <alias field="id" index="1" name=""/>
     <alias field="code" index="2" name=""/>
     <alias field="display_name" index="3" name=""/>
-    <alias field="calculation_type" index="4" name=""/>
+    <alias field="exchange_type" index="4" name=""/>
     <alias field="shape" index="5" name=""/>
     <alias field="width" index="6" name=""/>
     <alias field="length" index="7" name=""/>
@@ -735,7 +735,7 @@
     <default applyOnUpdate="0" field="id" expression=""/>
     <default applyOnUpdate="0" field="code" expression=""/>
     <default applyOnUpdate="0" field="display_name" expression=""/>
-    <default applyOnUpdate="0" field="calculation_type" expression=""/>
+    <default applyOnUpdate="0" field="exchange_type" expression=""/>
     <default applyOnUpdate="0" field="shape" expression=""/>
     <default applyOnUpdate="0" field="width" expression=""/>
     <default applyOnUpdate="0" field="length" expression=""/>
@@ -755,7 +755,7 @@
     <constraint field="id" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="code" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="display_name" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
-    <constraint field="calculation_type" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
+    <constraint field="exchange_type" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="shape" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="width" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="length" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
@@ -775,7 +775,7 @@
     <constraint field="id" exp="" desc=""/>
     <constraint field="code" exp="" desc=""/>
     <constraint field="display_name" exp="" desc=""/>
-    <constraint field="calculation_type" exp="" desc=""/>
+    <constraint field="exchange_type" exp="" desc=""/>
     <constraint field="shape" exp="" desc=""/>
     <constraint field="width" exp="" desc=""/>
     <constraint field="length" exp="" desc=""/>
@@ -800,7 +800,7 @@
       <column hidden="0" type="field" width="-1" name="id"/>
       <column hidden="0" type="field" width="-1" name="code"/>
       <column hidden="0" type="field" width="-1" name="display_name"/>
-      <column hidden="0" type="field" width="-1" name="calculation_type"/>
+      <column hidden="0" type="field" width="-1" name="exchange_type"/>
       <column hidden="0" type="field" width="-1" name="shape"/>
       <column hidden="0" type="field" width="-1" name="width"/>
       <column hidden="0" type="field" width="-1" name="length"/>
@@ -856,7 +856,7 @@
             <labelFont description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" italic="0" strikethrough="0" bold="0" style=""/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" index="4" name="calculation_type">
+        <attributeEditorField showLabel="1" index="4" name="exchange_type">
           <labelStyle labelColor="0,0,0,255" overrideLabelColor="0" overrideLabelFont="0">
             <labelFont description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" italic="0" strikethrough="0" bold="0" style=""/>
           </labelStyle>
@@ -942,7 +942,7 @@
   <editable>
     <field editable="1" name="ROWID"/>
     <field editable="1" name="bottom_level"/>
-    <field editable="1" name="calculation_type"/>
+    <field editable="1" name="exchange_type"/>
     <field editable="1" name="code"/>
     <field editable="0" name="connection_node_id"/>
     <field editable="1" name="display_name"/>
@@ -968,7 +968,7 @@
   <labelOnTop>
     <field labelOnTop="0" name="ROWID"/>
     <field labelOnTop="0" name="bottom_level"/>
-    <field labelOnTop="0" name="calculation_type"/>
+    <field labelOnTop="0" name="exchange_type"/>
     <field labelOnTop="0" name="code"/>
     <field labelOnTop="0" name="connection_node_id"/>
     <field labelOnTop="0" name="display_name"/>
@@ -993,7 +993,7 @@
   </labelOnTop>
   <reuseLastValue>
     <field reuseLastValue="0" name="bottom_level"/>
-    <field reuseLastValue="0" name="calculation_type"/>
+    <field reuseLastValue="0" name="exchange_type"/>
     <field reuseLastValue="0" name="code"/>
     <field reuseLastValue="0" name="connection_node_id"/>
     <field reuseLastValue="0" name="display_name"/>

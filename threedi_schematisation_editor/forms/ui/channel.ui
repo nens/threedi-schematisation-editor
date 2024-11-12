@@ -254,7 +254,7 @@
                </widget>
               </item>
               <item row="3" column="5">
-               <widget class="QToolButton" name="dist_calc_points_clear">
+               <widget class="QToolButton" name="calculation_point_distance_clear">
                 <property name="text">
                  <string>x</string>
                 </property>

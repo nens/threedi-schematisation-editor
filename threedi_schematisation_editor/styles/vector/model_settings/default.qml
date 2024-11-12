@@ -281,7 +281,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="dist_calc_points">
+    <field configurationFlags="None" name="calculation_point_distance">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -736,7 +736,7 @@
     <alias name="" field="start_time" index="9"/>
     <alias name="" field="start_date" index="10"/>
     <alias name="" field="grid_space" index="11"/>
-    <alias name="" field="dist_calc_points" index="12"/>
+    <alias name="" field="calculation_point_distance" index="12"/>
     <alias name="" field="kmax" index="13"/>
     <alias name="" field="guess_dams" index="14"/>
     <alias name="" field="table_step_size" index="15"/>
@@ -789,7 +789,7 @@
     <default applyOnUpdate="0" field="start_time" expression=" to_date( now() ) ||  ' 00:00:00'"/>
     <default applyOnUpdate="0" field="start_date" expression=" to_date(now() )"/>
     <default applyOnUpdate="0" field="grid_space" expression=""/>
-    <default applyOnUpdate="0" field="dist_calc_points" expression="10000"/>
+    <default applyOnUpdate="0" field="calculation_point_distance" expression="10000"/>
     <default applyOnUpdate="0" field="kmax" expression=""/>
     <default applyOnUpdate="0" field="guess_dams" expression="0"/>
     <default applyOnUpdate="0" field="table_step_size" expression="0.01"/>
@@ -842,7 +842,7 @@
     <constraint notnull_strength="2" field="start_time" constraints="5" exp_strength="2" unique_strength="0"/>
     <constraint notnull_strength="2" field="start_date" constraints="5" exp_strength="2" unique_strength="0"/>
     <constraint notnull_strength="2" field="grid_space" constraints="1" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="2" field="dist_calc_points" constraints="1" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="2" field="calculation_point_distance" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="kmax" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="guess_dams" constraints="0" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="table_step_size" constraints="1" exp_strength="0" unique_strength="0"/>
@@ -895,7 +895,7 @@
     <constraint desc="" field="start_time" exp="&quot;start_time&quot;"/>
     <constraint desc="" field="start_date" exp="&quot;start_date&quot; is not null"/>
     <constraint desc="" field="grid_space" exp=""/>
-    <constraint desc="" field="dist_calc_points" exp=""/>
+    <constraint desc="" field="calculation_point_distance" exp=""/>
     <constraint desc="" field="kmax" exp=""/>
     <constraint desc="" field="guess_dams" exp=""/>
     <constraint desc="" field="table_step_size" exp=""/>
@@ -953,7 +953,7 @@
       <column hidden="0" width="-1" name="start_time" type="field"/>
       <column hidden="0" width="-1" name="start_date" type="field"/>
       <column hidden="0" width="-1" name="grid_space" type="field"/>
-      <column hidden="0" width="-1" name="dist_calc_points" type="field"/>
+      <column hidden="0" width="-1" name="calculation_point_distance" type="field"/>
       <column hidden="0" width="-1" name="kmax" type="field"/>
       <column hidden="0" width="-1" name="guess_dams" type="field"/>
       <column hidden="0" width="-1" name="table_step_size" type="field"/>
@@ -1291,7 +1291,7 @@ def my_form_open(dialog, layer, feature):
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
       </attributeEditorField>
-      <attributeEditorField showLabel="1" name="dist_calc_points" index="12">
+      <attributeEditorField showLabel="1" name="calculation_point_distance" index="12">
         <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
@@ -1355,7 +1355,7 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="dem_file"/>
     <field editable="1" name="dem_obstacle_detection"/>
     <field editable="1" name="dem_obstacle_height"/>
-    <field editable="1" name="dist_calc_points"/>
+    <field editable="1" name="calculation_point_distance"/>
     <field editable="1" name="embedded_cutoff_threshold"/>
     <field editable="1" name="epsg_code"/>
     <field editable="1" name="fid"/>
@@ -1411,7 +1411,7 @@ def my_form_open(dialog, layer, feature):
     <field labelOnTop="0" name="dem_file"/>
     <field labelOnTop="0" name="dem_obstacle_detection"/>
     <field labelOnTop="0" name="dem_obstacle_height"/>
-    <field labelOnTop="0" name="dist_calc_points"/>
+    <field labelOnTop="0" name="calculation_point_distance"/>
     <field labelOnTop="0" name="embedded_cutoff_threshold"/>
     <field labelOnTop="0" name="epsg_code"/>
     <field labelOnTop="0" name="fid"/>
@@ -1467,7 +1467,7 @@ def my_form_open(dialog, layer, feature):
     <field reuseLastValue="0" name="dem_file"/>
     <field reuseLastValue="0" name="dem_obstacle_detection"/>
     <field reuseLastValue="0" name="dem_obstacle_height"/>
-    <field reuseLastValue="0" name="dist_calc_points"/>
+    <field reuseLastValue="0" name="calculation_point_distance"/>
     <field reuseLastValue="0" name="embedded_cutoff_threshold"/>
     <field reuseLastValue="0" name="epsg_code"/>
     <field reuseLastValue="0" name="fid"/>

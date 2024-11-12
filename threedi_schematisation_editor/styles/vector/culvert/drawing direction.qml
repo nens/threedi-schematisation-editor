@@ -186,14 +186,14 @@
         </config>
       </editWidget>
     </field>
-    <field name="calculation_type">
+    <field name="exchange_type">
       <editWidget type="Range">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="dist_calc_points">
+    <field name="calculation_point_distance">
       <editWidget type="TextEdit">
         <config>
           <Option/>
@@ -293,8 +293,8 @@ def my_form_open(dialog, layer, feature):
         <attributeEditorField name="id" showLabel="1" index="-1"/>
         <attributeEditorField name="display_name" showLabel="1" index="-1"/>
         <attributeEditorField name="code" showLabel="1" index="-1"/>
-        <attributeEditorField name="calculation_type" showLabel="1" index="-1"/>
-        <attributeEditorField name="dist_calc_points" showLabel="1" index="-1"/>
+        <attributeEditorField name="exchange_type" showLabel="1" index="-1"/>
+        <attributeEditorField name="calculation_point_distance" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer visibilityExpression="" name="Characteristics" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
         <attributeEditorField name="invert_level_start_point" showLabel="1" index="-1"/>
@@ -320,18 +320,18 @@ def my_form_open(dialog, layer, feature):
   </attributeEditorForm>
   <editable>
     <field editable="1" name="ROWID"/>
-    <field editable="1" name="calculation_type"/>
+    <field editable="1" name="exchange_type"/>
     <field editable="1" name="code"/>
     <field editable="1" name="connection_node_end_id"/>
     <field editable="1" name="connection_node_start_id"/>
-    <field editable="1" name="calculation_type"/>
+    <field editable="1" name="exchange_type"/>
     <field editable="1" name="code"/>
     <field editable="0" name="connection_node_end_id"/>
     <field editable="0" name="connection_node_start_id"/>
     <field editable="1" name="discharge_coefficient_negative"/>
     <field editable="1" name="discharge_coefficient_positive"/>
     <field editable="1" name="display_name"/>
-    <field editable="1" name="dist_calc_points"/>
+    <field editable="1" name="calculation_point_distance"/>
     <field editable="1" name="friction_type"/>
     <field editable="1" name="friction_value"/>
     <field editable="1" name="id"/>
@@ -344,7 +344,7 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="discharge_coefficient_negative"/>
     <field editable="1" name="discharge_coefficient_positive"/>
     <field editable="1" name="display_name"/>
-    <field editable="1" name="dist_calc_points"/>
+    <field editable="1" name="calculation_point_distance"/>
     <field editable="1" name="fid"/>
     <field editable="1" name="friction_type"/>
     <field editable="1" name="friction_value"/>
@@ -355,18 +355,18 @@ def my_form_open(dialog, layer, feature):
   </editable>
   <labelOnTop>
     <field name="ROWID" labelOnTop="0"/>
-    <field name="calculation_type" labelOnTop="0"/>
+    <field name="exchange_type" labelOnTop="0"/>
     <field name="code" labelOnTop="0"/>
     <field name="connection_node_end_id" labelOnTop="0"/>
     <field name="connection_node_start_id" labelOnTop="0"/>
-    <field name="calculation_type" labelOnTop="0"/>
+    <field name="exchange_type" labelOnTop="0"/>
     <field name="code" labelOnTop="0"/>
     <field name="connection_node_end_id" labelOnTop="0"/>
     <field name="connection_node_start_id" labelOnTop="0"/>
     <field name="discharge_coefficient_negative" labelOnTop="0"/>
     <field name="discharge_coefficient_positive" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>
-    <field name="dist_calc_points" labelOnTop="0"/>
+    <field name="calculation_point_distance" labelOnTop="0"/>
     <field name="friction_type" labelOnTop="0"/>
     <field name="friction_value" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
@@ -379,7 +379,7 @@ def my_form_open(dialog, layer, feature):
     <field name="discharge_coefficient_negative" labelOnTop="0"/>
     <field name="discharge_coefficient_positive" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>
-    <field name="dist_calc_points" labelOnTop="0"/>
+    <field name="calculation_point_distance" labelOnTop="0"/>
     <field name="fid" labelOnTop="0"/>
     <field name="friction_type" labelOnTop="0"/>
     <field name="friction_value" labelOnTop="0"/>

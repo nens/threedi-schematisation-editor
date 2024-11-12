@@ -551,8 +551,8 @@ class CulvertHandler(UserLayerHandler):
         {
             "display_name": "new",
             "code": "new",
-            "dist_calc_points": 1000,
-            "calculation_type": ExchangeTypeCulvert.ISOLATED.value,
+            "calculation_point_distance": 1000,
+            "exchange_type": ExchangeTypeCulvert.ISOLATED.value,
             "friction_type": FrictionType.MANNING.value,
             "friction_value": 0.02,
             "discharge_coefficient_positive": 0.8,
@@ -624,9 +624,9 @@ class PipeHandler(UserLayerHandler):
         {
             "display_name": "new",
             "code": "new",
-            "dist_calc_points": 1000,
+            "calculation_point_distance": 1000,
             "friction_type": FrictionType.MANNING.value,
-            "calculation_type": ExchangeTypeNode.ISOLATED.value,
+            "exchange_type": ExchangeTypeNode.ISOLATED.value,
             "material": PipeMaterial.CONCRETE.value,
             "friction_value": dm.TABLE_MANNING[PipeMaterial.CONCRETE],
             "invert_level_start_point": -10.0,
@@ -742,7 +742,7 @@ class CrossSectionLocationHandler(UserLayerHandler):
             "width": 0.8,
             "shape": ManholeShape.ROUND.value,
             "manhole_indicator": Visualisation.INSPECTION.value,
-            "calculation_type": ExchangeTypeNode.ISOLATED.value,
+            "exchange_type": ExchangeTypeNode.ISOLATED.value,
             "bottom_level": -10.0,
         }
     )
