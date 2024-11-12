@@ -1247,7 +1247,7 @@ class ImperviousSurfaceMapForm(NodeToSurfaceMapForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
         self.surface_model = dm.DryWeatherFlow
-        self.surface_id_field = "impervious_surface_id"
+        self.surface_id_field = "dry_weather_flow_id"
 
 
 class SurfaceMapForm(NodeToSurfaceMapForm):
@@ -1329,7 +1329,7 @@ class ChannelForm(FormWithStartEndNode, FormWithXSTable):
         except StopIteration:
             global_settings_feat = None
         if global_settings_feat:
-            self.current_cross_section_location["friction_type"] = global_settings_feat["frict_type"]
+            self.current_cross_section_location["friction_type"] = global_settings_feat["friction_type"]
 
     def set_current_cross_section_location(self, current_text):
         """Set handling of selected channel cross-section location."""
@@ -1498,7 +1498,7 @@ class CrossSectionLocationForm(FormWithXSTable):
                     self.feature[xs_field_name] = closest_existing_cross_section[xs_field_name]
         try:
             global_settings_feat = next(global_settings_layer.getFeatures())
-            self.feature["friction_type"] = global_settings_feat["frict_type"]
+            self.feature["friction_type"] = global_settings_feat["friction_type"]
         except StopIteration:
             pass
 

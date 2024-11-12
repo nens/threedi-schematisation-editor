@@ -570,14 +570,14 @@
         </config>
       </editWidget>
     </field>
-    <field name="invert_level_start_point">
+    <field name="invert_level_start">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="invert_level_end_point">
+    <field name="invert_level_end">
       <editWidget type="TextEdit">
         <config>
           <Option/>
@@ -667,8 +667,8 @@ def my_form_open(dialog, layer, feature):
         <attributeEditorField name="calculation_point_distance" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer visibilityExpression="" name="Characteristics" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
-        <attributeEditorField name="invert_level_start_point" showLabel="1" index="-1"/>
-        <attributeEditorField name="invert_level_end_point" showLabel="1" index="-1"/>
+        <attributeEditorField name="invert_level_start" showLabel="1" index="-1"/>
+        <attributeEditorField name="invert_level_end" showLabel="1" index="-1"/>
         <attributeEditorField name="friction_type" showLabel="1" index="-1"/>
         <attributeEditorField name="friction_value" showLabel="1" index="-1"/>
         <attributeEditorField name="discharge_coefficient_positive" showLabel="1" index="-1"/>
@@ -705,8 +705,8 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="friction_type"/>
     <field editable="1" name="friction_value"/>
     <field editable="1" name="id"/>
-    <field editable="1" name="invert_level_end_point"/>
-    <field editable="1" name="invert_level_start_point"/>
+    <field editable="1" name="invert_level_end"/>
+    <field editable="1" name="invert_level_start"/>
     <field editable="1" name="zoom_category"/>
     <field editable="1" name="cross_section_height"/>
     <field editable="1" name="cross_section_shape"/>
@@ -719,8 +719,8 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="friction_type"/>
     <field editable="1" name="friction_value"/>
     <field editable="1" name="id"/>
-    <field editable="1" name="invert_level_end_point"/>
-    <field editable="1" name="invert_level_start_point"/>
+    <field editable="1" name="invert_level_end"/>
+    <field editable="1" name="invert_level_start"/>
     <field editable="1" name="zoom_category"/>
   </editable>
   <labelOnTop>
@@ -740,8 +740,8 @@ def my_form_open(dialog, layer, feature):
     <field name="friction_type" labelOnTop="0"/>
     <field name="friction_value" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="invert_level_end_point" labelOnTop="0"/>
-    <field name="invert_level_start_point" labelOnTop="0"/>
+    <field name="invert_level_end" labelOnTop="0"/>
+    <field name="invert_level_start" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
     <field name="cross_section_height" labelOnTop="0"/>
     <field name="cross_section_shape" labelOnTop="0"/>
@@ -754,8 +754,8 @@ def my_form_open(dialog, layer, feature):
     <field name="friction_type" labelOnTop="0"/>
     <field name="friction_value" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="invert_level_end_point" labelOnTop="0"/>
-    <field name="invert_level_start_point" labelOnTop="0"/>
+    <field name="invert_level_end" labelOnTop="0"/>
+    <field name="invert_level_start" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>

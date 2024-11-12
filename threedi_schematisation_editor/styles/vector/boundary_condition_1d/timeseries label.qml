@@ -37,7 +37,7 @@
   </renderer-v2>
   <labeling type="simple">
     <settings calloutType="simple">
-      <text-style textColor="0,0,0,255" fieldName=" represent_value(&quot;boundary_type&quot;) || '\n' ||&#xd;&#xa;'min: '||&#xd;&#xa;format_number(&#xd;&#xa;&#x9;array_first(&#xd;&#xa;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;array_foreach(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;string_to_array(timeseries,  '\n' ),&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(@element, ',')&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;)&#xd;&#xa;&#x9;),&#xd;&#xa;&#x9;2&#xd;&#xa;)&#xd;&#xa;|| '\nmax: ' ||&#xd;&#xa;format_number(&#xd;&#xa;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;array_foreach(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;string_to_array(timeseries,  '\n' ),&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(@element, ',')&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;)&#xd;&#xa;&#x9;),&#xd;&#xa;&#x9;2&#xd;&#xa;)&#xd;&#xa;" isExpression="1" fontWeight="50" allowHtml="0" fontSizeUnit="Point" fontItalic="0" fontLetterSpacing="0" fontUnderline="0" fontStrikeout="0" namedStyle="Regular" fontSizeMapUnitScale="3x:0,0,0,0,0,0" blendMode="0" capitalization="0" multilineHeight="1" useSubstitutions="0" previewBkgrdColor="255,255,255,255" fontWordSpacing="0" textOpacity="1" fontFamily="MS Gothic" fontKerning="1" fontSize="8" textOrientation="horizontal">
+      <text-style textColor="0,0,0,255" fieldName=" represent_value(&quot;type&quot;) || '\n' ||&#xd;&#xa;'min: '||&#xd;&#xa;format_number(&#xd;&#xa;&#x9;array_first(&#xd;&#xa;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;array_foreach(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;string_to_array(timeseries,  '\n' ),&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(@element, ',')&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;)&#xd;&#xa;&#x9;),&#xd;&#xa;&#x9;2&#xd;&#xa;)&#xd;&#xa;|| '\nmax: ' ||&#xd;&#xa;format_number(&#xd;&#xa;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;array_foreach(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;string_to_array(timeseries,  '\n' ),&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(@element, ',')&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;)&#xd;&#xa;&#x9;),&#xd;&#xa;&#x9;2&#xd;&#xa;)&#xd;&#xa;" isExpression="1" fontWeight="50" allowHtml="0" fontSizeUnit="Point" fontItalic="0" fontLetterSpacing="0" fontUnderline="0" fontStrikeout="0" namedStyle="Regular" fontSizeMapUnitScale="3x:0,0,0,0,0,0" blendMode="0" capitalization="0" multilineHeight="1" useSubstitutions="0" previewBkgrdColor="255,255,255,255" fontWordSpacing="0" textOpacity="1" fontFamily="MS Gothic" fontKerning="1" fontSize="8" textOrientation="horizontal">
         <text-buffer bufferBlendMode="0" bufferDraw="1" bufferSize="0.7" bufferJoinStyle="128" bufferSizeUnits="MM" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferOpacity="1" bufferNoFill="1" bufferColor="255,255,255,255"/>
         <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskSizeUnits="MM" maskOpacity="1" maskEnabled="0" maskType="0" maskSize="0"/>
         <background shapeOffsetY="0" shapeJoinStyle="64" shapeRadiiUnit="MM" shapeType="0" shapeSizeY="0" shapeOffsetUnit="MM" shapeBorderWidthUnit="MM" shapeBorderWidthMapUnitScale="3x:0,0,0,0,0,0" shapeSVGFile="" shapeDraw="0" shapeFillColor="255,255,255,255" shapeRotationType="0" shapeRadiiX="0" shapeBorderWidth="0" shapeSizeType="0" shapeOffsetX="0" shapeBlendMode="0" shapeRadiiMapUnitScale="3x:0,0,0,0,0,0" shapeRadiiY="0" shapeSizeMapUnitScale="3x:0,0,0,0,0,0" shapeBorderColor="128,128,128,255" shapeSizeX="0" shapeOpacity="1" shapeOffsetMapUnitScale="3x:0,0,0,0,0,0" shapeSizeUnit="MM" shapeRotation="0">
@@ -136,7 +136,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="boundary_type">
+    <field name="type">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
@@ -182,7 +182,7 @@
   <defaults>
     <default expression="" applyOnUpdate="0" field="fid"/>
     <default expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0" field="id"/>
-    <default expression="" applyOnUpdate="0" field="boundary_type"/>
+    <default expression="" applyOnUpdate="0" field="type"/>
     <default expression="if(aggregate('Connection Node','min',&quot;id&quot;, intersects($geometry,geometry(@parent))) is null,'Created automatically',aggregate('Connection Node','min',&quot;id&quot;, intersects($geometry,geometry(@parent))))" applyOnUpdate="1" field="connection_node_id"/>
     <default expression="" applyOnUpdate="0" field="timeseries"/>
   </defaults>
@@ -213,13 +213,13 @@ def my_form_open(dialog, layer, feature):
     <attributeEditorContainer groupBox="0" columnCount="1" visibilityExpression="" name="General" showLabel="1" visibilityExpressionEnabled="0">
       <attributeEditorField index="1" name="id" showLabel="1"/>
       <attributeEditorField index="3" name="connection_node_id" showLabel="1"/>
-      <attributeEditorField index="2" name="boundary_type" showLabel="1"/>
+      <attributeEditorField index="2" name="type" showLabel="1"/>
       <attributeEditorField index="4" name="timeseries" showLabel="1"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
     <field editable="1" name="ROWID"/>
-    <field editable="1" name="boundary_type"/>
+    <field editable="1" name="type"/>
     <field editable="0" name="connection_node_id"/>
     <field editable="1" name="fid"/>
     <field editable="1" name="id"/>
@@ -227,7 +227,7 @@ def my_form_open(dialog, layer, feature):
   </editable>
   <labelOnTop>
     <field labelOnTop="0" name="ROWID"/>
-    <field labelOnTop="0" name="boundary_type"/>
+    <field labelOnTop="0" name="type"/>
     <field labelOnTop="0" name="connection_node_id"/>
     <field labelOnTop="0" name="fid"/>
     <field labelOnTop="0" name="id"/>

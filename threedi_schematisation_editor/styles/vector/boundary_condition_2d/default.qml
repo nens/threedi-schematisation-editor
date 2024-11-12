@@ -139,7 +139,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="boundary_type" configurationFlags="None">
+    <field name="type" configurationFlags="None">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
@@ -176,28 +176,28 @@
     <alias field="fid" index="0" name=""/>
     <alias field="id" index="1" name=""/>
     <alias field="display_name" index="2" name=""/>
-    <alias field="boundary_type" index="3" name=""/>
+    <alias field="type" index="3" name=""/>
     <alias field="timeseries" index="4" name=""/>
   </aliases>
   <defaults>
     <default expression="" applyOnUpdate="0" field="fid"/>
     <default expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0" field="id"/>
     <default expression="" applyOnUpdate="0" field="display_name"/>
-    <default expression="" applyOnUpdate="0" field="boundary_type"/>
+    <default expression="" applyOnUpdate="0" field="type"/>
     <default expression="" applyOnUpdate="0" field="timeseries"/>
   </defaults>
   <constraints>
     <constraint constraints="3" exp_strength="0" notnull_strength="1" field="fid" unique_strength="1"/>
     <constraint constraints="3" exp_strength="0" notnull_strength="1" field="id" unique_strength="1"/>
     <constraint constraints="1" exp_strength="0" notnull_strength="2" field="display_name" unique_strength="0"/>
-    <constraint constraints="1" exp_strength="0" notnull_strength="2" field="boundary_type" unique_strength="0"/>
+    <constraint constraints="1" exp_strength="0" notnull_strength="2" field="type" unique_strength="0"/>
     <constraint constraints="1" exp_strength="0" notnull_strength="2" field="timeseries" unique_strength="0"/>
   </constraints>
   <constraintExpressions>
     <constraint exp="" desc="" field="fid"/>
     <constraint exp="" desc="" field="id"/>
     <constraint exp="" desc="" field="display_name"/>
-    <constraint exp="" desc="" field="boundary_type"/>
+    <constraint exp="" desc="" field="type"/>
     <constraint exp="" desc="" field="timeseries"/>
   </constraintExpressions>
   <expressionfields/>
@@ -209,7 +209,7 @@
       <column width="-1" hidden="1" type="field" name="fid"/>
       <column width="-1" hidden="0" type="field" name="id"/>
       <column width="-1" hidden="0" type="field" name="display_name"/>
-      <column width="-1" hidden="0" type="field" name="boundary_type"/>
+      <column width="-1" hidden="0" type="field" name="type"/>
       <column width="-1" hidden="0" type="field" name="timeseries"/>
       <column width="-1" hidden="1" type="actions"/>
     </columns>
@@ -246,19 +246,19 @@ def my_form_open(dialog, layer, feature):
     <attributeEditorContainer showLabel="1" groupBox="0" visibilityExpression="" columnCount="1" name="General" visibilityExpressionEnabled="0">
       <attributeEditorField showLabel="1" index="1" name="id"/>
       <attributeEditorField showLabel="1" index="2" name="display_name"/>
-      <attributeEditorField showLabel="1" index="3" name="boundary_type"/>
+      <attributeEditorField showLabel="1" index="3" name="type"/>
       <attributeEditorField showLabel="1" index="4" name="timeseries"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
-    <field editable="1" name="boundary_type"/>
+    <field editable="1" name="type"/>
     <field editable="1" name="display_name"/>
     <field editable="1" name="fid"/>
     <field editable="1" name="id"/>
     <field editable="1" name="timeseries"/>
   </editable>
   <labelOnTop>
-    <field labelOnTop="0" name="boundary_type"/>
+    <field labelOnTop="0" name="type"/>
     <field labelOnTop="0" name="display_name"/>
     <field labelOnTop="0" name="fid"/>
     <field labelOnTop="0" name="id"/>

@@ -557,8 +557,8 @@ class CulvertHandler(UserLayerHandler):
             "friction_value": 0.02,
             "discharge_coefficient_positive": 0.8,
             "discharge_coefficient_negative": 0.8,
-            "invert_level_start_point": -10.0,
-            "invert_level_end_point": -10.0,
+            "invert_level_start": -10.0,
+            "invert_level_end": -10.0,
         }
     )
 
@@ -627,10 +627,9 @@ class PipeHandler(UserLayerHandler):
             "calculation_point_distance": 1000,
             "friction_type": FrictionType.MANNING.value,
             "exchange_type": ExchangeTypeNode.ISOLATED.value,
-            "material": PipeMaterial.CONCRETE.value,
             "friction_value": dm.TABLE_MANNING[PipeMaterial.CONCRETE],
-            "invert_level_start_point": -10.0,
-            "invert_level_end_point": -10.0,
+            "invert_level_start": -10.0,
+            "invert_level_end": -10.0,
         }
     )
 
@@ -680,7 +679,7 @@ class PipeHandler(UserLayerHandler):
             elif idx == end_vertex_idx:
                 connection_node_id = pipe_feat["connection_node_id_end"]
                 points_connection_nodes[point] = connection_node_id
-                intermediate_bottom_levels[point] = pipe_feat["invert_level_end_point"]
+                intermediate_bottom_levels[point] = pipe_feat["invert_level_end"]
             else:
                 geom = QgsGeometry.fromPointXY(point)
                 existing_node_feat = find_point_nodes(point, connection_node_layer)
@@ -711,7 +710,7 @@ class PipeHandler(UserLayerHandler):
         pipe_feat.setGeometry(new_source_pipe_geom)
         pipe_feat["connection_node_id_end"] = points_connection_nodes[first_seg_end_point]
         if first_seg_end_point in intermediate_bottom_levels:
-            pipe_feat["invert_level_end_point"] = intermediate_bottom_levels[first_seg_end_point]
+            pipe_feat["invert_level_end"] = intermediate_bottom_levels[first_seg_end_point]
         self.layer.updateFeature(pipe_feat)
         # Let's add a new pipes
         skip_fields = ["connection_node_id_start", "connection_node_id_end"]
@@ -721,9 +720,9 @@ class PipeHandler(UserLayerHandler):
             new_feat["connection_node_id_start"] = points_connection_nodes[start_point]
             new_feat["connection_node_id_end"] = points_connection_nodes[end_point]
             if start_point in intermediate_bottom_levels:
-                new_feat["invert_level_start_point"] = intermediate_bottom_levels[start_point]
+                new_feat["invert_level_start"] = intermediate_bottom_levels[start_point]
             if end_point in intermediate_bottom_levels:
-                new_feat["invert_level_end_point"] = intermediate_bottom_levels[end_point]
+                new_feat["invert_level_end"] = intermediate_bottom_levels[end_point]
             self.layer.addFeature(new_feat)
 
 
@@ -741,7 +740,7 @@ class CrossSectionLocationHandler(UserLayerHandler):
             "length": 0.8,
             "width": 0.8,
             "shape": ManholeShape.ROUND.value,
-            "manhole_indicator": Visualisation.INSPECTION.value,
+            "visualisation": Visualisation.INSPECTION.value,
             "exchange_type": ExchangeTypeNode.ISOLATED.value,
             "bottom_level": -10.0,
         }
@@ -962,25 +961,25 @@ class DryWeatherFlowHandler(UserLayerHandler):
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.connect(self.update_surface_link)
+        self.layer.geometryChanged.connect(self.update_dwf_link)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.disconnect(self.update_surface_link)
+        self.layer.geometryChanged.disconnect(self.update_dwf_link)
 
-    def update_surface_link(self, feat_id, geometry):
-        """Update geometry of the surface - node link."""
-        surface_handler = self.layer_manager.model_handlers[dm.DryWeatherFlow]
-        surface_layer = surface_handler.layer
-        surface_link_handler = self.layer_manager.model_handlers[dm.DryWeatherFlowMap]
-        surface_link_layer = surface_link_handler.layer
-        surface_feat = surface_layer.getFeature(feat_id)
-        link_feat = surface_link_handler.get_feat_by_id(surface_feat["id"], "impervious_surface_id")
+    def update_dwf_link(self, feat_id, geometry):
+        """Update geometry of the DWF area - node link."""
+        dwf_handler = self.layer_manager.model_handlers[dm.DryWeatherFlow]
+        dwf_layer = dwf_handler.layer
+        dwf_link_handler = self.layer_manager.model_handlers[dm.DryWeatherFlowMap]
+        dwf_link_layer = dwf_link_handler.layer
+        surface_feat = dwf_layer.getFeature(feat_id)
+        link_feat = dwf_link_handler.get_feat_by_id(surface_feat["id"], "dry_weather_flow_id")
         point = geometry.centroid().asPoint()
         link_linestring = link_feat.geometry().asPolyline()
         link_linestring[0] = point
         link_new_geom = QgsGeometry.fromPolylineXY(link_linestring)
-        surface_link_layer.changeGeometry(link_feat.id(), link_new_geom)
+        dwf_link_layer.changeGeometry(link_feat.id(), link_new_geom)
 
 
 class SurfaceHandler(UserLayerHandler):
@@ -1044,7 +1043,7 @@ class DryWeatherFlowMapHandler(UserLayerHandler):
         changes = {}
         start_surface_id = start_surface_feat["id"] if start_surface_feat else None
         end_connection_node_id = end_connection_node_feat["id"] if end_connection_node_feat else None
-        start_surface_id_idx = layer_fields.lookupField("impervious_surface_id")
+        start_surface_id_idx = layer_fields.lookupField("dry_weather_flow_id")
         end_connection_node_id_idx = layer_fields.lookupField("connection_node_id")
         changes[start_surface_id_idx] = start_surface_id
         changes[end_connection_node_id_idx] = end_connection_node_id

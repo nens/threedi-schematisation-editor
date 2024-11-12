@@ -123,12 +123,12 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
         for pipe_feat in pipe_lyr.selectedFeatures() if selected_pipes else pipe_lyr.getFeatures():
             pipe_start_node_id = pipe_feat["connection_node_id_start"]
             pipe_end_node_id = pipe_feat["connection_node_id_end"]
-            invert_level_start_point = pipe_feat["invert_level_start_point"]
-            invert_level_end_point = pipe_feat["invert_level_end_point"]
-            if invert_level_start_point != NULL:
-                node_adjacent_invert_levels[pipe_start_node_id].add(invert_level_start_point)
-            if invert_level_end_point != NULL:
-                node_adjacent_invert_levels[pipe_end_node_id].add(invert_level_end_point)
+            invert_level_start = pipe_feat["invert_level_start"]
+            invert_level_end = pipe_feat["invert_level_end"]
+            if invert_level_start != NULL:
+                node_adjacent_invert_levels[pipe_start_node_id].add(invert_level_start)
+            if invert_level_end != NULL:
+                node_adjacent_invert_levels[pipe_end_node_id].add(invert_level_end)
             processed_pipes += 1
             feedback.setProgress(100 / 3 * processed_pipes / num_pipes)
             if feedback.isCanceled():

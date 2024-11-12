@@ -92,7 +92,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="max_infiltration_capacity_file" configurationFlags="None">
+    <field name="max_infiltration_volume_file" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -112,7 +112,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="max_infiltration_capacity" configurationFlags="None">
+    <field name="max_infiltration_volume" configurationFlags="None">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -133,9 +133,9 @@
     <alias name="" index="2" field="infiltration_rate"/>
     <alias name="" index="3" field="infiltration_rate_file"/>
     <alias name="" index="4" field="infiltration_surface_option"/>
-    <alias name="" index="5" field="max_infiltration_capacity_file"/>
+    <alias name="" index="5" field="max_infiltration_volume_file"/>
     <alias name="" index="6" field="display_name"/>
-    <alias name="" index="7" field="max_infiltration_capacity"/>
+    <alias name="" index="7" field="max_infiltration_volume"/>
   </aliases>
   <defaults>
     <default applyOnUpdate="0" expression="" field="fid"/>
@@ -143,9 +143,9 @@
     <default applyOnUpdate="0" expression="" field="infiltration_rate"/>
     <default applyOnUpdate="0" expression="" field="infiltration_rate_file"/>
     <default applyOnUpdate="0" expression="0" field="infiltration_surface_option"/>
-    <default applyOnUpdate="0" expression="" field="max_infiltration_capacity_file"/>
+    <default applyOnUpdate="0" expression="" field="max_infiltration_volume_file"/>
     <default applyOnUpdate="0" expression="'new'" field="display_name"/>
-    <default applyOnUpdate="0" expression="" field="max_infiltration_capacity"/>
+    <default applyOnUpdate="0" expression="" field="max_infiltration_volume"/>
   </defaults>
   <constraints>
     <constraint constraints="3" unique_strength="1" exp_strength="0" notnull_strength="1" field="fid"/>
@@ -153,9 +153,9 @@
     <constraint constraints="1" unique_strength="0" exp_strength="0" notnull_strength="2" field="infiltration_rate"/>
     <constraint constraints="0" unique_strength="0" exp_strength="0" notnull_strength="0" field="infiltration_rate_file"/>
     <constraint constraints="0" unique_strength="0" exp_strength="0" notnull_strength="0" field="infiltration_surface_option"/>
-    <constraint constraints="0" unique_strength="0" exp_strength="0" notnull_strength="0" field="max_infiltration_capacity_file"/>
+    <constraint constraints="0" unique_strength="0" exp_strength="0" notnull_strength="0" field="max_infiltration_volume_file"/>
     <constraint constraints="1" unique_strength="0" exp_strength="0" notnull_strength="2" field="display_name"/>
-    <constraint constraints="0" unique_strength="0" exp_strength="0" notnull_strength="0" field="max_infiltration_capacity"/>
+    <constraint constraints="0" unique_strength="0" exp_strength="0" notnull_strength="0" field="max_infiltration_volume"/>
   </constraints>
   <constraintExpressions>
     <constraint desc="" exp="" field="fid"/>
@@ -163,9 +163,9 @@
     <constraint desc="" exp="" field="infiltration_rate"/>
     <constraint desc="" exp="" field="infiltration_rate_file"/>
     <constraint desc="" exp="" field="infiltration_surface_option"/>
-    <constraint desc="" exp="" field="max_infiltration_capacity_file"/>
+    <constraint desc="" exp="" field="max_infiltration_volume_file"/>
     <constraint desc="" exp="" field="display_name"/>
-    <constraint desc="" exp="" field="max_infiltration_capacity"/>
+    <constraint desc="" exp="" field="max_infiltration_volume"/>
   </constraintExpressions>
   <expressionfields/>
   <attributeactions>
@@ -178,9 +178,9 @@
       <column width="-1" type="field" name="infiltration_rate" hidden="0"/>
       <column width="210" type="field" name="infiltration_rate_file" hidden="0"/>
       <column width="209" type="field" name="infiltration_surface_option" hidden="0"/>
-      <column width="271" type="field" name="max_infiltration_capacity_file" hidden="0"/>
+      <column width="271" type="field" name="max_infiltration_volume_file" hidden="0"/>
       <column width="196" type="field" name="display_name" hidden="0"/>
-      <column width="-1" type="field" name="max_infiltration_capacity" hidden="0"/>
+      <column width="-1" type="field" name="max_infiltration_volume" hidden="0"/>
       <column width="-1" type="actions" hidden="1"/>
     </columns>
   </attributetableconfig>
@@ -218,8 +218,8 @@ def my_form_open(dialog, layer, feature):
       <attributeEditorField showLabel="1" name="display_name" index="6"/>
       <attributeEditorField showLabel="1" name="infiltration_rate" index="2"/>
       <attributeEditorField showLabel="1" name="infiltration_rate_file" index="3"/>
-      <attributeEditorField showLabel="1" name="max_infiltration_capacity" index="7"/>
-      <attributeEditorField showLabel="1" name="max_infiltration_capacity_file" index="5"/>
+      <attributeEditorField showLabel="1" name="max_infiltration_volume" index="7"/>
+      <attributeEditorField showLabel="1" name="max_infiltration_volume_file" index="5"/>
       <attributeEditorField showLabel="1" name="infiltration_surface_option" index="4"/>
     </attributeEditorContainer>
   </attributeEditorForm>
@@ -230,8 +230,8 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="infiltration_rate"/>
     <field editable="1" name="infiltration_rate_file"/>
     <field editable="1" name="infiltration_surface_option"/>
-    <field editable="1" name="max_infiltration_capacity"/>
-    <field editable="1" name="max_infiltration_capacity_file"/>
+    <field editable="1" name="max_infiltration_volume"/>
+    <field editable="1" name="max_infiltration_volume_file"/>
   </editable>
   <labelOnTop>
     <field labelOnTop="0" name="display_name"/>
@@ -240,8 +240,8 @@ def my_form_open(dialog, layer, feature):
     <field labelOnTop="0" name="infiltration_rate"/>
     <field labelOnTop="0" name="infiltration_rate_file"/>
     <field labelOnTop="0" name="infiltration_surface_option"/>
-    <field labelOnTop="0" name="max_infiltration_capacity"/>
-    <field labelOnTop="0" name="max_infiltration_capacity_file"/>
+    <field labelOnTop="0" name="max_infiltration_volume"/>
+    <field labelOnTop="0" name="max_infiltration_volume_file"/>
   </labelOnTop>
   <reuseLastValue>
     <field name="display_name" reuseLastValue="0"/>
@@ -250,8 +250,8 @@ def my_form_open(dialog, layer, feature):
     <field name="infiltration_rate" reuseLastValue="0"/>
     <field name="infiltration_rate_file" reuseLastValue="0"/>
     <field name="infiltration_surface_option" reuseLastValue="0"/>
-    <field name="max_infiltration_capacity" reuseLastValue="0"/>
-    <field name="max_infiltration_capacity_file" reuseLastValue="0"/>
+    <field name="max_infiltration_volume" reuseLastValue="0"/>
+    <field name="max_infiltration_volume_file" reuseLastValue="0"/>
   </reuseLastValue>
   <dataDefinedFieldProperties/>
   <widgets/>

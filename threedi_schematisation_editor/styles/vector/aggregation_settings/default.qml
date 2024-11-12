@@ -150,7 +150,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="timestep" configurationFlags="None">
+    <field name="interval" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -169,7 +169,7 @@
     <alias field="flow_variable" index="4" name=""/>
     <alias field="aggregation_method" index="5" name=""/>
     <alias field="aggregation_in_space" index="6" name=""/>
-    <alias field="timestep" index="7" name=""/>
+    <alias field="interval" index="7" name=""/>
   </aliases>
   <defaults>
     <default expression="" applyOnUpdate="0" field="fid"/>
@@ -179,7 +179,7 @@
     <default expression="" applyOnUpdate="0" field="flow_variable"/>
     <default expression="" applyOnUpdate="0" field="aggregation_method"/>
     <default expression="0" applyOnUpdate="0" field="aggregation_in_space"/>
-    <default expression="" applyOnUpdate="0" field="timestep"/>
+    <default expression="" applyOnUpdate="0" field="interval"/>
   </defaults>
   <constraints>
     <constraint constraints="3" exp_strength="0" notnull_strength="1" field="fid" unique_strength="1"/>
@@ -189,7 +189,7 @@
     <constraint constraints="1" exp_strength="0" notnull_strength="2" field="flow_variable" unique_strength="0"/>
     <constraint constraints="1" exp_strength="0" notnull_strength="2" field="aggregation_method" unique_strength="0"/>
     <constraint constraints="1" exp_strength="0" notnull_strength="2" field="aggregation_in_space" unique_strength="0"/>
-    <constraint constraints="1" exp_strength="0" notnull_strength="2" field="timestep" unique_strength="0"/>
+    <constraint constraints="1" exp_strength="0" notnull_strength="2" field="interval" unique_strength="0"/>
   </constraints>
   <constraintExpressions>
     <constraint exp="" desc="" field="fid"/>
@@ -199,7 +199,7 @@
     <constraint exp="" desc="" field="flow_variable"/>
     <constraint exp="" desc="" field="aggregation_method"/>
     <constraint exp="" desc="" field="aggregation_in_space"/>
-    <constraint exp="" desc="" field="timestep"/>
+    <constraint exp="" desc="" field="interval"/>
   </constraintExpressions>
   <expressionfields/>
   <attributeactions>
@@ -214,7 +214,7 @@
       <column width="-1" hidden="0" type="field" name="flow_variable"/>
       <column width="-1" hidden="0" type="field" name="aggregation_method"/>
       <column width="-1" hidden="0" type="field" name="aggregation_in_space"/>
-      <column width="-1" hidden="0" type="field" name="timestep"/>
+      <column width="-1" hidden="0" type="field" name="interval"/>
       <column width="-1" hidden="1" type="actions"/>
     </columns>
   </attributetableconfig>
@@ -251,7 +251,7 @@ def my_form_open(dialog, layer, feature):
       <attributeEditorField showLabel="1" index="1" name="id"/>
       <attributeEditorField showLabel="1" index="4" name="flow_variable"/>
       <attributeEditorField showLabel="1" index="5" name="aggregation_method"/>
-      <attributeEditorField showLabel="1" index="7" name="timestep"/>
+      <attributeEditorField showLabel="1" index="7" name="interval"/>
       <attributeEditorField showLabel="1" index="3" name="var_name"/>
       <attributeEditorField showLabel="1" index="2" name="global_settings_id"/>
     </attributeEditorContainer>
@@ -263,7 +263,7 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="flow_variable"/>
     <field editable="1" name="global_settings_id"/>
     <field editable="1" name="id"/>
-    <field editable="1" name="timestep"/>
+    <field editable="1" name="interval"/>
     <field editable="1" name="var_name"/>
   </editable>
   <labelOnTop>
@@ -273,7 +273,7 @@ def my_form_open(dialog, layer, feature):
     <field labelOnTop="0" name="flow_variable"/>
     <field labelOnTop="0" name="global_settings_id"/>
     <field labelOnTop="0" name="id"/>
-    <field labelOnTop="0" name="timestep"/>
+    <field labelOnTop="0" name="interval"/>
     <field labelOnTop="0" name="var_name"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>

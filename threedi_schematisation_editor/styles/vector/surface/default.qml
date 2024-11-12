@@ -457,7 +457,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="nr_of_inhabitants" configurationFlags="None">
+    <field name="multiplier" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -477,7 +477,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="dry_weather_flow" configurationFlags="None">
+    <field name="daily_total" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -507,9 +507,9 @@
     <alias field="surface_class" index="5" name=""/>
     <alias field="surface_sub_class" index="6" name=""/>
     <alias field="zoom_category" index="7" name=""/>
-    <alias field="nr_of_inhabitants" index="8" name=""/>
+    <alias field="multiplier" index="8" name=""/>
     <alias field="area" index="9" name=""/>
-    <alias field="dry_weather_flow" index="10" name=""/>
+    <alias field="daily_total" index="10" name=""/>
     <alias field="function" index="11" name=""/>
   </aliases>
   <defaults>
@@ -521,9 +521,9 @@
     <default expression="" applyOnUpdate="0" field="surface_class"/>
     <default expression="" applyOnUpdate="0" field="surface_sub_class"/>
     <default expression="-1" applyOnUpdate="0" field="zoom_category"/>
-    <default expression="" applyOnUpdate="0" field="nr_of_inhabitants"/>
+    <default expression="" applyOnUpdate="0" field="multiplier"/>
     <default expression="$area" applyOnUpdate="0" field="area"/>
-    <default expression="" applyOnUpdate="0" field="dry_weather_flow"/>
+    <default expression="" applyOnUpdate="0" field="daily_total"/>
     <default expression="" applyOnUpdate="0" field="function"/>
   </defaults>
   <constraints>
@@ -535,9 +535,9 @@
     <constraint constraints="1" exp_strength="0" notnull_strength="2" field="surface_class" unique_strength="0"/>
     <constraint constraints="0" exp_strength="0" notnull_strength="0" field="surface_sub_class" unique_strength="0"/>
     <constraint constraints="1" exp_strength="0" notnull_strength="2" field="zoom_category" unique_strength="0"/>
-    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="nr_of_inhabitants" unique_strength="0"/>
+    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="multiplier" unique_strength="0"/>
     <constraint constraints="1" exp_strength="0" notnull_strength="2" field="area" unique_strength="0"/>
-    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="dry_weather_flow" unique_strength="0"/>
+    <constraint constraints="0" exp_strength="0" notnull_strength="0" field="daily_total" unique_strength="0"/>
     <constraint constraints="0" exp_strength="0" notnull_strength="0" field="function" unique_strength="0"/>
   </constraints>
   <constraintExpressions>
@@ -549,9 +549,9 @@
     <constraint exp="" desc="" field="surface_class"/>
     <constraint exp="" desc="" field="surface_sub_class"/>
     <constraint exp="" desc="" field="zoom_category"/>
-    <constraint exp="" desc="" field="nr_of_inhabitants"/>
+    <constraint exp="" desc="" field="multiplier"/>
     <constraint exp="" desc="" field="area"/>
-    <constraint exp="" desc="" field="dry_weather_flow"/>
+    <constraint exp="" desc="" field="daily_total"/>
     <constraint exp="" desc="" field="function"/>
   </constraintExpressions>
   <expressionfields/>
@@ -568,9 +568,9 @@
       <column width="-1" hidden="0" type="field" name="surface_class"/>
       <column width="-1" hidden="0" type="field" name="surface_sub_class"/>
       <column width="-1" hidden="0" type="field" name="zoom_category"/>
-      <column width="-1" hidden="0" type="field" name="nr_of_inhabitants"/>
+      <column width="-1" hidden="0" type="field" name="multiplier"/>
       <column width="-1" hidden="0" type="field" name="area"/>
-      <column width="-1" hidden="0" type="field" name="dry_weather_flow"/>
+      <column width="-1" hidden="0" type="field" name="daily_total"/>
       <column width="-1" hidden="0" type="field" name="function"/>
       <column width="-1" hidden="1" type="actions"/>
     </columns>
@@ -616,8 +616,8 @@ def my_form_open(dialog, layer, feature):
           <attributeEditorField showLabel="1" index="9" name="area"/>
         </attributeEditorContainer>
         <attributeEditorContainer showLabel="1" groupBox="1" visibilityExpression="" columnCount="1" name="Municipal water" visibilityExpressionEnabled="0">
-          <attributeEditorField showLabel="1" index="10" name="dry_weather_flow"/>
-          <attributeEditorField showLabel="1" index="8" name="nr_of_inhabitants"/>
+          <attributeEditorField showLabel="1" index="10" name="daily_total"/>
+          <attributeEditorField showLabel="1" index="8" name="multiplier"/>
         </attributeEditorContainer>
       </attributeEditorContainer>
       <attributeEditorContainer showLabel="1" groupBox="1" visibilityExpression="" columnCount="1" name="Visualization" visibilityExpressionEnabled="0">
@@ -630,11 +630,11 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="area"/>
     <field editable="1" name="code"/>
     <field editable="1" name="display_name"/>
-    <field editable="1" name="dry_weather_flow"/>
+    <field editable="1" name="daily_total"/>
     <field editable="1" name="fid"/>
     <field editable="1" name="function"/>
     <field editable="1" name="id"/>
-    <field editable="1" name="nr_of_inhabitants"/>
+    <field editable="1" name="multiplier"/>
     <field editable="1" name="surface_class"/>
     <field editable="1" name="surface_inclination"/>
     <field editable="1" name="surface_sub_class"/>
@@ -644,11 +644,11 @@ def my_form_open(dialog, layer, feature):
     <field labelOnTop="0" name="area"/>
     <field labelOnTop="0" name="code"/>
     <field labelOnTop="0" name="display_name"/>
-    <field labelOnTop="0" name="dry_weather_flow"/>
+    <field labelOnTop="0" name="daily_total"/>
     <field labelOnTop="0" name="fid"/>
     <field labelOnTop="0" name="function"/>
     <field labelOnTop="0" name="id"/>
-    <field labelOnTop="0" name="nr_of_inhabitants"/>
+    <field labelOnTop="0" name="multiplier"/>
     <field labelOnTop="0" name="surface_class"/>
     <field labelOnTop="0" name="surface_inclination"/>
     <field labelOnTop="0" name="surface_sub_class"/>

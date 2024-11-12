@@ -250,8 +250,8 @@ class Culvert(ModelObject):
     display_name: str
     exchange_type: Optional[ExchangeTypeCulvert]
     calculation_point_distance: Optional[float]
-    invert_level_start_point: float
-    invert_level_end_point: float
+    invert_level_start: float
+    invert_level_end: float
     discharge_coefficient_positive: float
     discharge_coefficient_negative: float
     friction_value: float
@@ -612,7 +612,7 @@ class DryWeatherFlowMap(ModelObject):
 
     id: int
     percentage: float
-    impervious_surface_id: int
+    dry_weather_flow_id: int
     connection_node_id: int
     tags: Optional[str]
 
@@ -792,7 +792,7 @@ class GroundWaterSettings(ModelObject):
     phreatic_storage_capacity_aggregation: Optional[InitializationType]
     equilibrium_infiltration_rate: Optional[float]
     equilibrium_infiltration_rate_aggregation: Optional[str]
-    equilibrium_infiltration_rate_type: Optional[InitializationType]
+    equilibrium_infiltration_rate_aggregation: Optional[InitializationType]
     initial_infiltration_rate: Optional[float]
     initial_infiltration_rate_file: Optional[str]
     initial_infiltration_rate_aggregation: Optional[InitializationType]
@@ -1198,7 +1198,7 @@ MODEL_DEPENDENCIES = MappingProxyType(
             ExchangeLine: ("channel_id",),
         },
         DryWeatherFlow: {
-            DryWeatherFlowMap: ("impervious_surface_id",),
+            DryWeatherFlowMap: ("dry_weather_flow_id",),
         },
         Surface: {
             SurfaceMap: ("surface_id",),

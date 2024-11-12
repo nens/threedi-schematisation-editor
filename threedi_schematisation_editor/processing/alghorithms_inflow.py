@@ -217,7 +217,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
         surface_map_fields = surface_map_lyr.fields()
         surface_map_field_names = {fld.name() for fld in surface_map_fields}
         next_surface_map_id = get_next_feature_id(surface_map_lyr)
-        surface_id_field = "surface_id" if "surface_id" in surface_map_field_names else "impervious_surface_id"
+        surface_id_field = "surface_id" if "surface_id" in surface_map_field_names else "dry_weather_flow_id"
         for surface_id, surface_pipes in surface_to_pipes_distances.items():
             if feedback.isCanceled():
                 return {}

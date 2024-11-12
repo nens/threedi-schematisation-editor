@@ -102,7 +102,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="impervious_surface_id">
+    <field name="dry_weather_flow_id">
       <editWidget type="Range">
         <config>
           <Option/>
@@ -128,14 +128,14 @@
     <field editable="1" name="connection_node_id"/>
     <field editable="1" name="fid"/>
     <field editable="1" name="id"/>
-    <field editable="1" name="impervious_surface_id"/>
+    <field editable="1" name="dry_weather_flow_id"/>
     <field editable="1" name="percentage"/>
   </editable>
   <labelOnTop>
     <field labelOnTop="0" name="connection_node_id"/>
     <field labelOnTop="0" name="fid"/>
     <field labelOnTop="0" name="id"/>
-    <field labelOnTop="0" name="impervious_surface_id"/>
+    <field labelOnTop="0" name="dry_weather_flow_id"/>
     <field labelOnTop="0" name="percentage"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>

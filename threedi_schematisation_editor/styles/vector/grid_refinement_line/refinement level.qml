@@ -31,7 +31,7 @@
               <Option name="properties" type="Map">
                 <Option name="customDash" type="Map">
                   <Option name="active" type="bool" value="true"/>
-                  <Option name="expression" type="QString" value="'2;'||&#xd;&#xa;CASE &#x9;WHEN refinement_level IS NULL THEN '2' &#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 1 THEN '0.8;0.15;0.8' &#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 2 THEN '0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 3 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 4 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 5 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 6 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 7 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 8 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 9 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;ELSE '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;END&#xd;&#xa;||';2'"/>
+                  <Option name="expression" type="QString" value="'2;'||&#xd;&#xa;CASE &#x9;WHEN grid_level IS NULL THEN '2' &#xd;&#xa;&#x9;&#x9;WHEN grid_level = 1 THEN '0.8;0.15;0.8' &#xd;&#xa;&#x9;&#x9;WHEN grid_level = 2 THEN '0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 3 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 4 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 5 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 6 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 7 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 8 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 9 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;ELSE '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;END&#xd;&#xa;||';2'"/>
                   <Option name="type" type="int" value="3"/>
                 </Option>
               </Option>
@@ -46,7 +46,7 @@
   </renderer-v2>
   <labeling type="simple">
     <settings calloutType="simple">
-      <text-style blendMode="0" fontSizeUnit="Point" textOrientation="horizontal" isExpression="1" fontUnderline="0" fontWeight="50" namedStyle="Regular" fontCapitals="0" textColor="0,0,0,255" fontFamily="MS Gothic" useSubstitutions="0" fontStrikeout="0" fontWordSpacing="0" fontKerning="1" multilineHeight="1" fontSize="8" previewBkgrdColor="255,255,255,255" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" fontLetterSpacing="0" fieldName="COALESCE(refinement_level, 'NULL')" fontItalic="0">
+      <text-style blendMode="0" fontSizeUnit="Point" textOrientation="horizontal" isExpression="1" fontUnderline="0" fontWeight="50" namedStyle="Regular" fontCapitals="0" textColor="0,0,0,255" fontFamily="MS Gothic" useSubstitutions="0" fontStrikeout="0" fontWordSpacing="0" fontKerning="1" multilineHeight="1" fontSize="8" previewBkgrdColor="255,255,255,255" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" fontLetterSpacing="0" fieldName="COALESCE(grid_level, 'NULL')" fontItalic="0">
         <text-buffer bufferSizeUnits="MM" bufferNoFill="1" bufferSize="0.7" bufferColor="255,255,255,255" bufferOpacity="1" bufferJoinStyle="128" bufferDraw="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferBlendMode="0"/>
         <background shapeSVGFile="" shapeRadiiMapUnitScale="3x:0,0,0,0,0,0" shapeBorderColor="128,128,128,255" shapeBorderWidthUnit="MM" shapeOpacity="1" shapeRadiiY="0" shapeRotation="0" shapeSizeMapUnitScale="3x:0,0,0,0,0,0" shapeOffsetUnit="MM" shapeOffsetY="0" shapeSizeX="0" shapeFillColor="255,255,255,255" shapeBorderWidthMapUnitScale="3x:0,0,0,0,0,0" shapeBorderWidth="0" shapeSizeUnit="MM" shapeSizeY="0" shapeRadiiX="0" shapeDraw="0" shapeRadiiUnit="MM" shapeType="0" shapeRotationType="0" shapeOffsetX="0" shapeOffsetMapUnitScale="3x:0,0,0,0,0,0" shapeJoinStyle="64" shapeBlendMode="0" shapeSizeType="0">
           <symbol name="markerSymbol" type="marker" clip_to_extent="1" alpha="1" force_rhr="0">
@@ -144,7 +144,7 @@
         <Option name="properties" type="Map">
           <Option name="show" type="Map">
             <Option name="active" type="bool" value="true"/>
-            <Option name="field" type="QString" value="refinement_level"/>
+            <Option name="field" type="QString" value="grid_level"/>
             <Option name="type" type="int" value="2"/>
           </Option>
         </Option>
@@ -157,7 +157,7 @@
     <checkConfiguration/>
   </geometryOptions>
   <fieldConfiguration>
-    <field name="refinement_level">
+    <field name="grid_level">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -199,7 +199,7 @@
     </field>
   </fieldConfiguration>
   <aliases>
-    <alias name="" index="0" field="refinement_level"/>
+    <alias name="" index="0" field="grid_level"/>
     <alias name="" index="1" field="code"/>
     <alias name="" index="2" field="display_name"/>
     <alias name="" index="3" field="id"/>
@@ -207,19 +207,19 @@
   <excludeAttributesWMS/>
   <excludeAttributesWFS/>
   <defaults>
-    <default field="refinement_level" applyOnUpdate="0" expression="1"/>
+    <default field="grid_level" applyOnUpdate="0" expression="1"/>
     <default field="code" applyOnUpdate="0" expression="'new'"/>
     <default field="display_name" applyOnUpdate="0" expression="'new'"/>
     <default field="id" applyOnUpdate="0" expression="if(maximum(id) is null,1, maximum(id)+1)"/>
   </defaults>
   <constraints>
-    <constraint field="refinement_level" constraints="1" unique_strength="0" notnull_strength="2" exp_strength="0"/>
+    <constraint field="grid_level" constraints="1" unique_strength="0" notnull_strength="2" exp_strength="0"/>
     <constraint field="code" constraints="1" unique_strength="0" notnull_strength="2" exp_strength="0"/>
     <constraint field="display_name" constraints="1" unique_strength="0" notnull_strength="2" exp_strength="0"/>
     <constraint field="id" constraints="3" unique_strength="1" notnull_strength="1" exp_strength="0"/>
   </constraints>
   <constraintExpressions>
-    <constraint desc="" exp="" field="refinement_level"/>
+    <constraint desc="" exp="" field="grid_level"/>
     <constraint desc="" exp="" field="code"/>
     <constraint desc="" exp="" field="display_name"/>
     <constraint desc="" exp="" field="id"/>
@@ -230,7 +230,7 @@
   </attributeactions>
   <attributetableconfig sortExpression="" sortOrder="0" actionWidgetStyle="dropDown">
     <columns>
-      <column hidden="0" name="refinement_level" type="field" width="-1"/>
+      <column hidden="0" name="grid_level" type="field" width="-1"/>
       <column hidden="0" name="code" type="field" width="-1"/>
       <column hidden="0" name="display_name" type="field" width="-1"/>
       <column hidden="0" name="id" type="field" width="-1"/>
@@ -270,20 +270,20 @@ def my_form_open(dialog, layer, feature):
       <attributeEditorField name="id" index="3" showLabel="1"/>
       <attributeEditorField name="display_name" index="2" showLabel="1"/>
       <attributeEditorField name="code" index="1" showLabel="1"/>
-      <attributeEditorField name="refinement_level" index="0" showLabel="1"/>
+      <attributeEditorField name="grid_level" index="0" showLabel="1"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
     <field name="code" editable="1"/>
     <field name="display_name" editable="1"/>
     <field name="id" editable="1"/>
-    <field name="refinement_level" editable="1"/>
+    <field name="grid_level" editable="1"/>
   </editable>
   <labelOnTop>
     <field name="code" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="refinement_level" labelOnTop="0"/>
+    <field name="grid_level" labelOnTop="0"/>
   </labelOnTop>
   <widgets/>
   <previewExpression>"display_name"</previewExpression>

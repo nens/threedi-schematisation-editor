@@ -411,7 +411,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="invert_level_start_point">
+    <field name="invert_level_start">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -425,7 +425,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="invert_level_end_point">
+    <field name="invert_level_end">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -576,8 +576,8 @@
         <attributeEditorField name="calculation_point_distance" showLabel="1" index="5"/>
       </attributeEditorContainer>
       <attributeEditorContainer name="Characteristics" showLabel="1" groupBox="1" visibilityExpression="" columnCount="1" visibilityExpressionEnabled="0">
-        <attributeEditorField name="invert_level_start_point" showLabel="1" index="6"/>
-        <attributeEditorField name="invert_level_end_point" showLabel="1" index="7"/>
+        <attributeEditorField name="invert_level_start" showLabel="1" index="6"/>
+        <attributeEditorField name="invert_level_end" showLabel="1" index="7"/>
         <attributeEditorField name="friction_type" showLabel="1" index="11"/>
         <attributeEditorField name="friction_value" showLabel="1" index="10"/>
         <attributeEditorField name="discharge_coefficient_positive" showLabel="1" index="8"/>
@@ -615,8 +615,8 @@
     <field name="friction_type" editable="1"/>
     <field name="friction_value" editable="1"/>
     <field name="id" editable="1"/>
-    <field name="invert_level_end_point" editable="1"/>
-    <field name="invert_level_start_point" editable="1"/>
+    <field name="invert_level_end" editable="1"/>
+    <field name="invert_level_start" editable="1"/>
     <field name="zoom_category" editable="1"/>
   </editable>
   <labelOnTop>
@@ -637,8 +637,8 @@
     <field name="friction_type" labelOnTop="0"/>
     <field name="friction_value" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="invert_level_end_point" labelOnTop="0"/>
-    <field name="invert_level_start_point" labelOnTop="0"/>
+    <field name="invert_level_end" labelOnTop="0"/>
+    <field name="invert_level_start" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>

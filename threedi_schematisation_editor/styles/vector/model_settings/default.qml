@@ -195,7 +195,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="manhole_storage_area">
+    <field configurationFlags="None" name="manhole_aboveground_storage_area">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -215,7 +215,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="sim_time_step">
+    <field configurationFlags="None" name="time_step">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -271,7 +271,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="grid_space">
+    <field configurationFlags="None" name="minimum_cell_size">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -291,7 +291,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="kmax">
+    <field configurationFlags="None" name="nr_grid_levels">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -311,7 +311,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="table_step_size">
+    <field configurationFlags="None" name="minimum_table_step_size">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -379,7 +379,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="frict_type">
+    <field configurationFlags="None" name="friction_type">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
@@ -395,7 +395,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="frict_coef">
+    <field configurationFlags="None" name="friction_coefficient">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -405,7 +405,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="frict_coef_file">
+    <field configurationFlags="None" name="friction_coefficient_file">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -415,7 +415,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="water_level_ini_type">
+    <field configurationFlags="None" name="initial_water_level_aggregation">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
@@ -437,7 +437,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="initial_waterlevel">
+    <field configurationFlags="None" name="initial_water_level">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -447,7 +447,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="initial_waterlevel_file">
+    <field configurationFlags="None" name="initial_water_level_file">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -457,7 +457,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="interception_global">
+    <field configurationFlags="None" name="interception">
       <editWidget type="TextEdit">
         <config>
           <Option/>
@@ -511,7 +511,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="timestep_plus">
+    <field configurationFlags="None" name="use_time_step_stretch">
       <editWidget type="CheckBox">
         <config>
           <Option type="Map">
@@ -531,7 +531,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="minimum_sim_time_step">
+    <field configurationFlags="None" name="min_time_step">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -541,7 +541,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="maximum_sim_time_step">
+    <field configurationFlags="None" name="max_time_step">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -551,7 +551,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="frict_avg">
+    <field configurationFlags="None" name="friction_averaging">
       <editWidget type="CheckBox">
         <config>
           <Option type="Map">
@@ -630,7 +630,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="initial_groundwater_level_type">
+    <field configurationFlags="None" name="initial_groundwater_level_aggregation">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
@@ -672,7 +672,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="control_group_id">
+    <field configurationFlags="None" name="use_structure_control">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -728,49 +728,49 @@
     <alias name="" field="id" index="1"/>
     <alias name="" field="use_2d_flow" index="2"/>
     <alias name="" field="use_1d_flow" index="3"/>
-    <alias name="" field="manhole_storage_area" index="4"/>
+    <alias name="" field="manhole_aboveground_storage_area" index="4"/>
     <alias name="" field="name" index="5"/>
-    <alias name="" field="sim_time_step" index="6"/>
+    <alias name="" field="time_step" index="6"/>
     <alias name="" field="output_time_step" index="7"/>
     <alias name="" field="nr_timesteps" index="8"/>
     <alias name="" field="start_time" index="9"/>
     <alias name="" field="start_date" index="10"/>
-    <alias name="" field="grid_space" index="11"/>
+    <alias name="" field="minimum_cell_size" index="11"/>
     <alias name="" field="calculation_point_distance" index="12"/>
-    <alias name="" field="kmax" index="13"/>
+    <alias name="" field="nr_grid_levels" index="13"/>
     <alias name="" field="guess_dams" index="14"/>
-    <alias name="" field="table_step_size" index="15"/>
+    <alias name="" field="minimum_table_step_size" index="15"/>
     <alias name="" field="flooding_threshold" index="16"/>
     <alias name="" field="advection_1d" index="17"/>
     <alias name="" field="advection_2d" index="18"/>
     <alias name="" field="dem_file" index="19"/>
-    <alias name="" field="frict_type" index="20"/>
-    <alias name="" field="frict_coef" index="21"/>
-    <alias name="" field="frict_coef_file" index="22"/>
-    <alias name="" field="water_level_ini_type" index="23"/>
-    <alias name="" field="initial_waterlevel" index="24"/>
-    <alias name="" field="initial_waterlevel_file" index="25"/>
-    <alias name="" field="interception_global" index="26"/>
+    <alias name="" field="friction_type" index="20"/>
+    <alias name="" field="friction_coefficient" index="21"/>
+    <alias name="" field="friction_coefficient_file" index="22"/>
+    <alias name="" field="initial_water_level_aggregation" index="23"/>
+    <alias name="" field="initial_water_level" index="24"/>
+    <alias name="" field="initial_water_level_file" index="25"/>
+    <alias name="" field="interception" index="26"/>
     <alias name="" field="interception_file" index="27"/>
     <alias name="" field="dem_obstacle_detection" index="28"/>
     <alias name="" field="dem_obstacle_height" index="29"/>
     <alias name="" field="embedded_cutoff_threshold" index="30"/>
     <alias name="" field="epsg_code" index="31"/>
-    <alias name="" field="timestep_plus" index="32"/>
+    <alias name="" field="use_time_step_stretch" index="32"/>
     <alias name="" field="max_angle_1d_advection" index="33"/>
-    <alias name="" field="minimum_sim_time_step" index="34"/>
-    <alias name="" field="maximum_sim_time_step" index="35"/>
-    <alias name="" field="frict_avg" index="36"/>
+    <alias name="" field="min_time_step" index="34"/>
+    <alias name="" field="max_time_step" index="35"/>
+    <alias name="" field="friction_averaging" index="36"/>
     <alias name="" field="wind_shielding_file" index="37"/>
     <alias name="" field="use_0d_inflow" index="38"/>
     <alias name="" field="table_step_size_1d" index="39"/>
     <alias name="" field="use_2d_rain" index="40"/>
     <alias name="" field="initial_groundwater_level" index="41"/>
     <alias name="" field="initial_groundwater_level_file" index="42"/>
-    <alias name="" field="initial_groundwater_level_type" index="43"/>
+    <alias name="" field="initial_groundwater_level_aggregation" index="43"/>
     <alias name="" field="numerical_settings_id" index="44"/>
     <alias name="" field="interflow_settings_id" index="45"/>
-    <alias name="" field="control_group_id" index="46"/>
+    <alias name="" field="use_structure_control" index="46"/>
     <alias name="" field="simple_infiltration_settings_id" index="47"/>
     <alias name="" field="groundwater_settings_id" index="48"/>
     <alias name="" field="maximum_table_step_size" index="49"/>
@@ -781,49 +781,49 @@
     <default applyOnUpdate="0" field="id" expression="if (maximum(id) is null, 1, maximum(id) + 1)"/>
     <default applyOnUpdate="0" field="use_2d_flow" expression=""/>
     <default applyOnUpdate="0" field="use_1d_flow" expression=""/>
-    <default applyOnUpdate="0" field="manhole_storage_area" expression=""/>
+    <default applyOnUpdate="0" field="manhole_aboveground_storage_area" expression=""/>
     <default applyOnUpdate="0" field="name" expression=""/>
-    <default applyOnUpdate="0" field="sim_time_step" expression=""/>
+    <default applyOnUpdate="0" field="time_step" expression=""/>
     <default applyOnUpdate="0" field="output_time_step" expression=""/>
     <default applyOnUpdate="0" field="nr_timesteps" expression=""/>
     <default applyOnUpdate="0" field="start_time" expression=" to_date( now() ) ||  ' 00:00:00'"/>
     <default applyOnUpdate="0" field="start_date" expression=" to_date(now() )"/>
-    <default applyOnUpdate="0" field="grid_space" expression=""/>
+    <default applyOnUpdate="0" field="minimum_cell_size" expression=""/>
     <default applyOnUpdate="0" field="calculation_point_distance" expression="10000"/>
-    <default applyOnUpdate="0" field="kmax" expression=""/>
+    <default applyOnUpdate="0" field="nr_grid_levels" expression=""/>
     <default applyOnUpdate="0" field="guess_dams" expression="0"/>
-    <default applyOnUpdate="0" field="table_step_size" expression="0.01"/>
+    <default applyOnUpdate="0" field="minimum_table_step_size" expression="0.01"/>
     <default applyOnUpdate="0" field="flooding_threshold" expression="0.001"/>
     <default applyOnUpdate="0" field="advection_1d" expression=""/>
     <default applyOnUpdate="0" field="advection_2d" expression=""/>
     <default applyOnUpdate="0" field="dem_file" expression=""/>
-    <default applyOnUpdate="0" field="frict_type" expression="2"/>
-    <default applyOnUpdate="0" field="frict_coef" expression=""/>
-    <default applyOnUpdate="0" field="frict_coef_file" expression=""/>
-    <default applyOnUpdate="0" field="water_level_ini_type" expression=""/>
-    <default applyOnUpdate="0" field="initial_waterlevel" expression=""/>
-    <default applyOnUpdate="0" field="initial_waterlevel_file" expression=""/>
-    <default applyOnUpdate="0" field="interception_global" expression=""/>
+    <default applyOnUpdate="0" field="friction_type" expression="2"/>
+    <default applyOnUpdate="0" field="friction_coefficient" expression=""/>
+    <default applyOnUpdate="0" field="friction_coefficient_file" expression=""/>
+    <default applyOnUpdate="0" field="initial_water_level_aggregation" expression=""/>
+    <default applyOnUpdate="0" field="initial_water_level" expression=""/>
+    <default applyOnUpdate="0" field="initial_water_level_file" expression=""/>
+    <default applyOnUpdate="0" field="interception" expression=""/>
     <default applyOnUpdate="0" field="interception_file" expression=""/>
     <default applyOnUpdate="0" field="dem_obstacle_detection" expression="0"/>
     <default applyOnUpdate="0" field="dem_obstacle_height" expression=""/>
     <default applyOnUpdate="0" field="embedded_cutoff_threshold" expression=""/>
     <default applyOnUpdate="0" field="epsg_code" expression=""/>
-    <default applyOnUpdate="0" field="timestep_plus" expression="0"/>
+    <default applyOnUpdate="0" field="use_time_step_stretch" expression="0"/>
     <default applyOnUpdate="0" field="max_angle_1d_advection" expression=""/>
-    <default applyOnUpdate="0" field="minimum_sim_time_step" expression=""/>
-    <default applyOnUpdate="0" field="maximum_sim_time_step" expression=""/>
-    <default applyOnUpdate="0" field="frict_avg" expression="0"/>
+    <default applyOnUpdate="0" field="min_time_step" expression=""/>
+    <default applyOnUpdate="0" field="max_time_step" expression=""/>
+    <default applyOnUpdate="0" field="friction_averaging" expression="0"/>
     <default applyOnUpdate="0" field="wind_shielding_file" expression=""/>
     <default applyOnUpdate="0" field="use_0d_inflow" expression=""/>
     <default applyOnUpdate="0" field="table_step_size_1d" expression=""/>
     <default applyOnUpdate="0" field="use_2d_rain" expression=""/>
     <default applyOnUpdate="0" field="initial_groundwater_level" expression=""/>
     <default applyOnUpdate="0" field="initial_groundwater_level_file" expression=""/>
-    <default applyOnUpdate="0" field="initial_groundwater_level_type" expression=""/>
+    <default applyOnUpdate="0" field="initial_groundwater_level_aggregation" expression=""/>
     <default applyOnUpdate="0" field="numerical_settings_id" expression="1"/>
     <default applyOnUpdate="0" field="interflow_settings_id" expression=""/>
-    <default applyOnUpdate="0" field="control_group_id" expression=""/>
+    <default applyOnUpdate="0" field="use_structure_control" expression=""/>
     <default applyOnUpdate="0" field="simple_infiltration_settings_id" expression=""/>
     <default applyOnUpdate="0" field="groundwater_settings_id" expression=""/>
     <default applyOnUpdate="0" field="maximum_table_step_size" expression=""/>
@@ -834,49 +834,49 @@
     <constraint notnull_strength="1" field="id" constraints="3" exp_strength="0" unique_strength="1"/>
     <constraint notnull_strength="2" field="use_2d_flow" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="use_1d_flow" constraints="1" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="0" field="manhole_storage_area" constraints="0" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" field="manhole_aboveground_storage_area" constraints="0" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="name" constraints="1" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="2" field="sim_time_step" constraints="1" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="2" field="time_step" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="output_time_step" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="nr_timesteps" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="start_time" constraints="5" exp_strength="2" unique_strength="0"/>
     <constraint notnull_strength="2" field="start_date" constraints="5" exp_strength="2" unique_strength="0"/>
-    <constraint notnull_strength="2" field="grid_space" constraints="1" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="2" field="minimum_cell_size" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="calculation_point_distance" constraints="1" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="2" field="kmax" constraints="1" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="2" field="nr_grid_levels" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="guess_dams" constraints="0" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="2" field="table_step_size" constraints="1" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="2" field="minimum_table_step_size" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="flooding_threshold" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="advection_1d" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="advection_2d" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="dem_file" constraints="0" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="0" field="frict_type" constraints="0" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="2" field="frict_coef" constraints="1" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="0" field="frict_coef_file" constraints="0" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="0" field="water_level_ini_type" constraints="0" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="2" field="initial_waterlevel" constraints="1" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="0" field="initial_waterlevel_file" constraints="0" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="0" field="interception_global" constraints="0" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" field="friction_type" constraints="0" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="2" field="friction_coefficient" constraints="1" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" field="friction_coefficient_file" constraints="0" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" field="initial_water_level_aggregation" constraints="0" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="2" field="initial_water_level" constraints="1" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" field="initial_water_level_file" constraints="0" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" field="interception" constraints="0" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="interception_file" constraints="0" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="dem_obstacle_detection" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="dem_obstacle_height" constraints="0" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="embedded_cutoff_threshold" constraints="0" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="epsg_code" constraints="1" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="2" field="timestep_plus" constraints="1" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="2" field="use_time_step_stretch" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="max_angle_1d_advection" constraints="0" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="0" field="minimum_sim_time_step" constraints="4" exp_strength="2" unique_strength="0"/>
-    <constraint notnull_strength="0" field="maximum_sim_time_step" constraints="0" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="2" field="frict_avg" constraints="1" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" field="min_time_step" constraints="4" exp_strength="2" unique_strength="0"/>
+    <constraint notnull_strength="0" field="max_time_step" constraints="0" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="2" field="friction_averaging" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="wind_shielding_file" constraints="0" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="use_0d_inflow" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="table_step_size_1d" constraints="0" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="use_2d_rain" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="initial_groundwater_level" constraints="0" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="initial_groundwater_level_file" constraints="0" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="0" field="initial_groundwater_level_type" constraints="0" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" field="initial_groundwater_level_aggregation" constraints="0" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="2" field="numerical_settings_id" constraints="1" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="interflow_settings_id" constraints="0" exp_strength="0" unique_strength="0"/>
-    <constraint notnull_strength="0" field="control_group_id" constraints="0" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" field="use_structure_control" constraints="0" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="simple_infiltration_settings_id" constraints="0" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="groundwater_settings_id" constraints="0" exp_strength="0" unique_strength="0"/>
     <constraint notnull_strength="0" field="maximum_table_step_size" constraints="0" exp_strength="0" unique_strength="0"/>
@@ -887,49 +887,49 @@
     <constraint desc="" field="id" exp=""/>
     <constraint desc="" field="use_2d_flow" exp=""/>
     <constraint desc="" field="use_1d_flow" exp=""/>
-    <constraint desc="" field="manhole_storage_area" exp=""/>
+    <constraint desc="" field="manhole_aboveground_storage_area" exp=""/>
     <constraint desc="" field="name" exp=""/>
-    <constraint desc="" field="sim_time_step" exp=""/>
+    <constraint desc="" field="time_step" exp=""/>
     <constraint desc="" field="output_time_step" exp=""/>
     <constraint desc="" field="nr_timesteps" exp=""/>
     <constraint desc="" field="start_time" exp="&quot;start_time&quot;"/>
     <constraint desc="" field="start_date" exp="&quot;start_date&quot; is not null"/>
-    <constraint desc="" field="grid_space" exp=""/>
+    <constraint desc="" field="minimum_cell_size" exp=""/>
     <constraint desc="" field="calculation_point_distance" exp=""/>
-    <constraint desc="" field="kmax" exp=""/>
+    <constraint desc="" field="nr_grid_levels" exp=""/>
     <constraint desc="" field="guess_dams" exp=""/>
-    <constraint desc="" field="table_step_size" exp=""/>
+    <constraint desc="" field="minimum_table_step_size" exp=""/>
     <constraint desc="" field="flooding_threshold" exp=""/>
     <constraint desc="" field="advection_1d" exp=""/>
     <constraint desc="" field="advection_2d" exp=""/>
     <constraint desc="" field="dem_file" exp=""/>
-    <constraint desc="" field="frict_type" exp=""/>
-    <constraint desc="" field="frict_coef" exp=""/>
-    <constraint desc="" field="frict_coef_file" exp=""/>
-    <constraint desc="" field="water_level_ini_type" exp=""/>
-    <constraint desc="" field="initial_waterlevel" exp=""/>
-    <constraint desc="" field="initial_waterlevel_file" exp=""/>
-    <constraint desc="" field="interception_global" exp=""/>
+    <constraint desc="" field="friction_type" exp=""/>
+    <constraint desc="" field="friction_coefficient" exp=""/>
+    <constraint desc="" field="friction_coefficient_file" exp=""/>
+    <constraint desc="" field="initial_water_level_aggregation" exp=""/>
+    <constraint desc="" field="initial_water_level" exp=""/>
+    <constraint desc="" field="initial_water_level_file" exp=""/>
+    <constraint desc="" field="interception" exp=""/>
     <constraint desc="" field="interception_file" exp=""/>
     <constraint desc="" field="dem_obstacle_detection" exp=""/>
     <constraint desc="" field="dem_obstacle_height" exp=""/>
     <constraint desc="" field="embedded_cutoff_threshold" exp=""/>
     <constraint desc="" field="epsg_code" exp=""/>
-    <constraint desc="" field="timestep_plus" exp=""/>
+    <constraint desc="" field="use_time_step_stretch" exp=""/>
     <constraint desc="" field="max_angle_1d_advection" exp=""/>
-    <constraint desc="" field="minimum_sim_time_step" exp=" &quot;minimum_sim_time_step&quot; &lt; &quot;sim_time_step&quot; "/>
-    <constraint desc="" field="maximum_sim_time_step" exp=""/>
-    <constraint desc="" field="frict_avg" exp=""/>
+    <constraint desc="" field="min_time_step" exp=" &quot;min_time_step&quot; &lt; &quot;time_step&quot; "/>
+    <constraint desc="" field="max_time_step" exp=""/>
+    <constraint desc="" field="friction_averaging" exp=""/>
     <constraint desc="" field="wind_shielding_file" exp=""/>
     <constraint desc="" field="use_0d_inflow" exp=""/>
     <constraint desc="" field="table_step_size_1d" exp=""/>
     <constraint desc="" field="use_2d_rain" exp=""/>
     <constraint desc="" field="initial_groundwater_level" exp=""/>
     <constraint desc="" field="initial_groundwater_level_file" exp=""/>
-    <constraint desc="" field="initial_groundwater_level_type" exp=""/>
+    <constraint desc="" field="initial_groundwater_level_aggregation" exp=""/>
     <constraint desc="" field="numerical_settings_id" exp=""/>
     <constraint desc="" field="interflow_settings_id" exp=""/>
-    <constraint desc="" field="control_group_id" exp=""/>
+    <constraint desc="" field="use_structure_control" exp=""/>
     <constraint desc="" field="simple_infiltration_settings_id" exp=""/>
     <constraint desc="" field="groundwater_settings_id" exp=""/>
     <constraint desc="" field="maximum_table_step_size" exp=""/>
@@ -945,49 +945,49 @@
       <column hidden="0" width="-1" name="id" type="field"/>
       <column hidden="0" width="-1" name="use_2d_flow" type="field"/>
       <column hidden="0" width="-1" name="use_1d_flow" type="field"/>
-      <column hidden="0" width="-1" name="manhole_storage_area" type="field"/>
+      <column hidden="0" width="-1" name="manhole_aboveground_storage_area" type="field"/>
       <column hidden="0" width="-1" name="name" type="field"/>
-      <column hidden="0" width="-1" name="sim_time_step" type="field"/>
+      <column hidden="0" width="-1" name="time_step" type="field"/>
       <column hidden="0" width="-1" name="output_time_step" type="field"/>
       <column hidden="0" width="-1" name="nr_timesteps" type="field"/>
       <column hidden="0" width="-1" name="start_time" type="field"/>
       <column hidden="0" width="-1" name="start_date" type="field"/>
-      <column hidden="0" width="-1" name="grid_space" type="field"/>
+      <column hidden="0" width="-1" name="minimum_cell_size" type="field"/>
       <column hidden="0" width="-1" name="calculation_point_distance" type="field"/>
-      <column hidden="0" width="-1" name="kmax" type="field"/>
+      <column hidden="0" width="-1" name="nr_grid_levels" type="field"/>
       <column hidden="0" width="-1" name="guess_dams" type="field"/>
-      <column hidden="0" width="-1" name="table_step_size" type="field"/>
+      <column hidden="0" width="-1" name="minimum_table_step_size" type="field"/>
       <column hidden="0" width="-1" name="flooding_threshold" type="field"/>
       <column hidden="0" width="-1" name="advection_1d" type="field"/>
       <column hidden="0" width="-1" name="advection_2d" type="field"/>
       <column hidden="0" width="-1" name="dem_file" type="field"/>
-      <column hidden="0" width="-1" name="frict_type" type="field"/>
-      <column hidden="0" width="-1" name="frict_coef" type="field"/>
-      <column hidden="0" width="-1" name="frict_coef_file" type="field"/>
-      <column hidden="0" width="-1" name="water_level_ini_type" type="field"/>
-      <column hidden="0" width="-1" name="initial_waterlevel" type="field"/>
-      <column hidden="0" width="-1" name="initial_waterlevel_file" type="field"/>
-      <column hidden="0" width="-1" name="interception_global" type="field"/>
+      <column hidden="0" width="-1" name="friction_type" type="field"/>
+      <column hidden="0" width="-1" name="friction_coefficient" type="field"/>
+      <column hidden="0" width="-1" name="friction_coefficient_file" type="field"/>
+      <column hidden="0" width="-1" name="initial_water_level_aggregation" type="field"/>
+      <column hidden="0" width="-1" name="initial_water_level" type="field"/>
+      <column hidden="0" width="-1" name="initial_water_level_file" type="field"/>
+      <column hidden="0" width="-1" name="interception" type="field"/>
       <column hidden="0" width="-1" name="interception_file" type="field"/>
       <column hidden="0" width="-1" name="dem_obstacle_detection" type="field"/>
       <column hidden="0" width="-1" name="dem_obstacle_height" type="field"/>
       <column hidden="0" width="-1" name="embedded_cutoff_threshold" type="field"/>
       <column hidden="0" width="-1" name="epsg_code" type="field"/>
-      <column hidden="0" width="-1" name="timestep_plus" type="field"/>
+      <column hidden="0" width="-1" name="use_time_step_stretch" type="field"/>
       <column hidden="0" width="-1" name="max_angle_1d_advection" type="field"/>
-      <column hidden="0" width="-1" name="minimum_sim_time_step" type="field"/>
-      <column hidden="0" width="-1" name="maximum_sim_time_step" type="field"/>
-      <column hidden="0" width="-1" name="frict_avg" type="field"/>
+      <column hidden="0" width="-1" name="min_time_step" type="field"/>
+      <column hidden="0" width="-1" name="max_time_step" type="field"/>
+      <column hidden="0" width="-1" name="friction_averaging" type="field"/>
       <column hidden="0" width="-1" name="wind_shielding_file" type="field"/>
       <column hidden="0" width="-1" name="use_0d_inflow" type="field"/>
       <column hidden="0" width="-1" name="table_step_size_1d" type="field"/>
       <column hidden="0" width="-1" name="use_2d_rain" type="field"/>
       <column hidden="0" width="-1" name="initial_groundwater_level" type="field"/>
       <column hidden="0" width="-1" name="initial_groundwater_level_file" type="field"/>
-      <column hidden="0" width="-1" name="initial_groundwater_level_type" type="field"/>
+      <column hidden="0" width="-1" name="initial_groundwater_level_aggregation" type="field"/>
       <column hidden="0" width="-1" name="numerical_settings_id" type="field"/>
       <column hidden="0" width="-1" name="interflow_settings_id" type="field"/>
-      <column hidden="0" width="-1" name="control_group_id" type="field"/>
+      <column hidden="0" width="-1" name="use_structure_control" type="field"/>
       <column hidden="0" width="-1" name="simple_infiltration_settings_id" type="field"/>
       <column hidden="0" width="-1" name="groundwater_settings_id" type="field"/>
       <column hidden="0" width="-1" name="maximum_table_step_size" type="field"/>
@@ -1066,17 +1066,17 @@ def my_form_open(dialog, layer, feature):
       <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
         <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
       </labelStyle>
-      <attributeEditorField showLabel="1" name="grid_space" index="11">
+      <attributeEditorField showLabel="1" name="minimum_cell_size" index="11">
         <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
       </attributeEditorField>
-      <attributeEditorField showLabel="1" name="kmax" index="13">
+      <attributeEditorField showLabel="1" name="nr_grid_levels" index="13">
         <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
       </attributeEditorField>
-      <attributeEditorField showLabel="1" name="table_step_size" index="15">
+      <attributeEditorField showLabel="1" name="minimum_table_step_size" index="15">
         <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
@@ -1110,22 +1110,22 @@ def my_form_open(dialog, layer, feature):
         <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
-        <attributeEditorField showLabel="1" name="frict_coef_file" index="22">
+        <attributeEditorField showLabel="1" name="friction_coefficient_file" index="22">
           <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
             <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" name="frict_coef" index="21">
+        <attributeEditorField showLabel="1" name="friction_coefficient" index="21">
           <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
             <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" name="frict_type" index="20">
+        <attributeEditorField showLabel="1" name="friction_type" index="20">
           <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
             <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" name="frict_avg" index="36">
+        <attributeEditorField showLabel="1" name="friction_averaging" index="36">
           <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
             <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
           </labelStyle>
@@ -1145,7 +1145,7 @@ def my_form_open(dialog, layer, feature):
             <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" name="initial_groundwater_level_type" index="43">
+        <attributeEditorField showLabel="1" name="initial_groundwater_level_aggregation" index="43">
           <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
             <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
           </labelStyle>
@@ -1155,17 +1155,17 @@ def my_form_open(dialog, layer, feature):
         <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
-        <attributeEditorField showLabel="1" name="initial_waterlevel_file" index="25">
+        <attributeEditorField showLabel="1" name="initial_water_level_file" index="25">
           <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
             <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" name="initial_waterlevel" index="24">
+        <attributeEditorField showLabel="1" name="initial_water_level" index="24">
           <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
             <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" name="water_level_ini_type" index="23">
+        <attributeEditorField showLabel="1" name="initial_water_level_aggregation" index="23">
           <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
             <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
           </labelStyle>
@@ -1180,7 +1180,7 @@ def my_form_open(dialog, layer, feature):
             <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" name="interception_global" index="26">
+        <attributeEditorField showLabel="1" name="interception" index="26">
           <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
             <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
           </labelStyle>
@@ -1216,22 +1216,22 @@ def my_form_open(dialog, layer, feature):
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
       </attributeEditorField>
-      <attributeEditorField showLabel="1" name="sim_time_step" index="6">
+      <attributeEditorField showLabel="1" name="time_step" index="6">
         <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
       </attributeEditorField>
-      <attributeEditorField showLabel="1" name="timestep_plus" index="32">
+      <attributeEditorField showLabel="1" name="use_time_step_stretch" index="32">
         <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
       </attributeEditorField>
-      <attributeEditorField showLabel="1" name="minimum_sim_time_step" index="34">
+      <attributeEditorField showLabel="1" name="min_time_step" index="34">
         <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
       </attributeEditorField>
-      <attributeEditorField showLabel="1" name="maximum_sim_time_step" index="35">
+      <attributeEditorField showLabel="1" name="max_time_step" index="35">
         <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
@@ -1271,7 +1271,7 @@ def my_form_open(dialog, layer, feature):
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
       </attributeEditorField>
-      <attributeEditorField showLabel="1" name="control_group_id" index="46">
+      <attributeEditorField showLabel="1" name="use_structure_control" index="46">
         <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
@@ -1296,7 +1296,7 @@ def my_form_open(dialog, layer, feature):
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
       </attributeEditorField>
-      <attributeEditorField showLabel="1" name="manhole_storage_area" index="4">
+      <attributeEditorField showLabel="1" name="manhole_aboveground_storage_area" index="4">
         <labelStyle overrideLabelFont="0" labelColor="0,0,0,255" overrideLabelColor="0">
           <labelFont italic="0" description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0" style="" bold="0"/>
         </labelStyle>
@@ -1351,7 +1351,7 @@ def my_form_open(dialog, layer, feature):
   <editable>
     <field editable="1" name="advection_1d"/>
     <field editable="1" name="advection_2d"/>
-    <field editable="1" name="control_group_id"/>
+    <field editable="1" name="use_structure_control"/>
     <field editable="1" name="dem_file"/>
     <field editable="1" name="dem_obstacle_detection"/>
     <field editable="1" name="dem_obstacle_height"/>
@@ -1360,54 +1360,54 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="epsg_code"/>
     <field editable="1" name="fid"/>
     <field editable="1" name="flooding_threshold"/>
-    <field editable="1" name="frict_avg"/>
-    <field editable="1" name="frict_coef"/>
-    <field editable="1" name="frict_coef_file"/>
-    <field editable="1" name="frict_type"/>
-    <field editable="1" name="grid_space"/>
+    <field editable="1" name="friction_averaging"/>
+    <field editable="1" name="friction_coefficient"/>
+    <field editable="1" name="friction_coefficient_file"/>
+    <field editable="1" name="friction_type"/>
+    <field editable="1" name="minimum_cell_size"/>
     <field editable="1" name="groundwater_settings_id"/>
     <field editable="1" name="guess_dams"/>
     <field editable="1" name="id"/>
     <field editable="1" name="initial_groundwater_level"/>
     <field editable="1" name="initial_groundwater_level_file"/>
-    <field editable="1" name="initial_groundwater_level_type"/>
-    <field editable="1" name="initial_waterlevel"/>
-    <field editable="1" name="initial_waterlevel_file"/>
+    <field editable="1" name="initial_groundwater_level_aggregation"/>
+    <field editable="1" name="initial_water_level"/>
+    <field editable="1" name="initial_water_level_file"/>
     <field editable="1" name="interception_file"/>
-    <field editable="1" name="interception_global"/>
+    <field editable="1" name="interception"/>
     <field editable="1" name="interflow_settings_id"/>
-    <field editable="1" name="kmax"/>
-    <field editable="1" name="manhole_storage_area"/>
+    <field editable="1" name="nr_grid_levels"/>
+    <field editable="1" name="manhole_aboveground_storage_area"/>
     <field editable="1" name="max_angle_1d_advection"/>
     <field editable="1" name="max_interception"/>
     <field editable="1" name="max_interception_file"/>
-    <field editable="1" name="maximum_sim_time_step"/>
+    <field editable="1" name="max_time_step"/>
     <field editable="1" name="maximum_table_step_size"/>
-    <field editable="1" name="minimum_sim_time_step"/>
+    <field editable="1" name="min_time_step"/>
     <field editable="1" name="name"/>
     <field editable="1" name="nr_timesteps"/>
     <field editable="1" name="numerical_settings_id"/>
     <field editable="1" name="output_time_step"/>
-    <field editable="1" name="sim_time_step"/>
+    <field editable="1" name="time_step"/>
     <field editable="1" name="simple_infiltration_settings_id"/>
     <field editable="1" name="start_date"/>
     <field editable="1" name="start_time"/>
-    <field editable="1" name="table_step_size"/>
+    <field editable="1" name="minimum_table_step_size"/>
     <field editable="1" name="table_step_size_1d"/>
     <field editable="1" name="table_step_size_volume_2d"/>
-    <field editable="1" name="timestep_plus"/>
+    <field editable="1" name="use_time_step_stretch"/>
     <field editable="1" name="use_0d_inflow"/>
     <field editable="1" name="use_1d_flow"/>
     <field editable="1" name="use_2d_flow"/>
     <field editable="1" name="use_2d_rain"/>
     <field editable="1" name="vegetation_drag_settings_id"/>
-    <field editable="1" name="water_level_ini_type"/>
+    <field editable="1" name="initial_water_level_aggregation"/>
     <field editable="1" name="wind_shielding_file"/>
   </editable>
   <labelOnTop>
     <field labelOnTop="0" name="advection_1d"/>
     <field labelOnTop="0" name="advection_2d"/>
-    <field labelOnTop="0" name="control_group_id"/>
+    <field labelOnTop="0" name="use_structure_control"/>
     <field labelOnTop="0" name="dem_file"/>
     <field labelOnTop="0" name="dem_obstacle_detection"/>
     <field labelOnTop="0" name="dem_obstacle_height"/>
@@ -1416,54 +1416,54 @@ def my_form_open(dialog, layer, feature):
     <field labelOnTop="0" name="epsg_code"/>
     <field labelOnTop="0" name="fid"/>
     <field labelOnTop="0" name="flooding_threshold"/>
-    <field labelOnTop="0" name="frict_avg"/>
-    <field labelOnTop="0" name="frict_coef"/>
-    <field labelOnTop="0" name="frict_coef_file"/>
-    <field labelOnTop="0" name="frict_type"/>
-    <field labelOnTop="0" name="grid_space"/>
+    <field labelOnTop="0" name="friction_averaging"/>
+    <field labelOnTop="0" name="friction_coefficient"/>
+    <field labelOnTop="0" name="friction_coefficient_file"/>
+    <field labelOnTop="0" name="friction_type"/>
+    <field labelOnTop="0" name="minimum_cell_size"/>
     <field labelOnTop="0" name="groundwater_settings_id"/>
     <field labelOnTop="0" name="guess_dams"/>
     <field labelOnTop="0" name="id"/>
     <field labelOnTop="0" name="initial_groundwater_level"/>
     <field labelOnTop="0" name="initial_groundwater_level_file"/>
-    <field labelOnTop="0" name="initial_groundwater_level_type"/>
-    <field labelOnTop="0" name="initial_waterlevel"/>
-    <field labelOnTop="0" name="initial_waterlevel_file"/>
+    <field labelOnTop="0" name="initial_groundwater_level_aggregation"/>
+    <field labelOnTop="0" name="initial_water_level"/>
+    <field labelOnTop="0" name="initial_water_level_file"/>
     <field labelOnTop="0" name="interception_file"/>
-    <field labelOnTop="0" name="interception_global"/>
+    <field labelOnTop="0" name="interception"/>
     <field labelOnTop="0" name="interflow_settings_id"/>
-    <field labelOnTop="0" name="kmax"/>
-    <field labelOnTop="0" name="manhole_storage_area"/>
+    <field labelOnTop="0" name="nr_grid_levels"/>
+    <field labelOnTop="0" name="manhole_aboveground_storage_area"/>
     <field labelOnTop="0" name="max_angle_1d_advection"/>
     <field labelOnTop="0" name="max_interception"/>
     <field labelOnTop="0" name="max_interception_file"/>
-    <field labelOnTop="0" name="maximum_sim_time_step"/>
+    <field labelOnTop="0" name="max_time_step"/>
     <field labelOnTop="0" name="maximum_table_step_size"/>
-    <field labelOnTop="0" name="minimum_sim_time_step"/>
+    <field labelOnTop="0" name="min_time_step"/>
     <field labelOnTop="0" name="name"/>
     <field labelOnTop="0" name="nr_timesteps"/>
     <field labelOnTop="0" name="numerical_settings_id"/>
     <field labelOnTop="0" name="output_time_step"/>
-    <field labelOnTop="0" name="sim_time_step"/>
+    <field labelOnTop="0" name="time_step"/>
     <field labelOnTop="0" name="simple_infiltration_settings_id"/>
     <field labelOnTop="0" name="start_date"/>
     <field labelOnTop="0" name="start_time"/>
-    <field labelOnTop="0" name="table_step_size"/>
+    <field labelOnTop="0" name="minimum_table_step_size"/>
     <field labelOnTop="0" name="table_step_size_1d"/>
     <field labelOnTop="0" name="table_step_size_volume_2d"/>
-    <field labelOnTop="0" name="timestep_plus"/>
+    <field labelOnTop="0" name="use_time_step_stretch"/>
     <field labelOnTop="0" name="use_0d_inflow"/>
     <field labelOnTop="0" name="use_1d_flow"/>
     <field labelOnTop="0" name="use_2d_flow"/>
     <field labelOnTop="0" name="use_2d_rain"/>
     <field labelOnTop="0" name="vegetation_drag_settings_id"/>
-    <field labelOnTop="0" name="water_level_ini_type"/>
+    <field labelOnTop="0" name="initial_water_level_aggregation"/>
     <field labelOnTop="0" name="wind_shielding_file"/>
   </labelOnTop>
   <reuseLastValue>
     <field reuseLastValue="0" name="advection_1d"/>
     <field reuseLastValue="0" name="advection_2d"/>
-    <field reuseLastValue="0" name="control_group_id"/>
+    <field reuseLastValue="0" name="use_structure_control"/>
     <field reuseLastValue="0" name="dem_file"/>
     <field reuseLastValue="0" name="dem_obstacle_detection"/>
     <field reuseLastValue="0" name="dem_obstacle_height"/>
@@ -1472,45 +1472,45 @@ def my_form_open(dialog, layer, feature):
     <field reuseLastValue="0" name="epsg_code"/>
     <field reuseLastValue="0" name="fid"/>
     <field reuseLastValue="0" name="flooding_threshold"/>
-    <field reuseLastValue="0" name="frict_avg"/>
-    <field reuseLastValue="0" name="frict_coef"/>
-    <field reuseLastValue="0" name="frict_coef_file"/>
-    <field reuseLastValue="0" name="frict_type"/>
-    <field reuseLastValue="0" name="grid_space"/>
+    <field reuseLastValue="0" name="friction_averaging"/>
+    <field reuseLastValue="0" name="friction_coefficient"/>
+    <field reuseLastValue="0" name="friction_coefficient_file"/>
+    <field reuseLastValue="0" name="friction_type"/>
+    <field reuseLastValue="0" name="minimum_cell_size"/>
     <field reuseLastValue="0" name="groundwater_settings_id"/>
     <field reuseLastValue="0" name="guess_dams"/>
     <field reuseLastValue="0" name="id"/>
     <field reuseLastValue="0" name="initial_groundwater_level"/>
     <field reuseLastValue="0" name="initial_groundwater_level_file"/>
-    <field reuseLastValue="0" name="initial_groundwater_level_type"/>
-    <field reuseLastValue="0" name="initial_waterlevel"/>
-    <field reuseLastValue="0" name="initial_waterlevel_file"/>
+    <field reuseLastValue="0" name="initial_groundwater_level_aggregation"/>
+    <field reuseLastValue="0" name="initial_water_level"/>
+    <field reuseLastValue="0" name="initial_water_level_file"/>
     <field reuseLastValue="0" name="interception_file"/>
-    <field reuseLastValue="0" name="interception_global"/>
+    <field reuseLastValue="0" name="interception"/>
     <field reuseLastValue="0" name="interflow_settings_id"/>
-    <field reuseLastValue="0" name="kmax"/>
-    <field reuseLastValue="0" name="manhole_storage_area"/>
+    <field reuseLastValue="0" name="nr_grid_levels"/>
+    <field reuseLastValue="0" name="manhole_aboveground_storage_area"/>
     <field reuseLastValue="0" name="max_angle_1d_advection"/>
-    <field reuseLastValue="0" name="maximum_sim_time_step"/>
+    <field reuseLastValue="0" name="max_time_step"/>
     <field reuseLastValue="0" name="maximum_table_step_size"/>
-    <field reuseLastValue="0" name="minimum_sim_time_step"/>
+    <field reuseLastValue="0" name="min_time_step"/>
     <field reuseLastValue="0" name="name"/>
     <field reuseLastValue="0" name="nr_timesteps"/>
     <field reuseLastValue="0" name="numerical_settings_id"/>
     <field reuseLastValue="0" name="output_time_step"/>
-    <field reuseLastValue="0" name="sim_time_step"/>
+    <field reuseLastValue="0" name="time_step"/>
     <field reuseLastValue="0" name="simple_infiltration_settings_id"/>
     <field reuseLastValue="0" name="start_date"/>
     <field reuseLastValue="0" name="start_time"/>
-    <field reuseLastValue="0" name="table_step_size"/>
+    <field reuseLastValue="0" name="minimum_table_step_size"/>
     <field reuseLastValue="0" name="table_step_size_1d"/>
-    <field reuseLastValue="0" name="timestep_plus"/>
+    <field reuseLastValue="0" name="use_time_step_stretch"/>
     <field reuseLastValue="0" name="use_0d_inflow"/>
     <field reuseLastValue="0" name="use_1d_flow"/>
     <field reuseLastValue="0" name="use_2d_flow"/>
     <field reuseLastValue="0" name="use_2d_rain"/>
     <field reuseLastValue="0" name="vegetation_drag_settings_id"/>
-    <field reuseLastValue="0" name="water_level_ini_type"/>
+    <field reuseLastValue="0" name="initial_water_level_aggregation"/>
     <field reuseLastValue="0" name="wind_shielding_file"/>
   </reuseLastValue>
   <dataDefinedFieldProperties/>

@@ -40,7 +40,7 @@
   </renderer-v2>
   <labeling type="simple">
     <settings calloutType="simple">
-      <text-style fontKerning="1" isExpression="1" fontLetterSpacing="0" namedStyle="Regular" blendMode="0" fontUnderline="0" fontCapitals="0" fieldName=" represent_value(&quot;boundary_type&quot;) || ' | ' ||&#xd;&#xa;'min: '||&#xd;&#xa;format_number(&#xd;&#xa;&#x9;array_first(&#xd;&#xa;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;array_foreach(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;string_to_array(timeseries,  '\n' ),&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(@element, ',')&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;)&#xd;&#xa;&#x9;),&#xd;&#xa;&#x9;2&#xd;&#xa;)&#xd;&#xa;|| ' | max: ' ||&#xd;&#xa;format_number(&#xd;&#xa;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;array_foreach(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;string_to_array(timeseries,  '\n' ),&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(@element, ',')&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;)&#xd;&#xa;&#x9;),&#xd;&#xa;&#x9;2&#xd;&#xa;)&#xd;&#xa;" useSubstitutions="0" textColor="0,0,0,255" fontSizeUnit="Point" textOrientation="horizontal" fontItalic="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" fontWordSpacing="0" previewBkgrdColor="255,255,255,255" multilineHeight="1" fontWeight="50" fontSize="8" fontFamily="MS Gothic" fontStrikeout="0" textOpacity="1">
+      <text-style fontKerning="1" isExpression="1" fontLetterSpacing="0" namedStyle="Regular" blendMode="0" fontUnderline="0" fontCapitals="0" fieldName=" represent_value(&quot;type&quot;) || ' | ' ||&#xd;&#xa;'min: '||&#xd;&#xa;format_number(&#xd;&#xa;&#x9;array_first(&#xd;&#xa;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;array_foreach(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;string_to_array(timeseries,  '\n' ),&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(@element, ',')&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;)&#xd;&#xa;&#x9;),&#xd;&#xa;&#x9;2&#xd;&#xa;)&#xd;&#xa;|| ' | max: ' ||&#xd;&#xa;format_number(&#xd;&#xa;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;array_sort(&#xd;&#xa;&#x9;&#x9;&#x9;array_foreach(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;string_to_array(timeseries,  '\n' ),&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;to_real(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;array_last(&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;string_to_array(@element, ',')&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;&#x9;)&#xd;&#xa;&#x9;&#x9;)&#xd;&#xa;&#x9;),&#xd;&#xa;&#x9;2&#xd;&#xa;)&#xd;&#xa;" useSubstitutions="0" textColor="0,0,0,255" fontSizeUnit="Point" textOrientation="horizontal" fontItalic="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" fontWordSpacing="0" previewBkgrdColor="255,255,255,255" multilineHeight="1" fontWeight="50" fontSize="8" fontFamily="MS Gothic" fontStrikeout="0" textOpacity="1">
         <text-buffer bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferJoinStyle="128" bufferDraw="1" bufferSize="0.7" bufferSizeUnits="MM" bufferNoFill="1" bufferOpacity="1" bufferColor="255,255,255,255" bufferBlendMode="0"/>
         <background shapeOffsetMapUnitScale="3x:0,0,0,0,0,0" shapeSizeUnit="MM" shapeOffsetY="0" shapeRotationType="0" shapeSizeY="0" shapeRadiiY="0" shapeSizeX="0" shapeOffsetX="0" shapeOpacity="1" shapeRotation="0" shapeType="0" shapeSVGFile="" shapeOffsetUnit="MM" shapeBorderColor="128,128,128,255" shapeDraw="0" shapeFillColor="255,255,255,255" shapeRadiiX="0" shapeBorderWidthMapUnitScale="3x:0,0,0,0,0,0" shapeBlendMode="0" shapeRadiiMapUnitScale="3x:0,0,0,0,0,0" shapeBorderWidth="0" shapeBorderWidthUnit="MM" shapeJoinStyle="64" shapeSizeType="0" shapeSizeMapUnitScale="3x:0,0,0,0,0,0" shapeRadiiUnit="MM">
           <symbol alpha="1" name="markerSymbol" type="marker" clip_to_extent="1" force_rhr="0">
@@ -176,7 +176,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="boundary_type">
+    <field name="type">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
@@ -203,7 +203,7 @@
     <alias field="id" name="" index="0"/>
     <alias field="display_name" name="" index="1"/>
     <alias field="timeseries" name="" index="2"/>
-    <alias field="boundary_type" name="" index="3"/>
+    <alias field="type" name="" index="3"/>
   </aliases>
   <excludeAttributesWMS/>
   <excludeAttributesWFS/>
@@ -211,19 +211,19 @@
     <default field="id" expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0"/>
     <default field="display_name" expression="" applyOnUpdate="0"/>
     <default field="timeseries" expression="" applyOnUpdate="0"/>
-    <default field="boundary_type" expression="" applyOnUpdate="0"/>
+    <default field="type" expression="" applyOnUpdate="0"/>
   </defaults>
   <constraints>
     <constraint field="id" unique_strength="1" exp_strength="0" constraints="3" notnull_strength="1"/>
     <constraint field="display_name" unique_strength="0" exp_strength="0" constraints="1" notnull_strength="2"/>
     <constraint field="timeseries" unique_strength="0" exp_strength="0" constraints="1" notnull_strength="2"/>
-    <constraint field="boundary_type" unique_strength="0" exp_strength="0" constraints="1" notnull_strength="2"/>
+    <constraint field="type" unique_strength="0" exp_strength="0" constraints="1" notnull_strength="2"/>
   </constraints>
   <constraintExpressions>
     <constraint field="id" exp="" desc=""/>
     <constraint field="display_name" exp="" desc=""/>
     <constraint field="timeseries" exp="" desc=""/>
-    <constraint field="boundary_type" exp="" desc=""/>
+    <constraint field="type" exp="" desc=""/>
   </constraintExpressions>
   <expressionfields/>
   <attributeactions>
@@ -234,7 +234,7 @@
       <column hidden="0" width="-1" name="id" type="field"/>
       <column hidden="0" width="-1" name="display_name" type="field"/>
       <column hidden="0" width="-1" name="timeseries" type="field"/>
-      <column hidden="0" width="-1" name="boundary_type" type="field"/>
+      <column hidden="0" width="-1" name="type" type="field"/>
       <column hidden="1" width="-1" type="actions"/>
     </columns>
   </attributetableconfig>
@@ -270,18 +270,18 @@ def my_form_open(dialog, layer, feature):
     <attributeEditorContainer showLabel="1" groupBox="0" visibilityExpressionEnabled="0" visibilityExpression="" name="General" columnCount="1">
       <attributeEditorField showLabel="1" name="id" index="0"/>
       <attributeEditorField showLabel="1" name="display_name" index="1"/>
-      <attributeEditorField showLabel="1" name="boundary_type" index="3"/>
+      <attributeEditorField showLabel="1" name="type" index="3"/>
       <attributeEditorField showLabel="1" name="timeseries" index="2"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
-    <field editable="1" name="boundary_type"/>
+    <field editable="1" name="type"/>
     <field editable="1" name="display_name"/>
     <field editable="1" name="id"/>
     <field editable="1" name="timeseries"/>
   </editable>
   <labelOnTop>
-    <field name="boundary_type" labelOnTop="0"/>
+    <field name="type" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
     <field name="timeseries" labelOnTop="0"/>
