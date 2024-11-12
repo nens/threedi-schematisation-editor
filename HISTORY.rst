@@ -1,8 +1,8 @@
 History
 =======
 
-1.13.1 (unreleased)
--------------------
+1.14 (2024-11-12)
+-----------------
 
 - Add new 1D advection options
 - Fixes/enhancements: #149, #254, #270
