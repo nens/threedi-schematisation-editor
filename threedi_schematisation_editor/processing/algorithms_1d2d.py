@@ -64,7 +64,7 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
             )
         )
 
-        offset_param = QgsProcessingParameterNumber(self.OFFSET_DISTANCE, self.tr("Distance (m)"), type=1)
+        offset_param = QgsProcessingParameterNumber(self.OFFSET_DISTANCE, self.tr("Distance (m)"), type=QgsProcessingParameterNumber.Double)
         offset_param.setMetadata({"widget_wrapper": {"decimals": 3}})
         self.addParameter(offset_param)
         self.addParameter(
