@@ -395,6 +395,7 @@ class ConnectionNodeHandler(UserLayerHandler):
         }
     )
 
+
 class BoundaryCondition1DHandler(UserLayerHandler):
     MODEL = dm.BoundaryCondition1D
 
@@ -443,7 +444,9 @@ class PumpHandler(UserLayerHandler):
                 if not connection_node_layer.isEditable():
                     connection_node_layer.startEditing()
                 visualisation_idx = connection_node_layer.fields().lookupField("visualisation")
-                connection_node_layer.changeAttributeValue(connection_node_fid, visualisation_idx, Visualisation.PUMP.value)
+                connection_node_layer.changeAttributeValue(
+                    connection_node_fid, visualisation_idx, Visualisation.PUMP.value
+                )
 
     def get_pump_feats_for_node_id(self, node_id):
         """Check if there is a pump features defined for node of the given node_id and return it."""
@@ -686,7 +689,9 @@ class PipeHandler(UserLayerHandler):
                     points_connection_nodes[point] = new_node_feat["id"]
                     intermediate_bottom_levels[point] = existing_node_feat["bottom_level"]
                 else:
-                    new_node_feat = connection_node_handler.create_new_feature_from_template(geom, template_feat=connection_node_template)
+                    new_node_feat = connection_node_handler.create_new_feature_from_template(
+                        connection_node_template, geom
+                    )
                     points_connection_nodes[point] = new_node_feat["id"]
                     intermediate_bottom_levels[point] = new_node_feat["bottom_level"]
                     connection_node_handler.layer.addFeature(new_node_feat)

@@ -56,6 +56,7 @@ class BaseForm(QObject):
 
     MODEL = None
     MIN_FID = -sys.maxsize - 1
+    AUTOGENERATE_ID = "Autogenerate"
 
     def __init__(self, layer_manager, dialog, layer, feature):
         super().__init__(parent=dialog)  # We need to set dialog as a parent to keep form alive
@@ -100,7 +101,7 @@ class BaseForm(QObject):
             if not geometry:
                 return  # form open for an invalid feature
             else:
-                if self.feature["id"] is not None:
+                if self.feature["id"] != self.AUTOGENERATE_ID:
                     # This is the case after accepting new feature
                     return
                 self.creation = True
@@ -1175,9 +1176,7 @@ class PumpMapForm(FormWithStartEndNode):
         if start_pump_feat is None:
             start_geom = QgsGeometry.fromPointXY(start_point)
             if start_connection_node_feat is None:
-                start_pump_feat, start_connection_node_feat = pump_handler.create_pump_with_connection_node(
-                    start_geom
-                )
+                start_pump_feat, start_connection_node_feat = pump_handler.create_pump_with_connection_node(start_geom)
                 self.extra_features[connection_node_handler].append(start_connection_node_feat)
             else:
                 start_pump_feat = pump_handler.create_new_feature(start_geom)
