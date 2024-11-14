@@ -739,7 +739,6 @@ class StructuresIntegrator(LinearStructuresImporter):
             start_node_feat.setGeometry(start_node)
             for field_name, field_value in template_node_attributes.items():
                 start_node_feat[field_name] = field_value
-            start_node_feat["fid"] = start_node_id
             start_node_feat["id"] = start_node_id
             self.next_node_id += 1
             self.node_by_location[start_node_point] = start_node_id
@@ -754,7 +753,6 @@ class StructuresIntegrator(LinearStructuresImporter):
             end_node_feat.setGeometry(end_node)
             for field_name, field_value in template_node_attributes.items():
                 end_node_feat[field_name] = field_value
-            end_node_feat["fid"] = end_node_id
             end_node_feat["id"] = end_node_id
             self.next_node_id += 1
             self.node_by_location[end_node_point] = end_node_id
@@ -851,7 +849,6 @@ class StructuresIntegrator(LinearStructuresImporter):
         channel_fields = self.layer_fields_mapping[channel_layer_name]
         channel_field_names = self.layer_field_names_mapping[channel_layer_name]
         channel_attributes = {field_name: channel_feat[field_name] for field_name in channel_field_names}
-        del channel_attributes["fid"]
         channel_geom = channel_feat.geometry()
         channel_polyline = channel_geom.asPolyline()
         first_point = channel_polyline[0]
@@ -871,7 +868,6 @@ class StructuresIntegrator(LinearStructuresImporter):
             # Update with values from the widgets.
             self.update_attributes(self.structure_model_cls, src_structure_feat, structure_feat)
             structure_attributes = {field_name: structure_feat[field_name] for field_name in structure_field_names}
-            del structure_attributes["fid"]
             structure_length = channel_structure.length
             half_length = structure_length * 0.5
             structure_m = channel_structure.m
@@ -941,10 +937,8 @@ class StructuresIntegrator(LinearStructuresImporter):
                 source_channel_feat = next(get_features_by_expression(self.channel_layer, f'"id" = {channel_id}'))
                 self.channel_layer.deleteFeature(source_channel_feat.id())
                 visited_channel_ids.add(channel_id)
-                channel_feat["fid"] = source_channel_feat["fid"]
                 channel_feat["id"] = source_channel_feat["id"]
             else:
-                channel_feat["fid"] = next_channel_id
                 channel_feat["id"] = next_channel_id
                 next_channel_id += 1
             channels_to_add[channel_id].append(channel_feat)
@@ -956,7 +950,6 @@ class StructuresIntegrator(LinearStructuresImporter):
         # Process structures
         structures_to_add = []
         for structure_id, structure_feat in enumerate(self.features_to_add[self.structure_layer_name], start=1):
-            structure_feat["fid"] = structure_id
             structure_feat["id"] = structure_id
             structures_to_add.append(structure_feat)
         self.structure_layer.startEditing()

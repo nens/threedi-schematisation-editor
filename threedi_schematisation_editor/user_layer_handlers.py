@@ -322,7 +322,7 @@ class UserLayerHandler:
         field_values = dict()
         for field in template_feat.fields():
             field_name = field.name()
-            if field_name == "fid" or (fields_to_skip is not None and field_name in fields_to_skip):
+            if fields_to_skip is not None and field_name in fields_to_skip:
                 continue
             field_values[field_name] = template_feat[field_name]
         new_feat = self.create_new_feature(geometry=geometry, use_defaults=False)
