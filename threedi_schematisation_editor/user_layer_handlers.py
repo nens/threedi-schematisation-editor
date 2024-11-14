@@ -659,8 +659,6 @@ class PipeHandler(UserLayerHandler):
         """Method to split single pipe into 2 vertices segments."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_layer = connection_node_handler.layer
-        manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
-        manhole_layer = manhole_handler.layer
         pipe_feat = self.layer.getFeature(pipe_feat_id)
         pipe_geom = pipe_feat.geometry()
         vertices_count = count_vertices(pipe_geom)
@@ -670,12 +668,12 @@ class PipeHandler(UserLayerHandler):
         points_connection_nodes = {}
         intermediate_bottom_levels = {}
         pipe_polyline = pipe_geom.asPolyline()
-        manhole_template = None
+        connection_node_template = None
         for idx, point in enumerate(pipe_polyline):
             if idx == start_vertex_idx:
                 connection_node_id = pipe_feat["connection_node_id_start"]
                 points_connection_nodes[point] = connection_node_id
-                manhole_template = connection_node_handler.get_manhole_feat_for_node_id(connection_node_id)
+                connection_node_template = connection_node_handler.get_feat_by_id(connection_node_id)
             elif idx == end_vertex_idx:
                 connection_node_id = pipe_feat["connection_node_id_end"]
                 points_connection_nodes[point] = connection_node_id
@@ -685,23 +683,13 @@ class PipeHandler(UserLayerHandler):
                 existing_node_feat = find_point_nodes(point, connection_node_layer)
                 if existing_node_feat is not None:
                     new_node_feat = existing_node_feat
-                    existing_manhole_feat = find_point_nodes(point, manhole_layer)
-                    if existing_manhole_feat is None:
-                        new_manhole_feat = manhole_handler.create_new_feature(geom)
-                        new_manhole_feat["connection_node_id"] = new_node_feat["id"]
-                    else:
-                        new_manhole_feat = existing_manhole_feat
-                        intermediate_bottom_levels[point] = new_manhole_feat["bottom_level"]
                     points_connection_nodes[point] = new_node_feat["id"]
+                    intermediate_bottom_levels[point] = existing_node_feat["bottom_level"]
                 else:
-                    extra_feats = manhole_handler.create_manhole_with_connection_node(
-                        geom, template_feat=manhole_template
-                    )
-                    new_manhole_feat, new_node_feat = extra_feats
+                    new_node_feat = connection_node_handler.create_new_feature_from_template(geom, template_feat=connection_node_template)
                     points_connection_nodes[point] = new_node_feat["id"]
-                    intermediate_bottom_levels[point] = new_manhole_feat["bottom_level"]
+                    intermediate_bottom_levels[point] = new_node_feat["bottom_level"]
                     connection_node_handler.layer.addFeature(new_node_feat)
-                    manhole_handler.layer.addFeature(new_manhole_feat)
         # Split pipe into segments
         segments = zip(pipe_polyline, pipe_polyline[1:])
         # Extract first segment and update source pipe

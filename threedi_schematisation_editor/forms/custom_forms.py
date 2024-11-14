@@ -1012,7 +1012,10 @@ class PipeForm(FormWithStartEndNode, FormWithXSTable):
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
+            self.setup_connection_nodes_on_creation()
             self.fill_related_attributes()
+        else:
+            self.setup_connection_nodes_on_edit()
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
@@ -1121,8 +1124,8 @@ class OrificeForm(FormWithStartEndNode, FormWithXSTable):
         self.populate_cross_section_table_data()
 
 
-class pumpForm(FormWithNode):
-    """pump without end node user layer edit form logic."""
+class PumpForm(FormWithNode):
+    """Pump without end node user layer edit form logic."""
 
     MODEL = dm.Pump
 
@@ -1130,8 +1133,8 @@ class pumpForm(FormWithNode):
         super().__init__(*args, *kwargs)
 
 
-class pumpMapForm(FormWithStartEndNode):
-    """pump with end node user layer edit form logic."""
+class PumpMapForm(FormWithStartEndNode):
+    """Pump with end node user layer edit form logic."""
 
     MODEL = dm.PumpMap
 
@@ -1561,8 +1564,8 @@ ALL_FORMS = (
     WeirForm,
     CulvertForm,
     OrificeForm,
-    pumpForm,
-    pumpMapForm,
+    PumpForm,
+    PumpMapForm,
     ImperviousSurfaceMapForm,
     SurfaceMapForm,
     ChannelForm,
