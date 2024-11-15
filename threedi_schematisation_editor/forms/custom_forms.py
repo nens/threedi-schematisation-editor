@@ -1134,21 +1134,21 @@ class PumpForm(FormWithNode):
         super().__init__(*args, *kwargs)
 
 
-class PumpMapForm(FormWithStartEndNode):
+class PumpMapForm(BaseForm):
     """Pump with end node user layer edit form logic."""
 
     MODEL = dm.PumpMap
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
+        self.connection_node_end = None
         self.pump = None
 
     @property
     def foreign_models_features(self):
         """Property returning dictionary where key = data model class with identifier and value = data model feature."""
         fm_features = {
-            (dm.ConnectionNode, 1): self.connection_node_start,
-            (dm.ConnectionNode, 2): self.connection_node_end,
+            (dm.ConnectionNode, None): self.connection_node_end,
             (dm.Pump, None): self.pump,
         }
         return fm_features
@@ -1157,10 +1157,8 @@ class PumpMapForm(FormWithStartEndNode):
         """Setting up pump during editing feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         pump_handler = self.layer_manager.model_handlers[dm.Pump]
-        connection_node_id_start = self.feature["connection_node_id_start"]
         connection_node_id_end = self.feature["connection_node_id_end"]
         pump_id = self.feature["pump_id"]
-        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_id_start)
         self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_id_end)
         self.pump = pump_handler.get_feat_by_id(pump_id)
 
@@ -1196,7 +1194,6 @@ class PumpMapForm(FormWithStartEndNode):
                 )
                 self.extra_features[connection_node_handler].append(end_connection_node_feat)
         # Assign features as a form instance attributes.
-        self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
         self.pump = start_pump_feat
         self.sequence_related_features_ids()
@@ -1205,6 +1202,7 @@ class PumpMapForm(FormWithStartEndNode):
         """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
         self.feature["pump_id"] = self.pump["id"]
+        self.feature["connection_node_id_end"] = self.connection_node_end["id"]
 
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""

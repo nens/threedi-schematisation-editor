@@ -475,7 +475,6 @@ class PumpMapHandler(UserLayerHandler):
     MODEL = dm.PumpMap
     RELATED_MODELS = MappingProxyType(
         {
-            dm.ConnectionNode: 2,
             dm.Pump: 1,
         }
     )
