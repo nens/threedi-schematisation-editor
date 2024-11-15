@@ -5,6 +5,7 @@ from collections import defaultdict
 from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
 from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QComboBox, QMenu
+
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.custom_widgets import ImportStructuresDialog, LoadSchematisationDialog
@@ -71,7 +72,6 @@ class ThreediSchematisationEditorPlugin:
             ("Orifices", self.import_external_orifices, None),
             ("Weirs", self.import_external_weirs, None),
             ("Pipes", self.import_external_pipes, None),
-            ("Manholes", self.import_external_manholes, None),
         ]
         self.action_import_culverts = self.add_multi_action_button(
             "Import schematisation objects", import_culverts_icon_path, import_actions_spec
@@ -277,10 +277,6 @@ class ThreediSchematisationEditorPlugin:
     def import_external_pipes(self):
         import_pipes_dlg = ImportStructuresDialog(dm.Pipe, self.model_gpkg, self.layer_manager, self.uc)
         import_pipes_dlg.exec_()
-
-    def import_external_manholes(self):
-        import_manholes_dlg = ImportStructuresDialog(dm.Manhole, self.model_gpkg, self.layer_manager, self.uc)
-        import_manholes_dlg.exec_()
 
     def on_project_close(self):
         if self.layer_manager is None:

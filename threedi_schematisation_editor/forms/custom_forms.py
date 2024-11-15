@@ -163,8 +163,8 @@ class BaseForm(QObject):
         """
         Populate form's widgets - widgets are named after their attributes in the data model.
         If data_model_cls is given, then populate widgets for this class and feature.
-        start_end_modifier is used when there are multiple features edited in the form, for example two manholes in
-        a pipe form. The modifier should be 1 for starting point and 2 for ending.
+        start_end_modifier is used when there are multiple features edited in the form, for example two connection nodes
+         in a pipe form. The modifier should be 1 for starting point and 2 for ending.
         """
         if data_model_cls is not None:
             field_name_prefix = data_model_cls.__tablename__ + "_"
