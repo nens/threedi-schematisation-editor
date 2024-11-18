@@ -60,9 +60,9 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
             <p>In some cases, you may want to prefer e.g. stormwater drains over combined sewers. This can be done by setting the stormwater sewer preference to a value greater than zero.</p>
             <h3>Parameters</h3>
             <h4>(DWF) surface layer</h4>
-            <p>Surface or Impervious surface layer that is added to the project with the 3Di Schematisation Editor.</p>
+            <p>Surface or DWF surface layer that is added to the project with the 3Di Schematisation Editor.</p>
             <h4>(DWF) surface map layer</h4>
-            <p>Surface map or Impervious surface map layer that is added to the project with the 3Di Schematisation Editor.</p>
+            <p>Surface map or DWF surface map layer that is added to the project with the 3Di Schematisation Editor.</p>
             <h4>Pipe layer</h4>
             <p>Pipe layer that is added to the project with the 3Di Schematisation Editor.</p>
             <h4>Connection node layer</h4>
@@ -98,7 +98,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
                 self.SURFACE_MAP_LAYER,
                 self.tr("(DWF) surface map layer"),
                 [QgsProcessing.TypeVectorLine],
-                defaultValue="Impervious surface map",
+                defaultValue="Dry Weather Flow map",
             )
         )
         self.addParameter(
