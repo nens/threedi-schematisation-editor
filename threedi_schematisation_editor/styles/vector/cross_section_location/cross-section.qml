@@ -643,7 +643,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="cross_section_friction_table">
+    <field configurationFlags="None" name="cross_section_friction_values">
       <editWidget type="TextEdit">
         <config>
           <Option/>
@@ -675,7 +675,7 @@
     <alias index="13" field="cross_section_width" name=""/>
     <alias index="14" field="cross_section_height" name=""/>
     <alias index="15" field="cross_section_table" name=""/>
-    <alias index="16" field="cross_section_friction_table" name=""/>
+    <alias index="16" field="cross_section_friction_values" name=""/>
     <alias index="17" field="cross_section_vegetation_table" name=""/>
   </aliases>
   <defaults>
@@ -695,7 +695,7 @@
     <default field="cross_section_width" applyOnUpdate="0" expression=""/>
     <default field="cross_section_height" applyOnUpdate="0" expression=""/>
     <default field="cross_section_table" applyOnUpdate="0" expression=""/>
-    <default field="cross_section_friction_table" applyOnUpdate="0" expression=""/>
+    <default field="cross_section_friction_values" applyOnUpdate="0" expression=""/>
     <default field="cross_section_vegetation_table" applyOnUpdate="0" expression=""/>
   </defaults>
   <constraints>
@@ -715,7 +715,7 @@
     <constraint exp_strength="0" unique_strength="0" constraints="0" field="cross_section_width" notnull_strength="0"/>
     <constraint exp_strength="0" unique_strength="0" constraints="0" field="cross_section_height" notnull_strength="0"/>
     <constraint exp_strength="0" unique_strength="0" constraints="0" field="cross_section_table" notnull_strength="0"/>
-    <constraint exp_strength="0" unique_strength="0" constraints="0" field="cross_section_friction_table" notnull_strength="0"/>
+    <constraint exp_strength="0" unique_strength="0" constraints="0" field="cross_section_friction_values" notnull_strength="0"/>
     <constraint exp_strength="0" unique_strength="0" constraints="0" field="cross_section_vegetation_table" notnull_strength="0"/>
   </constraints>
   <constraintExpressions>
@@ -735,7 +735,7 @@
     <constraint field="cross_section_width" desc="" exp=""/>
     <constraint field="cross_section_height" desc="" exp=""/>
     <constraint field="cross_section_table" desc="" exp=""/>
-    <constraint field="cross_section_friction_table" desc="" exp=""/>
+    <constraint field="cross_section_friction_values" desc="" exp=""/>
     <constraint field="cross_section_vegetation_table" desc="" exp=""/>
   </constraintExpressions>
   <expressionfields/>
@@ -760,7 +760,7 @@
       <column hidden="0" width="-1" name="vegetation_stem_diameter" type="field"/>
       <column hidden="0" width="-1" name="vegetation_height" type="field"/>
       <column hidden="0" width="-1" name="vegetation_drag_coefficient" type="field"/>
-      <column hidden="0" width="-1" name="cross_section_friction_table" type="field"/>
+      <column hidden="0" width="-1" name="cross_section_friction_values" type="field"/>
       <column hidden="0" width="-1" name="cross_section_vegetation_table" type="field"/>
       <column hidden="1" width="-1" type="actions"/>
     </columns>
@@ -860,7 +860,7 @@
     <field name="bank_level" editable="1"/>
     <field name="channel_id" editable="1"/>
     <field name="code" editable="1"/>
-    <field name="cross_section_friction_table" editable="1"/>
+    <field name="cross_section_friction_values" editable="1"/>
     <field name="cross_section_height" editable="1"/>
     <field name="cross_section_shape" editable="1"/>
     <field name="cross_section_table" editable="1"/>
@@ -885,7 +885,7 @@
     <field name="bank_level" labelOnTop="0"/>
     <field name="channel_id" labelOnTop="0"/>
     <field name="code" labelOnTop="0"/>
-    <field name="cross_section_friction_table" labelOnTop="0"/>
+    <field name="cross_section_friction_values" labelOnTop="0"/>
     <field name="cross_section_height" labelOnTop="0"/>
     <field name="cross_section_shape" labelOnTop="0"/>
     <field name="cross_section_table" labelOnTop="0"/>
@@ -906,7 +906,7 @@
     <field reuseLastValue="0" name="bank_level"/>
     <field reuseLastValue="0" name="channel_id"/>
     <field reuseLastValue="0" name="code"/>
-    <field reuseLastValue="0" name="cross_section_friction_table"/>
+    <field reuseLastValue="0" name="cross_section_friction_values"/>
     <field reuseLastValue="0" name="cross_section_height"/>
     <field reuseLastValue="0" name="cross_section_shape"/>
     <field reuseLastValue="0" name="cross_section_table"/>

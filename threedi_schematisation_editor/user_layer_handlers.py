@@ -322,7 +322,7 @@ class UserLayerHandler:
         field_values = dict()
         for field in template_feat.fields():
             field_name = field.name()
-            if field_name == "fid" or (fields_to_skip is not None and field_name in fields_to_skip):
+            if fields_to_skip is not None and field_name in fields_to_skip:
                 continue
             field_values[field_name] = template_feat[field_name]
         new_feat = self.create_new_feature(geometry=geometry, use_defaults=False)
@@ -368,10 +368,10 @@ class UserLayerHandler:
             end_connection_node_id_idx = layer_fields.lookupField("connection_node_id_end")
             changes[end_connection_node_id_idx] = end_connection_node_id
             if self.MODEL == dm.PumpMap:
-                pumpstation_layer = self.layer_manager.model_handlers[dm.Pump].layer
-                start_pump_feat = find_point_nodes(linestring[0], pumpstation_layer)
+                pump_layer = self.layer_manager.model_handlers[dm.Pump].layer
+                start_pump_feat = find_point_nodes(linestring[0], pump_layer)
                 start_pump_id = start_pump_feat["id"] if start_pump_feat else None
-                start_pump_id_idx = layer_fields.lookupField("pumpstation_id")
+                start_pump_id_idx = layer_fields.lookupField("pump_id")
                 changes[start_pump_id_idx] = start_pump_id
             self.layer.changeAttributeValues(feat_id, changes)
 
@@ -383,29 +383,17 @@ class UserLayerHandler:
 
 class ConnectionNodeHandler(UserLayerHandler):
     MODEL = dm.ConnectionNode
-    # DEFAULTS = MappingProxyType(
-    #     {
-    #         "display_name": "new",
-    #         "code": "new",
-    #         "length": 0.8,
-    #         "width": 0.8,
-    #         "shape": ManholeShape.ROUND.value,
-    #         "manhole_indicator": Visualisation.INSPECTION.value,
-    #         "calculation_type": ExchangeTypeNode.ISOLATED.value,
-    #         "bottom_level": -10.0,
-    #     }
-    # )
-
-    def get_manhole_feat_for_node_id(self, node_id):
-        """Check if there is a manhole feature defined for node of the given node_id and return it."""
-        manhole_feat = None
-        if node_id not in (None, NULL):
-            manhole_feats = self.layer_manager.get_layer_features(dm.Manhole, f'"connection_node_id" = {node_id}')
-            try:
-                manhole_feat = next(manhole_feats)
-            except StopIteration:
-                pass
-        return manhole_feat
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+            "length": 0.8,
+            "width": 0.8,
+            "shape": ManholeShape.ROUND.value,
+            "exchange_type": ExchangeTypeNode.ISOLATED.value,
+            "bottom_level": -10.0,
+        }
+    )
 
 
 class BoundaryCondition1DHandler(UserLayerHandler):
@@ -414,41 +402,6 @@ class BoundaryCondition1DHandler(UserLayerHandler):
 
 class Lateral1DHandler(UserLayerHandler):
     MODEL = dm.Lateral1D
-
-
-# class ManholeHandler(UserLayerHandler):
-#     MODEL = dm.Manhole
-#     RELATED_MODELS = MappingProxyType(
-#         {
-#             dm.ConnectionNode: 1,
-#         }
-#     )
-#     DEFAULTS = MappingProxyType(
-#         {
-#             "display_name": "new",
-#             "code": "new",
-#             "length": 0.8,
-#             "width": 0.8,
-#             "shape": ManholeShape.ROUND.value,
-#             "manhole_indicator": Visualisation.INSPECTION.value,
-#             "calculation_type": ExchangeTypeNode.ISOLATED.value,
-#             "bottom_level": -10.0,
-#         }
-#     )
-#
-#     def create_manhole_with_connection_node(self, geometry, template_feat=None):
-#         """Creating manhole with connection node at same location."""
-#         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-#         if template_feat is not None:
-#             template_connection_node_id = template_feat["connection_node_id"]
-#             node_template = connection_node_handler.layer.getFeature(template_connection_node_id)
-#             node_feat = connection_node_handler.create_new_feature_from_template(node_template, geometry=geometry)
-#             manhole_feat = self.create_new_feature_from_template(template_feat, geometry=geometry)
-#         else:
-#             node_feat = connection_node_handler.create_new_feature(geometry=geometry)
-#             manhole_feat = self.create_new_feature(geometry=geometry)
-#         manhole_feat["connection_node_id"] = node_feat["id"]
-#         return manhole_feat, node_feat
 
 
 class PumpHandler(UserLayerHandler):
@@ -470,31 +423,33 @@ class PumpHandler(UserLayerHandler):
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
-        self.layer.featureAdded.connect(self.adjust_manhole_indicator)
+        self.layer.featureAdded.connect(self.adjust_visualisation)
         self.layer.geometryChanged.connect(self.trigger_update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
-        self.layer.featureAdded.disconnect(self.adjust_manhole_indicator)
+        self.layer.featureAdded.disconnect(self.adjust_visualisation)
         self.layer.geometryChanged.disconnect(self.trigger_update_node_references)
 
-    def adjust_manhole_indicator(self, feat_id):
-        """Adjusting underlying manhole attributes."""
+    def adjust_visualisation(self, feat_id):
+        """Adjusting underlying connection node  type."""
         if feat_id < 0:  # This logic should be triggered just once after adding feature, but before committing changes.
             feat = self.layer.getFeature(feat_id)
             point = feat.geometry().asPoint()
-            manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
-            manhole_layer = manhole_handler.layer
-            manhole_feat = find_point_nodes(point, manhole_layer)
-            if manhole_feat is not None:
-                manhole_fid = manhole_feat.id()
-                if not manhole_layer.isEditable():
-                    manhole_layer.startEditing()
-                manhole_indicator_idx = manhole_layer.fields().lookupField("manhole_indicator")
-                manhole_layer.changeAttributeValue(manhole_fid, manhole_indicator_idx, Visualisation.PUMP.value)
+            connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+            connection_node_layer = connection_node_handler.layer
+            connection_node_feat = find_point_nodes(point, connection_node_layer)
+            if connection_node_feat is not None:
+                connection_node_fid = connection_node_feat.id()
+                if not connection_node_layer.isEditable():
+                    connection_node_layer.startEditing()
+                visualisation_idx = connection_node_layer.fields().lookupField("visualisation")
+                connection_node_layer.changeAttributeValue(
+                    connection_node_fid, visualisation_idx, Visualisation.PUMP.value
+                )
 
-    def get_pumpstation_feats_for_node_id(self, node_id):
-        """Check if there is a pumpstation features defined for node of the given node_id and return it."""
+    def get_pump_feats_for_node_id(self, node_id):
+        """Check if there is a pump features defined for node of the given node_id and return it."""
         pump_feats = []
         if node_id not in (None, NULL):
             exp = f'"connection_node_id" = {node_id}'
@@ -502,25 +457,24 @@ class PumpHandler(UserLayerHandler):
         return pump_feats
 
     def create_pump_with_connection_node(self, geometry, template_feat=None):
-        """Creating pumpstation with connection node at same location."""
+        """Creating pump with connection node at same location."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         if template_feat is not None:
             template_connection_node_id = template_feat["connection_node_id"]
             node_template = connection_node_handler.layer.getFeature(template_connection_node_id)
             node_feat = connection_node_handler.create_new_feature_from_template(node_template, geometry=geometry)
-            pumpstation_feat = self.create_new_feature_from_template(template_feat, geometry=geometry)
+            pump_feat = self.create_new_feature_from_template(template_feat, geometry=geometry)
         else:
             node_feat = connection_node_handler.create_new_feature(geometry=geometry)
-            pumpstation_feat = self.create_new_feature(geometry=geometry)
-        pumpstation_feat["connection_node_id"] = node_feat["id"]
-        return pumpstation_feat, node_feat
+            pump_feat = self.create_new_feature(geometry=geometry)
+        pump_feat["connection_node_id"] = node_feat["id"]
+        return pump_feat, node_feat
 
 
 class PumpMapHandler(UserLayerHandler):
     MODEL = dm.PumpMap
     RELATED_MODELS = MappingProxyType(
         {
-            dm.ConnectionNode: 2,
             dm.Pump: 1,
         }
     )
@@ -533,17 +487,17 @@ class PumpMapHandler(UserLayerHandler):
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
-        self.layer.featureAdded.connect(self.trigger_simplify_pumpstation_map)
+        self.layer.featureAdded.connect(self.trigger_simplify_pump_map)
         self.layer.geometryChanged.connect(self.trigger_update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
-        self.layer.featureAdded.disconnect(self.trigger_simplify_pumpstation_map)
+        self.layer.featureAdded.disconnect(self.trigger_simplify_pump_map)
         self.layer.geometryChanged.disconnect(self.trigger_update_node_references)
 
-    def trigger_simplify_pumpstation_map(self, pumpstation_map_id):
+    def trigger_simplify_pump_map(self, pump_map_id):
         """Triggering geometry simplification on newly added feature."""
-        simplify_method = partial(self.simplify_linear_feature, pumpstation_map_id)
+        simplify_method = partial(self.simplify_linear_feature, pump_map_id)
         QTimer.singleShot(0, simplify_method)
 
 
@@ -599,14 +553,14 @@ class CulvertHandler(UserLayerHandler):
         {
             "display_name": "new",
             "code": "new",
-            "dist_calc_points": 1000,
-            "calculation_type": ExchangeTypeCulvert.ISOLATED.value,
+            "calculation_point_distance": 1000,
+            "exchange_type": ExchangeTypeCulvert.ISOLATED.value,
             "friction_type": FrictionType.MANNING.value,
             "friction_value": 0.02,
             "discharge_coefficient_positive": 0.8,
             "discharge_coefficient_negative": 0.8,
-            "invert_level_start_point": -10.0,
-            "invert_level_end_point": -10.0,
+            "invert_level_start": -10.0,
+            "invert_level_end": -10.0,
         }
     )
 
@@ -672,13 +626,12 @@ class PipeHandler(UserLayerHandler):
         {
             "display_name": "new",
             "code": "new",
-            "dist_calc_points": 1000,
+            "calculation_point_distance": 1000,
             "friction_type": FrictionType.MANNING.value,
-            "calculation_type": ExchangeTypeNode.ISOLATED.value,
-            "material": PipeMaterial.CONCRETE.value,
+            "exchange_type": ExchangeTypeNode.ISOLATED.value,
             "friction_value": dm.TABLE_MANNING[PipeMaterial.CONCRETE],
-            "invert_level_start_point": -10.0,
-            "invert_level_end_point": -10.0,
+            "invert_level_start": -10.0,
+            "invert_level_end": -10.0,
         }
     )
 
@@ -708,8 +661,6 @@ class PipeHandler(UserLayerHandler):
         """Method to split single pipe into 2 vertices segments."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_layer = connection_node_handler.layer
-        manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
-        manhole_layer = manhole_handler.layer
         pipe_feat = self.layer.getFeature(pipe_feat_id)
         pipe_geom = pipe_feat.geometry()
         vertices_count = count_vertices(pipe_geom)
@@ -719,38 +670,30 @@ class PipeHandler(UserLayerHandler):
         points_connection_nodes = {}
         intermediate_bottom_levels = {}
         pipe_polyline = pipe_geom.asPolyline()
-        manhole_template = None
+        connection_node_template = None
         for idx, point in enumerate(pipe_polyline):
             if idx == start_vertex_idx:
                 connection_node_id = pipe_feat["connection_node_id_start"]
                 points_connection_nodes[point] = connection_node_id
-                manhole_template = connection_node_handler.get_manhole_feat_for_node_id(connection_node_id)
+                connection_node_template = connection_node_handler.get_feat_by_id(connection_node_id)
             elif idx == end_vertex_idx:
                 connection_node_id = pipe_feat["connection_node_id_end"]
                 points_connection_nodes[point] = connection_node_id
-                intermediate_bottom_levels[point] = pipe_feat["invert_level_end_point"]
+                intermediate_bottom_levels[point] = pipe_feat["invert_level_end"]
             else:
                 geom = QgsGeometry.fromPointXY(point)
                 existing_node_feat = find_point_nodes(point, connection_node_layer)
                 if existing_node_feat is not None:
                     new_node_feat = existing_node_feat
-                    existing_manhole_feat = find_point_nodes(point, manhole_layer)
-                    if existing_manhole_feat is None:
-                        new_manhole_feat = manhole_handler.create_new_feature(geom)
-                        new_manhole_feat["connection_node_id"] = new_node_feat["id"]
-                    else:
-                        new_manhole_feat = existing_manhole_feat
-                        intermediate_bottom_levels[point] = new_manhole_feat["bottom_level"]
                     points_connection_nodes[point] = new_node_feat["id"]
+                    intermediate_bottom_levels[point] = existing_node_feat["bottom_level"]
                 else:
-                    extra_feats = manhole_handler.create_manhole_with_connection_node(
-                        geom, template_feat=manhole_template
+                    new_node_feat = connection_node_handler.create_new_feature_from_template(
+                        connection_node_template, geom
                     )
-                    new_manhole_feat, new_node_feat = extra_feats
                     points_connection_nodes[point] = new_node_feat["id"]
-                    intermediate_bottom_levels[point] = new_manhole_feat["bottom_level"]
+                    intermediate_bottom_levels[point] = new_node_feat["bottom_level"]
                     connection_node_handler.layer.addFeature(new_node_feat)
-                    manhole_handler.layer.addFeature(new_manhole_feat)
         # Split pipe into segments
         segments = zip(pipe_polyline, pipe_polyline[1:])
         # Extract first segment and update source pipe
@@ -759,7 +702,7 @@ class PipeHandler(UserLayerHandler):
         pipe_feat.setGeometry(new_source_pipe_geom)
         pipe_feat["connection_node_id_end"] = points_connection_nodes[first_seg_end_point]
         if first_seg_end_point in intermediate_bottom_levels:
-            pipe_feat["invert_level_end_point"] = intermediate_bottom_levels[first_seg_end_point]
+            pipe_feat["invert_level_end"] = intermediate_bottom_levels[first_seg_end_point]
         self.layer.updateFeature(pipe_feat)
         # Let's add a new pipes
         skip_fields = ["connection_node_id_start", "connection_node_id_end"]
@@ -769,9 +712,9 @@ class PipeHandler(UserLayerHandler):
             new_feat["connection_node_id_start"] = points_connection_nodes[start_point]
             new_feat["connection_node_id_end"] = points_connection_nodes[end_point]
             if start_point in intermediate_bottom_levels:
-                new_feat["invert_level_start_point"] = intermediate_bottom_levels[start_point]
+                new_feat["invert_level_start"] = intermediate_bottom_levels[start_point]
             if end_point in intermediate_bottom_levels:
-                new_feat["invert_level_end_point"] = intermediate_bottom_levels[end_point]
+                new_feat["invert_level_end"] = intermediate_bottom_levels[end_point]
             self.layer.addFeature(new_feat)
 
 
@@ -789,8 +732,8 @@ class CrossSectionLocationHandler(UserLayerHandler):
             "length": 0.8,
             "width": 0.8,
             "shape": ManholeShape.ROUND.value,
-            "manhole_indicator": Visualisation.INSPECTION.value,
-            "calculation_type": ExchangeTypeNode.ISOLATED.value,
+            "visualisation": Visualisation.INSPECTION.value,
+            "exchange_type": ExchangeTypeNode.ISOLATED.value,
             "bottom_level": -10.0,
         }
     )
@@ -1010,25 +953,25 @@ class DryWeatherFlowHandler(UserLayerHandler):
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.connect(self.update_surface_link)
+        self.layer.geometryChanged.connect(self.update_dwf_link)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.disconnect(self.update_surface_link)
+        self.layer.geometryChanged.disconnect(self.update_dwf_link)
 
-    def update_surface_link(self, feat_id, geometry):
-        """Update geometry of the surface - node link."""
-        surface_handler = self.layer_manager.model_handlers[dm.DryWeatherFlow]
-        surface_layer = surface_handler.layer
-        surface_link_handler = self.layer_manager.model_handlers[dm.DryWeatherFlowMap]
-        surface_link_layer = surface_link_handler.layer
-        surface_feat = surface_layer.getFeature(feat_id)
-        link_feat = surface_link_handler.get_feat_by_id(surface_feat["id"], "impervious_surface_id")
+    def update_dwf_link(self, feat_id, geometry):
+        """Update geometry of the DWF area - node link."""
+        dwf_handler = self.layer_manager.model_handlers[dm.DryWeatherFlow]
+        dwf_layer = dwf_handler.layer
+        dwf_link_handler = self.layer_manager.model_handlers[dm.DryWeatherFlowMap]
+        dwf_link_layer = dwf_link_handler.layer
+        surface_feat = dwf_layer.getFeature(feat_id)
+        link_feat = dwf_link_handler.get_feat_by_id(surface_feat["id"], "dry_weather_flow_id")
         point = geometry.centroid().asPoint()
         link_linestring = link_feat.geometry().asPolyline()
         link_linestring[0] = point
         link_new_geom = QgsGeometry.fromPolylineXY(link_linestring)
-        surface_link_layer.changeGeometry(link_feat.id(), link_new_geom)
+        dwf_link_layer.changeGeometry(link_feat.id(), link_new_geom)
 
 
 class SurfaceHandler(UserLayerHandler):
@@ -1092,7 +1035,7 @@ class DryWeatherFlowMapHandler(UserLayerHandler):
         changes = {}
         start_surface_id = start_surface_feat["id"] if start_surface_feat else None
         end_connection_node_id = end_connection_node_feat["id"] if end_connection_node_feat else None
-        start_surface_id_idx = layer_fields.lookupField("impervious_surface_id")
+        start_surface_id_idx = layer_fields.lookupField("dry_weather_flow_id")
         end_connection_node_id_idx = layer_fields.lookupField("connection_node_id")
         changes[start_surface_id_idx] = start_surface_id
         changes[end_connection_node_id_idx] = end_connection_node_id

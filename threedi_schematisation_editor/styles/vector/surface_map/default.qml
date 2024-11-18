@@ -102,7 +102,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="surface_id">
+    <field name="dry_weather_flow_id">
       <editWidget type="Range">
         <config>
           <Option/>
@@ -117,7 +117,7 @@
       </editWidget>
     </field>
   </fieldConfiguration>
-  <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_schematisation_editor\forms\ui\surface_map.ui</editform>
+  <editform tolerant="1">C:/Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_schematisation_editor\forms\ui\impervious_surface_map.ui</editform>
   <editforminit>open_edit_form</editforminit>
   <editforminitcodesource>2</editforminitcodesource>
   <editforminitfilepath></editforminitfilepath>
@@ -128,15 +128,15 @@
     <field editable="1" name="connection_node_id"/>
     <field editable="1" name="fid"/>
     <field editable="1" name="id"/>
+    <field editable="1" name="dry_weather_flow_id"/>
     <field editable="1" name="percentage"/>
-    <field editable="1" name="surface_id"/>
   </editable>
   <labelOnTop>
     <field labelOnTop="0" name="connection_node_id"/>
     <field labelOnTop="0" name="fid"/>
     <field labelOnTop="0" name="id"/>
+    <field labelOnTop="0" name="dry_weather_flow_id"/>
     <field labelOnTop="0" name="percentage"/>
-    <field labelOnTop="0" name="surface_id"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>
   <widgets/>

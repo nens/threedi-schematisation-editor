@@ -383,7 +383,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="calculation_type">
+    <field name="exchange_type">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -397,7 +397,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="dist_calc_points">
+    <field name="calculation_point_distance">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -411,7 +411,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="invert_level_start_point">
+    <field name="invert_level_start">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -425,7 +425,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="invert_level_end_point">
+    <field name="invert_level_end">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -572,12 +572,12 @@
         <attributeEditorField name="id" showLabel="1" index="1"/>
         <attributeEditorField name="display_name" showLabel="1" index="3"/>
         <attributeEditorField name="code" showLabel="1" index="2"/>
-        <attributeEditorField name="calculation_type" showLabel="1" index="4"/>
-        <attributeEditorField name="dist_calc_points" showLabel="1" index="5"/>
+        <attributeEditorField name="exchange_type" showLabel="1" index="4"/>
+        <attributeEditorField name="calculation_point_distance" showLabel="1" index="5"/>
       </attributeEditorContainer>
       <attributeEditorContainer name="Characteristics" showLabel="1" groupBox="1" visibilityExpression="" columnCount="1" visibilityExpressionEnabled="0">
-        <attributeEditorField name="invert_level_start_point" showLabel="1" index="6"/>
-        <attributeEditorField name="invert_level_end_point" showLabel="1" index="7"/>
+        <attributeEditorField name="invert_level_start" showLabel="1" index="6"/>
+        <attributeEditorField name="invert_level_end" showLabel="1" index="7"/>
         <attributeEditorField name="friction_type" showLabel="1" index="11"/>
         <attributeEditorField name="friction_value" showLabel="1" index="10"/>
         <attributeEditorField name="discharge_coefficient_positive" showLabel="1" index="8"/>
@@ -599,7 +599,7 @@
   </attributeEditorForm>
   <editable>
     <field name="ROWID" editable="1"/>
-    <field name="calculation_type" editable="1"/>
+    <field name="exchange_type" editable="1"/>
     <field name="code" editable="1"/>
     <field name="connection_node_end_id" editable="0"/>
     <field name="connection_node_start_id" editable="0"/>
@@ -610,18 +610,18 @@
     <field name="discharge_coefficient_negative" editable="1"/>
     <field name="discharge_coefficient_positive" editable="1"/>
     <field name="display_name" editable="1"/>
-    <field name="dist_calc_points" editable="1"/>
+    <field name="calculation_point_distance" editable="1"/>
     <field name="fid" editable="1"/>
     <field name="friction_type" editable="1"/>
     <field name="friction_value" editable="1"/>
     <field name="id" editable="1"/>
-    <field name="invert_level_end_point" editable="1"/>
-    <field name="invert_level_start_point" editable="1"/>
+    <field name="invert_level_end" editable="1"/>
+    <field name="invert_level_start" editable="1"/>
     <field name="zoom_category" editable="1"/>
   </editable>
   <labelOnTop>
     <field name="ROWID" labelOnTop="0"/>
-    <field name="calculation_type" labelOnTop="0"/>
+    <field name="exchange_type" labelOnTop="0"/>
     <field name="code" labelOnTop="0"/>
     <field name="connection_node_end_id" labelOnTop="0"/>
     <field name="connection_node_start_id" labelOnTop="0"/>
@@ -632,13 +632,13 @@
     <field name="discharge_coefficient_negative" labelOnTop="0"/>
     <field name="discharge_coefficient_positive" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>
-    <field name="dist_calc_points" labelOnTop="0"/>
+    <field name="calculation_point_distance" labelOnTop="0"/>
     <field name="fid" labelOnTop="0"/>
     <field name="friction_type" labelOnTop="0"/>
     <field name="friction_value" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="invert_level_end_point" labelOnTop="0"/>
-    <field name="invert_level_start_point" labelOnTop="0"/>
+    <field name="invert_level_end" labelOnTop="0"/>
+    <field name="invert_level_start" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>

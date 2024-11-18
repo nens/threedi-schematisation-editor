@@ -32,6 +32,19 @@
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
+       <item row="3" column="0">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
        <item row="1" column="0">
         <widget class="QGroupBox" name="grp_channel">
          <property name="locale">
@@ -116,7 +129,7 @@
           <item row="3" column="3">
            <widget class="QLabel" name="label_23">
             <property name="text">
-             <string>Max breach depth [m]</string>
+             <string>Fianl breach depth [m]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -204,7 +217,7 @@
            </widget>
           </item>
           <item row="3" column="4">
-           <widget class="QDoubleSpinBox" name="maximum_breach_depth">
+           <widget class="QDoubleSpinBox" name="final_exchange_level">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -238,14 +251,14 @@
            </widget>
           </item>
           <item row="3" column="5">
-           <widget class="QToolButton" name="maximum_breach_depth_clear">
+           <widget class="QToolButton" name="final_exchange_level_clear">
             <property name="text">
              <string>x</string>
             </property>
            </widget>
           </item>
           <item row="1" column="4">
-           <widget class="QDoubleSpinBox" name="exchange_level">
+           <widget class="QDoubleSpinBox" name="initial_exchange_level">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -279,7 +292,7 @@
            </widget>
           </item>
           <item row="1" column="5">
-           <widget class="QToolButton" name="exchange_level_clear">
+           <widget class="QToolButton" name="initial_exchange_level_clear">
             <property name="text">
              <string>x</string>
             </property>
@@ -317,7 +330,7 @@
           <item row="1" column="3">
            <widget class="QLabel" name="label_26">
             <property name="text">
-             <string>Exchange level [m MSL]</string>
+             <string>Initial exchange level [m MSL]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -331,17 +344,25 @@
         </widget>
        </item>
        <item row="2" column="0">
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <property name="bottomMargin">
+          <number>0</number>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
+         <item>
+          <widget class="QLabel" name="label_15">
+           <property name="text">
+            <string>Tags</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="tags">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
@@ -361,10 +382,10 @@
   <tabstop>id</tabstop>
   <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
-  <tabstop>exchange_level</tabstop>
-  <tabstop>exchange_level_clear</tabstop>
-  <tabstop>maximum_breach_depth</tabstop>
-  <tabstop>maximum_breach_depth_clear</tabstop>
+  <tabstop>initial_exchange_level</tabstop>
+  <tabstop>initial_exchange_level_clear</tabstop>
+  <tabstop>final_exchange_level</tabstop>
+  <tabstop>final_exchange_level_clear</tabstop>
   <tabstop>levee_material</tabstop>
   <tabstop>channel_id</tabstop>
  </tabstops>

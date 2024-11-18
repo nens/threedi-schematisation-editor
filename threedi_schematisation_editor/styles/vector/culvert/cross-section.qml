@@ -1042,7 +1042,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="calculation_type" configurationFlags="None">
+    <field name="exchange_type" configurationFlags="None">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
@@ -1067,7 +1067,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="dist_calc_points" configurationFlags="None">
+    <field name="calculation_point_distance" configurationFlags="None">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -1081,7 +1081,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="invert_level_start_point" configurationFlags="None">
+    <field name="invert_level_start" configurationFlags="None">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -1095,7 +1095,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="invert_level_end_point" configurationFlags="None">
+    <field name="invert_level_end" configurationFlags="None">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -1287,10 +1287,10 @@
     <alias field="id" name="" index="1"/>
     <alias field="code" name="" index="2"/>
     <alias field="display_name" name="" index="3"/>
-    <alias field="calculation_type" name="" index="4"/>
-    <alias field="dist_calc_points" name="" index="5"/>
-    <alias field="invert_level_start_point" name="" index="6"/>
-    <alias field="invert_level_end_point" name="" index="7"/>
+    <alias field="exchange_type" name="" index="4"/>
+    <alias field="calculation_point_distance" name="" index="5"/>
+    <alias field="invert_level_start" name="" index="6"/>
+    <alias field="invert_level_end" name="" index="7"/>
     <alias field="discharge_coefficient_positive" name="" index="8"/>
     <alias field="discharge_coefficient_negative" name="" index="9"/>
     <alias field="friction_value" name="" index="10"/>
@@ -1308,10 +1308,10 @@
     <default field="id" expression="" applyOnUpdate="0"/>
     <default field="code" expression="" applyOnUpdate="0"/>
     <default field="display_name" expression="" applyOnUpdate="0"/>
-    <default field="calculation_type" expression="" applyOnUpdate="0"/>
-    <default field="dist_calc_points" expression="" applyOnUpdate="0"/>
-    <default field="invert_level_start_point" expression="" applyOnUpdate="0"/>
-    <default field="invert_level_end_point" expression="" applyOnUpdate="0"/>
+    <default field="exchange_type" expression="" applyOnUpdate="0"/>
+    <default field="calculation_point_distance" expression="" applyOnUpdate="0"/>
+    <default field="invert_level_start" expression="" applyOnUpdate="0"/>
+    <default field="invert_level_end" expression="" applyOnUpdate="0"/>
     <default field="discharge_coefficient_positive" expression="" applyOnUpdate="0"/>
     <default field="discharge_coefficient_negative" expression="" applyOnUpdate="0"/>
     <default field="friction_value" expression="" applyOnUpdate="0"/>
@@ -1329,10 +1329,10 @@
     <constraint field="id" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
     <constraint field="code" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
     <constraint field="display_name" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
-    <constraint field="calculation_type" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
-    <constraint field="dist_calc_points" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
-    <constraint field="invert_level_start_point" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
-    <constraint field="invert_level_end_point" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
+    <constraint field="exchange_type" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
+    <constraint field="calculation_point_distance" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
+    <constraint field="invert_level_start" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
+    <constraint field="invert_level_end" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
     <constraint field="discharge_coefficient_positive" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
     <constraint field="discharge_coefficient_negative" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
     <constraint field="friction_value" unique_strength="0" constraints="0" exp_strength="0" notnull_strength="0"/>
@@ -1350,10 +1350,10 @@
     <constraint field="id" desc="" exp=""/>
     <constraint field="code" desc="" exp=""/>
     <constraint field="display_name" desc="" exp=""/>
-    <constraint field="calculation_type" desc="" exp=""/>
-    <constraint field="dist_calc_points" desc="" exp=""/>
-    <constraint field="invert_level_start_point" desc="" exp=""/>
-    <constraint field="invert_level_end_point" desc="" exp=""/>
+    <constraint field="exchange_type" desc="" exp=""/>
+    <constraint field="calculation_point_distance" desc="" exp=""/>
+    <constraint field="invert_level_start" desc="" exp=""/>
+    <constraint field="invert_level_end" desc="" exp=""/>
     <constraint field="discharge_coefficient_positive" desc="" exp=""/>
     <constraint field="discharge_coefficient_negative" desc="" exp=""/>
     <constraint field="friction_value" desc="" exp=""/>
@@ -1376,10 +1376,10 @@
       <column name="id" width="-1" hidden="0" type="field"/>
       <column name="code" width="-1" hidden="0" type="field"/>
       <column name="display_name" width="-1" hidden="0" type="field"/>
-      <column name="calculation_type" width="-1" hidden="0" type="field"/>
-      <column name="dist_calc_points" width="-1" hidden="0" type="field"/>
-      <column name="invert_level_start_point" width="-1" hidden="0" type="field"/>
-      <column name="invert_level_end_point" width="-1" hidden="0" type="field"/>
+      <column name="exchange_type" width="-1" hidden="0" type="field"/>
+      <column name="calculation_point_distance" width="-1" hidden="0" type="field"/>
+      <column name="invert_level_start" width="-1" hidden="0" type="field"/>
+      <column name="invert_level_end" width="-1" hidden="0" type="field"/>
       <column name="discharge_coefficient_positive" width="-1" hidden="0" type="field"/>
       <column name="discharge_coefficient_negative" width="-1" hidden="0" type="field"/>
       <column name="friction_value" width="-1" hidden="0" type="field"/>
@@ -1412,12 +1412,12 @@
         <attributeEditorField name="id" index="1" showLabel="1"/>
         <attributeEditorField name="display_name" index="3" showLabel="1"/>
         <attributeEditorField name="code" index="2" showLabel="1"/>
-        <attributeEditorField name="calculation_type" index="4" showLabel="1"/>
-        <attributeEditorField name="dist_calc_points" index="5" showLabel="1"/>
+        <attributeEditorField name="exchange_type" index="4" showLabel="1"/>
+        <attributeEditorField name="calculation_point_distance" index="5" showLabel="1"/>
       </attributeEditorContainer>
       <attributeEditorContainer name="Characteristics" groupBox="1" visibilityExpression="" showLabel="1" columnCount="1" visibilityExpressionEnabled="0">
-        <attributeEditorField name="invert_level_start_point" index="6" showLabel="1"/>
-        <attributeEditorField name="invert_level_end_point" index="7" showLabel="1"/>
+        <attributeEditorField name="invert_level_start" index="6" showLabel="1"/>
+        <attributeEditorField name="invert_level_end" index="7" showLabel="1"/>
         <attributeEditorField name="friction_type" index="11" showLabel="1"/>
         <attributeEditorField name="friction_value" index="10" showLabel="1"/>
         <attributeEditorField name="discharge_coefficient_positive" index="8" showLabel="1"/>
@@ -1439,7 +1439,7 @@
   </attributeEditorForm>
   <editable>
     <field name="ROWID" editable="1"/>
-    <field name="calculation_type" editable="1"/>
+    <field name="exchange_type" editable="1"/>
     <field name="code" editable="1"/>
     <field name="connection_node_end_id" editable="0"/>
     <field name="connection_node_start_id" editable="0"/>
@@ -1450,18 +1450,18 @@
     <field name="discharge_coefficient_negative" editable="1"/>
     <field name="discharge_coefficient_positive" editable="1"/>
     <field name="display_name" editable="1"/>
-    <field name="dist_calc_points" editable="1"/>
+    <field name="calculation_point_distance" editable="1"/>
     <field name="fid" editable="1"/>
     <field name="friction_type" editable="1"/>
     <field name="friction_value" editable="1"/>
     <field name="id" editable="1"/>
-    <field name="invert_level_end_point" editable="1"/>
-    <field name="invert_level_start_point" editable="1"/>
+    <field name="invert_level_end" editable="1"/>
+    <field name="invert_level_start" editable="1"/>
     <field name="zoom_category" editable="1"/>
   </editable>
   <labelOnTop>
     <field name="ROWID" labelOnTop="0"/>
-    <field name="calculation_type" labelOnTop="0"/>
+    <field name="exchange_type" labelOnTop="0"/>
     <field name="code" labelOnTop="0"/>
     <field name="connection_node_end_id" labelOnTop="0"/>
     <field name="connection_node_start_id" labelOnTop="0"/>
@@ -1472,17 +1472,17 @@
     <field name="discharge_coefficient_negative" labelOnTop="0"/>
     <field name="discharge_coefficient_positive" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>
-    <field name="dist_calc_points" labelOnTop="0"/>
+    <field name="calculation_point_distance" labelOnTop="0"/>
     <field name="fid" labelOnTop="0"/>
     <field name="friction_type" labelOnTop="0"/>
     <field name="friction_value" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="invert_level_end_point" labelOnTop="0"/>
-    <field name="invert_level_start_point" labelOnTop="0"/>
+    <field name="invert_level_end" labelOnTop="0"/>
+    <field name="invert_level_start" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
   </labelOnTop>
   <reuseLastValue>
-    <field name="calculation_type" reuseLastValue="0"/>
+    <field name="exchange_type" reuseLastValue="0"/>
     <field name="code" reuseLastValue="0"/>
     <field name="connection_node_end_id" reuseLastValue="0"/>
     <field name="connection_node_start_id" reuseLastValue="0"/>
@@ -1493,13 +1493,13 @@
     <field name="discharge_coefficient_negative" reuseLastValue="0"/>
     <field name="discharge_coefficient_positive" reuseLastValue="0"/>
     <field name="display_name" reuseLastValue="0"/>
-    <field name="dist_calc_points" reuseLastValue="0"/>
+    <field name="calculation_point_distance" reuseLastValue="0"/>
     <field name="fid" reuseLastValue="0"/>
     <field name="friction_type" reuseLastValue="0"/>
     <field name="friction_value" reuseLastValue="0"/>
     <field name="id" reuseLastValue="0"/>
-    <field name="invert_level_end_point" reuseLastValue="0"/>
-    <field name="invert_level_start_point" reuseLastValue="0"/>
+    <field name="invert_level_end" reuseLastValue="0"/>
+    <field name="invert_level_start" reuseLastValue="0"/>
     <field name="zoom_category" reuseLastValue="0"/>
   </reuseLastValue>
   <dataDefinedFieldProperties/>

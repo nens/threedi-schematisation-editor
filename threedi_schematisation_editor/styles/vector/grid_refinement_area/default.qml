@@ -34,7 +34,7 @@
               <Option type="Map" name="properties">
                 <Option type="Map" name="lineDistance">
                   <Option value="true" type="bool" name="active"/>
-                  <Option value="0.7 + (refinement_level-1) * 0.5" type="QString" name="expression"/>
+                  <Option value="0.7 + (grid_level-1) * 0.5" type="QString" name="expression"/>
                   <Option value="3" type="int" name="type"/>
                 </Option>
               </Option>
@@ -94,7 +94,7 @@
               <Option type="Map" name="properties">
                 <Option type="Map" name="lineDistance">
                   <Option value="true" type="bool" name="active"/>
-                  <Option value="0.7 + (refinement_level-1) * 0.5" type="QString" name="expression"/>
+                  <Option value="0.7 + (grid_level-1) * 0.5" type="QString" name="expression"/>
                   <Option value="3" type="int" name="type"/>
                 </Option>
               </Option>
@@ -162,7 +162,7 @@
               <Option type="Map" name="properties">
                 <Option type="Map" name="customDash">
                   <Option value="true" type="bool" name="active"/>
-                  <Option value="'2;'||&#xd;&#xa;CASE &#x9;WHEN refinement_level IS NULL THEN '2' &#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 1 THEN '0.8;0.15;0.8' &#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 2 THEN '0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 3 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 4 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 5 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 6 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 7 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 8 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN refinement_level = 9 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;ELSE '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;END&#xd;&#xa;||';2'" type="QString" name="expression"/>
+                  <Option value="'2;'||&#xd;&#xa;CASE &#x9;WHEN grid_level IS NULL THEN '2' &#xd;&#xa;&#x9;&#x9;WHEN grid_level = 1 THEN '0.8;0.15;0.8' &#xd;&#xa;&#x9;&#x9;WHEN grid_level = 2 THEN '0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 3 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 4 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 5 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 6 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 7 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 8 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;&#x9;&#x9;WHEN grid_level = 9 THEN '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;ELSE '0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8;0.15;0.8'&#xd;&#xa;END&#xd;&#xa;||';2'" type="QString" name="expression"/>
                   <Option value="3" type="int" name="type"/>
                 </Option>
               </Option>
@@ -362,7 +362,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="refinement_level" configurationFlags="None">
+    <field name="grid_level" configurationFlags="None">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -378,28 +378,28 @@
     <alias field="id" index="1" name=""/>
     <alias field="code" index="2" name=""/>
     <alias field="display_name" index="3" name=""/>
-    <alias field="refinement_level" index="4" name=""/>
+    <alias field="grid_level" index="4" name=""/>
   </aliases>
   <defaults>
     <default expression="" applyOnUpdate="0" field="fid"/>
     <default expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0" field="id"/>
     <default expression="'new'" applyOnUpdate="0" field="code"/>
     <default expression="'new'" applyOnUpdate="0" field="display_name"/>
-    <default expression="1" applyOnUpdate="0" field="refinement_level"/>
+    <default expression="1" applyOnUpdate="0" field="grid_level"/>
   </defaults>
   <constraints>
     <constraint constraints="3" exp_strength="0" notnull_strength="1" field="fid" unique_strength="1"/>
     <constraint constraints="3" exp_strength="0" notnull_strength="1" field="id" unique_strength="1"/>
     <constraint constraints="1" exp_strength="0" notnull_strength="2" field="code" unique_strength="0"/>
     <constraint constraints="1" exp_strength="0" notnull_strength="2" field="display_name" unique_strength="0"/>
-    <constraint constraints="1" exp_strength="0" notnull_strength="2" field="refinement_level" unique_strength="0"/>
+    <constraint constraints="1" exp_strength="0" notnull_strength="2" field="grid_level" unique_strength="0"/>
   </constraints>
   <constraintExpressions>
     <constraint exp="" desc="" field="fid"/>
     <constraint exp="" desc="" field="id"/>
     <constraint exp="" desc="" field="code"/>
     <constraint exp="" desc="" field="display_name"/>
-    <constraint exp="" desc="" field="refinement_level"/>
+    <constraint exp="" desc="" field="grid_level"/>
   </constraintExpressions>
   <expressionfields/>
   <attributeactions>
@@ -411,7 +411,7 @@
       <column width="-1" hidden="0" type="field" name="id"/>
       <column width="-1" hidden="0" type="field" name="code"/>
       <column width="-1" hidden="0" type="field" name="display_name"/>
-      <column width="-1" hidden="0" type="field" name="refinement_level"/>
+      <column width="-1" hidden="0" type="field" name="grid_level"/>
       <column width="-1" hidden="1" type="actions"/>
     </columns>
   </attributetableconfig>
@@ -448,7 +448,7 @@ def my_form_open(dialog, layer, feature):
       <attributeEditorField showLabel="1" index="1" name="id"/>
       <attributeEditorField showLabel="1" index="3" name="display_name"/>
       <attributeEditorField showLabel="1" index="2" name="code"/>
-      <attributeEditorField showLabel="1" index="4" name="refinement_level"/>
+      <attributeEditorField showLabel="1" index="4" name="grid_level"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
@@ -456,14 +456,14 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="display_name"/>
     <field editable="1" name="fid"/>
     <field editable="1" name="id"/>
-    <field editable="1" name="refinement_level"/>
+    <field editable="1" name="grid_level"/>
   </editable>
   <labelOnTop>
     <field labelOnTop="0" name="code"/>
     <field labelOnTop="0" name="display_name"/>
     <field labelOnTop="0" name="fid"/>
     <field labelOnTop="0" name="id"/>
-    <field labelOnTop="0" name="refinement_level"/>
+    <field labelOnTop="0" name="grid_level"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>
   <widgets/>

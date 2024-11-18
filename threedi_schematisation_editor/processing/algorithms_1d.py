@@ -14,10 +14,10 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 
 class BottomLevelCalculator(QgsProcessingAlgorithm):
-    """Calculate manhole bottom level from pipes."""
+    """Calculate connection node manhole bottom level from pipes."""
 
-    MANHOLE_LAYER = "MANHOLE_LAYER"
-    SELECTED_MANHOLES = "SELECTED_MANHOLES"
+    CONNECTION_NODE_LAYER = "CONNECTION_NODE_LAYER"
+    SELECTED_CONNECTION_NODES = "SELECTED_CONNECTION_NODES"
     PIPE_LAYER = "PIPE_LAYER"
     SELECTED_PIPES = "SELECTED_PIPES"
     OVERWRITE_LEVELS = "OVERWRITE_LEVELS"
@@ -44,12 +44,12 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
     def shortHelpString(self):
         return self.tr(
             """
-        <p>Calculate manhole bottom level from the invert levels of pipes or culverts.</p>
-        <p>For each manhole, the algorithm determines which sides of which pipes (or culverts) are connected to it, and what the invert level is at that side. It than takes the lowest of these invert levels as bottom level for the manhole.</p>
+        <p>Calculate connection node manhole bottom level from the invert levels of pipes or culverts.</p>
+        <p>For each connection node manhole, the algorithm determines which sides of which pipes (or culverts) are connected to it, and what the invert level is at that side. It than takes the lowest of these invert levels as bottom level for the manhole.</p>
         <h3>Parameters</h3>
-        <h4>Manhole layer</h4>
-        <p>Manhole layer that is added to the project with the 3Di Schematisation Editor.</p>
-        <p>If "Selected manholes only" is checked, only the selected manholes will be used in the algorithm.</p>
+        <h4>Connection node layer</h4>
+        <p>Connection node layer that is added to the project with the 3Di Schematisation Editor.</p>
+        <p>If "Selected connection nodes only" is checked, only the selected manholes will be used in the algorithm.</p>
         <h4>Pipe layer</h4>
         <p>Pipe or Culvert layer that is added to the project with the 3Di Schematisation Editor.</p>
         <p>If "Selected pipes only" is checked, only the selected pipes will be used in the algorithm.</p>
@@ -64,16 +64,16 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
-                self.MANHOLE_LAYER,
-                self.tr("Manhole layer"),
+                self.CONNECTION_NODE_LAYER,
+                self.tr("Connection node layer"),
                 [QgsProcessing.TypeVectorPoint],
-                defaultValue="Manhole",
+                defaultValue="Connection Node",
             )
         )
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.SELECTED_MANHOLES,
-                self.tr("Selected manholes only"),
+                self.SELECTED_CONNECTION_NODES,
+                self.tr("Selected connection node manholes only"),
             )
         )
         self.addParameter(
@@ -106,10 +106,10 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
         )
 
     def processAlgorithm(self, parameters, context, feedback):
-        manhole_lyr = self.parameterAsLayer(parameters, self.MANHOLE_LAYER, context)
-        if manhole_lyr is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.MANHOLE_LAYER))
-        selected_manholes = self.parameterAsBool(parameters, self.SELECTED_MANHOLES, context)
+        connection_node_lyr = self.parameterAsLayer(parameters, self.CONNECTION_NODE_LAYER, context)
+        if connection_node_lyr is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.CONNECTION_NODE_LAYER))
+        selected_manhole_nodes = self.parameterAsBool(parameters, self.SELECTED_CONNECTION_NODES, context)
         pipe_lyr = self.parameterAsLayer(parameters, self.PIPE_LAYER, context)
         if pipe_lyr is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.PIPE_LAYER))
@@ -123,25 +123,29 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
         for pipe_feat in pipe_lyr.selectedFeatures() if selected_pipes else pipe_lyr.getFeatures():
             pipe_start_node_id = pipe_feat["connection_node_id_start"]
             pipe_end_node_id = pipe_feat["connection_node_id_end"]
-            invert_level_start_point = pipe_feat["invert_level_start_point"]
-            invert_level_end_point = pipe_feat["invert_level_end_point"]
-            if invert_level_start_point != NULL:
-                node_adjacent_invert_levels[pipe_start_node_id].add(invert_level_start_point)
-            if invert_level_end_point != NULL:
-                node_adjacent_invert_levels[pipe_end_node_id].add(invert_level_end_point)
+            invert_level_start = pipe_feat["invert_level_start"]
+            invert_level_end = pipe_feat["invert_level_end"]
+            if invert_level_start != NULL:
+                node_adjacent_invert_levels[pipe_start_node_id].add(invert_level_start)
+            if invert_level_end != NULL:
+                node_adjacent_invert_levels[pipe_end_node_id].add(invert_level_end)
             processed_pipes += 1
             feedback.setProgress(100 / 3 * processed_pipes / num_pipes)
             if feedback.isCanceled():
                 return {}
         bottom_level_changes = {}
-        num_manholes = manhole_lyr.selectedFeatureCount() if selected_manholes else manhole_lyr.featureCount()
-        processed_manholes = 0
-        for manhole_feat in manhole_lyr.selectedFeatures() if selected_manholes else manhole_lyr.getFeatures():
-            manhole_fid = manhole_feat.id()
-            node_id = manhole_feat["connection_node_id"]
+        num_manhole_nodes = (
+            connection_node_lyr.selectedFeatureCount() if selected_manhole_nodes else connection_node_lyr.featureCount()
+        )
+        processed_nodes = 0
+        for node_feat in (
+            connection_node_lyr.selectedFeatures() if selected_manhole_nodes else connection_node_lyr.getFeatures()
+        ):
+            node_fid = node_feat.id()
+            node_id = node_feat["id"]
             if not node_id:
                 continue
-            bottom_level = manhole_feat["bottom_level"]
+            bottom_level = node_feat["bottom_level"]
             if bottom_level != NULL and not overwrite_levels:
                 continue
             invert_levels = node_adjacent_invert_levels[node_id]
@@ -151,24 +155,24 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
             if bottom_level != NULL:
                 if min_invert_level > bottom_level and do_not_raise_levels:
                     continue
-            bottom_level_changes[manhole_fid] = min_invert_level
-            processed_manholes += 1
-            feedback.setProgress(100 / 3 + 100 / 3 * processed_manholes / num_manholes)
+            bottom_level_changes[node_fid] = min_invert_level
+            processed_nodes += 1
+            feedback.setProgress(100 / 3 + 100 / 3 * processed_nodes / num_manhole_nodes)
             if feedback.isCanceled():
                 return {}
         if bottom_level_changes:
-            bottom_level_field_idx = manhole_lyr.fields().lookupField("bottom_level")
-            manhole_lyr.startEditing()
-            for i, (manhole_fid, bottom_level) in enumerate(bottom_level_changes.items()):
+            bottom_level_field_idx = connection_node_lyr.fields().lookupField("bottom_level")
+            connection_node_lyr.startEditing()
+            for i, (node_fid, bottom_level) in enumerate(bottom_level_changes.items()):
                 if feedback.isCanceled():
                     return {}
-                manhole_lyr.changeAttributeValue(manhole_fid, bottom_level_field_idx, bottom_level)
+                connection_node_lyr.changeAttributeValue(node_fid, bottom_level_field_idx, bottom_level)
                 feedback.setProgress(200 / 3 + 100 / 3 * (i + 1) / len(bottom_level_changes))
                 if feedback.isCanceled():
                     return {}
-            success = manhole_lyr.commitChanges()
+            success = connection_node_lyr.commitChanges()
             if not success:
-                commit_errors = manhole_lyr.commitErrors()
+                commit_errors = connection_node_lyr.commitErrors()
                 commit_errors_message = "\n".join(commit_errors)
                 feedback.reportError(commit_errors_message)
         return {}

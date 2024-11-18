@@ -98,7 +98,7 @@
                     </Option>
                     <Option name="enabled" type="Map">
                       <Option value="true" name="active" type="bool"/>
-                      <Option value="&quot;invert_level_start_point&quot; !=  &quot;invert_level_end_point&quot;" name="expression" type="QString"/>
+                      <Option value="&quot;invert_level_start&quot; !=  &quot;invert_level_end&quot;" name="expression" type="QString"/>
                       <Option value="3" name="type" type="int"/>
                     </Option>
                     <Option name="size" type="Map">

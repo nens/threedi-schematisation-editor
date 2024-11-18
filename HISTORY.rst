@@ -37,7 +37,7 @@ History
 -----------------
 
 - Fixes/enhancements: #191
-- No longer commit changes in processing algorithms "Manhole bottom levels from pipes" and "Map (impervious) surfaces to connection nodes"
+- No longer commit changes in processing algorithms "Manhole bottom levels from pipes" and "Map (DWF) surfaces to connection nodes"
 - Add documentation to processing algorithm "Manhole bottom level from pipes"
 
 1.9 (2024-03-14)

@@ -144,7 +144,7 @@
       </symbol>
     </profileMarkerSymbol>
   </elevation>
-  <renderer-v2 attr="calculation_type" forceraster="0" referencescale="-1" enableorderby="0" symbollevels="0" type="categorizedSymbol">
+  <renderer-v2 attr="exchange_type" forceraster="0" referencescale="-1" enableorderby="0" symbollevels="0" type="categorizedSymbol">
     <categories>
       <category label="Embedded" value="0" symbol="0" render="true" type="string"/>
       <category label="Isolated" value="1" symbol="1" render="true" type="string"/>
@@ -670,7 +670,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="calculation_type">
+    <field configurationFlags="None" name="exchange_type">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
@@ -689,7 +689,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="dist_calc_points">
+    <field configurationFlags="None" name="calculation_point_distance">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -703,7 +703,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="invert_level_start_point">
+    <field configurationFlags="None" name="invert_level_start">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -717,7 +717,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="invert_level_end_point">
+    <field configurationFlags="None" name="invert_level_end">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -761,7 +761,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="material">
+    <field configurationFlags="None" name="material_id">
       <editWidget type="ValueMap">
         <config>
           <Option type="Map">
@@ -1054,13 +1054,13 @@
     <alias field="id" index="1" name=""/>
     <alias field="code" index="2" name=""/>
     <alias field="display_name" index="3" name=""/>
-    <alias field="calculation_type" index="4" name=""/>
-    <alias field="dist_calc_points" index="5" name=""/>
-    <alias field="invert_level_start_point" index="6" name=""/>
-    <alias field="invert_level_end_point" index="7" name=""/>
+    <alias field="exchange_type" index="4" name=""/>
+    <alias field="calculation_point_distance" index="5" name=""/>
+    <alias field="invert_level_start" index="6" name=""/>
+    <alias field="invert_level_end" index="7" name=""/>
     <alias field="friction_value" index="8" name=""/>
     <alias field="friction_type" index="9" name=""/>
-    <alias field="material" index="10" name=""/>
+    <alias field="material_id" index="10" name=""/>
     <alias field="pipe_quality" index="11" name=""/>
     <alias field="sewerage_type" index="12" name=""/>
     <alias field="zoom_category" index="13" name=""/>
@@ -1081,13 +1081,13 @@
     <default applyOnUpdate="0" field="id" expression=""/>
     <default applyOnUpdate="0" field="code" expression=""/>
     <default applyOnUpdate="0" field="display_name" expression=""/>
-    <default applyOnUpdate="0" field="calculation_type" expression=""/>
-    <default applyOnUpdate="0" field="dist_calc_points" expression=""/>
-    <default applyOnUpdate="0" field="invert_level_start_point" expression=""/>
-    <default applyOnUpdate="0" field="invert_level_end_point" expression=""/>
+    <default applyOnUpdate="0" field="exchange_type" expression=""/>
+    <default applyOnUpdate="0" field="calculation_point_distance" expression=""/>
+    <default applyOnUpdate="0" field="invert_level_start" expression=""/>
+    <default applyOnUpdate="0" field="invert_level_end" expression=""/>
     <default applyOnUpdate="0" field="friction_value" expression=""/>
     <default applyOnUpdate="0" field="friction_type" expression=""/>
-    <default applyOnUpdate="0" field="material" expression=""/>
+    <default applyOnUpdate="0" field="material_id" expression=""/>
     <default applyOnUpdate="0" field="pipe_quality" expression=""/>
     <default applyOnUpdate="0" field="sewerage_type" expression=""/>
     <default applyOnUpdate="0" field="zoom_category" expression=""/>
@@ -1108,13 +1108,13 @@
     <constraint field="id" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="code" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="display_name" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
-    <constraint field="calculation_type" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
-    <constraint field="dist_calc_points" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
-    <constraint field="invert_level_start_point" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
-    <constraint field="invert_level_end_point" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
+    <constraint field="exchange_type" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
+    <constraint field="calculation_point_distance" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
+    <constraint field="invert_level_start" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
+    <constraint field="invert_level_end" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="friction_value" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="friction_type" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
-    <constraint field="material" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
+    <constraint field="material_id" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="pipe_quality" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="sewerage_type" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
     <constraint field="zoom_category" unique_strength="0" exp_strength="0" notnull_strength="0" constraints="0"/>
@@ -1135,13 +1135,13 @@
     <constraint field="id" exp="" desc=""/>
     <constraint field="code" exp="" desc=""/>
     <constraint field="display_name" exp="" desc=""/>
-    <constraint field="calculation_type" exp="" desc=""/>
-    <constraint field="dist_calc_points" exp="" desc=""/>
-    <constraint field="invert_level_start_point" exp="" desc=""/>
-    <constraint field="invert_level_end_point" exp="" desc=""/>
+    <constraint field="exchange_type" exp="" desc=""/>
+    <constraint field="calculation_point_distance" exp="" desc=""/>
+    <constraint field="invert_level_start" exp="" desc=""/>
+    <constraint field="invert_level_end" exp="" desc=""/>
     <constraint field="friction_value" exp="" desc=""/>
     <constraint field="friction_type" exp="" desc=""/>
-    <constraint field="material" exp="" desc=""/>
+    <constraint field="material_id" exp="" desc=""/>
     <constraint field="pipe_quality" exp="" desc=""/>
     <constraint field="sewerage_type" exp="" desc=""/>
     <constraint field="zoom_category" exp="" desc=""/>
@@ -1167,13 +1167,13 @@
       <column hidden="0" type="field" width="-1" name="id"/>
       <column hidden="0" type="field" width="-1" name="code"/>
       <column hidden="0" type="field" width="-1" name="display_name"/>
-      <column hidden="0" type="field" width="-1" name="calculation_type"/>
-      <column hidden="0" type="field" width="-1" name="dist_calc_points"/>
-      <column hidden="0" type="field" width="-1" name="invert_level_start_point"/>
-      <column hidden="0" type="field" width="-1" name="invert_level_end_point"/>
+      <column hidden="0" type="field" width="-1" name="exchange_type"/>
+      <column hidden="0" type="field" width="-1" name="calculation_point_distance"/>
+      <column hidden="0" type="field" width="-1" name="invert_level_start"/>
+      <column hidden="0" type="field" width="-1" name="invert_level_end"/>
       <column hidden="0" type="field" width="-1" name="friction_value"/>
       <column hidden="0" type="field" width="-1" name="friction_type"/>
-      <column hidden="0" type="field" width="-1" name="material"/>
+      <column hidden="0" type="field" width="-1" name="material_id"/>
       <column hidden="0" type="field" width="-1" name="pipe_quality"/>
       <column hidden="0" type="field" width="-1" name="sewerage_type"/>
       <column hidden="0" type="field" width="-1" name="zoom_category"/>
@@ -1230,12 +1230,12 @@
             <labelFont description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" italic="0" strikethrough="0" bold="0" style=""/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" index="4" name="calculation_type">
+        <attributeEditorField showLabel="1" index="4" name="exchange_type">
           <labelStyle labelColor="0,0,0,255" overrideLabelColor="0" overrideLabelFont="0">
             <labelFont description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" italic="0" strikethrough="0" bold="0" style=""/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" index="5" name="dist_calc_points">
+        <attributeEditorField showLabel="1" index="5" name="calculation_point_distance">
           <labelStyle labelColor="0,0,0,255" overrideLabelColor="0" overrideLabelFont="0">
             <labelFont description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" italic="0" strikethrough="0" bold="0" style=""/>
           </labelStyle>
@@ -1245,12 +1245,12 @@
         <labelStyle labelColor="0,0,0,255" overrideLabelColor="0" overrideLabelFont="0">
           <labelFont description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" italic="0" strikethrough="0" bold="0" style=""/>
         </labelStyle>
-        <attributeEditorField showLabel="1" index="6" name="invert_level_start_point">
+        <attributeEditorField showLabel="1" index="6" name="invert_level_start">
           <labelStyle labelColor="0,0,0,255" overrideLabelColor="0" overrideLabelFont="0">
             <labelFont description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" italic="0" strikethrough="0" bold="0" style=""/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" index="7" name="invert_level_end_point">
+        <attributeEditorField showLabel="1" index="7" name="invert_level_end">
           <labelStyle labelColor="0,0,0,255" overrideLabelColor="0" overrideLabelFont="0">
             <labelFont description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" italic="0" strikethrough="0" bold="0" style=""/>
           </labelStyle>
@@ -1265,7 +1265,7 @@
             <labelFont description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" italic="0" strikethrough="0" bold="0" style=""/>
           </labelStyle>
         </attributeEditorField>
-        <attributeEditorField showLabel="1" index="10" name="material">
+        <attributeEditorField showLabel="1" index="10" name="material_id">
           <labelStyle labelColor="0,0,0,255" overrideLabelColor="0" overrideLabelFont="0">
             <labelFont description="MS Shell Dlg 2,8.25,-1,5,50,0,0,0,0,0" underline="0" italic="0" strikethrough="0" bold="0" style=""/>
           </labelStyle>
@@ -1325,7 +1325,7 @@
   </attributeEditorForm>
   <editable>
     <field editable="1" name="ROWID"/>
-    <field editable="1" name="calculation_type"/>
+    <field editable="1" name="exchange_type"/>
     <field editable="1" name="code"/>
     <field editable="0" name="connection_node_end_id"/>
     <field editable="0" name="connection_node_start_id"/>
@@ -1334,7 +1334,7 @@
     <field editable="1" name="cross_section_table"/>
     <field editable="1" name="cross_section_width"/>
     <field editable="1" name="display_name"/>
-    <field editable="1" name="dist_calc_points"/>
+    <field editable="1" name="calculation_point_distance"/>
     <field editable="1" name="exchange_thickness"/>
     <field editable="1" name="fid"/>
     <field editable="1" name="friction_type"/>
@@ -1342,9 +1342,9 @@
     <field editable="1" name="hydraulic_conductivity_in"/>
     <field editable="1" name="hydraulic_conductivity_out"/>
     <field editable="1" name="id"/>
-    <field editable="1" name="invert_level_end_point"/>
-    <field editable="1" name="invert_level_start_point"/>
-    <field editable="1" name="material"/>
+    <field editable="1" name="invert_level_end"/>
+    <field editable="1" name="invert_level_start"/>
+    <field editable="1" name="material_id"/>
     <field editable="1" name="original_length"/>
     <field editable="1" name="pipe_quality"/>
     <field editable="1" name="profile_num"/>
@@ -1353,7 +1353,7 @@
   </editable>
   <labelOnTop>
     <field labelOnTop="0" name="ROWID"/>
-    <field labelOnTop="0" name="calculation_type"/>
+    <field labelOnTop="0" name="exchange_type"/>
     <field labelOnTop="0" name="code"/>
     <field labelOnTop="0" name="connection_node_end_id"/>
     <field labelOnTop="0" name="connection_node_start_id"/>
@@ -1362,7 +1362,7 @@
     <field labelOnTop="0" name="cross_section_table"/>
     <field labelOnTop="0" name="cross_section_width"/>
     <field labelOnTop="0" name="display_name"/>
-    <field labelOnTop="0" name="dist_calc_points"/>
+    <field labelOnTop="0" name="calculation_point_distance"/>
     <field labelOnTop="0" name="exchange_thickness"/>
     <field labelOnTop="0" name="fid"/>
     <field labelOnTop="0" name="friction_type"/>
@@ -1370,9 +1370,9 @@
     <field labelOnTop="0" name="hydraulic_conductivity_in"/>
     <field labelOnTop="0" name="hydraulic_conductivity_out"/>
     <field labelOnTop="0" name="id"/>
-    <field labelOnTop="0" name="invert_level_end_point"/>
-    <field labelOnTop="0" name="invert_level_start_point"/>
-    <field labelOnTop="0" name="material"/>
+    <field labelOnTop="0" name="invert_level_end"/>
+    <field labelOnTop="0" name="invert_level_start"/>
+    <field labelOnTop="0" name="material_id"/>
     <field labelOnTop="0" name="original_length"/>
     <field labelOnTop="0" name="pipe_quality"/>
     <field labelOnTop="0" name="profile_num"/>
@@ -1380,7 +1380,7 @@
     <field labelOnTop="0" name="zoom_category"/>
   </labelOnTop>
   <reuseLastValue>
-    <field reuseLastValue="0" name="calculation_type"/>
+    <field reuseLastValue="0" name="exchange_type"/>
     <field reuseLastValue="0" name="code"/>
     <field reuseLastValue="0" name="connection_node_end_id"/>
     <field reuseLastValue="0" name="connection_node_start_id"/>
@@ -1389,7 +1389,7 @@
     <field reuseLastValue="0" name="cross_section_table"/>
     <field reuseLastValue="0" name="cross_section_width"/>
     <field reuseLastValue="0" name="display_name"/>
-    <field reuseLastValue="0" name="dist_calc_points"/>
+    <field reuseLastValue="0" name="calculation_point_distance"/>
     <field reuseLastValue="0" name="exchange_thickness"/>
     <field reuseLastValue="0" name="fid"/>
     <field reuseLastValue="0" name="friction_type"/>
@@ -1397,9 +1397,9 @@
     <field reuseLastValue="0" name="hydraulic_conductivity_in"/>
     <field reuseLastValue="0" name="hydraulic_conductivity_out"/>
     <field reuseLastValue="0" name="id"/>
-    <field reuseLastValue="0" name="invert_level_end_point"/>
-    <field reuseLastValue="0" name="invert_level_start_point"/>
-    <field reuseLastValue="0" name="material"/>
+    <field reuseLastValue="0" name="invert_level_end"/>
+    <field reuseLastValue="0" name="invert_level_start"/>
+    <field reuseLastValue="0" name="material_id"/>
     <field reuseLastValue="0" name="original_length"/>
     <field reuseLastValue="0" name="pipe_quality"/>
     <field reuseLastValue="0" name="profile_num"/>

@@ -56,6 +56,7 @@ class BaseForm(QObject):
 
     MODEL = None
     MIN_FID = -sys.maxsize - 1
+    AUTOGENERATE_ID = "Autogenerate"
 
     def __init__(self, layer_manager, dialog, layer, feature):
         super().__init__(parent=dialog)  # We need to set dialog as a parent to keep form alive
@@ -89,7 +90,6 @@ class BaseForm(QObject):
 
     def setup_form_widgets(self):
         """Setting up all form widgets."""
-        # TODO: Improve handling of newly added related features
         for field, customisation_fn in self.handler.FORM_CUSTOMIZATIONS.items():
             widget = self.dialog.findChild(QObject, field)
             customisation_fn(widget)
@@ -101,7 +101,7 @@ class BaseForm(QObject):
             if not geometry:
                 return  # form open for an invalid feature
             else:
-                if self.feature["id"] is not None:
+                if self.feature["id"] != self.AUTOGENERATE_ID:
                     # This is the case after accepting new feature
                     return
                 self.creation = True
@@ -163,8 +163,8 @@ class BaseForm(QObject):
         """
         Populate form's widgets - widgets are named after their attributes in the data model.
         If data_model_cls is given, then populate widgets for this class and feature.
-        start_end_modifier is used when there are multiple features edited in the form, for example two manholes in
-        a pipe form. The modifier should be 1 for starting point and 2 for ending.
+        start_end_modifier is used when there are multiple features edited in the form, for example two connection nodes
+         in a pipe form. The modifier should be 1 for starting point and 2 for ending.
         """
         if data_model_cls is not None:
             field_name_prefix = data_model_cls.__tablename__ + "_"
@@ -439,7 +439,7 @@ class FormWithXSTable(BaseForm):
     def cross_section_table_field_widget_map(self):
         field_map = {
             "cross_section_table": self.cross_section_table,
-            "cross_section_friction_table": self.cross_section_friction,
+            "cross_section_friction_values": self.cross_section_friction,
             "cross_section_vegetation_table": self.cross_section_vegetation,
         }
         return field_map
@@ -538,11 +538,11 @@ class FormWithXSTable(BaseForm):
             cross_section_vegetation_clear_signal = self.cross_section_vegetation_clear.clicked
             cross_section_friction_copy_signal = self.cross_section_friction_copy.clicked
             cross_section_vegetation_copy_signal = self.cross_section_vegetation_copy.clicked
-            cross_section_friction_edit_slot = partial(self.edit_table_row, "cross_section_friction_table")
+            cross_section_friction_edit_slot = partial(self.edit_table_row, "cross_section_friction_values")
             cross_section_vegetation_edit_slot = partial(self.edit_table_row, "cross_section_vegetation_table")
-            cross_section_friction_clear_slot = partial(self.clear_table_row_values, "cross_section_friction_table")
+            cross_section_friction_clear_slot = partial(self.clear_table_row_values, "cross_section_friction_values")
             cross_section_vegetation_clear_slot = partial(self.clear_table_row_values, "cross_section_vegetation_table")
-            cross_section_friction_copy_slot = partial(self.copy_table_rows, "cross_section_friction_table")
+            cross_section_friction_copy_slot = partial(self.copy_table_rows, "cross_section_friction_values")
             cross_section_vegetation_copy_slot = partial(self.copy_table_rows, "cross_section_vegetation_table")
             connect_signal(cross_section_friction_edit_signal, cross_section_friction_edit_slot)
             connect_signal(cross_section_vegetation_edit_signal, cross_section_vegetation_edit_slot)
@@ -586,7 +586,7 @@ class FormWithXSTable(BaseForm):
                 table_header += ["Y [m]", "Z [m]"]
             else:
                 table_header += ["Height [m]", "Width [m]"]
-        elif table_field_name == "cross_section_friction_table":
+        elif table_field_name == "cross_section_friction_values":
             table_header += ["Friction coefficient"]
         elif table_field_name == "cross_section_vegetation_table":
             table_header += ["Stem density [m-2]", "Stem diameter [m]", "Height [m]", "Drag coefficient [-]"]
@@ -662,7 +662,7 @@ class FormWithXSTable(BaseForm):
                 self.cross_section_vegetation.removeRow(frict_vege_last_row_number)
         self.save_cross_section_table_edits()
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
-            self.save_cross_section_table_edits("cross_section_friction_table")
+            self.save_cross_section_table_edits("cross_section_friction_values")
             self.save_cross_section_table_edits("cross_section_vegetation_table")
 
     def paste_table_rows(self):
@@ -991,8 +991,6 @@ class PipeForm(FormWithStartEndNode, FormWithXSTable):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.manhole_start = None
-        self.manhole_end = None
 
     @property
     def foreign_models_features(self):
@@ -1000,95 +998,25 @@ class PipeForm(FormWithStartEndNode, FormWithXSTable):
         fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
-            # (dm.Manhole, 1): self.manhole_start,
-            # (dm.Manhole, 2): self.manhole_end,
         }
         return fm_features
-
-    def setup_manholes_on_edit(self):
-        """Setting up manholes during editing feature."""
-        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        connection_node_id_start = self.feature["connection_node_id_start"]
-        connection_node_id_end = self.feature["connection_node_id_end"]
-        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_id_start)
-        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_id_end)
-        self.manhole_start = connection_node_handler.get_manhole_feat_for_node_id(connection_node_id_start)
-        self.manhole_end = connection_node_handler.get_manhole_feat_for_node_id(connection_node_id_end)
-
-    def setup_manholes_on_creation(self):
-        """Setting up manholes during adding feature."""
-        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
-        manhole_layer = manhole_handler.layer
-        linestring = self.feature.geometry().asPolyline()
-        start_point, end_point = linestring[0], linestring[-1]
-        start_manhole_feat, end_manhole_feat = find_linestring_nodes(linestring, manhole_layer)
-        if start_manhole_feat is not None and end_manhole_feat is None:
-            start_connection_node_id = start_manhole_feat["connection_node_id"]
-            start_connection_node_feat = connection_node_handler.get_feat_by_id(start_connection_node_id)
-            # Create and add ending points
-            end_geom = QgsGeometry.fromPointXY(end_point)
-            end_manhole_feat, end_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
-                end_geom, template_feat=start_manhole_feat
-            )
-            self.extra_features[connection_node_handler].append(end_connection_node_feat)
-            self.extra_features[manhole_handler].append(end_manhole_feat)
-        elif start_manhole_feat is None and end_manhole_feat is not None:
-            end_connection_node_id = end_manhole_feat["connection_node_id"]
-            end_connection_node_feat = connection_node_handler.get_feat_by_id(end_connection_node_id)
-            # Create and add starting points
-            start_geom = QgsGeometry.fromPointXY(start_point)
-            start_manhole_feat, start_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
-                start_geom, template_feat=end_manhole_feat
-            )
-            self.extra_features[connection_node_handler].append(start_connection_node_feat)
-            self.extra_features[manhole_handler].append(start_manhole_feat)
-        elif start_manhole_feat is None and end_manhole_feat is None:
-            # Create and add starting points
-            start_geom = QgsGeometry.fromPointXY(start_point)
-            start_manhole_feat, start_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
-                start_geom
-            )
-            self.extra_features[connection_node_handler].append(start_connection_node_feat)
-            self.extra_features[manhole_handler].append(start_manhole_feat)
-            # Create and add ending points
-            end_geom = QgsGeometry.fromPointXY(end_point)
-            end_manhole_feat, end_connection_node_feat = manhole_handler.create_manhole_with_connection_node(end_geom)
-            self.extra_features[connection_node_handler].append(end_connection_node_feat)
-            self.extra_features[manhole_handler].append(end_manhole_feat)
-        else:
-            start_connection_node_id = start_manhole_feat["connection_node_id"]
-            start_connection_node_feat = connection_node_handler.get_feat_by_id(start_connection_node_id)
-            end_connection_node_id = end_manhole_feat["connection_node_id"]
-            end_connection_node_feat = connection_node_handler.get_feat_by_id(end_connection_node_id)
-
-        # Sequence related features ids
-        self.sequence_related_features_ids()
-        # Reassign manholes connection_node_id after sequencing
-        start_manhole_feat["connection_node_id"] = start_connection_node_feat["id"]
-        end_manhole_feat["connection_node_id"] = end_connection_node_feat["id"]
-        # Assign features as a form instance attributes.
-        self.connection_node_start = start_connection_node_feat
-        self.connection_node_end = end_connection_node_feat
-        self.manhole_start = start_manhole_feat
-        self.manhole_end = end_manhole_feat
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
-        code_display_name = f"{self.manhole_start['code']}-{self.manhole_end['code']}"
+        code_display_name = f"{self.connection_node_start['code']}-{self.connection_node_end['code']}"
         self.feature["code"] = code_display_name
         self.feature["display_name"] = code_display_name
-        self.feature["invert_level_start_point"] = self.manhole_start["bottom_level"]
-        self.feature["invert_level_end_point"] = self.manhole_end["bottom_level"]
+        self.feature["invert_level_start"] = self.connection_node_start["bottom_level"]
+        self.feature["invert_level_end"] = self.connection_node_end["bottom_level"]
 
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
-            # self.setup_manholes_on_creation()
+            self.setup_connection_nodes_on_creation()
             self.fill_related_attributes()
-        # else:
-        # self.setup_manholes_on_edit()
+        else:
+            self.setup_connection_nodes_on_edit()
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
@@ -1197,8 +1125,8 @@ class OrificeForm(FormWithStartEndNode, FormWithXSTable):
         self.populate_cross_section_table_data()
 
 
-class PumpstationForm(FormWithNode):
-    """Pumpstation without end node user layer edit form logic."""
+class PumpForm(FormWithNode):
+    """Pump without end node user layer edit form logic."""
 
     MODEL = dm.Pump
 
@@ -1206,54 +1134,50 @@ class PumpstationForm(FormWithNode):
         super().__init__(*args, *kwargs)
 
 
-class PumpstationMapForm(FormWithStartEndNode):
-    """Pumpstation with end node user layer edit form logic."""
+class PumpMapForm(BaseForm):
+    """Pump with end node user layer edit form logic."""
 
     MODEL = dm.PumpMap
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.pumpstation = None
+        self.connection_node_end = None
+        self.pump = None
 
     @property
     def foreign_models_features(self):
         """Property returning dictionary where key = data model class with identifier and value = data model feature."""
         fm_features = {
-            (dm.ConnectionNode, 1): self.connection_node_start,
-            (dm.ConnectionNode, 2): self.connection_node_end,
-            (dm.Pump, None): self.pumpstation,
+            (dm.ConnectionNode, None): self.connection_node_end,
+            (dm.Pump, None): self.pump,
         }
         return fm_features
 
-    def setup_pumpstation_on_edit(self):
-        """Setting up pumpstation during editing feature."""
+    def setup_pump_on_edit(self):
+        """Setting up pump during editing feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        pumpstation_handler = self.layer_manager.model_handlers[dm.Pump]
-        connection_node_id_start = self.feature["connection_node_id_start"]
+        pump_handler = self.layer_manager.model_handlers[dm.Pump]
         connection_node_id_end = self.feature["connection_node_id_end"]
-        pumpstation_id = self.feature["pumpstation_id"]
-        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_id_start)
+        pump_id = self.feature["pump_id"]
         self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_id_end)
-        self.pumpstation = pumpstation_handler.get_feat_by_id(pumpstation_id)
+        self.pump = pump_handler.get_feat_by_id(pump_id)
 
-    def setup_pumpstation_on_creation(self):
-        """Setting up pumpstation during adding feature."""
+    def setup_pump_on_creation(self):
+        """Setting up pump during adding feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        pumpstation_handler = self.layer_manager.model_handlers[dm.Pump]
+        pump_handler = self.layer_manager.model_handlers[dm.Pump]
         connection_node_layer = connection_node_handler.layer
         linestring = self.feature.geometry().asPolyline()
         start_point, end_point = linestring[0], linestring[-1]
         start_connection_node_feat, end_connection_node_feat = find_linestring_nodes(linestring, connection_node_layer)
-        start_pump_feat = self.pumpstation
+        start_pump_feat = self.pump
         if start_pump_feat is None:
             start_geom = QgsGeometry.fromPointXY(start_point)
             if start_connection_node_feat is None:
-                start_pump_feat, start_connection_node_feat = pumpstation_handler.create_pump_with_connection_node(
-                    start_geom
-                )
+                start_pump_feat, start_connection_node_feat = pump_handler.create_pump_with_connection_node(start_geom)
                 self.extra_features[connection_node_handler].append(start_connection_node_feat)
             else:
-                start_pump_feat = pumpstation_handler.create_new_feature(start_geom)
+                start_pump_feat = pump_handler.create_new_feature(start_geom)
                 start_pump_feat["connection_node_id"] = start_connection_node_feat["id"]
             if end_connection_node_feat is None:
                 end_geom = QgsGeometry.fromPointXY(end_point)
@@ -1261,7 +1185,7 @@ class PumpstationMapForm(FormWithStartEndNode):
                     start_connection_node_feat, geometry=end_geom
                 )
                 self.extra_features[connection_node_handler].append(end_connection_node_feat)
-            self.extra_features[pumpstation_handler].append(start_pump_feat)
+            self.extra_features[pump_handler].append(start_pump_feat)
         else:
             if end_connection_node_feat is None:
                 end_geom = QgsGeometry.fromPointXY(end_point)
@@ -1270,49 +1194,49 @@ class PumpstationMapForm(FormWithStartEndNode):
                 )
                 self.extra_features[connection_node_handler].append(end_connection_node_feat)
         # Assign features as a form instance attributes.
-        self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
-        self.pumpstation = start_pump_feat
+        self.pump = start_pump_feat
         self.sequence_related_features_ids()
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
-        self.feature["pumpstation_id"] = self.pumpstation["id"]
+        self.feature["pump_id"] = self.pump["id"]
+        self.feature["connection_node_id_end"] = self.connection_node_end["id"]
 
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
-            self.pumpstation = self.select_start_pumpstation()
-            self.setup_pumpstation_on_creation()
+            self.pump = self.select_start_pump()
+            self.setup_pump_on_creation()
             self.fill_related_attributes()
         else:
-            self.setup_pumpstation_on_edit()
+            self.setup_pump_on_edit()
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
 
-    def select_start_pumpstation(self):
-        """Selecting start pumpstation"""
-        title = "Select start pumpstation"
-        message = "Pumpstations at location"
+    def select_start_pump(self):
+        """Selecting start pump"""
+        title = "Select start pump"
+        message = "pumps at location"
         linestring = self.feature.geometry().asPolyline()
         start_point, end_point = linestring[0], linestring[-1]
-        pumpstation_handler = self.layer_manager.model_handlers[dm.Pump]
-        pumpstation_layer = pumpstation_handler.layer
-        start_pump_feats = find_point_nodes(start_point, pumpstation_layer, allow_multiple=True)
+        pump_handler = self.layer_manager.model_handlers[dm.Pump]
+        pump_layer = pump_handler.layer
+        start_pump_feats = find_point_nodes(start_point, pump_layer, allow_multiple=True)
         pump_no = len(start_pump_feats)
         if pump_no == 0:
-            pumpstation_feat = None
+            pump_feat = None
         elif pump_no == 1:
-            pumpstation_feat = next(iter(start_pump_feats))
+            pump_feat = next(iter(start_pump_feats))
         else:
             pump_feats_by_id = {feat["id"]: feat for feat in start_pump_feats}
             pump_entries = [f"{feat_id} ({feat['display_name']})" for feat_id, feat in pump_feats_by_id.items()]
-            pumpstation_entry = self.uc.pick_item(title, message, None, *pump_entries)
-            pumpstation_id = int(pumpstation_entry.split()[0]) if pumpstation_entry else None
-            pumpstation_feat = pump_feats_by_id[pumpstation_id] if pumpstation_id else None
-        return pumpstation_feat
+            pump_entry = self.uc.pick_item(title, message, None, *pump_entries)
+            pump_id = int(pump_entry.split()[0]) if pump_entry else None
+            pump_feat = pump_feats_by_id[pump_id] if pump_id else None
+        return pump_feat
 
 
 class ImperviousSurfaceMapForm(NodeToSurfaceMapForm):
@@ -1323,7 +1247,7 @@ class ImperviousSurfaceMapForm(NodeToSurfaceMapForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
         self.surface_model = dm.DryWeatherFlow
-        self.surface_id_field = "impervious_surface_id"
+        self.surface_id_field = "dry_weather_flow_id"
 
 
 class SurfaceMapForm(NodeToSurfaceMapForm):
@@ -1405,7 +1329,7 @@ class ChannelForm(FormWithStartEndNode, FormWithXSTable):
         except StopIteration:
             global_settings_feat = None
         if global_settings_feat:
-            self.current_cross_section_location["friction_type"] = global_settings_feat["frict_type"]
+            self.current_cross_section_location["friction_type"] = global_settings_feat["friction_type"]
 
     def set_current_cross_section_location(self, current_text):
         """Set handling of selected channel cross-section location."""
@@ -1568,13 +1492,13 @@ class CrossSectionLocationForm(FormWithXSTable):
                     "cross_section_width",
                     "cross_section_height",
                     "cross_section_table",
-                    "cross_section_friction_table",
+                    "cross_section_friction_values",
                     "cross_section_vegetation_table",
                 ]:
                     self.feature[xs_field_name] = closest_existing_cross_section[xs_field_name]
         try:
             global_settings_feat = next(global_settings_layer.getFeatures())
-            self.feature["friction_type"] = global_settings_feat["frict_type"]
+            self.feature["friction_type"] = global_settings_feat["friction_type"]
         except StopIteration:
             pass
 
@@ -1637,8 +1561,8 @@ ALL_FORMS = (
     WeirForm,
     CulvertForm,
     OrificeForm,
-    PumpstationForm,
-    PumpstationMapForm,
+    PumpForm,
+    PumpMapForm,
     ImperviousSurfaceMapForm,
     SurfaceMapForm,
     ChannelForm,
