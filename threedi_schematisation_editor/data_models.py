@@ -1041,7 +1041,6 @@ MODEL_1D_ELEMENTS = (
     ConnectionNode,
     BoundaryCondition1D,
     Lateral1D,
-    Material,
     Pump,
     PumpMap,
     Weir,
@@ -1051,6 +1050,7 @@ MODEL_1D_ELEMENTS = (
     CrossSectionLocation,
     Channel,
     Windshielding1D,
+    Material,
 )
 
 MODEL_2D_ELEMENTS = (
@@ -1066,12 +1066,12 @@ MODEL_1D2D_ELEMENTS = (
 )
 
 MODEL_0D_INFLOW_ELEMENTS = (
-    DryWeatherFlow,
-    DryWeatherFlowMap,
-    DryWeatherFlowDistribution,
     Surface,
     SurfaceMap,
+    DryWeatherFlow,
+    DryWeatherFlowMap,
     SurfaceParameters,
+    DryWeatherFlowDistribution,
 )
 
 SETTINGS_ELEMENTS = (
