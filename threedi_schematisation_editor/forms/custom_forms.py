@@ -1239,8 +1239,8 @@ class PumpMapForm(BaseForm):
         return pump_feat
 
 
-class ImperviousSurfaceMapForm(NodeToSurfaceMapForm):
-    """Impervious Surface Map user layer edit form logic."""
+class DryWeatherFlowMapForm(NodeToSurfaceMapForm):
+    """Dry Weather Flow Map user layer edit form logic."""
 
     MODEL = dm.DryWeatherFlowMap
 
@@ -1563,7 +1563,7 @@ ALL_FORMS = (
     OrificeForm,
     PumpForm,
     PumpMapForm,
-    ImperviousSurfaceMapForm,
+    DryWeatherFlowMapForm,
     SurfaceMapForm,
     ChannelForm,
     CrossSectionLocationForm,
