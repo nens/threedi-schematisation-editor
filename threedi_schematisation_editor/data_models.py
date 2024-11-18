@@ -73,11 +73,12 @@ class ConnectionNode(ModelObject):
 
     id: int
     code: str
+    display_name: str
     storage_area: Optional[float]
     initial_water_level: Optional[float]
     visualisation: Optional[Visualisation]
     manhole_surface_level: Optional[float]
-    manhole_bottom_level: float
+    bottom_level: float
     exchange_level: Optional[float]
     exchange_type: Optional[ExchangeTypeNode]
     exchange_thickness: Optional[float]
@@ -90,10 +91,11 @@ class ConnectionNode(ModelObject):
         display_names_list = [
             "ID",
             "Code",
+            "Display name",
             "Storage area [m²]",
             "Initial water level [m]",
             "Visualisation",
-            "Manhole bottom level [m MSL]",
+            "Bottom level [m MSL]",
             "Manhole surface level [m MSL]",
             "Exchange level [m MSL]",
             "Exchange type",
@@ -181,7 +183,7 @@ class PumpMap(ModelObject):
     code: str
     display_name: str
     pump_id: int
-    connection_node_id_start: int
+    connection_node_id_end: int
     tags: Optional[str]
 
 
@@ -248,8 +250,8 @@ class Culvert(ModelObject):
     display_name: str
     exchange_type: Optional[ExchangeTypeCulvert]
     calculation_point_distance: Optional[float]
-    invert_level_start_point: float
-    invert_level_end_point: float
+    invert_level_start: float
+    invert_level_end: float
     discharge_coefficient_positive: float
     discharge_coefficient_negative: float
     friction_value: float
@@ -371,7 +373,7 @@ class Pipe(ModelObject):
             "ID",
             "Code",
             "Display name",
-            "Calculation type",
+            "exchange type",
             "Calculation point distance [m]",
             "Invert level start point",
             "Invert level end point",
@@ -410,7 +412,7 @@ class CrossSectionLocation(ModelObject):
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
     cross_section_table: Optional[str]
-    cross_section_friction_table: Optional[str]
+    cross_section_friction_values: Optional[str]
     cross_section_vegetation_table: Optional[str]
     vegetation_stem_density: Optional[float]
     vegetation_stem_diameter: Optional[float]
@@ -610,7 +612,7 @@ class DryWeatherFlowMap(ModelObject):
 
     id: int
     percentage: float
-    impervious_surface_id: int
+    dry_weather_flow_id: int
     connection_node_id: int
     tags: Optional[str]
 
@@ -790,7 +792,7 @@ class GroundWaterSettings(ModelObject):
     phreatic_storage_capacity_aggregation: Optional[InitializationType]
     equilibrium_infiltration_rate: Optional[float]
     equilibrium_infiltration_rate_aggregation: Optional[str]
-    equilibrium_infiltration_rate_type: Optional[InitializationType]
+    equilibrium_infiltration_rate_aggregation: Optional[InitializationType]
     initial_infiltration_rate: Optional[float]
     initial_infiltration_rate_file: Optional[str]
     initial_infiltration_rate_aggregation: Optional[InitializationType]
@@ -1039,7 +1041,6 @@ MODEL_1D_ELEMENTS = (
     ConnectionNode,
     BoundaryCondition1D,
     Lateral1D,
-    Material,
     Pump,
     PumpMap,
     Weir,
@@ -1049,6 +1050,7 @@ MODEL_1D_ELEMENTS = (
     CrossSectionLocation,
     Channel,
     Windshielding1D,
+    Material,
 )
 
 MODEL_2D_ELEMENTS = (
@@ -1064,12 +1066,12 @@ MODEL_1D2D_ELEMENTS = (
 )
 
 MODEL_0D_INFLOW_ELEMENTS = (
-    DryWeatherFlow,
-    DryWeatherFlowMap,
-    DryWeatherFlowDistribution,
     Surface,
     SurfaceMap,
+    DryWeatherFlow,
+    DryWeatherFlowMap,
     SurfaceParameters,
+    DryWeatherFlowDistribution,
 )
 
 SETTINGS_ELEMENTS = (
@@ -1196,7 +1198,7 @@ MODEL_DEPENDENCIES = MappingProxyType(
             ExchangeLine: ("channel_id",),
         },
         DryWeatherFlow: {
-            DryWeatherFlowMap: ("impervious_surface_id",),
+            DryWeatherFlowMap: ("dry_weather_flow_id",),
         },
         Surface: {
             SurfaceMap: ("surface_id",),

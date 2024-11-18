@@ -2,8 +2,8 @@
 <qgis styleCategories="Symbology|Labeling" labelsEnabled="1" version="3.16.9-Hannover">
   <renderer-v2 type="RuleRenderer" enableorderby="0" symbollevels="0" forceraster="0">
     <rules key="{a1065705-9372-4a82-8b49-4a30152c1b2a}">
-      <rule filter="initial_waterlevel IS NOT NULL" key="{fa832e1f-ba5c-47ef-b6e3-13f779a6ce11}" label="Initial water level" symbol="0"/>
-      <rule filter="initial_waterlevel IS NULL" key="{f1ef164a-7d60-4c16-91d6-96fd46517dad}" label="No initial water level" symbol="1"/>
+      <rule filter="initial_water_level IS NOT NULL" key="{fa832e1f-ba5c-47ef-b6e3-13f779a6ce11}" label="Initial water level" symbol="0"/>
+      <rule filter="initial_water_level IS NULL" key="{f1ef164a-7d60-4c16-91d6-96fd46517dad}" label="No initial water level" symbol="1"/>
     </rules>
     <symbols>
       <symbol type="marker" force_rhr="0" clip_to_extent="1" name="0" alpha="1">
@@ -68,7 +68,7 @@
   </renderer-v2>
   <labeling type="simple">
     <settings calloutType="simple">
-      <text-style textColor="1,124,255,255" fieldName="format_number(initial_waterlevel, 2)" isExpression="1" fontWeight="50" allowHtml="0" fontSizeUnit="Point" fontItalic="0" fontLetterSpacing="0" fontUnderline="0" fontStrikeout="0" namedStyle="Regular" fontSizeMapUnitScale="3x:0,0,0,0,0,0" blendMode="0" capitalization="0" multilineHeight="1" useSubstitutions="0" previewBkgrdColor="255,255,255,255" fontWordSpacing="0" textOpacity="1" fontFamily="MS Gothic" fontKerning="1" fontSize="8" textOrientation="horizontal">
+      <text-style textColor="1,124,255,255" fieldName="format_number(initial_water_level, 2)" isExpression="1" fontWeight="50" allowHtml="0" fontSizeUnit="Point" fontItalic="0" fontLetterSpacing="0" fontUnderline="0" fontStrikeout="0" namedStyle="Regular" fontSizeMapUnitScale="3x:0,0,0,0,0,0" blendMode="0" capitalization="0" multilineHeight="1" useSubstitutions="0" previewBkgrdColor="255,255,255,255" fontWordSpacing="0" textOpacity="1" fontFamily="MS Gothic" fontKerning="1" fontSize="8" textOrientation="horizontal">
         <text-buffer bufferBlendMode="0" bufferDraw="1" bufferSize="0.7" bufferJoinStyle="128" bufferSizeUnits="MM" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferOpacity="1" bufferNoFill="1" bufferColor="255,255,255,255"/>
         <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskSizeUnits="MM" maskOpacity="1" maskEnabled="0" maskType="0" maskSize="0"/>
         <background shapeOffsetY="0" shapeJoinStyle="64" shapeRadiiUnit="MM" shapeType="0" shapeSizeY="0" shapeOffsetUnit="MM" shapeBorderWidthUnit="MM" shapeBorderWidthMapUnitScale="3x:0,0,0,0,0,0" shapeSVGFile="" shapeDraw="0" shapeFillColor="255,255,255,255" shapeRotationType="0" shapeRadiiX="0" shapeBorderWidth="0" shapeSizeType="0" shapeOffsetX="0" shapeBlendMode="0" shapeRadiiMapUnitScale="3x:0,0,0,0,0,0" shapeRadiiY="0" shapeSizeMapUnitScale="3x:0,0,0,0,0,0" shapeBorderColor="128,128,128,255" shapeSizeX="0" shapeOpacity="1" shapeOffsetMapUnitScale="3x:0,0,0,0,0,0" shapeSizeUnit="MM" shapeRotation="0">

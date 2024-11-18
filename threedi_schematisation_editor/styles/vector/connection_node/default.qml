@@ -164,7 +164,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="initial_waterlevel">
+    <field configurationFlags="None" name="initial_water_level">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -197,28 +197,28 @@
     <alias name="" field="fid" index="0"/>
     <alias name="" field="id" index="1"/>
     <alias name="" field="code" index="2"/>
-    <alias name="" field="initial_waterlevel" index="3"/>
+    <alias name="" field="initial_water_level" index="3"/>
     <alias name="" field="storage_area" index="4"/>
   </aliases>
   <defaults>
     <default field="fid" expression="" applyOnUpdate="0"/>
     <default field="id" expression="" applyOnUpdate="0"/>
     <default field="code" expression="" applyOnUpdate="0"/>
-    <default field="initial_waterlevel" expression="" applyOnUpdate="0"/>
+    <default field="initial_water_level" expression="" applyOnUpdate="0"/>
     <default field="storage_area" expression="" applyOnUpdate="0"/>
   </defaults>
   <constraints>
     <constraint constraints="3" notnull_strength="1" exp_strength="0" field="fid" unique_strength="1"/>
     <constraint constraints="0" notnull_strength="0" exp_strength="0" field="id" unique_strength="0"/>
     <constraint constraints="0" notnull_strength="0" exp_strength="0" field="code" unique_strength="0"/>
-    <constraint constraints="0" notnull_strength="0" exp_strength="0" field="initial_waterlevel" unique_strength="0"/>
+    <constraint constraints="0" notnull_strength="0" exp_strength="0" field="initial_water_level" unique_strength="0"/>
     <constraint constraints="0" notnull_strength="0" exp_strength="0" field="storage_area" unique_strength="0"/>
   </constraints>
   <constraintExpressions>
     <constraint desc="" exp="" field="fid"/>
     <constraint desc="" exp="" field="id"/>
     <constraint desc="" exp="" field="code"/>
-    <constraint desc="" exp="" field="initial_waterlevel"/>
+    <constraint desc="" exp="" field="initial_water_level"/>
     <constraint desc="" exp="" field="storage_area"/>
   </constraintExpressions>
   <expressionfields/>
@@ -233,7 +233,7 @@
     <attributeEditorContainer columnCount="1" showLabel="1" visibilityExpressionEnabled="0" name="General" groupBox="0" visibilityExpression="">
       <attributeEditorField showLabel="1" name="id" index="1"/>
       <attributeEditorField showLabel="1" name="code" index="2"/>
-      <attributeEditorField showLabel="1" name="initial_waterlevel" index="3"/>
+      <attributeEditorField showLabel="1" name="initial_water_level" index="3"/>
       <attributeEditorField showLabel="1" name="storage_area" index="4"/>
     </attributeEditorContainer>
   </attributeEditorForm>
@@ -241,7 +241,7 @@
     <field name="code" editable="1"/>
     <field name="fid" editable="1"/>
     <field name="id" editable="1"/>
-    <field name="initial_waterlevel" editable="1"/>
+    <field name="initial_water_level" editable="1"/>
     <field name="storage_area" editable="1"/>
     <field name="the_geom_linestring" editable="1"/>
   </editable>
@@ -249,7 +249,7 @@
     <field name="code" labelOnTop="0"/>
     <field name="fid" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="initial_waterlevel" labelOnTop="0"/>
+    <field name="initial_water_level" labelOnTop="0"/>
     <field name="storage_area" labelOnTop="0"/>
     <field name="the_geom_linestring" labelOnTop="0"/>
   </labelOnTop>

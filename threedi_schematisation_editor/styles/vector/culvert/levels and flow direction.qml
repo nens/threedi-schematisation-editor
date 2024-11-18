@@ -55,7 +55,7 @@
               <Option name="properties" type="Map">
                 <Option name="enabled" type="Map">
                   <Option value="true" name="active" type="bool"/>
-                  <Option value="&quot;invert_level_start_point&quot; !=  &quot;invert_level_end_point&quot;" name="expression" type="QString"/>
+                  <Option value="&quot;invert_level_start&quot; !=  &quot;invert_level_end&quot;" name="expression" type="QString"/>
                   <Option value="3" name="type" type="int"/>
                 </Option>
                 <Option name="offsetAlongLine" type="Map">
@@ -93,12 +93,12 @@
                   <Option name="properties" type="Map">
                     <Option name="angle" type="Map">
                       <Option value="true" name="active" type="bool"/>
-                      <Option value="line_interpolate_angle($geometry, length($geometry) * 0.33) + if(invert_level_start_point > invert_level_end_point, -90, 90)" name="expression" type="QString"/>
+                      <Option value="line_interpolate_angle($geometry, length($geometry) * 0.33) + if(invert_level_start > invert_level_end, -90, 90)" name="expression" type="QString"/>
                       <Option value="3" name="type" type="int"/>
                     </Option>
                     <Option name="enabled" type="Map">
                       <Option value="true" name="active" type="bool"/>
-                      <Option value="&quot;invert_level_start_point&quot; !=  &quot;invert_level_end_point&quot;" name="expression" type="QString"/>
+                      <Option value="&quot;invert_level_start&quot; !=  &quot;invert_level_end&quot;" name="expression" type="QString"/>
                       <Option value="3" name="type" type="int"/>
                     </Option>
                     <Option name="size" type="Map">
@@ -175,7 +175,7 @@
     <rules key="{8ca5f0b7-9166-40a3-b68d-88c7e3dc73ca}">
       <rule scalemaxdenom="1000" description="Start point label" key="{b4b62fde-9d88-4fc9-ae29-cc70262c340d}">
         <settings calloutType="simple">
-          <text-style fontFamily="MS Gothic" fontLetterSpacing="0" blendMode="0" textOpacity="1" fontWeight="50" fontWordSpacing="0" isExpression="1" fontKerning="1" fontSizeUnit="Point" fontUnderline="0" textColor="101,101,101,255" fieldName="'s:' || coalesce(format_number(round(invert_level_start_point,2),2), 'NULL')" fontItalic="0" fontStrikeout="0" fontSize="7" allowHtml="0" useSubstitutions="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOrientation="horizontal" capitalization="0" multilineHeight="1" previewBkgrdColor="255,255,255,255" namedStyle="Regular">
+          <text-style fontFamily="MS Gothic" fontLetterSpacing="0" blendMode="0" textOpacity="1" fontWeight="50" fontWordSpacing="0" isExpression="1" fontKerning="1" fontSizeUnit="Point" fontUnderline="0" textColor="101,101,101,255" fieldName="'s:' || coalesce(format_number(round(invert_level_start,2),2), 'NULL')" fontItalic="0" fontStrikeout="0" fontSize="7" allowHtml="0" useSubstitutions="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOrientation="horizontal" capitalization="0" multilineHeight="1" previewBkgrdColor="255,255,255,255" namedStyle="Regular">
             <text-buffer bufferBlendMode="0" bufferDraw="1" bufferNoFill="0" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferOpacity="1" bufferSize="0.7" bufferColor="255,255,255,255" bufferJoinStyle="128" bufferSizeUnits="MM"/>
             <text-mask maskType="0" maskSize="0" maskOpacity="1" maskSizeUnits="MM" maskEnabled="0" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskJoinStyle="128"/>
             <background shapeBorderColor="128,128,128,255" shapeJoinStyle="64" shapeRotation="0" shapeOffsetUnit="MM" shapeRadiiX="0" shapeOffsetMapUnitScale="3x:0,0,0,0,0,0" shapeFillColor="255,255,255,255" shapeRotationType="0" shapeSizeMapUnitScale="3x:0,0,0,0,0,0" shapeRadiiY="0" shapeRadiiUnit="MM" shapeOffsetX="0" shapeBorderWidth="0" shapeOpacity="1" shapeRadiiMapUnitScale="3x:0,0,0,0,0,0" shapeBorderWidthUnit="MM" shapeBlendMode="0" shapeSVGFile="" shapeDraw="0" shapeSizeX="0" shapeSizeType="0" shapeSizeUnit="MM" shapeType="0" shapeSizeY="0" shapeOffsetY="0" shapeBorderWidthMapUnitScale="3x:0,0,0,0,0,0">
@@ -287,7 +287,7 @@
       </rule>
       <rule scalemaxdenom="1000" description="End point label" key="{e636dbbf-4a89-46bd-b310-308a64bc64c5}">
         <settings calloutType="simple">
-          <text-style fontFamily="MS Gothic" fontLetterSpacing="0" blendMode="0" textOpacity="1" fontWeight="50" fontWordSpacing="0" isExpression="1" fontKerning="1" fontSizeUnit="Point" fontUnderline="0" textColor="101,101,101,255" fieldName="'e:'||coalesce(format_number(round(invert_level_end_point,2),2), 'NULL')" fontItalic="0" fontStrikeout="0" fontSize="7" allowHtml="0" useSubstitutions="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOrientation="horizontal" capitalization="0" multilineHeight="1" previewBkgrdColor="255,255,255,255" namedStyle="Regular">
+          <text-style fontFamily="MS Gothic" fontLetterSpacing="0" blendMode="0" textOpacity="1" fontWeight="50" fontWordSpacing="0" isExpression="1" fontKerning="1" fontSizeUnit="Point" fontUnderline="0" textColor="101,101,101,255" fieldName="'e:'||coalesce(format_number(round(invert_level_end,2),2), 'NULL')" fontItalic="0" fontStrikeout="0" fontSize="7" allowHtml="0" useSubstitutions="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOrientation="horizontal" capitalization="0" multilineHeight="1" previewBkgrdColor="255,255,255,255" namedStyle="Regular">
             <text-buffer bufferBlendMode="0" bufferDraw="1" bufferNoFill="0" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferOpacity="1" bufferSize="0.7" bufferColor="255,255,255,255" bufferJoinStyle="128" bufferSizeUnits="MM"/>
             <text-mask maskType="0" maskSize="0" maskOpacity="1" maskSizeUnits="MM" maskEnabled="0" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskJoinStyle="128"/>
             <background shapeBorderColor="128,128,128,255" shapeJoinStyle="64" shapeRotation="0" shapeOffsetUnit="MM" shapeRadiiX="0" shapeOffsetMapUnitScale="3x:0,0,0,0,0,0" shapeFillColor="255,255,255,255" shapeRotationType="0" shapeSizeMapUnitScale="3x:0,0,0,0,0,0" shapeRadiiY="0" shapeRadiiUnit="MM" shapeOffsetX="0" shapeBorderWidth="0" shapeOpacity="1" shapeRadiiMapUnitScale="3x:0,0,0,0,0,0" shapeBorderWidthUnit="MM" shapeBlendMode="0" shapeSVGFile="" shapeDraw="0" shapeSizeX="0" shapeSizeType="0" shapeSizeUnit="MM" shapeType="0" shapeSizeY="0" shapeOffsetY="0" shapeBorderWidthMapUnitScale="3x:0,0,0,0,0,0">
@@ -430,28 +430,28 @@
         </config>
       </editWidget>
     </field>
-    <field name="calculation_type">
+    <field name="exchange_type">
       <editWidget type="Range">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="dist_calc_points">
+    <field name="calculation_point_distance">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="invert_level_start_point">
+    <field name="invert_level_start">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="invert_level_end_point">
+    <field name="invert_level_end">
       <editWidget type="TextEdit">
         <config>
           <Option/>
@@ -537,12 +537,12 @@ def my_form_open(dialog, layer, feature):
         <attributeEditorField name="id" showLabel="1" index="-1"/>
         <attributeEditorField name="display_name" showLabel="1" index="-1"/>
         <attributeEditorField name="code" showLabel="1" index="-1"/>
-        <attributeEditorField name="calculation_type" showLabel="1" index="-1"/>
-        <attributeEditorField name="dist_calc_points" showLabel="1" index="-1"/>
+        <attributeEditorField name="exchange_type" showLabel="1" index="-1"/>
+        <attributeEditorField name="calculation_point_distance" showLabel="1" index="-1"/>
       </attributeEditorContainer>
       <attributeEditorContainer visibilityExpression="" name="Characteristics" columnCount="1" groupBox="1" visibilityExpressionEnabled="0" showLabel="1">
-        <attributeEditorField name="invert_level_start_point" showLabel="1" index="-1"/>
-        <attributeEditorField name="invert_level_end_point" showLabel="1" index="-1"/>
+        <attributeEditorField name="invert_level_start" showLabel="1" index="-1"/>
+        <attributeEditorField name="invert_level_end" showLabel="1" index="-1"/>
         <attributeEditorField name="friction_type" showLabel="1" index="-1"/>
         <attributeEditorField name="friction_value" showLabel="1" index="-1"/>
         <attributeEditorField name="discharge_coefficient_positive" showLabel="1" index="-1"/>
@@ -564,23 +564,23 @@ def my_form_open(dialog, layer, feature):
   </attributeEditorForm>
   <editable>
     <field editable="1" name="ROWID"/>
-    <field editable="1" name="calculation_type"/>
+    <field editable="1" name="exchange_type"/>
     <field editable="1" name="code"/>
     <field editable="1" name="connection_node_end_id"/>
     <field editable="1" name="connection_node_start_id"/>
-    <field editable="1" name="calculation_type"/>
+    <field editable="1" name="exchange_type"/>
     <field editable="1" name="code"/>
     <field editable="0" name="connection_node_end_id"/>
     <field editable="0" name="connection_node_start_id"/>
     <field editable="1" name="discharge_coefficient_negative"/>
     <field editable="1" name="discharge_coefficient_positive"/>
     <field editable="1" name="display_name"/>
-    <field editable="1" name="dist_calc_points"/>
+    <field editable="1" name="calculation_point_distance"/>
     <field editable="1" name="friction_type"/>
     <field editable="1" name="friction_value"/>
     <field editable="1" name="id"/>
-    <field editable="1" name="invert_level_end_point"/>
-    <field editable="1" name="invert_level_start_point"/>
+    <field editable="1" name="invert_level_end"/>
+    <field editable="1" name="invert_level_start"/>
     <field editable="1" name="zoom_category"/>
     <field editable="1" name="cross_section_height"/>
     <field editable="1" name="cross_section_shape"/>
@@ -588,34 +588,34 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="discharge_coefficient_negative"/>
     <field editable="1" name="discharge_coefficient_positive"/>
     <field editable="1" name="display_name"/>
-    <field editable="1" name="dist_calc_points"/>
+    <field editable="1" name="calculation_point_distance"/>
     <field editable="1" name="fid"/>
     <field editable="1" name="friction_type"/>
     <field editable="1" name="friction_value"/>
     <field editable="1" name="id"/>
-    <field editable="1" name="invert_level_end_point"/>
-    <field editable="1" name="invert_level_start_point"/>
+    <field editable="1" name="invert_level_end"/>
+    <field editable="1" name="invert_level_start"/>
     <field editable="1" name="zoom_category"/>
   </editable>
   <labelOnTop>
     <field name="ROWID" labelOnTop="0"/>
-    <field name="calculation_type" labelOnTop="0"/>
+    <field name="exchange_type" labelOnTop="0"/>
     <field name="code" labelOnTop="0"/>
     <field name="connection_node_end_id" labelOnTop="0"/>
     <field name="connection_node_start_id" labelOnTop="0"/>
-    <field name="calculation_type" labelOnTop="0"/>
+    <field name="exchange_type" labelOnTop="0"/>
     <field name="code" labelOnTop="0"/>
     <field name="connection_node_end_id" labelOnTop="0"/>
     <field name="connection_node_start_id" labelOnTop="0"/>
     <field name="discharge_coefficient_negative" labelOnTop="0"/>
     <field name="discharge_coefficient_positive" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>
-    <field name="dist_calc_points" labelOnTop="0"/>
+    <field name="calculation_point_distance" labelOnTop="0"/>
     <field name="friction_type" labelOnTop="0"/>
     <field name="friction_value" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="invert_level_end_point" labelOnTop="0"/>
-    <field name="invert_level_start_point" labelOnTop="0"/>
+    <field name="invert_level_end" labelOnTop="0"/>
+    <field name="invert_level_start" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
     <field name="cross_section_height" labelOnTop="0"/>
     <field name="cross_section_shape" labelOnTop="0"/>
@@ -623,13 +623,13 @@ def my_form_open(dialog, layer, feature):
     <field name="discharge_coefficient_negative" labelOnTop="0"/>
     <field name="discharge_coefficient_positive" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>
-    <field name="dist_calc_points" labelOnTop="0"/>
+    <field name="calculation_point_distance" labelOnTop="0"/>
     <field name="fid" labelOnTop="0"/>
     <field name="friction_type" labelOnTop="0"/>
     <field name="friction_value" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="invert_level_end_point" labelOnTop="0"/>
-    <field name="invert_level_start_point" labelOnTop="0"/>
+    <field name="invert_level_end" labelOnTop="0"/>
+    <field name="invert_level_start" labelOnTop="0"/>
     <field name="zoom_category" labelOnTop="0"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>

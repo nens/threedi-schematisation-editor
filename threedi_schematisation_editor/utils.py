@@ -140,7 +140,7 @@ def layer_to_gpkg(layer, gpkg_filename, overwrite=False, driver_name="GPKG"):
         QgsVectorFileWriter.CreateOrOverwriteLayer if overwrite is False else QgsVectorFileWriter.CreateOrOverwriteFile
     )
     fields = layer.fields()
-    valid_indexes = [fields.lookupField(fname) for fname in fields.names() if fname != "fid"]
+    valid_indexes = [fields.lookupField(fname) for fname in fields.names()]
     options.attributes = valid_indexes
     options.driverName = driver_name
     options.layerName = layer.name()
@@ -295,7 +295,6 @@ def set_initial_layer_configuration(layer, model_cls):
     fields = layer.dataProvider().fields()
     columns = attr_table_config.columns()
     model_hidden_fields = model_cls.hidden_fields()
-    model_hidden_fields.add("fid")
     for column in columns:
         column_name = column.name
         if column_name in model_hidden_fields:
@@ -972,7 +971,7 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
         related_widget.setDisabled(True)
     cross_section_shape = custom_form.get_widget_value(cross_section_shape_widget)
     friction_value = custom_form.get_widget_value(friction_widget)
-    custom_form.update_cross_section_table_header("cross_section_friction_table")
+    custom_form.update_cross_section_table_header("cross_section_friction_values")
     custom_form.update_cross_section_table_header("cross_section_vegetation_table")
     if not custom_form.layer.isEditable():
         return

@@ -9,7 +9,6 @@ from threedi_schematisation_editor.processing.algorithms_1d import BottomLevelCa
 from threedi_schematisation_editor.processing.algorithms_1d2d import GenerateExchangeLines
 from threedi_schematisation_editor.processing.algorithms_conversion import (
     ImportCulverts,
-    ImportManholes,
     ImportOrifices,
     ImportPipes,
     ImportWeirs,
@@ -48,7 +47,6 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
             ImportOrifices(),
             ImportWeirs(),
             ImportPipes(),
-            ImportManholes(),
             BottomLevelCalculator(),
         ]
         for alg in self.algorithms_list:

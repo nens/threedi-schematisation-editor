@@ -398,7 +398,7 @@
         </config>
       </editWidget>
     </field>
-    <field name="initial_waterlevel">
+    <field name="initial_water_level">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">
@@ -446,7 +446,7 @@ def my_form_open(dialog, layer, feature):
     <attributeEditorContainer groupBox="0" columnCount="1" visibilityExpression="" name="General" showLabel="1" visibilityExpressionEnabled="0">
       <attributeEditorField index="1" name="id" showLabel="1"/>
       <attributeEditorField index="2" name="code" showLabel="1"/>
-      <attributeEditorField index="3" name="initial_waterlevel" showLabel="1"/>
+      <attributeEditorField index="3" name="initial_water_level" showLabel="1"/>
       <attributeEditorField index="4" name="storage_area" showLabel="1"/>
     </attributeEditorContainer>
   </attributeEditorForm>
@@ -454,14 +454,14 @@ def my_form_open(dialog, layer, feature):
     <field editable="1" name="code"/>
     <field editable="1" name="fid"/>
     <field editable="1" name="id"/>
-    <field editable="1" name="initial_waterlevel"/>
+    <field editable="1" name="initial_water_level"/>
     <field editable="1" name="storage_area"/>
   </editable>
   <labelOnTop>
     <field labelOnTop="0" name="code"/>
     <field labelOnTop="0" name="fid"/>
     <field labelOnTop="0" name="id"/>
-    <field labelOnTop="0" name="initial_waterlevel"/>
+    <field labelOnTop="0" name="initial_water_level"/>
     <field labelOnTop="0" name="storage_area"/>
   </labelOnTop>
   <dataDefinedFieldProperties/>

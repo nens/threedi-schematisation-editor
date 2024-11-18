@@ -470,7 +470,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="maximum_breach_depth">
+    <field configurationFlags="None" name="final_exchange_level">
       <editWidget type="Range">
         <config>
           <Option type="Map">
@@ -493,7 +493,7 @@
     <alias name="" field="channel_id" index="4"/>
     <alias name="" field="exchange_level" index="5"/>
     <alias name="" field="levee_material" index="6"/>
-    <alias name="" field="maximum_breach_depth" index="7"/>
+    <alias name="" field="final_exchange_level" index="7"/>
   </aliases>
   <defaults>
     <default applyOnUpdate="0" expression="" field="fid"/>
@@ -503,7 +503,7 @@
     <default applyOnUpdate="0" expression="" field="channel_id"/>
     <default applyOnUpdate="0" expression="" field="exchange_level"/>
     <default applyOnUpdate="0" expression="" field="levee_material"/>
-    <default applyOnUpdate="0" expression="" field="maximum_breach_depth"/>
+    <default applyOnUpdate="0" expression="" field="final_exchange_level"/>
   </defaults>
   <constraints>
     <constraint notnull_strength="1" field="fid" unique_strength="1" exp_strength="0" constraints="3"/>
@@ -513,7 +513,7 @@
     <constraint notnull_strength="0" field="channel_id" unique_strength="0" exp_strength="0" constraints="0"/>
     <constraint notnull_strength="0" field="exchange_level" unique_strength="0" exp_strength="0" constraints="0"/>
     <constraint notnull_strength="0" field="levee_material" unique_strength="0" exp_strength="0" constraints="0"/>
-    <constraint notnull_strength="0" field="maximum_breach_depth" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" field="final_exchange_level" unique_strength="0" exp_strength="0" constraints="0"/>
   </constraints>
   <constraintExpressions>
     <constraint desc="" field="fid" exp=""/>
@@ -523,7 +523,7 @@
     <constraint desc="" field="channel_id" exp=""/>
     <constraint desc="" field="exchange_level" exp=""/>
     <constraint desc="" field="levee_material" exp=""/>
-    <constraint desc="" field="maximum_breach_depth" exp=""/>
+    <constraint desc="" field="final_exchange_level" exp=""/>
   </constraintExpressions>
   <expressionfields/>
   <attributeactions>
@@ -538,7 +538,7 @@
       <column hidden="0" width="-1" name="channel_id" type="field"/>
       <column hidden="0" width="-1" name="exchange_level" type="field"/>
       <column hidden="0" width="-1" name="levee_material" type="field"/>
-      <column hidden="0" width="-1" name="maximum_breach_depth" type="field"/>
+      <column hidden="0" width="-1" name="final_exchange_level" type="field"/>
       <column hidden="1" width="-1" type="actions"/>
     </columns>
   </attributetableconfig>
@@ -562,7 +562,7 @@
     <field name="fid" editable="1"/>
     <field name="id" editable="1"/>
     <field name="levee_material" editable="1"/>
-    <field name="maximum_breach_depth" editable="1"/>
+    <field name="final_exchange_level" editable="1"/>
   </editable>
   <labelOnTop>
     <field labelOnTop="0" name="channel_id"/>
@@ -572,7 +572,7 @@
     <field labelOnTop="0" name="fid"/>
     <field labelOnTop="0" name="id"/>
     <field labelOnTop="0" name="levee_material"/>
-    <field labelOnTop="0" name="maximum_breach_depth"/>
+    <field labelOnTop="0" name="final_exchange_level"/>
   </labelOnTop>
   <reuseLastValue>
     <field reuseLastValue="0" name="channel_id"/>
@@ -582,7 +582,7 @@
     <field reuseLastValue="0" name="fid"/>
     <field reuseLastValue="0" name="id"/>
     <field reuseLastValue="0" name="levee_material"/>
-    <field reuseLastValue="0" name="maximum_breach_depth"/>
+    <field reuseLastValue="0" name="final_exchange_level"/>
   </reuseLastValue>
   <dataDefinedFieldProperties/>
   <widgets/>
