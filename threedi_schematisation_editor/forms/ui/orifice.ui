@@ -872,7 +872,7 @@ coefficient positive</string>
               </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="tags">
+              <widget class="QLineEdit" name="tag_descriptions">
                <property name="readOnly">
                 <bool>true</bool>
                </property>
