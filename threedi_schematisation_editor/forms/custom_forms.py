@@ -392,6 +392,34 @@ class BaseForm(QObject):
         pass
 
 
+class FormWithTags(BaseForm):
+    """Base edit form for user layers with tags table reference."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.tags = None
+
+    def setup_form_widgets(self):
+        """Setting up all form widgets."""
+        super().setup_form_widgets()
+        self.setup_tag_widgets()
+
+    def setup_tag_widgets(self):
+        """Setup tag widgets."""
+        self.tags = self.dialog.findChild(QObject, "tag_descriptions")
+        self.tags.clear()
+        try:
+            tag_ids_str = self.feature["tags"]
+        except KeyError:
+            return
+        if tag_ids_str:
+            tag_ids = [int(tag_id) for tag_id in tag_ids_str.split(",")]
+            tags_handler = self.layer_manager.model_handlers[dm.Tags]
+            tags_layer = tags_handler.layer
+            tag_descriptions = [tag_feat["description"] for tag_feat in tags_layer.getFeatures(tag_ids)]
+            self.tags.setText(", ".join(tag_descriptions))
+
+
 class FormWithXSTable(BaseForm):
     """Base edit form for user layers with cross-section table reference."""
 
@@ -974,7 +1002,7 @@ class NodeToSurfaceMapForm(BaseForm):
         return surface_feat
 
 
-class ConnectionNodeForm(BaseForm):
+class ConnectionNodeForm(FormWithTags):
     """Connection node edit form logic."""
 
     MODEL = dm.ConnectionNode
