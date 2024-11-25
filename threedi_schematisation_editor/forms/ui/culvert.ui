@@ -35,7 +35,7 @@
         <x>0</x>
         <y>0</y>
         <width>515</width>
-        <height>656</height>
+        <height>684</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_7">
@@ -767,7 +767,7 @@ coefficient positive</string>
                  <enum>QAbstractItemView::SelectRows</enum>
                 </property>
                 <attribute name="verticalHeaderDefaultSectionSize">
-                 <number>21</number>
+                 <number>23</number>
                 </attribute>
                </widget>
               </item>
@@ -1570,6 +1570,9 @@ coefficient positive</string>
                <property name="readOnly">
                 <bool>true</bool>
                </property>
+               <property name="placeholderText">
+                <string>Open this feature's own attribute form to see its tags</string>
+               </property>
               </widget>
              </item>
             </layout>
@@ -2182,6 +2185,9 @@ coefficient positive</string>
               <widget class="QLineEdit" name="connection_node_2_tags">
                <property name="readOnly">
                 <bool>true</bool>
+               </property>
+               <property name="placeholderText">
+                <string>Open this feature's own attribute form to see its tags</string>
                </property>
               </widget>
              </item>

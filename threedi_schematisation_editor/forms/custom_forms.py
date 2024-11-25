@@ -945,7 +945,7 @@ class FormWithStartEndNode(BaseForm):
         self.populate_widgets()
 
 
-class NodeToSurfaceMapForm(BaseForm):
+class NodeToSurfaceMapForm(FormWithTags):
     """Basic surface to node map edit form logic."""
 
     def __init__(self, *args, **kwargs):
@@ -1012,7 +1012,7 @@ class ConnectionNodeForm(FormWithTags):
         self.populate_widgets()
 
 
-class PipeForm(FormWithStartEndNode, FormWithXSTable):
+class PipeForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
     """Pipe user layer edit form logic."""
 
     MODEL = dm.Pipe
@@ -1051,7 +1051,7 @@ class PipeForm(FormWithStartEndNode, FormWithXSTable):
         self.populate_cross_section_table_data()
 
 
-class WeirForm(FormWithStartEndNode, FormWithXSTable):
+class WeirForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
     """Weir user layer edit form logic."""
 
     MODEL = dm.Weir
@@ -1085,7 +1085,7 @@ class WeirForm(FormWithStartEndNode, FormWithXSTable):
         self.populate_cross_section_table_data()
 
 
-class CulvertForm(FormWithStartEndNode, FormWithXSTable):
+class CulvertForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
     """Culvert user layer edit form logic."""
 
     MODEL = dm.Culvert
@@ -1119,7 +1119,7 @@ class CulvertForm(FormWithStartEndNode, FormWithXSTable):
         self.populate_cross_section_table_data()
 
 
-class OrificeForm(FormWithStartEndNode, FormWithXSTable):
+class OrificeForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
     """Orifice user layer edit form logic."""
 
     MODEL = dm.Orifice
@@ -1153,7 +1153,7 @@ class OrificeForm(FormWithStartEndNode, FormWithXSTable):
         self.populate_cross_section_table_data()
 
 
-class PumpForm(FormWithNode):
+class PumpForm(FormWithNode, FormWithTags):
     """Pump without end node user layer edit form logic."""
 
     MODEL = dm.Pump
@@ -1162,7 +1162,7 @@ class PumpForm(FormWithNode):
         super().__init__(*args, *kwargs)
 
 
-class PumpMapForm(BaseForm):
+class PumpMapForm(FormWithTags):
     """Pump with end node user layer edit form logic."""
 
     MODEL = dm.PumpMap
@@ -1267,7 +1267,7 @@ class PumpMapForm(BaseForm):
         return pump_feat
 
 
-class DryWeatherFlowMapForm(NodeToSurfaceMapForm):
+class DryWeatherFlowMapForm(NodeToSurfaceMapForm, FormWithTags):
     """Dry Weather Flow Map user layer edit form logic."""
 
     MODEL = dm.DryWeatherFlowMap
@@ -1278,7 +1278,7 @@ class DryWeatherFlowMapForm(NodeToSurfaceMapForm):
         self.surface_id_field = "dry_weather_flow_id"
 
 
-class SurfaceMapForm(NodeToSurfaceMapForm):
+class SurfaceMapForm(NodeToSurfaceMapForm, FormWithTags):
     """Surface Map user layer edit form logic."""
 
     MODEL = dm.SurfaceMap
@@ -1289,7 +1289,7 @@ class SurfaceMapForm(NodeToSurfaceMapForm):
         self.surface_id_field = "surface_id"
 
 
-class ChannelForm(FormWithStartEndNode, FormWithXSTable):
+class ChannelForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
     """Channel user layer edit form logic."""
 
     MODEL = dm.Channel
@@ -1531,7 +1531,7 @@ class CrossSectionLocationForm(FormWithXSTable):
             pass
 
 
-class PotentialBreachForm(BaseForm):
+class PotentialBreachForm(FormWithTags):
     """Potential breach user layer edit form logic."""
 
     MODEL = dm.PotentialBreach
@@ -1568,7 +1568,7 @@ class PotentialBreachForm(BaseForm):
         self.populate_widgets()
 
 
-class ExchangeLineForm(BaseForm):
+class ExchangeLineForm(FormWithTags):
     """Exchange line user layer edit form logic."""
 
     MODEL = dm.ExchangeLine
