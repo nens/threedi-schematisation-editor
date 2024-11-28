@@ -924,20 +924,6 @@ class CrossSectionDefinition(ModelObject):
 
 
 @dataclass
-class Timeseries(ModelObject):
-    __tablename__ = "timeseries"
-    __layername__ = "Timeseries"
-    __geometrytype__ = GeometryType.NoGeometry
-
-    id: int
-    reference_layer: str
-    reference_id: int
-    offset: int  # seconds
-    duration: int  # seconds
-    value: float
-
-
-@dataclass
 class MeasureLocation(ModelObject):
     __tablename__ = "measure_location"
     __layername__ = "Measure location"
@@ -1107,10 +1093,7 @@ ALL_MODELS = (
     + MODEL_0D_INFLOW_ELEMENTS
     + SETTINGS_ELEMENTS
 )
-ALL_MODELS = ALL_MODELS + (
-    Timeseries,
-    CrossSectionDefinition,
-)
+ALL_MODELS = ALL_MODELS + (CrossSectionDefinition,)
 ALL_MODELS = ALL_MODELS + STRUCTURE_CONTROL_ELEMENTS + HIDDEN_ELEMENTS
 
 ELEMENTS_WITH_XS_DEF = (

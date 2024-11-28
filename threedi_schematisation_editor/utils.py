@@ -1016,6 +1016,27 @@ def setup_cross_section_definition_widgets(custom_form, shape_widget, friction_w
         setup_friction_and_vegetation_widgets(custom_form, shape_widget, friction_widget, prefix)
 
 
+def setup_timeseries_widgets(custom_form):
+    """Adjust timeseries  widgets."""
+    timeseries_table_widget_name = "timeseries_table_widget"
+    timeseries_table = custom_form.dialog.findChild(QObject, timeseries_table_widget_name)
+    timeseries_table_add = custom_form.dialog.findChild(QObject, f"{timeseries_table_widget_name}_add")
+    timeseries_table_delete = custom_form.dialog.findChild(QObject, f"{timeseries_table_widget_name}_delete")
+    timeseries_table_copy = custom_form.dialog.findChild(QObject, f"{timeseries_table_widget_name}_copy")
+    timeseries_table_paste = custom_form.dialog.findChild(QObject, f"{timeseries_table_widget_name}_paste")
+
+    all_related_widgets = [
+        timeseries_table,
+        timeseries_table_add,
+        timeseries_table_delete,
+        timeseries_table_copy,
+        timeseries_table_paste,
+    ]
+    custom_form_editable = custom_form.layer.isEditable()
+    for widget in all_related_widgets:
+        widget.setEnabled(custom_form_editable)
+
+
 class NumericItemDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
