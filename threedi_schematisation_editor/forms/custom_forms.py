@@ -434,9 +434,18 @@ class FormWithTimeseries(BaseForm):
         self.timeseries_table_paste = None
         self.setup_timeseries_table_widgets()
 
+    @property
+    def table_header(self):
+        return ["Time", "Value"]
+
+    def setup_form_widgets(self):
+        """Setting up all form widgets."""
+        super().setup_form_widgets()
+        self.update_timeseries_table_header()
+
     def setup_timeseries_table_widgets(self):
         """Setup timeseries widgets."""
-        timeseries_table_widget_name = "timeseries_table_widget"
+        timeseries_table_widget_name = "timeseries_table"
         self.timeseries_table = self.dialog.findChild(QTableWidget, timeseries_table_widget_name)
         self.timeseries_table_add = self.dialog.findChild(QPushButton, f"{timeseries_table_widget_name}_add")
         self.timeseries_table_delete = self.dialog.findChild(QPushButton, f"{timeseries_table_widget_name}_delete")
@@ -465,6 +474,10 @@ class FormWithTimeseries(BaseForm):
         connect_signal(self.timeseries_table_copy.clicked, self.copy_table_rows)
         self.dialog.active_form_signals.add((self.timeseries_table_copy.clicked, self.copy_table_rows))
 
+    def update_timeseries_table_header(self):
+        """Update timeseries table headers."""
+        self.timeseries_table.setHorizontalHeaderLabels(self.table_header)
+
     def get_timeseries_table_values(self):
         """Get timeseries table values."""
         num_of_rows = self.timeseries_table.rowCount()
@@ -483,7 +496,7 @@ class FormWithTimeseries(BaseForm):
         return timeseries_table_values
 
     def get_timeseries_table_text(self):
-        """Get cross-section table data as a string representation."""
+        """Get timeseries table data as a string representation."""
         timeseries_table_values = self.get_timeseries_table_values()
         timeseries_table_str = "\n".join(", ".join(row) for row in timeseries_table_values if all(row))
         return timeseries_table_str
@@ -494,7 +507,7 @@ class FormWithTimeseries(BaseForm):
         if self.creation is True:
             self.feature[self.timeseries_table_field_name] = timeseries_table_str
         else:
-            timeseries_table_idx = self.layer.lookupField(self.timeseries_table_field_name)
+            timeseries_table_idx = self.layer.fields().lookupField(self.timeseries_table_field_name)
             changes = {timeseries_table_idx: timeseries_table_str}
             self.layer.changeAttributeValues(self.feature.id(), changes)
 
@@ -554,12 +567,11 @@ class FormWithTimeseries(BaseForm):
         disconnect_signal(self.timeseries_table.cellChanged, self.save_timeseries_table_edits)
         table = self.feature[self.timeseries_table_field_name] or ""
         number_of_rows_main = len(table.split("\n"))
-        table_header = ["Time", "Value"]
-        table_columns_count = len(table_header)
+        table_columns_count = len(self.table_header)
         self.timeseries_table.clearContents()
         self.timeseries_table.setRowCount(0)
         self.timeseries_table.setColumnCount(table_columns_count)
-        self.timeseries_table.setHorizontalHeaderLabels(table_header)
+        self.update_timeseries_table_header()
         for column_idx in range(table_columns_count):
             self.timeseries_table.setItemDelegateForColumn(column_idx, NumericItemDelegate(self.timeseries_table))
         for row_num_main in range(number_of_rows_main):
@@ -1756,7 +1768,7 @@ class ExchangeLineForm(FormWithTags):
         self.populate_widgets()
 
 
-class BoundaryCondition1D(FormWithTags, FormWithTimeseries):
+class BoundaryCondition1D(FormWithTags, FormWithNode, FormWithTimeseries):
     """Boundary Condition 1D user layer edit form logic."""
 
     MODEL = dm.BoundaryCondition1D
@@ -1764,11 +1776,86 @@ class BoundaryCondition1D(FormWithTags, FormWithTimeseries):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
 
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
+            self.setup_connection_node_on_creation()
             self.fill_related_attributes()
+        else:
+            self.setup_connection_node_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
         self.populate_widgets()
+        self.populate_timeseries_table_data()
+
+
+class BoundaryCondition2D(FormWithTags, FormWithTimeseries):
+    """Boundary Condition 2D user layer edit form logic."""
+
+    MODEL = dm.BoundaryCondition2D
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+        self.populate_timeseries_table_data()
+
+
+class Lateral1D(FormWithTags, FormWithNode, FormWithTimeseries):
+    """Lateral 1D user layer edit form logic."""
+
+    MODEL = dm.Lateral1D
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.setup_connection_node_on_creation()
+            self.fill_related_attributes()
+        else:
+            self.setup_connection_node_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+        self.populate_timeseries_table_data()
+
+
+class Lateral2D(FormWithTags, FormWithTimeseries):
+    """Lateral 2D user layer edit form logic."""
+
+    MODEL = dm.Lateral2D
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+        self.populate_timeseries_table_data()
 
 
 ALL_FORMS = (
@@ -1787,6 +1874,9 @@ ALL_FORMS = (
     PotentialBreachForm,
     ExchangeLineForm,
     BoundaryCondition1D,
+    Lateral1D,
+    BoundaryCondition2D,
+    Lateral2D,
 )
 
 MODEL_FORMS = MappingProxyType({form.MODEL: form for form in ALL_FORMS})

@@ -447,6 +447,7 @@ class BoundaryCondition2D(ModelObject):
     __geometrytype__ = GeometryType.Linestring
 
     id: int
+    code: str
     display_name: str
     type: BoundaryType
     timeseries: str
@@ -1016,13 +1017,6 @@ class VegetationDrag2DSettings(ModelObject):
     vegetation_drag_coefficient_file: Optional[str]
 
 
-MODEL_BOUNDARY_CONDITION_ELEMENTS = (
-    BoundaryCondition1D,
-    BoundaryCondition2D,
-    Lateral1D,
-    Lateral2D,
-)
-
 MODEL_1D_ELEMENTS = (
     ConnectionNode,
     BoundaryCondition1D,
@@ -1040,6 +1034,8 @@ MODEL_1D_ELEMENTS = (
 )
 
 MODEL_2D_ELEMENTS = (
+    BoundaryCondition2D,
+    Lateral2D,
     DEMAverageArea,
     GridRefinementArea,
     GridRefinementLine,
@@ -1054,9 +1050,9 @@ MODEL_1D2D_ELEMENTS = (
 MODEL_0D_INFLOW_ELEMENTS = (
     Surface,
     SurfaceMap,
+    SurfaceParameters,
     DryWeatherFlow,
     DryWeatherFlowMap,
-    SurfaceParameters,
     DryWeatherFlowDistribution,
 )
 
@@ -1085,14 +1081,7 @@ STRUCTURE_CONTROL_ELEMENTS = (
 
 HIDDEN_ELEMENTS = tuple()
 
-ALL_MODELS = (
-    MODEL_BOUNDARY_CONDITION_ELEMENTS
-    + MODEL_1D_ELEMENTS
-    + MODEL_2D_ELEMENTS
-    + MODEL_1D2D_ELEMENTS
-    + MODEL_0D_INFLOW_ELEMENTS
-    + SETTINGS_ELEMENTS
-)
+ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + MODEL_1D2D_ELEMENTS + MODEL_0D_INFLOW_ELEMENTS + SETTINGS_ELEMENTS
 ALL_MODELS = ALL_MODELS + (CrossSectionDefinition,)
 ALL_MODELS = ALL_MODELS + STRUCTURE_CONTROL_ELEMENTS + HIDDEN_ELEMENTS
 

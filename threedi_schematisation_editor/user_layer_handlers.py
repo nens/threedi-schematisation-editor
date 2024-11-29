@@ -1,10 +1,8 @@
 # Copyright (C) 2023 by Lutra Consulting
 from collections import defaultdict
 from functools import cached_property, partial
-from multiprocessing.connection import default_family
 from types import MappingProxyType
 
-from numpy.f2py.rules import defmod_rules
 from qgis.core import NULL, QgsExpression, QgsFeature, QgsFeatureRequest, QgsGeometry
 from qgis.PyQt.QtCore import QTimer
 
@@ -400,10 +398,20 @@ class ConnectionNodeHandler(UserLayerHandler):
 
 class BoundaryCondition1DHandler(UserLayerHandler):
     MODEL = dm.BoundaryCondition1D
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.ConnectionNode: 1,
+        }
+    )
 
 
 class Lateral1DHandler(UserLayerHandler):
     MODEL = dm.Lateral1D
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.ConnectionNode: 1,
+        }
+    )
 
 
 class PumpHandler(UserLayerHandler):

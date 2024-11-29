@@ -61,7 +61,7 @@
              </property>
              <layout class="QGridLayout" name="gridLayout_3">
               <item row="1" column="1" colspan="2">
-               <widget class="QTableWidget" name="timeseries_table_widget">
+               <widget class="QTableWidget" name="timeseries_table">
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
@@ -586,7 +586,7 @@
   <tabstop>id</tabstop>
   <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
-  <tabstop>timeseries_table_widget</tabstop>
+  <tabstop>timeseries_table</tabstop>
   <tabstop>timeseries_table_delete</tabstop>
   <tabstop>timeseries_table_copy</tabstop>
   <tabstop>timeseries_table_paste</tabstop>
