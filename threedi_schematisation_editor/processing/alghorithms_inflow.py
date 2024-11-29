@@ -133,19 +133,19 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
             )
         )
         storm_pref = QgsProcessingParameterNumber(
-            self.STORMWATER_SEWER_PREFERENCE, self.tr("Stormwater sewer preference [m]"), type=1, defaultValue=0.0
+            self.STORMWATER_SEWER_PREFERENCE, self.tr("Stormwater sewer preference [m]"), type=QgsProcessingParameterNumber.Double, defaultValue=0.0
         )
         storm_pref.setMinimum(0.0)
         storm_pref.setMetadata({"widget_wrapper": {"decimals": 2}})
         self.addParameter(storm_pref)
         sanitary_pref = QgsProcessingParameterNumber(
-            self.SANITARY_SEWER_PREFERENCE, self.tr("Sanitary sewer preference [m]"), type=1, defaultValue=0.0
+            self.SANITARY_SEWER_PREFERENCE, self.tr("Sanitary sewer preference [m]"), type=QgsProcessingParameterNumber.Double, defaultValue=0.0
         )
         sanitary_pref.setMinimum(0.0)
         sanitary_pref.setMetadata({"widget_wrapper": {"decimals": 2}})
         self.addParameter(sanitary_pref)
         search_distance = QgsProcessingParameterNumber(
-            self.SEARCH_DISTANCE, self.tr("Search distance"), type=1, defaultValue=10.0
+            self.SEARCH_DISTANCE, self.tr("Search distance"), type=QgsProcessingParameterNumber.Double, defaultValue=10.0
         )
         search_distance.setMinimum(0.01)
         search_distance.setMetadata({"widget_wrapper": {"decimals": 2}})

@@ -4,7 +4,7 @@ History
 1.15 (unreleased)
 -----------------
 
-- Nothing changed yet.
+- Fix type error: #278
 
 
 1.14 (2024-11-12)
