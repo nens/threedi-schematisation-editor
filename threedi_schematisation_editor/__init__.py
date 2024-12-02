@@ -6,6 +6,10 @@ from pathlib import Path
 from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
 from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
+
+from .deps.custom_imports import patch_wheel_imports
+
+patch_wheel_imports()
 from threedi_mi_utils.news import QgsNewsSettingsInjector
 
 PLUGIN_DIR = Path(__file__).parent
@@ -29,8 +33,6 @@ from threedi_schematisation_editor.utils import (ConversionError,
                                                  is_gpkg_connection_exists,
                                                  remove_user_layers)
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
-
-from .deps.custom_imports import patch_wheel_imports
 
 
 def classFactory(iface):
@@ -60,7 +62,6 @@ class ThreediSchematisationEditorPlugin:
         self.project.projectSaved.connect(self.on_3di_project_save)
         self.iface.currentLayerChanged.connect(self.switch_workspace_context)
 
-        patch_wheel_imports()
         # Inject custom news entries in settings
         QgsNewsSettingsInjector().load(PLUGIN_DIR / "news_feed.json")
 
