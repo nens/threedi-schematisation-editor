@@ -60,7 +60,6 @@ class ThreediSchematisationEditorPlugin:
         self.project.projectSaved.connect(self.on_3di_project_save)
         self.iface.currentLayerChanged.connect(self.switch_workspace_context)
 
-    def run(self):
         patch_wheel_imports()
         # Inject custom news entries in settings
         QgsNewsSettingsInjector().load(PLUGIN_DIR / "news_feed.json")
