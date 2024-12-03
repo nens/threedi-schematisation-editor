@@ -1,29 +1,37 @@
 # Copyright (C) 2023 by Lutra Consulting
 import os.path
 from collections import defaultdict
+from pathlib import Path
 
 from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
 from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
 
+from .deps.custom_imports import patch_wheel_imports
+
+patch_wheel_imports()
+from threedi_mi_utils.news import QgsNewsSettingsInjector
+
+PLUGIN_DIR = Path(__file__).parent
+
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.conversion import ModelDataConverter
-from threedi_schematisation_editor.custom_widgets import ImportStructuresDialog, LoadSchematisationDialog
-from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
+from threedi_schematisation_editor.custom_widgets import (
+    ImportStructuresDialog, LoadSchematisationDialog)
+from threedi_schematisation_editor.processing import \
+    ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager
-from threedi_schematisation_editor.utils import (
-    ConversionError,
-    add_gpkg_connection,
-    add_settings_entry,
-    can_write_in_dir,
-    check_enable_macros_option,
-    create_empty_model,
-    ensure_valid_schema,
-    get_filepath,
-    is_gpkg_connection_exists,
-    remove_user_layers,
-)
+from threedi_schematisation_editor.utils import (ConversionError,
+                                                 add_gpkg_connection,
+                                                 add_settings_entry,
+                                                 can_write_in_dir,
+                                                 check_enable_macros_option,
+                                                 create_empty_model,
+                                                 ensure_valid_schema,
+                                                 get_filepath,
+                                                 is_gpkg_connection_exists,
+                                                 remove_user_layers)
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
 
@@ -53,6 +61,9 @@ class ThreediSchematisationEditorPlugin:
         self.project.readProject.connect(self.on_3di_project_read)
         self.project.projectSaved.connect(self.on_3di_project_save)
         self.iface.currentLayerChanged.connect(self.switch_workspace_context)
+
+        # Inject custom news entries in settings
+        QgsNewsSettingsInjector().load(PLUGIN_DIR / "news_feed.json")
 
     def initGui(self):
         QgsApplication.processingRegistry().addProvider(self.provider)
