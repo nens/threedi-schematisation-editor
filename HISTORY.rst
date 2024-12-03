@@ -1,10 +1,11 @@
 History
 =======
 
-1.15 (unreleased)
+1.15 (2024-12-02)
 -----------------
 
 - Fix type error: #278
+- Add news to QGIS news feed (#281)
 
 
 1.14 (2024-11-12)
