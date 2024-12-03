@@ -1,6 +1,12 @@
 History
 =======
 
+1.17 (unreleased)
+-----------------
+
+- Nothing changed yet.
+
+
 1.16 (2024-12-03)
 
 - Fixed import error
