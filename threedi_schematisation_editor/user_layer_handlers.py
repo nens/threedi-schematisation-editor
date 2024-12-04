@@ -398,10 +398,20 @@ class ConnectionNodeHandler(UserLayerHandler):
 
 class BoundaryCondition1DHandler(UserLayerHandler):
     MODEL = dm.BoundaryCondition1D
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.ConnectionNode: 1,
+        }
+    )
 
 
 class Lateral1DHandler(UserLayerHandler):
     MODEL = dm.Lateral1D
+    RELATED_MODELS = MappingProxyType(
+        {
+            dm.ConnectionNode: 1,
+        }
+    )
 
 
 class PumpHandler(UserLayerHandler):
@@ -944,36 +954,6 @@ class ExchangeLineHandler(UserLayerHandler):
     )
 
 
-class DryWeatherFlowDistributionHandler(UserLayerHandler):
-    MODEL = dm.DryWeatherFlowDistribution
-
-
-class DryWeatherFlowHandler(UserLayerHandler):
-    MODEL = dm.DryWeatherFlow
-
-    def connect_additional_signals(self):
-        """Connecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.connect(self.update_dwf_link)
-
-    def disconnect_additional_signals(self):
-        """Disconnecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.disconnect(self.update_dwf_link)
-
-    def update_dwf_link(self, feat_id, geometry):
-        """Update geometry of the DWF area - node link."""
-        dwf_handler = self.layer_manager.model_handlers[dm.DryWeatherFlow]
-        dwf_layer = dwf_handler.layer
-        dwf_link_handler = self.layer_manager.model_handlers[dm.DryWeatherFlowMap]
-        dwf_link_layer = dwf_link_handler.layer
-        surface_feat = dwf_layer.getFeature(feat_id)
-        link_feat = dwf_link_handler.get_feat_by_id(surface_feat["id"], "dry_weather_flow_id")
-        point = geometry.centroid().asPoint()
-        link_linestring = link_feat.geometry().asPolyline()
-        link_linestring[0] = point
-        link_new_geom = QgsGeometry.fromPolylineXY(link_linestring)
-        dwf_link_layer.changeGeometry(link_feat.id(), link_new_geom)
-
-
 class SurfaceHandler(UserLayerHandler):
     MODEL = dm.Surface
 
@@ -998,6 +978,36 @@ class SurfaceHandler(UserLayerHandler):
         link_linestring[0] = point
         link_new_geom = QgsGeometry.fromPolylineXY(link_linestring)
         surface_link_layer.changeGeometry(link_feat.id(), link_new_geom)
+
+
+class DryWeatherFlowDistributionHandler(UserLayerHandler):
+    MODEL = dm.DryWeatherFlowDistribution
+
+
+class DryWeatherFlowHandler(UserLayerHandler):
+    MODEL = dm.DryWeatherFlow
+
+    def connect_additional_signals(self):
+        """Connecting signals to action specific for the particular layers."""
+        self.layer.geometryChanged.connect(self.update_dwf_link)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to action specific for the particular layers."""
+        self.layer.geometryChanged.disconnect(self.update_dwf_link)
+
+    def update_dwf_link(self, feat_id, geometry):
+        """Update geometry of the DWF area - node link."""
+        dwf_handler = self.layer_manager.model_handlers[dm.DryWeatherFlow]
+        dwf_layer = dwf_handler.layer
+        dwf_link_handler = self.layer_manager.model_handlers[dm.DryWeatherFlowMap]
+        dwf_link_layer = dwf_link_handler.layer
+        dwf_feat = dwf_layer.getFeature(feat_id)
+        link_feat = dwf_link_handler.get_feat_by_id(dwf_feat["id"], "dry_weather_flow_id")
+        point = geometry.centroid().asPoint()
+        link_linestring = link_feat.geometry().asPolyline()
+        link_linestring[0] = point
+        link_new_geom = QgsGeometry.fromPolylineXY(link_linestring)
+        dwf_link_layer.changeGeometry(link_feat.id(), link_new_geom)
 
 
 class DryWeatherFlowMapHandler(UserLayerHandler):
