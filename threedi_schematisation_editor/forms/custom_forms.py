@@ -1,4 +1,4 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 import sys
 from collections import defaultdict
 from enum import Enum
@@ -420,14 +420,111 @@ class FormWithTags(BaseForm):
             self.tags.setText(", ".join(tag_descriptions))
 
 
+class FormWithDistribution(BaseForm):
+    """Base edit form for user layers with distribution table."""
+
+    NUMBER_OF_ROWS = 24
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.distribution_table_field_name = "distribution"
+        self.distribution_table = None
+        self.distribution_table_clear = None
+        self.setup_distribution_table_widgets()
+
+    @property
+    def table_header(self):
+        return ["Value"]
+
+    def setup_form_widgets(self):
+        """Setting up all form widgets."""
+        super().setup_form_widgets()
+        self.update_distribution_table_header()
+
+    def setup_distribution_table_widgets(self):
+        """Setup distribution widgets."""
+        distribution_table_widget_name = "distribution_table"
+        self.distribution_table = self.dialog.findChild(QTableWidget, distribution_table_widget_name)
+        self.distribution_table_clear = self.dialog.findChild(QPushButton, f"{distribution_table_widget_name}_clear")
+        for widget in [self.distribution_table, self.distribution_table_clear]:
+            self.custom_widgets[widget.objectName()] = self.distribution_table
+
+    def connect_custom_widgets(self):
+        """Connect other widgets."""
+        super().connect_custom_widgets()
+        connect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+        self.dialog.active_form_signals.add((self.distribution_table.cellChanged, self.save_distribution_table_edits))
+        connect_signal(self.distribution_table_clear.clicked, self.clear_table_row_values)
+        self.dialog.active_form_signals.add((self.distribution_table_clear.clicked, self.clear_table_row_values))
+
+    def update_distribution_table_header(self):
+        """Update distribution table headers."""
+        self.distribution_table.setHorizontalHeaderLabels(self.table_header)
+
+    def get_distribution_table_values(self):
+        """Get distribution table values."""
+        distribution_table_values = []
+        for row_num in range(self.NUMBER_OF_ROWS):
+            item = self.distribution_table.item(row_num, 0)
+            row_value = item.text().strip() if item is not None else ""
+            distribution_table_values.append(row_value)
+        return distribution_table_values
+
+    def get_distribution_table_text(self):
+        """Get distribution table data as a string representation."""
+        distribution_table_values = self.get_distribution_table_values()
+        distribution_table_str = ",".join(row for row in distribution_table_values)
+        return distribution_table_str
+
+    def save_distribution_table_edits(self):
+        """Slot for handling table cells edits."""
+        distribution_table_str = self.get_distribution_table_text()
+        if self.creation is True:
+            self.feature[self.distribution_table_field_name] = distribution_table_str
+        else:
+            distribution_table_idx = self.layer.fields().lookupField(self.distribution_table_field_name)
+            changes = {distribution_table_idx: distribution_table_str}
+            self.layer.changeAttributeValues(self.feature.id(), changes)
+
+    def clear_table_row_values(self):
+        """Slot for clearing table values."""
+        disconnect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+        for row_num in range(self.NUMBER_OF_ROWS):
+            self.distribution_table.setItem(row_num, 0, QTableWidgetItem(""))
+        connect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+        self.save_distribution_table_edits()
+
+    def populate_distribution_table_data(self):
+        """Populate distribution tabular data in the table widget."""
+        disconnect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+        self.distribution_table.clearContents()
+        self.distribution_table.setRowCount(self.NUMBER_OF_ROWS)
+        self.distribution_table.setColumnCount(1)
+        self.update_distribution_table_header()
+        self.distribution_table.setItemDelegateForColumn(0, NumericItemDelegate(self.distribution_table))
+        if self.feature is not None:
+            table = self.feature[self.distribution_table_field_name] or ""
+        else:
+            table = ""
+        for row_number, row_value in enumerate(table.split(",")):
+            self.distribution_table.setItem(row_number, 0, QTableWidgetItem(row_value))
+        connect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_flow_distribution_table_data()
+
+
 class FormWithTimeseries(BaseForm):
-    """Base edit form for user layers with timeseries table reference."""
+    """Base edit form for user layers with timeseries table."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
         self.timeseries_table_field_name = "timeseries"
         self.timeseries_table = None
-        self.cross_section_table = None
         self.timeseries_table_add = None
         self.timeseries_table_delete = None
         self.timeseries_table_copy = None
@@ -502,7 +599,7 @@ class FormWithTimeseries(BaseForm):
         return timeseries_table_str
 
     def save_timeseries_table_edits(self):
-        """ "Slot for handling table cells edits."""
+        """Slot for handling table cells edits."""
         timeseries_table_str = self.get_timeseries_table_text()
         if self.creation is True:
             self.feature[self.timeseries_table_field_name] = timeseries_table_str
@@ -1443,6 +1540,15 @@ class PumpMapForm(FormWithTags):
         return pump_feat
 
 
+class SurfaceForm(FormWithTags):
+    """Surface user layer edit form logic."""
+
+    MODEL = dm.Surface
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+
 class SurfaceMapForm(NodeToSurfaceMapForm, FormWithTags):
     """Surface Map user layer edit form logic."""
 
@@ -1472,6 +1578,26 @@ class DryWeatherFlowMapForm(NodeToSurfaceMapForm, FormWithTags):
         super().__init__(*args, *kwargs)
         self.dwf_model = dm.DryWeatherFlow
         self.dwf_id_field = "dry_weather_flow_id"
+
+
+class DryWeatherFlowDistributionForm(FormWithTags, FormWithDistribution):
+    """Dry Weather Flow Distribution user layer edit form logic."""
+
+    MODEL = dm.DryWeatherFlowDistribution
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+        self.populate_distribution_table_data()
 
 
 class ChannelForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
@@ -1868,6 +1994,8 @@ ALL_FORMS = (
     PumpMapForm,
     DryWeatherFlowForm,
     DryWeatherFlowMapForm,
+    DryWeatherFlowDistributionForm,
+    SurfaceForm,
     SurfaceMapForm,
     ChannelForm,
     CrossSectionLocationForm,

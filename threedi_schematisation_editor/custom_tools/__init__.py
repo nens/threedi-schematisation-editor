@@ -1,4 +1,4 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 from collections import defaultdict, namedtuple
 from enum import Enum
 from functools import cached_property

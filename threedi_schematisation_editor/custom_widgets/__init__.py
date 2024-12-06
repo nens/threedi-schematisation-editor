@@ -1,4 +1,4 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 import ast
 import json
 import os

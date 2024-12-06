@@ -1,4 +1,4 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 from collections import defaultdict
 from functools import cached_property, partial
 from types import MappingProxyType
@@ -980,8 +980,50 @@ class SurfaceHandler(UserLayerHandler):
         surface_link_layer.changeGeometry(link_feat.id(), link_new_geom)
 
 
-class DryWeatherFlowDistributionHandler(UserLayerHandler):
-    MODEL = dm.DryWeatherFlowDistribution
+class SurfaceMapHandler(UserLayerHandler):
+    MODEL = dm.SurfaceMap
+    DEFAULTS = MappingProxyType(
+        {
+            "percentage": 100.00,
+        }
+    )
+
+    def connect_additional_signals(self):
+        """Connecting signals to action specific for the particular layers."""
+        self.layer.geometryChanged.connect(self.trigger_update_link_references)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to action specific for the particular layers."""
+        self.layer.geometryChanged.disconnect(self.trigger_update_link_references)
+
+    def trigger_update_link_references(self, feat_id, geometry):
+        """Triggering update of the references to the connections nodes and surfaces after geometry change."""
+        update_link_references_method = partial(self.update_link_references, feat_id, geometry)
+        QTimer.singleShot(0, update_link_references_method)
+
+    def update_link_references(self, feat_id, geometry):
+        """Update references to the connections nodes and surfaces after geometry change."""
+        node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        surface_handler = self.layer_manager.model_handlers[dm.Surface]
+        node_layer = node_handler.layer
+        surface_layer = surface_handler.layer
+        layer_fields = self.layer.fields()
+        linestring = geometry.asPolyline()
+        start_point, end_point = linestring[0], linestring[-1]
+        start_surface_feat = find_point_polygons(start_point, surface_layer)
+        end_connection_node_feat = find_point_nodes(end_point, node_layer)
+        changes = {}
+        start_surface_id = start_surface_feat["id"] if start_surface_feat else None
+        end_connection_node_id = end_connection_node_feat["id"] if end_connection_node_feat else None
+        start_surface_id_idx = layer_fields.lookupField("surface_id")
+        end_connection_node_id_idx = layer_fields.lookupField("connection_node_id")
+        changes[start_surface_id_idx] = start_surface_id
+        changes[end_connection_node_id_idx] = end_connection_node_id
+        self.layer.changeAttributeValues(feat_id, changes)
+
+
+class SurfaceParameterHandler(UserLayerHandler):
+    MODEL = dm.SurfaceParameters
 
 
 class DryWeatherFlowHandler(UserLayerHandler):
@@ -1052,54 +1094,12 @@ class DryWeatherFlowMapHandler(UserLayerHandler):
         self.layer.changeAttributeValues(feat_id, changes)
 
 
-class SurfaceMapHandler(UserLayerHandler):
-    MODEL = dm.SurfaceMap
-    DEFAULTS = MappingProxyType(
-        {
-            "percentage": 100.00,
-        }
-    )
-
-    def connect_additional_signals(self):
-        """Connecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.connect(self.trigger_update_link_references)
-
-    def disconnect_additional_signals(self):
-        """Disconnecting signals to action specific for the particular layers."""
-        self.layer.geometryChanged.disconnect(self.trigger_update_link_references)
-
-    def trigger_update_link_references(self, feat_id, geometry):
-        """Triggering update of the references to the connections nodes and surfaces after geometry change."""
-        update_link_references_method = partial(self.update_link_references, feat_id, geometry)
-        QTimer.singleShot(0, update_link_references_method)
-
-    def update_link_references(self, feat_id, geometry):
-        """Update references to the connections nodes and surfaces after geometry change."""
-        node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        surface_handler = self.layer_manager.model_handlers[dm.Surface]
-        node_layer = node_handler.layer
-        surface_layer = surface_handler.layer
-        layer_fields = self.layer.fields()
-        linestring = geometry.asPolyline()
-        start_point, end_point = linestring[0], linestring[-1]
-        start_surface_feat = find_point_polygons(start_point, surface_layer)
-        end_connection_node_feat = find_point_nodes(end_point, node_layer)
-        changes = {}
-        start_surface_id = start_surface_feat["id"] if start_surface_feat else None
-        end_connection_node_id = end_connection_node_feat["id"] if end_connection_node_feat else None
-        start_surface_id_idx = layer_fields.lookupField("surface_id")
-        end_connection_node_id_idx = layer_fields.lookupField("connection_node_id")
-        changes[start_surface_id_idx] = start_surface_id
-        changes[end_connection_node_id_idx] = end_connection_node_id
-        self.layer.changeAttributeValues(feat_id, changes)
+class DryWeatherFlowDistributionHandler(UserLayerHandler):
+    MODEL = dm.DryWeatherFlowDistribution
 
 
 class ModelSettingsHandler(UserLayerHandler):
     MODEL = dm.ModelSettings
-
-
-class SurfaceParameterHandler(UserLayerHandler):
-    MODEL = dm.SurfaceParameters
 
 
 class AggregationSettingsHandler(UserLayerHandler):
@@ -1188,12 +1188,12 @@ ALL_HANDLERS = (
     Windshielding1DHandler,
     PotentialBreachHandler,
     ExchangeLineHandler,
-    DryWeatherFlowHandler,
     SurfaceHandler,
-    DryWeatherFlowMapHandler,
-    DryWeatherFlowDistributionHandler,
     SurfaceMapHandler,
     SurfaceParameterHandler,
+    DryWeatherFlowHandler,
+    DryWeatherFlowMapHandler,
+    DryWeatherFlowDistributionHandler,
     ModelSettingsHandler,
     AggregationSettingsHandler,
     SimpleInfiltrationSettingsHandler,
