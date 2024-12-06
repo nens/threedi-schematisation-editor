@@ -1,4 +1,4 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 from dataclasses import dataclass
 from types import MappingProxyType, SimpleNamespace
 from typing import Optional
@@ -578,47 +578,6 @@ class ExchangeLine(ModelObject):
 
 
 @dataclass
-class DryWeatherFlow(ModelObject):
-    __tablename__ = "dry_weather_flow"
-    __layername__ = "Dry Weather Flow"
-    __geometrytype__ = GeometryType.Polygon
-
-    id: int
-    code: str
-    display_name: str
-    multiplier: Optional[float]
-    daily_total: Optional[float]
-    interpolate: bool
-    dry_weather_flow_distribution_id: int
-    tags: Optional[str]
-
-
-@dataclass
-class DryWeatherFlowDistribution(ModelObject):
-    __tablename__ = "dry_weather_flow_distribution"
-    __layername__ = "Dry Weather Flow distribution"
-    __geometrytype__ = GeometryType.NoGeometry
-
-    id: int
-    description: str
-    distribution: str
-    tags: Optional[str]
-
-
-@dataclass
-class DryWeatherFlowMap(ModelObject):
-    __tablename__ = "dry_weather_flow_map"
-    __layername__ = "Dry Weather Flow map"
-    __geometrytype__ = GeometryType.Linestring
-
-    id: int
-    percentage: float
-    dry_weather_flow_id: int
-    connection_node_id: int
-    tags: Optional[str]
-
-
-@dataclass
 class Surface(ModelObject):
     __tablename__ = "surface"
     __layername__ = "Surface"
@@ -662,6 +621,47 @@ class SurfaceParameters(ModelObject):
     min_infiltration_capacity: float
     infiltration_decay_constant: float
     infiltration_recovery_constant: float
+    tags: Optional[str]
+
+
+@dataclass
+class DryWeatherFlow(ModelObject):
+    __tablename__ = "dry_weather_flow"
+    __layername__ = "Dry Weather Flow"
+    __geometrytype__ = GeometryType.Polygon
+
+    id: int
+    code: str
+    display_name: str
+    multiplier: Optional[float]
+    daily_total: Optional[float]
+    interpolate: bool
+    dry_weather_flow_distribution_id: int
+    tags: Optional[str]
+
+
+@dataclass
+class DryWeatherFlowMap(ModelObject):
+    __tablename__ = "dry_weather_flow_map"
+    __layername__ = "Dry Weather Flow map"
+    __geometrytype__ = GeometryType.Linestring
+
+    id: int
+    percentage: float
+    dry_weather_flow_id: int
+    connection_node_id: int
+    tags: Optional[str]
+
+
+@dataclass
+class DryWeatherFlowDistribution(ModelObject):
+    __tablename__ = "dry_weather_flow_distribution"
+    __layername__ = "Dry Weather Flow distribution"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    id: int
+    description: str
+    distribution: str
     tags: Optional[str]
 
 
@@ -1180,6 +1180,9 @@ MODEL_DEPENDENCIES = MappingProxyType(
         },
         SurfaceParameters: {
             Surface: ("surface_parameters_id",),
+        },
+        DryWeatherFlowDistribution: {
+            DryWeatherFlow: ("dry_weather_flow_distribution_id",),
         },
     }
 )
