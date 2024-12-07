@@ -7,6 +7,7 @@ from types import MappingProxyType
 
 from qgis.core import (
     Qgis,
+    QgsEditorWidgetSetup,
     QgsExpression,
     QgsFeatureRequest,
     QgsProject,
@@ -57,6 +58,13 @@ class LayersManager:
     )
     RASTER_GROUPS = (("Model rasters", dm.ELEMENTS_WITH_RASTERS),)
     LAYER_JOINS = MappingProxyType({})
+    VALUE_RELATIONS = MappingProxyType(
+        {
+            # parent model: (child model, parent column, child key column, child value column)
+            dm.Surface: (dm.SurfaceParameters, "surface_parameters_id", "id", "description"),
+            dm.DryWeatherFlow: (dm.DryWeatherFlowDistribution, "dry_weather_flow_distribution_id", "id", "description"),
+        }
+    )
 
     def __init__(self, iface, user_communication, model_gpkg_path):
         self.iface = iface
@@ -102,7 +110,7 @@ class LayersManager:
         """Validate all layers registered within handlers."""
         fixed_errors, unsolved_errors = [], []
         handlers_count = len(self.model_handlers)
-        msg = "Validating data before the export..."
+        msg = "Validating layers data..."
         self.uc.progress_bar(msg, 0, handlers_count, 0, clear_msg_bar=True)
         QCoreApplication.processEvents()
         for i, handler in enumerate(self.model_handlers.values(), start=1):
@@ -276,6 +284,24 @@ class LayersManager:
         QgsExpression.unregisterFunction("cross_section_max_height")
         QgsExpression.unregisterFunction("cross_section_max_width")
 
+    def setup_value_relation_widgets(self):
+        """Setup value relation widget."""
+        for parent_model_cls, (
+            child_model_cls,
+            parent_column,
+            key_column,
+            value_column,
+        ) in self.VALUE_RELATIONS.items():
+            parent_layer = self.model_handlers[parent_model_cls].layer
+            parent_column_idx = parent_layer.fields().lookupField(parent_column)
+            child_layer = self.model_handlers[child_model_cls].layer
+            default_ews = parent_layer.editorWidgetSetup(parent_column_idx)
+            config = default_ews.config()
+            config["Layer"] = child_layer.id()
+            config["LayerSource"] = child_layer.source()
+            ews = QgsEditorWidgetSetup(default_ews.type(), config)
+            parent_layer.setEditorWidgetSetup(parent_column_idx, ews)
+
     def create_groups(self):
         """Creating all User Layers groups."""
         self.remove_groups()
@@ -422,6 +448,7 @@ class LayersManager:
             self.remove_loaded_layers(dry_remove=True)
             self.register_groups()
             self.register_vector_layers()
+        self.setup_value_relation_widgets()
         self.iface.setActiveLayer(self.model_handlers[dm.ConnectionNode].layer)
 
     def remove_loaded_layers(self, dry_remove=False):
