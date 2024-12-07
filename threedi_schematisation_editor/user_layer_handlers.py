@@ -1143,7 +1143,7 @@ class TimeStepSettingsHandler(UserLayerHandler):
 
 
 class VegetationDrag2DHandler(UserLayerHandler):
-    MODEL = dm.VegetationDrag2DSettings
+    MODEL = dm.VegetationDrag2D
 
 
 class TagsHandler(UserLayerHandler):
