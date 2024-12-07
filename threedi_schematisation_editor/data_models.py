@@ -994,7 +994,7 @@ class TableControl(ModelObject):
 
 
 @dataclass
-class VegetationDrag2DSettings(ModelObject):
+class VegetationDrag2D(ModelObject):
     __tablename__ = "vegetation_drag_2d"
     __layername__ = "2D Vegetation drag"
     __geometrytype__ = GeometryType.NoGeometry
@@ -1020,12 +1020,11 @@ class VegetationDrag2DSettings(ModelObject):
 MODEL_1D_ELEMENTS = (
     ConnectionNode,
     BoundaryCondition1D,
-    Lateral1D,
     Pump,
     PumpMap,
     Weir,
-    Culvert,
     Orifice,
+    Culvert,
     Pipe,
     CrossSectionLocation,
     Channel,
@@ -1033,43 +1032,28 @@ MODEL_1D_ELEMENTS = (
     Material,
 )
 
-MODEL_2D_ELEMENTS = (
-    BoundaryCondition2D,
-    Lateral2D,
-    DEMAverageArea,
-    GridRefinementArea,
-    GridRefinementLine,
-    Obstacle,
-)
-
 MODEL_1D2D_ELEMENTS = (
     PotentialBreach,
     ExchangeLine,
 )
 
+MODEL_2D_ELEMENTS = (
+    BoundaryCondition2D,
+    Obstacle,
+    GridRefinementArea,
+    GridRefinementLine,
+    DEMAverageArea,
+)
+
 MODEL_0D_INFLOW_ELEMENTS = (
-    Surface,
-    SurfaceMap,
-    SurfaceParameters,
+    Lateral1D,
+    Lateral2D,
     DryWeatherFlow,
     DryWeatherFlowMap,
     DryWeatherFlowDistribution,
-)
-
-SETTINGS_ELEMENTS = (
-    ModelSettings,
-    InitialConditionsSettings,
-    InterceptionSettings,
-    AggregationSettings,
-    SimpleInfiltrationSettings,
-    GroundWaterSettings,
-    InterflowSettings,
-    NumericalSettings,
-    VegetationDrag2DSettings,
-    PhysicalSettings,
-    SimulationTemplateSettings,
-    TimeStepSettings,
-    Tags,
+    Surface,
+    SurfaceMap,
+    SurfaceParameters,
 )
 
 STRUCTURE_CONTROL_ELEMENTS = (
@@ -1078,12 +1062,38 @@ STRUCTURE_CONTROL_ELEMENTS = (
     MemoryControl,
     TableControl,
 )
+HYDROLOGICAL_PROCESSES = (
+    InitialConditionsSettings,
+    InterceptionSettings,
+    InterflowSettings,
+    GroundWaterSettings,
+    SimpleInfiltrationSettings,
+    VegetationDrag2D,
+)
+SETTINGS_ELEMENTS = (
+    ModelSettings,
+    AggregationSettings,
+    NumericalSettings,
+    PhysicalSettings,
+    SimulationTemplateSettings,
+    TimeStepSettings,
+    Tags,
+)
+
 
 HIDDEN_ELEMENTS = tuple()
 
-ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + MODEL_1D2D_ELEMENTS + MODEL_0D_INFLOW_ELEMENTS + SETTINGS_ELEMENTS
+ALL_MODELS = (
+    MODEL_1D_ELEMENTS
+    + MODEL_1D2D_ELEMENTS
+    + MODEL_2D_ELEMENTS
+    + MODEL_0D_INFLOW_ELEMENTS
+    + STRUCTURE_CONTROL_ELEMENTS
+    + HYDROLOGICAL_PROCESSES
+    + SETTINGS_ELEMENTS
+)
 ALL_MODELS = ALL_MODELS + (CrossSectionDefinition,)
-ALL_MODELS = ALL_MODELS + STRUCTURE_CONTROL_ELEMENTS + HIDDEN_ELEMENTS
+ALL_MODELS = ALL_MODELS + HIDDEN_ELEMENTS
 
 ELEMENTS_WITH_XS_DEF = (
     Weir,

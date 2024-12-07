@@ -200,6 +200,12 @@ def get_form_ui_path(table_name):
     return None
 
 
+def get_icon_path(icon_filename, root_dir=None):
+    """Getting icon path for a given icon file."""
+    icon_filepath = os.path.join(os.path.dirname(__file__) if root_dir is None else root_dir, "icons", icon_filename)
+    return icon_filepath
+
+
 def create_tree_group(name, insert_at_top=False, root=None):
     """Creating layer tree group with given name."""
     root = QgsProject.instance().layerTreeRoot() if root is None else root

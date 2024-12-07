@@ -28,6 +28,7 @@ from threedi_schematisation_editor.utils import (
     create_empty_model,
     ensure_valid_schema,
     get_filepath,
+    get_icon_path,
     is_gpkg_connection_exists,
     remove_user_layers,
 )
@@ -73,11 +74,15 @@ class ThreediSchematisationEditorPlugin:
         self.active_schematisation_combo.currentIndexChanged.connect(self.active_schematisation_changed)
         self.toolbar.addWidget(self.active_schematisation_combo)
         self.toolbar.addSeparator()
-        self.action_open = QAction("Open 3Di Geopackage", self.iface.mainWindow())
+        self.action_open = QAction(
+            QIcon(get_icon_path("icon_load.svg")), "Load 3Di Schematisation", self.iface.mainWindow()
+        )
         self.action_open.triggered.connect(self.open_model_from_geopackage)
-        self.action_remove = QAction("Remove 3Di model", self.iface.mainWindow())
+        self.action_remove = QAction(
+            QIcon(get_icon_path("icon_unload.svg")), "Remove 3Di Schematisation", self.iface.mainWindow()
+        )
         self.action_remove.triggered.connect(self.remove_model_from_project)
-        import_culverts_icon_path = os.path.join(os.path.dirname(__file__), "import.png")
+        import_culverts_icon_path = get_icon_path("icon_import.png")
         import_actions_spec = [
             ("Culverts", self.import_external_culverts, None),
             ("Orifices", self.import_external_orifices, None),

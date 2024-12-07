@@ -50,8 +50,9 @@ class LayersManager:
         ("1D", dm.MODEL_1D_ELEMENTS),
         ("1D2D", dm.MODEL_1D2D_ELEMENTS),
         ("2D", dm.MODEL_2D_ELEMENTS),
-        ("Inflow", dm.MODEL_0D_INFLOW_ELEMENTS),
-        ("Control structures", dm.STRUCTURE_CONTROL_ELEMENTS),
+        ("Laterals & 0D inflow", dm.MODEL_0D_INFLOW_ELEMENTS),
+        ("Structure control", dm.STRUCTURE_CONTROL_ELEMENTS),
+        ("Hydrological processes", dm.HYDROLOGICAL_PROCESSES),
         ("Settings", dm.SETTINGS_ELEMENTS),
     )
     RASTER_GROUPS = (("Model rasters", dm.ELEMENTS_WITH_RASTERS),)
@@ -396,7 +397,7 @@ class LayersManager:
                     relative_path = feat[raster_file_field]
                     if not relative_path:
                         continue
-                    raster_filepath = os.path.normpath(os.path.join(gpkg_dir, relative_path))
+                    raster_filepath = os.path.normpath(os.path.join(gpkg_dir, "rasters", relative_path))
                     if not os.path.isfile(raster_filepath):
                         continue
                     rlayer = QgsRasterLayer(raster_filepath, raster_layer_name)
