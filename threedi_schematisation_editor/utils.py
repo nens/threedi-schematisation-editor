@@ -54,24 +54,14 @@ field_types_mapping = {
 }
 
 
-def backup_sqlite(filename):
-    """Make a backup of the sqlite database."""
+def backup_geopackage(filename):
+    """Make a backup of the geopackage."""
     backup_folder = os.path.join(os.path.dirname(os.path.dirname(filename)), "_backup")
     os.makedirs(backup_folder, exist_ok=True)
     prefix = str(uuid4())[:8]
-    backup_sqlite_path = os.path.join(backup_folder, f"{prefix}_{os.path.basename(filename)}")
-    shutil.copyfile(filename, backup_sqlite_path)
-    return backup_sqlite_path
-
-
-def cast_if_bool(value):
-    """Function for changing True/False from GeoPackage layers to 0/1 integers used in Spatialite layers."""
-    if value is True:
-        return 1
-    elif value is False:
-        return 0
-    else:
-        return value
+    backup_gpkg_path = os.path.join(backup_folder, f"{prefix}_{os.path.basename(filename)}")
+    shutil.copyfile(filename, backup_gpkg_path)
+    return backup_gpkg_path
 
 
 def vector_layer_factory(annotated_model_cls, epsg=4326):
@@ -154,22 +144,6 @@ def gpkg_layer(gpkg_path, table_name, layer_name=None):
     layer_name = table_name if layer_name is None else layer_name
     vlayer = QgsVectorLayer(uri, layer_name, "ogr")
     return vlayer
-
-
-def sqlite_layer(sqlite_path, table_name, layer_name=None, geom_column="the_geom", schema=""):
-    """Creating vector layer out of Spatialite source."""
-    uri = QgsDataSourceUri()
-    uri.setDatabase(sqlite_path)
-    uri.setDataSource(schema, table_name, geom_column)
-    layer_name = table_name if layer_name is None else layer_name
-    vlayer = QgsVectorLayer(uri.uri(), layer_name, "spatialite")
-    return vlayer
-
-
-def create_empty_model(export_sqlite_path):
-    """Copying Spatialite database template with 3Di model data structure."""
-    empty_sqlite = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "empty.sqlite")
-    shutil.copy(empty_sqlite, export_sqlite_path)
 
 
 def get_qml_style_path(style_name, *subfolders):
@@ -407,7 +381,16 @@ def load_model_raster_layers(gpkg_path):
 
 def remove_user_layers():
     """Removing all 3Di model User Layers and rasters from the map canvas."""
-    groups = ["1D", "2D", "Inflow", "Settings", "Model rasters"]
+    groups = [
+        "1D",
+        "1D2D",
+        " 2D",
+        "Laterals & 0D inflow",
+        "Structure control",
+        "Hydrological processes",
+        "Settings",
+        "Model rasters",
+    ]
     for group_name in groups:
         remove_group_with_children(group_name)
 
@@ -708,15 +691,16 @@ def modify_raster_style(raster_layer, limits=QgsRasterMinMaxOrigin.MinMax, exten
     raster_layer.setRenderer(renderer)
 
 
-def migrate_spatialite_schema(sqlite_filepath):
+def migrate_geopackage_schema(gpkg_filepath):
+    # TODO: Needs refactoring
     migration_succeed = False
     try:
         from threedi_schema import ThreediDatabase, errors
 
-        threedi_db = ThreediDatabase(sqlite_filepath)
+        threedi_db = ThreediDatabase(gpkg_filepath)
         schema = threedi_db.schema
-        backup_filepath = backup_sqlite(sqlite_filepath)
-        schema.upgrade(backup=False, upgrade_spatialite_version=True)
+        backup_filepath = backup_geopackage(gpkg_filepath)
+        schema.upgrade(backup=False, upgrade_schema_version=True)
         schema.set_spatial_indexes()
         shutil.rmtree(os.path.dirname(backup_filepath))
         migration_succeed = True
@@ -725,7 +709,7 @@ def migrate_spatialite_schema(sqlite_filepath):
         migration_feedback_msg = "Missing threedi-schema library. Schema migration failed."
     except errors.UpgradeFailedError:
         migration_feedback_msg = (
-            "The spatialite database schema cannot be migrated to the current version. "
+            "The geopackage database schema cannot be migrated to the current version. "
             "Please contact the service desk for assistance."
         )
     except Exception as e:
@@ -755,34 +739,35 @@ def bypass_max_path_limit(path, is_file=False):
     return valid_path
 
 
-def ensure_valid_schema(schematisation_sqlite, communication):
+def ensure_valid_schema(schematisation_gpkg, communication):
     """Check if schema version is up-to-date and migrate it if needed."""
+    # TODO: Needs refactoring
     try:
         from threedi_schema import ThreediDatabase, errors
     except ImportError:
         return
-    schematisation_dirname = os.path.dirname(schematisation_sqlite)
-    schematisation_filename = os.path.basename(schematisation_sqlite)
+    schematisation_dirname = os.path.dirname(schematisation_gpkg)
+    schematisation_filename = os.path.basename(schematisation_gpkg)
     backup_folder = os.path.join(schematisation_dirname, "_backup")
     os.makedirs(bypass_max_path_limit(backup_folder), exist_ok=True)
     prefix = str(uuid4())[:8]
-    backup_sqlite_path = os.path.join(backup_folder, f"{prefix}_{schematisation_filename}")
-    shutil.copyfile(schematisation_sqlite, bypass_max_path_limit(backup_sqlite_path, is_file=True))
-    threedi_db = ThreediDatabase(schematisation_sqlite)
+    backup_gpkg_path = os.path.join(backup_folder, f"{prefix}_{schematisation_filename}")
+    shutil.copyfile(schematisation_gpkg, bypass_max_path_limit(backup_gpkg_path, is_file=True))
+    threedi_db = ThreediDatabase(schematisation_gpkg)
     schema = threedi_db.schema
     try:
         schema.validate_schema()
         schema.set_spatial_indexes()
     except errors.MigrationMissingError:
         warn_and_ask_msg = (
-            "The selected spatialite cannot be used because its database schema version is out of date. "
-            "Would you like to migrate your spatialite to the current schema version?"
+            "The selected geopackage cannot be used because its database schema version is out of date. "
+            "Would you like to migrate your geopackage to the current schema version?"
         )
         do_migration = communication.ask(None, "Missing migration", warn_and_ask_msg)
         if not do_migration:
             return False
         try:
-            schema.upgrade(backup=False, upgrade_spatialite_version=True)
+            schema.upgrade(backup=False, upgrade_schema_version=True)
             schema.set_spatial_indexes()
             shutil.rmtree(backup_folder)
         except errors.MigrationMissingError as e:
@@ -796,7 +781,7 @@ def ensure_valid_schema(schematisation_sqlite, communication):
                 raise e
     except errors.UpgradeFailedError:
         error_msg = (
-            "The spatialite database schema cannot be migrated to the current version. "
+            "The geopackage database schema cannot be migrated to the current version. "
             "Please contact the service desk for assistance."
         )
         communication.show_error(error_msg)

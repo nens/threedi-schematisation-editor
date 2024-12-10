@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
 from qgis.PyQt.QtGui import QCursor, QIcon
-from qgis.PyQt.QtWidgets import QAction, QComboBox, QMenu
+from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
@@ -17,12 +17,10 @@ from threedi_schematisation_editor.utils import (
     add_settings_entry,
     can_write_in_dir,
     check_enable_macros_option,
-    create_empty_model,
     ensure_valid_schema,
     get_filepath,
     get_icon_path,
     is_gpkg_connection_exists,
-    remove_user_layers,
 )
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
@@ -66,7 +64,7 @@ class ThreediSchematisationEditorPlugin:
         self.action_open = QAction(
             QIcon(get_icon_path("icon_load.svg")), "Load 3Di Schematisation", self.iface.mainWindow()
         )
-        self.action_open.triggered.connect(self.open_model_from_geopackage)
+        self.action_open.triggered.connect(self.load_schematisation)
         self.action_remove = QAction(
             QIcon(get_icon_path("icon_unload.svg")), "Remove 3Di Schematisation", self.iface.mainWindow()
         )
@@ -204,11 +202,6 @@ class ThreediSchematisationEditorPlugin:
         filename = get_filepath(self.iface.mainWindow(), extension_filter=name_filter, save=False)
         return filename
 
-    def select_sqlite_database(self, title):
-        name_filter = "Spatialite Database (*.sqlite)"
-        filename = get_filepath(self.iface.mainWindow(), extension_filter=name_filter, save=False, dialog_title=title)
-        return filename
-
     def on_3di_project_read(self):
         custom_vars = self.project.customVariables()
         try:
@@ -231,11 +224,17 @@ class ThreediSchematisationEditorPlugin:
         if project_model_gpkgs_str:
             self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAMES: project_model_gpkgs_str})
 
-    def open_model_from_geopackage(self, model_gpkg=None):
+    def load_schematisation(self, model_gpkg=None):
         if not model_gpkg:
-            model_gpkg = self.select_user_layers_geopackage()
-            if not model_gpkg:
+            schematisation_loader = LoadSchematisationDialog(self.uc)
+            result = schematisation_loader.exec_()
+            if result != QDialog.Accepted:
                 return
+            model_gpkg = schematisation_loader.selected_schematisation_gpkg
+        if not can_write_in_dir(os.path.dirname(model_gpkg)):
+            warn_msg = "You don't have required write permissions to load data from the selected location."
+            self.uc.show_warn(warn_msg)
+            return
         lm = LayersManager(self.iface, self.uc, model_gpkg)
         if lm in self.workspace_context_manager:
             warn_msg = "Selected schematisation is already loaded. Loading canceled."
