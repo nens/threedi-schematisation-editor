@@ -636,9 +636,9 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
         self.working_dir = self.settings.value("threedi/working_dir", "", type=str)
         if self.working_dir:
             self.file_browse_widget.setDefaultRoot(self.working_dir)
-        self.selected_schematisation_sqlite = None
-        self.schematisation_tv.doubleClicked.connect(self.set_schematisation_sqlite_filepath)
-        self.load_pb.clicked.connect(self.set_schematisation_sqlite_filepath)
+        self.selected_schematisation_gpkg = None
+        self.schematisation_tv.doubleClicked.connect(self.set_schematisation_geopackage_filepath)
+        self.load_pb.clicked.connect(self.set_schematisation_geopackage_filepath)
         self.cancle_pb.clicked.connect(self.reject)
         self.list_working_dir_schematisations()
 
@@ -661,27 +661,27 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
             local_schematisation_name = local_schematisation.name
             wip_revision = local_schematisation.wip_revision
             try:
-                wip_revision_sqlite = wip_revision.sqlite
+                wip_revision_gpkg = wip_revision.geopackage_filepath
             except (AttributeError, FileNotFoundError):
-                wip_revision_sqlite = None
-            if wip_revision_sqlite is not None:
+                wip_revision_gpkg = None
+            if wip_revision_gpkg is not None:
                 schematisation_name_item = QStandardItem(local_schematisation_name)
                 revision_number_str = f"{wip_revision.number} (work in progress)"
                 revision_number_item = QStandardItem(revision_number_str)
-                revision_number_item.setData(wip_revision_sqlite, Qt.UserRole)
+                revision_number_item.setData(wip_revision_gpkg, Qt.UserRole)
                 self.schematisation_model.appendRow([schematisation_name_item, revision_number_item])
                 if wip_revision.schematisation_dir == last_used_schematisation_dir:
                     last_used_schematisation_row_number = self.schematisation_model.rowCount() - 1
             for revision_number, revision in local_schematisation.revisions.items():
                 try:
-                    revision_sqlite = revision.sqlite
-                    if revision_sqlite is None:
+                    revision_gpkg = revision.geopackage_filepath
+                    if revision_gpkg is None:
                         continue
                 except FileNotFoundError:
                     continue
                 schematisation_name_item = QStandardItem(local_schematisation_name)
                 revision_number_item = QStandardItem(str(revision.number))
-                revision_number_item.setData(revision_sqlite, Qt.UserRole)
+                revision_number_item.setData(revision_gpkg, Qt.UserRole)
                 self.schematisation_model.appendRow([schematisation_name_item, revision_number_item])
                 if revision.schematisation_dir == last_used_schematisation_dir:
                     last_used_schematisation_row_number = self.schematisation_model.rowCount() - 1
@@ -694,7 +694,7 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
             )
             self.schematisation_tv.scrollTo(last_used_schematisation_row_idx)
 
-    def set_schematisation_sqlite_filepath(self):
+    def set_schematisation_geopackage_filepath(self):
         """Set selected schematisation filepath."""
         if self.load_tab.currentIndex() == 0:
             index = self.schematisation_tv.currentIndex()
@@ -703,12 +703,12 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
                 return
             current_row = index.row()
             revision_item = self.schematisation_model.item(current_row, 1)
-            revision_sqlite = revision_item.data(Qt.UserRole)
-            self.selected_schematisation_sqlite = revision_sqlite
+            revision_gpkg = revision_item.data(Qt.UserRole)
+            self.selected_schematisation_gpkg = revision_gpkg
         else:
             selected_filepath = self.file_browse_widget.filePath()
             if not selected_filepath:
                 self.uc.show_warn("No file selected. Please select schematisation file to continue.", parent=self)
                 return
-            self.selected_schematisation_sqlite = self.file_browse_widget.filePath()
+            self.selected_schematisation_gpkg = self.file_browse_widget.filePath()
         self.accept()
