@@ -34,18 +34,9 @@ from threedi_schematisation_editor.utils import (
     optional_type,
 )
 
-ps_basecls, ps_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "projection_selection.ui"))
 ic_basecls, ic_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "import_structures.ui"))
 vm_basecls, vm_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "attribute_value_map.ui"))
 load_basecls, load_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "load_schematisation.ui"))
-
-
-class ProjectionSelectionDialog(ps_basecls, ps_uicls):
-    """Dialog with selection of the desired projection."""
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setupUi(self)
 
 
 class AttributeValueMapDialog(vm_basecls, vm_uicls):
