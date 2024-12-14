@@ -2,7 +2,7 @@
 import sys
 from collections import defaultdict
 from enum import Enum
-from functools import partial
+from functools import cached_property, partial
 from operator import itemgetter
 from types import MappingProxyType
 
@@ -51,7 +51,7 @@ field_types_widgets = MappingProxyType(
 )
 
 
-class BaseForm(QObject):
+class AbstractBaseForm(QObject):
     """Base edit form for user layers edit form logic."""
 
     MODEL = None
@@ -106,6 +106,7 @@ class BaseForm(QObject):
                     return
                 self.creation = True
                 self.handler.set_feature_values(self.feature)
+
         self.activate_field_based_conditions()
         self.toggle_edit_mode()
         self.connect_foreign_widgets()
@@ -392,7 +393,7 @@ class BaseForm(QObject):
         pass
 
 
-class FormWithTags(BaseForm):
+class AbstractFormWithTags(AbstractBaseForm):
     """Base edit form for user layers with tags table reference."""
 
     def __init__(self, *args, **kwargs):
@@ -420,7 +421,7 @@ class FormWithTags(BaseForm):
             self.tags.setText(", ".join(tag_descriptions))
 
 
-class FormWithDistribution(BaseForm):
+class AbstractFormWithDistribution(AbstractBaseForm):
     """Base edit form for user layers with distribution table."""
 
     NUMBER_OF_ROWS = 24
@@ -434,7 +435,7 @@ class FormWithDistribution(BaseForm):
 
     @property
     def table_header(self):
-        return ["Value"]
+        return ["%"]
 
     def setup_form_widgets(self):
         """Setting up all form widgets."""
@@ -518,182 +519,206 @@ class FormWithDistribution(BaseForm):
         self.populate_flow_distribution_table_data()
 
 
-class FormWithTimeseries(BaseForm):
-    """Base edit form for user layers with timeseries table."""
+class AbstractFormWithTable(AbstractBaseForm):
+    """Base edit form for user layers with table."""
+
+    TABLE_NAME = ""
+    ROW_SEPARATOR = "\n"
+    COLUMN_SEPARATOR = ","
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.timeseries_table_field_name = "timeseries"
-        self.timeseries_table = None
-        self.timeseries_table_add = None
-        self.timeseries_table_delete = None
-        self.timeseries_table_copy = None
-        self.timeseries_table_paste = None
-        self.setup_timeseries_table_widgets()
+        self.table = None
+        self.table_add = None
+        self.table_delete = None
+        self.table_copy = None
+        self.table_paste = None
+        self.setup_table_widgets()
 
     @property
     def table_header(self):
-        return ["Time", "Value"]
+        """Return table header."""
+        raise NotImplementedError("Table header not implemented.")
 
     def setup_form_widgets(self):
         """Setting up all form widgets."""
         super().setup_form_widgets()
-        self.update_timeseries_table_header()
+        self.update_table_header()
 
-    def setup_timeseries_table_widgets(self):
+    def setup_table_widgets(self):
         """Setup timeseries widgets."""
-        timeseries_table_widget_name = "timeseries_table"
-        self.timeseries_table = self.dialog.findChild(QTableWidget, timeseries_table_widget_name)
-        self.timeseries_table_add = self.dialog.findChild(QPushButton, f"{timeseries_table_widget_name}_add")
-        self.timeseries_table_delete = self.dialog.findChild(QPushButton, f"{timeseries_table_widget_name}_delete")
-        self.timeseries_table_copy = self.dialog.findChild(QPushButton, f"{timeseries_table_widget_name}_copy")
-        self.timeseries_table_paste = self.dialog.findChild(QPushButton, f"{timeseries_table_widget_name}_paste")
+        table_widget_name = f"{self.TABLE_NAME}_table"
+        self.table = self.dialog.findChild(QTableWidget, table_widget_name)
+        self.table_add = self.dialog.findChild(QPushButton, f"{table_widget_name}_add")
+        self.table_delete = self.dialog.findChild(QPushButton, f"{table_widget_name}_delete")
+        self.table_copy = self.dialog.findChild(QPushButton, f"{table_widget_name}_copy")
+        self.table_paste = self.dialog.findChild(QPushButton, f"{table_widget_name}_paste")
         for widget in [
-            self.timeseries_table,
-            self.timeseries_table_add,
-            self.timeseries_table_delete,
-            self.timeseries_table_copy,
-            self.timeseries_table_paste,
+            self.table,
+            self.table_add,
+            self.table_delete,
+            self.table_copy,
+            self.table_paste,
         ]:
             self.custom_widgets[widget.objectName()] = widget
 
     def connect_custom_widgets(self):
         """Connect other widgets."""
         super().connect_custom_widgets()
-        connect_signal(self.timeseries_table.cellChanged, self.save_timeseries_table_edits)
-        self.dialog.active_form_signals.add((self.timeseries_table.cellChanged, self.save_timeseries_table_edits))
-        connect_signal(self.timeseries_table_add.clicked, self.add_table_row)
-        self.dialog.active_form_signals.add((self.timeseries_table_add.clicked, self.add_table_row))
-        connect_signal(self.timeseries_table_delete.clicked, self.delete_table_rows)
-        self.dialog.active_form_signals.add((self.timeseries_table_delete.clicked, self.delete_table_rows))
-        connect_signal(self.timeseries_table_paste.clicked, self.paste_table_rows)
-        self.dialog.active_form_signals.add((self.timeseries_table_paste.clicked, self.paste_table_rows))
-        connect_signal(self.timeseries_table_copy.clicked, self.copy_table_rows)
-        self.dialog.active_form_signals.add((self.timeseries_table_copy.clicked, self.copy_table_rows))
+        connect_signal(self.table.cellChanged, self.save_table_edits)
+        self.dialog.active_form_signals.add((self.table.cellChanged, self.save_table_edits))
+        connect_signal(self.table_add.clicked, self.add_table_row)
+        self.dialog.active_form_signals.add((self.table_add.clicked, self.add_table_row))
+        connect_signal(self.table_delete.clicked, self.delete_table_rows)
+        self.dialog.active_form_signals.add((self.table_delete.clicked, self.delete_table_rows))
+        connect_signal(self.table_paste.clicked, self.paste_table_rows)
+        self.dialog.active_form_signals.add((self.table_paste.clicked, self.paste_table_rows))
+        connect_signal(self.table_copy.clicked, self.copy_table_rows)
+        self.dialog.active_form_signals.add((self.table_copy.clicked, self.copy_table_rows))
 
-    def update_timeseries_table_header(self):
-        """Update timeseries table headers."""
-        self.timeseries_table.setHorizontalHeaderLabels(self.table_header)
+    def update_table_header(self):
+        """Update table headers."""
+        self.table.setHorizontalHeaderLabels(self.table_header)
 
-    def get_timeseries_table_values(self):
-        """Get timeseries table values."""
-        num_of_rows = self.timeseries_table.rowCount()
-        num_of_cols = self.timeseries_table.columnCount()
-        timeseries_table_values = []
+    def get_table_values(self):
+        """Get table values."""
+        num_of_rows = self.table.rowCount()
+        num_of_cols = self.table.columnCount()
+        table_values = []
         for row_num in range(num_of_rows):
             row_values = []
             for col_num in range(num_of_cols):
-                item = self.timeseries_table.item(row_num, col_num)
+                item = self.table.item(row_num, col_num)
                 if item is not None:
                     item_text = item.text().strip()
                 else:
                     item_text = ""
                 row_values.append(item_text)
-            timeseries_table_values.append(row_values)
-        return timeseries_table_values
+            table_values.append(row_values)
+        return table_values
 
-    def get_timeseries_table_text(self):
-        """Get timeseries table data as a string representation."""
-        timeseries_table_values = self.get_timeseries_table_values()
-        timeseries_table_str = "\n".join(", ".join(row) for row in timeseries_table_values if all(row))
-        return timeseries_table_str
+    def get_table_text(self):
+        """Get table data as a string representation."""
+        table_values = self.get_table_values()
+        table_str = self.ROW_SEPARATOR.join(self.COLUMN_SEPARATOR.join(row) for row in table_values if all(row))
+        return table_str
 
-    def save_timeseries_table_edits(self):
+    def save_table_edits(self):
         """Slot for handling table cells edits."""
-        timeseries_table_str = self.get_timeseries_table_text()
+        table_str = self.get_table_text()
         if self.creation is True:
-            self.feature[self.timeseries_table_field_name] = timeseries_table_str
+            self.feature[self.TABLE_NAME] = table_str
         else:
-            timeseries_table_idx = self.layer.fields().lookupField(self.timeseries_table_field_name)
-            changes = {timeseries_table_idx: timeseries_table_str}
+            table_idx = self.layer.fields().lookupField(self.TABLE_NAME)
+            changes = {table_idx: table_str}
             self.layer.changeAttributeValues(self.feature.id(), changes)
 
     def add_table_row(self):
         """Slot for handling new row addition."""
-        selected_rows = {idx.row() for idx in self.timeseries_table.selectedIndexes()}
+        selected_rows = {idx.row() for idx in self.table.selectedIndexes()}
         if selected_rows:
             last_row_number = max(selected_rows) + 1
         else:
-            last_row_number = self.timeseries_table.rowCount()
-        self.timeseries_table.insertRow(last_row_number)
+            last_row_number = self.table.rowCount()
+        self.table.insertRow(last_row_number)
 
     def delete_table_rows(self):
         """Slot for handling deletion of the selected rows."""
-        selected_rows = {idx.row() for idx in self.timeseries_table.selectedIndexes()}
+        selected_rows = {idx.row() for idx in self.table.selectedIndexes()}
         for row_number in sorted(selected_rows, reverse=True):
-            self.timeseries_table.removeRow(row_number)
-        self.save_timeseries_table_edits()
+            self.table.removeRow(row_number)
+        self.save_table_edits()
 
     def paste_table_rows(self):
         """Handling pasting new rows from the clipboard."""
         text = QApplication.clipboard().text()
-        rows = text.split("\n")
-        last_row_num = self.timeseries_table.rowCount()
-        disconnect_signal(self.timeseries_table.cellChanged, self.save_timeseries_table_edits)
+        rows = text.split(self.ROW_SEPARATOR)
+        last_row_num = self.table.rowCount()
+        disconnect_signal(self.table.cellChanged, self.save_table_edits)
         for row in rows:
             try:
-                height_str, width_str = row.replace(" ", "").split(",")
+                height_str, width_str = row.replace(" ", "").split(self.COLUMN_SEPARATOR)
             except ValueError:
                 continue
-            self.timeseries_table.insertRow(last_row_num)
-            self.timeseries_table.setItem(last_row_num, 0, QTableWidgetItem(height_str))
-            self.timeseries_table.setItem(last_row_num, 1, QTableWidgetItem(width_str))
+            self.table.insertRow(last_row_num)
+            self.table.setItem(last_row_num, 0, QTableWidgetItem(height_str))
+            self.table.setItem(last_row_num, 1, QTableWidgetItem(width_str))
             last_row_num += 1
-        connect_signal(self.timeseries_table.cellChanged, self.save_timeseries_table_edits)
-        self.save_timeseries_table_edits()
+        connect_signal(self.table.cellChanged, self.save_table_edits)
+        self.save_table_edits()
 
     def copy_table_rows(self):
         """Slot for copying table values into the clipboard."""
-        timeseries_table_values = self.get_timeseries_table_values()
-        clipboard_values = "\n".join([",".join(row_values) for row_values in timeseries_table_values])
+        table_values = self.get_table_values()
+        clipboard_values = "\n".join([",".join(row_values) for row_values in table_values])
         QApplication.clipboard().setText(clipboard_values)
 
     def clear_table_row_values(self):
         """Slot for clearing table values."""
-        num_of_rows = self.timeseries_table.rowCount()
-        num_of_cols = self.timeseries_table.columnCount()
-        disconnect_signal(self.timeseries_table.cellChanged, self.save_timeseries_table_edits)
+        num_of_rows = self.table.rowCount()
+        num_of_cols = self.table.columnCount()
+        disconnect_signal(self.table.cellChanged, self.save_table_edits)
         for row_num in range(num_of_rows):
             for col_num in range(num_of_cols):
-                self.timeseries_table.setItem(row_num, col_num, QTableWidgetItem(""))
-        connect_signal(self.timeseries_table.cellChanged, self.save_timeseries_table_edits)
-        self.save_timeseries_table_edits()
+                self.table.setItem(row_num, col_num, QTableWidgetItem(""))
+        connect_signal(self.table.cellChanged, self.save_table_edits)
+        self.save_table_edits()
 
-    def populate_timeseries_table_data(self):
+    def populate_table_data(self):
         """Populate timeseries tabular data in the table widget."""
-        disconnect_signal(self.timeseries_table.cellChanged, self.save_timeseries_table_edits)
-        table = self.feature[self.timeseries_table_field_name] or ""
-        number_of_rows_main = len(table.split("\n"))
+        disconnect_signal(self.table.cellChanged, self.save_table_edits)
+        table = self.feature[self.TABLE_NAME] or ""
+        number_of_rows_main = len(table.split(self.ROW_SEPARATOR))
         table_columns_count = len(self.table_header)
-        self.timeseries_table.clearContents()
-        self.timeseries_table.setRowCount(0)
-        self.timeseries_table.setColumnCount(table_columns_count)
-        self.update_timeseries_table_header()
+        self.table.clearContents()
+        self.table.setRowCount(0)
+        self.table.setColumnCount(table_columns_count)
+        self.update_table_header()
         for column_idx in range(table_columns_count):
-            self.timeseries_table.setItemDelegateForColumn(column_idx, NumericItemDelegate(self.timeseries_table))
+            self.table.setItemDelegateForColumn(column_idx, NumericItemDelegate(self.table))
         for row_num_main in range(number_of_rows_main):
-            self.timeseries_table.insertRow(row_num_main)
+            self.table.insertRow(row_num_main)
         if self.feature is not None:
-            table = self.feature[self.timeseries_table_field_name] or ""
+            table = self.feature[self.TABLE_NAME] or ""
         else:
             table = ""
-        for row_number, row in enumerate(table.split("\n")):
-            row_values = [val for val in row.replace(" ", "").split(",") if val]
+        for row_number, row in enumerate(table.split(self.ROW_SEPARATOR)):
+            row_values = [val for val in row.replace(" ", "").split(self.COLUMN_SEPARATOR) if val]
             if len(row_values) != table_columns_count:
                 continue
             for col_idx, row_value in enumerate(row_values):
-                self.timeseries_table.setItem(row_number, col_idx, QTableWidgetItem(row_value))
-        connect_signal(self.timeseries_table.cellChanged, self.save_timeseries_table_edits)
+                self.table.setItem(row_number, col_idx, QTableWidgetItem(row_value))
+        connect_signal(self.table.cellChanged, self.save_table_edits)
 
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
             self.fill_related_attributes()
         self.populate_widgets()
-        self.populate_timeseries_table_data()
+        self.populate_table_data()
 
 
-class FormWithXSTable(BaseForm):
+class AbstractFormWithTimeseries(AbstractFormWithTable):
+    """Base edit form for user layers with timeseries table."""
+
+    TABLE_NAME = "timeseries"
+
+    @property
+    def table_header(self):
+        return ["Time", "Value"]
+
+
+class AbstractFormWithActionTable(AbstractFormWithTable):
+    """Base edit form for user layers with action table."""
+
+    TABLE_NAME = "action_table"
+
+    @property
+    def table_header(self):
+        return ["Measured value", "Action value 1", "Action value 2"]
+
+
+class AbstractFormWithXSTable(AbstractBaseForm):
     """Base edit form for user layers with cross-section table reference."""
 
     def __init__(self, *args, **kwargs):
@@ -1080,7 +1105,7 @@ class FormWithXSTable(BaseForm):
             self.dialog.active_form_signals.add((friction_edit_signal, friction_edit_slot))
 
 
-class FormWithNode(BaseForm):
+class AbstractFormWithNode(AbstractBaseForm):
     """Base edit form for user layers with a single connection node."""
 
     def __init__(self, *args, **kwargs):
@@ -1132,7 +1157,7 @@ class FormWithNode(BaseForm):
         self.populate_widgets()
 
 
-class FormWithStartEndNode(BaseForm):
+class AbstractFormWithStartEndNode(AbstractBaseForm):
     """Base edit form for user layers start and end connection nodes."""
 
     def __init__(self, *args, **kwargs):
@@ -1218,7 +1243,7 @@ class FormWithStartEndNode(BaseForm):
         self.populate_widgets()
 
 
-class NodeToSurfaceMapForm(FormWithTags):
+class AbstractNodeToSurfaceMapForm(AbstractFormWithTags):
     """Basic surface to node map edit form logic."""
 
     def __init__(self, *args, **kwargs):
@@ -1275,7 +1300,72 @@ class NodeToSurfaceMapForm(FormWithTags):
         return surface_feat
 
 
-class ConnectionNodeForm(FormWithTags):
+class AbstractFormWithTargetStructure(AbstractBaseForm):
+    """Base edit form for user layers with a single structure."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.structure_feature = None
+        self.structure_feature_type = None
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+        if self.structure_feature is not None:
+            self.feature["target_type"] = self.structure_feature_type
+            self.feature["target_id"] = self.structure_feature["id"]
+
+    @cached_property
+    def target_structure_types(self):
+        """Return supported target structure type data models."""
+        target_structure_data_models = {
+            model_cls.__tablename__: model_cls for model_cls in [dm.Weir, dm.Orifice, dm.Pump]
+        }
+        return target_structure_data_models
+
+    def setup_target_structure_on_edit(self):
+        """Setting up target structure during editing feature."""
+        try:
+            target_structure_type = self.target_structure_types[self.feature["target_type"]]
+            model_cls = self.target_structure_types[target_structure_type]
+            structure_handler = self.layer_manager.model_handlers[model_cls]
+            structure_feat = structure_handler.get_feat_by_id(self.feature["target_id"])
+        except KeyError:
+            return
+        self.structure_feature = structure_feat
+        self.structure_feature_type = target_structure_type
+
+    def setup_target_structure_on_creation(self):
+        """Setting up target structure during adding feature."""
+        feature_point = self.feature.geometry().asPoint()
+        for structure_type, model_cls in self.target_structure_types.items():
+            structure_handler = self.layer_manager.model_handlers[model_cls]
+            structure_layer = structure_handler.layer
+            dm_geometry_type = model_cls.__geometrytype__
+            if dm_geometry_type == en.GeometryType.Point:
+                structure_feat = find_point_nodes(feature_point, structure_layer)
+            elif dm_geometry_type == en.GeometryType.Linestring:
+                structure_feat = find_point_polyline(feature_point, structure_layer)
+            else:
+                continue
+            if structure_feat is not None:
+                self.structure_feature, self.structure_feature_type = structure_feat, structure_type
+                break
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.setup_target_structure_on_creation()
+            # Set feature specific attributes
+            self.fill_related_attributes()
+        else:
+            self.setup_target_structure_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+
+
+class ConnectionNodeForm(AbstractFormWithTags):
     """Connection node edit form logic."""
 
     MODEL = dm.ConnectionNode
@@ -1285,7 +1375,7 @@ class ConnectionNodeForm(FormWithTags):
         self.populate_widgets()
 
 
-class PipeForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
+class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTags):
     """Pipe user layer edit form logic."""
 
     MODEL = dm.Pipe
@@ -1324,7 +1414,7 @@ class PipeForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
         self.populate_cross_section_table_data()
 
 
-class WeirForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
+class WeirForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTags):
     """Weir user layer edit form logic."""
 
     MODEL = dm.Weir
@@ -1358,7 +1448,7 @@ class WeirForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
         self.populate_cross_section_table_data()
 
 
-class CulvertForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
+class CulvertForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTags):
     """Culvert user layer edit form logic."""
 
     MODEL = dm.Culvert
@@ -1392,7 +1482,7 @@ class CulvertForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
         self.populate_cross_section_table_data()
 
 
-class OrificeForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
+class OrificeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTags):
     """Orifice user layer edit form logic."""
 
     MODEL = dm.Orifice
@@ -1426,7 +1516,7 @@ class OrificeForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
         self.populate_cross_section_table_data()
 
 
-class PumpForm(FormWithNode, FormWithTags):
+class PumpForm(AbstractFormWithNode, AbstractFormWithTags):
     """Pump without end node user layer edit form logic."""
 
     MODEL = dm.Pump
@@ -1435,7 +1525,7 @@ class PumpForm(FormWithNode, FormWithTags):
         super().__init__(*args, *kwargs)
 
 
-class PumpMapForm(FormWithTags):
+class PumpMapForm(AbstractFormWithTags):
     """Pump with end node user layer edit form logic."""
 
     MODEL = dm.PumpMap
@@ -1540,7 +1630,7 @@ class PumpMapForm(FormWithTags):
         return pump_feat
 
 
-class SurfaceForm(FormWithTags):
+class SurfaceForm(AbstractFormWithTags):
     """Surface user layer edit form logic."""
 
     MODEL = dm.Surface
@@ -1549,7 +1639,7 @@ class SurfaceForm(FormWithTags):
         super().__init__(*args, *kwargs)
 
 
-class SurfaceMapForm(NodeToSurfaceMapForm, FormWithTags):
+class SurfaceMapForm(AbstractNodeToSurfaceMapForm, AbstractFormWithTags):
     """Surface Map user layer edit form logic."""
 
     MODEL = dm.SurfaceMap
@@ -1560,7 +1650,7 @@ class SurfaceMapForm(NodeToSurfaceMapForm, FormWithTags):
         self.surface_id_field = "surface_id"
 
 
-class DryWeatherFlowForm(FormWithTags):
+class DryWeatherFlowForm(AbstractFormWithTags):
     """Dry Weather Flow user layer edit form logic."""
 
     MODEL = dm.DryWeatherFlow
@@ -1569,7 +1659,7 @@ class DryWeatherFlowForm(FormWithTags):
         super().__init__(*args, *kwargs)
 
 
-class DryWeatherFlowMapForm(NodeToSurfaceMapForm, FormWithTags):
+class DryWeatherFlowMapForm(AbstractNodeToSurfaceMapForm, AbstractFormWithTags):
     """Dry Weather Flow Map user layer edit form logic."""
 
     MODEL = dm.DryWeatherFlowMap
@@ -1580,7 +1670,7 @@ class DryWeatherFlowMapForm(NodeToSurfaceMapForm, FormWithTags):
         self.dwf_id_field = "dry_weather_flow_id"
 
 
-class DryWeatherFlowDistributionForm(FormWithTags, FormWithDistribution):
+class DryWeatherFlowDistributionForm(AbstractFormWithTags, AbstractFormWithDistribution):
     """Dry Weather Flow Distribution user layer edit form logic."""
 
     MODEL = dm.DryWeatherFlowDistribution
@@ -1600,7 +1690,7 @@ class DryWeatherFlowDistributionForm(FormWithTags, FormWithDistribution):
         self.populate_distribution_table_data()
 
 
-class ChannelForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
+class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTags):
     """Channel user layer edit form logic."""
 
     MODEL = dm.Channel
@@ -1734,7 +1824,7 @@ class ChannelForm(FormWithStartEndNode, FormWithXSTable, FormWithTags):
         self.populate_cross_section_table_data()
 
 
-class CrossSectionLocationForm(FormWithXSTable):
+class CrossSectionLocationForm(AbstractFormWithXSTable):
     """Cross-section location user layer edit form logic."""
 
     MODEL = dm.CrossSectionLocation
@@ -1842,7 +1932,7 @@ class CrossSectionLocationForm(FormWithXSTable):
             pass
 
 
-class PotentialBreachForm(FormWithTags):
+class PotentialBreachForm(AbstractFormWithTags):
     """Potential breach user layer edit form logic."""
 
     MODEL = dm.PotentialBreach
@@ -1879,7 +1969,7 @@ class PotentialBreachForm(FormWithTags):
         self.populate_widgets()
 
 
-class ExchangeLineForm(FormWithTags):
+class ExchangeLineForm(AbstractFormWithTags):
     """Exchange line user layer edit form logic."""
 
     MODEL = dm.ExchangeLine
@@ -1894,7 +1984,7 @@ class ExchangeLineForm(FormWithTags):
         self.populate_widgets()
 
 
-class BoundaryCondition1D(FormWithTags, FormWithNode, FormWithTimeseries):
+class BoundaryCondition1D(AbstractFormWithTags, AbstractFormWithNode, AbstractFormWithTimeseries):
     """Boundary Condition 1D user layer edit form logic."""
 
     MODEL = dm.BoundaryCondition1D
@@ -1916,10 +2006,10 @@ class BoundaryCondition1D(FormWithTags, FormWithNode, FormWithTimeseries):
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
-        self.populate_timeseries_table_data()
+        self.populate_table_data()
 
 
-class BoundaryCondition2D(FormWithTags, FormWithTimeseries):
+class BoundaryCondition2D(AbstractFormWithTags, AbstractFormWithTimeseries):
     """Boundary Condition 2D user layer edit form logic."""
 
     MODEL = dm.BoundaryCondition2D
@@ -1936,10 +2026,10 @@ class BoundaryCondition2D(FormWithTags, FormWithTimeseries):
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
-        self.populate_timeseries_table_data()
+        self.populate_table_data()
 
 
-class Lateral1D(FormWithTags, FormWithNode, FormWithTimeseries):
+class Lateral1D(AbstractFormWithTags, AbstractFormWithNode, AbstractFormWithTimeseries):
     """Lateral 1D user layer edit form logic."""
 
     MODEL = dm.Lateral1D
@@ -1961,10 +2051,10 @@ class Lateral1D(FormWithTags, FormWithNode, FormWithTimeseries):
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
-        self.populate_timeseries_table_data()
+        self.populate_table_data()
 
 
-class Lateral2D(FormWithTags, FormWithTimeseries):
+class Lateral2D(AbstractFormWithTags, AbstractFormWithTimeseries):
     """Lateral 2D user layer edit form logic."""
 
     MODEL = dm.Lateral2D
@@ -1981,7 +2071,125 @@ class Lateral2D(FormWithTags, FormWithTimeseries):
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
-        self.populate_timeseries_table_data()
+        self.populate_table_data()
+
+
+class MeasureLocation(AbstractFormWithNode, AbstractFormWithTags):
+    """Measure Location user layer edit form logic."""
+
+    MODEL = dm.MeasureLocation
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+
+class MemoryControl(AbstractFormWithTargetStructure, AbstractFormWithTags):
+    """Memory Control user layer edit form logic."""
+
+    MODEL = dm.MemoryControl
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+
+class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable, AbstractFormWithTags):
+    """Table Control user layer edit form logic."""
+
+    MODEL = dm.TableControl
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        # Populate widgets based on features attributes
+        if self.creation is True:
+            self.setup_target_structure_on_creation()
+            self.fill_related_attributes()
+        else:
+            self.setup_target_structure_on_edit()
+        self.populate_widgets()
+        self.populate_foreign_widgets()
+        self.populate_table_data()
+
+
+class MeasureMap(AbstractFormWithTags):
+    """Measure Map user layer edit form logic."""
+
+    MODEL = dm.MeasureMap
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.measure_location_feature = None
+        self.control_feature = None
+        self.control_feature_type = None
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+        if self.measure_location_feature is not None:
+            self.feature["measure_location_id"] = self.measure_location_feature["id"]
+        if self.control_feature is not None:
+            self.feature["control_id"] = self.control_feature["id"]
+            self.feature["control_type"] = self.control_feature_type
+
+    @cached_property
+    def control_types(self):
+        """Return supported structure control data models."""
+        control_data_models = {model_cls.__tablename__: model_cls for model_cls in [dm.TableControl, dm.MemoryControl]}
+        return control_data_models
+
+    def setup_measure_location_on_edit(self):
+        """Setting up measure map location and structure control during editing feature."""
+        try:
+            control_type = self.control_types[self.feature["control_type"]]
+            control_model_cls = self.control_types[control_type]
+            control_handler = self.layer_manager.model_handlers[control_model_cls]
+            control_feat = control_handler.get_feat_by_id(self.feature["control_id"])
+            self.control_feature = control_feat
+            self.control_feature_type = control_type
+        except KeyError:
+            pass
+        try:
+            measure_location_handler = self.layer_manager.model_handlers[dm.MeasureLocation]
+            measure_location_feat = measure_location_handler.get_feat_by_id(self.feature["control_measure_location_id"])
+            self.measure_location_feature = measure_location_feat
+        except KeyError:
+            pass
+
+    def setup_measure_control_on_creation(self):
+        """Setting up measure map location and structure control during adding feature."""
+        measure_location_handler = self.layer_manager.model_handlers[dm.MeasureLocation]
+        measure_location_layer = measure_location_handler.layer
+        feature_linestring = self.feature.geometry().asPolyline()
+        feature_start_point, feature_end_point = feature_linestring[0], feature_linestring[-1]
+        measure_location_feat = find_point_nodes(feature_start_point, measure_location_layer)
+        if measure_location_feat is not None:
+            self.measure_location_feature = measure_location_feat
+        for control_type, control_model_cls in self.control_types.items():
+            control_handler = self.layer_manager.model_handlers[control_model_cls]
+            control_layer = control_handler.layer
+            feature_end_point = self.feature.geometry().asPolyline()[-1]
+            control_feat = find_point_nodes(feature_end_point, control_layer)
+            if control_feat is not None:
+                self.control_feature, self.control_feature_type = control_feat, control_type
+                break
+
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.setup_measure_control_on_creation()
+            # Set feature specific attributes
+            self.fill_related_attributes()
+        else:
+            self.setup_measure_location_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
 
 
 ALL_FORMS = (
@@ -2005,6 +2213,10 @@ ALL_FORMS = (
     Lateral1D,
     BoundaryCondition2D,
     Lateral2D,
+    MeasureLocation,
+    MemoryControl,
+    TableControl,
+    MeasureMap,
 )
 
 MODEL_FORMS = MappingProxyType({form.MODEL: form for form in ALL_FORMS})

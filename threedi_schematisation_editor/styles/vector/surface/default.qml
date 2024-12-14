@@ -393,7 +393,7 @@
     <policy policy="Duplicate" field="display_name"/>
   </splitPolicies>
   <defaults>
-    <default expression="if (maximum(id) is null, 1, maximum(id) + 1)" field="id" applyOnUpdate="0"/>
+    <default expression="" field="id" applyOnUpdate="0"/>
     <default expression="$area" field="area" applyOnUpdate="0"/>
     <default expression="" field="surface_parameters_id" applyOnUpdate="0"/>
     <default expression="" field="tags" applyOnUpdate="0"/>

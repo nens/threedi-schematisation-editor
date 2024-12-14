@@ -13,7 +13,6 @@ from qgis.core import (
     NULL,
     QgsBilinearRasterResampler,
     QgsCoordinateTransform,
-    QgsDataSourceUri,
     QgsEditorWidgetSetup,
     QgsExpression,
     QgsFeature,

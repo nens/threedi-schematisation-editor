@@ -1152,6 +1152,11 @@ class TagsHandler(UserLayerHandler):
 
 class MeasureMapHandler(UserLayerHandler):
     MODEL = dm.MeasureMap
+    DEFAULTS = MappingProxyType(
+        {
+            "weight": 1.0,
+        }
+    )
 
 
 class MeasureLocationHandler(UserLayerHandler):

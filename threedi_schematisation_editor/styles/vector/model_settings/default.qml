@@ -778,7 +778,7 @@
   </aliases>
   <defaults>
     <default applyOnUpdate="0" field="fid" expression=""/>
-    <default applyOnUpdate="0" field="id" expression="if (maximum(id) is null, 1, maximum(id) + 1)"/>
+    <default applyOnUpdate="0" field="id" expression=""/>
     <default applyOnUpdate="0" field="use_2d_flow" expression=""/>
     <default applyOnUpdate="0" field="use_1d_flow" expression=""/>
     <default applyOnUpdate="0" field="manhole_aboveground_storage_area" expression=""/>

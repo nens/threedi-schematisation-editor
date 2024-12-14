@@ -92,10 +92,12 @@ class LayersManager:
                 dm.DryWeatherFlowMap,
                 dm.Lateral1D,
                 dm.BoundaryCondition1D,
+                dm.MeasureLocation,
             },
             dm.Channel: {dm.ConnectionNode, dm.CrossSectionLocation, dm.PotentialBreach},
             dm.CrossSectionLocation: {dm.Channel},
             dm.PotentialBreach: {dm.Channel},
+            dm.TableControl: {dm.Pump, dm.Orifice, dm.Weir},
         }
         for model_cls in dm.ALL_MODELS:
             if model_cls.__geometrytype__ == en.GeometryType.NoGeometry:

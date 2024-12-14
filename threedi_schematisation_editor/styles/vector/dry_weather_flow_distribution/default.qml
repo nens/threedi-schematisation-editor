@@ -203,7 +203,7 @@
     <policy field="distribution" policy="Duplicate"/>
   </splitPolicies>
   <defaults>
-    <default field="id" expression="if (maximum(id) is null, 1, maximum(id) + 1)" applyOnUpdate="0"/>
+    <default field="id" expression="" applyOnUpdate="0"/>
     <default field="description" expression="" applyOnUpdate="0"/>
     <default field="tags" expression="" applyOnUpdate="0"/>
     <default field="distribution" expression="" applyOnUpdate="0"/>
