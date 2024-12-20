@@ -1,18 +1,18 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis labelsEnabled="0" styleCategories="AllStyleCategories" maxScale="0" readOnly="0" simplifyLocal="1" autoRefreshMode="Disabled" simplifyAlgorithm="0" minScale="100000000" simplifyMaxScale="1" simplifyDrawingHints="1" simplifyDrawingTol="1" version="3.34.12-Prizren" autoRefreshTime="0" symbologyReferenceScale="-1" hasScaleBasedVisibilityFlag="0">
+<qgis simplifyDrawingTol="1" styleCategories="AllStyleCategories" minScale="100000000" readOnly="0" simplifyLocal="1" simplifyMaxScale="1" autoRefreshTime="0" hasScaleBasedVisibilityFlag="0" labelsEnabled="0" maxScale="0" autoRefreshMode="Disabled" simplifyDrawingHints="0" symbologyReferenceScale="-1" version="3.34.12-Prizren" simplifyAlgorithm="0">
   <flags>
     <Identifiable>1</Identifiable>
-    <Removable>0</Removable>
+    <Removable>1</Removable>
     <Searchable>1</Searchable>
     <Private>0</Private>
   </flags>
-  <temporal startField="" accumulate="0" mode="0" endField="" durationUnit="min" endExpression="" limitMode="0" fixedDuration="0" enabled="0" startExpression="" durationField="id">
+  <temporal mode="0" endExpression="" accumulate="0" enabled="0" limitMode="0" startExpression="" startField="" durationField="id" durationUnit="min" fixedDuration="0" endField="">
     <fixedRange>
       <start></start>
       <end></end>
     </fixedRange>
   </temporal>
-  <elevation symbology="Line" zscale="1" clamping="Terrain" extrusionEnabled="0" showMarkerSymbolInSurfacePlots="0" zoffset="0" binding="Centroid" respectLayerSymbol="1" type="IndividualFeatures" extrusion="0">
+  <elevation showMarkerSymbolInSurfacePlots="0" clamping="Terrain" binding="Centroid" zoffset="0" extrusionEnabled="0" symbology="Line" extrusion="0" zscale="1" type="IndividualFeatures" respectLayerSymbol="1">
     <data-defined-properties>
       <Option type="Map">
         <Option name="name" value="" type="QString"/>
@@ -21,7 +21,7 @@
       </Option>
     </data-defined-properties>
     <profileLineSymbol>
-      <symbol clip_to_extent="1" name="" force_rhr="0" frame_rate="10" type="line" alpha="1" is_animated="0">
+      <symbol clip_to_extent="1" alpha="1" name="" force_rhr="0" frame_rate="10" type="line" is_animated="0">
         <data_defined_properties>
           <Option type="Map">
             <Option name="name" value="" type="QString"/>
@@ -29,7 +29,7 @@
             <Option name="type" value="collection" type="QString"/>
           </Option>
         </data_defined_properties>
-        <layer class="SimpleLine" locked="0" pass="0" enabled="1" id="{ef7ff914-bb80-4e24-8cfd-fd245dc7419f}">
+        <layer pass="0" enabled="1" class="SimpleLine" locked="0" id="{88d1b9e9-f9df-4f87-a09e-d6b287013a7f}">
           <Option type="Map">
             <Option name="align_dash_pattern" value="0" type="QString"/>
             <Option name="capstyle" value="square" type="QString"/>
@@ -41,7 +41,7 @@
             <Option name="dash_pattern_offset_unit" value="MM" type="QString"/>
             <Option name="draw_inside_polygon" value="0" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
-            <Option name="line_color" value="225,89,137,255" type="QString"/>
+            <Option name="line_color" value="232,113,141,255" type="QString"/>
             <Option name="line_style" value="solid" type="QString"/>
             <Option name="line_width" value="0.6" type="QString"/>
             <Option name="line_width_unit" value="MM" type="QString"/>
@@ -70,7 +70,7 @@
       </symbol>
     </profileLineSymbol>
     <profileFillSymbol>
-      <symbol clip_to_extent="1" name="" force_rhr="0" frame_rate="10" type="fill" alpha="1" is_animated="0">
+      <symbol clip_to_extent="1" alpha="1" name="" force_rhr="0" frame_rate="10" type="fill" is_animated="0">
         <data_defined_properties>
           <Option type="Map">
             <Option name="name" value="" type="QString"/>
@@ -78,15 +78,15 @@
             <Option name="type" value="collection" type="QString"/>
           </Option>
         </data_defined_properties>
-        <layer class="SimpleFill" locked="0" pass="0" enabled="1" id="{3e9ee5ce-eaca-4b8b-b96b-6fa71b49832b}">
+        <layer pass="0" enabled="1" class="SimpleFill" locked="0" id="{7cb450d9-ff09-4a69-9973-7f94ebea7bf2}">
           <Option type="Map">
             <Option name="border_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
-            <Option name="color" value="225,89,137,255" type="QString"/>
+            <Option name="color" value="232,113,141,255" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="offset" value="0,0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
             <Option name="offset_unit" value="MM" type="QString"/>
-            <Option name="outline_color" value="161,64,98,255" type="QString"/>
+            <Option name="outline_color" value="166,81,101,255" type="QString"/>
             <Option name="outline_style" value="solid" type="QString"/>
             <Option name="outline_width" value="0.2" type="QString"/>
             <Option name="outline_width_unit" value="MM" type="QString"/>
@@ -103,7 +103,7 @@
       </symbol>
     </profileFillSymbol>
     <profileMarkerSymbol>
-      <symbol clip_to_extent="1" name="" force_rhr="0" frame_rate="10" type="marker" alpha="1" is_animated="0">
+      <symbol clip_to_extent="1" alpha="1" name="" force_rhr="0" frame_rate="10" type="marker" is_animated="0">
         <data_defined_properties>
           <Option type="Map">
             <Option name="name" value="" type="QString"/>
@@ -111,18 +111,18 @@
             <Option name="type" value="collection" type="QString"/>
           </Option>
         </data_defined_properties>
-        <layer class="SimpleMarker" locked="0" pass="0" enabled="1" id="{c7c1b0e8-a563-4b9e-b5eb-9114d7097a25}">
+        <layer pass="0" enabled="1" class="SimpleMarker" locked="0" id="{ba20d21f-593d-473a-8dce-788875bc0926}">
           <Option type="Map">
             <Option name="angle" value="0" type="QString"/>
             <Option name="cap_style" value="square" type="QString"/>
-            <Option name="color" value="225,89,137,255" type="QString"/>
+            <Option name="color" value="232,113,141,255" type="QString"/>
             <Option name="horizontal_anchor_point" value="1" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
             <Option name="name" value="diamond" type="QString"/>
             <Option name="offset" value="0,0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
             <Option name="offset_unit" value="MM" type="QString"/>
-            <Option name="outline_color" value="161,64,98,255" type="QString"/>
+            <Option name="outline_color" value="166,81,101,255" type="QString"/>
             <Option name="outline_style" value="solid" type="QString"/>
             <Option name="outline_width" value="0.2" type="QString"/>
             <Option name="outline_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
@@ -144,9 +144,9 @@
       </symbol>
     </profileMarkerSymbol>
   </elevation>
-  <renderer-v2 type="singleSymbol" referencescale="-1" enableorderby="0" symbollevels="0" forceraster="0">
+  <renderer-v2 referencescale="-1" enableorderby="0" symbollevels="0" forceraster="0" type="singleSymbol">
     <symbols>
-      <symbol clip_to_extent="1" name="0" force_rhr="0" frame_rate="10" type="fill" alpha="1" is_animated="0">
+      <symbol clip_to_extent="1" alpha="1" name="0" force_rhr="0" frame_rate="10" type="marker" is_animated="0">
         <data_defined_properties>
           <Option type="Map">
             <Option name="name" value="" type="QString"/>
@@ -154,19 +154,27 @@
             <Option name="type" value="collection" type="QString"/>
           </Option>
         </data_defined_properties>
-        <layer class="SimpleFill" locked="0" pass="0" enabled="1" id="{7d6d722b-4905-4419-8020-d3358ab97467}">
+        <layer pass="0" enabled="1" class="SimpleMarker" locked="0" id="{f95f57d5-4e84-413c-b569-ddb036ae3e76}">
           <Option type="Map">
-            <Option name="border_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
-            <Option name="color" value="229,182,54,255" type="QString"/>
+            <Option name="angle" value="0" type="QString"/>
+            <Option name="cap_style" value="square" type="QString"/>
+            <Option name="color" value="141,90,153,255" type="QString"/>
+            <Option name="horizontal_anchor_point" value="1" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
+            <Option name="name" value="circle" type="QString"/>
             <Option name="offset" value="0,0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
             <Option name="offset_unit" value="MM" type="QString"/>
             <Option name="outline_color" value="35,35,35,255" type="QString"/>
             <Option name="outline_style" value="solid" type="QString"/>
-            <Option name="outline_width" value="0.26" type="QString"/>
+            <Option name="outline_width" value="0" type="QString"/>
+            <Option name="outline_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
             <Option name="outline_width_unit" value="MM" type="QString"/>
-            <Option name="style" value="solid" type="QString"/>
+            <Option name="scale_method" value="diameter" type="QString"/>
+            <Option name="size" value="2" type="QString"/>
+            <Option name="size_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="size_unit" value="MM" type="QString"/>
+            <Option name="vertical_anchor_point" value="1" type="QString"/>
           </Option>
           <data_defined_properties>
             <Option type="Map">
@@ -184,7 +192,7 @@
   <selection mode="Default">
     <selectionColor invalid="1"/>
     <selectionSymbol>
-      <symbol clip_to_extent="1" name="" force_rhr="0" frame_rate="10" type="fill" alpha="1" is_animated="0">
+      <symbol clip_to_extent="1" alpha="1" name="" force_rhr="0" frame_rate="10" type="marker" is_animated="0">
         <data_defined_properties>
           <Option type="Map">
             <Option name="name" value="" type="QString"/>
@@ -192,19 +200,27 @@
             <Option name="type" value="collection" type="QString"/>
           </Option>
         </data_defined_properties>
-        <layer class="SimpleFill" locked="0" pass="0" enabled="1" id="{ae97dbd9-b403-4b36-ba4d-faa708673766}">
+        <layer pass="0" enabled="1" class="SimpleMarker" locked="0" id="{61987d80-540f-4666-a20a-294a49472560}">
           <Option type="Map">
-            <Option name="border_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
-            <Option name="color" value="0,0,255,255" type="QString"/>
+            <Option name="angle" value="0" type="QString"/>
+            <Option name="cap_style" value="square" type="QString"/>
+            <Option name="color" value="255,0,0,255" type="QString"/>
+            <Option name="horizontal_anchor_point" value="1" type="QString"/>
             <Option name="joinstyle" value="bevel" type="QString"/>
+            <Option name="name" value="circle" type="QString"/>
             <Option name="offset" value="0,0" type="QString"/>
             <Option name="offset_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
             <Option name="offset_unit" value="MM" type="QString"/>
             <Option name="outline_color" value="35,35,35,255" type="QString"/>
             <Option name="outline_style" value="solid" type="QString"/>
-            <Option name="outline_width" value="0.26" type="QString"/>
+            <Option name="outline_width" value="0" type="QString"/>
+            <Option name="outline_width_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
             <Option name="outline_width_unit" value="MM" type="QString"/>
-            <Option name="style" value="solid" type="QString"/>
+            <Option name="scale_method" value="diameter" type="QString"/>
+            <Option name="size" value="2" type="QString"/>
+            <Option name="size_map_unit_scale" value="3x:0,0,0,0,0,0" type="QString"/>
+            <Option name="size_unit" value="MM" type="QString"/>
+            <Option name="vertical_anchor_point" value="1" type="QString"/>
           </Option>
           <data_defined_properties>
             <Option type="Map">
@@ -219,9 +235,6 @@
   </selection>
   <customproperties>
     <Option type="Map">
-      <Option name="dualview/previewExpressions" type="List">
-        <Option value="&quot;display_name&quot;" type="QString"/>
-      </Option>
       <Option name="embeddedWidgets/count" value="0" type="int"/>
       <Option name="variableNames"/>
       <Option name="variableValues"/>
@@ -230,12 +243,11 @@
   <blendMode>0</blendMode>
   <featureBlendMode>0</featureBlendMode>
   <layerOpacity>1</layerOpacity>
-  <SingleCategoryDiagramRenderer diagramType="Histogram" attributeLegend="1">
-    <DiagramCategory enabled="0" sizeScale="3x:0,0,0,0,0,0" scaleDependency="Area" lineSizeScale="3x:0,0,0,0,0,0" sizeType="MM" backgroundAlpha="255" rotationOffset="270" width="15" opacity="1" showAxis="1" barWidth="5" direction="0" scaleBasedVisibility="0" penAlpha="255" diagramOrientation="Up" minimumSize="0" height="15" lineSizeType="MM" minScaleDenominator="0" penColor="#000000" penWidth="0" spacingUnit="MM" spacingUnitScale="3x:0,0,0,0,0,0" spacing="5" maxScaleDenominator="1e+08" backgroundColor="#ffffff" labelPlacementMethod="XHeight">
-      <fontProperties style="" description="MS Shell Dlg 2,7.9,-1,5,50,0,0,0,0,0" bold="0" italic="0" strikethrough="0" underline="0"/>
-      <attribute field="" colorOpacity="1" color="#000000" label=""/>
+  <SingleCategoryDiagramRenderer attributeLegend="1" diagramType="Histogram">
+    <DiagramCategory backgroundAlpha="255" minimumSize="0" width="15" opacity="1" labelPlacementMethod="XHeight" penColor="#000000" minScaleDenominator="0" direction="0" sizeType="MM" maxScaleDenominator="1e+08" scaleDependency="Area" penWidth="0" sizeScale="3x:0,0,0,0,0,0" lineSizeScale="3x:0,0,0,0,0,0" barWidth="5" showAxis="1" spacingUnitScale="3x:0,0,0,0,0,0" rotationOffset="270" enabled="0" lineSizeType="MM" spacing="5" backgroundColor="#ffffff" scaleBasedVisibility="0" penAlpha="255" diagramOrientation="Up" spacingUnit="MM" height="15">
+      <fontProperties bold="0" underline="0" strikethrough="0" italic="0" style="" description="MS Shell Dlg 2,7.9,-1,5,50,0,0,0,0,0"/>
       <axisSymbol>
-        <symbol clip_to_extent="1" name="" force_rhr="0" frame_rate="10" type="line" alpha="1" is_animated="0">
+        <symbol clip_to_extent="1" alpha="1" name="" force_rhr="0" frame_rate="10" type="line" is_animated="0">
           <data_defined_properties>
             <Option type="Map">
               <Option name="name" value="" type="QString"/>
@@ -243,7 +255,7 @@
               <Option name="type" value="collection" type="QString"/>
             </Option>
           </data_defined_properties>
-          <layer class="SimpleLine" locked="0" pass="0" enabled="1" id="{ef446938-1057-4da8-bbca-b0cfa9c142bf}">
+          <layer pass="0" enabled="1" class="SimpleLine" locked="0" id="{be32cf68-649b-42fc-bc32-c0eec42ce74c}">
             <Option type="Map">
               <Option name="align_dash_pattern" value="0" type="QString"/>
               <Option name="capstyle" value="square" type="QString"/>
@@ -285,7 +297,7 @@
       </axisSymbol>
     </DiagramCategory>
   </SingleCategoryDiagramRenderer>
-  <DiagramLayerSettings showAll="1" priority="0" obstacle="0" placement="1" dist="0" zIndex="0" linePlacementFlags="18">
+  <DiagramLayerSettings obstacle="0" placement="0" dist="0" linePlacementFlags="18" zIndex="0" priority="0" showAll="1">
     <properties>
       <Option type="Map">
         <Option name="name" value="" type="QString"/>
@@ -294,98 +306,70 @@
       </Option>
     </properties>
   </DiagramLayerSettings>
-  <geometryOptions geometryPrecision="0" removeDuplicateNodes="0">
+  <geometryOptions removeDuplicateNodes="0" geometryPrecision="0">
     <activeChecks/>
-    <checkConfiguration type="Map">
-      <Option name="QgsGeometryGapCheck" type="Map">
-        <Option name="allowedGapsBuffer" value="0" type="double"/>
-        <Option name="allowedGapsEnabled" value="false" type="bool"/>
-        <Option name="allowedGapsLayer" value="" type="QString"/>
-      </Option>
-    </checkConfiguration>
+    <checkConfiguration/>
   </geometryOptions>
   <legend showLabelLegend="0" type="default-vector"/>
   <referencedLayers/>
   <fieldConfiguration>
-    <field name="id" configurationFlags="NoFlag">
+    <field configurationFlags="NoFlag" name="id">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="multiplier" configurationFlags="NoFlag">
+    <field configurationFlags="NoFlag" name="action_table">
       <editWidget type="TextEdit">
         <config>
-          <Option type="Map">
-            <Option name="IsMultiline" value="false" type="bool"/>
-            <Option name="UseHtml" value="false" type="bool"/>
-          </Option>
+          <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="dry_weather_flow_distribution_id" configurationFlags="NoFlag">
-      <editWidget type="ValueRelation">
+    <field configurationFlags="NoFlag" name="action_type">
+      <editWidget type="TextEdit">
         <config>
-          <Option type="Map">
-            <Option name="AllowMulti" value="false" type="bool"/>
-            <Option name="AllowNull" value="false" type="bool"/>
-            <Option name="Description" value="format( '%1: %2', &quot;id&quot;,  &quot;description&quot;)" type="QString"/>
-            <Option name="FilterExpression" value="" type="QString"/>
-            <Option name="Key" value="id" type="QString"/>
-            <Option name="Layer" value="Dry_Weather_Flow_distribution_9bfe804e_64ff_43c1_b40c_aa83e8342907" type="QString"/>
-            <Option name="LayerName" value="Dry Weather Flow distribution" type="QString"/>
-            <Option name="LayerProviderName" value="ogr" type="QString"/>
-            <Option name="LayerSource" value="C:\M5406UA\GIS\3Di\schema 300\staging-test-0d1d2d-simple-infiltration\staging-test-0d1d2d-simple-infiltration_28992.gpkg|layername=dry_weather_flow_distribution" type="QString"/>
-            <Option name="NofColumns" value="1" type="int"/>
-            <Option name="OrderByValue" value="false" type="bool"/>
-            <Option name="UseCompleter" value="false" type="bool"/>
-            <Option name="Value" value="description" type="QString"/>
-          </Option>
+          <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="daily_total" configurationFlags="NoFlag">
+    <field configurationFlags="NoFlag" name="measure_operator">
+      <editWidget type="TextEdit">
+        <config>
+          <Option/>
+        </config>
+      </editWidget>
+    </field>
+    <field configurationFlags="NoFlag" name="target_type">
+      <editWidget type="TextEdit">
+        <config>
+          <Option/>
+        </config>
+      </editWidget>
+    </field>
+    <field configurationFlags="NoFlag" name="target_id">
       <editWidget type="Range">
         <config>
-          <Option type="Map">
-            <Option name="AllowNull" value="true" type="bool"/>
-            <Option name="Max" value="1.7976931348623157e+308" type="double"/>
-            <Option name="Min" value="-1.7976931348623157e+308" type="double"/>
-            <Option name="Precision" value="3" type="int"/>
-            <Option name="Step" value="1" type="double"/>
-            <Option name="Style" value="SpinBox" type="QString"/>
-          </Option>
+          <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="interpolate" configurationFlags="NoFlag">
-      <editWidget type="CheckBox">
-        <config>
-          <Option type="Map">
-            <Option name="AllowNullState" value="false" type="bool"/>
-            <Option name="CheckedState" value="" type="QString"/>
-            <Option name="TextDisplayMethod" value="0" type="int"/>
-            <Option name="UncheckedState" value="" type="QString"/>
-          </Option>
-        </config>
-      </editWidget>
-    </field>
-    <field name="tags" configurationFlags="NoFlag">
+    <field configurationFlags="NoFlag" name="tags">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="code" configurationFlags="NoFlag">
+    <field configurationFlags="NoFlag" name="code">
       <editWidget type="TextEdit">
         <config>
           <Option/>
         </config>
       </editWidget>
     </field>
-    <field name="display_name" configurationFlags="NoFlag">
+    <field configurationFlags="NoFlag" name="display_name">
       <editWidget type="TextEdit">
         <config>
           <Option/>
@@ -395,50 +379,55 @@
   </fieldConfiguration>
   <aliases>
     <alias field="id" name="" index="0"/>
-    <alias field="multiplier" name="" index="1"/>
-    <alias field="dry_weather_flow_distribution_id" name="" index="2"/>
-    <alias field="daily_total" name="" index="3"/>
-    <alias field="interpolate" name="" index="4"/>
-    <alias field="tags" name="" index="5"/>
-    <alias field="code" name="" index="6"/>
-    <alias field="display_name" name="" index="7"/>
+    <alias field="action_table" name="" index="1"/>
+    <alias field="action_type" name="" index="2"/>
+    <alias field="measure_operator" name="" index="3"/>
+    <alias field="target_type" name="" index="4"/>
+    <alias field="target_id" name="" index="5"/>
+    <alias field="tags" name="" index="6"/>
+    <alias field="code" name="" index="7"/>
+    <alias field="display_name" name="" index="8"/>
   </aliases>
   <splitPolicies>
     <policy field="id" policy="Duplicate"/>
-    <policy field="multiplier" policy="Duplicate"/>
-    <policy field="dry_weather_flow_distribution_id" policy="Duplicate"/>
-    <policy field="daily_total" policy="Duplicate"/>
-    <policy field="interpolate" policy="Duplicate"/>
+    <policy field="action_table" policy="Duplicate"/>
+    <policy field="action_type" policy="Duplicate"/>
+    <policy field="measure_operator" policy="Duplicate"/>
+    <policy field="target_type" policy="Duplicate"/>
+    <policy field="target_id" policy="Duplicate"/>
     <policy field="tags" policy="Duplicate"/>
     <policy field="code" policy="Duplicate"/>
     <policy field="display_name" policy="Duplicate"/>
   </splitPolicies>
   <defaults>
-    <default field="id" expression="" applyOnUpdate="0"/>
-    <default field="multiplier" expression="" applyOnUpdate="0"/>
-    <default field="dry_weather_flow_distribution_id" expression="" applyOnUpdate="0"/>
-    <default field="daily_total" expression="" applyOnUpdate="0"/>
-    <default field="interpolate" expression="" applyOnUpdate="0"/>
-    <default field="tags" expression="" applyOnUpdate="0"/>
-    <default field="code" expression="" applyOnUpdate="0"/>
-    <default field="display_name" expression="" applyOnUpdate="0"/>
+    <default applyOnUpdate="0" field="id" expression=""/>
+    <default applyOnUpdate="0" field="action_table" expression=""/>
+    <default applyOnUpdate="0" field="action_type" expression=""/>
+    <default applyOnUpdate="0" field="measure_operator" expression=""/>
+    <default applyOnUpdate="0" field="target_type" expression=""/>
+    <default applyOnUpdate="0" field="target_id" expression=""/>
+    <default applyOnUpdate="0" field="tags" expression=""/>
+    <default applyOnUpdate="0" field="code" expression=""/>
+    <default applyOnUpdate="0" field="display_name" expression=""/>
   </defaults>
   <constraints>
-    <constraint field="id" notnull_strength="1" unique_strength="1" exp_strength="0" constraints="3"/>
-    <constraint field="multiplier" notnull_strength="0" unique_strength="0" exp_strength="0" constraints="0"/>
-    <constraint field="dry_weather_flow_distribution_id" notnull_strength="0" unique_strength="0" exp_strength="0" constraints="0"/>
-    <constraint field="daily_total" notnull_strength="0" unique_strength="0" exp_strength="0" constraints="0"/>
-    <constraint field="interpolate" notnull_strength="0" unique_strength="0" exp_strength="0" constraints="0"/>
-    <constraint field="tags" notnull_strength="0" unique_strength="0" exp_strength="0" constraints="0"/>
-    <constraint field="code" notnull_strength="0" unique_strength="0" exp_strength="0" constraints="0"/>
-    <constraint field="display_name" notnull_strength="0" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="1" exp_strength="0" field="id" unique_strength="1" constraints="3"/>
+    <constraint notnull_strength="0" exp_strength="0" field="action_table" unique_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" exp_strength="0" field="action_type" unique_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" exp_strength="0" field="measure_operator" unique_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" exp_strength="0" field="target_type" unique_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" exp_strength="0" field="target_id" unique_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" exp_strength="0" field="tags" unique_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" exp_strength="0" field="code" unique_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" exp_strength="0" field="display_name" unique_strength="0" constraints="0"/>
   </constraints>
   <constraintExpressions>
     <constraint field="id" desc="" exp=""/>
-    <constraint field="multiplier" desc="" exp=""/>
-    <constraint field="dry_weather_flow_distribution_id" desc="" exp=""/>
-    <constraint field="daily_total" desc="" exp=""/>
-    <constraint field="interpolate" desc="" exp=""/>
+    <constraint field="action_table" desc="" exp=""/>
+    <constraint field="action_type" desc="" exp=""/>
+    <constraint field="measure_operator" desc="" exp=""/>
+    <constraint field="target_type" desc="" exp=""/>
+    <constraint field="target_id" desc="" exp=""/>
     <constraint field="tags" desc="" exp=""/>
     <constraint field="code" desc="" exp=""/>
     <constraint field="display_name" desc="" exp=""/>
@@ -447,17 +436,18 @@
   <attributeactions>
     <defaultAction key="Canvas" value="{00000000-0000-0000-0000-000000000000}"/>
   </attributeactions>
-  <attributetableconfig actionWidgetStyle="dropDown" sortOrder="0" sortExpression="">
+  <attributetableconfig sortOrder="0" actionWidgetStyle="dropDown" sortExpression="">
     <columns>
-      <column width="-1" name="id" type="field" hidden="0"/>
-      <column width="-1" name="multiplier" type="field" hidden="0"/>
-      <column width="-1" name="dry_weather_flow_distribution_id" type="field" hidden="0"/>
-      <column width="-1" name="daily_total" type="field" hidden="0"/>
-      <column width="-1" name="interpolate" type="field" hidden="0"/>
-      <column width="-1" name="tags" type="field" hidden="0"/>
-      <column width="-1" name="code" type="field" hidden="0"/>
-      <column width="-1" name="display_name" type="field" hidden="0"/>
-      <column width="-1" type="actions" hidden="1"/>
+      <column name="id" hidden="0" width="-1" type="field"/>
+      <column name="action_table" hidden="0" width="-1" type="field"/>
+      <column name="action_type" hidden="0" width="-1" type="field"/>
+      <column name="measure_operator" hidden="0" width="-1" type="field"/>
+      <column name="target_type" hidden="0" width="-1" type="field"/>
+      <column name="target_id" hidden="0" width="-1" type="field"/>
+      <column name="tags" hidden="0" width="-1" type="field"/>
+      <column name="code" hidden="0" width="-1" type="field"/>
+      <column name="display_name" hidden="0" width="-1" type="field"/>
+      <column hidden="1" width="-1" type="actions"/>
     </columns>
   </attributetableconfig>
   <conditionalstyles>
@@ -465,7 +455,7 @@
     <fieldstyles/>
   </conditionalstyles>
   <storedexpressions/>
-  <editform tolerant="1">C:\Users/lukas/AppData/Roaming/QGIS/QGIS3\profiles\default/python/plugins\threedi_schematisation_editor\forms\ui\dry_weather_flow.ui</editform>
+  <editform tolerant="1"></editform>
   <editforminit>open_edit_form</editforminit>
   <editforminitcodesource>2</editforminitcodesource>
   <editforminitfilepath></editforminitfilepath>
@@ -473,38 +463,41 @@
   <featformsuppress>0</featformsuppress>
   <editorlayout>uifilelayout</editorlayout>
   <editable>
+    <field name="action_table" editable="1"/>
+    <field name="action_type" editable="1"/>
     <field name="code" editable="1"/>
-    <field name="daily_total" editable="1"/>
     <field name="display_name" editable="1"/>
-    <field name="dry_weather_flow_distribution_id" editable="1"/>
     <field name="id" editable="1"/>
-    <field name="interpolate" editable="1"/>
-    <field name="multiplier" editable="1"/>
+    <field name="measure_operator" editable="1"/>
     <field name="tags" editable="1"/>
+    <field name="target_id" editable="1"/>
+    <field name="target_type" editable="1"/>
   </editable>
   <labelOnTop>
+    <field name="action_table" labelOnTop="0"/>
+    <field name="action_type" labelOnTop="0"/>
     <field name="code" labelOnTop="0"/>
-    <field name="daily_total" labelOnTop="0"/>
     <field name="display_name" labelOnTop="0"/>
-    <field name="dry_weather_flow_distribution_id" labelOnTop="0"/>
     <field name="id" labelOnTop="0"/>
-    <field name="interpolate" labelOnTop="0"/>
-    <field name="multiplier" labelOnTop="0"/>
+    <field name="measure_operator" labelOnTop="0"/>
     <field name="tags" labelOnTop="0"/>
+    <field name="target_id" labelOnTop="0"/>
+    <field name="target_type" labelOnTop="0"/>
   </labelOnTop>
   <reuseLastValue>
-    <field name="code" reuseLastValue="0"/>
-    <field name="daily_total" reuseLastValue="0"/>
-    <field name="display_name" reuseLastValue="0"/>
-    <field name="dry_weather_flow_distribution_id" reuseLastValue="0"/>
-    <field name="id" reuseLastValue="0"/>
-    <field name="interpolate" reuseLastValue="0"/>
-    <field name="multiplier" reuseLastValue="0"/>
-    <field name="tags" reuseLastValue="0"/>
+    <field reuseLastValue="0" name="action_table"/>
+    <field reuseLastValue="0" name="action_type"/>
+    <field reuseLastValue="0" name="code"/>
+    <field reuseLastValue="0" name="display_name"/>
+    <field reuseLastValue="0" name="id"/>
+    <field reuseLastValue="0" name="measure_operator"/>
+    <field reuseLastValue="0" name="tags"/>
+    <field reuseLastValue="0" name="target_id"/>
+    <field reuseLastValue="0" name="target_type"/>
   </reuseLastValue>
   <dataDefinedFieldProperties/>
   <widgets/>
   <previewExpression>"display_name"</previewExpression>
   <mapTip enabled="1"></mapTip>
-  <layerGeometryType>2</layerGeometryType>
+  <layerGeometryType>0</layerGeometryType>
 </qgis>

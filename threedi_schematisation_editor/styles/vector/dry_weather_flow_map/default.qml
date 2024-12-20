@@ -401,7 +401,7 @@
     <policy field="display_name" policy="Duplicate"/>
   </splitPolicies>
   <defaults>
-    <default field="id" expression="if (maximum(id) is null, 1, maximum(id) + 1)" applyOnUpdate="0"/>
+    <default field="id" expression="" applyOnUpdate="0"/>
     <default field="connection_node_id" expression="" applyOnUpdate="0"/>
     <default field="dry_weather_flow_id" expression="" applyOnUpdate="0"/>
     <default field="percentage" expression="" applyOnUpdate="0"/>

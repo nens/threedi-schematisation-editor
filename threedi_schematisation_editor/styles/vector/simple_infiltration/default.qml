@@ -139,7 +139,7 @@
   </aliases>
   <defaults>
     <default applyOnUpdate="0" expression="" field="fid"/>
-    <default applyOnUpdate="0" expression="if (maximum(id) is null, 1, maximum(id) + 1)" field="id"/>
+    <default applyOnUpdate="0" expression="" field="id"/>
     <default applyOnUpdate="0" expression="" field="infiltration_rate"/>
     <default applyOnUpdate="0" expression="" field="infiltration_rate_file"/>
     <default applyOnUpdate="0" expression="0" field="infiltration_surface_option"/>
