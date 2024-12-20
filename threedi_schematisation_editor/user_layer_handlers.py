@@ -1319,12 +1319,19 @@ class MeasureMapHandler(UserLayerHandler):
         update_control_references_method = partial(self.update_control_references, feat_id, geometry)
         QTimer.singleShot(0, update_control_references_method)
 
+    def trigger_simplify_measure_map(self, measure_map_id):
+        """Triggering geometry simplification on newly added feature."""
+        simplify_method = partial(self.simplify_linear_feature, measure_map_id)
+        QTimer.singleShot(0, simplify_method)
+
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.connect(self.trigger_simplify_measure_map)
         self.layer.geometryChanged.connect(self.trigger_update_control_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.disconnect(self.trigger_simplify_measure_map)
         self.layer.geometryChanged.disconnect(self.trigger_update_control_references)
 
 
