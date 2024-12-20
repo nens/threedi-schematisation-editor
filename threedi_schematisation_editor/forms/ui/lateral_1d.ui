@@ -515,7 +515,7 @@
                </layout>
               </item>
               <item row="3" column="0">
-               <widget class="QLabel" name="timeseries_table_label">
+               <widget class="QLabel" name="table_label">
                 <property name="text">
                  <string>Table</string>
                 </property>

@@ -212,10 +212,20 @@ class UserLayerHandler:
             feat_real = next(handler.layer_dt.getFeatures(request))
         except StopIteration:  # Feature not committed
             return dependent_features
+        feat_table_name = model_cls.__tablename__
         feat_real_id = feat_real["id"]
         for dependent_data_model, dependent_fields in dm.MODEL_DEPENDENCIES[model_cls].items():
             dependent_layer = self.layer_manager.model_handlers[dependent_data_model].layer
-            expr_str = " OR ".join(f'"{field_name}" = {feat_real_id}' for field_name in dependent_fields)
+            expr_parts = []
+            for dependent_feat_id_field in dependent_fields:
+                if isinstance(dependent_feat_id_field, tuple):
+                    # We have a pair of fields: field with dependent feature ID and field with dependent feature type
+                    dependent_feat_id_field, dependent_feat_type_field = dependent_feat_id_field
+                    expr_part = f'("{dependent_feat_id_field}" = {feat_real_id} AND "{dependent_feat_type_field}" = \'{feat_table_name}\')'
+                else:
+                    expr_part = f'"{dependent_feat_id_field}" = {feat_real_id}'
+                expr_parts.append(expr_part)
+            expr_str = " OR ".join(expr_parts)
             expr = QgsExpression(expr_str)
             for dependent_feat in dependent_layer.getFeatures(QgsFeatureRequest(expr)):
                 dependent_fid = dependent_feat.id()
@@ -1150,20 +1160,179 @@ class TagsHandler(UserLayerHandler):
     MODEL = dm.Tags
 
 
-class MeasureMapHandler(UserLayerHandler):
-    MODEL = dm.MeasureMap
+class AbstractControlHandler(UserLayerHandler):
+
+    @cached_property
+    def target_data_models(self):
+        return {model_cls.__tablename__: model_cls for model_cls in [dm.Pump, dm.Orifice, dm.Weir]}
+
+    def snap_to_target_centroid(self, feat_id):
+        """Move geometry to target centroid (if target is linear)."""
+        feat = self.layer.getFeature(feat_id)
+        target_feat_id = feat["target_id"]
+        if not target_feat_id:
+            return
+        target_type = feat["target_type"]
+        if not target_type:
+            return
+        try:
+            target_model_cls = self.target_data_models[target_type]
+        except KeyError:
+            return
+        if target_model_cls.__geometrytype__ != GeometryType.Linestring:
+            return
+        target_handler = self.layer_manager.model_handlers[target_model_cls]
+        target_layer = target_handler.layer
+        target_feat = target_layer.getFeature(target_feat_id)
+        target_feat_centroid = target_feat.geometry().centroid()
+        new_source_geom = QgsGeometry(target_feat_centroid)
+        feat.setGeometry(new_source_geom)
+        self.layer.updateFeature(feat)
+
+    def update_target_references(self, feat_id, geometry):
+        """Update references to the target after geometry change."""
+        feature_point = geometry.asPoint()
+        target_feature, target_type = None, None
+        layer_fields = self.layer.fields()
+        for model_cls in self.target_data_models.values():
+            structure_handler = self.layer_manager.model_handlers[model_cls]
+            structure_layer = structure_handler.layer
+            dm_geometry_type = model_cls.__geometrytype__
+            if dm_geometry_type == GeometryType.Point:
+                structure_feat = find_point_nodes(feature_point, structure_layer)
+            elif dm_geometry_type == GeometryType.Linestring:
+                structure_feat = find_point_polyline(feature_point, structure_layer)
+            else:
+                continue
+            if structure_feat is not None:
+                target_feature, target_type = structure_feat, model_cls.__tablename__
+                break
+        target_id = target_feature["id"] if target_feature is not None else None
+        target_id_idx = layer_fields.lookupField("target_id")
+        target_type_idx = layer_fields.lookupField("target_type")
+        changes = {target_id_idx: target_id, target_type_idx: target_type}
+        self.layer.changeAttributeValues(feat_id, changes)
+
+    def trigger_snap_to_target_centroid(self, feat_id):
+        """Triggering snapping geometry to the target centroid after feature added."""
+        snap_to_target_centroid_method = partial(self.snap_to_target_centroid, feat_id)
+        QTimer.singleShot(0, snap_to_target_centroid_method)
+
+    def trigger_update_target_references(self, feat_id, geometry):
+        """Triggering update of the target references after feature geometry change."""
+        update_target_references_method = partial(self.update_target_references, feat_id, geometry)
+        QTimer.singleShot(0, update_target_references_method)
+
+
+class MemoryControlHandler(AbstractControlHandler):
+    MODEL = dm.MemoryControl
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+        }
+    )
+
+    def connect_additional_signals(self):
+        """Connecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.connect(self.trigger_snap_to_target_centroid)
+        self.layer.geometryChanged.connect(self.trigger_update_target_references)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.disconnect(self.trigger_snap_to_target_centroid)
+        self.layer.geometryChanged.disconnect(self.trigger_update_target_references)
+
+
+class TableControlHandler(AbstractControlHandler):
+    MODEL = dm.TableControl
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+        }
+    )
+
+    def connect_additional_signals(self):
+        """Connecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.connect(self.trigger_snap_to_target_centroid)
+        self.layer.geometryChanged.connect(self.trigger_update_target_references)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.disconnect(self.trigger_snap_to_target_centroid)
+        self.layer.geometryChanged.disconnect(self.trigger_update_target_references)
 
 
 class MeasureLocationHandler(UserLayerHandler):
     MODEL = dm.MeasureLocation
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+        }
+    )
 
 
-class MemoryControlHandler(UserLayerHandler):
-    MODEL = dm.MemoryControl
+class MeasureMapHandler(UserLayerHandler):
+    MODEL = dm.MeasureMap
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+            "weight": 1.0,
+        }
+    )
 
+    @cached_property
+    def control_data_models(self):
+        return {model_cls.__tablename__: model_cls for model_cls in [dm.MemoryControl, dm.TableControl]}
 
-class TableControlHandler(UserLayerHandler):
-    MODEL = dm.TableControl
+    def update_control_references(self, feat_id, geometry):
+        """Update references to the control and measure location feature after geometry change."""
+        feature_polyline = geometry.asPolyline()
+        feature_start_point, feature_end_point = feature_polyline[0], feature_polyline[-1]
+        control_feature, control_type = None, None
+        layer_fields = self.layer.fields()
+        for model_cls in self.control_data_models.values():
+            control_handler = self.layer_manager.model_handlers[model_cls]
+            control_layer = control_handler.layer
+            control_feat = find_point_nodes(feature_end_point, control_layer)
+            if control_feat is not None:
+                control_feature, control_type = control_feat, model_cls.__tablename__
+                break
+        control_id = control_feature["id"] if control_feature is not None else None
+        control_id_idx = layer_fields.lookupField("control_id")
+        control_type_idx = layer_fields.lookupField("control_type")
+        changes = {control_id_idx: control_id, control_type_idx: control_type}
+        measure_location_handler = self.layer_manager.model_handlers[dm.MeasureLocation]
+        measure_location_layer = measure_location_handler.layer
+        measure_location_feat = find_point_nodes(feature_start_point, measure_location_layer)
+        if measure_location_feat is not None:
+            measure_location_id = measure_location_feat["id"] if measure_location_feat is not None else None
+            measure_location_id_idx = layer_fields.lookupField("control_measure_location_id")
+            changes[measure_location_id_idx] = measure_location_id
+        self.layer.changeAttributeValues(feat_id, changes)
+
+    def trigger_update_control_references(self, feat_id, geometry):
+        """Triggering update of the control and measure location references after feature geometry change."""
+        update_control_references_method = partial(self.update_control_references, feat_id, geometry)
+        QTimer.singleShot(0, update_control_references_method)
+
+    def trigger_simplify_measure_map(self, measure_map_id):
+        """Triggering geometry simplification on newly added feature."""
+        simplify_method = partial(self.simplify_linear_feature, measure_map_id)
+        QTimer.singleShot(0, simplify_method)
+
+    def connect_additional_signals(self):
+        """Connecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.connect(self.trigger_simplify_measure_map)
+        self.layer.geometryChanged.connect(self.trigger_update_control_references)
+
+    def disconnect_additional_signals(self):
+        """Disconnecting signals to action specific for the particular layers."""
+        self.layer.featureAdded.disconnect(self.trigger_simplify_measure_map)
+        self.layer.geometryChanged.disconnect(self.trigger_update_control_references)
 
 
 ALL_HANDLERS = (

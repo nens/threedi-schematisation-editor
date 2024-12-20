@@ -1,13 +1,16 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 import importlib
 import os
 import sys
 
 import pkg_resources
 
-REQUIRED_3DI_MI_UTILS_VERSION = "0.1.5"
 MAIN_DIR = os.path.dirname(os.path.abspath(__file__))
+REQUIRED_3DI_SCHEMA_VERSION = "0.230.0.dev0"
+REQUIRED_3DI_MI_UTILS_VERSION = "0.1.5"
+THREEDI_SCHEMA_WHEEL = os.path.join(MAIN_DIR, f"threedi_schema-{REQUIRED_3DI_SCHEMA_VERSION}-py3-none-any.whl")
 MI_UTILS_WHEEL = os.path.join(MAIN_DIR, f"threedi_mi_utils-{REQUIRED_3DI_MI_UTILS_VERSION}-py3-none-any.whl")
+
 
 def patch_wheel_imports():
     """

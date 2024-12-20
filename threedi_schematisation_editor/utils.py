@@ -13,7 +13,6 @@ from qgis.core import (
     NULL,
     QgsBilinearRasterResampler,
     QgsCoordinateTransform,
-    QgsDataSourceUri,
     QgsEditorWidgetSetup,
     QgsExpression,
     QgsFeature,
@@ -54,14 +53,14 @@ field_types_mapping = {
 }
 
 
-def backup_geopackage(filename):
-    """Make a backup of the geopackage."""
+def backup_schematisation_file(filename):
+    """Make a backup of the schematisation file."""
     backup_folder = os.path.join(os.path.dirname(os.path.dirname(filename)), "_backup")
     os.makedirs(backup_folder, exist_ok=True)
     prefix = str(uuid4())[:8]
-    backup_gpkg_path = os.path.join(backup_folder, f"{prefix}_{os.path.basename(filename)}")
-    shutil.copyfile(filename, backup_gpkg_path)
-    return backup_gpkg_path
+    backup_file_path = os.path.join(backup_folder, f"{prefix}_{os.path.basename(filename)}")
+    shutil.copyfile(filename, backup_file_path)
+    return backup_file_path
 
 
 def vector_layer_factory(annotated_model_cls, epsg=4326):
@@ -691,25 +690,24 @@ def modify_raster_style(raster_layer, limits=QgsRasterMinMaxOrigin.MinMax, exten
     raster_layer.setRenderer(renderer)
 
 
-def migrate_geopackage_schema(gpkg_filepath):
-    # TODO: Needs refactoring
+def migrate_schematisation_schema(schematisation_filepath):
     migration_succeed = False
     try:
         from threedi_schema import ThreediDatabase, errors
 
-        threedi_db = ThreediDatabase(gpkg_filepath)
+        threedi_db = ThreediDatabase(schematisation_filepath)
         schema = threedi_db.schema
-        backup_filepath = backup_geopackage(gpkg_filepath)
-        schema.upgrade(backup=False, upgrade_schema_version=True)
-        schema.set_spatial_indexes()
+        backup_filepath = backup_schematisation_file(schematisation_filepath)
+        # schema.upgrade(backup=False, convert_to_geopackage=True)
+        schema.convert_to_geopackage()
         shutil.rmtree(os.path.dirname(backup_filepath))
         migration_succeed = True
         migration_feedback_msg = "Migration succeed."
     except ImportError:
-        migration_feedback_msg = "Missing threedi-schema library. Schema migration failed."
+        migration_feedback_msg = "Missing threedi-schema library (or its dependencies). Schema migration failed."
     except errors.UpgradeFailedError:
         migration_feedback_msg = (
-            "The geopackage database schema cannot be migrated to the current version. "
+            "The schematisation database schema cannot be migrated to the current version. "
             "Please contact the service desk for assistance."
         )
     except Exception as e:
@@ -737,60 +735,6 @@ def bypass_max_path_limit(path, is_file=False):
             else:
                 valid_path = path_str
     return valid_path
-
-
-def ensure_valid_schema(schematisation_gpkg, communication):
-    """Check if schema version is up-to-date and migrate it if needed."""
-    # TODO: Needs refactoring
-    try:
-        from threedi_schema import ThreediDatabase, errors
-    except ImportError:
-        return
-    schematisation_dirname = os.path.dirname(schematisation_gpkg)
-    schematisation_filename = os.path.basename(schematisation_gpkg)
-    backup_folder = os.path.join(schematisation_dirname, "_backup")
-    os.makedirs(bypass_max_path_limit(backup_folder), exist_ok=True)
-    prefix = str(uuid4())[:8]
-    backup_gpkg_path = os.path.join(backup_folder, f"{prefix}_{schematisation_filename}")
-    shutil.copyfile(schematisation_gpkg, bypass_max_path_limit(backup_gpkg_path, is_file=True))
-    threedi_db = ThreediDatabase(schematisation_gpkg)
-    schema = threedi_db.schema
-    try:
-        schema.validate_schema()
-        schema.set_spatial_indexes()
-    except errors.MigrationMissingError:
-        warn_and_ask_msg = (
-            "The selected geopackage cannot be used because its database schema version is out of date. "
-            "Would you like to migrate your geopackage to the current schema version?"
-        )
-        do_migration = communication.ask(None, "Missing migration", warn_and_ask_msg)
-        if not do_migration:
-            return False
-        try:
-            schema.upgrade(backup=False, upgrade_schema_version=True)
-            schema.set_spatial_indexes()
-            shutil.rmtree(backup_folder)
-        except errors.MigrationMissingError as e:
-            if "This tool cannot update versions below 160" in str(e):
-                error_msg = (
-                    "This tool cannot update versions below 160. " "Please contact the service desk for assistance."
-                )
-                communication.show_error(error_msg)
-                return False
-            else:
-                raise e
-    except errors.UpgradeFailedError:
-        error_msg = (
-            "The geopackage database schema cannot be migrated to the current version. "
-            "Please contact the service desk for assistance."
-        )
-        communication.show_error(error_msg)
-        return False
-    except Exception as e:
-        error_msg = f"{e}"
-        communication.show_error(error_msg)
-        return False
-    return True
 
 
 def validation_errors_summary(validation_errors):
@@ -1060,3 +1004,54 @@ def extract_substring(linestring_geometry, start_distance, end_distance):
     before_start_geometry = QgsGeometry(before_start_substring)
     after_end_geometry = QgsGeometry(after_end_substring)
     return substring_geometry, before_start_geometry, after_end_geometry
+
+
+# def ensure_valid_schema(schematisation_filepath, communication):
+#     """Check if schema version is up-to-date and migrate it if needed."""
+#     try:
+#         from threedi_schema import ThreediDatabase, errors
+#     except ImportError:
+#         return
+#     schematisation_dirname = os.path.dirname(schematisation_filepath)
+#     schematisation_filename = os.path.basename(schematisation_filepath)
+#     backup_folder = os.path.join(schematisation_dirname, "_backup")
+#     os.makedirs(bypass_max_path_limit(backup_folder), exist_ok=True)
+#     prefix = str(uuid4())[:8]
+#     backup_filepath = os.path.join(backup_folder, f"{prefix}_{schematisation_filename}")
+#     shutil.copyfile(schematisation_filepath, bypass_max_path_limit(backup_filepath, is_file=True))
+#     threedi_db = ThreediDatabase(schematisation_filepath)
+#     schema = threedi_db.schema
+#     try:
+#         schema.validate_schema()
+#     except errors.MigrationMissingError:
+#         warn_and_ask_msg = (
+#             "The selected geopackage cannot be used because its database schema version is out of date. "
+#             "Would you like to migrate your geopackage to the current schema version?"
+#         )
+#         do_migration = communication.ask(None, "Missing migration", warn_and_ask_msg)
+#         if not do_migration:
+#             return False
+#         try:
+#             schema.upgrade(backup=False, upgrade_schema_version=True)
+#             shutil.rmtree(backup_folder)
+#         except errors.MigrationMissingError as e:
+#             if "This tool cannot update versions below 160" in str(e):
+#                 error_msg = (
+#                     "This tool cannot update versions below 160. " "Please contact the service desk for assistance."
+#                 )
+#                 communication.show_error(error_msg)
+#                 return False
+#             else:
+#                 raise e
+#     except errors.UpgradeFailedError:
+#         error_msg = (
+#             "The geopackage database schema cannot be migrated to the current version. "
+#             "Please contact the service desk for assistance."
+#         )
+#         communication.show_error(error_msg)
+#         return False
+#     except Exception as e:
+#         error_msg = f"{e}"
+#         communication.show_error(error_msg)
+#         return False
+#     return True

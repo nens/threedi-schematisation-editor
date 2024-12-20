@@ -627,9 +627,9 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
         self.working_dir = self.settings.value("threedi/working_dir", "", type=str)
         if self.working_dir:
             self.file_browse_widget.setDefaultRoot(self.working_dir)
-        self.selected_schematisation_gpkg = None
-        self.schematisation_tv.doubleClicked.connect(self.set_schematisation_geopackage_filepath)
-        self.load_pb.clicked.connect(self.set_schematisation_geopackage_filepath)
+        self.selected_schematisation_filepath = None
+        self.schematisation_tv.doubleClicked.connect(self.set_schematisation_filepath)
+        self.load_pb.clicked.connect(self.set_schematisation_filepath)
         self.cancle_pb.clicked.connect(self.reject)
         self.list_working_dir_schematisations()
 
@@ -685,7 +685,7 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
             )
             self.schematisation_tv.scrollTo(last_used_schematisation_row_idx)
 
-    def set_schematisation_geopackage_filepath(self):
+    def set_schematisation_filepath(self):
         """Set selected schematisation filepath."""
         if self.load_tab.currentIndex() == 0:
             index = self.schematisation_tv.currentIndex()
@@ -695,11 +695,11 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
             current_row = index.row()
             revision_item = self.schematisation_model.item(current_row, 1)
             revision_gpkg = revision_item.data(Qt.UserRole)
-            self.selected_schematisation_gpkg = revision_gpkg
+            self.selected_schematisation_filepath = revision_gpkg
         else:
             selected_filepath = self.file_browse_widget.filePath()
             if not selected_filepath:
                 self.uc.show_warn("No file selected. Please select schematisation file to continue.", parent=self)
                 return
-            self.selected_schematisation_gpkg = self.file_browse_widget.filePath()
+            self.selected_schematisation_filepath = self.file_browse_widget.filePath()
         self.accept()

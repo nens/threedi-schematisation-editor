@@ -7,13 +7,13 @@ from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
 from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
 
-from .deps.custom_imports import patch_wheel_imports
-
-patch_wheel_imports()
 from threedi_mi_utils.news import QgsNewsSettingsInjector
 
 PLUGIN_DIR = Path(__file__).parent
 
+from threedi_schematisation_editor.deps.custom_imports import patch_wheel_imports
+
+patch_wheel_imports()
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.custom_widgets import ImportStructuresDialog, LoadSchematisationDialog
@@ -25,10 +25,10 @@ from threedi_schematisation_editor.utils import (
     add_settings_entry,
     can_write_in_dir,
     check_enable_macros_option,
-    ensure_valid_schema,
     get_filepath,
     get_icon_path,
     is_gpkg_connection_exists,
+    migrate_schematisation_schema,
 )
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
@@ -208,11 +208,6 @@ class ThreediSchematisationEditorPlugin:
             )
             self.uc.bar_warn(msg, dur=10)
 
-    def select_user_layers_geopackage(self):
-        name_filter = "3Di User Layers (*.gpkg *.GPKG)"
-        filename = get_filepath(self.iface.mainWindow(), extension_filter=name_filter, save=False)
-        return filename
-
     def on_3di_project_read(self):
         custom_vars = self.project.customVariables()
         try:
@@ -241,11 +236,19 @@ class ThreediSchematisationEditorPlugin:
             result = schematisation_loader.exec_()
             if result != QDialog.Accepted:
                 return
-            model_gpkg = schematisation_loader.selected_schematisation_gpkg
-        if not can_write_in_dir(os.path.dirname(model_gpkg)):
-            warn_msg = "You don't have required write permissions to load data from the selected location."
-            self.uc.show_warn(warn_msg)
-            return
+            schematisation_filepath = schematisation_loader.selected_schematisation_filepath
+            if not can_write_in_dir(os.path.dirname(schematisation_filepath)):
+                warn_msg = "You don't have required write permissions to load data from the selected location."
+                self.uc.show_warn(warn_msg)
+                return
+            if schematisation_filepath.endswith(".sqlite"):
+                migration_succeed, migration_feedback_msg = migrate_schematisation_schema(schematisation_filepath)
+                if not migration_succeed:
+                    self.uc.show_warn(migration_feedback_msg)
+                    return
+                model_gpkg = schematisation_filepath.rsplit(".", 1)[0] + ".gpkg"
+            else:
+                model_gpkg = schematisation_filepath
         lm = LayersManager(self.iface, self.uc, model_gpkg)
         if lm in self.workspace_context_manager:
             warn_msg = "Selected schematisation is already loaded. Loading canceled."

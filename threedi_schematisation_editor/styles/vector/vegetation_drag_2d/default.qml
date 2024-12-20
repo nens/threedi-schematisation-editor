@@ -254,7 +254,7 @@
   </aliases>
   <defaults>
     <default expression="" field="fid" applyOnUpdate="0"/>
-    <default expression="if (maximum(id) is null, 1, maximum(id) + 1)" field="id" applyOnUpdate="0"/>
+    <default expression="" field="id" applyOnUpdate="0"/>
     <default expression="" field="display_name" applyOnUpdate="0"/>
     <default expression="" field="vegetation_height" applyOnUpdate="0"/>
     <default expression="" field="vegetation_height_file" applyOnUpdate="0"/>
