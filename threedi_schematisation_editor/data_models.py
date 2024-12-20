@@ -1172,6 +1172,7 @@ MODEL_DEPENDENCIES = MappingProxyType(
                 "connection_node_id_end",
             ),
             Pump: ("connection_node_id",),
+            MeasureLocation: ("connection_node_id",),
         },
         Channel: {
             CrossSectionLocation: ("channel_id",),
@@ -1187,12 +1188,31 @@ MODEL_DEPENDENCIES = MappingProxyType(
         },
         Pump: {
             PumpMap: ("pump_id",),
+            MemoryControl: (("target_id", "target_type"),),
+            TableControl: (("target_id", "target_type"),),
         },
         SurfaceParameters: {
             Surface: ("surface_parameters_id",),
         },
         DryWeatherFlowDistribution: {
             DryWeatherFlow: ("dry_weather_flow_distribution_id",),
+        },
+        Orifice: {
+            MemoryControl: (("target_id", "target_type"),),
+            TableControl: (("target_id", "target_type"),),
+        },
+        Weir: {
+            MemoryControl: (("target_id", "target_type"),),
+            TableControl: (("target_id", "target_type"),),
+        },
+        MemoryControl: {
+            MeasureMap: (("control_id", "control_type"),),
+        },
+        TableControl: {
+            MeasureMap: (("control_id", "control_type"),),
+        },
+        MeasureLocation: {
+            MeasureMap: ("control_measure_location_id",),
         },
     }
 )

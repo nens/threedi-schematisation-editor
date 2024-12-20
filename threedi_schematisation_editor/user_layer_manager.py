@@ -97,7 +97,9 @@ class LayersManager:
             dm.Channel: {dm.ConnectionNode, dm.CrossSectionLocation, dm.PotentialBreach},
             dm.CrossSectionLocation: {dm.Channel},
             dm.PotentialBreach: {dm.Channel},
+            dm.MemoryControl: {dm.Pump, dm.Orifice, dm.Weir},
             dm.TableControl: {dm.Pump, dm.Orifice, dm.Weir},
+            dm.MeasureMap: {dm.MemoryControl, dm.TableControl},
         }
         for model_cls in dm.ALL_MODELS:
             if model_cls.__geometrytype__ == en.GeometryType.NoGeometry:
@@ -151,17 +153,23 @@ class LayersManager:
         snap_config.setMode(QgsSnappingConfig.AdvancedConfiguration)
         snap_config.setIntersectionSnapping(True)
         individual_configs = snap_config.individualLayerSettings()
+        vertex_segment_snapping_models = {
+            dm.CrossSectionLocation,
+            dm.PotentialBreach,
+            dm.TableControl,
+            dm.MemoryControl,
+        }
         try:
             snap_type = (
                 Qgis.SnappingTypes(Qgis.SnappingType.Vertex | Qgis.SnappingType.Segment)
-                if layer_model in {dm.CrossSectionLocation, dm.PotentialBreach}
+                if layer_model in vertex_segment_snapping_models
                 else Qgis.SnappingType.Vertex
             )
         except AttributeError:
             # Backward compatibility for QGIS versions before introducing `Qgis.SnappingTypes`
             snap_type = (
                 QgsSnappingConfig.VertexFlag | QgsSnappingConfig.SegmentFlag
-                if layer_model in {dm.CrossSectionLocation, dm.PotentialBreach}
+                if layer_model in vertex_segment_snapping_models
                 else QgsSnappingConfig.VertexFlag
             )
         for layer in snapped_layers:
@@ -198,6 +206,7 @@ class LayersManager:
                 dm.Surface,
                 dm.SurfaceMap,
             )
+            + dm.STRUCTURE_CONTROL_ELEMENTS,
         )
         return linked_models
 
