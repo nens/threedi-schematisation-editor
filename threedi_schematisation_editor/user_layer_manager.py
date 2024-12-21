@@ -376,6 +376,9 @@ class LayersManager:
         default_edit_form_config = layer.editFormConfig()
         if form_ui_path:
             default_edit_form_config.setUiForm(form_ui_path)
+            default_edit_form_config.setInitCodeSource(Qgis.AttributeFormPythonInitCodeSource.Dialog)
+            default_edit_form_config.setInitFunction("open_edit_form")
+            default_edit_form_config.setInitCode("from threedi_schematisation_editor.utils import open_edit_form")
             set_field_default_value(layer, "id", "")
         else:
             id_increment_expression = "if (maximum(id) is null, 1, maximum(id) + 1)"

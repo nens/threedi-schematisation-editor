@@ -158,7 +158,11 @@ def get_multiple_qml_style_paths(styles_folder_name, *subfolders):
     """Getting QML styles paths within given styles folder."""
     styles_folder_path = os.path.join(os.path.dirname(__file__), "styles", *subfolders, styles_folder_name)
     if os.path.exists(styles_folder_path):
-        qml_paths = [os.path.join(styles_folder_path, q) for q in os.listdir(styles_folder_path) if q.endswith(".qml")]
+        qml_paths = [
+            os.path.normpath(os.path.join(styles_folder_path, q))
+            for q in os.listdir(styles_folder_path)
+            if q.endswith(".qml")
+        ]
     else:
         qml_paths = []
     return qml_paths
@@ -167,7 +171,7 @@ def get_multiple_qml_style_paths(styles_folder_name, *subfolders):
 def get_form_ui_path(table_name):
     """Getting UI form path for a given table name."""
     ui_filename = f"{table_name}.ui"
-    filepath = os.path.join(os.path.dirname(__file__), "forms", "ui", ui_filename)
+    filepath = os.path.normpath(os.path.join(os.path.dirname(__file__), "forms", "ui", ui_filename))
     if os.path.isfile(filepath):
         return filepath
     return None
