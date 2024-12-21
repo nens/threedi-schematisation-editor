@@ -109,7 +109,7 @@
   </aliases>
   <defaults>
     <default expression="" applyOnUpdate="0" field="fid"/>
-    <default expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0" field="id"/>
+    <default expression="" applyOnUpdate="0" field="id"/>
     <default expression="'new'" applyOnUpdate="0" field="code"/>
     <default expression="" applyOnUpdate="0" field="width"/>
     <default expression="" applyOnUpdate="0" field="height"/>

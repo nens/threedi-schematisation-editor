@@ -208,7 +208,7 @@
   <excludeAttributesWMS/>
   <excludeAttributesWFS/>
   <defaults>
-    <default field="id" expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0"/>
+    <default field="id" expression="" applyOnUpdate="0"/>
     <default field="display_name" expression="" applyOnUpdate="0"/>
     <default field="timeseries" expression="" applyOnUpdate="0"/>
     <default field="type" expression="" applyOnUpdate="0"/>

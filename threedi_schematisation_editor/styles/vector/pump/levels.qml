@@ -364,7 +364,7 @@
   <excludeAttributesWFS/>
   <defaults>
     <default applyOnUpdate="0" field="ROWID" expression=""/>
-    <default applyOnUpdate="0" field="id" expression="if(maximum(id) is null,1, maximum(id)+1)"/>
+    <default applyOnUpdate="0" field="id" expression=""/>
     <default applyOnUpdate="0" field="display_name" expression="'new'"/>
     <default applyOnUpdate="0" field="code" expression="'new'"/>
     <default applyOnUpdate="0" field="classification" expression=""/>

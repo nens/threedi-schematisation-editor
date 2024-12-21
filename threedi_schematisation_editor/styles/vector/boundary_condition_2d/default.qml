@@ -438,7 +438,7 @@
     <policy policy="Duplicate" field="interpolate"/>
   </splitPolicies>
   <defaults>
-    <default expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0" field="id"/>
+    <default expression="" applyOnUpdate="0" field="id"/>
     <default expression="" applyOnUpdate="0" field="display_name"/>
     <default expression="" applyOnUpdate="0" field="timeseries"/>
     <default expression="" applyOnUpdate="0" field="type"/>
