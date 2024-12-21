@@ -67,7 +67,7 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
                 self.CONNECTION_NODE_LAYER,
                 self.tr("Connection node layer"),
                 [QgsProcessing.TypeVectorPoint],
-                defaultValue="Connection Node",
+                defaultValue="Connection node",
             )
         )
         self.addParameter(

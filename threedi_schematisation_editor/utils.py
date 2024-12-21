@@ -354,7 +354,7 @@ def load_user_layers(gpkg_path):
 def load_model_raster_layers(gpkg_path):
     """Loading raster layers related with 3Di model."""
     gpkg_dir = os.path.dirname(gpkg_path)
-    group_name = "Model rasters"
+    group_name = "Rasters"
     get_tree_group(group_name)
     for settings_cls in dm.SETTINGS_ELEMENTS:
         if settings_cls.RELATED_RASTERS is None:
@@ -383,12 +383,12 @@ def remove_user_layers():
     groups = [
         "1D",
         "1D2D",
-        " 2D",
+        "2D",
         "Laterals & 0D inflow",
         "Structure control",
         "Hydrological processes",
         "Settings",
-        "Model rasters",
+        "Rasters",
     ]
     for group_name in groups:
         remove_group_with_children(group_name)

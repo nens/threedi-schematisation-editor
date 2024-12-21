@@ -120,7 +120,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
                 self.NODE_LAYER,
                 self.tr("Connection node layer"),
                 [QgsProcessing.TypeVectorPoint],
-                defaultValue="Connection Node",
+                defaultValue="Connection node",
             )
         )
         self.addParameter(

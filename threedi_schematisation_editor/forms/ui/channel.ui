@@ -547,7 +547,7 @@
              <item>
               <widget class="QLabel" name="label_44">
                <property name="text">
-                <string>Tags</string>
+                <string>Tag</string>
                </property>
               </widget>
              </item>
@@ -1160,7 +1160,7 @@
              <item>
               <widget class="QLabel" name="label_9">
                <property name="text">
-                <string>Tags</string>
+                <string>Tag</string>
                </property>
               </widget>
              </item>
@@ -1776,7 +1776,7 @@
              <item>
               <widget class="QLabel" name="label_34">
                <property name="text">
-                <string>Tags</string>
+                <string>Tag</string>
                </property>
               </widget>
              </item>

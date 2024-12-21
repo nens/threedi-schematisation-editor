@@ -948,7 +948,7 @@ coefficient positive</string>
              <item>
               <widget class="QLabel" name="label_42">
                <property name="text">
-                <string>Tags</string>
+                <string>Tag</string>
                </property>
               </widget>
              </item>
@@ -1561,7 +1561,7 @@ coefficient positive</string>
              <item>
               <widget class="QLabel" name="label_7">
                <property name="text">
-                <string>Tags</string>
+                <string>Tag</string>
                </property>
               </widget>
              </item>
@@ -2177,7 +2177,7 @@ coefficient positive</string>
              <item>
               <widget class="QLabel" name="label_14">
                <property name="text">
-                <string>Tags</string>
+                <string>Tag</string>
                </property>
               </widget>
              </item>

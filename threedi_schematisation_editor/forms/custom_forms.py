@@ -393,7 +393,7 @@ class AbstractBaseForm(QObject):
         pass
 
 
-class AbstractFormWithTags(AbstractBaseForm):
+class AbstractFormWithTag(AbstractBaseForm):
     """Base edit form for user layers with tags table reference."""
 
     def __init__(self, *args, **kwargs):
@@ -415,7 +415,7 @@ class AbstractFormWithTags(AbstractBaseForm):
             return
         if tag_ids_str:
             tag_ids = [int(tag_id) for tag_id in tag_ids_str.split(",")]
-            tags_handler = self.layer_manager.model_handlers[dm.Tags]
+            tags_handler = self.layer_manager.model_handlers[dm.Tag]
             tags_layer = tags_handler.layer
             tag_descriptions = [tag_feat["description"] for tag_feat in tags_layer.getFeatures(tag_ids)]
             self.tags.setText(", ".join(tag_descriptions))
@@ -1243,20 +1243,20 @@ class AbstractFormWithStartEndNode(AbstractBaseForm):
         self.populate_widgets()
 
 
-class AbstractNodeToSurfaceMapForm(AbstractFormWithTags):
+class AbstractNodeToSurfaceMapForm(AbstractFormWithTag):
     """Basic surface to node map edit form logic."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.dwf_model = None
-        self.dwf_id_field = None
-        self.surface = None
+        self.surface_model = None
+        self.surface_id_field = None
+        self.surface_feature = None
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        surface_handler = self.layer_manager.model_handlers[self.dwf_model]
+        surface_handler = self.layer_manager.model_handlers[self.surface_model]
         connection_node_layer = connection_node_handler.layer
         surface_layer = surface_handler.layer
         linestring = self.feature.geometry().asPolyline()
@@ -1265,25 +1265,25 @@ class AbstractNodeToSurfaceMapForm(AbstractFormWithTags):
         connection_node = connection_node_feat
         if connection_node is not None:
             self.feature["connection_node_id"] = connection_node["id"]
-        if self.surface is None:
-            self.surface = find_point_polygons(start_point, surface_layer)
-        if self.surface is not None:
-            self.feature[self.dwf_id_field] = self.surface["id"]
+        if self.surface_feature is None:
+            self.surface_feature = find_point_polygons(start_point, surface_layer)
+        if self.surface_feature is not None:
+            self.feature[self.surface_id_field] = self.surface_feature["id"]
 
     def populate_with_extra_widgets(self):
         """Populate widgets for other layers attributes."""
         if self.creation is True:
-            self.surface = self.select_start_surface()
+            self.surface_feature = self.select_start_surface()
             self.fill_related_attributes()
         self.populate_widgets()
 
     def select_start_surface(self):
         """Selecting start surface"""
-        title = f"Select start {self.dwf_model.__layername__}"
-        message = f"{self.dwf_model.__layername__}s at location"
+        title = f"Select start {self.surface_model.__layername__}"
+        message = f"{self.surface_model.__layername__}s at location"
         linestring = self.feature.geometry().asPolyline()
         start_point, end_point = linestring[0], linestring[-1]
-        surface_handler = self.layer_manager.model_handlers[self.dwf_model]
+        surface_handler = self.layer_manager.model_handlers[self.surface_model]
         surface_layer = surface_handler.layer
         surface_feats = find_point_polygons(start_point, surface_layer, allow_multiple=True)
         surfaces_no = len(surface_feats)
@@ -1365,7 +1365,7 @@ class AbstractFormWithTargetStructure(AbstractBaseForm):
         self.populate_widgets()
 
 
-class ConnectionNodeForm(AbstractFormWithTags):
+class ConnectionNodeForm(AbstractFormWithTag):
     """Connection node edit form logic."""
 
     MODEL = dm.ConnectionNode
@@ -1375,7 +1375,7 @@ class ConnectionNodeForm(AbstractFormWithTags):
         self.populate_widgets()
 
 
-class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTags):
+class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
     """Pipe user layer edit form logic."""
 
     MODEL = dm.Pipe
@@ -1414,7 +1414,7 @@ class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFo
         self.populate_cross_section_table_data()
 
 
-class WeirForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTags):
+class WeirForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
     """Weir user layer edit form logic."""
 
     MODEL = dm.Weir
@@ -1448,7 +1448,7 @@ class WeirForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFo
         self.populate_cross_section_table_data()
 
 
-class CulvertForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTags):
+class CulvertForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
     """Culvert user layer edit form logic."""
 
     MODEL = dm.Culvert
@@ -1482,7 +1482,7 @@ class CulvertForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
         self.populate_cross_section_table_data()
 
 
-class OrificeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTags):
+class OrificeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
     """Orifice user layer edit form logic."""
 
     MODEL = dm.Orifice
@@ -1516,7 +1516,7 @@ class OrificeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
         self.populate_cross_section_table_data()
 
 
-class PumpForm(AbstractFormWithNode, AbstractFormWithTags):
+class PumpForm(AbstractFormWithNode, AbstractFormWithTag):
     """Pump without end node user layer edit form logic."""
 
     MODEL = dm.Pump
@@ -1525,7 +1525,7 @@ class PumpForm(AbstractFormWithNode, AbstractFormWithTags):
         super().__init__(*args, *kwargs)
 
 
-class PumpMapForm(AbstractFormWithTags):
+class PumpMapForm(AbstractFormWithTag):
     """Pump with end node user layer edit form logic."""
 
     MODEL = dm.PumpMap
@@ -1630,7 +1630,7 @@ class PumpMapForm(AbstractFormWithTags):
         return pump_feat
 
 
-class SurfaceForm(AbstractFormWithTags):
+class SurfaceForm(AbstractFormWithTag):
     """Surface user layer edit form logic."""
 
     MODEL = dm.Surface
@@ -1639,7 +1639,7 @@ class SurfaceForm(AbstractFormWithTags):
         super().__init__(*args, *kwargs)
 
 
-class SurfaceMapForm(AbstractNodeToSurfaceMapForm, AbstractFormWithTags):
+class SurfaceMapForm(AbstractNodeToSurfaceMapForm, AbstractFormWithTag):
     """Surface Map user layer edit form logic."""
 
     MODEL = dm.SurfaceMap
@@ -1650,8 +1650,8 @@ class SurfaceMapForm(AbstractNodeToSurfaceMapForm, AbstractFormWithTags):
         self.surface_id_field = "surface_id"
 
 
-class DryWeatherFlowForm(AbstractFormWithTags):
-    """Dry Weather Flow user layer edit form logic."""
+class DryWeatherFlowForm(AbstractFormWithTag):
+    """Dry weather flow user layer edit form logic."""
 
     MODEL = dm.DryWeatherFlow
 
@@ -1659,19 +1659,19 @@ class DryWeatherFlowForm(AbstractFormWithTags):
         super().__init__(*args, *kwargs)
 
 
-class DryWeatherFlowMapForm(AbstractNodeToSurfaceMapForm, AbstractFormWithTags):
-    """Dry Weather Flow Map user layer edit form logic."""
+class DryWeatherFlowMapForm(AbstractNodeToSurfaceMapForm, AbstractFormWithTag):
+    """Dry weather flow Map user layer edit form logic."""
 
     MODEL = dm.DryWeatherFlowMap
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.dwf_model = dm.DryWeatherFlow
-        self.dwf_id_field = "dry_weather_flow_id"
+        self.surface_model = dm.DryWeatherFlow
+        self.surface_id_field = "dry_weather_flow_id"
 
 
-class DryWeatherFlowDistributionForm(AbstractFormWithTags, AbstractFormWithDistribution):
-    """Dry Weather Flow Distribution user layer edit form logic."""
+class DryWeatherFlowDistributionForm(AbstractFormWithTag, AbstractFormWithDistribution):
+    """Dry weather flow Distribution user layer edit form logic."""
 
     MODEL = dm.DryWeatherFlowDistribution
 
@@ -1690,7 +1690,7 @@ class DryWeatherFlowDistributionForm(AbstractFormWithTags, AbstractFormWithDistr
         self.populate_distribution_table_data()
 
 
-class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTags):
+class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
     """Channel user layer edit form logic."""
 
     MODEL = dm.Channel
@@ -1932,7 +1932,7 @@ class CrossSectionLocationForm(AbstractFormWithXSTable):
             pass
 
 
-class PotentialBreachForm(AbstractFormWithTags):
+class PotentialBreachForm(AbstractFormWithTag):
     """Potential breach user layer edit form logic."""
 
     MODEL = dm.PotentialBreach
@@ -1969,7 +1969,7 @@ class PotentialBreachForm(AbstractFormWithTags):
         self.populate_widgets()
 
 
-class ExchangeLineForm(AbstractFormWithTags):
+class ExchangeLineForm(AbstractFormWithTag):
     """Exchange line user layer edit form logic."""
 
     MODEL = dm.ExchangeLine
@@ -1984,7 +1984,7 @@ class ExchangeLineForm(AbstractFormWithTags):
         self.populate_widgets()
 
 
-class BoundaryCondition1D(AbstractFormWithTags, AbstractFormWithNode, AbstractFormWithTimeseries):
+class BoundaryCondition1D(AbstractFormWithTag, AbstractFormWithNode, AbstractFormWithTimeseries):
     """Boundary Condition 1D user layer edit form logic."""
 
     MODEL = dm.BoundaryCondition1D
@@ -2009,7 +2009,7 @@ class BoundaryCondition1D(AbstractFormWithTags, AbstractFormWithNode, AbstractFo
         self.populate_table_data()
 
 
-class BoundaryCondition2D(AbstractFormWithTags, AbstractFormWithTimeseries):
+class BoundaryCondition2D(AbstractFormWithTag, AbstractFormWithTimeseries):
     """Boundary Condition 2D user layer edit form logic."""
 
     MODEL = dm.BoundaryCondition2D
@@ -2029,7 +2029,7 @@ class BoundaryCondition2D(AbstractFormWithTags, AbstractFormWithTimeseries):
         self.populate_table_data()
 
 
-class Lateral1D(AbstractFormWithTags, AbstractFormWithNode, AbstractFormWithTimeseries):
+class Lateral1D(AbstractFormWithTag, AbstractFormWithNode, AbstractFormWithTimeseries):
     """Lateral 1D user layer edit form logic."""
 
     MODEL = dm.Lateral1D
@@ -2054,7 +2054,7 @@ class Lateral1D(AbstractFormWithTags, AbstractFormWithNode, AbstractFormWithTime
         self.populate_table_data()
 
 
-class Lateral2D(AbstractFormWithTags, AbstractFormWithTimeseries):
+class Lateral2D(AbstractFormWithTag, AbstractFormWithTimeseries):
     """Lateral 2D user layer edit form logic."""
 
     MODEL = dm.Lateral2D
@@ -2074,7 +2074,7 @@ class Lateral2D(AbstractFormWithTags, AbstractFormWithTimeseries):
         self.populate_table_data()
 
 
-class MeasureLocation(AbstractFormWithNode, AbstractFormWithTags):
+class MeasureLocation(AbstractFormWithNode, AbstractFormWithTag):
     """Measure Location user layer edit form logic."""
 
     MODEL = dm.MeasureLocation
@@ -2083,7 +2083,7 @@ class MeasureLocation(AbstractFormWithNode, AbstractFormWithTags):
         super().__init__(*args, *kwargs)
 
 
-class MemoryControl(AbstractFormWithTargetStructure, AbstractFormWithTags):
+class MemoryControl(AbstractFormWithTargetStructure, AbstractFormWithTag):
     """Memory Control user layer edit form logic."""
 
     MODEL = dm.MemoryControl
@@ -2092,7 +2092,7 @@ class MemoryControl(AbstractFormWithTargetStructure, AbstractFormWithTags):
         super().__init__(*args, *kwargs)
 
 
-class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable, AbstractFormWithTags):
+class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable, AbstractFormWithTag):
     """Table Control user layer edit form logic."""
 
     MODEL = dm.TableControl
@@ -2117,7 +2117,7 @@ class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable,
         self.populate_table_data()
 
 
-class MeasureMap(AbstractFormWithTags):
+class MeasureMap(AbstractFormWithTag):
     """Measure Map user layer edit form logic."""
 
     MODEL = dm.MeasureMap
