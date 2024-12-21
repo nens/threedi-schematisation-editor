@@ -132,7 +132,7 @@
   </aliases>
   <defaults>
     <default expression="" applyOnUpdate="0" field="fid"/>
-    <default expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0" field="id"/>
+    <default expression="" applyOnUpdate="0" field="id"/>
   </defaults>
   <constraints>
     <constraint constraints="3" exp_strength="0" notnull_strength="1" field="fid" unique_strength="1"/>

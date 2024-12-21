@@ -317,7 +317,7 @@
   <excludeAttributesWMS/>
   <excludeAttributesWFS/>
   <defaults>
-    <default field="id" applyOnUpdate="0" expression="if(maximum(id) is null,1, maximum(id)+1)"/>
+    <default field="id" applyOnUpdate="0" expression=""/>
     <default field="display_name" applyOnUpdate="0" expression="'new'"/>
     <default field="grid_level" applyOnUpdate="0" expression="1"/>
     <default field="code" applyOnUpdate="0" expression="'new'"/>

@@ -124,7 +124,7 @@
   </aliases>
   <defaults>
     <default expression="" applyOnUpdate="0" field="fid"/>
-    <default expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0" field="id"/>
+    <default expression="" applyOnUpdate="0" field="id"/>
     <default expression="" applyOnUpdate="0" field="outflow_delay"/>
     <default expression="" applyOnUpdate="0" field="surface_layer_thickness"/>
     <default expression="" applyOnUpdate="0" field="infiltration"/>

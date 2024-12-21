@@ -443,10 +443,10 @@
     <policy policy="Duplicate" field="interpolate"/>
   </splitPolicies>
   <defaults>
-    <default expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0" field="id"/>
+    <default expression="" applyOnUpdate="0" field="id"/>
     <default expression="" applyOnUpdate="0" field="type"/>
     <default expression="" applyOnUpdate="0" field="timeseries"/>
-    <default expression="if(aggregate('Connection Node','min',&quot;id&quot;, intersects($geometry,geometry(@parent))) is null,'Created automatically',aggregate('Connection Node','min',&quot;id&quot;, intersects($geometry,geometry(@parent))))" applyOnUpdate="1" field="connection_node_id"/>
+    <default expression="" applyOnUpdate="0" field="connection_node_id"/>
     <default expression="" applyOnUpdate="0" field="code"/>
     <default expression="" applyOnUpdate="0" field="display_name"/>
     <default expression="" applyOnUpdate="0" field="tags"/>

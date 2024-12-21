@@ -422,7 +422,7 @@
     <policy policy="Duplicate" field="units"/>
   </splitPolicies>
   <defaults>
-    <default expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0" field="id"/>
+    <default expression="" applyOnUpdate="0" field="id"/>
     <default expression="1" applyOnUpdate="0" field="type"/>
     <default expression="" applyOnUpdate="0" field="timeseries"/>
     <default expression="" applyOnUpdate="0" field="code"/>

@@ -8,14 +8,18 @@ from qgis.PyQt.QtCore import QTimer
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.enumerators import (
+    BoundaryType,
     CrestType,
     ExchangeTypeCulvert,
     ExchangeTypeNode,
     FrictionType,
     GeometryType,
+    Later2DType,
     ManholeShape,
     PipeMaterial,
     PumpType,
+    TimeUnit,
+    Unit,
     Visualisation,
 )
 from threedi_schematisation_editor.utils import (
@@ -408,6 +412,14 @@ class ConnectionNodeHandler(UserLayerHandler):
 
 class BoundaryCondition1DHandler(UserLayerHandler):
     MODEL = dm.BoundaryCondition1D
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+            "type": BoundaryType.WATER_LEVEL.value,
+            "time_units": "seconds",
+        }
+    )
     RELATED_MODELS = MappingProxyType(
         {
             dm.ConnectionNode: 1,
@@ -417,6 +429,15 @@ class BoundaryCondition1DHandler(UserLayerHandler):
 
 class Lateral1DHandler(UserLayerHandler):
     MODEL = dm.Lateral1D
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+            "offset": 0,
+            "units": Unit.M3_SECONDS.value,
+            "time_units": TimeUnit.SECONDS.value,
+        }
+    )
     RELATED_MODELS = MappingProxyType(
         {
             dm.ConnectionNode: 1,
@@ -878,10 +899,28 @@ class MaterialHandler(UserLayerHandler):
 
 class BoundaryCondition2DHandler(UserLayerHandler):
     MODEL = dm.BoundaryCondition2D
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+            "type": BoundaryType.WATER_LEVEL.value,
+            "time_units": TimeUnit.SECONDS.value,
+        }
+    )
 
 
 class Lateral2DHandler(UserLayerHandler):
     MODEL = dm.Lateral2D
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+            "offset": 0,
+            "type": Later2DType.SURFACE.value,
+            "units": Unit.M3_SECONDS.value,
+            "time_units": TimeUnit.SECONDS.value,
+        }
+    )
 
 
 class ObstacleHandler(UserLayerHandler):

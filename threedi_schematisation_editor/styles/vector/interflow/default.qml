@@ -132,7 +132,7 @@
   </aliases>
   <defaults>
     <default expression="" applyOnUpdate="0" field="fid"/>
-    <default expression="if(maximum(id) is null,1, maximum(id)+1)" applyOnUpdate="0" field="id"/>
+    <default expression="" applyOnUpdate="0" field="id"/>
     <default expression="" applyOnUpdate="0" field="interflow_type"/>
     <default expression="" applyOnUpdate="0" field="porosity"/>
     <default expression="" applyOnUpdate="0" field="porosity_file"/>
