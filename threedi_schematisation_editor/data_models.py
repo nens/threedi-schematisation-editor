@@ -68,7 +68,7 @@ class ModelObject:
 @dataclass
 class ConnectionNode(ModelObject):
     __tablename__ = "connection_node"
-    __layername__ = "Connection Node"
+    __layername__ = "Connection node"
     __geometrytype__ = GeometryType.Point
 
     id: int
@@ -102,7 +102,7 @@ class ConnectionNode(ModelObject):
             "Exchange thickness [m]",
             "Hydraulic conductivity in [m/d]",
             "Hydraulic conductivity out [m/d]",
-            "Tags",
+            "Tag",
         ]
         return display_names_list
 
@@ -122,7 +122,7 @@ class Material(ModelObject):
 @dataclass
 class BoundaryCondition1D(ModelObject):
     __tablename__ = "boundary_condition_1d"
-    __layername__ = "1D Boundary Condition"
+    __layername__ = "1D Boundary condition"
     __geometrytype__ = GeometryType.Point
 
     id: int
@@ -214,7 +214,7 @@ class Weir(ModelObject):
             "Cross section width [m]",
             "Cross section height [m]",
             "Cross section table",
-            "Tags",
+            "Tag",
         ]
         return display_names_list
 
@@ -284,7 +284,7 @@ class Culvert(ModelObject):
             "Cross section width [m]",
             "Cross section height [m]",
             "Cross section table",
-            "Tags",
+            "Tag",
         ]
         return display_names_list
 
@@ -334,7 +334,7 @@ class Orifice(ModelObject):
             "Cross section width [m]",
             "Cross section height [m]",
             "Cross section table",
-            "Tags",
+            "Tag",
         ]
         return display_names_list
 
@@ -390,7 +390,7 @@ class Pipe(ModelObject):
             "Exchange thickness [m]",
             "Hydraulic conductivity in [m/d]",
             "Hydraulic conductivity out [m/d]",
-            "Tags",
+            "Tag",
         ]
         return display_names_list
 
@@ -627,7 +627,7 @@ class SurfaceParameters(ModelObject):
 @dataclass
 class DryWeatherFlow(ModelObject):
     __tablename__ = "dry_weather_flow"
-    __layername__ = "Dry Weather Flow"
+    __layername__ = "Dry weather flow"
     __geometrytype__ = GeometryType.Polygon
 
     id: int
@@ -643,7 +643,7 @@ class DryWeatherFlow(ModelObject):
 @dataclass
 class DryWeatherFlowMap(ModelObject):
     __tablename__ = "dry_weather_flow_map"
-    __layername__ = "Dry Weather Flow map"
+    __layername__ = "Dry weather flow map"
     __geometrytype__ = GeometryType.Linestring
 
     id: int
@@ -656,7 +656,7 @@ class DryWeatherFlowMap(ModelObject):
 @dataclass
 class DryWeatherFlowDistribution(ModelObject):
     __tablename__ = "dry_weather_flow_distribution"
-    __layername__ = "Dry Weather Flow distribution"
+    __layername__ = "Dry weather flow distribution"
     __geometrytype__ = GeometryType.NoGeometry
 
     id: int
@@ -897,9 +897,9 @@ class TimeStepSettings(ModelObject):
 
 
 @dataclass
-class Tags(ModelObject):
-    __tablename__ = "tags"
-    __layername__ = "Tags"
+class Tag(ModelObject):
+    __tablename__ = "tag"
+    __layername__ = "Tag"
     __geometrytype__ = GeometryType.NoGeometry
 
     id: int
@@ -1048,11 +1048,11 @@ MODEL_2D_ELEMENTS = (
 MODEL_0D_INFLOW_ELEMENTS = (
     Lateral1D,
     Lateral2D,
-    DryWeatherFlow,
     DryWeatherFlowMap,
+    DryWeatherFlow,
     DryWeatherFlowDistribution,
-    Surface,
     SurfaceMap,
+    Surface,
     SurfaceParameters,
 )
 
@@ -1077,7 +1077,7 @@ SETTINGS_ELEMENTS = (
     PhysicalSettings,
     SimulationTemplateSettings,
     TimeStepSettings,
-    Tags,
+    Tag,
 )
 
 

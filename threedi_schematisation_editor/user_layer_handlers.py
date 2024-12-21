@@ -1156,8 +1156,8 @@ class VegetationDrag2DHandler(UserLayerHandler):
     MODEL = dm.VegetationDrag2D
 
 
-class TagsHandler(UserLayerHandler):
-    MODEL = dm.Tags
+class TagHandler(UserLayerHandler):
+    MODEL = dm.Tag
 
 
 class AbstractControlHandler(UserLayerHandler):
@@ -1374,7 +1374,7 @@ ALL_HANDLERS = (
     PhysicalSettingsHandler,
     SimulationTemplateSettingsHandler,
     TimeStepSettingsHandler,
-    TagsHandler,
+    TagHandler,
     VegetationDrag2DHandler,
     MeasureMapHandler,
     MeasureLocationHandler,

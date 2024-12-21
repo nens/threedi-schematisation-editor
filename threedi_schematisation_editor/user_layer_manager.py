@@ -56,7 +56,7 @@ class LayersManager:
         ("Hydrological processes", dm.HYDROLOGICAL_PROCESSES),
         ("Settings", dm.SETTINGS_ELEMENTS),
     )
-    RASTER_GROUPS = (("Model rasters", dm.ELEMENTS_WITH_RASTERS),)
+    RASTER_GROUPS = (("Rasters", dm.ELEMENTS_WITH_RASTERS),)
     LAYER_JOINS = MappingProxyType({})
     VALUE_RELATIONS = MappingProxyType(
         {
