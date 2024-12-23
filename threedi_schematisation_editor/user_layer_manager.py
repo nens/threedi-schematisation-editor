@@ -206,7 +206,7 @@ class LayersManager:
                 dm.Surface,
                 dm.SurfaceMap,
             )
-            + dm.STRUCTURE_CONTROL_ELEMENTS,
+            + dm.STRUCTURE_CONTROL_ELEMENTS
         )
         return linked_models
 
