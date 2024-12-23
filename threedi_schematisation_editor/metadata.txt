@@ -27,7 +27,7 @@ tags=3di, edit, 1D, hydraulics
 
 homepage=https://www.3diwatermanagement.com
 category=Plugins
-icon=icon/icon.png
+icon=icons/icon.png
 experimental=False
 hasProcessingProvider=no
 

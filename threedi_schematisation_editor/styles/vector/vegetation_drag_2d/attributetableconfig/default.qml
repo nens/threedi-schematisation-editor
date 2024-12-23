@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<qgis><attributetableconfig actionWidgetStyle="dropDown" sortOrder="0" sortExpression="">
+    <columns>
+      <column width="-1" hidden="0" type="field" name="id" />
+      <column width="-1" hidden="0" type="field" name="vegetation_height" />
+      <column width="-1" hidden="0" type="field" name="vegetation_height_file" />
+      <column width="-1" hidden="0" type="field" name="vegetation_stem_count" />
+      <column width="-1" hidden="0" type="field" name="vegetation_stem_count_file" />
+      <column width="-1" hidden="0" type="field" name="vegetation_stem_diameter" />
+      <column width="-1" hidden="0" type="field" name="vegetation_stem_diameter_file" />
+      <column width="-1" hidden="0" type="field" name="vegetation_drag_coefficient" />
+      <column width="-1" hidden="0" type="field" name="vegetation_drag_coefficient_file" />
+      <column width="-1" hidden="1" type="actions" />
+    </columns>
+  </attributetableconfig>
+  </qgis>
