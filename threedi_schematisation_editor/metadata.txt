@@ -3,7 +3,7 @@ name=3Di Schematisation Editor
 qgisMinimumVersion=3.22
 qgisMaximumVersion=3.99
 description=3Di Schematisation Editor for QGIS
-version=1.99.1
+version=1.99.2
 author=Lutra Consulting for 3Di Water Management
 email=servicedesk@nelen-schuurmans.nl
 about=View and edit 3Di schematisations in the Modeller Interface.
@@ -27,7 +27,7 @@ tags=3di, edit, 1D, hydraulics
 
 homepage=https://www.3diwatermanagement.com
 category=Plugins
-icon=icon.png
+icon=icon/icon.png
 experimental=False
 hasProcessingProvider=no
 
