@@ -7,6 +7,7 @@ from types import MappingProxyType
 
 from qgis.core import (
     Qgis,
+    QgsEditFormConfig,
     QgsEditorWidgetSetup,
     QgsExpression,
     QgsFeatureRequest,
@@ -376,7 +377,10 @@ class LayersManager:
         default_edit_form_config = layer.editFormConfig()
         if form_ui_path:
             default_edit_form_config.setUiForm(form_ui_path)
-            default_edit_form_config.setInitCodeSource(Qgis.AttributeFormPythonInitCodeSource.Dialog)
+            try:
+                default_edit_form_config.setInitCodeSource(Qgis.AttributeFormPythonInitCodeSource.Dialog)
+            except AttributeError:
+                default_edit_form_config.setInitCodeSource(QgsEditFormConfig.PythonInitCodeSource)
             default_edit_form_config.setInitFunction("open_edit_form")
             default_edit_form_config.setInitCode("from threedi_schematisation_editor.utils import open_edit_form")
             set_field_default_value(layer, "id", "")
