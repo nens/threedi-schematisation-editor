@@ -249,8 +249,36 @@ def get_filepath(
     return file_name
 
 
+def dataclass_field_to_widget_setup(model_cls_field_type, optional=False, **config_overrides):
+    """Create QgsEditorWidgetSetup out of the dataclass field type."""
+    if model_cls_field_type is bool:
+        config_type = "CheckBox"
+        config_map = {"AllowNull": optional}
+    elif model_cls_field_type is int:
+        config_type = "TextEdit"
+        config_map = {"AllowNull": optional}
+    elif model_cls_field_type is float:
+        config_type = "Range"
+        config_map = {
+            "AllowNull": optional,
+            "Max": 10**15,
+            "Min": -(10**15),
+            "Precision": 3,
+            "Step": 1.0,
+            "Style": "SpinBox",
+        }
+    elif model_cls_field_type is str:
+        config_type = "TextEdit"
+        config_map = {"AllowNull": optional}
+    else:
+        return None
+    config_map.update(config_overrides)
+    ews = QgsEditorWidgetSetup(config_type, config_map)
+    return ews
+
+
 def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
-    """Creating QgsEditorWidgetSetup out of the Enum object."""
+    """Create QgsEditorWidgetSetup out of the Enum object."""
     if enum_name_format_fn is None:
 
         def enum_name_format_fn(entry_name):
@@ -290,9 +318,15 @@ def set_initial_layer_configuration(layer, model_cls):
                 optional = True
             else:
                 optional = False
+            field_idx = fields.lookupField(column_name)
             if issubclass(field_type, Enum):
-                field_idx = fields.lookupField(column_name)
                 ews = enum_to_editor_widget_setup(field_type, optional, enum_name_format_fn=enum_entry_name_format)
+            else:
+                if column_name.startswith("hydraulic_conductivity"):
+                    ews = dataclass_field_to_widget_setup(field_type, optional=True, Min=0)
+                else:
+                    ews = dataclass_field_to_widget_setup(field_type)
+            if ews is not None:
                 layer.setEditorWidgetSetup(field_idx, ews)
         except KeyError:
             continue
