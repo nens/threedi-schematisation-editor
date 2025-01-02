@@ -1,6 +1,6 @@
 [general]
 name=3Di Schematisation Editor
-qgisMinimumVersion=3.22
+qgisMinimumVersion=3.28
 qgisMaximumVersion=3.99
 description=3Di Schematisation Editor for QGIS
 version=1.99.3

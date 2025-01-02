@@ -380,7 +380,7 @@ class LayersManager:
             try:
                 default_edit_form_config.setInitCodeSource(Qgis.AttributeFormPythonInitCodeSource.Dialog)
             except AttributeError:
-                default_edit_form_config.setInitCodeSource(QgsEditFormConfig.PythonInitCodeSource)
+                default_edit_form_config.setInitCodeSource(QgsEditFormConfig.PythonInitCodeSource.Dialog)
             default_edit_form_config.setInitFunction("open_edit_form")
             default_edit_form_config.setInitCode("from threedi_schematisation_editor.utils import open_edit_form")
             set_field_default_value(layer, "id", "")
