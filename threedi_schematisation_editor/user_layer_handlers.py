@@ -1006,6 +1006,13 @@ class ExchangeLineHandler(UserLayerHandler):
 class SurfaceHandler(UserLayerHandler):
     MODEL = dm.Surface
 
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+        }
+    )
+
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
         self.layer.geometryChanged.connect(self.update_surface_link)
@@ -1077,6 +1084,13 @@ class SurfaceParameterHandler(UserLayerHandler):
 
 class DryWeatherFlowHandler(UserLayerHandler):
     MODEL = dm.DryWeatherFlow
+
+    DEFAULTS = MappingProxyType(
+        {
+            "display_name": "new",
+            "code": "new",
+        }
+    )
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""

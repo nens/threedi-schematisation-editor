@@ -420,6 +420,12 @@ class AbstractFormWithTag(AbstractBaseForm):
             tag_descriptions = [tag_feat["description"] for tag_feat in tags_layer.getFeatures(tag_ids)]
             self.tags.setText(", ".join(tag_descriptions))
 
+    def populate_with_extra_widgets(self):
+        """Populate widgets for other layers attributes."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+
 
 class AbstractFormWithDistribution(AbstractBaseForm):
     """Base edit form for user layers with distribution table."""
@@ -1369,10 +1375,6 @@ class ConnectionNodeForm(AbstractFormWithTag):
     """Connection node edit form logic."""
 
     MODEL = dm.ConnectionNode
-
-    def populate_with_extra_widgets(self):
-        # Populate widgets based on features attributes
-        self.populate_widgets()
 
 
 class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):

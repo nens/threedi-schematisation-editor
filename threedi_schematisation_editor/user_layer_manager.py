@@ -65,6 +65,10 @@ class LayersManager:
             # parent model: (child model, parent column, child key column, child value column)
             dm.Surface: (dm.SurfaceParameters, "surface_parameters_id", "id", "description"),
             dm.DryWeatherFlow: (dm.DryWeatherFlowDistribution, "dry_weather_flow_distribution_id", "id", "description"),
+            dm.Culvert: (dm.Material, "material_id", "id", "description"),
+            dm.Pipe: (dm.Material, "material_id", "id", "description"),
+            dm.Weir: (dm.Material, "material_id", "id", "description"),
+            dm.Orifice: (dm.Material, "material_id", "id", "description"),
         }
     )
 
@@ -317,7 +321,9 @@ class LayersManager:
             config = default_ews.config()
             config["Layer"] = child_layer.id()
             config["LayerSource"] = child_layer.source()
-            ews = QgsEditorWidgetSetup(default_ews.type(), config)
+            config["Key"] = key_column
+            config["Value"] = value_column
+            ews = QgsEditorWidgetSetup("ValueRelation", config)
             parent_layer.setEditorWidgetSetup(parent_column_idx, ews)
 
     def create_groups(self):
@@ -362,7 +368,8 @@ class LayersManager:
         """Initializing single model layer based on data model class."""
         default_style_name = "default"
         layer = gpkg_layer(self.model_gpkg_path, model_cls.__tablename__, model_cls.__layername__)
-        fields_indexes = list(range(len(layer.fields())))
+        layer_fields = layer.fields()
+        fields_indexes = list(range(len(layer_fields)))
         form_ui_path = get_form_ui_path(model_cls.__tablename__)
         qml_main_dir = styles_location()
         style_manager = layer.styleManager()
@@ -390,6 +397,8 @@ class LayersManager:
             set_field_default_value(layer, "id", "")
         else:
             set_field_default_value(layer, "id", "if (maximum(id) is null, 1, maximum(id) + 1)")
+        if "area" in layer_fields.names():
+            set_field_default_value(layer, "area", "$area", apply_on_update=True)
         for style in all_styles:
             style_manager.setCurrentStyle(style)
             layer.setEditFormConfig(default_edit_form_config)

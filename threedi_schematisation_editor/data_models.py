@@ -254,6 +254,7 @@ class Culvert(ModelObject):
     invert_level_end: float
     discharge_coefficient_positive: float
     discharge_coefficient_negative: float
+    material_id: int
     friction_value: float
     friction_type: FrictionType
     connection_node_id_start: int
@@ -276,6 +277,7 @@ class Culvert(ModelObject):
             "Invert level end point",
             "Discharge coefficient positive",
             "Discharge coefficient negative",
+            "Material ID",
             "Friction value",
             "Friction type",
             "Connection node start ID",
