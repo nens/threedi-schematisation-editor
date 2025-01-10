@@ -207,8 +207,8 @@ class Unit(Enum):
 
 
 class MeasureVariable(Enum):
-    S1 = "s1"
-    VOL1 = "vol1"
+    WATER_LEVEL = "water_level"
+    VOLUME = "volume"
 
 
 class ControlType(Enum):
