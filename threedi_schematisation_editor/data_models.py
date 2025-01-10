@@ -758,7 +758,7 @@ class SimpleInfiltrationSettings(ModelObject):
 
     RELATED_RASTERS = (
         ("infiltration_rate_file", "Infiltration rate [mm/d]"),
-        ("max_infiltration_volume_file", "Max infiltration capacity [m]"),
+        ("max_infiltration_volume_file", "Max infiltration volume [m]"),
     )
 
     id: int
@@ -1112,7 +1112,7 @@ ELEMENTS_WITH_TIMESERIES = (
     Lateral2D,
 )
 
-ELEMENTS_WITH_RASTERS = tuple(model_cls for model_cls in SETTINGS_ELEMENTS if model_cls.RELATED_RASTERS)
+ELEMENTS_WITH_RASTERS = tuple(model_cls for model_cls in ALL_MODELS if model_cls.RELATED_RASTERS)
 
 TABLE_MANNING = MappingProxyType(
     {
