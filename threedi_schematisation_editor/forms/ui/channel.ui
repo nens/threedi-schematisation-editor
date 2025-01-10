@@ -1843,7 +1843,7 @@
               <item row="1" column="0">
                <widget class="QLabel" name="label_23">
                 <property name="text">
-                 <string>Bank level</string>
+                 <string>Bank level [m MSL]</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1913,7 +1913,7 @@
                  <locale language="English" country="UnitedStates"/>
                 </property>
                 <property name="text">
-                 <string>Reference level [m]</string>
+                 <string>Reference level [m MSL]</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>

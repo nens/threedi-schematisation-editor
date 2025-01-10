@@ -2,7 +2,6 @@
 import os
 import shutil
 import sys
-from collections import OrderedDict
 from enum import Enum
 from itertools import groupby
 from operator import attrgetter, itemgetter
@@ -249,14 +248,42 @@ def get_filepath(
     return file_name
 
 
+def dataclass_field_to_widget_setup(model_cls_field_type, optional=False, **config_overrides):
+    """Create QgsEditorWidgetSetup out of the dataclass field type."""
+    if model_cls_field_type is bool:
+        config_type = "CheckBox"
+        config_map = {"AllowNull": optional}
+    elif model_cls_field_type is int:
+        config_type = "TextEdit"
+        config_map = {"AllowNull": optional}
+    elif model_cls_field_type is float:
+        config_type = "Range"
+        config_map = {
+            "AllowNull": optional,
+            "Max": 10**15,
+            "Min": -(10**15),
+            "Precision": 3,
+            "Step": 1.0,
+            "Style": "SpinBox",
+        }
+    elif model_cls_field_type is str:
+        config_type = "TextEdit"
+        config_map = {"AllowNull": optional}
+    else:
+        return None
+    config_map.update(config_overrides)
+    ews = QgsEditorWidgetSetup(config_type, config_map)
+    return ews
+
+
 def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
-    """Creating QgsEditorWidgetSetup out of the Enum object."""
+    """Create QgsEditorWidgetSetup out of the Enum object."""
     if enum_name_format_fn is None:
 
         def enum_name_format_fn(entry_name):
             return entry_name
 
-    value_map = [{f"{entry.value}: {enum_name_format_fn(entry.name)}": entry.value} for entry in enum]
+    value_map = [{f"{enum_name_format_fn(entry.name)}": entry.value} for entry in enum]
     if optional:
         null_value = QgsValueMapFieldFormatter.NULL_VALUE
         value_map.insert(0, {"": null_value})
@@ -290,9 +317,15 @@ def set_initial_layer_configuration(layer, model_cls):
                 optional = True
             else:
                 optional = False
+            field_idx = fields.lookupField(column_name)
             if issubclass(field_type, Enum):
-                field_idx = fields.lookupField(column_name)
                 ews = enum_to_editor_widget_setup(field_type, optional, enum_name_format_fn=enum_entry_name_format)
+            else:
+                if column_name.startswith("hydraulic_conductivity"):
+                    ews = dataclass_field_to_widget_setup(field_type, optional=True, Min=0)
+                else:
+                    ews = dataclass_field_to_widget_setup(field_type)
+            if ews is not None:
                 layer.setEditorWidgetSetup(field_idx, ews)
         except KeyError:
             continue
@@ -308,78 +341,6 @@ def set_field_default_value(vector_layer, field_name, expression, apply_on_updat
     default_value_definition.setExpression(expression)
     default_value_definition.setApplyOnUpdate(apply_on_update)
     vector_layer.setDefaultValueDefinition(field_index, default_value_definition)
-
-
-def load_user_layers(gpkg_path):
-    """Loading grouped User Layers from GeoPackage into map canvas."""
-    groups = OrderedDict()
-    groups["1D"] = dm.MODEL_1D_ELEMENTS
-    groups["2D"] = dm.MODEL_2D_ELEMENTS
-    groups["Inflow"] = dm.MODEL_0D_INFLOW_ELEMENTS
-    groups["Settings"] = dm.SETTINGS_ELEMENTS
-    default_style_name = "default"
-    for group_name, group_models in groups.items():
-        get_tree_group(group_name)
-        for model_cls in group_models:
-            layer = gpkg_layer(gpkg_path, model_cls.__tablename__, model_cls.__layername__)
-            fields_indexes = list(range(len(layer.fields())))
-            form_ui_path = get_form_ui_path(model_cls.__tablename__)
-            qml_paths = get_multiple_qml_style_paths(model_cls.__tablename__, "vector")
-            qml_names = [os.path.basename(qml_path).split(".")[0] for qml_path in qml_paths]
-            try:
-                default_idx = qml_names.index(default_style_name)
-                qml_paths.append(qml_paths.pop(default_idx))
-                qml_names.append(qml_names.pop(default_idx))
-            except ValueError:
-                # There is no default.qml style defined for the model layer
-                pass
-            style_manager = layer.styleManager()
-            for style_name, qml_path in zip(qml_names, qml_paths):
-                layer.loadNamedStyle(qml_path)
-                style_manager.addStyleFromLayer(style_name)
-            all_styles = style_manager.styles()
-            default_widgets_setup = [(idx, layer.editorWidgetSetup(idx)) for idx in fields_indexes]
-            default_edit_form_config = layer.editFormConfig()
-            if form_ui_path:
-                default_edit_form_config.setUiForm(form_ui_path)
-            else:
-                id_increment_expression = "if (maximum(id) is null, 1, maximum(id) + 1)"
-                set_field_default_value(layer, "id", id_increment_expression)
-            for style in all_styles:
-                style_manager.setCurrentStyle(style)
-                layer.setEditFormConfig(default_edit_form_config)
-                for field_idx, field_widget_setup in default_widgets_setup:
-                    layer.setEditorWidgetSetup(field_idx, field_widget_setup)
-            style_manager.setCurrentStyle(default_style_name)
-            add_layer_to_group(group_name, layer, bottom=True)
-    load_model_raster_layers(gpkg_path)
-
-
-def load_model_raster_layers(gpkg_path):
-    """Loading raster layers related with 3Di model."""
-    gpkg_dir = os.path.dirname(gpkg_path)
-    group_name = "Rasters"
-    get_tree_group(group_name)
-    for settings_cls in dm.SETTINGS_ELEMENTS:
-        if settings_cls.RELATED_RASTERS is None:
-            continue
-        settings_layer = gpkg_layer(gpkg_path, settings_cls.__tablename__)
-        try:
-            feat = next(settings_layer.getFeatures())
-        except StopIteration:
-            continue
-        for raster_file_field, raster_layer_name in settings_cls.RELATED_RASTERS:
-            relative_path = feat[raster_file_field]
-            if not relative_path:
-                continue
-            raster_filepath = os.path.normpath(os.path.join(gpkg_dir, relative_path))
-            if not os.path.isfile(raster_filepath):
-                continue
-            rlayer = QgsRasterLayer(raster_filepath, raster_layer_name)
-            qml_path = get_qml_style_path(raster_file_field, "raster")
-            if qml_path is not None:
-                rlayer.loadNamedStyle(qml_path)
-            add_layer_to_group(group_name, rlayer, bottom=True)
 
 
 def remove_user_layers():
@@ -792,6 +753,7 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
     cross_section_table_widget_add = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_add")
     cross_section_table_widget_paste = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_paste")
     cross_section_table_widget_delete = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_delete")
+    cross_section_table_widget_copy = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_copy")
     cross_section_table_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_label")
     all_related_widgets = [
         cross_section_width_widget,
@@ -804,6 +766,7 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
         cross_section_table_widget_add,
         cross_section_table_widget_paste,
         cross_section_table_widget_delete,
+        cross_section_table_widget_copy,
         cross_section_table_label_widget,
     ]
     for related_widget in all_related_widgets:
@@ -823,6 +786,7 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
             cross_section_table_widget_add.setDisabled(True)
             cross_section_table_widget_paste.setDisabled(True)
             cross_section_table_widget_delete.setDisabled(True)
+            cross_section_table_widget_copy.setDisabled(True)
             cross_section_table_label_widget.setDisabled(True)
             if cross_section_shape in {
                 en.CrossSectionShape.CLOSED_RECTANGLE.value,
@@ -838,6 +802,7 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
             cross_section_table_widget_add.setEnabled(True)
             cross_section_table_widget_paste.setEnabled(True)
             cross_section_table_widget_delete.setEnabled(True)
+            cross_section_table_widget_copy.setEnabled(True)
             cross_section_table_label_widget.setEnabled(True)
         else:
             pass
@@ -851,6 +816,7 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
     cross_section_friction_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_label")
     cross_section_friction_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_widget")
     cross_section_friction_clear = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_clear")
+    cross_section_friction_copy = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_copy")
     vegetation_stem_density_label_widget = custom_form.dialog.findChild(
         QObject, f"{prefix}vegetation_stem_density_label"
     )
@@ -880,11 +846,13 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
     )
     cross_section_vegetation_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_widget")
     cross_section_vegetation_clear = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_clear")
+    cross_section_vegetation_copy = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_copy")
     single_friction_widgets = [friction_value_label_widget, friction_value_widget, friction_value_clear_widget]
     multi_friction_widgets = [
         cross_section_friction_label_widget,
         cross_section_friction_widget,
         cross_section_friction_clear,
+        cross_section_friction_copy,
     ]
     single_vege_widgets = [
         vegetation_stem_density_label_widget,
@@ -904,6 +872,7 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
         cross_section_vegetation_label_widget,
         cross_section_vegetation_widget,
         cross_section_vegetation_clear,
+        cross_section_vegetation_copy,
     ]
     all_related_widgets = single_friction_widgets + multi_friction_widgets + single_vege_widgets + multi_vege_widgets
     for related_widget in all_related_widgets:

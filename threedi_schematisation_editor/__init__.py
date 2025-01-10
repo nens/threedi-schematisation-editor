@@ -221,7 +221,7 @@ class ThreediSchematisationEditorPlugin:
             if lm not in self.workspace_context_manager:
                 lm.load_all_layers(from_project=True)
                 self.workspace_context_manager.register_layer_manager(lm)
-        self.uc.bar_info("3Di User Layers registered!")
+        self.uc.bar_info("Project schematisations loaded!")
         self.check_macros_status()
         self.toggle_active_project_actions()
 
@@ -256,7 +256,7 @@ class ThreediSchematisationEditorPlugin:
             return
         lm.load_all_layers()
         self.workspace_context_manager.register_layer_manager(lm)
-        self.uc.bar_info("3Di User Layers registered!")
+        self.uc.bar_info(f"Schematisation {lm.model_name} loaded!")
         self.check_macros_status()
         self.toggle_active_project_actions()
         if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):

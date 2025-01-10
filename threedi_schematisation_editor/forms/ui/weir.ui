@@ -705,7 +705,7 @@ coefficient positive</string>
                  <set>Qt::ImhNone</set>
                 </property>
                 <property name="text">
-                 <string>Material ID</string>
+                 <string>Material</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -824,25 +824,15 @@ coefficient positive</string>
                 </property>
                </widget>
               </item>
-              <item row="3" column="4" colspan="2">
-               <widget class="QSpinBox" name="material_id">
-                <property name="readOnly">
-                 <bool>true</bool>
-                </property>
-                <property name="buttonSymbols">
-                 <enum>QAbstractSpinBox::NoButtons</enum>
-                </property>
-                <property name="maximum">
-                 <number>99999999</number>
-                </property>
-               </widget>
-              </item>
               <item row="0" column="5">
                <widget class="QToolButton" name="friction_value_clear">
                 <property name="text">
                  <string>x</string>
                 </property>
                </widget>
+              </item>
+              <item row="3" column="4" colspan="2">
+               <widget class="QComboBox" name="material_id"/>
               </item>
              </layout>
             </widget>

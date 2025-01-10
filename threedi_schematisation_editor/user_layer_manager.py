@@ -26,6 +26,7 @@ from threedi_schematisation_editor.expressions import (
     cross_section_max_height,
     cross_section_max_width,
 )
+from threedi_schematisation_editor.styles.style_config import get_style_configurations, styles_location
 from threedi_schematisation_editor.user_layer_forms import LayerEditFormFactory
 from threedi_schematisation_editor.user_layer_handlers import MODEL_HANDLERS
 from threedi_schematisation_editor.utils import (
@@ -64,6 +65,10 @@ class LayersManager:
             # parent model: (child model, parent column, child key column, child value column)
             dm.Surface: (dm.SurfaceParameters, "surface_parameters_id", "id", "description"),
             dm.DryWeatherFlow: (dm.DryWeatherFlowDistribution, "dry_weather_flow_distribution_id", "id", "description"),
+            dm.Culvert: (dm.Material, "material_id", "id", "description"),
+            dm.Pipe: (dm.Material, "material_id", "id", "description"),
+            dm.Weir: (dm.Material, "material_id", "id", "description"),
+            dm.Orifice: (dm.Material, "material_id", "id", "description"),
         }
     )
 
@@ -296,6 +301,11 @@ class LayersManager:
         QgsExpression.unregisterFunction("cross_section_max_height")
         QgsExpression.unregisterFunction("cross_section_max_width")
 
+    @cached_property
+    def vector_style_configs(self):
+        """Return vector layers style configurations."""
+        return get_style_configurations()
+
     def setup_value_relation_widgets(self):
         """Setup value relation widget."""
         for parent_model_cls, (
@@ -311,7 +321,9 @@ class LayersManager:
             config = default_ews.config()
             config["Layer"] = child_layer.id()
             config["LayerSource"] = child_layer.source()
-            ews = QgsEditorWidgetSetup(default_ews.type(), config)
+            config["Key"] = key_column
+            config["Value"] = value_column
+            ews = QgsEditorWidgetSetup("ValueRelation", config)
             parent_layer.setEditorWidgetSetup(parent_column_idx, ews)
 
     def create_groups(self):
@@ -356,22 +368,21 @@ class LayersManager:
         """Initializing single model layer based on data model class."""
         default_style_name = "default"
         layer = gpkg_layer(self.model_gpkg_path, model_cls.__tablename__, model_cls.__layername__)
-        fields_indexes = list(range(len(layer.fields())))
+        layer_fields = layer.fields()
+        fields_indexes = list(range(len(layer_fields)))
         form_ui_path = get_form_ui_path(model_cls.__tablename__)
-        qml_paths = get_multiple_qml_style_paths(model_cls.__tablename__, "vector")
-        qml_names = [os.path.basename(qml_path).split(".")[0] for qml_path in qml_paths]
-        try:
-            default_idx = qml_names.index(default_style_name)
-            qml_paths.append(qml_paths.pop(default_idx))
-            qml_names.append(qml_names.pop(default_idx))
-        except ValueError:
-            # There is no default.qml style defined for the model layer
-            pass
+        qml_main_dir = styles_location()
         style_manager = layer.styleManager()
-        for style_name, qml_path in zip(qml_names, qml_paths):
-            layer.loadNamedStyle(qml_path)
-            set_initial_layer_configuration(layer, model_cls)
-            style_manager.addStyleFromLayer(style_name)
+        try:
+            layer_style_config = self.vector_style_configs[model_cls.__tablename__]
+            for style_name, style_categories in layer_style_config.styles.items():
+                for style_category, style_path in style_categories.items():
+                    style_path = os.path.join(qml_main_dir, style_path)
+                    layer.loadNamedStyle(style_path)
+                set_initial_layer_configuration(layer, model_cls)
+                style_manager.addStyleFromLayer(style_name)
+        except KeyError:
+            pass
         all_styles = style_manager.styles()
         default_widgets_setup = [(idx, layer.editorWidgetSetup(idx)) for idx in fields_indexes]
         default_edit_form_config = layer.editFormConfig()
@@ -385,8 +396,9 @@ class LayersManager:
             default_edit_form_config.setInitCode("from threedi_schematisation_editor.utils import open_edit_form")
             set_field_default_value(layer, "id", "")
         else:
-            id_increment_expression = "if (maximum(id) is null, 1, maximum(id) + 1)"
-            set_field_default_value(layer, "id", id_increment_expression)
+            set_field_default_value(layer, "id", "if (maximum(id) is null, 1, maximum(id) + 1)")
+        if "area" in layer_fields.names():
+            set_field_default_value(layer, "area", "$area", apply_on_update=True)
         for style in all_styles:
             style_manager.setCurrentStyle(style)
             layer.setEditFormConfig(default_edit_form_config)

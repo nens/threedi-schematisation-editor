@@ -254,7 +254,7 @@
          <item>
           <widget class="QLabel" name="label">
            <property name="text">
-            <string>Dry Weather Flow distribution ID</string>
+            <string>Dry Weather Flow distribution</string>
            </property>
           </widget>
          </item>

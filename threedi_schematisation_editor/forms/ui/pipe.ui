@@ -28,7 +28,7 @@
         <x>0</x>
         <y>0</y>
         <width>515</width>
-        <height>811</height>
+        <height>786</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_7">
@@ -278,15 +278,8 @@
               <string>Characteristics</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_4">
-              <item row="0" column="2">
-               <widget class="QToolButton" name="invert_level_start_clear">
-                <property name="text">
-                 <string>x</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="3">
-               <widget class="QLabel" name="label_11">
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_15">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
@@ -294,45 +287,13 @@
                  <set>Qt::ImhNone</set>
                 </property>
                 <property name="text">
-                 <string>Friction type</string>
+                 <string>Sewerage type</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
                 </property>
                 <property name="indent">
-                 <number>10</number>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_6">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="text">
-                 <string>Start invert level</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="label_9">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="text">
-                 <string>End invert level</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                 <number>-1</number>
                 </property>
                </widget>
               </item>
@@ -373,10 +334,41 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="2">
-               <widget class="QToolButton" name="invert_level_end_clear">
+              <item row="2" column="4" colspan="2">
+               <widget class="QComboBox" name="material_id"/>
+              </item>
+              <item row="2" column="3">
+               <widget class="QLabel" name="label_12">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
                 <property name="text">
-                 <string>x</string>
+                 <string>Material</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="indent">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_6">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+                <property name="text">
+                 <string>Start invert level</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
                 </property>
                </widget>
               </item>
@@ -417,6 +409,100 @@
                 </property>
                </widget>
               </item>
+              <item row="0" column="3">
+               <widget class="QLabel" name="label_10">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+                <property name="text">
+                 <string>Friction value</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="indent">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_9">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+                <property name="text">
+                 <string>End invert level</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QToolButton" name="invert_level_end_clear">
+                <property name="text">
+                 <string>x</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="3">
+               <widget class="QLabel" name="label_11">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+                <property name="text">
+                 <string>Friction type</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="indent">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="5">
+               <widget class="QToolButton" name="friction_value_clear">
+                <property name="text">
+                 <string>x</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1" colspan="2">
+               <widget class="QComboBox" name="sewerage_type">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="4" colspan="2">
+               <widget class="QComboBox" name="friction_type">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+               </widget>
+              </item>
               <item row="0" column="4">
                <widget class="QDoubleSpinBox" name="friction_value">
                 <property name="sizePolicy">
@@ -451,106 +537,10 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="5">
-               <widget class="QToolButton" name="friction_value_clear">
+              <item row="0" column="2">
+               <widget class="QToolButton" name="invert_level_start_clear">
                 <property name="text">
                  <string>x</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0">
-               <widget class="QLabel" name="label_15">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="text">
-                 <string>Sewerage type</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>-1</number>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="4" colspan="2">
-               <widget class="QComboBox" name="friction_type">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="3">
-               <widget class="QLabel" name="label_10">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="text">
-                 <string>Friction value</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>10</number>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="0">
-               <widget class="QLabel" name="label_12">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="text">
-                 <string>Material ID</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>-1</number>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="1" colspan="5">
-               <widget class="QComboBox" name="sewerage_type">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="1" colspan="5">
-               <widget class="QSpinBox" name="material_id">
-                <property name="readOnly">
-                 <bool>true</bool>
-                </property>
-                <property name="buttonSymbols">
-                 <enum>QAbstractSpinBox::NoButtons</enum>
-                </property>
-                <property name="maximum">
-                 <number>99999999</number>
                 </property>
                </widget>
               </item>
