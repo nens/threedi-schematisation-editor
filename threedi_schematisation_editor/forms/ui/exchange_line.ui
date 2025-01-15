@@ -45,6 +45,68 @@
          </property>
         </spacer>
        </item>
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="grp_channel">
+         <property name="locale">
+          <locale language="English" country="UnitedStates"/>
+         </property>
+         <property name="inputMethodHints">
+          <set>Qt::ImhNone</set>
+         </property>
+         <property name="title">
+          <string>Channel</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_6">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_18">
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="inputMethodHints">
+             <set>Qt::ImhNone</set>
+            </property>
+            <property name="text">
+             <string>Channel ID</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="channel_id">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="inputMethodHints">
+             <set>Qt::ImhNone</set>
+            </property>
+            <property name="readOnly">
+             <bool>false</bool>
+            </property>
+            <property name="buttonSymbols">
+             <enum>QAbstractSpinBox::NoButtons</enum>
+            </property>
+            <property name="maximum">
+             <number>999999999</number>
+            </property>
+            <property name="clearValue" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="expressionsEnabled" stdset="0">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
        <item row="0" column="0">
         <widget class="QGroupBox" name="grp_general">
          <property name="enabled">
@@ -204,88 +266,23 @@
          </layout>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QGroupBox" name="grp_channel">
-         <property name="locale">
-          <locale language="English" country="UnitedStates"/>
-         </property>
-         <property name="inputMethodHints">
-          <set>Qt::ImhNone</set>
+       <item row="2" column="0">
+        <widget class="QGroupBox" name="grp_tag">
+         <property name="font">
+          <font>
+           <weight>50</weight>
+           <bold>false</bold>
+          </font>
          </property>
          <property name="title">
-          <string>Channel</string>
+          <string>Tag</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_6">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_18">
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="inputMethodHints">
-             <set>Qt::ImhNone</set>
-            </property>
-            <property name="text">
-             <string>Channel ID</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QSpinBox" name="channel_id">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="inputMethodHints">
-             <set>Qt::ImhNone</set>
-            </property>
-            <property name="readOnly">
-             <bool>false</bool>
-            </property>
-            <property name="buttonSymbols">
-             <enum>QAbstractSpinBox::NoButtons</enum>
-            </property>
-            <property name="maximum">
-             <number>999999999</number>
-            </property>
-            <property name="clearValue" stdset="0">
-             <bool>true</bool>
-            </property>
-            <property name="expressionsEnabled" stdset="0">
-             <bool>false</bool>
-            </property>
-           </widget>
+         <layout class="QGridLayout" name="gridLayout_16">
+          <item row="0" column="0" colspan="2">
+           <layout class="QHBoxLayout" name="tags_layout"/>
           </item>
          </layout>
         </widget>
-       </item>
-       <item row="2" column="0">
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QLabel" name="label_15">
-           <property name="text">
-            <string>Tag</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="tag_descriptions">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
        </item>
       </layout>
      </widget>

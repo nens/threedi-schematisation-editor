@@ -7,8 +7,8 @@ from operator import itemgetter
 from types import MappingProxyType
 
 from qgis.core import NULL, QgsGeometry
-from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
-from qgis.PyQt.QtCore import QObject
+from qgis.gui import QgsCheckableComboBox, QgsDoubleSpinBox, QgsSpinBox
+from qgis.PyQt.QtCore import QObject, Qt
 from qgis.PyQt.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -398,33 +398,76 @@ class AbstractFormWithTag(AbstractBaseForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.tags = None
-
-    def setup_form_widgets(self):
-        """Setting up all form widgets."""
-        super().setup_form_widgets()
+        self.tags_widget = None
         self.setup_tag_widgets()
+
+    @cached_property
+    def all_tags_data(self):
+        """Return all available tags data."""
+        tags_handler = self.layer_manager.model_handlers[dm.Tag]
+        tags_layer = tags_handler.layer
+        tags_data = {tag_feat["id"]: tag_feat["description"] for tag_feat in tags_layer.getFeatures()}
+        return tags_data
+
+    @property
+    def assigned_tag_ids(self):
+        """Return all tag IDs assigned to the feature."""
+        try:
+            assigned_tag_ids_str = self.feature["tags"]
+            assigned_tag_ids = (
+                [int(tag_id) for tag_id in assigned_tag_ids_str.split(",")] if assigned_tag_ids_str else []
+            )
+        except KeyError:
+            assigned_tag_ids = []
+        return assigned_tag_ids
+
+    @property
+    def selected_tag_ids(self):
+        """Return current tag IDs selected in the form."""
+        return ",".join(self.tags_widget.checkedItemsData())
 
     def setup_tag_widgets(self):
         """Setup tag widgets."""
-        self.tags = self.dialog.findChild(QObject, "tag_descriptions")
-        self.tags.clear()
-        try:
-            tag_ids_str = self.feature["tags"]
-        except KeyError:
-            return
-        if tag_ids_str:
-            tag_ids = [int(tag_id) for tag_id in tag_ids_str.split(",")]
-            tags_handler = self.layer_manager.model_handlers[dm.Tag]
-            tags_layer = tags_handler.layer
-            tag_descriptions = [tag_feat["description"] for tag_feat in tags_layer.getFeatures(tag_ids)]
-            self.tags.setText(", ".join(tag_descriptions))
+        tags_widget_name = "add_remove_tags"
+        self.tags_widget = self.dialog.findChild(QObject, tags_widget_name)
+        if self.tags_widget is None:
+            tags_layout = self.dialog.findChild(QObject, "tags_layout")
+            self.tags_widget = QgsCheckableComboBox()
+            self.tags_widget.setObjectName(tags_widget_name)
+            tags_layout.addWidget(self.tags_widget)
+        self.custom_widgets[tags_widget_name] = self.tags_widget
+
+    def connect_custom_widgets(self):
+        """Connect other widgets."""
+        super().connect_custom_widgets()
+        connect_signal(self.tags_widget.checkedItemsChanged, self.save_tag_edits)
+        self.dialog.active_form_signals.add((self.tags_widget.checkedItemsChanged, self.save_tag_edits))
+
+    def save_tag_edits(self):
+        """Save tag references to the feature attribute."""
+        if self.creation is True:
+            self.feature["tags"] = self.selected_tag_ids
+        else:
+            tags_idx = self.layer.fields().lookupField("tags")
+            changes = {tags_idx: self.selected_tag_ids}
+            self.layer.changeAttributeValues(self.feature.id(), changes)
+
+    def populate_tag_widgets(self):
+        """Populate tag widgets."""
+        disconnect_signal(self.tags_widget.checkedItemsChanged, self.save_tag_edits)
+        self.tags_widget.clear()
+        for tag_id, tag_description in self.all_tags_data.items():
+            tag_text = f"{tag_id}: {tag_description}"
+            check_state = Qt.Checked if tag_id in self.assigned_tag_ids else Qt.Unchecked
+            self.tags_widget.addItemWithCheckState(text=tag_text, state=check_state, userData=tag_id)
+        connect_signal(self.tags_widget.checkedItemsChanged, self.save_tag_edits)
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.fill_related_attributes()
         self.populate_widgets()
+        self.populate_tag_widgets()
 
 
 class AbstractFormWithDistribution(AbstractBaseForm):
@@ -518,7 +561,7 @@ class AbstractFormWithDistribution(AbstractBaseForm):
         connect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.fill_related_attributes()
         self.populate_widgets()
@@ -697,7 +740,7 @@ class AbstractFormWithTable(AbstractBaseForm):
         connect_signal(self.table.cellChanged, self.save_table_edits)
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.fill_related_attributes()
         self.populate_widgets()
@@ -1081,7 +1124,7 @@ class AbstractFormWithXSTable(AbstractBaseForm):
                 connect_signal(cell_changed_signal, cell_changed_slot)
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.fill_related_attributes()
         self.populate_widgets()
@@ -1151,7 +1194,7 @@ class AbstractFormWithNode(AbstractBaseForm):
         self.feature["connection_node_id"] = self.connection_node["id"]
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_node_on_creation()
             # Set feature specific attributes
@@ -1237,7 +1280,7 @@ class AbstractFormWithStartEndNode(AbstractBaseForm):
             pass  # Some layers might not have code and display name
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_nodes_on_creation()
             # Set feature specific attributes
@@ -1277,7 +1320,7 @@ class AbstractNodeToSurfaceMapForm(AbstractFormWithTag):
             self.feature[self.surface_id_field] = self.surface_feature["id"]
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.surface_feature = self.select_start_surface()
             self.fill_related_attributes()
@@ -1359,7 +1402,7 @@ class AbstractFormWithTargetStructure(AbstractBaseForm):
                 break
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_target_structure_on_creation()
             # Set feature specific attributes
@@ -1404,7 +1447,7 @@ class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFo
         self.feature["invert_level_end"] = self.connection_node_end["bottom_level"]
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_nodes_on_creation()
             self.fill_related_attributes()
@@ -1414,6 +1457,7 @@ class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFo
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_cross_section_table_data()
+        self.populate_tag_widgets()
 
 
 class WeirForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
@@ -1438,7 +1482,7 @@ class WeirForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFo
         super().fill_related_attributes()
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_nodes_on_creation()
             self.fill_related_attributes()
@@ -1448,6 +1492,7 @@ class WeirForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFo
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_cross_section_table_data()
+        self.populate_tag_widgets()
 
 
 class CulvertForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
@@ -1472,7 +1517,7 @@ class CulvertForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
         super().fill_related_attributes()
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_nodes_on_creation()
             self.fill_related_attributes()
@@ -1482,6 +1527,7 @@ class CulvertForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_cross_section_table_data()
+        self.populate_tag_widgets()
 
 
 class OrificeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
@@ -1506,7 +1552,7 @@ class OrificeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
         super().fill_related_attributes()
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_nodes_on_creation()
             self.fill_related_attributes()
@@ -1516,6 +1562,7 @@ class OrificeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_cross_section_table_data()
+        self.populate_tag_widgets()
 
 
 class PumpForm(AbstractFormWithNode, AbstractFormWithTag):
@@ -1598,7 +1645,7 @@ class PumpMapForm(AbstractFormWithTag):
         self.feature["connection_node_id_end"] = self.connection_node_end["id"]
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.pump = self.select_start_pump()
             self.setup_pump_on_creation()
@@ -1608,6 +1655,7 @@ class PumpMapForm(AbstractFormWithTag):
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
+        self.populate_tag_widgets()
 
     def select_start_pump(self):
         """Selecting start pump"""
@@ -1685,11 +1733,12 @@ class DryWeatherFlowDistributionForm(AbstractFormWithTag, AbstractFormWithDistri
         super().fill_related_attributes()
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_distribution_table_data()
+        self.populate_tag_widgets()
 
 
 class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
@@ -1813,7 +1862,7 @@ class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
                 self.populate_widgets(data_model_cls, feature, start_end_modifier)
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_nodes_on_creation()
             self.setup_cross_section_location_on_creation()
@@ -1824,6 +1873,7 @@ class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_cross_section_table_data()
+        self.populate_tag_widgets()
 
 
 class CrossSectionLocationForm(AbstractFormWithXSTable):
@@ -1965,10 +2015,11 @@ class PotentialBreachForm(AbstractFormWithTag):
             self.channel = channel_node_feat
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.fill_related_attributes()
         self.populate_widgets()
+        self.populate_tag_widgets()
 
 
 class ExchangeLineForm(AbstractFormWithTag):
@@ -1980,10 +2031,11 @@ class ExchangeLineForm(AbstractFormWithTag):
         super().__init__(*args, *kwargs)
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.fill_related_attributes()
         self.populate_widgets()
+        self.populate_tag_widgets()
 
 
 class BoundaryCondition1D(AbstractFormWithTag, AbstractFormWithNode, AbstractFormWithTimeseries):
@@ -1999,7 +2051,7 @@ class BoundaryCondition1D(AbstractFormWithTag, AbstractFormWithNode, AbstractFor
         super().fill_related_attributes()
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_node_on_creation()
             self.fill_related_attributes()
@@ -2009,6 +2061,7 @@ class BoundaryCondition1D(AbstractFormWithTag, AbstractFormWithNode, AbstractFor
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_table_data()
+        self.populate_tag_widgets()
 
 
 class BoundaryCondition2D(AbstractFormWithTag, AbstractFormWithTimeseries):
@@ -2024,11 +2077,12 @@ class BoundaryCondition2D(AbstractFormWithTag, AbstractFormWithTimeseries):
         super().fill_related_attributes()
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_table_data()
+        self.populate_tag_widgets()
 
 
 class Lateral1D(AbstractFormWithTag, AbstractFormWithNode, AbstractFormWithTimeseries):
@@ -2044,7 +2098,7 @@ class Lateral1D(AbstractFormWithTag, AbstractFormWithNode, AbstractFormWithTimes
         super().fill_related_attributes()
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_node_on_creation()
             self.fill_related_attributes()
@@ -2054,6 +2108,7 @@ class Lateral1D(AbstractFormWithTag, AbstractFormWithNode, AbstractFormWithTimes
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_table_data()
+        self.populate_tag_widgets()
 
 
 class Lateral2D(AbstractFormWithTag, AbstractFormWithTimeseries):
@@ -2069,11 +2124,12 @@ class Lateral2D(AbstractFormWithTag, AbstractFormWithTimeseries):
         super().fill_related_attributes()
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_table_data()
+        self.populate_tag_widgets()
 
 
 class MeasureLocation(AbstractFormWithNode, AbstractFormWithTag):
@@ -2107,7 +2163,7 @@ class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable,
         super().fill_related_attributes()
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         # Populate widgets based on features attributes
         if self.creation is True:
             self.setup_target_structure_on_creation()
@@ -2117,6 +2173,7 @@ class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable,
         self.populate_widgets()
         self.populate_foreign_widgets()
         self.populate_table_data()
+        self.populate_tag_widgets()
 
 
 class MeasureMap(AbstractFormWithTag):
@@ -2182,7 +2239,7 @@ class MeasureMap(AbstractFormWithTag):
                 break
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_measure_control_on_creation()
             # Set feature specific attributes
@@ -2192,6 +2249,7 @@ class MeasureMap(AbstractFormWithTag):
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
+        self.populate_tag_widgets()
 
 
 ALL_FORMS = (

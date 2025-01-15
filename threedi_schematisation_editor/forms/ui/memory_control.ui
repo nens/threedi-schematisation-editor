@@ -61,8 +61,8 @@
              </property>
             </spacer>
            </item>
-           <item row="0" column="0">
-            <widget class="QGroupBox" name="grp_general">
+           <item row="2" column="0">
+            <widget class="QGroupBox" name="grp_target">
              <property name="enabled">
               <bool>true</bool>
              </property>
@@ -70,16 +70,16 @@
               <locale language="English" country="UnitedStates"/>
              </property>
              <property name="title">
-              <string>General</string>
+              <string>Target relationship</string>
              </property>
-             <layout class="QGridLayout" name="gridLayout_2">
+             <layout class="QGridLayout" name="gridLayout_4">
               <item row="0" column="2">
-               <widget class="QLabel" name="label_2">
+               <widget class="QLabel" name="label_16">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
                 <property name="text">
-                 <string>Display name</string>
+                 <string>Target type</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -89,50 +89,14 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="label_3">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="text">
-                 <string>Code</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QLineEdit" name="code">
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="target_id">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="clearButtonEnabled">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="text">
-                 <string>ID</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QSpinBox" name="id">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
@@ -143,7 +107,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="maximum">
-                 <number>99999999</number>
+                 <number>999999999</number>
                 </property>
                 <property name="showClearButton" stdset="0">
                  <bool>true</bool>
@@ -156,18 +120,22 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="3">
-               <widget class="QLineEdit" name="display_name">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_7">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
-                <property name="clearButtonEnabled">
+                <property name="text">
+                 <string>Target ID</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <widget class="QLineEdit" name="target_type">
+                <property name="readOnly">
                  <bool>true</bool>
                 </property>
                </widget>
@@ -343,8 +311,8 @@
              </layout>
             </widget>
            </item>
-           <item row="2" column="0">
-            <widget class="QGroupBox" name="grp_target">
+           <item row="0" column="0">
+            <widget class="QGroupBox" name="grp_general">
              <property name="enabled">
               <bool>true</bool>
              </property>
@@ -352,16 +320,16 @@
               <locale language="English" country="UnitedStates"/>
              </property>
              <property name="title">
-              <string>Target relationship</string>
+              <string>General</string>
              </property>
-             <layout class="QGridLayout" name="gridLayout_4">
+             <layout class="QGridLayout" name="gridLayout_2">
               <item row="0" column="2">
-               <widget class="QLabel" name="label_16">
+               <widget class="QLabel" name="label_2">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
                 <property name="text">
-                 <string>Target type</string>
+                 <string>Display name</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -371,14 +339,50 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="1">
-               <widget class="QSpinBox" name="target_id">
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_3">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="text">
+                 <string>Code</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="code">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="clearButtonEnabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="text">
+                 <string>ID</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="id">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
@@ -389,7 +393,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="maximum">
-                 <number>999999999</number>
+                 <number>99999999</number>
                 </property>
                 <property name="showClearButton" stdset="0">
                  <bool>true</bool>
@@ -402,22 +406,18 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_7">
+              <item row="0" column="3">
+               <widget class="QLineEdit" name="display_name">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
-                <property name="text">
-                 <string>Target ID</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="3">
-               <widget class="QLineEdit" name="target_type">
-                <property name="readOnly">
+                <property name="clearButtonEnabled">
                  <bool>true</bool>
                 </property>
                </widget>
@@ -426,25 +426,22 @@
             </widget>
            </item>
            <item row="3" column="0">
-            <layout class="QHBoxLayout" name="horizontalLayout_2">
-             <property name="bottomMargin">
-              <number>0</number>
+            <widget class="QGroupBox" name="grp_tag">
+             <property name="font">
+              <font>
+               <weight>50</weight>
+               <bold>false</bold>
+              </font>
              </property>
-             <item>
-              <widget class="QLabel" name="label_42">
-               <property name="text">
-                <string>Tag</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="tag_descriptions">
-               <property name="readOnly">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-            </layout>
+             <property name="title">
+              <string>Tag</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_17">
+              <item row="0" column="0" colspan="2">
+               <layout class="QHBoxLayout" name="tags_layout_2"/>
+              </item>
+             </layout>
+            </widget>
            </item>
           </layout>
          </widget>

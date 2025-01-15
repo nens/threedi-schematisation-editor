@@ -48,27 +48,6 @@
            <string>Measure Map</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_18">
-           <item row="2" column="0">
-            <layout class="QHBoxLayout" name="horizontalLayout_2">
-             <property name="bottomMargin">
-              <number>0</number>
-             </property>
-             <item>
-              <widget class="QLabel" name="label_42">
-               <property name="text">
-                <string>Tag</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="tag_descriptions">
-               <property name="readOnly">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
            <item row="3" column="0">
             <spacer name="verticalSpacer_3">
              <property name="orientation">
@@ -375,6 +354,24 @@
                  <bool>true</bool>
                 </property>
                </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QGroupBox" name="grp_tag">
+             <property name="font">
+              <font>
+               <weight>50</weight>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="title">
+              <string>Tag</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_16">
+              <item row="0" column="0" colspan="2">
+               <layout class="QHBoxLayout" name="tags_layout"/>
               </item>
              </layout>
             </widget>
