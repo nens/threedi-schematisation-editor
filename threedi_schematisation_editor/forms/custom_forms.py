@@ -434,6 +434,7 @@ class AbstractFormWithTag(AbstractBaseForm):
             tags_layout = self.dialog.findChild(QObject, "tags_layout")
             self.tags_widget = QgsCheckableComboBox()
             self.tags_widget.setObjectName(tags_widget_name)
+            self.tags_widget.setDefaultText("Click to assign tags...")
             tags_layout.addWidget(self.tags_widget)
         self.custom_widgets[tags_widget_name] = self.tags_widget
 
