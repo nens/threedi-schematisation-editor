@@ -1,5 +1,6 @@
 # Copyright (C) 2025 by Lutra Consulting
 from dataclasses import dataclass
+from itertools import chain
 from types import MappingProxyType, SimpleNamespace
 from typing import Optional
 
@@ -777,7 +778,7 @@ class GroundWaterSettings(ModelObject):
     __geometrytype__ = GeometryType.NoGeometry
 
     RELATED_RASTERS = (
-        ("equilibrium_infiltration_rate_aggregation", "Equilibrium infiltration rate [mm/d]"),
+        ("equilibrium_infiltration_rate_file", "Equilibrium infiltration rate [mm/d]"),
         ("groundwater_hydraulic_conductivity_file", "Hydraulic conductivity [m/day]"),
         ("groundwater_impervious_layer_level_file", "Impervious layer level [m MSL]"),
         ("infiltration_decay_period_file", "Infiltration decay period [d]"),
@@ -794,7 +795,7 @@ class GroundWaterSettings(ModelObject):
     phreatic_storage_capacity_file: Optional[str]
     phreatic_storage_capacity_aggregation: Optional[InitializationType]
     equilibrium_infiltration_rate: Optional[float]
-    equilibrium_infiltration_rate_aggregation: Optional[str]
+    equilibrium_infiltration_rate_file: Optional[str]
     equilibrium_infiltration_rate_aggregation: Optional[InitializationType]
     initial_infiltration_rate: Optional[float]
     initial_infiltration_rate_file: Optional[str]
@@ -1033,12 +1034,10 @@ MODEL_1D_ELEMENTS = (
     Windshielding1D,
     Material,
 )
-
 MODEL_1D2D_ELEMENTS = (
     PotentialBreach,
     ExchangeLine,
 )
-
 MODEL_2D_ELEMENTS = (
     BoundaryCondition2D,
     Obstacle,
@@ -1046,7 +1045,6 @@ MODEL_2D_ELEMENTS = (
     GridRefinementLine,
     DEMAverageArea,
 )
-
 MODEL_0D_INFLOW_ELEMENTS = (
     Lateral1D,
     Lateral2D,
@@ -1057,7 +1055,6 @@ MODEL_0D_INFLOW_ELEMENTS = (
     Surface,
     SurfaceParameters,
 )
-
 STRUCTURE_CONTROL_ELEMENTS = (
     MeasureMap,
     MeasureLocation,
@@ -1081,10 +1078,7 @@ SETTINGS_ELEMENTS = (
     TimeStepSettings,
     Tag,
 )
-
-
 HIDDEN_ELEMENTS = tuple()
-
 ALL_MODELS = (
     MODEL_1D_ELEMENTS
     + MODEL_1D2D_ELEMENTS
@@ -1096,7 +1090,6 @@ ALL_MODELS = (
 )
 ALL_MODELS = ALL_MODELS + (CrossSectionDefinition,)
 ALL_MODELS = ALL_MODELS + HIDDEN_ELEMENTS
-
 ELEMENTS_WITH_XS_DEF = (
     Weir,
     Culvert,
@@ -1104,7 +1097,6 @@ ELEMENTS_WITH_XS_DEF = (
     Pipe,
     CrossSectionLocation,
 )
-
 ELEMENTS_WITH_TIMESERIES = (
     BoundaryCondition1D,
     Lateral1D,
@@ -1112,7 +1104,9 @@ ELEMENTS_WITH_TIMESERIES = (
     Lateral2D,
 )
 
-ELEMENTS_WITH_RASTERS = tuple(model_cls for model_cls in ALL_MODELS if model_cls.RELATED_RASTERS)
+ELEMENTS_WITH_RASTERS = tuple(
+    model_cls for model_cls in chain(SETTINGS_ELEMENTS, HYDROLOGICAL_PROCESSES) if model_cls.RELATED_RASTERS
+)
 
 TABLE_MANNING = MappingProxyType(
     {

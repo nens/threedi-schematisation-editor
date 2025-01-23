@@ -462,10 +462,12 @@ class LayersManager:
                     if qml_path is not None:
                         rlayer.loadNamedStyle(qml_path)
                     modify_raster_style(rlayer)
-                    add_layer_to_group(group_name, rlayer, bottom=True, cached_groups=self.spawned_groups)
                     if raster_file_field == "dem_file":
                         hillshade_raster_layer = hillshade_layer(raster_filepath)
+                        add_layer_to_group(group_name, rlayer, cached_groups=self.spawned_groups)
                         add_layer_to_group(group_name, hillshade_raster_layer, cached_groups=self.spawned_groups)
+                    else:
+                        add_layer_to_group(group_name, rlayer, bottom=True, cached_groups=self.spawned_groups)
 
     def load_all_layers(self, from_project=False):
         """Creating/registering groups and loading/registering vector, raster and tabular layers."""
