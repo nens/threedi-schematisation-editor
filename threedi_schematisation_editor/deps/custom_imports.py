@@ -8,7 +8,7 @@ import pkg_resources
 MAIN_DIR = os.path.dirname(os.path.abspath(__file__))
 THREEDI_SCHEMA_MODULE_NAME = "threedi_schema"
 THREEDI_MI_UTILS_MODULE_NAME = "threedi_mi_utils"
-REQUIRED_3DI_SCHEMA_VERSION = "0.230.1"
+REQUIRED_3DI_SCHEMA_VERSION = "0.300.0"
 REQUIRED_3DI_MI_UTILS_VERSION = "0.1.5"
 THREEDI_SCHEMA_WHEEL = os.path.join(
     MAIN_DIR, f"{THREEDI_SCHEMA_MODULE_NAME}-{REQUIRED_3DI_SCHEMA_VERSION}-py3-none-any.whl"
