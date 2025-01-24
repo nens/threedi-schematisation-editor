@@ -438,7 +438,7 @@
              </property>
              <layout class="QGridLayout" name="gridLayout_17">
               <item row="0" column="0" colspan="2">
-               <layout class="QHBoxLayout" name="tags_layout_2"/>
+               <layout class="QHBoxLayout" name="tags_layout"/>
               </item>
              </layout>
             </widget>

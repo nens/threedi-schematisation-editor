@@ -632,7 +632,7 @@
              </property>
              <layout class="QGridLayout" name="gridLayout_19">
               <item row="0" column="0" colspan="2">
-               <layout class="QHBoxLayout" name="tags_layout_3"/>
+               <layout class="QHBoxLayout" name="tags_layout"/>
               </item>
              </layout>
             </widget>
