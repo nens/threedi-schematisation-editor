@@ -901,7 +901,7 @@ class TimeStepSettings(ModelObject):
 
 @dataclass
 class Tag(ModelObject):
-    __tablename__ = "tag"
+    __tablename__ = "tags"
     __layername__ = "Tag"
     __geometrytype__ = GeometryType.NoGeometry
 
