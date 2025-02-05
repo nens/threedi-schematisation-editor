@@ -6,12 +6,12 @@ from pathlib import Path
 from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
 from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
-from threedi_mi_utils.news import QgsNewsSettingsInjector
 
 PLUGIN_DIR = Path(__file__).parent
 from threedi_schematisation_editor.deps.custom_imports import patch_wheel_imports
 
 patch_wheel_imports()
+from threedi_mi_utils.news import QgsNewsSettingsInjector
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.custom_widgets import ImportStructuresDialog, LoadSchematisationDialog
