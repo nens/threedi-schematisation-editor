@@ -116,7 +116,7 @@ class Material(ModelObject):
 
     id: int
     description: str
-    friction_value: float
+    friction_coefficient: float
     friction_type: FrictionType
 
 

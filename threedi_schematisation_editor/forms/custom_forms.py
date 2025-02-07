@@ -569,6 +569,63 @@ class AbstractFormWithDistribution(AbstractBaseForm):
         self.populate_flow_distribution_table_data()
 
 
+class AbstractFormWithMaterial(AbstractBaseForm):
+    """Base edit form for user layers with material table reference."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.material_id_field_name = "material_id"
+        self.material_id_widget = self.dialog.findChild(QComboBox, self.material_id_field_name)
+        connect_signal(self.material_id_widget.activated, self.update_material_friction)
+        self.dialog.active_form_signals.add((self.material_id_widget.activated, self.update_material_friction))
+        try:
+            self.initial_material_id = self.feature[self.material_id_field_name]
+        except KeyError:
+            self.initial_material_id = None
+
+    @cached_property
+    def material_friction_widgets(self):
+        """Return material friction widgets."""
+        material_friction_widgets_map = {
+            "friction_coefficient": self.dialog.findChild(QDoubleSpinBox, "friction_value"),
+            "friction_type": self.dialog.findChild(QComboBox, "friction_type"),
+        }
+        return material_friction_widgets_map
+
+    @cached_property
+    def all_material_data(self):
+        """Return all materials with characteristics."""
+        material_handler = self.layer_manager.model_handlers[dm.Material]
+        material_layer = material_handler.layer
+        material_field_names = material_layer.fields().names()
+        material_data = {
+            material_feat["id"]: dict(zip(material_field_names, material_feat.attributes()))
+            for material_feat in material_layer.getFeatures()
+        }
+        return material_data
+
+    def setup_form_widgets(self):
+        """Setting up all form widgets."""
+        super().setup_form_widgets()
+        if self.creation is True:
+            self.update_material_friction()
+
+    def update_material_friction(self):
+        """Update material friction widgets."""
+        if self.feature is None or not self.feature.fields().names():
+            return
+        current_material_id = self.material_id_widget.currentData()
+        if current_material_id not in self.all_material_data:
+            return
+        if current_material_id == self.initial_material_id:
+            return
+        current_material_data = self.all_material_data[current_material_id]
+        for material_field_name, field_name_widget in self.material_friction_widgets.items():
+            widget_value = current_material_data[material_field_name]
+            self.set_widget_value(field_name_widget, widget_value)
+        self.initial_material_id = self.feature[self.material_id_field_name]
+
+
 class AbstractFormWithTable(AbstractBaseForm):
     """Base edit form for user layers with table."""
 
@@ -1421,7 +1478,7 @@ class ConnectionNodeForm(AbstractFormWithTag):
     MODEL = dm.ConnectionNode
 
 
-class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
+class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag, AbstractFormWithMaterial):
     """Pipe user layer edit form logic."""
 
     MODEL = dm.Pipe
@@ -1461,7 +1518,7 @@ class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFo
         self.populate_tag_widgets()
 
 
-class WeirForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
+class WeirForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag, AbstractFormWithMaterial):
     """Weir user layer edit form logic."""
 
     MODEL = dm.Weir
@@ -1496,7 +1553,7 @@ class WeirForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFo
         self.populate_tag_widgets()
 
 
-class CulvertForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
+class CulvertForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag, AbstractFormWithMaterial):
     """Culvert user layer edit form logic."""
 
     MODEL = dm.Culvert
@@ -1531,7 +1588,7 @@ class CulvertForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
         self.populate_tag_widgets()
 
 
-class OrificeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
+class OrificeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag, AbstractFormWithMaterial):
     """Orifice user layer edit form logic."""
 
     MODEL = dm.Orifice

@@ -12,6 +12,7 @@ from threedi_schematisation_editor.deps.custom_imports import patch_wheel_import
 
 patch_wheel_imports()
 from threedi_mi_utils.news import QgsNewsSettingsInjector
+
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.custom_widgets import ImportStructuresDialog, LoadSchematisationDialog
