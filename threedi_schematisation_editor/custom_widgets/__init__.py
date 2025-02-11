@@ -14,8 +14,10 @@ from qgis.PyQt.QtWidgets import QComboBox, QInputDialog, QTableWidgetItem
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.custom_tools import (
     ColumnImportMethod,
+    ConnectionNodesImporter,
     CulvertsImporter,
     CulvertsIntegrator,
+    FeaturesImportConfig,
     OrificesImporter,
     OrificesIntegrator,
     PipesImporter,
@@ -31,10 +33,12 @@ from threedi_schematisation_editor.utils import (
     enum_entry_name_format,
     get_filepath,
     is_optional,
+    layer_to_gpkg,
     optional_type,
 )
 
-ic_basecls, ic_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "import_structures.ui"))
+if_basecls, if_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "import_features.ui"))
+is_basecls, is_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "import_structures.ui"))
 vm_basecls, vm_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "attribute_value_map.ui"))
 load_basecls, load_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "load_schematisation.ui"))
 
@@ -152,7 +156,387 @@ class AttributeValueMapDialog(vm_basecls, vm_uicls):
         self.update_value_map_button(self.pressed_button, new_value_map)
 
 
-class ImportStructuresDialog(ic_basecls, ic_uicls):
+class ImportFieldMappingUtils:
+    """Utilities for importing field mappings."""
+
+    LAST_CONFIG_DIR_ENTRY = "threedi/last_import_config_dir"
+
+    @staticmethod
+    def on_method_changed(source_attribute_combobox, value_map_widget, expression_widget, current_text):
+        if current_text != str(ColumnImportMethod.ATTRIBUTE):
+            source_attribute_combobox.setDisabled(True)
+            value_map_widget.setDisabled(True)
+            source_attribute_combobox.setStyleSheet("")
+            expression_widget.setEnabled(current_text == str(ColumnImportMethod.EXPRESSION))
+        else:
+            source_attribute_combobox.setEnabled(True)
+            value_map_widget.setEnabled(True)
+            expression_widget.setDisabled(True)
+            if source_attribute_combobox.currentText():
+                source_attribute_combobox.setStyleSheet("")
+            else:
+                source_attribute_combobox.setStyleSheet(REQUIRED_VALUE_STYLESHEET)
+
+    @staticmethod
+    def on_source_attribute_value_changed(method_combobox, source_attribute_combobox, current_text):
+        if method_combobox.currentText() == str(ColumnImportMethod.ATTRIBUTE) and not current_text:
+            source_attribute_combobox.setStyleSheet(REQUIRED_VALUE_STYLESHEET)
+        else:
+            source_attribute_combobox.setStyleSheet("")
+
+    @staticmethod
+    def on_value_map_clicked(
+        source_layer_cbo, source_attribute_combobox, pressed_button, user_communication, parent=None
+    ):
+        source_layer = source_layer_cbo.currentLayer()
+        value_map_dlg = AttributeValueMapDialog(pressed_button, source_attribute_combobox, source_layer, parent)
+        accepted = value_map_dlg.exec_()
+        if accepted:
+            try:
+                value_map_dlg.update_value_map()
+            except (SyntaxError, ValueError):
+                user_communication.show_error(f"Invalid value map. Action aborted.", parent)
+
+    @staticmethod
+    def update_widget_with_config(widget, key_name, field_type, field_config):
+        try:
+            key_value = field_config[key_name]
+        except KeyError:
+            return
+        if isinstance(widget, QComboBox):
+            if key_value == NULL_STR:
+                widget.setCurrentText(key_value)
+            else:
+                if key_name == "method":
+                    widget.setCurrentText(enum_entry_name_format(ColumnImportMethod(key_value).name))
+                elif key_name == "default_value" and field_type != bool:
+                    widget.setCurrentText(enum_entry_name_format(field_type(key_value).name))
+                else:
+                    widget.setCurrentText(str(key_value))
+        elif key_name == "value_map":
+            AttributeValueMapDialog.update_value_map_button(widget, key_value)
+        elif key_name == "expression":
+            widget.setExpression(key_value)
+        else:
+            widget.setText(str(key_value))
+            widget.setCursorPosition(0)
+
+    @staticmethod
+    def collect_config_from_widget(widget, key_name, field_type, column_idx):
+        if isinstance(widget, QComboBox):
+            key_value = (
+                widget.currentText()
+                if column_idx == FeaturesImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX
+                else widget.currentData()
+            )
+        elif column_idx == FeaturesImportConfig.VALUE_MAP_COLUMN_IDX:
+            key_value = widget.value_map
+            if not key_value:
+                return None
+        elif column_idx == FeaturesImportConfig.EXPRESSION_COLUMN_IDX:
+            if not widget.isValidExpression():
+                return None
+            key_value = widget.expression()
+        else:
+            key_value = widget.text()
+            if not key_value:
+                return None
+            if column_idx == FeaturesImportConfig.DEFAULT_VALUE_COLUMN_IDX and key_name != NULL_STR:
+                key_value = field_type(key_value)
+        return key_value
+
+
+class ImportFeaturesDialog(if_basecls, if_uicls):
+
+    FEATURE_IMPORTERS = {
+        dm.ConnectionNode: ConnectionNodesImporter,
+    }
+
+    def __init__(self, import_model_cls, model_gpkg, layer_manager, uc, parent=None):
+        super().__init__(parent)
+        self.setupUi(self)
+        self.import_model_cls = import_model_cls
+        self.model_gpkg = model_gpkg
+        self.layer_manager = layer_manager
+        self.uc = uc
+        self.import_configuration = FeaturesImportConfig(self.import_model_cls)
+        self.field_map_model = QStandardItemModel()
+        self.field_map_tv.setModel(self.field_map_model)
+        if self.import_model_cls.__geometrytype__ == dm.GeometryType.Point:
+            layer_filter = QgsMapLayerProxyModel.PointLayer
+        elif self.import_model_cls.__geometrytype__ == dm.GeometryType.Linestring:
+            layer_filter = QgsMapLayerProxyModel.LineLayer
+        elif self.import_model_cls.__geometrytype__ == dm.GeometryType.Polygon:
+            layer_filter = QgsMapLayerProxyModel.PolygonLayer
+        else:
+            layer_filter = None
+        if layer_filter is not None:
+            self.source_layer_cbo.setFilters(layer_filter)
+        self.source_layer_cbo.setCurrentIndex(0)
+        self.populate_conversion_settings_widgets()
+        self.source_layer_cbo.layerChanged.connect(self.on_layer_changed)
+        self.save_pb.clicked.connect(self.save_import_settings)
+        self.load_pb.clicked.connect(self.load_import_settings)
+        self.run_pb.clicked.connect(self.run_import_features)
+        self.close_pb.clicked.connect(self.close)
+        self.setup_labels()
+
+    def setup_labels(self):
+        import_model_name = self.import_model_cls.__layername__
+        import_model_name_lower = import_model_name.lower()
+        self.setWindowTitle(self.windowTitle().format(import_model_name_lower))
+        self.source_layer_label.setText(self.source_layer_label.text().format(import_model_name_lower))
+        self.tab_widget.setTabText(0, self.tab_widget.tabText(0).format(import_model_name))
+
+    @staticmethod
+    def is_obsolete_field(model_cls, field_name):
+        return field_name in model_cls.obsolete_fields()
+
+    @property
+    def source_layer(self):
+        return self.source_layer_cbo.currentLayer()
+
+    @property
+    def layer_dependent_widgets(self):
+        widgets = [
+            self.tab_widget,
+            self.save_pb,
+            self.load_pb,
+            self.run_pb,
+            self.selected_only_cb,
+        ]
+        return widgets
+
+    def activate_layer_dependent_widgets(self):
+        for widget in self.layer_dependent_widgets:
+            widget.setEnabled(True)
+
+    def deactivate_layer_dependent_widgets(self):
+        for widget in self.layer_dependent_widgets:
+            widget.setDisabled(True)
+
+    def on_layer_changed(self, layer):
+        layer_field_names = [""]
+        if layer:
+            layer_field_names += [field.name() for field in layer.fields()]
+            self.activate_layer_dependent_widgets()
+        else:
+            self.deactivate_layer_dependent_widgets()
+        source_attribute_widgets = self.get_column_widgets(FeaturesImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX)
+        for combobox in source_attribute_widgets:
+            combobox.clear()
+            combobox.addItems(layer_field_names)
+            combobox.setCurrentText(combobox.data_model_field_name)
+        expression_widgets = self.get_column_widgets(FeaturesImportConfig.EXPRESSION_COLUMN_IDX)
+        for expression_widget in expression_widgets:
+            expression_widget.setLayer(layer)
+
+    def get_column_widgets(self, column_idx):
+        model_widgets = []
+        row_idx = 0
+        for field_name in self.import_model_cls.__annotations__.keys():
+            if self.is_obsolete_field(self.import_model_cls, field_name):
+                continue
+            item = self.field_map_model.item(row_idx, column_idx)
+            index = item.index()
+            widget = self.field_map_tv.indexWidget(index)
+            widget.data_model_field_name = field_name
+            model_widgets.append(widget)
+            row_idx += 1
+        return model_widgets
+
+    def populate_conversion_settings_widgets(self):
+        widgets_to_add = self.import_configuration.data_model_widgets()
+        model_widgets = widgets_to_add[self.import_model_cls]
+        self.field_map_model.clear()
+        self.field_map_model.setHorizontalHeaderLabels(self.import_configuration.config_header)
+        for (row_idx, column_idx), widget in model_widgets.items():
+            self.field_map_model.setItem(row_idx, column_idx, QStandardItem(""))
+            self.field_map_tv.setIndexWidget(self.field_map_model.index(row_idx, column_idx), widget)
+        for i in range(len(self.import_configuration.config_header)):
+            self.field_map_tv.resizeColumnToContents(i)
+        self.connect_configuration_widgets()
+        self.on_layer_changed(self.source_layer)
+
+    def connect_configuration_widgets(self):
+        row_idx = 0
+        for field_name in self.import_model_cls.__annotations__.keys():
+            if self.is_obsolete_field(self.import_model_cls, field_name):
+                continue
+            method_item = self.field_map_model.item(row_idx, FeaturesImportConfig.METHOD_COLUMN_IDX)
+            method_index = method_item.index()
+            method_combobox = self.field_map_tv.indexWidget(method_index)
+            source_attribute_item = self.field_map_model.item(row_idx, FeaturesImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX)
+            source_attribute_index = source_attribute_item.index()
+            source_attribute_combobox = self.field_map_tv.indexWidget(source_attribute_index)
+            value_map_item = self.field_map_model.item(row_idx, FeaturesImportConfig.VALUE_MAP_COLUMN_IDX)
+            value_map_index = value_map_item.index()
+            value_map_button = self.field_map_tv.indexWidget(value_map_index)
+            expression_item = self.field_map_model.item(row_idx, FeaturesImportConfig.EXPRESSION_COLUMN_IDX)
+            expression_index = expression_item.index()
+            expression_widget = self.field_map_tv.indexWidget(expression_index)
+            method_combobox.currentTextChanged.connect(
+                partial(
+                    ImportFieldMappingUtils.on_method_changed,
+                    source_attribute_combobox,
+                    value_map_button,
+                    expression_widget,
+                )
+            )
+            method_combobox.currentTextChanged.emit(method_combobox.currentText())
+            source_attribute_combobox.currentTextChanged.connect(
+                partial(
+                    ImportFieldMappingUtils.on_source_attribute_value_changed,
+                    method_combobox,
+                    source_attribute_combobox,
+                )
+            )
+            value_map_button.clicked.connect(
+                partial(
+                    ImportFieldMappingUtils.on_value_map_clicked,
+                    self.source_layer_cbo,
+                    source_attribute_combobox,
+                    value_map_button,
+                    self.uc,
+                    self,
+                )
+            )
+            row_idx += 1
+
+    def collect_settings(self):
+        import_settings = {
+            "target_layer": self.import_model_cls.__tablename__,
+            "fields": self.collect_fields_settings(),
+        }
+        return import_settings
+
+    def collect_fields_settings(self):
+        fields_settings = {}
+        row_idx = 0
+        for field_name, field_type in self.import_model_cls.__annotations__.items():
+            if self.is_obsolete_field(self.import_model_cls, field_name):
+                continue
+            single_field_config = {}
+            field_type = core_field_type(field_type)
+            for column_idx, key_name in enumerate(self.import_configuration.config_keys, start=1):
+                item = self.field_map_model.item(row_idx, column_idx)
+                index = item.index()
+                widget = self.field_map_tv.indexWidget(index)
+                key_value = ImportFieldMappingUtils.collect_config_from_widget(widget, key_name, field_type, column_idx)
+                if key_value is None:
+                    continue
+                single_field_config[key_name] = key_value
+            fields_settings[field_name] = single_field_config
+            row_idx += 1
+        return fields_settings
+
+    def update_fields_settings(self, fields_setting):
+        row_idx = 0
+        for field_name, field_type in self.import_model_cls.__annotations__.items():
+            if self.is_obsolete_field(self.import_model_cls, field_name):
+                continue
+            if is_optional(field_type):
+                field_type = optional_type(field_type)
+            field_config = fields_setting.get(field_name, {})
+            for column_idx, key_name in enumerate(self.import_configuration.config_keys, start=1):
+                item = self.field_map_model.item(row_idx, column_idx)
+                index = item.index()
+                widget = self.field_map_tv.indexWidget(index)
+                ImportFieldMappingUtils.update_widget_with_config(widget, field_name, field_type, field_config)
+            row_idx += 1
+
+    def save_import_settings(self):
+        extension_filter = "JSON (*.json)"
+        template_filepath = get_filepath(
+            self, extension_filter, default_settings_entry=ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY
+        )
+        if not template_filepath:
+            return
+        settings = QgsSettings()
+        settings.setValue(ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
+        try:
+            import_settings = self.collect_settings()
+            with open(template_filepath, "w") as template_file:
+                json.dump(import_settings, template_file, indent=2)
+            self.uc.show_info(f"Settings saved to the template.", self)
+        except Exception as e:
+            self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
+
+    def load_import_settings(self):
+        extension_filter = "JSON (*.json)"
+        template_filepath = get_filepath(
+            self, extension_filter, save=False, default_settings_entry=ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY
+        )
+        if not template_filepath:
+            return
+        settings = QgsSettings()
+        settings.setValue(ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
+        try:
+            with open(template_filepath, "r") as template_file:
+                import_settings = json.loads(template_file.read())
+            self.update_fields_settings(import_settings["fields"])
+            self.uc.show_info(f"Settings loaded from the template.", self)
+        except Exception as e:
+            self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
+
+    def missing_source_fields(self):
+        field_labels = self.get_column_widgets(FeaturesImportConfig.FIELD_NAME_COLUMN_IDX)
+        method_widgets = self.get_column_widgets(FeaturesImportConfig.METHOD_COLUMN_IDX)
+        source_attribute_widgets = self.get_column_widgets(FeaturesImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX)
+        missing_fields = []
+        for field_lbl, method_cbo, source_attribute_cbo in zip(field_labels, method_widgets, source_attribute_widgets):
+            field_name, method_txt, source_attribute_txt = (
+                field_lbl.text().strip(),
+                method_cbo.currentText(),
+                source_attribute_cbo.currentText(),
+            )
+            if method_txt == str(ColumnImportMethod.ATTRIBUTE) and not source_attribute_txt:
+                missing_fields.append(field_name)
+        return missing_fields
+
+    def run_import_features(self):
+        missing_fields = self.missing_source_fields()
+        if missing_fields:
+            missing_fields_lines = []
+            for missing_field in missing_fields:
+                missing_fields_lines.append(f"{self.import_model_cls.__layername__}: {missing_field}")
+            missing_fields_txt = "\n".join(missing_fields_lines)
+            self.uc.show_warn(
+                f"Please specify a source field for a following attribute(s) and try again:\n{missing_fields_txt}", self
+            )
+            return
+        source_layer = self.source_layer
+        layer_handler = self.layer_manager.model_handlers[self.import_model_cls]
+        target_layer = layer_handler.layer
+        selected_feat_ids = None
+        if self.selected_only_cb.isChecked():
+            selected_feat_ids = source_layer.selectedFeatureIds()
+        import_settings = self.collect_settings()
+        feature_importer_cls = self.FEATURE_IMPORTERS[self.import_model_cls]
+
+        try:
+            layer_handler.disconnect_handler_signals()
+            features_importer = feature_importer_cls(
+                source_layer,
+                self.model_gpkg,
+                import_settings,
+                target_layer,
+            )
+            features_importer.import_features(selected_ids=selected_feat_ids)
+            success_msg = (
+                "Features imported successfully.\n\n"
+                "The layers to which the features have been added are still in editing mode, "
+                "so you can review the changes before saving them to the layers."
+            )
+            self.uc.show_info(success_msg, self)
+        except Exception as e:
+            self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
+        finally:
+            layer_handler.connect_handler_signals()
+        target_layer.triggerRepaint()
+
+
+class ImportStructuresDialog(is_basecls, is_uicls):
     """Dialog for the importing structures tool."""
 
     STRUCTURE_IMPORTERS = {
@@ -285,38 +669,6 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         for expression_widget in chain.from_iterable(expression_widgets.values()):
             expression_widget.setLayer(layer)
 
-    @staticmethod
-    def on_method_changed(source_attribute_combobox, value_map_widget, expression_widget, current_text):
-        if current_text != str(ColumnImportMethod.ATTRIBUTE):
-            source_attribute_combobox.setDisabled(True)
-            value_map_widget.setDisabled(True)
-            source_attribute_combobox.setStyleSheet("")
-            expression_widget.setEnabled(current_text == str(ColumnImportMethod.EXPRESSION))
-        else:
-            source_attribute_combobox.setEnabled(True)
-            value_map_widget.setEnabled(True)
-            expression_widget.setDisabled(True)
-            if source_attribute_combobox.currentText():
-                source_attribute_combobox.setStyleSheet("")
-            else:
-                source_attribute_combobox.setStyleSheet(REQUIRED_VALUE_STYLESHEET)
-
-    @staticmethod
-    def on_source_attribute_value_changed(method_combobox, source_attribute_combobox, current_text):
-        if method_combobox.currentText() == str(ColumnImportMethod.ATTRIBUTE) and not current_text:
-            source_attribute_combobox.setStyleSheet(REQUIRED_VALUE_STYLESHEET)
-        else:
-            source_attribute_combobox.setStyleSheet("")
-
-    def on_value_map_clicked(self, source_attribute_combobox, pressed_button):
-        value_map_dlg = AttributeValueMapDialog(pressed_button, source_attribute_combobox, self.source_layer, self)
-        accepted = value_map_dlg.exec_()
-        if accepted:
-            try:
-                value_map_dlg.update_value_map()
-            except (SyntaxError, ValueError):
-                self.uc.show_error(f"Invalid value map. Action aborted.", self)
-
     def get_column_widgets(self, column_idx, *data_models):
         column_widgets = {}
         for model_cls in data_models:
@@ -336,7 +688,7 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
         return column_widgets
 
     def populate_conversion_settings_widgets(self):
-        widgets_to_add = self.import_configuration.structure_widgets()
+        widgets_to_add = self.import_configuration.data_model_widgets()
         for model_cls, (tree_view, tree_view_model) in self.data_models_tree_views.items():
             tree_view_model.clear()
             tree_view_model.setHorizontalHeaderLabels(self.import_configuration.config_header)
@@ -372,14 +724,30 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 expression_index = expression_item.index()
                 expression_widget = tree_view.indexWidget(expression_index)
                 method_combobox.currentTextChanged.connect(
-                    partial(self.on_method_changed, source_attribute_combobox, value_map_button, expression_widget)
+                    partial(
+                        ImportFieldMappingUtils.on_method_changed,
+                        source_attribute_combobox,
+                        value_map_button,
+                        expression_widget,
+                    )
                 )
                 method_combobox.currentTextChanged.emit(method_combobox.currentText())
                 source_attribute_combobox.currentTextChanged.connect(
-                    partial(self.on_source_attribute_value_changed, method_combobox, source_attribute_combobox)
+                    partial(
+                        ImportFieldMappingUtils.on_source_attribute_value_changed,
+                        method_combobox,
+                        source_attribute_combobox,
+                    )
                 )
                 value_map_button.clicked.connect(
-                    partial(self.on_value_map_clicked, source_attribute_combobox, value_map_button)
+                    partial(
+                        ImportFieldMappingUtils.on_value_map_clicked,
+                        self.structure_layer_cbo,
+                        source_attribute_combobox,
+                        value_map_button,
+                        self.uc,
+                        self,
+                    )
                 )
                 row_idx += 1
 
@@ -414,26 +782,9 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
-                if isinstance(widget, QComboBox):
-                    key_value = (
-                        widget.currentText()
-                        if column_idx == StructuresImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX
-                        else widget.currentData()
-                    )
-                elif column_idx == StructuresImportConfig.VALUE_MAP_COLUMN_IDX:
-                    key_value = widget.value_map
-                    if not key_value:
-                        continue
-                elif column_idx == StructuresImportConfig.EXPRESSION_COLUMN_IDX:
-                    if not widget.isValidExpression():
-                        continue
-                    key_value = widget.expression()
-                else:
-                    key_value = widget.text()
-                    if not key_value:
-                        continue
-                    if column_idx == StructuresImportConfig.DEFAULT_VALUE_COLUMN_IDX and key_name != NULL_STR:
-                        key_value = field_type(key_value)
+                key_value = ImportFieldMappingUtils.collect_config_from_widget(widget, key_name, field_type, column_idx)
+                if key_value is None:
+                    continue
                 single_field_config[key_name] = key_value
             fields_settings[field_name] = single_field_config
             row_idx += 1
@@ -452,36 +803,18 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
-                try:
-                    key_value = field_config[key_name]
-                except KeyError:
-                    continue
-                if isinstance(widget, QComboBox):
-                    if key_value == NULL_STR:
-                        widget.setCurrentText(key_value)
-                    else:
-                        if key_name == "method":
-                            widget.setCurrentText(enum_entry_name_format(ColumnImportMethod(key_value).name))
-                        elif key_name == "default_value" and field_type != bool:
-                            widget.setCurrentText(enum_entry_name_format(field_type(key_value).name))
-                        else:
-                            widget.setCurrentText(str(key_value))
-                elif key_name == "value_map":
-                    AttributeValueMapDialog.update_value_map_button(widget, key_value)
-                elif key_name == "expression":
-                    widget.setExpression(key_value)
-                else:
-                    widget.setText(str(key_value))
-                    widget.setCursorPosition(0)
+                ImportFieldMappingUtils.update_widget_with_config(widget, field_name, field_type, field_config)
             row_idx += 1
 
     def save_import_settings(self):
         extension_filter = "JSON (*.json)"
-        template_filepath = get_filepath(self, extension_filter, default_settings_entry=self.LAST_CONFIG_DIR_ENTRY)
+        template_filepath = get_filepath(
+            self, extension_filter, default_settings_entry=ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY
+        )
         if not template_filepath:
             return
         settings = QgsSettings()
-        settings.setValue(self.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
+        settings.setValue(ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
         try:
             import_settings = self.collect_settings()
             with open(template_filepath, "w") as template_file:
@@ -493,12 +826,12 @@ class ImportStructuresDialog(ic_basecls, ic_uicls):
     def load_import_settings(self):
         extension_filter = "JSON (*.json)"
         template_filepath = get_filepath(
-            self, extension_filter, save=False, default_settings_entry=self.LAST_CONFIG_DIR_ENTRY
+            self, extension_filter, save=False, default_settings_entry=ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY
         )
         if not template_filepath:
             return
         settings = QgsSettings()
-        settings.setValue(self.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
+        settings.setValue(ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
         try:
             with open(template_filepath, "r") as template_file:
                 import_settings = json.loads(template_file.read())

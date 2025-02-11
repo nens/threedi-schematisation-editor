@@ -8,6 +8,7 @@ from threedi_schematisation_editor.processing.alghorithms_inflow import LinkSurf
 from threedi_schematisation_editor.processing.algorithms_1d import BottomLevelCalculator
 from threedi_schematisation_editor.processing.algorithms_1d2d import GenerateExchangeLines
 from threedi_schematisation_editor.processing.algorithms_conversion import (
+    ImportConnectionNodes,
     ImportCulverts,
     ImportOrifices,
     ImportPipes,
@@ -43,6 +44,7 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
         self.algorithms_list = [
             LinkSurfacesWithNodes(),
             GenerateExchangeLines(),
+            ImportConnectionNodes(),
             ImportCulverts(),
             ImportOrifices(),
             ImportWeirs(),

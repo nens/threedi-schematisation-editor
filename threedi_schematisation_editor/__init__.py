@@ -15,7 +15,11 @@ from threedi_mi_utils.news import QgsNewsSettingsInjector
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
-from threedi_schematisation_editor.custom_widgets import ImportStructuresDialog, LoadSchematisationDialog
+from threedi_schematisation_editor.custom_widgets import (
+    ImportFeaturesDialog,
+    ImportStructuresDialog,
+    LoadSchematisationDialog,
+)
 from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager
 from threedi_schematisation_editor.utils import (
@@ -50,7 +54,7 @@ class ThreediSchematisationEditorPlugin:
         self.action_export = None
         self.action_export_as = None
         self.action_remove = None
-        self.action_import_culverts = None
+        self.action_import_features = None
         self.workspace_context_manager = WorkspaceContextManager(self)
         self.provider = ThreediSchematisationEditorProcessingProvider()
         self.project = QgsProject.instance()
@@ -79,19 +83,20 @@ class ThreediSchematisationEditorPlugin:
             QIcon(get_icon_path("icon_unload.svg")), "Remove 3Di Schematisation", self.iface.mainWindow()
         )
         self.action_remove.triggered.connect(self.remove_model_from_project)
-        import_culverts_icon_path = get_icon_path("icon_import.png")
+        import_features_icon_path = get_icon_path("icon_import.png")
         import_actions_spec = [
+            ("Connection nodes", self.import_external_connection_nodes, None),
             ("Culverts", self.import_external_culverts, None),
             ("Orifices", self.import_external_orifices, None),
             ("Weirs", self.import_external_weirs, None),
             ("Pipes", self.import_external_pipes, None),
         ]
-        self.action_import_culverts = self.add_multi_action_button(
-            "Import schematisation objects", import_culverts_icon_path, import_actions_spec
+        self.action_import_features = self.add_multi_action_button(
+            "Import schematisation objects", import_features_icon_path, import_actions_spec
         )
         self.toolbar.addAction(self.action_open)
         self.toolbar.addAction(self.action_remove)
-        self.toolbar.addAction(self.action_import_culverts)
+        self.toolbar.addAction(self.action_import_features)
         self.toggle_active_project_actions()
         self.active_schematisation_changed()
 
@@ -102,7 +107,7 @@ class ThreediSchematisationEditorPlugin:
         del self.active_schematisation_combo
         del self.action_open
         del self.action_remove
-        del self.action_import_culverts
+        del self.action_import_features
 
     @property
     def model_gpkg(self):
@@ -193,10 +198,10 @@ class ThreediSchematisationEditorPlugin:
     def toggle_active_project_actions(self):
         if self.model_gpkg is None:
             self.action_remove.setDisabled(True)
-            self.action_import_culverts.setDisabled(True)
+            self.action_import_features.setDisabled(True)
         else:
             self.action_remove.setEnabled(True)
-            self.action_import_culverts.setEnabled(True)
+            self.action_import_features.setEnabled(True)
 
     def check_macros_status(self):
         macros_status = check_enable_macros_option()
@@ -272,6 +277,12 @@ class ThreediSchematisationEditorPlugin:
         self.switch_workspace_context(self.iface.activeLayer())
         self.toggle_active_project_actions()
         self.iface.mapCanvas().refresh()
+
+    def import_external_connection_nodes(self):
+        if not self.model_gpkg:
+            return
+        import_nodes_dlg = ImportFeaturesDialog(dm.ConnectionNode, self.model_gpkg, self.layer_manager, self.uc)
+        import_nodes_dlg.exec_()
 
     def import_external_culverts(self):
         if not self.model_gpkg:

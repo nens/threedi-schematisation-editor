@@ -44,8 +44,8 @@ class ColumnImportMethod(Enum):
         return self.name.capitalize()
 
 
-class StructuresImportConfig:
-    """Structures import tool configuration class."""
+class FeaturesImportConfig:
+    """Features import tool configuration class."""
 
     FIELD_NAME_COLUMN_IDX = 0
     METHOD_COLUMN_IDX = 1
@@ -54,13 +54,8 @@ class StructuresImportConfig:
     DEFAULT_VALUE_COLUMN_IDX = 4
     EXPRESSION_COLUMN_IDX = 5
 
-    def __init__(self, structures_model_cls):
-        self.structures_model_cls = structures_model_cls
-        self.nodes_model_cls = dm.ConnectionNode
-        self.related_models_classes = set()
-
-    def add_related_model_class(self, model_cls):
-        self.related_models_classes.add(model_cls)
+    def __init__(self, import_model_cls):
+        self.import_model_cls = import_model_cls
 
     @property
     def config_header(self):
@@ -74,12 +69,7 @@ class StructuresImportConfig:
 
     @property
     def models_fields_iterator(self):
-        structure_fields = ((k, self.structures_model_cls) for k in self.structures_model_cls.__annotations__.keys())
-        node_fields = ((k, self.nodes_model_cls) for k in self.nodes_model_cls.__annotations__.keys())
-        related_models_fields = (
-            (k, model_cls) for model_cls in self.related_models_classes for k in model_cls.__annotations__.keys()
-        )
-        fields_iterator = chain(structure_fields, node_fields, related_models_fields)
+        fields_iterator = ((k, self.import_model_cls) for k in self.import_model_cls.__annotations__.keys())
         return fields_iterator
 
     @property
@@ -105,7 +95,7 @@ class StructuresImportConfig:
                 ]
         return methods_mapping
 
-    def structure_widgets(self):
+    def data_model_widgets(self):
         widgets_to_add = defaultdict(dict)
         combobox_column_indexes = {self.METHOD_COLUMN_IDX, self.SOURCE_ATTRIBUTE_COLUMN_IDX}
         for model_cls, field_methods_mapping in self.field_methods_mapping.items():
@@ -153,60 +143,39 @@ class StructuresImportConfig:
         return widgets_to_add
 
 
-class AbstractStructuresImporter:
-    """Base class for the importing features from the external data source."""
+class StructuresImportConfig(FeaturesImportConfig):
+    """Structures import tool configuration class."""
 
-    DEFAULT_INTERSECTION_BUFFER = 0.0000001
-    DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
+    def __init__(self, import_model_cls):
+        super().__init__(import_model_cls)
+        self.nodes_model_cls = dm.ConnectionNode
+        self.related_models_classes = set()
+
+    def add_related_model_class(self, model_cls):
+        self.related_models_classes.add(model_cls)
+
+    @property
+    def models_fields_iterator(self):
+        structure_fields = ((k, self.import_model_cls) for k in self.import_model_cls.__annotations__.keys())
+        node_fields = ((k, self.nodes_model_cls) for k in self.nodes_model_cls.__annotations__.keys())
+        related_models_fields = (
+            (k, model_cls) for model_cls in self.related_models_classes for k in model_cls.__annotations__.keys()
+        )
+        fields_iterator = chain(structure_fields, node_fields, related_models_fields)
+        return fields_iterator
+
+
+class AbstractFeaturesImporter:
+    """Base class for the importing features from the external data source."""
 
     def __init__(self, external_source, target_gpkg, import_settings):
         self.external_source = external_source
         self.target_gpkg = target_gpkg
         self.import_settings = import_settings
-        self.structure_model_cls = None
-        self.structure_layer = None
-        self.structure_layer_name = None
-        self.node_layer = None
+        self.target_model_cls = None
+        self.target_layer = None
+        self.target_layer_name = None
         self.fields_configurations = {}
-        self.conversion_settings_cls = namedtuple(
-            "conversion_settings",
-            [
-                "use_snapping",
-                "snapping_distance",
-                "create_connection_nodes",
-                "length_source_field",
-                "length_fallback_value",
-                "azimuth_source_field",
-                "azimuth_fallback_value",
-                "edit_channels",
-            ],
-        )
-
-    @cached_property
-    def conversion_settings(self):
-        conversion_config = self.import_settings["conversion_settings"]
-        use_snapping = conversion_config.get("use_snapping", False)
-        if use_snapping:
-            snapping_distance = conversion_config.get("snapping_distance")
-        else:
-            snapping_distance = self.DEFAULT_INTERSECTION_BUFFER
-        create_connection_nodes = conversion_config.get("create_connection_nodes", False)
-        length_source_field = conversion_config.get("length_source_field", None)
-        length_fallback_value = conversion_config.get("length_fallback_value", 10.0)
-        azimuth_source_field = conversion_config.get("azimuth_source_field", None)
-        azimuth_fallback_value = conversion_config.get("azimuth_fallback_value", 90.0)
-        edit_channels = conversion_config.get("edit_channels", False)
-        cs = self.conversion_settings_cls(
-            use_snapping,
-            snapping_distance,
-            create_connection_nodes,
-            length_source_field,
-            length_fallback_value,
-            azimuth_source_field,
-            azimuth_fallback_value,
-            edit_channels,
-        )
-        return cs
 
     @cached_property
     def external_source_name(self):
@@ -216,21 +185,13 @@ class AbstractStructuresImporter:
             layer_name = self.external_source.sourceName()
         return layer_name
 
-    def setup_target_layers(self, structure_model_cls, structure_layer=None, node_layer=None):
-        self.structure_model_cls = structure_model_cls
-        self.structure_layer = (
-            gpkg_layer(self.target_gpkg, structure_model_cls.__tablename__)
-            if structure_layer is None
-            else structure_layer
+    def setup_target_layers(self, target_model_cls, target_layer=None):
+        self.target_model_cls = target_model_cls
+        self.target_layer = (
+            gpkg_layer(self.target_gpkg, target_model_cls.__tablename__) if target_layer is None else target_layer
         )
-        self.structure_layer_name = self.structure_layer.name()
-        self.node_layer = (
-            gpkg_layer(self.target_gpkg, dm.ConnectionNode.__tablename__) if node_layer is None else node_layer
-        )
-        self.fields_configurations = {
-            structure_model_cls: self.import_settings.get("fields", {}),
-            dm.ConnectionNode: self.import_settings.get("connection_node_fields", {}),
-        }
+        self.target_layer_name = self.target_layer.name()
+        self.fields_configurations = {target_model_cls: self.import_settings.get("fields", {})}
 
     def update_attributes(self, model_cls, source_feat, *new_features):
         fields_config = self.fields_configurations[model_cls]
@@ -280,7 +241,109 @@ class AbstractStructuresImporter:
     @property
     def modifiable_layers(self):
         """Return a list of the layers that can be modified."""
-        return [self.structure_layer, self.node_layer]
+        return [self.target_layer]
+
+    @staticmethod
+    def new_point_geometry(src_feat):
+        """Create a new point feature geometry based on the source feature."""
+        src_geometry = QgsGeometry(src_feat.geometry())
+        if src_geometry.isMultipart():
+            src_geometry.convertToSingleType()
+        src_point = src_geometry.asPoint()
+        dst_point = src_point
+        dst_geometry = QgsGeometry.fromPointXY(dst_point)
+        return dst_geometry
+
+    @staticmethod
+    def new_polyline_geometry(src_feat):
+        """Create a new polyline feature geometry based on the source feature."""
+        src_geometry = QgsGeometry(src_feat.geometry())
+        if src_geometry.isMultipart():
+            src_geometry.convertToSingleType()
+        src_polyline = src_geometry.asPolyline()
+        dst_polyline = src_polyline
+        dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
+        return dst_geometry
+
+    @staticmethod
+    def new_polygon_geometry(src_feat):
+        """Create a new polygon feature geometry based on the source feature."""
+        src_geometry = QgsGeometry(src_feat.geometry())
+        if src_geometry.isMultipart():
+            src_geometry.convertToSingleType()
+        src_polygon = src_geometry.asPolygon()
+        dst_polygon = src_polygon
+        dst_geometry = QgsGeometry.fromPolygonXY(dst_polygon)
+        return dst_geometry
+
+
+class AbstractStructuresImporter(AbstractFeaturesImporter):
+    """Base class for the importing structure features from the external data source."""
+
+    DEFAULT_INTERSECTION_BUFFER = 0.0000001
+    DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
+
+    def __init__(self, external_source, target_gpkg, import_settings):
+        super().__init__(external_source, target_gpkg, import_settings)
+        self.node_layer = None
+        self.conversion_settings_cls = namedtuple(
+            "conversion_settings",
+            [
+                "use_snapping",
+                "snapping_distance",
+                "create_connection_nodes",
+                "length_source_field",
+                "length_fallback_value",
+                "azimuth_source_field",
+                "azimuth_fallback_value",
+                "edit_channels",
+            ],
+        )
+
+    @cached_property
+    def conversion_settings(self):
+        conversion_config = self.import_settings["conversion_settings"]
+        use_snapping = conversion_config.get("use_snapping", False)
+        if use_snapping:
+            snapping_distance = conversion_config.get("snapping_distance")
+        else:
+            snapping_distance = self.DEFAULT_INTERSECTION_BUFFER
+        create_connection_nodes = conversion_config.get("create_connection_nodes", False)
+        length_source_field = conversion_config.get("length_source_field", None)
+        length_fallback_value = conversion_config.get("length_fallback_value", 10.0)
+        azimuth_source_field = conversion_config.get("azimuth_source_field", None)
+        azimuth_fallback_value = conversion_config.get("azimuth_fallback_value", 90.0)
+        edit_channels = conversion_config.get("edit_channels", False)
+        cs = self.conversion_settings_cls(
+            use_snapping,
+            snapping_distance,
+            create_connection_nodes,
+            length_source_field,
+            length_fallback_value,
+            azimuth_source_field,
+            azimuth_fallback_value,
+            edit_channels,
+        )
+        return cs
+
+    def setup_target_layers(self, target_model_cls, target_layer=None, node_layer=None):
+        self.target_model_cls = target_model_cls
+        self.target_layer = (
+            gpkg_layer(self.target_gpkg, target_model_cls.__tablename__) if target_layer is None else target_layer
+        )
+        self.target_layer_name = self.target_layer.name()
+        self.node_layer = (
+            gpkg_layer(self.target_gpkg, dm.ConnectionNode.__tablename__) if node_layer is None else node_layer
+        )
+        self.fields_configurations = {
+            target_model_cls: self.import_settings.get("fields", {}),
+            dm.ConnectionNode: self.import_settings.get("connection_node_fields", {}),
+        }
+
+    @property
+    def modifiable_layers(self):
+        """Return a list of the layers that can be modified."""
+        return [self.target_layer, self.node_layer]
 
     def new_structure_geometry(self, src_structure_feat):
         """Create new structure geometry based on the source structure feature."""
@@ -296,17 +359,11 @@ class AbstractStructuresImporter:
 
 
 class PointStructuresImporter(AbstractStructuresImporter):
-    """Point features importer class."""
+    """Point structures importer class."""
 
     def new_structure_geometry(self, src_structure_feat):
         """Create new structure geometry based on the source structure feature."""
-        src_geometry = QgsGeometry(src_structure_feat.geometry())
-        if src_geometry.isMultipart():
-            src_geometry.convertToSingleType()
-        src_point = src_geometry.asPoint()
-        dst_point = src_point
-        dst_geometry = QgsGeometry.fromPointXY(dst_point)
-        return dst_geometry
+        return self.new_point_geometry(src_structure_feat)
 
     def process_structure_feature(
         self,
@@ -357,19 +414,19 @@ class PointStructuresImporter(AbstractStructuresImporter):
 
     def import_structures(self, context=None, selected_ids=None):
         """Method responsible for the importing structures from the external feature source."""
-        structure_fields = self.structure_layer.fields()
+        structure_fields = self.target_layer.fields()
         node_fields = self.node_layer.fields()
         project = context.project() if context else QgsProject.instance()
         src_crs = self.external_source.sourceCrs()
-        dst_crs = self.structure_layer.crs()
+        dst_crs = self.target_layer.crs()
         transform_ctx = project.transformContext()
         transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx) if src_crs != dst_crs else None
-        next_structure_id = get_next_feature_id(self.structure_layer)
+        next_structure_id = get_next_feature_id(self.target_layer)
         next_connection_node_id = get_next_feature_id(self.node_layer)
         locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
         new_structures = []
         self.node_layer.startEditing()
-        self.structure_layer.startEditing()
+        self.target_layer.startEditing()
         features_iterator = (
             self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
         )
@@ -384,20 +441,20 @@ class PointStructuresImporter(AbstractStructuresImporter):
                 transformation,
             )
             new_structure_geom = new_structure_feat.geometry()
-            if find_point_nodes(new_structure_geom.asPoint(), self.structure_layer) is not None:
+            if find_point_nodes(new_structure_geom.asPoint(), self.target_layer) is not None:
                 continue
             if new_nodes:
                 self.update_attributes(dm.ConnectionNode, external_src_feat, *new_nodes)
                 self.node_layer.addFeatures(new_nodes)
                 locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
-            self.update_attributes(self.structure_model_cls, external_src_feat, new_structure_feat)
+            self.update_attributes(self.target_model_cls, external_src_feat, new_structure_feat)
             next_structure_id += 1
             new_structures.append(new_structure_feat)
-        self.structure_layer.addFeatures(new_structures)
+        self.target_layer.addFeatures(new_structures)
 
 
 class LinearStructuresImporter(AbstractStructuresImporter):
-    """Linear features importer class."""
+    """Linear structures importer class."""
 
     def new_structure_geometry(self, src_structure_feat):
         """Create new structure geometry based on the source structure feature."""
@@ -407,9 +464,7 @@ class LinearStructuresImporter(AbstractStructuresImporter):
         geometry_type = src_geometry.type()
         if geometry_type == QgsWkbTypes.GeometryType.LineGeometry:
             src_polyline = src_geometry.asPolyline()
-            dst_polyline = (
-                src_polyline if self.structure_model_cls == dm.Culvert else [src_polyline[0], src_polyline[-1]]
-            )
+            dst_polyline = src_polyline if self.target_model_cls == dm.Culvert else [src_polyline[0], src_polyline[-1]]
             dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
         elif geometry_type == QgsWkbTypes.GeometryType.PointGeometry:
             start_point = src_geometry.asPoint()
@@ -506,19 +561,19 @@ class LinearStructuresImporter(AbstractStructuresImporter):
 
     def import_structures(self, context=None, selected_ids=None):
         """Method responsible for the importing structures from the external feature source."""
-        structure_fields = self.structure_layer.fields()
+        structure_fields = self.target_layer.fields()
         node_fields = self.node_layer.fields()
         project = context.project() if context else QgsProject.instance()
         src_crs = self.external_source.sourceCrs()
-        dst_crs = self.structure_layer.crs()
+        dst_crs = self.target_layer.crs()
         transform_ctx = project.transformContext()
         transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx) if src_crs != dst_crs else None
-        next_structure_id = get_next_feature_id(self.structure_layer)
+        next_structure_id = get_next_feature_id(self.target_layer)
         next_connection_node_id = get_next_feature_id(self.node_layer)
         locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
         new_structures, external_source_structures = [], []
         self.node_layer.startEditing()
-        self.structure_layer.startEditing()
+        self.target_layer.startEditing()
         features_iterator = (
             self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
         )
@@ -536,11 +591,11 @@ class LinearStructuresImporter(AbstractStructuresImporter):
                 self.update_attributes(dm.ConnectionNode, external_src_feat, *new_nodes)
                 self.node_layer.addFeatures(new_nodes)
                 locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
-            self.update_attributes(self.structure_model_cls, external_src_feat, new_structure_feat)
+            self.update_attributes(self.target_model_cls, external_src_feat, new_structure_feat)
             next_structure_id += 1
             new_structures.append(new_structure_feat)
             external_source_structures.append(external_src_feat)
-        self.structure_layer.addFeatures(new_structures)
+        self.target_layer.addFeatures(new_structures)
 
 
 class StructuresIntegrator(LinearStructuresImporter):
@@ -565,14 +620,14 @@ class StructuresIntegrator(LinearStructuresImporter):
 
     def setup_target_layers(
         self,
-        structure_model_cls,
-        structure_layer=None,
+        target_model_cls,
+        target_layer=None,
         node_layer=None,
         channel_layer=None,
         cross_section_location_layer=None,
     ):
         """Setup target layers with fields configuration."""
-        super().setup_target_layers(structure_model_cls, structure_layer, node_layer)
+        super().setup_target_layers(target_model_cls, target_layer, node_layer)
         self.channel_layer = (
             gpkg_layer(self.target_gpkg, dm.Channel.__tablename__) if channel_layer is None else channel_layer
         )
@@ -588,7 +643,7 @@ class StructuresIntegrator(LinearStructuresImporter):
     def setup_fields_map(self):
         """Setup input layer fields map."""
         self.layer_fields_mapping.clear()
-        for layer in [self.structure_layer, self.node_layer, self.channel_layer, self.cross_section_location_layer]:
+        for layer in [self.target_layer, self.node_layer, self.channel_layer, self.cross_section_location_layer]:
             layer_name = layer.name()
             layer_fields = layer.fields()
             self.layer_fields_mapping[layer_name] = layer_fields
@@ -798,15 +853,15 @@ class StructuresIntegrator(LinearStructuresImporter):
         node_attributes = {field_name: first_node_feat[field_name] for field_name in node_field_names}
         channel_curve = channel_geom.constGet()
         before_substring_start, before_substring_end = 0, 0
-        simplify_structure_geometry = self.structure_model_cls != dm.Culvert
-        structure_fields = self.layer_fields_mapping[self.structure_layer_name]
-        structure_field_names = self.layer_field_names_mapping[self.structure_layer_name]
+        simplify_structure_geometry = self.target_model_cls != dm.Culvert
+        structure_fields = self.layer_fields_mapping[self.target_layer_name]
+        structure_field_names = self.layer_field_names_mapping[self.target_layer_name]
         for channel_structure in channel_structures:
             new_nodes = []
             src_structure_feat = channel_structure.feature
             structure_feat = QgsFeature(structure_fields)
             # Update with values from the widgets.
-            self.update_attributes(self.structure_model_cls, src_structure_feat, structure_feat)
+            self.update_attributes(self.target_model_cls, src_structure_feat, structure_feat)
             structure_attributes = {field_name: structure_feat[field_name] for field_name in structure_field_names}
             structure_length = channel_structure.length
             half_length = structure_length * 0.5
@@ -823,7 +878,7 @@ class StructuresIntegrator(LinearStructuresImporter):
                 **structure_attributes,
             )
             new_nodes += self.update_feature_endpoints(substring_feat, **node_attributes)
-            self.features_to_add[self.structure_layer_name].append(substring_feat)
+            self.features_to_add[self.target_layer_name].append(substring_feat)
             # Setup channel leftover feature
             before_substring_end = start_distance
             before_substring_feat = self.substring_feature(
@@ -889,23 +944,23 @@ class StructuresIntegrator(LinearStructuresImporter):
         self.remove_hanging_cross_sections()
         # Process structures
         structures_to_add = []
-        for structure_id, structure_feat in enumerate(self.features_to_add[self.structure_layer_name], start=1):
+        for structure_id, structure_feat in enumerate(self.features_to_add[self.target_layer_name], start=1):
             structure_feat["id"] = structure_id
             structures_to_add.append(structure_feat)
-        self.structure_layer.startEditing()
-        self.structure_layer.addFeatures(structures_to_add)
+        self.target_layer.startEditing()
+        self.target_layer.addFeatures(structures_to_add)
         # Fallback import for disconnected structures.
         disconnected_structure_ids = list(input_feature_ids.difference(all_processed_structure_ids))
         if disconnected_structure_ids:
             disconnected_structures_to_add, external_source_structures = [], []
-            structure_fields = self.layer_fields_mapping[self.structure_layer_name]
+            structure_fields = self.layer_fields_mapping[self.target_layer_name]
             node_fields = self.layer_fields_mapping[self.node_layer.name()]
             project = context.project() if context else QgsProject.instance()
             src_crs = self.external_source.sourceCrs()
-            dst_crs = self.structure_layer.crs()
+            dst_crs = self.target_layer.crs()
             transform_ctx = project.transformContext()
             transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx) if src_crs != dst_crs else None
-            next_structure_id = get_next_feature_id(self.structure_layer)
+            next_structure_id = get_next_feature_id(self.target_layer)
             next_connection_node_id = get_next_feature_id(self.node_layer)
             locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
             for disconnected_structure in self.external_source.getFeatures(disconnected_structure_ids):
@@ -922,11 +977,11 @@ class StructuresIntegrator(LinearStructuresImporter):
                     self.update_attributes(dm.ConnectionNode, disconnected_structure, *new_nodes)
                     self.node_layer.addFeatures(new_nodes)
                     locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
-                self.update_attributes(self.structure_model_cls, disconnected_structure, new_structure_feat)
+                self.update_attributes(self.target_model_cls, disconnected_structure, new_structure_feat)
                 next_structure_id += 1
                 disconnected_structures_to_add.append(new_structure_feat)
                 external_source_structures.append(disconnected_structure)
-            self.structure_layer.addFeatures(disconnected_structures_to_add)
+            self.target_layer.addFeatures(disconnected_structures_to_add)
 
 
 class CulvertsImporter(LinearStructuresImporter):
@@ -1004,3 +1059,47 @@ class PipesImporter(LinearStructuresImporter):
     def __init__(self, *args, structure_layer=None, node_layer=None):
         super().__init__(*args)
         self.setup_target_layers(dm.Pipe, structure_layer, node_layer)
+
+
+class ConnectionNodesImporter(AbstractFeaturesImporter):
+    """Connection nodes importer class."""
+
+    def __init__(self, *args, target_layer=None):
+        super().__init__(*args)
+        self.setup_target_layers(dm.ConnectionNode, target_layer)
+
+    def process_feature(self, src_feat, target_fields, next_connection_node_id, transformation=None):
+        """Process source point into connection node feature."""
+        new_node_feat = QgsFeature(target_fields)
+        new_node_feat["id"] = next_connection_node_id
+        new_geom = self.new_point_geometry(src_feat)
+        if transformation:
+            new_geom.transform(transformation)
+        new_node_feat.setGeometry(new_geom)
+        return new_node_feat
+
+    def import_features(self, context=None, selected_ids=None):
+        """Method responsible for the importing connection nodes from the external feature source."""
+        target_fields = self.target_layer.fields()
+        project = context.project() if context else QgsProject.instance()
+        src_crs = self.external_source.sourceCrs()
+        dst_crs = self.target_layer.crs()
+        transform_ctx = project.transformContext()
+        transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx) if src_crs != dst_crs else None
+        next_feature_id = get_next_feature_id(self.target_layer)
+        new_feats = []
+        self.target_layer.startEditing()
+        features_iterator = (
+            self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
+        )
+        for external_src_feat in features_iterator:
+            new_feat = self.process_feature(
+                external_src_feat,
+                target_fields,
+                next_feature_id,
+                transformation,
+            )
+            self.update_attributes(self.target_model_cls, external_src_feat, new_feat)
+            next_feature_id += 1
+            new_feats.append(new_feat)
+        self.target_layer.addFeatures(new_feats)
