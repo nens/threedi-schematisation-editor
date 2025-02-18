@@ -82,6 +82,12 @@ class AbstractBaseForm(QObject):
         self.dialog.active_form_signals.add((self.layer.editingStopped, self.toggle_edit_mode))
         self.dialog.active_form_signals.add((self.button_box.accepted, self.postprocess_on_acceptance))
 
+    def purge_form_dialog_signals(self):
+        """Remove all signals created by this form."""
+        for signal, slot in self.dialog.active_form_signals:
+            disconnect_signal(signal, slot)
+        self.dialog.active_form_signals.clear()
+
     @property
     def foreign_models_features(self):
         """Property returning dictionary where key = data model class with identifier and value = data model feature."""
@@ -96,19 +102,20 @@ class AbstractBaseForm(QObject):
         if self.feature is None:
             return
         fid = self.feature.id()
-        if fid == self.MIN_FID:
-            geometry = self.feature.geometry()
-            if not geometry:
+        if fid < 0:
+            try:
+                feature_id = self.feature["id"]
+            except KeyError:
                 return  # form open for an invalid feature
-            else:
-                if self.feature["id"] != self.AUTOGENERATE_ID:
-                    # This is the case after accepting new feature
-                    return
-                self.creation = True
-                self.handler.set_feature_values(self.feature)
+            if feature_id != self.AUTOGENERATE_ID:
+                # This is the case after accepting new feature
+                return
+            self.creation = True
+            self.handler.set_feature_values(self.feature)
 
         self.activate_field_based_conditions()
         self.toggle_edit_mode()
+        self.populate_with_extra_widgets()
         self.connect_foreign_widgets()
         self.connect_custom_widgets()
 
@@ -146,7 +153,6 @@ class AbstractBaseForm(QObject):
 
     def toggle_edit_mode(self):
         """Toggling editing for foreign widgets."""
-        self.populate_with_extra_widgets()
         editing_active = self.layer.isEditable()
         for widget, related_cls, numerical_modifier, field_name in self.foreign_widgets.values():
             widget.setEnabled(editing_active)
@@ -496,6 +502,8 @@ class AbstractFormWithDistribution(AbstractBaseForm):
         """Setup distribution widgets."""
         distribution_table_widget_name = "distribution_table"
         self.distribution_table = self.dialog.findChild(QTableWidget, distribution_table_widget_name)
+        # Somehow `cellChanged` signal keeps connected between feature switch within a form view
+        disconnect_signal(self.distribution_table.cellChanged)
         self.distribution_table_clear = self.dialog.findChild(QPushButton, f"{distribution_table_widget_name}_clear")
         for widget in [self.distribution_table, self.distribution_table_clear]:
             self.custom_widgets[widget.objectName()] = self.distribution_table
@@ -542,8 +550,8 @@ class AbstractFormWithDistribution(AbstractBaseForm):
         disconnect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
         for row_num in range(self.NUMBER_OF_ROWS):
             self.distribution_table.setItem(row_num, 0, QTableWidgetItem(""))
-        connect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
         self.save_distribution_table_edits()
+        connect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
 
     def populate_distribution_table_data(self):
         """Populate distribution tabular data in the table widget."""
@@ -566,7 +574,7 @@ class AbstractFormWithDistribution(AbstractBaseForm):
         if self.creation is True:
             self.fill_related_attributes()
         self.populate_widgets()
-        self.populate_flow_distribution_table_data()
+        self.populate_distribution_table_data()
 
 
 class AbstractFormWithMaterial(AbstractBaseForm):
@@ -656,6 +664,8 @@ class AbstractFormWithTable(AbstractBaseForm):
         """Setup timeseries widgets."""
         table_widget_name = f"{self.TABLE_NAME}_table"
         self.table = self.dialog.findChild(QTableWidget, table_widget_name)
+        # Somehow `cellChanged` signal keeps connected between feature switch within a form view
+        disconnect_signal(self.table.cellChanged)
         self.table_add = self.dialog.findChild(QPushButton, f"{table_widget_name}_add")
         self.table_delete = self.dialog.findChild(QPushButton, f"{table_widget_name}_delete")
         self.table_copy = self.dialog.findChild(QPushButton, f"{table_widget_name}_copy")
@@ -1793,7 +1803,8 @@ class DryWeatherFlowDistributionForm(AbstractFormWithTag, AbstractFormWithDistri
     def populate_with_extra_widgets(self):
         """Populate basic and extra widgets for the given custom form."""
         # Populate widgets based on features attributes
-        self.populate_foreign_widgets()
+        if self.creation is True:
+            self.fill_related_attributes()
         self.populate_widgets()
         self.populate_distribution_table_data()
         self.populate_tag_widgets()

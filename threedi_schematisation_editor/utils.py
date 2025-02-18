@@ -373,10 +373,10 @@ def connect_signal(signal, slot):
     signal.connect(slot)
 
 
-def disconnect_signal(signal, slot):
+def disconnect_signal(signal, slot=None):
     """Disconnecting signal with slot."""
     try:
-        signal.disconnect(slot)
+        signal.disconnect(slot) if slot is not None else signal.disconnect()
     except TypeError:
         pass
 
