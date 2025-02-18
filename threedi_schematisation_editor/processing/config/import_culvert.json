@@ -17,7 +17,7 @@
     "display_name": {
       "method": "ignore"
     },
-    "calculation_type": {
+    "exchange_type": {
       "method": "source_attribute",
       "source_attribute": "kdu_open",
       "value_map": {

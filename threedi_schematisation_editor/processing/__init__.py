@@ -1,4 +1,4 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 import os
 
 from qgis.core import QgsProcessingProvider
@@ -8,8 +8,8 @@ from threedi_schematisation_editor.processing.alghorithms_inflow import LinkSurf
 from threedi_schematisation_editor.processing.algorithms_1d import BottomLevelCalculator
 from threedi_schematisation_editor.processing.algorithms_1d2d import GenerateExchangeLines
 from threedi_schematisation_editor.processing.algorithms_conversion import (
+    ImportConnectionNodes,
     ImportCulverts,
-    ImportManholes,
     ImportOrifices,
     ImportPipes,
     ImportWeirs,
@@ -44,11 +44,11 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
         self.algorithms_list = [
             LinkSurfacesWithNodes(),
             GenerateExchangeLines(),
+            ImportConnectionNodes(),
             ImportCulverts(),
             ImportOrifices(),
             ImportWeirs(),
             ImportPipes(),
-            ImportManholes(),
             BottomLevelCalculator(),
         ]
         for alg in self.algorithms_list:

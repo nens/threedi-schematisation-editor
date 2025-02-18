@@ -1,4 +1,4 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 from qgis.core import (
     Qgis,
     QgsFeature,
@@ -11,7 +11,7 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
-from threedi_schematisation_editor.enumerators import CalculationType
+from threedi_schematisation_editor.enumerators import ExchangeTypeChannel
 from threedi_schematisation_editor.utils import get_features_by_expression, get_next_feature_id
 
 
@@ -46,7 +46,7 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
             <p>This processing algorithm generates exchange lines for (a selection of) channels. The resulting exchange line's geometry is a copy of the input channel's geometry, at user specified distance from that channel (the GIS term for this is 'offset curve'). The resulting exchange lines is added to the exchange line layer, and the attribute 'channel_id' refers to the channel it was derived from.</p>
             <h3>Parameters</h3>
             <h4>Input channel layer</h4>
-            <p>Usually this is the Channel layer that is added to the project with the 3Di Schematisation Editor. Technically, any layer with a line geometry and the fields 'id' and 'calculation_type' can be used as input.</p>
+            <p>Usually this is the Channel layer that is added to the project with the 3Di Schematisation Editor. Technically, any layer with a line geometry and the fields 'id' and 'exchange_type' can be used as input.</p>
             <h4>Distance</h4>
             <p>Offset distance in meters. A positive value will place the output exchange line to the left of the line, negative values will place it to the right.</p>
             <h4>Exchange lines layer</h4>
@@ -64,7 +64,9 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
             )
         )
 
-        offset_param = QgsProcessingParameterNumber(self.OFFSET_DISTANCE, self.tr("Distance (m)"), type=QgsProcessingParameterNumber.Double)
+        offset_param = QgsProcessingParameterNumber(
+            self.OFFSET_DISTANCE, self.tr("Distance (m)"), type=QgsProcessingParameterNumber.Double
+        )
         offset_param.setMetadata({"widget_wrapper": {"decimals": 3}})
         self.addParameter(offset_param)
         self.addParameter(
@@ -81,11 +83,11 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
         if success:
             invalid_parameters_messages = []
             channels = self.parameterAsSource(parameters, self.INPUT_CHANNELS, context)
-            required_channel_fields = {"id", "calculation_type"}
+            required_channel_fields = {"id", "exchange_type"}
             channels_field_names = {f.name() for f in channels.fields()}
             if not required_channel_fields.issubset(channels_field_names):
                 invalid_parameters_messages.append(
-                    "Channel layer is missing required fields ('id' and/or 'calculation_type')"
+                    "Channel layer is missing required fields ('id' and/or 'exchange_type')"
                 )
             offset_distance = self.parameterAsDouble(parameters, self.OFFSET_DISTANCE, context)
             if offset_distance == 0:
@@ -112,15 +114,15 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
         exchange_line_feats = []
         exchange_lines_fields = exchange_lines_lyr.fields()
         current_exchange_line_id = get_next_feature_id(exchange_lines_lyr)
-        calculation_type_max_exchange_lines = {
-            CalculationType.ISOLATED.value: 0,
-            CalculationType.EMBEDDED.value: 0,
-            CalculationType.CONNECTED.value: 1,
-            CalculationType.DOUBLE_CONNECTED.value: 2,
+        exchange_type_max_exchange_lines = {
+            ExchangeTypeChannel.ISOLATED.value: 0,
+            ExchangeTypeChannel.EMBEDDED.value: 0,
+            ExchangeTypeChannel.CONNECTED.value: 1,
+            ExchangeTypeChannel.DOUBLE_CONNECTED.value: 2,
         }
         error_template = (
-            "Error: channel {} with calculation type {} ({}) already has a maximum of {} exchange lines. "
-            "Change the calculation type or remove exchange lines for this channel and try again."
+            "Error: channel {} with exchange type {} ({}) already has a maximum of {} exchange lines. "
+            "Change the exchange type or remove exchange lines for this channel and try again."
         )
         for channel_feat in channels.getFeatures():
             channel_fid = channel_feat.id()
@@ -128,18 +130,18 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
             if not channel_id:
                 feedback.reportError(f"Error: invalid channel ID. Processing feature with FID {channel_fid} skipped.")
                 continue
-            calculation_type = channel_feat["calculation_type"]
-            if calculation_type not in calculation_type_max_exchange_lines:
+            exchange_type = channel_feat["exchange_type"]
+            if exchange_type not in exchange_type_max_exchange_lines:
                 feedback.reportError(
-                    f"Error: invalid channel calculation type. Processing feature with FID {channel_fid} skipped."
+                    f"Error: invalid channel exchange type. Processing feature with FID {channel_fid} skipped."
                 )
                 continue
-            calculation_type_name = CalculationType(calculation_type).name
+            exchange_type_name = ExchangeTypeChannel(exchange_type).name
             channel_expression_text = f'"channel_id" = {channel_id}'
             channel_exchange_lines = list(get_features_by_expression(exchange_lines_lyr, channel_expression_text))
-            calc_type_limit = calculation_type_max_exchange_lines[calculation_type]
+            calc_type_limit = exchange_type_max_exchange_lines[exchange_type]
             if len(channel_exchange_lines) >= calc_type_limit:
-                error_msg = error_template.format(channel_id, calculation_type, calculation_type_name, calc_type_limit)
+                error_msg = error_template.format(channel_id, exchange_type, exchange_type_name, calc_type_limit)
                 feedback.reportError(error_msg)
                 continue
             channel_geom = channel_feat.geometry()
