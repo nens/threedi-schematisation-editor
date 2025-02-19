@@ -33,7 +33,6 @@ from threedi_schematisation_editor.utils import (
     enum_entry_name_format,
     get_filepath,
     is_optional,
-    layer_to_gpkg,
     optional_type,
 )
 
@@ -442,7 +441,7 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
                 item = self.field_map_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = self.field_map_tv.indexWidget(index)
-                ImportFieldMappingUtils.update_widget_with_config(widget, field_name, field_type, field_config)
+                ImportFieldMappingUtils.update_widget_with_config(widget, key_name, field_type, field_config)
             row_idx += 1
 
     def save_import_settings(self):
@@ -803,7 +802,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
-                ImportFieldMappingUtils.update_widget_with_config(widget, field_name, field_type, field_config)
+                ImportFieldMappingUtils.update_widget_with_config(widget, key_name, field_type, field_config)
             row_idx += 1
 
     def save_import_settings(self):
