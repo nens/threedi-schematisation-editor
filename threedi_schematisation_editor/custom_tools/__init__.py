@@ -808,6 +808,11 @@ class StructuresIntegrator(LinearStructuresImporter):
                         closest_xs_feat_copy["channel_id"] = channel_id
                         closest_xs_feat_copy["id"] = next_cross_section_location_id
                         next_cross_section_location_id += 1
+                        
+                        # Force QGIS to generate a new, unique FID
+                        closest_xs_feat_copy["fid"] = None
+                        closest_xs_feat_copy.setId(-1)
+                        
                         cross_section_location_copies.append(closest_xs_feat_copy)
         if cross_section_location_copies:
             self.cross_section_location_layer.addFeatures(cross_section_location_copies)
@@ -956,7 +961,8 @@ class StructuresIntegrator(LinearStructuresImporter):
         # Process structures
         structures_to_add = []
         for structure_id, structure_feat in enumerate(self.features_to_add[self.structure_layer_name], start=1):
-            structure_feat["fid"] = structure_id
+            structure_feat["fid"] = None  # Force QGIS to generate a new, unique FID
+            structure_feat.setId(-1)  # Force QGIS to generate a new, unique FID
             structure_feat["id"] = structure_id
             structures_to_add.append(structure_feat)
         self.structure_layer.startEditing()
