@@ -312,19 +312,19 @@ def set_initial_layer_configuration(layer, model_cls):
             continue
         try:
             field_type = model_cls.__annotations__[column_name]
-            if is_optional(field_type):
+            field_is_optional = is_optional(field_type)
+            if field_is_optional:
                 field_type = optional_type(field_type)
-                optional = True
-            else:
-                optional = False
             field_idx = fields.lookupField(column_name)
             if issubclass(field_type, Enum):
-                ews = enum_to_editor_widget_setup(field_type, optional, enum_name_format_fn=enum_entry_name_format)
+                ews = enum_to_editor_widget_setup(
+                    field_type, field_is_optional, enum_name_format_fn=enum_entry_name_format
+                )
             else:
                 if column_name.startswith("hydraulic_conductivity"):
-                    ews = dataclass_field_to_widget_setup(field_type, optional=True, Min=0)
+                    ews = dataclass_field_to_widget_setup(field_type, optional=field_is_optional, Min=0)
                 else:
-                    ews = dataclass_field_to_widget_setup(field_type)
+                    ews = dataclass_field_to_widget_setup(field_type, optional=field_is_optional)
             if ews is not None:
                 layer.setEditorWidgetSetup(field_idx, ews)
         except KeyError:
