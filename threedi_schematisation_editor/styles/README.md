@@ -1,0 +1,21 @@
+# Vector styles
+
+All vector layers (including layers without geometry) have one or multiple predefined styles. Each style consists of several categories (e.g. symbology, labelling, attribute form, etc.). QML files can contain style settings for one, several, or all of these categories.
+
+If a layer has multiple styles, differences between these styles are usually limited to a subset of styling categories. For example, the only difference between the "default" and "code" styles of the Channel layer is the labelling. To keep this manageable, a system has been implemented that allows the sharing of style categories between styles. In our example, the "code" style will refer the  exact same .qml files as the "default" style, *except* for the labelling. If we change the symbology qml, these changes will automatically be reflected in both the "default" and the "code" style. 
+
+The names of the styling categories are the same as the keys in the QML file.
+
+The styling system has two components: the qml files and a configuration.
+
+## QML files
+
+The QML files are stored in ``vector/{layer_name}/{styling_category}``. In our example, there would be one for field aliases, ``vector/channel/aliases/default.qml``, and two files for labelling: ``vector/channel/labelling/default.qml`` and ``vector/channel/labelling/code.qml``.
+
+Some style settings are shared among all layers. These are stored in ``vector/general``. For example, ``vector/general/previewExpression/default.qml``
+
+## Configuration
+
+The configuration is defined in ``style_config.py``. All styles for a layer must have the same style categories. For example, the "default" style of the channel layer does not have any labelling, but because the "code" style of that layer does have labelling, a "labelling" qml must also be configured for the "default" style. The reason for this is that when users switch back from "code" to "default", the labelling must be reset as well.
+
+
