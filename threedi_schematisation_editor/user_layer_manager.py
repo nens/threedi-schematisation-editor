@@ -375,7 +375,13 @@ class LayersManager:
         style_manager = layer.styleManager()
         try:
             layer_style_config = self.vector_style_configs[model_cls.__tablename__]
-            for style_name, style_categories in layer_style_config.styles.items():
+            style_names = [
+                style_name for style_name in layer_style_config.styles.keys()
+                if style_name != default_style_name
+            ]
+            style_names.append(default_style_name)  # make sure default is last
+            for style_name in style_names:
+                style_categories = layer_style_config.styles[style_name]
                 style_paths = [qml_main_dir / style_path for style_path in style_categories.values()]
                 merged_qml = merge_qml_styles(style_paths)
                 layer.loadNamedStyle(str(merged_qml))
