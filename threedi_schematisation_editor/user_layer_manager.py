@@ -33,10 +33,10 @@ from threedi_schematisation_editor.utils import (
     add_layer_to_group,
     create_tree_group,
     get_form_ui_path,
-    get_multiple_qml_style_paths,
     get_qml_style_path,
     gpkg_layer,
     hillshade_layer,
+    merge_qml_styles,
     modify_raster_style,
     remove_group_with_children,
     remove_layer,
@@ -376,9 +376,9 @@ class LayersManager:
         try:
             layer_style_config = self.vector_style_configs[model_cls.__tablename__]
             for style_name, style_categories in layer_style_config.styles.items():
-                for style_category, style_path in style_categories.items():
-                    style_path = os.path.join(qml_main_dir, style_path)
-                    layer.loadNamedStyle(style_path)
+                style_paths = [qml_main_dir / style_path for style_path in style_categories.values()]
+                merged_qml = merge_qml_styles(style_paths)
+                layer.loadNamedStyle(str(merged_qml))
                 set_initial_layer_configuration(layer, model_cls)
                 style_manager.addStyleFromLayer(style_name)
         except KeyError:

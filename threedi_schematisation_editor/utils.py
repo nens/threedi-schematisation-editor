@@ -5,8 +5,11 @@ import sys
 from enum import Enum
 from itertools import groupby
 from operator import attrgetter, itemgetter
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Union
 from uuid import uuid4
+from xml.etree import ElementTree
 
 from qgis.core import (
     NULL,
@@ -165,6 +168,35 @@ def get_multiple_qml_style_paths(styles_folder_name, *subfolders):
     else:
         qml_paths = []
     return qml_paths
+
+
+def merge_qml_styles(qml_files) -> Path:
+    """
+    Merges multiple QML files into a single temporary QML file.
+    """
+    if not qml_files:
+        raise ValueError("No QML files provided.")
+
+    # Parse the first QML file as the base
+    base_tree = ElementTree.parse(qml_files[0])
+    base_root = base_tree.getroot()
+
+    for qml_file in qml_files[1:]:
+        tree = ElementTree.parse(qml_file)
+        root = tree.getroot()
+
+        for new_element in root:
+            existing_element = base_root.find(new_element.tag)
+            if existing_element is not None:
+                raise RuntimeError(f"Duplicate tag {new_element.tag} in {qml_files}")
+            base_root.append(new_element)
+
+    # Create a temporary file to save the merged QML
+    temp_qml = NamedTemporaryFile(delete=False, suffix=".qml")
+    temp_tree = ElementTree.ElementTree(base_root)
+    temp_tree.write(temp_qml.name, encoding="utf-8", xml_declaration=True)
+
+    return Path(temp_qml.name)
 
 
 def get_form_ui_path(table_name):
