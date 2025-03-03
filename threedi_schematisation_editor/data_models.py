@@ -991,7 +991,6 @@ class TableControl(ModelObject):
     action_table: Optional[str]
     target_type: Optional[str]
     target_id: Optional[int]
-    measure_variable: Optional[MeasureVariable]
     measure_operator: Optional[str]
     tags: Optional[str]
 
