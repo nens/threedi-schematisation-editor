@@ -28,7 +28,8 @@ from threedi_schematisation_editor.enumerators import (
     SewerageType,
     TimeUnit,
     Unit,
-    Visualisation, FrictionShallowWaterDepthCorrection,
+    Visualisation, FrictionShallowWaterDepthCorrection, TimeIntegrationMethod, LimiterSlopeCrossSectionalArea2D,
+    MaxDegreeGaussSeidel, UseNestedNewton,
 )
 
 
@@ -846,21 +847,21 @@ class NumericalSettings(ModelObject):
     flow_direction_threshold: Optional[float]
     friction_shallow_water_depth_correction: Optional[FrictionShallowWaterDepthCorrection]
     general_numerical_threshold: Optional[float]
-    time_integration_method: Optional[int]
-    limiter_waterlevel_gradient_1d: Optional[int]
-    limiter_waterlevel_gradient_2d: Optional[int]
-    limiter_slope_crossectional_area_2d: Optional[int]
-    limiter_slope_friction_2d: Optional[int]
+    time_integration_method: Optional[TimeIntegrationMethod]
+    limiter_waterlevel_gradient_1d: Optional[bool]
+    limiter_waterlevel_gradient_2d: Optional[bool]
+    limiter_slope_crossectional_area_2d: Optional[LimiterSlopeCrossSectionalArea2D]
+    limiter_slope_friction_2d: Optional[bool]
     max_non_linear_newton_iterations: Optional[int]
-    max_degree_gauss_seidel: int
+    max_degree_gauss_seidel: Optional[MaxDegreeGaussSeidel]
     min_friction_velocity: Optional[float]
     min_surface_area: Optional[float]
-    use_preconditioner_cg: Optional[int]
+    use_preconditioner_cg: Optional[bool]
     preissmann_slot: Optional[float]
     pump_implicit_ratio: Optional[float]
     limiter_slope_thin_water_layer: Optional[float]
     use_of_cg: int
-    use_nested_newton: int
+    use_nested_newton: Optional[UseNestedNewton]
 
 
 @dataclass

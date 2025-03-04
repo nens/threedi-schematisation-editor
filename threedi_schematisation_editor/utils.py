@@ -2,7 +2,7 @@
 import os
 import shutil
 import sys
-from enum import Enum
+from enum import Enum, IntEnum
 from itertools import groupby
 from operator import attrgetter, itemgetter
 from pathlib import Path
@@ -315,7 +315,7 @@ def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
         def enum_name_format_fn(entry_name):
             return entry_name
 
-    value_map = [{f"{enum_name_format_fn(entry.name)}": entry.value} for entry in enum]
+    value_map = [{f"{enum_name_format_fn(entry)}": entry.value} for entry in enum]
     if optional:
         null_value = QgsValueMapFieldFormatter.NULL_VALUE
         value_map.insert(0, {"": null_value})
@@ -323,11 +323,14 @@ def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
     return ews
 
 
-def enum_entry_name_format(entry_name):
-    if entry_name not in ["YZ", "HPE", "HDPE", "PVC"]:
-        formatted_entry_name = entry_name.capitalize().replace("_", " ")
+def enum_entry_name_format(entry):
+
+    if entry.name not in ["YZ", "HPE", "HDPE", "PVC"]:
+        formatted_entry_name = entry.name.capitalize().replace("_", " ")
     else:
-        formatted_entry_name = entry_name
+        formatted_entry_name = entry.name
+    if isinstance(entry, IntEnum):
+        formatted_entry_name = f"({entry.value}) {formatted_entry_name}"
     return formatted_entry_name
 
 

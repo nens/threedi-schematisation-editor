@@ -1,5 +1,5 @@
 # Copyright (C) 2025 by Lutra Consulting
-from enum import Enum
+from enum import Enum, IntEnum
 
 
 class GeometryType(Enum):
@@ -9,7 +9,7 @@ class GeometryType(Enum):
     Polygon = "Polygon"
 
 
-class BoundaryType(Enum):
+class BoundaryType(IntEnum):
     WATER_LEVEL = 1
     VELOCITY = 2
     DISCHARGE = 3
@@ -18,7 +18,7 @@ class BoundaryType(Enum):
     GROUNDWATER_DISCHARGE = 7
 
 
-class Later2DType(Enum):
+class Later2DType(IntEnum):
     SURFACE = 1
 
 
@@ -49,33 +49,33 @@ class AggregationMethod(Enum):
     CURRENT = "current"
 
 
-class ExchangeTypeChannel(Enum):
+class ExchangeTypeChannel(IntEnum):
     EMBEDDED = 100
     ISOLATED = 101
     CONNECTED = 102
     DOUBLE_CONNECTED = 105
 
 
-class ExchangeTypeCulvert(Enum):
+class ExchangeTypeCulvert(IntEnum):
     EMBEDDED = 100
     ISOLATED = 101
     CONNECTED = 102
     DOUBLE_CONNECTED = 105
 
 
-class ExchangeTypeNode(Enum):
+class ExchangeTypeNode(IntEnum):
     EMBEDDED = 0
     ISOLATED = 1
     CONNECTED = 2
 
 
-class ExchangeTypePipe(Enum):
+class ExchangeTypePipe(IntEnum):
     EMBEDDED = 0
     ISOLATED = 1
     CONNECTED = 2
 
 
-class CrossSectionShape(Enum):
+class CrossSectionShape(IntEnum):
     CLOSED_RECTANGLE = 0
     OPEN_RECTANGLE = 1
     CIRCLE = 2
@@ -92,26 +92,26 @@ class ManholeShape(Enum):
     RECTANGLE = "02"
 
 
-class Visualisation(Enum):
+class Visualisation(IntEnum):
     INSPECTION = 0
     OUTLET = 1
     PUMP = 2
     OTHER = 99
 
 
-class FrictionType(Enum):
+class FrictionType(IntEnum):
     CHEZY = 1
     MANNING = 2
 
 
-class FrictionTypeExtended(Enum):
+class FrictionTypeExtended(IntEnum):
     CHEZY = 1
     MANNING = 2
     CHEZY_WITH_CONVEYANCE = 3
     MANNING_WITH_CONVEYANCE = 4
 
 
-class InitializationType(Enum):
+class InitializationType(IntEnum):
     MAX = 0
     MIN = 1
     AVERAGE = 2
@@ -131,7 +131,7 @@ class SurfaceClass(Enum):
     PAND = "pand"
 
 
-class InterflowType(Enum):
+class InterflowType(IntEnum):
     NO_INTERLFOW = 0
     LOCAL_DEEPEST_POINT_SCALED_POROSITY = 1
     GLOBAL_DEEPEST_POINT_SCALED_POROSITY = 2
@@ -139,12 +139,12 @@ class InterflowType(Enum):
     GLOBAL_DEEPEST_POINT_CONSTANT_POROSITY = 4
 
 
-class LeveeMaterial(Enum):
+class LeveeMaterial(IntEnum):
     SAND = 1
     CLAY = 2
 
 
-class PipeMaterial(Enum):
+class PipeMaterial(IntEnum):
     CONCRETE = 0
     PVC = 1
     GRES = 2
@@ -158,12 +158,12 @@ class PipeMaterial(Enum):
     SHEET_IRON = 10
 
 
-class CrestType(Enum):
+class CrestType(IntEnum):
     BROAD_CRESTED = 3
     SHORT_CRESTED = 4
 
 
-class SewerageType(Enum):
+class SewerageType(IntEnum):
     COMBINED_SEWER = 0
     STORM_DRAIN = 1
     SANITARY_SEWER = 2
@@ -174,18 +174,18 @@ class SewerageType(Enum):
     STORAGE_AND_SETTLEMENT_TANK = 7
 
 
-class PumpType(Enum):
+class PumpType(IntEnum):
     SUCTION_SIDE = 1
     DELIVERY_SIDE = 2
 
 
-class InfiltrationSurfaceOption(Enum):
+class InfiltrationSurfaceOption(IntEnum):
     WHOLE_SURFACE_WHEN_RAINING = 0
     ALWAYS_WHOLE_SURFACE = 1
     WET_SURFACE_ONLY = 2
 
 
-class ZoomCategories(Enum):
+class ZoomCategories(IntEnum):
     # Visibility in live-site: 0 is lowest for smallest level (i.e. ditch)
     # and 5 for highest (rivers).
     LOWEST_VISIBILITY = 0
@@ -216,8 +216,32 @@ class ControlType(Enum):
     MEMORY = "memory"
 
 
-class FrictionShallowWaterDepthCorrection(Enum):
+class FrictionShallowWaterDepthCorrection(IntEnum):
     OFF = 0
     MAX_BETWEEN_AVERAGE_AND_DIVIDED_CHANNEL_BASED_FRICTION = 1
     ALWAYS_LINEARIZED = 2
     LINEARIZED_DEPTH_BASED_ON_WEIGHTED_AVERAGE = 3
+
+
+class TimeIntegrationMethod(IntEnum):
+    EULER_IMPLICIT = 0
+
+
+class LimiterSlopeCrossSectionalArea2D(IntEnum):
+    OFF = 0
+    HIGHER_ORDER_SCHEME = 1
+    VOLUME_DIVIDED_BY_SURFACE_AREA = 2
+    THIN_WATER_LAYER_APPROACH = 3
+
+
+class MaxDegreeGaussSeidel(IntEnum):
+    FOR_ONLY_2D_SURFACE_FLOW = 5
+    FOR_1D_AND_2D_FLOW = 7
+    FOR_1D_FLOW_2D_SURFACE_FLOW_AND_GROUNDWATER_FLOW = 70
+    FOR_ONLY_1D_FLOW = 700
+
+
+class UseNestedNewton(IntEnum):
+    FOR_SCHEMATISATIONS_WITHOUT_CLOSED_CROSS_SECTIONS = 0
+    FOR_SCHEMATISATIONS_WITH_CLOSED_CROSS_SECTIONS = 1
+
