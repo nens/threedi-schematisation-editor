@@ -28,9 +28,23 @@ from threedi_schematisation_editor.enumerators import (
     SewerageType,
     TimeUnit,
     Unit,
-    Visualisation, FrictionShallowWaterDepthCorrection, TimeIntegrationMethod, LimiterSlopeCrossSectionalArea2D,
-    MaxDegreeGaussSeidel, UseNestedNewton,
+    Visualisation,
+    FrictionShallowWaterDepthCorrection,
+    TimeIntegrationMethod,
+    LimiterSlopeCrossSectionalArea2D,
+    MaxDegreeGaussSeidel,
+    UseNestedNewton,
+    UseAdvection1D,
+    NodeOpenWaterDetection,
 )
+
+
+class HighPrecisionFloat(float):
+    """
+    Used to set the widget type for a field to TextEdit
+    so users can fill in any number of decimals and use scientific notation
+    """
+    pass
 
 
 class ModelObject:
@@ -687,18 +701,18 @@ class ModelSettings(ModelObject):
     minimum_cell_size: float
     calculation_point_distance_1d: float
     nr_grid_levels: int
-    node_open_water_detection: int
+    node_open_water_detection: NodeOpenWaterDetection
     minimum_table_step_size: float
     dem_file: Optional[str]
-    friction_type: Optional[int]
+    friction_type: Optional[FrictionType]
     friction_coefficient: float
     friction_coefficient_file: Optional[str]
     embedded_cutoff_threshold: Optional[float]
     epsg_code: Optional[int]
     max_angle_1d_advection: Optional[float]
-    friction_averaging: Optional[int]
+    friction_averaging: Optional[bool]
     table_step_size_1d: Optional[float]
-    use_2d_rain: int
+    use_2d_rain: bool
     use_interflow: bool
     use_simple_infiltration: bool
     use_groundwater_flow: bool
@@ -842,11 +856,11 @@ class NumericalSettings(ModelObject):
     id: int
     cfl_strictness_factor_1d: Optional[float]
     cfl_strictness_factor_2d: Optional[float]
-    convergence_cg: Optional[float]
-    convergence_eps: Optional[float]
-    flow_direction_threshold: Optional[float]
+    convergence_cg: Optional[HighPrecisionFloat]
+    convergence_eps: Optional[HighPrecisionFloat]
+    flow_direction_threshold: Optional[HighPrecisionFloat]
     friction_shallow_water_depth_correction: Optional[FrictionShallowWaterDepthCorrection]
-    general_numerical_threshold: Optional[float]
+    general_numerical_threshold: Optional[HighPrecisionFloat]
     time_integration_method: Optional[TimeIntegrationMethod]
     limiter_waterlevel_gradient_1d: Optional[bool]
     limiter_waterlevel_gradient_2d: Optional[bool]
@@ -854,10 +868,10 @@ class NumericalSettings(ModelObject):
     limiter_slope_friction_2d: Optional[bool]
     max_non_linear_newton_iterations: Optional[int]
     max_degree_gauss_seidel: Optional[MaxDegreeGaussSeidel]
-    min_friction_velocity: Optional[float]
-    min_surface_area: Optional[float]
+    min_friction_velocity: Optional[HighPrecisionFloat]
+    min_surface_area: Optional[HighPrecisionFloat]
     use_preconditioner_cg: Optional[bool]
-    preissmann_slot: Optional[float]
+    preissmann_slot: Optional[HighPrecisionFloat]
     pump_implicit_ratio: Optional[float]
     limiter_slope_thin_water_layer: Optional[float]
     use_of_cg: int
@@ -870,8 +884,8 @@ class PhysicalSettings(ModelObject):
     __layername__ = "Physical settings"
     __geometrytype__ = GeometryType.NoGeometry
 
-    use_advection_1d: int
-    use_advection_2d: int
+    use_advection_1d: UseAdvection1D
+    use_advection_2d: bool
 
 
 @dataclass
@@ -882,7 +896,7 @@ class SimulationTemplateSettings(ModelObject):
 
     id: int
     name: str
-    use_0d_inflow: int
+    use_0d_inflow: bool
     use_structure_control: bool
 
 
