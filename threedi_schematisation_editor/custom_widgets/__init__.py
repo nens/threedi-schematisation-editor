@@ -984,27 +984,27 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
             local_schematisation_name = local_schematisation.name
             wip_revision = local_schematisation.wip_revision
             try:
-                wip_revision_gpkg = wip_revision.geopackage_filepath
+                wip_revision_db = wip_revision.schematisation_db_filepath
             except (AttributeError, FileNotFoundError):
-                wip_revision_gpkg = None
-            if wip_revision_gpkg is not None:
+                wip_revision_db = None
+            if wip_revision_db is not None:
                 schematisation_name_item = QStandardItem(local_schematisation_name)
                 revision_number_str = f"{wip_revision.number} (work in progress)"
                 revision_number_item = QStandardItem(revision_number_str)
-                revision_number_item.setData(wip_revision_gpkg, Qt.UserRole)
+                revision_number_item.setData(wip_revision_db, Qt.UserRole)
                 self.schematisation_model.appendRow([schematisation_name_item, revision_number_item])
                 if wip_revision.schematisation_dir == last_used_schematisation_dir:
                     last_used_schematisation_row_number = self.schematisation_model.rowCount() - 1
             for revision_number, revision in local_schematisation.revisions.items():
                 try:
-                    revision_gpkg = revision.geopackage_filepath
-                    if revision_gpkg is None:
+                    revision_db = revision.schematisation_db_filepath
+                    if revision_db is None:
                         continue
                 except FileNotFoundError:
                     continue
                 schematisation_name_item = QStandardItem(local_schematisation_name)
                 revision_number_item = QStandardItem(str(revision.number))
-                revision_number_item.setData(revision_gpkg, Qt.UserRole)
+                revision_number_item.setData(revision_db, Qt.UserRole)
                 self.schematisation_model.appendRow([schematisation_name_item, revision_number_item])
                 if revision.schematisation_dir == last_used_schematisation_dir:
                     last_used_schematisation_row_number = self.schematisation_model.rowCount() - 1
@@ -1026,8 +1026,8 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
                 return
             current_row = index.row()
             revision_item = self.schematisation_model.item(current_row, 1)
-            revision_gpkg = revision_item.data(Qt.UserRole)
-            self.selected_schematisation_filepath = revision_gpkg
+            revision_db = revision_item.data(Qt.UserRole)
+            self.selected_schematisation_filepath = revision_db
         else:
             selected_filepath = self.file_browse_widget.filePath()
             if not selected_filepath:
