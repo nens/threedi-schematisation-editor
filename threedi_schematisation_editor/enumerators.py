@@ -214,3 +214,10 @@ class MeasureVariable(Enum):
 class ControlType(Enum):
     TABLE = "table"
     MEMORY = "memory"
+
+
+class FrictionShallowWaterDepthCorrection(Enum):
+    OFF = 0
+    MAX_BETWEEN_AVERAGE_AND_DIVIDED_CHANNEL_BASED_FRICTION = 1
+    ALWAYS_LINEARIZED = 2
+    LINEARIZED_DEPTH_BASED_ON_WEIGHTED_AVERAGE = 3

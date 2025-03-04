@@ -620,7 +620,7 @@ style_config_data = MappingProxyType(
             },
         },
         "groundwater": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("groundwater") / "aliases" / "default.qml",
@@ -628,11 +628,12 @@ style_config_data = MappingProxyType(
                     "constraints": Path("groundwater") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("groundwater") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("groundwater") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
         "initial_conditions": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("initial_conditions") / "aliases" / "default.qml",
@@ -640,6 +641,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("initial_conditions") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("initial_conditions") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("initial_conditions") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
@@ -655,7 +657,7 @@ style_config_data = MappingProxyType(
             },
         },
         "interflow": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("interflow") / "aliases" / "default.qml",
@@ -663,6 +665,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("interflow") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("interflow") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("interflow") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
@@ -915,7 +918,7 @@ style_config_data = MappingProxyType(
             },
         },
         "model_settings": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("model_settings") / "aliases" / "default.qml",
@@ -923,11 +926,12 @@ style_config_data = MappingProxyType(
                     "constraints": Path("model_settings") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("model_settings") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("model_settings") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
         "numerical_settings": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("numerical_settings") / "aliases" / "default.qml",
@@ -935,6 +939,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("numerical_settings") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("numerical_settings") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("numerical_settings") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
@@ -1236,7 +1241,7 @@ style_config_data = MappingProxyType(
             },
         },
         "simple_infiltration": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("simple_infiltration") / "aliases" / "default.qml",
@@ -1244,6 +1249,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("simple_infiltration") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("simple_infiltration") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("simple_infiltration") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
@@ -1351,13 +1357,15 @@ style_config_data = MappingProxyType(
             },
         },
         "surface_parameters": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES,
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("surface_parameters") / "aliases" / "default.qml",
                     "attributetableconfig": Path("surface_parameters") / "attributetableconfig" / "default.qml",
                     "constraints": Path("surface_parameters") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("surface_parameters") / "fieldConfiguration" / "default.qml",
+                    "attributeEditorForm": Path("surface_parameters") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
@@ -1422,7 +1430,7 @@ style_config_data = MappingProxyType(
             },
         },
         "time_step_settings": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("aggregation_settings") / "aliases" / "default.qml",
@@ -1430,6 +1438,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("aggregation_settings") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("time_step_settings") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("time_step_settings") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },

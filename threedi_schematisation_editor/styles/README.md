@@ -18,4 +18,11 @@ Some style settings are shared among all layers. These are stored in ``vector/ge
 
 The configuration is defined in ``style_config.py``. All styles for a layer must have the same style categories. For example, the "default" style of the channel layer does not have any labelling, but because the "code" style of that layer does have labelling, a "labelling" qml must also be configured for the "default" style. The reason for this is that when users switch back from "code" to "default", the labelling must be reset as well.
 
+## Field configurations
+Field configurations (e.g. should it be shown to the users as a boolean/checkbox, value map, text edit etc.) are automatically chosen based on the type annotations in threedi_schematisation_editor.data_models.py. For example, to define a value map, the field type should be an Enum, such as this field in ``aggregation_settings``:     
+
+    aggregation_method: Optional[AggregationMethod]
+
+
+
 

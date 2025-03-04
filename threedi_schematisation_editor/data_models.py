@@ -28,7 +28,7 @@ from threedi_schematisation_editor.enumerators import (
     SewerageType,
     TimeUnit,
     Unit,
-    Visualisation,
+    Visualisation, FrictionShallowWaterDepthCorrection,
 )
 
 
@@ -844,7 +844,7 @@ class NumericalSettings(ModelObject):
     convergence_cg: Optional[float]
     convergence_eps: Optional[float]
     flow_direction_threshold: Optional[float]
-    friction_shallow_water_depth_correction: Optional[int]
+    friction_shallow_water_depth_correction: Optional[FrictionShallowWaterDepthCorrection]
     general_numerical_threshold: Optional[float]
     time_integration_method: Optional[int]
     limiter_waterlevel_gradient_1d: Optional[int]
