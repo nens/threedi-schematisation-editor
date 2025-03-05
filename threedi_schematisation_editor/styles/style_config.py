@@ -329,11 +329,13 @@ style_config_data = MappingProxyType(
             },
         },
         "dem_average_area": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY,
+            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("dem_average_area") / "aliases" / "default.qml",
                     "attributetableconfig": Path("dem_average_area") / "attributetableconfig" / "default.qml",
+                    "attributeEditorForm": Path("dem_average_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "constraints": Path("dem_average_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dem_average_area") / "fieldConfiguration" / "default.qml",
                     "labeling": Path("general") / "labeling" / "default.qml",
@@ -344,6 +346,8 @@ style_config_data = MappingProxyType(
                 "id": {
                     "aliases": Path("dem_average_area") / "aliases" / "default.qml",
                     "attributetableconfig": Path("dem_average_area") / "attributetableconfig" / "default.qml",
+                    "attributeEditorForm": Path("dem_average_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "constraints": Path("dem_average_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dem_average_area") / "fieldConfiguration" / "default.qml",
                     "labeling": Path("general") / "labeling" / "id.qml",
@@ -354,6 +358,8 @@ style_config_data = MappingProxyType(
                 "code": {
                     "aliases": Path("dem_average_area") / "aliases" / "default.qml",
                     "attributetableconfig": Path("dem_average_area") / "attributetableconfig" / "default.qml",
+                    "attributeEditorForm": Path("dem_average_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "constraints": Path("dem_average_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dem_average_area") / "fieldConfiguration" / "default.qml",
                     "labeling": Path("general") / "labeling" / "code.qml",
@@ -364,6 +370,8 @@ style_config_data = MappingProxyType(
                 "display_name": {
                     "aliases": Path("dem_average_area") / "aliases" / "default.qml",
                     "attributetableconfig": Path("dem_average_area") / "attributetableconfig" / "default.qml",
+                    "attributeEditorForm": Path("dem_average_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "constraints": Path("dem_average_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dem_average_area") / "fieldConfiguration" / "default.qml",
                     "labeling": Path("general") / "labeling" / "display_name.qml",
@@ -522,7 +530,7 @@ style_config_data = MappingProxyType(
             },
         },
         "grid_refinement_area": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("grid_refinement_area") / "aliases" / "default.qml",
@@ -530,6 +538,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_area") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_area") / "renderer-v2" / "default.qml",  # symbology
@@ -541,6 +550,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_area") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_area") / "renderer-v2" / "default.qml",  # symbology
@@ -552,6 +562,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_area") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_area") / "renderer-v2" / "default.qml",  # symbology
@@ -563,6 +574,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_area") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_area") / "renderer-v2" / "default.qml",  # symbology
@@ -571,7 +583,7 @@ style_config_data = MappingProxyType(
             },
         },
         "grid_refinement_line": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("grid_refinement_line") / "aliases" / "default.qml",
@@ -579,6 +591,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_line") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_line") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_line") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_line") / "renderer-v2" / "default.qml",  # symbology
@@ -590,6 +603,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_line") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_line") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_line") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_line") / "renderer-v2" / "default.qml",  # symbology
@@ -601,6 +615,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_line") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_line") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_line") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_line") / "renderer-v2" / "default.qml",  # symbology
@@ -612,6 +627,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_line") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_line") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_line") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_line") / "renderer-v2" / "default.qml",  # symbology
@@ -944,7 +960,7 @@ style_config_data = MappingProxyType(
             },
         },
         "obstacle": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("obstacle") / "aliases" / "default.qml",
@@ -952,6 +968,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("obstacle") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("obstacle") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("obstacle") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("obstacle") / "renderer-v2" / "default.qml",  # symbology
@@ -963,6 +980,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("obstacle") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("obstacle") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("obstacle") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("obstacle") / "renderer-v2" / "default.qml",  # symbology
@@ -974,6 +992,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("obstacle") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("obstacle") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("obstacle") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("obstacle") / "renderer-v2" / "default.qml",  # symbology
@@ -985,6 +1004,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("obstacle") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("obstacle") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("obstacle") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("obstacle") / "renderer-v2" / "default.qml",  # symbology

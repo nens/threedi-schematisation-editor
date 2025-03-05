@@ -339,7 +339,8 @@ def enum_entry_name_format(entry):
             replace("0d", "0D").
             replace("1d", "1D").
             replace("2d", "2D").
-            replace("ross section", "ross-section")
+            replace("ross section", "ross-section").
+            replace("M3 seconds", "m³/s")
         )
     else:
         formatted_entry_name = entry.name

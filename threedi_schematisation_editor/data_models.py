@@ -35,7 +35,7 @@ from threedi_schematisation_editor.enumerators import (
     MaxDegreeGaussSeidel,
     UseNestedNewton,
     UseAdvection1D,
-    NodeOpenWaterDetection,
+    NodeOpenWaterDetection, ActionType, TargetType, MeasureOperator,
 )
 
 
@@ -978,18 +978,18 @@ class MemoryControl(ModelObject):
     __layername__ = "Memory control"
     __geometrytype__ = GeometryType.Point
 
-    id: Optional[int]
+    id: int
     code: str
     display_name: str
-    action_type: Optional[str]
-    action_value_1: Optional[float]
+    action_type: ActionType
+    action_value_1: float
     action_value_2: Optional[float]
     is_inverse: bool
     is_active: bool
-    lower_threshold: Optional[float]
-    upper_threshold: Optional[float]
-    target_type: Optional[str]
-    target_id: Optional[int]
+    lower_threshold: float
+    upper_threshold: float
+    target_type: TargetType
+    target_id: int
     tags: Optional[str]
 
 
@@ -999,15 +999,15 @@ class TableControl(ModelObject):
     __layername__ = "Table control"
     __geometrytype__ = GeometryType.Point
 
-    id: Optional[int]
-    code: str
-    display_name: str
-    action_type: Optional[str]
-    action_table: Optional[str]
-    target_type: Optional[str]
-    target_id: Optional[int]
-    measure_variable: Optional[MeasureVariable]
-    measure_operator: Optional[str]
+    id: int
+    code: Optional[str]
+    display_name: Optional[str]
+    action_type: ActionType
+    action_table: str
+    target_type: TargetType
+    target_id: int
+    measure_variable: MeasureVariable
+    measure_operator: MeasureOperator
     tags: Optional[str]
 
 
@@ -1036,8 +1036,8 @@ class VegetationDrag2D(ModelObject):
 
 
 MODEL_1D_ELEMENTS = (
-    ConnectionNode,
     BoundaryCondition1D,
+    ConnectionNode,
     Pump,
     PumpMap,
     Weir,

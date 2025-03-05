@@ -93,9 +93,11 @@ class ManholeShape(Enum):
 
 
 class Visualisation(IntEnum):
-    INSPECTION = 0
+    MANHOLE = 0
     OUTLET = 1
-    PUMP = 2
+    PUMP_CHAMBER = 2
+    INFILTRATION_MANHOLE = 3
+    GULLY = 4
     OTHER = 99
 
 
@@ -203,7 +205,7 @@ class TimeUnit(Enum):
 
 
 class Unit(Enum):
-    M3_SECONDS = "m3/s"
+    M3_SECONDS = "m3/s"  # will be displayed as m³/s
 
 
 class MeasureVariable(Enum):
@@ -214,6 +216,27 @@ class MeasureVariable(Enum):
 class ControlType(Enum):
     TABLE = "table"
     MEMORY = "memory"
+
+
+class ActionType(Enum):
+    SET_DISCHARGE_COEFFICIENTS = "set_discharge_coefficients"  # not pump
+    SET_CREST_LEVEL = "set_crest_level"  # orifice, weir only
+    SET_PUMP_CAPACITY = "set_pump_capacity"  # only pump
+    SET_GATE_LEVEL = "set_gate_level"
+
+
+class TargetType(Enum):
+    CHANNEL = "v2_channel"
+    CULVERT = "v2_culvert"
+    ORIFICE = "v2_orifice"
+    PIPE = "v2_pipe"
+    PUMP = "v2_pumpstation"
+    WEIR = "v2_weir"
+
+
+class MeasureOperator(Enum):
+    LARGER_THAN = ">"
+    SMALLER_THAN = "<"
 
 
 class FrictionShallowWaterDepthCorrection(IntEnum):
