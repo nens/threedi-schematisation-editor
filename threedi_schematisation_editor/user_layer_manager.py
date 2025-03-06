@@ -33,7 +33,6 @@ from threedi_schematisation_editor.utils import (
     add_layer_to_group,
     create_tree_group,
     get_form_ui_path,
-    get_multiple_qml_style_paths,
     get_qml_style_path,
     gpkg_layer,
     hillshade_layer,

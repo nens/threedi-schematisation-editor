@@ -28,10 +28,12 @@ from threedi_schematisation_editor.utils import (
     add_settings_entry,
     can_write_in_dir,
     check_enable_macros_option,
+    check_wal_for_sqlite,
     get_filepath,
     get_icon_path,
     is_gpkg_connection_exists,
     migrate_schematisation_schema,
+    set_wal_for_sqlite_mode,
 )
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
@@ -99,6 +101,7 @@ class ThreediSchematisationEditorPlugin:
         self.toolbar.addAction(self.action_import_features)
         self.toggle_active_project_actions()
         self.active_schematisation_changed()
+        self.ensure_sqlite_wal_status()
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
@@ -210,6 +213,13 @@ class ThreediSchematisationEditorPlugin:
                 f"Required 'Macros enabled' option is set to '{macros_status}'. "
                 "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable macros)."
             )
+            self.uc.bar_warn(msg, dur=10)
+
+    def ensure_sqlite_wal_status(self):
+        wal_status = check_wal_for_sqlite()
+        if wal_status is not False:
+            set_wal_for_sqlite_mode(False)
+            msg = f"WAL (Write-Ahead Logging) for GeoPackage format was disabled. To apply changes please restart QGIS."
             self.uc.bar_warn(msg, dur=10)
 
     def on_3di_project_read(self):
