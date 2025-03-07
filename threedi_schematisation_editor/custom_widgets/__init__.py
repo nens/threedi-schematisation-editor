@@ -519,7 +519,7 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
                 source_layer,
                 self.model_gpkg,
                 import_settings,
-                target_layer,
+                target_layer=target_layer,
             )
             features_importer.import_features(selected_ids=selected_feat_ids)
             success_msg = (
