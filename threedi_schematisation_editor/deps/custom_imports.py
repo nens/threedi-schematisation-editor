@@ -29,7 +29,9 @@ GEOALCHEMY2_WHEEL = os.path.join(MAIN_DIR, f"GeoAlchemy2-{REQUIRED_GEOALCHEMY2_V
 SQLALCHEMY_WHEEL = os.path.join(MAIN_DIR, f"SQLAlchemy-{REQUIRED_SQLALCHEMY_VERSION}-py3-none-any.whl")
 ALEMBIC_WHEEL = os.path.join(MAIN_DIR, f"alembic-{REQUIRED_ALEMBIC_VERSION}-py3-none-any.whl")
 MAKO_WHEEL = os.path.join(MAIN_DIR, f"Mako-{REQUIRED_MAKO_VERSION}-py3-none-any.whl")
-TYPING_EXTENSIONS_WHEEL = os.path.join(MAIN_DIR, f"typing_extensions-{REQUIRED_TYPING_EXTENSIONS_VERSION}-py3-none-any.whl")
+TYPING_EXTENSIONS_WHEEL = os.path.join(
+    MAIN_DIR, f"typing_extensions-{REQUIRED_TYPING_EXTENSIONS_VERSION}-py3-none-any.whl"
+)
 
 
 def patch_wheel_imports():
