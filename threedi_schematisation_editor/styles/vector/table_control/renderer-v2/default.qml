@@ -19,7 +19,7 @@
             <Option value="3x:0,0,0,0,0,0" type="QString" name="offset_map_unit_scale" />
             <Option value="MM" type="QString" name="offset_unit" />
             <Option value="diameter" type="QString" name="scale_method" />
-            <Option value="6" type="QString" name="size" />
+            <Option value="4" type="QString" name="size" />
             <Option value="3x:0,0,0,0,0,0" type="QString" name="size_map_unit_scale" />
             <Option value="MM" type="QString" name="size_unit" />
             <Option value="1" type="QString" name="vertical_anchor_point" />
