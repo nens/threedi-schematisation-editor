@@ -773,7 +773,7 @@ class CrossSectionLocationHandler(UserLayerHandler):
             "length": 0.8,
             "width": 0.8,
             "shape": ManholeShape.ROUND.value,
-            "visualisation": Visualisation.INSPECTION.value,
+            "visualisation": Visualisation.MANHOLE.value,
             "exchange_type": ExchangeTypeNode.ISOLATED.value,
             "bottom_level": -10.0,
         }
