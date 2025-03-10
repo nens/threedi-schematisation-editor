@@ -50,11 +50,11 @@ class LayersManager:
     """Class with methods and attributes used for managing 3Di User Layers."""
 
     VECTOR_GROUPS = (
+        ("Laterals & 0D inflow", dm.MODEL_0D_INFLOW_ELEMENTS),
+        ("Structure control", dm.STRUCTURE_CONTROL_ELEMENTS),
         ("1D", dm.MODEL_1D_ELEMENTS),
         ("1D2D", dm.MODEL_1D2D_ELEMENTS),
         ("2D", dm.MODEL_2D_ELEMENTS),
-        ("Laterals & 0D inflow", dm.MODEL_0D_INFLOW_ELEMENTS),
-        ("Structure control", dm.STRUCTURE_CONTROL_ELEMENTS),
         ("Hydrological processes", dm.HYDROLOGICAL_PROCESSES),
         ("Settings", dm.SETTINGS_ELEMENTS),
     )
