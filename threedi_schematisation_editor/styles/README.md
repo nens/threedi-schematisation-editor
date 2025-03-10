@@ -12,17 +12,21 @@ The styling system has two components: the qml files and a configuration.
 
 The QML files are stored in ``vector/{layer_name}/{styling_category}``. In our example, there would be one for field aliases, ``vector/channel/aliases/default.qml``, and two files for labelling: ``vector/channel/labelling/default.qml`` and ``vector/channel/labelling/code.qml``.
 
-Some style settings are shared among all layers. These are stored in ``vector/general``. For example, ``vector/general/previewExpression/default.qml``
+Some style settings are shared among all layers. These are stored in `vector/general`. For example, `vector/general/previewExpression/default.qml`
 
 ## Configuration
 
-The configuration is defined in ``style_config.py``. All styles for a layer must have the same style categories. For example, the "default" style of the channel layer does not have any labelling, but because the "code" style of that layer does have labelling, a "labelling" qml must also be configured for the "default" style. The reason for this is that when users switch back from "code" to "default", the labelling must be reset as well.
+The configuration is defined in `style_config.py`. All styles for a layer must have the same style categories. For example, the "default" style of the channel layer does not have any labelling, but because the "code" style of that layer does have labelling, a "labelling" qml must also be configured for the "default" style. The reason for this is that when users switch back from "code" to "default", the labelling must be reset as well.
 
 ## Field configurations
-Field configurations (e.g. should it be shown to the users as a boolean/checkbox, value map, text edit etc.) are automatically chosen based on the type annotations in threedi_schematisation_editor.data_models.py. For example, to define a value map, the field type should be an Enum, such as this field in ``aggregation_settings``:     
+Field configurations (e.g. should it be shown to the users as a boolean/checkbox, value map, text edit etc.) are automatically chosen based on the type annotations in threedi_schematisation_editor.data_models.py. For example, to define a value map, the field type should be an Enum, such as this field in `aggregation_settings`:     
 
     aggregation_method: Optional[AggregationMethod]
 
+## Defaults
+Defaults for layers with layer handlers are set in `user_layer_handlers.py`.
 
+## Validation in attribute forms
+Very basic validation in the attribute forms is implemented in that required fields are colored orange when not filled in. Which fields are required is configured in `data_models.py` using type annotations. E.g. `str` indicates a required field of type `str`, while `Optional[str]` denotes a non-required field of type `str` 
 
 

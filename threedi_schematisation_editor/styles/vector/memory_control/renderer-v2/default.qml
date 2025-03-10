@@ -17,7 +17,7 @@
             <Option value="1" type="QString" name="horizontal_anchor_point" />
             <Option value="bevel" type="QString" name="joinstyle" />
             <Option value="shield" type="QString" name="name" />
-            <Option value="0,-5" type="QString" name="offset" />
+            <Option value="0,-3.5" type="QString" name="offset" />
             <Option value="3x:0,0,0,0,0,0" type="QString" name="offset_map_unit_scale" />
             <Option value="MM" type="QString" name="offset_unit" />
             <Option value="35,35,35,255" type="QString" name="outline_color" />
@@ -47,7 +47,7 @@
             <Option value="1" type="QString" name="horizontal_anchor_point" />
             <Option value="bevel" type="QString" name="joinstyle" />
             <Option value="circle" type="QString" name="name" />
-            <Option value="0,-5.00000000000000178" type="QString" name="offset" />
+            <Option value="0,-3.5" type="QString" name="offset" />
             <Option value="3x:0,0,0,0,0,0" type="QString" name="offset_map_unit_scale" />
             <Option value="MM" type="QString" name="offset_unit" />
             <Option value="35,35,35,255" type="QString" name="outline_color" />

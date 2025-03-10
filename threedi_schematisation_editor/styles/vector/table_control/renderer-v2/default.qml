@@ -15,7 +15,7 @@
             <Option value="0,0,0,255" type="QString" name="color" />
             <Option value="1" type="QString" name="horizontal_anchor_point" />
             <Option value="shield" type="QString" name="name" />
-            <Option value="0,-5" type="QString" name="offset" />
+            <Option value="0,-3.5" type="QString" name="offset" />
             <Option value="3x:0,0,0,0,0,0" type="QString" name="offset_map_unit_scale" />
             <Option value="MM" type="QString" name="offset_unit" />
             <Option value="diameter" type="QString" name="scale_method" />

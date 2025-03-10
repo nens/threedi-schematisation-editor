@@ -88,13 +88,13 @@ class ConnectionNode(ModelObject):
     __geometrytype__ = GeometryType.Point
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     storage_area: Optional[float]
     initial_water_level: Optional[float]
     visualisation: Optional[Visualisation]
     manhole_surface_level: Optional[float]
-    bottom_level: float
+    bottom_level: Optional[float]
     exchange_level: Optional[float]
     exchange_type: Optional[ExchangeTypeNode]
     exchange_thickness: Optional[float]
@@ -142,8 +142,8 @@ class BoundaryCondition1D(ModelObject):
     __geometrytype__ = GeometryType.Point
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     type: BoundaryType
     connection_node_id: int
     timeseries: str
@@ -159,8 +159,8 @@ class Lateral1D(ModelObject):
     __geometrytype__ = GeometryType.Point
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     time_units: TimeUnit
     interpolate: bool
     offset: int
@@ -177,14 +177,14 @@ class Pump(ModelObject):
     __geometrytype__ = GeometryType.Point
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     start_level: float
     lower_stop_level: float
     upper_stop_level: Optional[float]
     capacity: float
     type: PumpType
-    sewerage: bool
+    sewerage: Optional[bool]
     connection_node_id: int
     tags: Optional[str]
 
@@ -196,8 +196,8 @@ class PumpMap(ModelObject):
     __geometrytype__ = GeometryType.Linestring
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     pump_id: int
     connection_node_id_end: int
     tags: Optional[str]
@@ -235,8 +235,8 @@ class Weir(ModelObject):
         return display_names_list
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     crest_level: float
     crest_type: CrestType
     discharge_coefficient_positive: Optional[float]
@@ -262,14 +262,14 @@ class Culvert(ModelObject):
     __geometrytype__ = GeometryType.Linestring
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     exchange_type: Optional[ExchangeTypeCulvert]
     calculation_point_distance: Optional[float]
     invert_level_start: float
     invert_level_end: float
-    discharge_coefficient_positive: float
-    discharge_coefficient_negative: float
+    discharge_coefficient_positive: Optional[float]
+    discharge_coefficient_negative: Optional[float]
     material_id: int
     friction_value: float
     friction_type: FrictionType
@@ -314,8 +314,8 @@ class Orifice(ModelObject):
     __geometrytype__ = GeometryType.Linestring
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     crest_level: float
     crest_type: CrestType
     discharge_coefficient_positive: Optional[float]
@@ -364,8 +364,8 @@ class Pipe(ModelObject):
     __geometrytype__ = GeometryType.Linestring
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     exchange_type: ExchangeTypePipe
     calculation_point_distance: Optional[float]
     invert_level_start: float
@@ -420,7 +420,7 @@ class CrossSectionLocation(ModelObject):
     __geometrytype__ = GeometryType.Point
 
     id: int
-    code: str
+    code: Optional[str]
     reference_level: float
     friction_type: FrictionTypeExtended
     friction_value: float
@@ -446,8 +446,8 @@ class Channel(ModelObject):
     __geometrytype__ = GeometryType.Linestring
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     exchange_type: ExchangeTypeChannel
     calculation_point_distance: Optional[float]
     connection_node_id_start: int
@@ -465,8 +465,8 @@ class BoundaryCondition2D(ModelObject):
     __geometrytype__ = GeometryType.Linestring
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     type: BoundaryType
     timeseries: str
     time_units: TimeUnit
@@ -481,8 +481,8 @@ class Lateral2D(ModelObject):
     __geometrytype__ = GeometryType.Point
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     type: Later2DType
     time_units: TimeUnit
     interpolate: bool
@@ -499,8 +499,8 @@ class Obstacle(ModelObject):
     __geometrytype__ = GeometryType.Linestring
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     crest_level: float
     affects_2d: bool
     affects_1d2d_open_water: bool
@@ -515,8 +515,8 @@ class GridRefinementLine(ModelObject):
     __geometrytype__ = GeometryType.Linestring
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     grid_level: int
     tags: Optional[str]
 
@@ -528,8 +528,8 @@ class GridRefinementArea(ModelObject):
     __geometrytype__ = GeometryType.Polygon
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     grid_level: int
     tags: Optional[str]
 
@@ -541,8 +541,8 @@ class DEMAverageArea(ModelObject):
     __geometrytype__ = GeometryType.Polygon
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     tags: Optional[str]
 
 
@@ -575,7 +575,7 @@ class PotentialBreach(ModelObject):
     code: Optional[str]
     display_name: Optional[str]
     channel_id: int
-    initial_exchange_level: Optional[float]
+    initial_exchange_level: float
     final_exchange_level: Optional[float]
     levee_material: Optional[Material]
     tags: Optional[str]
@@ -588,8 +588,8 @@ class ExchangeLine(ModelObject):
     __geometrytype__ = GeometryType.Linestring
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     channel_id: int
     exchange_level: Optional[float]
     tags: Optional[str]
@@ -602,9 +602,9 @@ class Surface(ModelObject):
     __geometrytype__ = GeometryType.Polygon
 
     id: int
-    code: str
-    display_name: str
-    area: Optional[float]
+    code: Optional[str]
+    display_name: Optional[str]
+    area: float
     surface_parameters_id: int
     tags: Optional[str]
 
@@ -616,9 +616,9 @@ class SurfaceMap(ModelObject):
     __geometrytype__ = GeometryType.Linestring
 
     id: int
-    code: str
-    display_name: str
-    percentage: Optional[float]
+    code: Optional[str]
+    display_name: Optional[str]
+    percentage: float
     surface_id: int
     connection_node_id: int
     tags: Optional[str]
@@ -649,10 +649,10 @@ class DryWeatherFlow(ModelObject):
     __geometrytype__ = GeometryType.Polygon
 
     id: int
-    code: str
-    display_name: str
-    multiplier: Optional[float]
-    daily_total: Optional[float]
+    code: Optional[str]
+    display_name: Optional[str]
+    multiplier: float
+    daily_total: float
     interpolate: bool
     dry_weather_flow_distribution_id: int
     tags: Optional[str]
@@ -718,7 +718,7 @@ class ModelSettings(ModelObject):
     use_groundwater_flow: bool
     use_groundwater_storage: bool
     use_interception: bool
-    maximum_table_step_size: float
+    maximum_table_step_size: Optional[float]
     use_vegetation_drag_2d: Optional[bool]
 
 
@@ -734,7 +734,7 @@ class InitialConditionsSettings(ModelObject):
     )
 
     id: int
-    initial_water_level: float
+    initial_water_level: Optional[float]
     initial_water_level_file: Optional[str]
     initial_groundwater_level: Optional[float]
     initial_groundwater_level_file: Optional[str]
@@ -762,7 +762,7 @@ class AggregationSettings(ModelObject):
 
     id: int
     flow_variable: FlowVariable
-    aggregation_method: Optional[AggregationMethod]
+    aggregation_method: AggregationMethod
     interval: int
 
 
@@ -778,8 +778,7 @@ class SimpleInfiltrationSettings(ModelObject):
     )
 
     id: int
-    display_name: str
-    infiltration_rate: float
+    infiltration_rate: Optional[float]
     infiltration_rate_file: Optional[str]
     infiltration_surface_option: Optional[InfiltrationSurfaceOption]
     max_infiltration_volume_file: Optional[str]
@@ -821,7 +820,6 @@ class GroundWaterSettings(ModelObject):
     groundwater_hydraulic_conductivity: Optional[float]
     groundwater_hydraulic_conductivity_file: Optional[str]
     groundwater_hydraulic_conductivity_aggregation: Optional[InitializationType]
-    display_name: str
     leakage: Optional[float]
     leakage_file: Optional[str]
 
@@ -911,7 +909,7 @@ class TimeStepSettings(ModelObject):
     min_time_step: Optional[float]
     output_time_step: Optional[float]
     time_step: Optional[float]
-    use_time_step_stretch: bool
+    use_time_step_stretch: Optional[bool]
 
 
 @dataclass
@@ -949,8 +947,8 @@ class MeasureLocation(ModelObject):
     __geometrytype__ = GeometryType.Point
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     measure_variable: MeasureVariable
     connection_node_id: int
     tags: Optional[str]
@@ -963,12 +961,12 @@ class MeasureMap(ModelObject):
     __geometrytype__ = GeometryType.Linestring
 
     id: int
-    code: str
-    display_name: str
-    weight: Optional[float]
-    control_measure_location_id: Optional[int]
-    control_id: Optional[int]
-    control_type: Optional[ControlType]
+    code: Optional[str]
+    display_name: Optional[str]
+    weight: float
+    control_measure_location_id: int
+    control_id: int
+    control_type: ControlType
     tags: Optional[str]
 
 
@@ -979,8 +977,8 @@ class MemoryControl(ModelObject):
     __geometrytype__ = GeometryType.Point
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     action_type: ActionType
     action_value_1: float
     action_value_2: Optional[float]
