@@ -577,6 +577,19 @@ def check_enable_macros_option():
     return option
 
 
+def check_wal_for_sqlite():
+    """Check if WAL for the SQLite is enabled."""
+    settings = QgsSettings()
+    option = settings.value("/qgis/walForSqlite3", type=bool)
+    return option
+
+
+def set_wal_for_sqlite_mode(mode=False):
+    """Set WAL for the SQLite mode."""
+    settings = QgsSettings()
+    settings.setValue("/qgis/walForSqlite3", mode)
+
+
 def get_next_feature_id(layer):
     """Return first available ID within layer features."""
     id_idx = layer.fields().indexFromName("id")

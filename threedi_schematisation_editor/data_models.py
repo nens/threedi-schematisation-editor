@@ -1006,7 +1006,6 @@ class TableControl(ModelObject):
     action_table: str
     target_type: TargetType
     target_id: int
-    measure_variable: MeasureVariable
     measure_operator: MeasureOperator
     tags: Optional[str]
 
