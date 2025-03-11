@@ -704,10 +704,10 @@ class StructuresIntegrator(LinearStructuresImporter):
                 if not structure_buffer.intersects(channel_geometry):
                     continue
                 intersection_m = channel_geometry.lineLocatePoint(structure_geom)
-                structure_length = getattr(
-                    structure_feat,
-                    self.conversion_settings.length_source_field,
-                    self.conversion_settings.length_fallback_value,
+                structure_length = (
+                    structure_feat[self.conversion_settings.length_source_field]
+                    if self.conversion_settings.length_source_field
+                    else self.conversion_settings.length_fallback_value
                 )
             else:
                 continue

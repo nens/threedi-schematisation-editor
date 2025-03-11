@@ -580,8 +580,13 @@ def check_enable_macros_option():
 def check_wal_for_sqlite():
     """Check if WAL for the SQLite is enabled."""
     settings = QgsSettings()
-    option = settings.value("/qgis/walForSqlite3", type=bool)
-    return option
+    option = settings.value("/qgis/walForSqlite3")
+    if option == "true":
+        return True
+    elif option == "false":
+        return False
+    else:
+        return True
 
 
 def set_wal_for_sqlite_mode(mode=False):
