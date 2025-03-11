@@ -665,6 +665,8 @@ class DryWeatherFlowMap(ModelObject):
     __geometrytype__ = GeometryType.Linestring
 
     id: int
+    code: Optional[str]
+    display_name: Optional[str]
     percentage: float
     dry_weather_flow_id: int
     connection_node_id: int

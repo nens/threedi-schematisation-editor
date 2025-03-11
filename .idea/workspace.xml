@@ -5,12 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6ef9d43c-1319-4bfa-b01a-1bbc1704f50c" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/threedi_schematisation_editor/styles/img.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/threedi_schematisation_editor.1.99.23.zip" beforeDir="false" afterPath="$PROJECT_DIR$/threedi_schematisation_editor.1.99.23.zip" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/threedi_schematisation_editor/data_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/threedi_schematisation_editor/data_models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/threedi_schematisation_editor/styles/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/threedi_schematisation_editor/styles/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/threedi_schematisation_editor/styles/vector/memory_control/renderer-v2/default.qml" beforeDir="false" afterPath="$PROJECT_DIR$/threedi_schematisation_editor/styles/vector/memory_control/renderer-v2/default.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/threedi_schematisation_editor/styles/vector/table_control/renderer-v2/default.qml" beforeDir="false" afterPath="$PROJECT_DIR$/threedi_schematisation_editor/styles/vector/table_control/renderer-v2/default.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/threedi_schematisation_editor/user_layer_handlers.py" beforeDir="false" afterPath="$PROJECT_DIR$/threedi_schematisation_editor/user_layer_handlers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/threedi_schematisation_editor/forms/ui/dry_weather_flow_map.ui" beforeDir="false" afterPath="$PROJECT_DIR$/threedi_schematisation_editor/forms/ui/dry_weather_flow_map.ui" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
