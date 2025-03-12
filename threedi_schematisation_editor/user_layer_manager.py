@@ -394,8 +394,12 @@ class LayersManager:
             default_edit_form_config.setInitFunction("open_edit_form")
             default_edit_form_config.setInitCode("from threedi_schematisation_editor.utils import open_edit_form")
             set_field_default_value(layer, "id", "")
+            if model_cls.__geometrytype__ == en.GeometryType.NoGeometry:
+                set_field_default_value(layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))")
+            else:
+                set_field_default_value(layer, "id", "")
         else:
-            set_field_default_value(layer, "id", "if (maximum(id) is null, 1, maximum(id) + 1)")
+            set_field_default_value(layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))")
         if "area" in layer_fields.names():
             set_field_default_value(layer, "area", "$area", apply_on_update=True)
         for style in all_styles:

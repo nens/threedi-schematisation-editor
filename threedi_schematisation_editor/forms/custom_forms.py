@@ -107,12 +107,8 @@ class AbstractBaseForm(QObject):
                 feature_id = self.feature["id"]
             except KeyError:
                 return  # form open for an invalid feature
-            if feature_id != self.AUTOGENERATE_ID:
-                # This is the case after accepting new feature
-                return
-            self.creation = True
+            self.creation = feature_id == self.AUTOGENERATE_ID
             self.handler.set_feature_values(self.feature)
-
         self.activate_field_based_conditions()
         self.toggle_edit_mode()
         self.populate_with_extra_widgets()
