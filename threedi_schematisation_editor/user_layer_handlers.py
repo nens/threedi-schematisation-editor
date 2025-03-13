@@ -10,17 +10,19 @@ import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.enumerators import (
     BoundaryType,
     CrestType,
+    CrossSectionShape,
     ExchangeTypeCulvert,
     ExchangeTypeNode,
     FrictionType,
     GeometryType,
     Later2DType,
     ManholeShape,
+    MeasureVariable,
     PipeMaterial,
     PumpType,
     TimeUnit,
     Unit,
-    Visualisation, MeasureVariable, CrossSectionShape,
+    Visualisation,
 )
 from threedi_schematisation_editor.utils import (
     connect_signal,
@@ -1219,20 +1221,12 @@ class TableControlHandler(AbstractControlHandler):
 
 class MeasureLocationHandler(UserLayerHandler):
     MODEL = dm.MeasureLocation
-    DEFAULTS = MappingProxyType(
-        {
-            "measure_variable": MeasureVariable.WATER_LEVEL.value
-        }
-    )
+    DEFAULTS = MappingProxyType({"measure_variable": MeasureVariable.WATER_LEVEL.value})
 
 
 class MeasureMapHandler(UserLayerHandler):
     MODEL = dm.MeasureMap
-    DEFAULTS = MappingProxyType(
-        {
-            "measure_variable": MeasureVariable.WATER_LEVEL.value
-        }
-    )
+    DEFAULTS = MappingProxyType({"measure_variable": MeasureVariable.WATER_LEVEL.value})
 
     @cached_property
     def control_data_models(self):

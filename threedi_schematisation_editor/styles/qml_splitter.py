@@ -2,19 +2,19 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import List
 
-from style_config import get_style_configurations, StyleConfig
+from style_config import StyleConfig, get_style_configurations
 
 
 def split_qml_by_category(
-        qml_file: Path | str,
-        output_dir: Path | str,
-        style_configs: List[StyleConfig],
+    qml_file: Path | str,
+    output_dir: Path | str,
+    style_configs: List[StyleConfig],
 ):
     # Convert qml_file and output_dir to Path objects
     qml_file = Path(qml_file)
     output_dir = Path(output_dir)
     # Get the relative path of the input file (without the file extension)
-    file_name_without_ext = qml_file.with_suffix('').name  # e.g. "weir"
+    file_name_without_ext = qml_file.with_suffix("").name  # e.g. "weir"
 
     # Create a new folder in the output_dir based on the input file's relative path
     output_dir.mkdir(parents=True, exist_ok=True)  # Create the directory, including parents
@@ -33,7 +33,7 @@ def split_qml_by_category(
         try:
             elements = root.findall(".//" + style_category)
             if elements:
-                new_tree = ET.ElementTree(ET.Element('qgis'))
+                new_tree = ET.ElementTree(ET.Element("qgis"))
                 new_root = new_tree.getroot()
 
                 # Append found elements to new root
@@ -56,16 +56,13 @@ def split_qml_by_category(
 if __name__ == "__main__":
 
     # Example usage
-    stylings_dir = Path(
-        r"C:\Users\leendert.vanwolfswin\Documents\migration_checker\style 300\auto-saved from qgis"
-    )
+    stylings_dir = Path(r"C:\Users\leendert.vanwolfswin\Documents\migration_checker\style 300\auto-saved from qgis")
     assert stylings_dir.exists()
 
     styling_configs = get_style_configurations()
 
     output_dir = stylings_dir.parent / "split"
-    for file in stylings_dir.rglob('aggregation_settings.qml'):  # Recursively find all QML files
-    # for file in stylings_dir.rglob('surface_parameters.qml'):  # Find specific qml file
+    for file in stylings_dir.rglob("aggregation_settings.qml"):  # Recursively find all QML files
+        # for file in stylings_dir.rglob('surface_parameters.qml'):  # Find specific qml file
         print(file)
         split_qml_by_category(qml_file=file, output_dir=output_dir, style_configs=styling_configs)
-

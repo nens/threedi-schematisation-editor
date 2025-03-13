@@ -300,10 +300,7 @@ def dataclass_field_to_widget_setup(model_cls_field_type, optional=False, **conf
         }
     elif model_cls_field_type is dm.HighPrecisionFloat:
         config_type = "TextEdit"
-        config_map = {
-            "IsMultiline": False,
-            "UseHtml": False
-        }
+        config_map = {"IsMultiline": False, "UseHtml": False}
     elif model_cls_field_type is str:
         config_type = "TextEdit"
         config_map = {"AllowNull": optional}
@@ -333,14 +330,13 @@ def enum_entry_name_format(entry):
 
     if entry.name not in ["YZ", "HPE", "HDPE", "PVC"]:
         formatted_entry_name = (
-            entry.name.
-            capitalize().
-            replace("_", " ").
-            replace("0d", "0D").
-            replace("1d", "1D").
-            replace("2d", "2D").
-            replace("ross section", "ross-section").
-            replace("M3 seconds", "m³/s")
+            entry.name.capitalize()
+            .replace("_", " ")
+            .replace("0d", "0D")
+            .replace("1d", "1D")
+            .replace("2d", "2D")
+            .replace("ross section", "ross-section")
+            .replace("M3 seconds", "m³/s")
         )
     else:
         formatted_entry_name = entry.name

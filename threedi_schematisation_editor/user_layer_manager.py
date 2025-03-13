@@ -376,8 +376,7 @@ class LayersManager:
         try:
             layer_style_config = self.vector_style_configs[model_cls.__tablename__]
             style_names = [
-                style_name for style_name in layer_style_config.styles.keys()
-                if style_name != default_style_name
+                style_name for style_name in layer_style_config.styles.keys() if style_name != default_style_name
             ]
             style_names.append(default_style_name)  # make sure default is last
             for style_name in style_names:
