@@ -2,11 +2,14 @@
 import os
 import shutil
 import sys
-from enum import Enum
+from enum import Enum, IntEnum
 from itertools import groupby
 from operator import attrgetter, itemgetter
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Union
 from uuid import uuid4
+from xml.etree import ElementTree
 
 from qgis.core import (
     NULL,
@@ -167,6 +170,35 @@ def get_multiple_qml_style_paths(styles_folder_name, *subfolders):
     return qml_paths
 
 
+def merge_qml_styles(qml_files) -> Path:
+    """
+    Merges multiple QML files into a single temporary QML file.
+    """
+    if not qml_files:
+        raise ValueError("No QML files provided.")
+
+    # Parse the first QML file as the base
+    base_tree = ElementTree.parse(qml_files[0])
+    base_root = base_tree.getroot()
+
+    for qml_file in qml_files[1:]:
+        tree = ElementTree.parse(qml_file)
+        root = tree.getroot()
+
+        for new_element in root:
+            existing_element = base_root.find(new_element.tag)
+            if existing_element is not None:
+                raise RuntimeError(f"Duplicate tag {new_element.tag} in {qml_files}")
+            base_root.append(new_element)
+
+    # Create a temporary file to save the merged QML
+    temp_qml = NamedTemporaryFile(delete=False, suffix=".qml")
+    temp_tree = ElementTree.ElementTree(base_root)
+    temp_tree.write(temp_qml.name, encoding="utf-8", xml_declaration=True)
+
+    return Path(temp_qml.name)
+
+
 def get_form_ui_path(table_name):
     """Getting UI form path for a given table name."""
     ui_filename = f"{table_name}.ui"
@@ -266,6 +298,9 @@ def dataclass_field_to_widget_setup(model_cls_field_type, optional=False, **conf
             "Step": 1.0,
             "Style": "SpinBox",
         }
+    elif model_cls_field_type is dm.HighPrecisionFloat:
+        config_type = "TextEdit"
+        config_map = {"IsMultiline": False, "UseHtml": False}
     elif model_cls_field_type is str:
         config_type = "TextEdit"
         config_map = {"AllowNull": optional}
@@ -283,7 +318,7 @@ def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
         def enum_name_format_fn(entry_name):
             return entry_name
 
-    value_map = [{f"{enum_name_format_fn(entry.name)}": entry.value} for entry in enum]
+    value_map = [{f"{enum_name_format_fn(entry)}": entry.value} for entry in enum]
     if optional:
         null_value = QgsValueMapFieldFormatter.NULL_VALUE
         value_map.insert(0, {"": null_value})
@@ -291,11 +326,23 @@ def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
     return ews
 
 
-def enum_entry_name_format(entry_name):
-    if entry_name not in ["YZ", "HPE", "HDPE", "PVC"]:
-        formatted_entry_name = entry_name.capitalize().replace("_", " ")
+def enum_entry_name_format(entry):
+
+    if entry.name not in ["YZ", "HPE", "HDPE", "PVC"]:
+        formatted_entry_name = (
+            entry.name.capitalize()
+            .replace("_", " ")
+            .replace("0d", "0D")
+            .replace("1d", "1D")
+            .replace("2d", "2D")
+            .replace("ross section", "ross-section")
+            .replace("M3 seconds", "m³/s")
+        )
     else:
-        formatted_entry_name = entry_name
+        formatted_entry_name = entry.name
+
+    if isinstance(entry, IntEnum):
+        formatted_entry_name = f"{entry.value}: {formatted_entry_name}"
     return formatted_entry_name
 
 

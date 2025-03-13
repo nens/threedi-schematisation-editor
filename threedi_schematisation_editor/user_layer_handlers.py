@@ -10,12 +10,14 @@ import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.enumerators import (
     BoundaryType,
     CrestType,
+    CrossSectionShape,
     ExchangeTypeCulvert,
     ExchangeTypeNode,
     FrictionType,
     GeometryType,
     Later2DType,
     ManholeShape,
+    MeasureVariable,
     PipeMaterial,
     PumpType,
     TimeUnit,
@@ -397,25 +399,12 @@ class UserLayerHandler:
 
 class ConnectionNodeHandler(UserLayerHandler):
     MODEL = dm.ConnectionNode
-    DEFAULTS = MappingProxyType(
-        {
-            "display_name": "new",
-            "code": "new",
-            "length": 0.8,
-            "width": 0.8,
-            "shape": ManholeShape.ROUND.value,
-            "exchange_type": ExchangeTypeNode.ISOLATED.value,
-            "bottom_level": -10.0,
-        }
-    )
 
 
 class BoundaryCondition1DHandler(UserLayerHandler):
     MODEL = dm.BoundaryCondition1D
     DEFAULTS = MappingProxyType(
         {
-            "display_name": "new",
-            "code": "new",
             "type": BoundaryType.WATER_LEVEL.value,
             "time_units": "seconds",
         }
@@ -431,8 +420,6 @@ class Lateral1DHandler(UserLayerHandler):
     MODEL = dm.Lateral1D
     DEFAULTS = MappingProxyType(
         {
-            "display_name": "new",
-            "code": "new",
             "offset": 0,
             "units": Unit.M3_SECONDS.value,
             "time_units": TimeUnit.SECONDS.value,
@@ -454,8 +441,6 @@ class PumpHandler(UserLayerHandler):
     )
     DEFAULTS = MappingProxyType(
         {
-            "display_name": "new",
-            "code": "new",
             "sewerage": False,
             "type": PumpType.SUCTION_SIDE.value,
             "capacity": None,
@@ -486,7 +471,7 @@ class PumpHandler(UserLayerHandler):
                     connection_node_layer.startEditing()
                 visualisation_idx = connection_node_layer.fields().lookupField("visualisation")
                 connection_node_layer.changeAttributeValue(
-                    connection_node_fid, visualisation_idx, Visualisation.PUMP.value
+                    connection_node_fid, visualisation_idx, Visualisation.PUMP_CHAMBER.value
                 )
 
     def get_pump_feats_for_node_id(self, node_id):
@@ -519,12 +504,6 @@ class PumpMapHandler(UserLayerHandler):
             dm.Pump: 1,
         }
     )
-    DEFAULTS = MappingProxyType(
-        {
-            "display_name": "new",
-            "code": "new",
-        }
-    )
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
@@ -552,15 +531,11 @@ class WeirHandler(UserLayerHandler):
 
     DEFAULTS = MappingProxyType(
         {
-            "display_name": "new",
-            "code": "new",
-            "crest_level": 1.0,
             "crest_type": CrestType.SHORT_CRESTED.value,
-            "friction_type": FrictionType.MANNING.value,
-            "friction_value": 0.02,
             "discharge_coefficient_positive": 0.8,
             "discharge_coefficient_negative": 0.8,
             "sewerage": False,
+            "cross_section_shape": CrossSectionShape.OPEN_RECTANGLE,
         }
     )
 
@@ -592,16 +567,8 @@ class CulvertHandler(UserLayerHandler):
 
     DEFAULTS = MappingProxyType(
         {
-            "display_name": "new",
-            "code": "new",
-            "calculation_point_distance": 1000,
-            "exchange_type": ExchangeTypeCulvert.ISOLATED.value,
-            "friction_type": FrictionType.MANNING.value,
-            "friction_value": 0.02,
             "discharge_coefficient_positive": 0.8,
             "discharge_coefficient_negative": 0.8,
-            "invert_level_start": -10.0,
-            "invert_level_end": -10.0,
         }
     )
 
@@ -626,15 +593,10 @@ class OrificeHandler(UserLayerHandler):
 
     DEFAULTS = MappingProxyType(
         {
-            "display_name": "new",
-            "code": "new",
-            "crest_level": 1.0,
             "crest_type": CrestType.SHORT_CRESTED.value,
-            "friction_type": FrictionType.MANNING.value,
-            "friction_value": 0.02,
+            "sewerage": False,
             "discharge_coefficient_positive": 0.8,
             "discharge_coefficient_negative": 0.8,
-            "sewerage": False,
         }
     )
 
@@ -665,17 +627,9 @@ class PipeHandler(UserLayerHandler):
     )
     DEFAULTS = MappingProxyType(
         {
-            "display_name": "new",
-            "code": "new",
-            "calculation_point_distance": 1000,
-            "friction_type": FrictionType.MANNING.value,
-            "exchange_type": ExchangeTypeNode.ISOLATED.value,
-            "friction_value": dm.TABLE_MANNING[PipeMaterial.CONCRETE],
-            "invert_level_start": -10.0,
-            "invert_level_end": -10.0,
+            "cross_section_shape": CrossSectionShape.CIRCLE.value,
         }
     )
-
     VALIDATORS = (CrossSectionTableValidator,)
 
     def connect_additional_signals(self):
@@ -766,19 +720,6 @@ class CrossSectionLocationHandler(UserLayerHandler):
             dm.Channel: 1,
         }
     )
-    DEFAULTS = MappingProxyType(
-        {
-            "display_name": "new",
-            "code": "new",
-            "length": 0.8,
-            "width": 0.8,
-            "shape": ManholeShape.ROUND.value,
-            "visualisation": Visualisation.INSPECTION.value,
-            "exchange_type": ExchangeTypeNode.ISOLATED.value,
-            "bottom_level": -10.0,
-        }
-    )
-
     VALIDATORS = (CrossSectionTableValidator,)
 
     def connect_additional_signals(self):
@@ -901,8 +842,6 @@ class BoundaryCondition2DHandler(UserLayerHandler):
     MODEL = dm.BoundaryCondition2D
     DEFAULTS = MappingProxyType(
         {
-            "display_name": "new",
-            "code": "new",
             "type": BoundaryType.WATER_LEVEL.value,
             "time_units": TimeUnit.SECONDS.value,
         }
@@ -913,8 +852,6 @@ class Lateral2DHandler(UserLayerHandler):
     MODEL = dm.Lateral2D
     DEFAULTS = MappingProxyType(
         {
-            "display_name": "new",
-            "code": "new",
             "offset": 0,
             "type": Later2DType.SURFACE.value,
             "units": Unit.M3_SECONDS.value,
@@ -948,13 +885,6 @@ class PotentialBreachHandler(UserLayerHandler):
     RELATED_MODELS = MappingProxyType(
         {
             dm.Channel: 1,
-        }
-    )
-
-    DEFAULTS = MappingProxyType(
-        {
-            "display_name": "new",
-            "code": "new",
         }
     )
 
@@ -995,23 +925,9 @@ class PotentialBreachHandler(UserLayerHandler):
 class ExchangeLineHandler(UserLayerHandler):
     MODEL = dm.ExchangeLine
 
-    DEFAULTS = MappingProxyType(
-        {
-            "display_name": "new",
-            "code": "new",
-        }
-    )
-
 
 class SurfaceHandler(UserLayerHandler):
     MODEL = dm.Surface
-
-    DEFAULTS = MappingProxyType(
-        {
-            "display_name": "new",
-            "code": "new",
-        }
-    )
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
@@ -1084,11 +1000,9 @@ class SurfaceParameterHandler(UserLayerHandler):
 
 class DryWeatherFlowHandler(UserLayerHandler):
     MODEL = dm.DryWeatherFlow
-
     DEFAULTS = MappingProxyType(
         {
-            "display_name": "new",
-            "code": "new",
+            "multiplier": 1,
         }
     )
 
@@ -1279,12 +1193,6 @@ class AbstractControlHandler(UserLayerHandler):
 
 class MemoryControlHandler(AbstractControlHandler):
     MODEL = dm.MemoryControl
-    DEFAULTS = MappingProxyType(
-        {
-            "display_name": "new",
-            "code": "new",
-        }
-    )
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
@@ -1299,12 +1207,6 @@ class MemoryControlHandler(AbstractControlHandler):
 
 class TableControlHandler(AbstractControlHandler):
     MODEL = dm.TableControl
-    DEFAULTS = MappingProxyType(
-        {
-            "display_name": "new",
-            "code": "new",
-        }
-    )
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
@@ -1319,23 +1221,12 @@ class TableControlHandler(AbstractControlHandler):
 
 class MeasureLocationHandler(UserLayerHandler):
     MODEL = dm.MeasureLocation
-    DEFAULTS = MappingProxyType(
-        {
-            "display_name": "new",
-            "code": "new",
-        }
-    )
+    DEFAULTS = MappingProxyType({"measure_variable": MeasureVariable.WATER_LEVEL.value})
 
 
 class MeasureMapHandler(UserLayerHandler):
     MODEL = dm.MeasureMap
-    DEFAULTS = MappingProxyType(
-        {
-            "display_name": "new",
-            "code": "new",
-            "weight": 1.0,
-        }
-    )
+    DEFAULTS = MappingProxyType({"measure_variable": MeasureVariable.WATER_LEVEL.value})
 
     @cached_property
     def control_data_models(self):

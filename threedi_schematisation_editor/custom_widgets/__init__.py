@@ -207,9 +207,9 @@ class ImportFieldMappingUtils:
                 widget.setCurrentText(key_value)
             else:
                 if key_name == "method":
-                    widget.setCurrentText(enum_entry_name_format(ColumnImportMethod(key_value).name))
+                    widget.setCurrentText(enum_entry_name_format(ColumnImportMethod(key_value)))
                 elif key_name == "default_value" and field_type != bool:
-                    widget.setCurrentText(enum_entry_name_format(field_type(key_value).name))
+                    widget.setCurrentText(enum_entry_name_format(field_type(key_value)))
                 else:
                     widget.setCurrentText(str(key_value))
         elif key_name == "value_map":

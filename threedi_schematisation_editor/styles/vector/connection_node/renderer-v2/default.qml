@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <qgis><renderer-v2 referencescale="-1" forceraster="0" symbollevels="0" enableorderby="0" type="RuleRenderer">
     <rules key="{4fbba513-a3b1-4a92-97bc-3d44735ac986}">
-      <rule filter=" &quot;visualisation&quot; = -1" symbol="0" key="{e471b7e3-40dc-47f7-9585-dc29adb086ed}" label="Connection node" />
+      <rule filter="True" symbol="0" key="{e471b7e3-40dc-47f7-9585-dc29adb086ed}" label="Connection node" />
       <rule filter="visualisation = 0" symbol="1" key="{a951db60-faa9-4c95-9eaa-a51d84ff90b1}" scalemaxdenom="5000" label="Manhole" />
-      <rule filter=" &quot;visualisation&quot; = 3" symbol="2" key="{e566bc63-cb1c-4211-87bd-f88971394bc8}" label="Infiltration manhole" />
+      <rule filter="visualisation = 3" symbol="2" key="{e566bc63-cb1c-4211-87bd-f88971394bc8}" label="Infiltration manhole" />
       <rule filter="visualisation = 4" symbol="3" key="{7a87fed8-6e71-442f-b0a3-9c2f6704bdc4}" label="Gully" />
       <rule filter="visualisation = 1" symbol="4" key="{c9e7ab73-45d5-45d6-970d-b4e28230c1e5}" scalemaxdenom="15000" label="Outlet" />
       <rule filter="visualisation = 2" symbol="5" key="{a1d98efc-8098-4201-a75e-93dc7c47f076}" label="Pump chamber" />

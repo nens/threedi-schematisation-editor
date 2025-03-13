@@ -124,5 +124,4 @@
       </callout>
     </settings>
   </labeling>
-  <layerGeometryType>0</layerGeometryType>
 </qgis>

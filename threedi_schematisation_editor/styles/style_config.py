@@ -12,6 +12,7 @@ DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY = DEFAULT_STYLE_CATEGORIES | {
     "labeling",
     "previewExpression",  # display name
     "renderer-v2",  # symbology
+    "layerGeometryType",
 }
 
 
@@ -68,6 +69,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("boundary_condition_1d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "id": {
                     "aliases": Path("boundary_condition_1d") / "aliases" / "default.qml",
@@ -77,6 +79,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("boundary_condition_1d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "code": {
                     "aliases": Path("boundary_condition_1d") / "aliases" / "default.qml",
@@ -86,6 +89,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("boundary_condition_1d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "display_name": {
                     "aliases": Path("boundary_condition_1d") / "aliases" / "default.qml",
@@ -95,6 +99,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("boundary_condition_1d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
             },
         },
@@ -109,6 +114,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("boundary_condition_2d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("boundary_condition_2d") / "aliases" / "default.qml",
@@ -118,6 +124,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("boundary_condition_2d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("boundary_condition_2d") / "aliases" / "default.qml",
@@ -127,6 +134,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("boundary_condition_2d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("boundary_condition_2d") / "aliases" / "default.qml",
@@ -136,6 +144,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("boundary_condition_2d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
@@ -150,6 +159,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("channel") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("channel") / "aliases" / "default.qml",
@@ -159,6 +169,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("channel") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("channel") / "aliases" / "default.qml",
@@ -168,6 +179,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("channel") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("channel") / "aliases" / "default.qml",
@@ -177,6 +189,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("channel") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
@@ -191,6 +204,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("connection_node") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "id": {
                     "aliases": Path("connection_node") / "aliases" / "default.qml",
@@ -200,6 +214,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("connection_node") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "code": {
                     "aliases": Path("connection_node") / "aliases" / "default.qml",
@@ -209,6 +224,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("connection_node") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "display_name": {
                     "aliases": Path("connection_node") / "aliases" / "default.qml",
@@ -218,6 +234,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("connection_node") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
             },
         },
@@ -232,6 +249,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("cross_section_location") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "id": {
                     "aliases": Path("cross_section_location") / "aliases" / "default.qml",
@@ -241,6 +259,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("cross_section_location") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "code": {
                     "aliases": Path("cross_section_location") / "aliases" / "default.qml",
@@ -250,6 +269,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("cross_section_location") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "display_name": {
                     "aliases": Path("cross_section_location") / "aliases" / "default.qml",
@@ -259,6 +279,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("cross_section_location") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
             },
         },
@@ -273,6 +294,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("culvert") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("culvert") / "aliases" / "default.qml",
@@ -282,6 +304,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("culvert") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("culvert") / "aliases" / "default.qml",
@@ -291,6 +314,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("culvert") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("culvert") / "aliases" / "default.qml",
@@ -300,47 +324,60 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("culvert") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
         "dem_average_area": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY,
+            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("dem_average_area") / "aliases" / "default.qml",
                     "attributetableconfig": Path("dem_average_area") / "attributetableconfig" / "default.qml",
+                    "attributeEditorForm": Path("dem_average_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "constraints": Path("dem_average_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dem_average_area") / "fieldConfiguration" / "default.qml",
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dem_average_area") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
                 "id": {
                     "aliases": Path("dem_average_area") / "aliases" / "default.qml",
                     "attributetableconfig": Path("dem_average_area") / "attributetableconfig" / "default.qml",
+                    "attributeEditorForm": Path("dem_average_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "constraints": Path("dem_average_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dem_average_area") / "fieldConfiguration" / "default.qml",
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dem_average_area") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
                 "code": {
                     "aliases": Path("dem_average_area") / "aliases" / "default.qml",
                     "attributetableconfig": Path("dem_average_area") / "attributetableconfig" / "default.qml",
+                    "attributeEditorForm": Path("dem_average_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "constraints": Path("dem_average_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dem_average_area") / "fieldConfiguration" / "default.qml",
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dem_average_area") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
                 "display_name": {
                     "aliases": Path("dem_average_area") / "aliases" / "default.qml",
                     "attributetableconfig": Path("dem_average_area") / "attributetableconfig" / "default.qml",
+                    "attributeEditorForm": Path("dem_average_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "constraints": Path("dem_average_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dem_average_area") / "fieldConfiguration" / "default.qml",
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dem_average_area") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
             },
         },
@@ -355,6 +392,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dry_weather_flow") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
                 "id": {
                     "aliases": Path("dry_weather_flow") / "aliases" / "default.qml",
@@ -364,6 +402,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dry_weather_flow") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
                 "code": {
                     "aliases": Path("dry_weather_flow") / "aliases" / "default.qml",
@@ -373,6 +412,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dry_weather_flow") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
                 "display_name": {
                     "aliases": Path("dry_weather_flow") / "aliases" / "default.qml",
@@ -382,6 +422,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dry_weather_flow") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
             },
         },
@@ -409,6 +450,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dry_weather_flow_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("dry_weather_flow_map") / "aliases" / "default.qml",
@@ -418,6 +460,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dry_weather_flow_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("dry_weather_flow_map") / "aliases" / "default.qml",
@@ -427,6 +470,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dry_weather_flow_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("dry_weather_flow_map") / "aliases" / "default.qml",
@@ -436,6 +480,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dry_weather_flow_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
@@ -450,6 +495,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("exchange_line") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("exchange_line") / "aliases" / "default.qml",
@@ -459,6 +505,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("exchange_line") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("exchange_line") / "aliases" / "default.qml",
@@ -468,6 +515,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("exchange_line") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("exchange_line") / "aliases" / "default.qml",
@@ -477,11 +525,12 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("exchange_line") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
         "grid_refinement_area": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("grid_refinement_area") / "aliases" / "default.qml",
@@ -489,9 +538,11 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_area") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_area") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
                 "id": {
                     "aliases": Path("grid_refinement_area") / "aliases" / "default.qml",
@@ -499,9 +550,11 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_area") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_area") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
                 "code": {
                     "aliases": Path("grid_refinement_area") / "aliases" / "default.qml",
@@ -509,9 +562,11 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_area") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_area") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
                 "display_name": {
                     "aliases": Path("grid_refinement_area") / "aliases" / "default.qml",
@@ -519,14 +574,16 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_area") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_area") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_area") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
             },
         },
         "grid_refinement_line": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("grid_refinement_line") / "aliases" / "default.qml",
@@ -534,9 +591,11 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_line") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_line") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_line") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_line") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("grid_refinement_line") / "aliases" / "default.qml",
@@ -544,9 +603,11 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_line") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_line") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_line") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_line") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("grid_refinement_line") / "aliases" / "default.qml",
@@ -554,9 +615,11 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_line") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_line") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_line") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_line") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("grid_refinement_line") / "aliases" / "default.qml",
@@ -564,14 +627,16 @@ style_config_data = MappingProxyType(
                     "constraints": Path("grid_refinement_line") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("grid_refinement_line") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_line") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_line") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
         "groundwater": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("groundwater") / "aliases" / "default.qml",
@@ -579,11 +644,12 @@ style_config_data = MappingProxyType(
                     "constraints": Path("groundwater") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("groundwater") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("groundwater") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
         "initial_conditions": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("initial_conditions") / "aliases" / "default.qml",
@@ -591,6 +657,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("initial_conditions") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("initial_conditions") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("initial_conditions") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
@@ -606,7 +673,7 @@ style_config_data = MappingProxyType(
             },
         },
         "interflow": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("interflow") / "aliases" / "default.qml",
@@ -614,6 +681,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("interflow") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("interflow") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("interflow") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
@@ -628,6 +696,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("lateral_1d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "id": {
                     "aliases": Path("lateral_1d") / "aliases" / "default.qml",
@@ -637,6 +706,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("lateral_1d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "code": {
                     "aliases": Path("lateral_1d") / "aliases" / "default.qml",
@@ -646,6 +716,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("lateral_1d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "display_name": {
                     "aliases": Path("lateral_1d") / "aliases" / "default.qml",
@@ -655,6 +726,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("lateral_1d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
             },
         },
@@ -669,6 +741,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("lateral_2d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "id": {
                     "aliases": Path("lateral_2d") / "aliases" / "default.qml",
@@ -678,6 +751,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("lateral_2d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "code": {
                     "aliases": Path("lateral_2d") / "aliases" / "default.qml",
@@ -687,6 +761,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("lateral_2d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "display_name": {
                     "aliases": Path("lateral_2d") / "aliases" / "default.qml",
@@ -696,6 +771,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("lateral_2d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
             },
         },
@@ -722,6 +798,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("measure_location") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "id": {
                     "aliases": Path("measure_location") / "aliases" / "default.qml",
@@ -732,6 +809,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("measure_location") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "code": {
                     "aliases": Path("measure_location") / "aliases" / "default.qml",
@@ -742,6 +820,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("measure_location") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "display_name": {
                     "aliases": Path("measure_location") / "aliases" / "default.qml",
@@ -752,6 +831,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("measure_location") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
             },
         },
@@ -767,6 +847,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("measure_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("measure_map") / "aliases" / "default.qml",
@@ -777,6 +858,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("measure_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("measure_map") / "aliases" / "default.qml",
@@ -787,6 +869,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("measure_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("measure_map") / "aliases" / "default.qml",
@@ -797,6 +880,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("measure_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
@@ -812,6 +896,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("memory_control") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "id": {
                     "aliases": Path("memory_control") / "aliases" / "default.qml",
@@ -822,6 +907,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("memory_control") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "code": {
                     "aliases": Path("memory_control") / "aliases" / "default.qml",
@@ -832,6 +918,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("memory_control") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "display_name": {
                     "aliases": Path("memory_control") / "aliases" / "default.qml",
@@ -842,11 +929,12 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("memory_control") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
             },
         },
         "model_settings": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("model_settings") / "aliases" / "default.qml",
@@ -854,11 +942,12 @@ style_config_data = MappingProxyType(
                     "constraints": Path("model_settings") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("model_settings") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("model_settings") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
         "numerical_settings": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("numerical_settings") / "aliases" / "default.qml",
@@ -866,11 +955,12 @@ style_config_data = MappingProxyType(
                     "constraints": Path("numerical_settings") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("numerical_settings") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("numerical_settings") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
         "obstacle": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES_WITH_GEOMETRY | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("obstacle") / "aliases" / "default.qml",
@@ -878,9 +968,11 @@ style_config_data = MappingProxyType(
                     "constraints": Path("obstacle") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("obstacle") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("obstacle") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("obstacle") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("obstacle") / "aliases" / "default.qml",
@@ -888,9 +980,11 @@ style_config_data = MappingProxyType(
                     "constraints": Path("obstacle") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("obstacle") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("obstacle") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("obstacle") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("obstacle") / "aliases" / "default.qml",
@@ -898,9 +992,11 @@ style_config_data = MappingProxyType(
                     "constraints": Path("obstacle") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("obstacle") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("obstacle") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("obstacle") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("obstacle") / "aliases" / "default.qml",
@@ -908,9 +1004,11 @@ style_config_data = MappingProxyType(
                     "constraints": Path("obstacle") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("obstacle") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("obstacle") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("obstacle") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
@@ -925,6 +1023,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("orifice") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("orifice") / "aliases" / "default.qml",
@@ -934,6 +1033,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("orifice") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("orifice") / "aliases" / "default.qml",
@@ -943,6 +1043,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("orifice") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("orifice") / "aliases" / "default.qml",
@@ -952,6 +1053,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("orifice") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
@@ -977,6 +1079,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("pipe") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("pipe") / "aliases" / "default.qml",
@@ -986,6 +1089,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("pipe") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("pipe") / "aliases" / "default.qml",
@@ -995,6 +1099,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("pipe") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("pipe") / "aliases" / "default.qml",
@@ -1004,6 +1109,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("pipe") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
@@ -1018,6 +1124,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("potential_breach") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("potential_breach") / "aliases" / "default.qml",
@@ -1027,6 +1134,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("potential_breach") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("potential_breach") / "aliases" / "default.qml",
@@ -1036,6 +1144,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("potential_breach") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("potential_breach") / "aliases" / "default.qml",
@@ -1045,6 +1154,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("potential_breach") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
@@ -1059,6 +1169,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("pump") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "id": {
                     "aliases": Path("pump") / "aliases" / "default.qml",
@@ -1068,6 +1179,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("pump") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "code": {
                     "aliases": Path("pump") / "aliases" / "default.qml",
@@ -1077,6 +1189,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("pump") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "display_name": {
                     "aliases": Path("pump") / "aliases" / "default.qml",
@@ -1086,6 +1199,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("pump") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
             },
         },
@@ -1100,6 +1214,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("pump_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("pump_map") / "aliases" / "default.qml",
@@ -1109,6 +1224,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("pump_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("pump_map") / "aliases" / "default.qml",
@@ -1118,6 +1234,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("pump_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("pump_map") / "aliases" / "default.qml",
@@ -1127,6 +1244,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("pump_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
@@ -1143,7 +1261,7 @@ style_config_data = MappingProxyType(
             },
         },
         "simple_infiltration": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("simple_infiltration") / "aliases" / "default.qml",
@@ -1151,6 +1269,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("simple_infiltration") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("simple_infiltration") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("simple_infiltration") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
@@ -1178,6 +1297,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("surface") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
                 "id": {
                     "aliases": Path("surface") / "aliases" / "default.qml",
@@ -1187,6 +1307,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("surface") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
                 "code": {
                     "aliases": Path("surface") / "aliases" / "default.qml",
@@ -1196,6 +1317,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("surface") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
                 "display_name": {
                     "aliases": Path("surface") / "aliases" / "default.qml",
@@ -1205,6 +1327,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("surface") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
                 },
             },
         },
@@ -1219,6 +1342,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("surface_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("surface_map") / "aliases" / "default.qml",
@@ -1228,6 +1352,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("surface_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("surface_map") / "aliases" / "default.qml",
@@ -1237,6 +1362,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("surface_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("surface_map") / "aliases" / "default.qml",
@@ -1246,17 +1372,20 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("surface_map") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
         "surface_parameters": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES,
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("surface_parameters") / "aliases" / "default.qml",
                     "attributetableconfig": Path("surface_parameters") / "attributetableconfig" / "default.qml",
                     "constraints": Path("surface_parameters") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("surface_parameters") / "fieldConfiguration" / "default.qml",
+                    "attributeEditorForm": Path("surface_parameters") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
@@ -1272,6 +1401,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("table_control") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "id": {
                     "aliases": Path("table_control") / "aliases" / "default.qml",
@@ -1282,6 +1412,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("table_control") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "code": {
                     "aliases": Path("table_control") / "aliases" / "default.qml",
@@ -1292,6 +1423,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("table_control") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "display_name": {
                     "aliases": Path("table_control") / "aliases" / "default.qml",
@@ -1302,6 +1434,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("table_control") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
             },
         },
@@ -1317,7 +1450,7 @@ style_config_data = MappingProxyType(
             },
         },
         "time_step_settings": {
-            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm"},
+            "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
                     "aliases": Path("aggregation_settings") / "aliases" / "default.qml",
@@ -1325,6 +1458,7 @@ style_config_data = MappingProxyType(
                     "constraints": Path("aggregation_settings") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("time_step_settings") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("time_step_settings") / "attributeEditorForm" / "default.qml",
+                    "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                 },
             },
         },
@@ -1350,6 +1484,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("weir") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "id": {
                     "aliases": Path("weir") / "aliases" / "default.qml",
@@ -1359,6 +1494,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("weir") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "code": {
                     "aliases": Path("weir") / "aliases" / "default.qml",
@@ -1368,6 +1504,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("weir") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
                 "display_name": {
                     "aliases": Path("weir") / "aliases" / "default.qml",
@@ -1377,6 +1514,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("weir") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
         },
@@ -1392,6 +1530,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "default.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("windshielding_1d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "id": {
                     "aliases": Path("windshielding_1d") / "aliases" / "default.qml",
@@ -1402,6 +1541,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "id.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("windshielding_1d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "code": {
                     "aliases": Path("windshielding_1d") / "aliases" / "default.qml",
@@ -1412,6 +1552,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "code.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("windshielding_1d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "display_name": {
                     "aliases": Path("windshielding_1d") / "aliases" / "default.qml",
@@ -1422,6 +1563,7 @@ style_config_data = MappingProxyType(
                     "labeling": Path("general") / "labeling" / "display_name.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("windshielding_1d") / "renderer-v2" / "default.qml",  # symbology
+                    "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
             },
         },

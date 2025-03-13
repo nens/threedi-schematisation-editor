@@ -36,6 +36,7 @@ from threedi_schematisation_editor.utils import (
     get_qml_style_path,
     gpkg_layer,
     hillshade_layer,
+    merge_qml_styles,
     modify_raster_style,
     remove_group_with_children,
     remove_layer,
@@ -49,11 +50,11 @@ class LayersManager:
     """Class with methods and attributes used for managing 3Di User Layers."""
 
     VECTOR_GROUPS = (
+        ("Laterals & 0D inflow", dm.MODEL_0D_INFLOW_ELEMENTS),
+        ("Structure control", dm.STRUCTURE_CONTROL_ELEMENTS),
         ("1D", dm.MODEL_1D_ELEMENTS),
         ("1D2D", dm.MODEL_1D2D_ELEMENTS),
         ("2D", dm.MODEL_2D_ELEMENTS),
-        ("Laterals & 0D inflow", dm.MODEL_0D_INFLOW_ELEMENTS),
-        ("Structure control", dm.STRUCTURE_CONTROL_ELEMENTS),
         ("Hydrological processes", dm.HYDROLOGICAL_PROCESSES),
         ("Settings", dm.SETTINGS_ELEMENTS),
     )
@@ -374,10 +375,15 @@ class LayersManager:
         style_manager = layer.styleManager()
         try:
             layer_style_config = self.vector_style_configs[model_cls.__tablename__]
-            for style_name, style_categories in layer_style_config.styles.items():
-                for style_category, style_path in style_categories.items():
-                    style_path = os.path.join(qml_main_dir, style_path)
-                    layer.loadNamedStyle(style_path)
+            style_names = [
+                style_name for style_name in layer_style_config.styles.keys() if style_name != default_style_name
+            ]
+            style_names.append(default_style_name)  # make sure default is last
+            for style_name in style_names:
+                style_categories = layer_style_config.styles[style_name]
+                style_paths = [qml_main_dir / style_path for style_path in style_categories.values()]
+                merged_qml = merge_qml_styles(style_paths)
+                layer.loadNamedStyle(str(merged_qml))
                 set_initial_layer_configuration(layer, model_cls)
                 style_manager.addStyleFromLayer(style_name)
         except KeyError:

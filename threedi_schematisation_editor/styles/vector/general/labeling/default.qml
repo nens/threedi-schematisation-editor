@@ -1,6 +1,6 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis styleCategories="Labeling" version="3.34.4-Prizren" labelsEnabled="0">
-  <labeling type="simple">
+<qgis>
+  <labeling type="none"> <!-- "none" is an invalid value, which tricks qgis into switching to "no labels"-->
     <settings calloutType="simple">
       <text-style blendMode="0" fontLetterSpacing="0" fieldName="id" textColor="0,0,0,255" fontWeight="50" fontStrikeout="0" fontWordSpacing="0" previewBkgrdColor="255,255,255,255" capitalization="0" multilineHeightUnit="Percentage" useSubstitutions="0" multilineHeight="1" forcedBold="0" forcedItalic="0" fontItalic="0" legendString="Aa" allowHtml="0" fontUnderline="0" namedStyle="Regular" fontSizeUnit="Point" fontSize="8" fontFamily="MS Gothic" fontSizeMapUnitScale="3x:0,0,0,0,0,0" isExpression="0" fontKerning="1" textOpacity="1" textOrientation="horizontal">
         <families/>
@@ -90,7 +90,7 @@
       </text-style>
       <text-format reverseDirectionSymbol="0" placeDirectionSymbol="0" plussign="0" leftDirectionSymbol="&lt;" decimals="3" formatNumbers="0" useMaxLineLengthForAutoWrap="1" addDirectionSymbol="0" multilineAlign="0" wrapChar="" rightDirectionSymbol=">" autoWrapLength="0"/>
       <placement dist="0" geometryGenerator="" centroidWhole="0" predefinedPositionOrder="TR,TL,BR,BL,R,L,TSR,BSR" polygonPlacementFlags="2" xOffset="0" overlapHandling="PreventOverlap" maxCurvedCharAngleIn="20" placement="0" geometryGeneratorEnabled="0" preserveRotation="1" geometryGeneratorType="PointGeometry" overrunDistance="0" centroidInside="0" labelOffsetMapUnitScale="3x:0,0,0,0,0,0" overrunDistanceUnit="MM" fitInPolygonOnly="0" offsetUnits="MapUnit" yOffset="0" allowDegraded="0" distUnits="MM" repeatDistanceUnits="MM" lineAnchorClipping="0" lineAnchorType="0" lineAnchorPercent="0.5" repeatDistanceMapUnitScale="3x:0,0,0,0,0,0" placementFlags="0" maxCurvedCharAngleOut="-20" distMapUnitScale="3x:0,0,0,0,0,0" priority="5" rotationUnit="AngleDegrees" lineAnchorTextPoint="CenterOfText" offsetType="0" overrunDistanceMapUnitScale="3x:0,0,0,0,0,0" layerType="PointGeometry" quadOffset="4" rotationAngle="0" repeatDistance="0"/>
-      <rendering drawLabels="1" scaleMin="1" obstacle="1" limitNumLabels="0" upsidedownLabels="0" scaleMax="2000" fontMinPixelSize="3" scaleVisibility="0" mergeLines="0" obstacleType="0" minFeatureSize="0" fontMaxPixelSize="10000" zIndex="0" maxNumLabels="2000" unplacedVisibility="0" labelPerPart="0" obstacleFactor="1" fontLimitPixelSize="0"/>
+      <rendering drawLabels="1" scaleMin="0" obstacle="1" limitNumLabels="0" upsidedownLabels="0" scaleMax="0" fontMinPixelSize="3" scaleVisibility="0" mergeLines="0" obstacleType="0" minFeatureSize="0" fontMaxPixelSize="10000" zIndex="0" maxNumLabels="2000" unplacedVisibility="0" labelPerPart="0" obstacleFactor="1" fontLimitPixelSize="0"/>
       <dd_properties>
         <Option type="Map">
           <Option type="QString" value="" name="name"/>
@@ -124,5 +124,4 @@
       </callout>
     </settings>
   </labeling>
-  <layerGeometryType>0</layerGeometryType>
 </qgis>

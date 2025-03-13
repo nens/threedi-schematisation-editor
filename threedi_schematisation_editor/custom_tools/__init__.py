@@ -131,8 +131,7 @@ class FeaturesImportConfig:
                             items = (
                                 [["False", False], ["True", True]]
                                 if field_type == bool
-                                else [["NULL", "NULL"]]
-                                + [[enum_entry_name_format(e.name), e.value] for e in field_type]
+                                else [["NULL", "NULL"]] + [[enum_entry_name_format(e), e.value] for e in field_type]
                             )
                             for item_str, item_data in items:
                                 widget.addItem(item_str, item_data)
