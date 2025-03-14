@@ -385,7 +385,8 @@ class LayersManager:
                 merged_qml = merge_qml_styles(style_paths)
                 layer.loadNamedStyle(str(merged_qml))
                 set_initial_layer_configuration(layer, model_cls)
-                style_manager.addStyleFromLayer(style_name)
+                style_display_name = style_name.replace("_", " ")
+                style_manager.addStyleFromLayer(style_display_name)
         except KeyError:
             pass
         all_styles = style_manager.styles()

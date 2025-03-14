@@ -11,14 +11,9 @@ from threedi_schematisation_editor.enumerators import (
     BoundaryType,
     CrestType,
     CrossSectionShape,
-    ExchangeTypeCulvert,
-    ExchangeTypeNode,
-    FrictionType,
     GeometryType,
     Later2DType,
-    ManholeShape,
     MeasureVariable,
-    PipeMaterial,
     PumpType,
     TimeUnit,
     Unit,
@@ -1128,7 +1123,6 @@ class TagHandler(UserLayerHandler):
 
 
 class AbstractControlHandler(UserLayerHandler):
-
     @cached_property
     def target_data_models(self):
         return {model_cls.__tablename__: model_cls for model_cls in [dm.Pump, dm.Orifice, dm.Weir]}

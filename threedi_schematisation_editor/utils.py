@@ -327,7 +327,6 @@ def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
 
 
 def enum_entry_name_format(entry):
-
     if entry.name not in ["YZ", "HPE", "HDPE", "PVC"]:
         formatted_entry_name = (
             entry.name.capitalize()
@@ -737,7 +736,9 @@ def migrate_schematisation_schema(schematisation_filepath):
             except errors.InvalidSRIDException:
                 srid = None
         if srid is None:
-            migration_feedback_msg = "Could not fetch valid EPSG code from database or DEM; aborting database migration."
+            migration_feedback_msg = (
+                "Could not fetch valid EPSG code from database or DEM; aborting database migration."
+            )
     except ImportError:
         migration_feedback_msg = "Missing threedi-schema library (or its dependencies). Schema migration failed."
     except Exception as e:
