@@ -376,8 +376,7 @@ class LayersManager:
         try:
             layer_style_config = self.vector_style_configs[model_cls.__tablename__]
             style_names = [
-                style_name for style_name in layer_style_config.styles.keys()
-                if style_name != default_style_name
+                style_name for style_name in layer_style_config.styles.keys() if style_name != default_style_name
             ]
             style_names.append(default_style_name)  # make sure default is last
             for style_name in style_names:
@@ -402,8 +401,12 @@ class LayersManager:
             default_edit_form_config.setInitFunction("open_edit_form")
             default_edit_form_config.setInitCode("from threedi_schematisation_editor.utils import open_edit_form")
             set_field_default_value(layer, "id", "")
+            if model_cls.__geometrytype__ == en.GeometryType.NoGeometry:
+                set_field_default_value(layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))")
+            else:
+                set_field_default_value(layer, "id", "")
         else:
-            set_field_default_value(layer, "id", "if (maximum(id) is null, 1, maximum(id) + 1)")
+            set_field_default_value(layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))")
         if "area" in layer_fields.names():
             set_field_default_value(layer, "area", "$area", apply_on_update=True)
         for style in all_styles:

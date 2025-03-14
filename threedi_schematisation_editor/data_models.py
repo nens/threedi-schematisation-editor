@@ -5,6 +5,7 @@ from types import MappingProxyType, SimpleNamespace
 from typing import Optional
 
 from threedi_schematisation_editor.enumerators import (
+    ActionType,
     AggregationMethod,
     BoundaryType,
     ControlType,
@@ -15,6 +16,7 @@ from threedi_schematisation_editor.enumerators import (
     ExchangeTypeNode,
     ExchangeTypePipe,
     FlowVariable,
+    FrictionShallowWaterDepthCorrection,
     FrictionType,
     FrictionTypeExtended,
     GeometryType,
@@ -22,20 +24,21 @@ from threedi_schematisation_editor.enumerators import (
     InitializationType,
     InterflowType,
     Later2DType,
+    LimiterSlopeCrossSectionalArea2D,
+    MaxDegreeGaussSeidel,
+    MeasureOperator,
     MeasureVariable,
+    NodeOpenWaterDetection,
     PipeMaterial,
     PumpType,
     SewerageType,
+    TargetType,
+    TimeIntegrationMethod,
     TimeUnit,
     Unit,
-    Visualisation,
-    FrictionShallowWaterDepthCorrection,
-    TimeIntegrationMethod,
-    LimiterSlopeCrossSectionalArea2D,
-    MaxDegreeGaussSeidel,
-    UseNestedNewton,
     UseAdvection1D,
-    NodeOpenWaterDetection, ActionType, TargetType, MeasureOperator,
+    UseNestedNewton,
+    Visualisation,
 )
 
 
@@ -44,6 +47,7 @@ class HighPrecisionFloat(float):
     Used to set the widget type for a field to TextEdit
     so users can fill in any number of decimals and use scientific notation
     """
+
     pass
 
 
