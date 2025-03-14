@@ -22,7 +22,9 @@ from threedi_schematisation_editor.enumerators import (
     PumpType,
     TimeUnit,
     Unit,
-    Visualisation, MeasureVariable, CrossSectionShape,
+    Visualisation,
+    MeasureVariable,
+    CrossSectionShape,
 )
 from threedi_schematisation_editor.utils import (
     connect_signal,
@@ -1128,7 +1130,6 @@ class TagHandler(UserLayerHandler):
 
 
 class AbstractControlHandler(UserLayerHandler):
-
     @cached_property
     def target_data_models(self):
         return {model_cls.__tablename__: model_cls for model_cls in [dm.Pump, dm.Orifice, dm.Weir]}
@@ -1221,20 +1222,12 @@ class TableControlHandler(AbstractControlHandler):
 
 class MeasureLocationHandler(UserLayerHandler):
     MODEL = dm.MeasureLocation
-    DEFAULTS = MappingProxyType(
-        {
-            "measure_variable": MeasureVariable.WATER_LEVEL.value
-        }
-    )
+    DEFAULTS = MappingProxyType({"measure_variable": MeasureVariable.WATER_LEVEL.value})
 
 
 class MeasureMapHandler(UserLayerHandler):
     MODEL = dm.MeasureMap
-    DEFAULTS = MappingProxyType(
-        {
-            "measure_variable": MeasureVariable.WATER_LEVEL.value
-        }
-    )
+    DEFAULTS = MappingProxyType({"measure_variable": MeasureVariable.WATER_LEVEL.value})
 
     @cached_property
     def control_data_models(self):

@@ -3,11 +3,7 @@ from pathlib import Path
 from typing import List
 
 
-def split_qml(
-        qml_file: Path | str,
-        output_dir: Path | str,
-        tags: List[str] = None
-):
+def split_qml(qml_file: Path | str, output_dir: Path | str, tags: List[str] = None):
     # Convert qml_file and output_dir to Path objects
     qml_file = Path(qml_file)
     output_dir = Path(output_dir)
@@ -28,7 +24,7 @@ def split_qml(
         if tags:
             if elem.tag not in tags:
                 continue
-        new_tree = ET.ElementTree(ET.Element('qgis'))
+        new_tree = ET.ElementTree(ET.Element("qgis"))
         new_root = new_tree.getroot()
         new_root.append(elem)
         output_file = output_dir / f"{elem.tag}.qml"
@@ -41,8 +37,5 @@ if __name__ == "__main__":
     # Example usage
     base_dir = Path(r"path\to\directory\with\qml\files")
     output_base_dir = Path(r"path\to\directory\to\store\output\qml\files")
-    for qml_file in base_dir.rglob('*.qml'):
-        split_qml(
-            qml_file=qml_file,
-            output_dir=output_base_dir / qml_file.with_suffix("")
-        )
+    for qml_file in base_dir.rglob("*.qml"):
+        split_qml(qml_file=qml_file, output_dir=output_base_dir / qml_file.with_suffix(""))

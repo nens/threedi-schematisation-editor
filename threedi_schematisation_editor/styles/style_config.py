@@ -111,7 +111,6 @@ style_config_data = MappingProxyType(
                     "renderer-v2": Path("boundary_condition_1d") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
-
             },
         },
         "boundary_condition_2d": {
