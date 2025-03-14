@@ -1,4 +1,4 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 from operator import itemgetter
 
 from qgis.core import (
@@ -21,7 +21,7 @@ from threedi_schematisation_editor.utils import get_feature_by_id, get_next_feat
 
 
 class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
-    """Link (impervious) surfaces to connection nodes."""
+    """Link (DWF) surfaces to connection nodes."""
 
     SURFACE_LAYER = "SURFACE_LAYER"
     SELECTED_SURFACES = "SELECTED_SURFACES"
@@ -44,7 +44,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
         return "threedi_map_surfaces_to_connection_nodes"
 
     def displayName(self):
-        return self.tr("Map (impervious) surfaces to connection nodes")
+        return self.tr("Map surfaces to connection nodes")
 
     def group(self):
         return self.tr("Inflow")
@@ -55,14 +55,14 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
     def shortHelpString(self):
         return self.tr(
             """
-            <p>Connect (impervious) surfaces to the sewer system by creating (impervious) surface map features. The new features are added to the (impervious) surface layer directly.</p>
-            <p>For each (impervious) surface, the nearest pipe is found; the surface is mapped to the the nearest of this pipe's connection nodes.</p>
+            <p>Connect surfaces to the sewer system by creating surface map features. The new features are added to the surface layer directly.</p>
+            <p>For each surface, the nearest pipe is found; the surface is mapped to the the nearest of this pipe's connection nodes.</p>
             <p>In some cases, you may want to prefer e.g. stormwater drains over combined sewers. This can be done by setting the stormwater sewer preference to a value greater than zero.</p>
             <h3>Parameters</h3>
-            <h4>(Impervious) surface layer</h4>
-            <p>Surface or Impervious surface layer that is added to the project with the 3Di Schematisation Editor.</p>
-            <h4>(Impervious) surface map layer</h4>
-            <p>Surface map or Impervious surface map layer that is added to the project with the 3Di Schematisation Editor.</p>
+            <h4>(DWF) surface layer</h4>
+            <p>Surface or DWF surface layer that is added to the project with the 3Di Schematisation Editor.</p>
+            <h4>(DWF) surface map layer</h4>
+            <p>Surface map or DWF surface map layer that is added to the project with the 3Di Schematisation Editor.</p>
             <h4>Pipe layer</h4>
             <p>Pipe layer that is added to the project with the 3Di Schematisation Editor.</p>
             <h4>Connection node layer</h4>
@@ -70,11 +70,11 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
             <h4>Sewerage types</h4>
             <p>Only pipes of the selected sewerage types will be used in the algorithm</p>
             <h4>Stormwater sewer preference</h4>
-            <p>This value (in meters) will be subtracted from the distance between the (impervious) surface and the stormwater drain. For example: there is a combined sewer within 10 meters from the (impervious) surface, and a stormwater drain within 11 meters; if the stormwater sewer preference is 2 m, the algorithm will use 11 - 2 = 9 m as distance to the stormwater sewer, so the (impervious) surface will be mapped to one of the stormwater drain's connection nodes, instead of to the combined sewer's connection nodes.</p>
+            <p>This value (in meters) will be subtracted from the distance between the surface and the stormwater drain. For example: there is a combined sewer within 10 meters from the surface, and a stormwater drain within 11 meters; if the stormwater sewer preference is 2 m, the algorithm will use 11 - 2 = 9 m as distance to the stormwater sewer, so the surface will be mapped to one of the stormwater drain's connection nodes, instead of to the combined sewer's connection nodes.</p>
             <h4>Sanitary sewer preference</h4>
-            <p>This value (in meters) will be subtracted from the distance between the (impervious) surface and the sanitary sewer. See 'stormwater sewer preference' for further explanation.</p>
+            <p>This value (in meters) will be subtracted from the distance between the surface and the sanitary sewer. See 'stormwater sewer preference' for further explanation.</p>
             <h4>Search distance</h4>
-            <p>Only pipes within search distance (m) from the (impervious) surface will be used in the algorithm.</p>
+            <p>Only pipes within search distance (m) from the surface will be used in the algorithm.</p>
             """
         )
 
@@ -82,23 +82,23 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.SURFACE_LAYER,
-                self.tr("(Impervious) surface layer"),
+                self.tr("Surface layer"),
                 [QgsProcessing.TypeVectorPolygon],
-                defaultValue="Impervious Surface",
+                defaultValue="Surface",
             )
         )
         self.addParameter(
             QgsProcessingParameterBoolean(
                 self.SELECTED_SURFACES,
-                self.tr("Selected (impervious) surfaces only"),
+                self.tr("Selected surfaces only"),
             )
         )
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.SURFACE_MAP_LAYER,
-                self.tr("(Impervious) surface map layer"),
+                self.tr("Surface map layer"),
                 [QgsProcessing.TypeVectorLine],
-                defaultValue="Impervious surface map",
+                defaultValue="Surface map",
             )
         )
         self.addParameter(
@@ -120,7 +120,7 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
                 self.NODE_LAYER,
                 self.tr("Connection node layer"),
                 [QgsProcessing.TypeVectorPoint],
-                defaultValue="Connection Node",
+                defaultValue="Connection node",
             )
         )
         self.addParameter(
@@ -133,19 +133,28 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
             )
         )
         storm_pref = QgsProcessingParameterNumber(
-            self.STORMWATER_SEWER_PREFERENCE, self.tr("Stormwater sewer preference [m]"), type=QgsProcessingParameterNumber.Double, defaultValue=0.0
+            self.STORMWATER_SEWER_PREFERENCE,
+            self.tr("Stormwater sewer preference [m]"),
+            type=QgsProcessingParameterNumber.Double,
+            defaultValue=0.0,
         )
         storm_pref.setMinimum(0.0)
         storm_pref.setMetadata({"widget_wrapper": {"decimals": 2}})
         self.addParameter(storm_pref)
         sanitary_pref = QgsProcessingParameterNumber(
-            self.SANITARY_SEWER_PREFERENCE, self.tr("Sanitary sewer preference [m]"), type=QgsProcessingParameterNumber.Double, defaultValue=0.0
+            self.SANITARY_SEWER_PREFERENCE,
+            self.tr("Sanitary sewer preference [m]"),
+            type=QgsProcessingParameterNumber.Double,
+            defaultValue=0.0,
         )
         sanitary_pref.setMinimum(0.0)
         sanitary_pref.setMetadata({"widget_wrapper": {"decimals": 2}})
         self.addParameter(sanitary_pref)
         search_distance = QgsProcessingParameterNumber(
-            self.SEARCH_DISTANCE, self.tr("Search distance"), type=QgsProcessingParameterNumber.Double, defaultValue=10.0
+            self.SEARCH_DISTANCE,
+            self.tr("Search distance"),
+            type=QgsProcessingParameterNumber.Double,
+            defaultValue=10.0,
         )
         search_distance.setMinimum(0.01)
         search_distance.setMetadata({"widget_wrapper": {"decimals": 2}})
@@ -215,9 +224,8 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
             step += 1
         surface_map_feats = []
         surface_map_fields = surface_map_lyr.fields()
-        surface_map_field_names = {fld.name() for fld in surface_map_fields}
         next_surface_map_id = get_next_feature_id(surface_map_lyr)
-        surface_id_field = "surface_id" if "surface_id" in surface_map_field_names else "impervious_surface_id"
+        surface_id_field = "surface_id"
         for surface_id, surface_pipes in surface_to_pipes_distances.items():
             if feedback.isCanceled():
                 return {}
@@ -231,8 +239,8 @@ class LinkSurfacesWithNodes(QgsProcessingAlgorithm):
             surface_centroid = surface_geom.centroid()
             pipe_id, surface_pipe_distance = surface_pipes[0]
             pipe_feat = pipe_features[pipe_id]
-            start_node_id = pipe_feat["connection_node_start_id"]
-            end_node_id = pipe_feat["connection_node_end_id"]
+            start_node_id = pipe_feat["connection_node_id_start"]
+            end_node_id = pipe_feat["connection_node_id_end"]
             start_node = get_feature_by_id(node_lyr, start_node_id)
             end_node = get_feature_by_id(node_lyr, end_node_id)
             start_node_geom = start_node.geometry()

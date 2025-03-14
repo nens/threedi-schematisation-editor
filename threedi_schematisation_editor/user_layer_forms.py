@@ -1,4 +1,4 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 from threedi_schematisation_editor.forms.custom_forms import MODEL_FORMS
 from threedi_schematisation_editor.utils import disconnect_signal
 

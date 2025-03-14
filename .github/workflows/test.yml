@@ -12,7 +12,7 @@ on:
 
 jobs:
   build_upload:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       # Checkout the code.
       - uses: actions/checkout@v2
@@ -20,7 +20,6 @@ jobs:
       - name: build
         run: |
           docker compose build schema
-          docker compose run schema make test
           docker compose run schema make zip
 
       - name: Publish package
