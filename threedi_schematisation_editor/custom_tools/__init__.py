@@ -520,6 +520,8 @@ class LinearStructuresImporter(AbstractStructuresImporterWithManholes):
                     new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
                     new_node_start_id = next_connection_node_id
                     new_start_node_feat["id"] = new_node_start_id
+                    # new_start_node_feat["fid"] = None  # Force QGIS to generate a new, unique FID
+                    # new_start_node_feat.setId(-1)  # Force QGIS to generate a new, unique FID
                     new_structure_feat["connection_node_start_id"] = new_node_start_id
                     next_connection_node_id += 1
                     new_nodes.append(new_start_node_feat)
@@ -536,6 +538,8 @@ class LinearStructuresImporter(AbstractStructuresImporterWithManholes):
                     new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
                     new_node_end_id = next_connection_node_id
                     new_end_node_feat["id"] = new_node_end_id
+                    # new_end_node_feat["fid"] = None  # Force QGIS to generate a new, unique FID
+                    # new_end_node_feat.setId(-1)  # Force QGIS to generate a new, unique FID
                     new_structure_feat["connection_node_end_id"] = new_node_end_id
                     next_connection_node_id += 1
                     new_nodes.append(new_end_node_feat)
@@ -546,6 +550,8 @@ class LinearStructuresImporter(AbstractStructuresImporterWithManholes):
                 new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
                 new_start_node_id = next_connection_node_id
                 new_start_node_feat["id"] = new_start_node_id
+                # new_start_node_feat["fid"] = None  # Force QGIS to generate a new, unique FID
+                # new_start_node_feat.setId(-1)  # Force QGIS to generate a new, unique FID
                 new_structure_feat["connection_node_start_id"] = new_start_node_id
                 next_connection_node_id += 1
                 new_end_node_feat = QgsFeature(node_fields)
@@ -553,6 +559,8 @@ class LinearStructuresImporter(AbstractStructuresImporterWithManholes):
                 new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
                 new_end_node_id = next_connection_node_id
                 new_end_node_feat["id"] = new_end_node_id
+                # new_end_node_feat["fid"] = None  # Force QGIS to generate a new, unique FID
+                # new_end_node_feat.setId(-1)  # Force QGIS to generate a new, unique FID
                 new_structure_feat["connection_node_end_id"] = new_end_node_id
                 next_connection_node_id += 1
                 new_nodes += [new_start_node_feat, new_end_node_feat]
@@ -739,7 +747,7 @@ class StructuresIntegrator(LinearStructuresImporter):
             start_node_feat.setGeometry(start_node)
             for field_name, field_value in template_node_attributes.items():
                 start_node_feat[field_name] = field_value
-            start_node_feat["fid"] = start_node_id
+            # start_node_feat["fid"] = start_node_id
             start_node_feat["id"] = start_node_id
             self.next_node_id += 1
             self.node_by_location[start_node_point] = start_node_id
@@ -754,7 +762,7 @@ class StructuresIntegrator(LinearStructuresImporter):
             end_node_feat.setGeometry(end_node)
             for field_name, field_value in template_node_attributes.items():
                 end_node_feat[field_name] = field_value
-            end_node_feat["fid"] = end_node_id
+            # end_node_feat["fid"] = end_node_id
             end_node_feat["id"] = end_node_id
             self.next_node_id += 1
             self.node_by_location[end_node_point] = end_node_id
