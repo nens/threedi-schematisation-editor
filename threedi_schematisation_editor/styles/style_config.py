@@ -106,7 +106,7 @@ style_config_data = MappingProxyType(
                     "attributetableconfig": Path("boundary_condition_1d") / "attributetableconfig" / "default.qml",
                     "constraints": Path("boundary_condition_1d") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("boundary_condition_1d") / "fieldConfiguration" / "default.qml",
-                    "labeling": Path("general") / "labeling" / "time_series.qml",
+                    "labeling": Path("boundary_condition_1d") / "labeling" / "time_series.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("boundary_condition_1d") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
@@ -162,7 +162,7 @@ style_config_data = MappingProxyType(
                     "attributetableconfig": Path("boundary_condition_2d") / "attributetableconfig" / "default.qml",
                     "constraints": Path("boundary_condition_2d") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("boundary_condition_2d") / "fieldConfiguration" / "default.qml",
-                    "labeling": Path("general") / "labeling" / "time_series.qml",
+                    "labeling": Path("boundary_condition_2d") / "labeling" / "time_series.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("boundary_condition_2d") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
@@ -294,7 +294,7 @@ style_config_data = MappingProxyType(
                     "fieldConfiguration": Path("connection_node") / "fieldConfiguration" / "default.qml",
                     "labeling": Path("connection_node") / "labeling" / "initial_water_level.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
-                    "renderer-v2": Path("connection_node") / "renderer-v2" / "default.qml",  # symbology
+                    "renderer-v2": Path("connection_node") / "renderer-v2" / "initial_water_level.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
                 },
                 "storage_area": {
@@ -928,7 +928,7 @@ style_config_data = MappingProxyType(
                     "attributetableconfig": Path("lateral_1d") / "attributetableconfig" / "default.qml",
                     "constraints": Path("lateral_1d") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("lateral_1d") / "fieldConfiguration" / "default.qml",
-                    "labeling": Path("general") / "labeling" / "time_series.qml",
+                    "labeling": Path("lateral_1d") / "labeling" / "time_series.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("lateral_1d") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",
@@ -983,7 +983,7 @@ style_config_data = MappingProxyType(
                     "attributetableconfig": Path("lateral_2d") / "attributetableconfig" / "default.qml",
                     "constraints": Path("lateral_2d") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("lateral_2d") / "fieldConfiguration" / "default.qml",
-                    "labeling": Path("general") / "labeling" / "time_series.qml",
+                    "labeling": Path("lateral_2d") / "labeling" / "time_series.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("lateral_2d") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "point.qml",

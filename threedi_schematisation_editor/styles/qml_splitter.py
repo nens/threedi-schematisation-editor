@@ -107,7 +107,7 @@ if __name__ == "__main__":
     base_dir = Path(r"C:\Users\leendert.vanwolfswin\Documents\migration_checker\style 300\stylings rob\new schema")
     # qml_file = base_dir / "channel_exchange type.qml"
     # for qml_file in base_dir.rglob('*.qml'):
-    for qml_file in base_dir.rglob('cross section location_cross section LVW.qml'):
+    for qml_file in base_dir.rglob('connection_node initial water level LVW 1403.qml'):
         split_qml(
             qml_file=qml_file,
             output_dir=Path(r"C:\Users\leendert.vanwolfswin\Downloads\test2") / qml_file.with_suffix(""),
