@@ -196,7 +196,7 @@
              <locale language="English" country="UnitedStates"/>
             </property>
             <property name="text">
-             <string>Area</string>
+             <string>Area [m²]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>

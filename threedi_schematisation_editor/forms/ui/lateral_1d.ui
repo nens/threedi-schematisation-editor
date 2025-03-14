@@ -27,7 +27,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>517</width>
+        <width>521</width>
         <height>521</height>
        </rect>
       </property>
@@ -383,7 +383,7 @@
               <set>Qt::ImhNone</set>
              </property>
              <property name="title">
-              <string>Timeseries</string>
+              <string>Time series</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_3">
               <item row="4" column="1" colspan="4">

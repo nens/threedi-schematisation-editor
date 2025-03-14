@@ -57,7 +57,7 @@
               <set>Qt::ImhNone</set>
              </property>
              <property name="title">
-              <string>Timeseries</string>
+              <string>Time series</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_3">
               <item row="4" column="1" colspan="4">
@@ -363,29 +363,6 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="2">
-               <widget class="QLabel" name="label_7">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="text">
-                 <string>Lateral type</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>10</number>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="3">
-               <widget class="QComboBox" name="type">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-               </widget>
-              </item>
              </layout>
             </widget>
            </item>
@@ -416,6 +393,44 @@
              <layout class="QGridLayout" name="gridLayout_16">
               <item row="0" column="0" colspan="2">
                <layout class="QHBoxLayout" name="tags_layout"/>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QGroupBox" name="grp_characteristics">
+             <property name="title">
+              <string>Characteristics</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_4">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_7">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="text">
+                 <string>Lateral type</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="indent">
+                 <number>-1</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="type">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+               </widget>
               </item>
              </layout>
             </widget>

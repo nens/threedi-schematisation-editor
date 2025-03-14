@@ -30,7 +30,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>515</width>
+        <width>519</width>
         <height>539</height>
        </rect>
       </property>
@@ -148,7 +148,7 @@
           <string>Administrative properties</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_7">
-          <item row="0" column="1">
+          <item row="1" column="1">
            <widget class="QDoubleSpinBox" name="manhole_surface_level">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -176,7 +176,7 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="0">
+          <item row="1" column="0">
            <widget class="QLabel" name="label_11">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
@@ -192,7 +192,7 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="2">
+          <item row="1" column="2">
            <widget class="QToolButton" name="manhole_surface_level_clear">
             <property name="font">
              <font>
@@ -203,6 +203,35 @@
             </property>
             <property name="text">
              <string>x</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_15">
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+            <property name="text">
+             <string>Visualisation</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+            <property name="indent">
+             <number>-1</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" colspan="2">
+           <widget class="QComboBox" name="visualisation">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
             </property>
            </widget>
           </item>
@@ -532,20 +561,23 @@
           <string>General</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_7">
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_8">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
             <property name="text">
-             <string>ID</string>
+             <string>Code</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
+            <property name="indent">
+             <number>10</number>
+            </property>
            </widget>
           </item>
-          <item row="1" column="1">
+          <item row="0" column="1">
            <widget class="QSpinBox" name="id">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -567,46 +599,7 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="1" colspan="4">
-           <widget class="QComboBox" name="visualisation">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1" colspan="4">
-           <widget class="QLineEdit" name="display_name"/>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Display name</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_8">
-            <property name="locale">
-             <locale language="English" country="UnitedStates"/>
-            </property>
-            <property name="text">
-             <string>Code</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-            </property>
-            <property name="indent">
-             <number>10</number>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="4">
+          <item row="0" column="3">
            <widget class="QLineEdit" name="code">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -619,21 +612,28 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_15">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_7">
             <property name="locale">
              <locale language="English" country="UnitedStates"/>
             </property>
             <property name="text">
-             <string>Visualisation</string>
+             <string>ID</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
-            <property name="indent">
-             <number>-1</number>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Display name</string>
             </property>
            </widget>
+          </item>
+          <item row="1" column="1" colspan="3">
+           <widget class="QLineEdit" name="display_name"/>
           </item>
          </layout>
         </widget>

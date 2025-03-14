@@ -34,8 +34,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>515</width>
-        <height>928</height>
+        <width>519</width>
+        <height>987</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
@@ -821,7 +821,37 @@
               <string>Administrative properties</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_12">
-              <item row="0" column="1">
+              <item row="1" column="2">
+               <widget class="QToolButton" name="connection_node_1_manhole_surface_level_clear">
+                <property name="font">
+                 <font>
+                  <weight>50</weight>
+                  <italic>false</italic>
+                  <bold>false</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>x</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_11">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="text">
+                 <string>Manhole surface level [m]</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="indent">
+                 <number>-1</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
                <widget class="QDoubleSpinBox" name="connection_node_1_manhole_surface_level">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -850,12 +880,12 @@
                </widget>
               </item>
               <item row="0" column="0">
-               <widget class="QLabel" name="label_11">
+               <widget class="QLabel" name="label_26">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
                 <property name="text">
-                 <string>Manhole surface level [m]</string>
+                 <string>Visualisation</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -865,17 +895,16 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="2">
-               <widget class="QToolButton" name="connection_node_1_manhole_surface_level_clear">
-                <property name="font">
-                 <font>
-                  <weight>50</weight>
-                  <italic>false</italic>
-                  <bold>false</bold>
-                 </font>
+              <item row="0" column="1" colspan="2">
+               <widget class="QComboBox" name="connection_node_1_visualisation">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
                 </property>
-                <property name="text">
-                 <string>x</string>
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
                 </property>
                </widget>
               </item>
@@ -974,19 +1003,6 @@
                 </property>
                </widget>
               </item>
-              <item row="2" column="1" colspan="3">
-               <widget class="QComboBox" name="connection_node_1_visualisation">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-               </widget>
-              </item>
               <item row="0" column="2">
                <widget class="QLabel" name="label_22">
                 <property name="locale">
@@ -1040,22 +1056,6 @@
               </item>
               <item row="1" column="1" colspan="3">
                <widget class="QLineEdit" name="connection_node_1_display_name"/>
-              </item>
-              <item row="2" column="0">
-               <widget class="QLabel" name="label_26">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="text">
-                 <string>Visualisation</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>-1</number>
-                </property>
-               </widget>
               </item>
               <item row="0" column="0">
                <widget class="QLabel" name="label_20">
@@ -1335,7 +1335,7 @@
               <string>Administrative properties</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_17">
-              <item row="0" column="1">
+              <item row="1" column="1">
                <widget class="QDoubleSpinBox" name="connection_node_2_manhole_surface_level">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -1363,7 +1363,7 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="0">
+              <item row="1" column="0">
                <widget class="QLabel" name="label_35">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
@@ -1379,7 +1379,7 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="2">
+              <item row="1" column="2">
                <widget class="QToolButton" name="connection_node_2_manhole_surface_level_clear">
                 <property name="font">
                  <font>
@@ -1390,6 +1390,35 @@
                 </property>
                 <property name="text">
                  <string>x</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_33">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="text">
+                 <string>Visualisation</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="indent">
+                 <number>-1</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1" colspan="2">
+               <widget class="QComboBox" name="connection_node_2_visualisation">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
                 </property>
                </widget>
               </item>
@@ -1559,19 +1588,6 @@
                 </property>
                </widget>
               </item>
-              <item row="3" column="1" colspan="4">
-               <widget class="QComboBox" name="connection_node_2_visualisation">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-               </widget>
-              </item>
               <item row="2" column="1" colspan="4">
                <widget class="QLineEdit" name="connection_node_2_display_name"/>
               </item>
@@ -1608,22 +1624,6 @@
                 </property>
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0">
-               <widget class="QLabel" name="label_33">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="text">
-                 <string>Visualisation</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>-1</number>
                 </property>
                </widget>
               </item>
@@ -1796,70 +1796,32 @@
            <string>Cross section locations</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_19">
-           <item row="2" column="0">
-            <widget class="QGroupBox" name="grp_general_cross_section">
-             <property name="enabled">
-              <bool>true</bool>
+           <item row="4" column="0">
+            <widget class="QGroupBox" name="grp_characteristics_def">
+             <property name="locale">
+              <locale language="English" country="UnitedStates"/>
+             </property>
+             <property name="inputMethodHints">
+              <set>Qt::ImhNone</set>
              </property>
              <property name="title">
-              <string>General</string>
+              <string>Cross-section</string>
              </property>
-             <layout class="QGridLayout" name="gridLayout_9">
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_24">
+             <layout class="QGridLayout" name="gridLayout_3">
+              <item row="4" column="5">
+               <widget class="QToolButton" name="cross_section_location_cross_section_height_clear">
                 <property name="text">
-                 <string>ID</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                 <string>x</string>
                 </property>
                </widget>
               </item>
-              <item row="0" column="1" colspan="2">
-               <widget class="QSpinBox" name="cross_section_location_id">
-                <property name="readOnly">
-                 <bool>true</bool>
-                </property>
-                <property name="buttonSymbols">
-                 <enum>QAbstractSpinBox::NoButtons</enum>
-                </property>
-                <property name="maximum">
-                 <number>99999999</number>
-                </property>
-                <property name="showClearButton" stdset="0">
-                 <bool>true</bool>
-                </property>
-                <property name="clearValue" stdset="0">
-                 <bool>true</bool>
-                </property>
-                <property name="expressionsEnabled" stdset="0">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="label_23">
-                <property name="text">
-                 <string>Bank level [m MSL]</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>-1</number>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QDoubleSpinBox" name="cross_section_location_bank_level">
+              <item row="4" column="1">
+               <widget class="QDoubleSpinBox" name="cross_section_location_cross_section_width">
                 <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
-                </property>
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
                 </property>
                 <property name="buttonSymbols">
                  <enum>QAbstractSpinBox::NoButtons</enum>
@@ -1867,44 +1829,61 @@
                 <property name="decimals">
                  <number>3</number>
                 </property>
-                <property name="minimum">
-                 <double>-99999999.000000000000000</double>
+                <property name="maximum">
+                 <double>1000000.000000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="4">
+               <widget class="QDoubleSpinBox" name="cross_section_location_cross_section_height">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="buttonSymbols">
+                 <enum>QAbstractSpinBox::NoButtons</enum>
+                </property>
+                <property name="decimals">
+                 <number>3</number>
                 </property>
                 <property name="maximum">
                  <double>1000000.000000000000000</double>
                 </property>
-                <property name="showClearButton" stdset="0">
-                 <bool>true</bool>
-                </property>
-                <property name="clearValue" stdset="0">
-                 <bool>true</bool>
-                </property>
-                <property name="expressionsEnabled" stdset="0">
-                 <bool>true</bool>
-                </property>
                </widget>
               </item>
-              <item row="1" column="2">
-               <widget class="QToolButton" name="cross_section_location_bank_level_clear">
-                <property name="text">
-                 <string>x</string>
+              <item row="5" column="1" colspan="5">
+               <widget class="QTableWidget" name="cross_section_location_cross_section_table_widget">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>125</height>
+                 </size>
                 </property>
+                <property name="font">
+                 <font>
+                  <pointsize>8</pointsize>
+                 </font>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhDigitsOnly</set>
+                </property>
+                <property name="verticalScrollBarPolicy">
+                 <enum>Qt::ScrollBarAsNeeded</enum>
+                </property>
+                <property name="sizeAdjustPolicy">
+                 <enum>QAbstractScrollArea::AdjustToContents</enum>
+                </property>
+                <property name="selectionBehavior">
+                 <enum>QAbstractItemView::SelectRows</enum>
+                </property>
+                <attribute name="verticalHeaderDefaultSectionSize">
+                 <number>23</number>
+                </attribute>
                </widget>
               </item>
-              <item row="0" column="3">
-               <widget class="QLabel" name="label_25">
-                <property name="text">
-                 <string>Code</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>10</number>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="3">
+              <item row="1" column="0">
                <widget class="QLabel" name="label_6">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
@@ -1916,11 +1895,11 @@
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
                 </property>
                 <property name="indent">
-                 <number>10</number>
+                 <number>-1</number>
                 </property>
                </widget>
               </item>
-              <item row="1" column="4">
+              <item row="1" column="1" colspan="4">
                <widget class="QDoubleSpinBox" name="cross_section_location_reference_level">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -1954,10 +1933,195 @@
                 </property>
                </widget>
               </item>
+              <item row="4" column="2">
+               <widget class="QToolButton" name="cross_section_location_cross_section_width_clear">
+                <property name="text">
+                 <string>x</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="cross_section_location_cross_section_width_label">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+                <property name="text">
+                 <string>Width [m]</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="3">
+               <widget class="QLabel" name="cross_section_location_cross_section_height_label">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+                <property name="text">
+                 <string>Height [m]</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="indent">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="cross_section_location_cross_section_table_label">
+                <property name="text">
+                 <string>Table</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1" colspan="5">
+               <widget class="QComboBox" name="cross_section_location_cross_section_shape">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+                <property name="editable">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1" colspan="5">
+               <layout class="QHBoxLayout" name="horizontalLayout">
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QPushButton" name="cross_section_location_cross_section_table_delete">
+                  <property name="toolTip">
+                   <string>Delete selected rows</string>
+                  </property>
+                  <property name="text">
+                   <string>Delete</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="cross_section_location_cross_section_table_copy">
+                  <property name="text">
+                   <string>Copy</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="cross_section_location_cross_section_table_paste">
+                  <property name="toolTip">
+                   <string>Paste rows from clipboard</string>
+                  </property>
+                  <property name="text">
+                   <string>Paste</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="cross_section_location_cross_section_table_add">
+                  <property name="toolTip">
+                   <string>Add new row</string>
+                  </property>
+                  <property name="text">
+                   <string>Add</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_5">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+                <property name="text">
+                 <string>Shape</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
               <item row="1" column="5">
                <widget class="QToolButton" name="cross_section_location_reference_level_clear">
                 <property name="text">
                  <string>x</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QGroupBox" name="grp_general_cross_section">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="title">
+              <string>General</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_9">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_24">
+                <property name="text">
+                 <string>ID</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <widget class="QLabel" name="label_25">
+                <property name="text">
+                 <string>Code</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="indent">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1" colspan="2">
+               <widget class="QSpinBox" name="cross_section_location_id">
+                <property name="readOnly">
+                 <bool>true</bool>
+                </property>
+                <property name="buttonSymbols">
+                 <enum>QAbstractSpinBox::NoButtons</enum>
+                </property>
+                <property name="maximum">
+                 <number>99999999</number>
+                </property>
+                <property name="showClearButton" stdset="0">
+                 <bool>true</bool>
+                </property>
+                <property name="clearValue" stdset="0">
+                 <bool>true</bool>
+                </property>
+                <property name="expressionsEnabled" stdset="0">
+                 <bool>false</bool>
                 </property>
                </widget>
               </item>
@@ -1977,7 +2141,7 @@
              </layout>
             </widget>
            </item>
-           <item row="6" column="0">
+           <item row="7" column="0">
             <widget class="QGroupBox" name="grp_vegetation">
              <property name="title">
               <string>Vegetation</string>
@@ -2272,7 +2436,7 @@
              </layout>
             </widget>
            </item>
-           <item row="4" column="0">
+           <item row="5" column="0">
             <widget class="QGroupBox" name="grp_friction">
              <property name="title">
               <string>Friction</string>
@@ -2434,7 +2598,7 @@
              </layout>
             </widget>
            </item>
-           <item row="5" column="0">
+           <item row="6" column="0">
             <spacer name="verticalSpacer_2">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -2446,224 +2610,6 @@
               </size>
              </property>
             </spacer>
-           </item>
-           <item row="3" column="0">
-            <widget class="QGroupBox" name="grp_characteristics_def">
-             <property name="locale">
-              <locale language="English" country="UnitedStates"/>
-             </property>
-             <property name="inputMethodHints">
-              <set>Qt::ImhNone</set>
-             </property>
-             <property name="title">
-              <string>Cross-section</string>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_3">
-              <item row="4" column="0">
-               <widget class="QLabel" name="cross_section_location_cross_section_table_label">
-                <property name="text">
-                 <string>Table</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="5">
-               <widget class="QToolButton" name="cross_section_location_cross_section_height_clear">
-                <property name="text">
-                 <string>x</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="1">
-               <widget class="QDoubleSpinBox" name="cross_section_location_cross_section_width">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="buttonSymbols">
-                 <enum>QAbstractSpinBox::NoButtons</enum>
-                </property>
-                <property name="decimals">
-                 <number>3</number>
-                </property>
-                <property name="maximum">
-                 <double>1000000.000000000000000</double>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="label_5">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="text">
-                 <string>Shape</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="4">
-               <widget class="QDoubleSpinBox" name="cross_section_location_cross_section_height">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="buttonSymbols">
-                 <enum>QAbstractSpinBox::NoButtons</enum>
-                </property>
-                <property name="decimals">
-                 <number>3</number>
-                </property>
-                <property name="maximum">
-                 <double>1000000.000000000000000</double>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="2">
-               <widget class="QToolButton" name="cross_section_location_cross_section_width_clear">
-                <property name="text">
-                 <string>x</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1" colspan="5">
-               <widget class="QComboBox" name="cross_section_location_cross_section_shape">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="editable">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="3">
-               <widget class="QLabel" name="cross_section_location_cross_section_height_label">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="text">
-                 <string>Height [m]</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>10</number>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0">
-               <widget class="QLabel" name="cross_section_location_cross_section_width_label">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="text">
-                 <string>Width [m]</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="1" colspan="5">
-               <widget class="QTableWidget" name="cross_section_location_cross_section_table_widget">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>125</height>
-                 </size>
-                </property>
-                <property name="font">
-                 <font>
-                  <pointsize>8</pointsize>
-                 </font>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhDigitsOnly</set>
-                </property>
-                <property name="verticalScrollBarPolicy">
-                 <enum>Qt::ScrollBarAsNeeded</enum>
-                </property>
-                <property name="sizeAdjustPolicy">
-                 <enum>QAbstractScrollArea::AdjustToContents</enum>
-                </property>
-                <property name="selectionBehavior">
-                 <enum>QAbstractItemView::SelectRows</enum>
-                </property>
-                <attribute name="verticalHeaderDefaultSectionSize">
-                 <number>23</number>
-                </attribute>
-               </widget>
-              </item>
-              <item row="5" column="1" colspan="5">
-               <layout class="QHBoxLayout" name="horizontalLayout">
-                <property name="bottomMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <widget class="QPushButton" name="cross_section_location_cross_section_table_delete">
-                  <property name="toolTip">
-                   <string>Delete selected rows</string>
-                  </property>
-                  <property name="text">
-                   <string>Delete</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="cross_section_location_cross_section_table_copy">
-                  <property name="text">
-                   <string>Copy</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="cross_section_location_cross_section_table_paste">
-                  <property name="toolTip">
-                   <string>Paste rows from clipboard</string>
-                  </property>
-                  <property name="text">
-                   <string>Paste</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="cross_section_location_cross_section_table_add">
-                  <property name="toolTip">
-                   <string>Add new row</string>
-                  </property>
-                  <property name="text">
-                   <string>Add</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </widget>
            </item>
            <item row="0" column="0">
             <layout class="QGridLayout" name="gridLayout_7">
@@ -2681,6 +2627,69 @@
               </widget>
              </item>
             </layout>
+           </item>
+           <item row="3" column="0">
+            <widget class="QGroupBox" name="grp_2d_exchange">
+             <property name="title">
+              <string>2D exchange</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_28">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_23">
+                <property name="text">
+                 <string>Bank level [m MSL]</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+                <property name="indent">
+                 <number>-1</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QDoubleSpinBox" name="bank_level">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="buttonSymbols">
+                 <enum>QAbstractSpinBox::NoButtons</enum>
+                </property>
+                <property name="decimals">
+                 <number>3</number>
+                </property>
+                <property name="minimum">
+                 <double>-99999999.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>1000000.000000000000000</double>
+                </property>
+                <property name="showClearButton" stdset="0">
+                 <bool>true</bool>
+                </property>
+                <property name="clearValue" stdset="0">
+                 <bool>true</bool>
+                </property>
+                <property name="expressionsEnabled" stdset="0">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <widget class="QToolButton" name="bank_level_clear">
+                <property name="text">
+                 <string>x</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -2708,11 +2717,7 @@
   <tabstop>connection_node_id_end</tabstop>
   <tabstop>cross_section_locations</tabstop>
   <tabstop>cross_section_location_id</tabstop>
-  <tabstop>cross_section_location_bank_level</tabstop>
-  <tabstop>cross_section_location_bank_level_clear</tabstop>
   <tabstop>cross_section_location_code</tabstop>
-  <tabstop>cross_section_location_reference_level</tabstop>
-  <tabstop>cross_section_location_reference_level_clear</tabstop>
   <tabstop>cross_section_location_cross_section_shape</tabstop>
   <tabstop>cross_section_location_cross_section_width</tabstop>
   <tabstop>cross_section_location_cross_section_width_clear</tabstop>
