@@ -184,13 +184,6 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="1">
-               <widget class="QLineEdit" name="control_type">
-                <property name="readOnly">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
               <item row="0" column="2">
                <widget class="QLabel" name="label_7">
                 <property name="locale">
@@ -335,6 +328,9 @@
                  <bool>false</bool>
                 </property>
                </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="control_type"/>
               </item>
              </layout>
             </widget>

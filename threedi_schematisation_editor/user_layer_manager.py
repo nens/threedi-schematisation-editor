@@ -103,6 +103,7 @@ class LayersManager:
             dm.Channel: {dm.ConnectionNode, dm.CrossSectionLocation, dm.PotentialBreach},
             dm.CrossSectionLocation: {dm.Channel},
             dm.PotentialBreach: {dm.Channel},
+            dm.Windshielding1D: {dm.Channel},
             dm.MemoryControl: {dm.Pump, dm.Orifice, dm.Weir},
             dm.TableControl: {dm.Pump, dm.Orifice, dm.Weir},
             dm.MeasureMap: {dm.MemoryControl, dm.TableControl},

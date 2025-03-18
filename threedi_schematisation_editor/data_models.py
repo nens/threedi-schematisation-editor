@@ -425,6 +425,7 @@ class CrossSectionLocation(ModelObject):
 
     id: int
     code: Optional[str]
+    display_name: Optional[str]
     reference_level: float
     friction_type: FrictionTypeExtended
     friction_value: float
@@ -557,6 +558,8 @@ class Windshielding1D(ModelObject):
     __geometrytype__ = GeometryType.Point
 
     id: int
+    code: Optional[str]
+    display_name: Optional[str]
     north: Optional[float]
     northeast: Optional[float]
     east: Optional[float]
