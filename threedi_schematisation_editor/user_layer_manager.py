@@ -100,7 +100,7 @@ class LayersManager:
                 dm.BoundaryCondition1D,
                 dm.MeasureLocation,
             },
-            dm.Channel: {dm.ConnectionNode, dm.CrossSectionLocation, dm.PotentialBreach},
+            dm.Channel: {dm.ConnectionNode, dm.CrossSectionLocation, dm.PotentialBreach, dm.Windshielding1D},
             dm.CrossSectionLocation: {dm.Channel},
             dm.PotentialBreach: {dm.Channel},
             dm.Windshielding1D: {dm.Channel},
