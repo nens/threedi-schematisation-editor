@@ -447,7 +447,7 @@
             <Option value="3" type="QString" name="interval" />
             <Option value="3x:0,0,0,0,0,0" type="QString" name="interval_map_unit_scale" />
             <Option value="MM" type="QString" name="interval_unit" />
-            <Option value="0" type="QString" name="offset" />
+            <Option value="-1.6" type="QString" name="offset" />
             <Option value="0" type="QString" name="offset_along_line" />
             <Option value="3x:0,0,0,0,0,0" type="QString" name="offset_along_line_map_unit_scale" />
             <Option value="MM" type="QString" name="offset_along_line_unit" />
@@ -456,7 +456,7 @@
             <Option value="true" type="bool" name="place_on_every_part" />
             <Option value="CentralPoint" type="QString" name="placements" />
             <Option value="0" type="QString" name="ring_filter" />
-            <Option value="0" type="QString" name="rotate" />
+            <Option value="1" type="QString" name="rotate" />
           </Option>
           <data_defined_properties>
             <Option type="Map">
