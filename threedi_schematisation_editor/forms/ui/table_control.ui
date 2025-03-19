@@ -427,8 +427,12 @@
   <tabstop>scrollArea</tabstop>
   <tabstop>tabWidget</tabstop>
   <tabstop>id</tabstop>
-  <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>target_type</tabstop>
+  <tabstop>target_id</tabstop>
+  <tabstop>action_type</tabstop>
+  <tabstop>measure_operator</tabstop>
   <tabstop>action_table_table</tabstop>
   <tabstop>action_table_table_delete</tabstop>
   <tabstop>action_table_table_copy</tabstop>

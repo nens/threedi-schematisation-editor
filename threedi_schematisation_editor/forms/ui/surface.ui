@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>548</width>
-    <height>543</height>
+    <width>550</width>
+    <height>550</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,8 +37,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>530</width>
-        <height>496</height>
+        <width>532</width>
+        <height>503</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
@@ -245,6 +245,11 @@
  </widget>
  <tabstops>
   <tabstop>scrollArea</tabstop>
+  <tabstop>id</tabstop>
+  <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>area</tabstop>
+  <tabstop>surface_parameters_id</tabstop>
  </tabstops>
  <resources/>
  <connections/>

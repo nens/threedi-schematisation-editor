@@ -394,6 +394,14 @@
  </widget>
  <tabstops>
   <tabstop>scrollArea</tabstop>
+  <tabstop>id</tabstop>
+  <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>initial_exchange_level</tabstop>
+  <tabstop>initial_exchange_level_clear</tabstop>
+  <tabstop>final_exchange_level</tabstop>
+  <tabstop>final_exchange_level_clear</tabstop>
+  <tabstop>levee_material</tabstop>
   <tabstop>channel_id</tabstop>
  </tabstops>
  <resources/>

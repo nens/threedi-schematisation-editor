@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>552</width>
-    <height>557</height>
+    <width>550</width>
+    <height>550</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,8 +27,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>534</width>
-        <height>510</height>
+        <width>532</width>
+        <height>503</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_7">
@@ -394,11 +394,14 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>scrollArea</tabstop>
   <tabstop>tabWidget</tabstop>
+  <tabstop>scrollArea</tabstop>
   <tabstop>id</tabstop>
-  <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>type</tabstop>
+  <tabstop>time_units</tabstop>
+  <tabstop>interpolate</tabstop>
   <tabstop>timeseries_table</tabstop>
   <tabstop>timeseries_table_delete</tabstop>
   <tabstop>timeseries_table_copy</tabstop>

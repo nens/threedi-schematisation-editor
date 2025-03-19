@@ -2264,7 +2264,9 @@ class MeasureMap(AbstractFormWithTag):
     @cached_property
     def control_types(self):
         """Return supported structure control data models."""
-        control_data_models = {model_cls.__tablename__: model_cls for model_cls in [dm.TableControl, dm.MemoryControl]}
+        control_data_models = {
+            model_cls.__tablename__.split("_", 1)[0]: model_cls for model_cls in [dm.TableControl, dm.MemoryControl]
+        }
         return control_data_models
 
     def setup_measure_location_on_edit(self):
@@ -2280,7 +2282,7 @@ class MeasureMap(AbstractFormWithTag):
             pass
         try:
             measure_location_handler = self.layer_manager.model_handlers[dm.MeasureLocation]
-            measure_location_feat = measure_location_handler.get_feat_by_id(self.feature["control_measure_location_id"])
+            measure_location_feat = measure_location_handler.get_feat_by_id(self.feature["measure_location_id"])
             self.measure_location_feature = measure_location_feat
         except KeyError:
             pass

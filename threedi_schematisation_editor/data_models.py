@@ -973,7 +973,7 @@ class MeasureMap(ModelObject):
     code: Optional[str]
     display_name: Optional[str]
     weight: float
-    control_measure_location_id: int
+    measure_location_id: int
     control_id: int
     control_type: ControlType
     tags: Optional[str]

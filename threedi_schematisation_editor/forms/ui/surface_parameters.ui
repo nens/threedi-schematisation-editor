@@ -402,6 +402,20 @@
  <tabstops>
   <tabstop>scrollArea</tabstop>
   <tabstop>id</tabstop>
+  <tabstop>description</tabstop>
+  <tabstop>surface_layer_thickness</tabstop>
+  <tabstop>surface_layer_thickness_clear</tabstop>
+  <tabstop>outflow_delay</tabstop>
+  <tabstop>outflow_delay_clear</tabstop>
+  <tabstop>min_infiltration_capacity</tabstop>
+  <tabstop>min_infiltration_capacity_clear</tabstop>
+  <tabstop>max_infiltration_capacity</tabstop>
+  <tabstop>max_infiltration_capacity_clear</tabstop>
+  <tabstop>infiltration_decay_constant</tabstop>
+  <tabstop>infiltration_decay_constant_clear</tabstop>
+  <tabstop>infiltration_recovery_constant</tabstop>
+  <tabstop>infiltration_recovery_constant_clear</tabstop>
+  <tabstop>infiltration</tabstop>
  </tabstops>
  <resources/>
  <connections/>

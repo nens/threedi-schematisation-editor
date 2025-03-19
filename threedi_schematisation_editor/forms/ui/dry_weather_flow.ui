@@ -280,6 +280,13 @@
  </widget>
  <tabstops>
   <tabstop>scrollArea</tabstop>
+  <tabstop>id</tabstop>
+  <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>daily_total</tabstop>
+  <tabstop>multiplier</tabstop>
+  <tabstop>interpolate</tabstop>
+  <tabstop>dry_weather_flow_distribution_id</tabstop>
  </tabstops>
  <resources/>
  <connections/>

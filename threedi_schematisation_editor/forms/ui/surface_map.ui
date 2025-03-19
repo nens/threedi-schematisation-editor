@@ -344,6 +344,12 @@
  <tabstops>
   <tabstop>scrollArea</tabstop>
   <tabstop>id</tabstop>
+  <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>percentage</tabstop>
+  <tabstop>percentage_clear</tabstop>
+  <tabstop>connection_node_id</tabstop>
+  <tabstop>surface_id</tabstop>
  </tabstops>
  <resources/>
  <connections/>

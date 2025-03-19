@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>552</width>
-    <height>557</height>
+    <width>550</width>
+    <height>550</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,7 +27,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>521</width>
+        <width>515</width>
         <height>1039</height>
        </rect>
       </property>
@@ -1044,6 +1044,12 @@
  <tabstops>
   <tabstop>scrollArea</tabstop>
   <tabstop>id</tabstop>
+  <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>bank_level</tabstop>
+  <tabstop>bank_level_clear</tabstop>
+  <tabstop>reference_level</tabstop>
+  <tabstop>reference_level_clear</tabstop>
   <tabstop>cross_section_shape</tabstop>
   <tabstop>cross_section_width</tabstop>
   <tabstop>cross_section_width_clear</tabstop>
@@ -1062,10 +1068,10 @@
   <tabstop>cross_section_friction_copy</tabstop>
   <tabstop>vegetation_stem_density</tabstop>
   <tabstop>vegetation_stem_density_clear</tabstop>
-  <tabstop>vegetation_stem_diameter</tabstop>
-  <tabstop>vegetation_stem_diameter_clear</tabstop>
   <tabstop>vegetation_height</tabstop>
   <tabstop>vegetation_height_clear</tabstop>
+  <tabstop>vegetation_stem_diameter</tabstop>
+  <tabstop>vegetation_stem_diameter_clear</tabstop>
   <tabstop>vegetation_drag_coefficient</tabstop>
   <tabstop>vegetation_drag_coefficient_clear</tabstop>
   <tabstop>cross_section_vegetation_widget</tabstop>

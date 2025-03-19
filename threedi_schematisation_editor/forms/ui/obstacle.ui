@@ -311,8 +311,13 @@
  <tabstops>
   <tabstop>scrollArea</tabstop>
   <tabstop>id</tabstop>
-  <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>crest_level</tabstop>
+  <tabstop>crest_level_clear</tabstop>
+  <tabstop>affects_2d</tabstop>
+  <tabstop>affects_1d2d_open_water</tabstop>
+  <tabstop>affects_1d2d_closed</tabstop>
  </tabstops>
  <resources/>
  <connections/>

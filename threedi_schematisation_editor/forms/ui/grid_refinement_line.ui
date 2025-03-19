@@ -265,8 +265,10 @@
  <tabstops>
   <tabstop>scrollArea</tabstop>
   <tabstop>id</tabstop>
-  <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>grid_level</tabstop>
+  <tabstop>crest_level_clear</tabstop>
  </tabstops>
  <resources/>
  <connections/>

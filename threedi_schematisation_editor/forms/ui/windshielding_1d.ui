@@ -572,6 +572,26 @@
  </widget>
  <tabstops>
   <tabstop>scrollArea</tabstop>
+  <tabstop>id</tabstop>
+  <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>channel_id</tabstop>
+  <tabstop>north</tabstop>
+  <tabstop>north_clear</tabstop>
+  <tabstop>northeast</tabstop>
+  <tabstop>northeast_clear</tabstop>
+  <tabstop>east</tabstop>
+  <tabstop>east_clear</tabstop>
+  <tabstop>southeast</tabstop>
+  <tabstop>southeast_clear</tabstop>
+  <tabstop>south</tabstop>
+  <tabstop>south_clear</tabstop>
+  <tabstop>southwest</tabstop>
+  <tabstop>southwest_clear</tabstop>
+  <tabstop>west</tabstop>
+  <tabstop>west_clear</tabstop>
+  <tabstop>northwest</tabstop>
+  <tabstop>northwest_clear</tabstop>
  </tabstops>
  <resources/>
  <connections/>
