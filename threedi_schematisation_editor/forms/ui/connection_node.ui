@@ -30,7 +30,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>519</width>
+        <width>515</width>
         <height>539</height>
        </rect>
       </property>
@@ -654,6 +654,26 @@
  <tabstops>
   <tabstop>scrollArea</tabstop>
   <tabstop>id</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>display_name</tabstop>
+  <tabstop>bottom_level</tabstop>
+  <tabstop>bottom_level_clear</tabstop>
+  <tabstop>storage_area</tabstop>
+  <tabstop>storage_area_clear</tabstop>
+  <tabstop>initial_water_level</tabstop>
+  <tabstop>initial_water_level_clear</tabstop>
+  <tabstop>exchange_type</tabstop>
+  <tabstop>exchange_level</tabstop>
+  <tabstop>exchange_level_clear</tabstop>
+  <tabstop>exchange_thickness</tabstop>
+  <tabstop>exchange_thickness_clear</tabstop>
+  <tabstop>hydraulic_conductivity_in</tabstop>
+  <tabstop>hydraulic_conductivity_in_clear</tabstop>
+  <tabstop>hydraulic_conductivity_out</tabstop>
+  <tabstop>hydraulic_conductivity_out_clear</tabstop>
+  <tabstop>visualisation</tabstop>
+  <tabstop>manhole_surface_level</tabstop>
+  <tabstop>manhole_surface_level_clear</tabstop>
  </tabstops>
  <resources/>
  <connections/>

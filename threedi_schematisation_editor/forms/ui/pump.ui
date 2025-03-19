@@ -674,18 +674,22 @@
  <tabstops>
   <tabstop>scrollArea</tabstop>
   <tabstop>id</tabstop>
-  <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
   <tabstop>start_level</tabstop>
   <tabstop>start_level_clear</tabstop>
-  <tabstop>lower_stop_level</tabstop>
-  <tabstop>lower_stop_level_clear</tabstop>
   <tabstop>capacity</tabstop>
   <tabstop>capacity_clear</tabstop>
+  <tabstop>lower_stop_level</tabstop>
+  <tabstop>lower_stop_level_clear</tabstop>
+  <tabstop>upper_stop_level</tabstop>
+  <tabstop>upper_stop_level_clear</tabstop>
+  <tabstop>type</tabstop>
+  <tabstop>sewerage</tabstop>
   <tabstop>connection_node_id</tabstop>
-  <tabstop>connection_node_code</tabstop>
   <tabstop>connection_node_initial_water_level</tabstop>
   <tabstop>connection_node_initial_water_level_clear</tabstop>
+  <tabstop>connection_node_code</tabstop>
   <tabstop>connection_node_storage_area</tabstop>
   <tabstop>connection_node_storage_area_clear</tabstop>
  </tabstops>

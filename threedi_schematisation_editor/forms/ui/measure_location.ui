@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>552</width>
-    <height>557</height>
+    <width>550</width>
+    <height>550</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,8 +27,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>534</width>
-        <height>510</height>
+        <width>532</width>
+        <height>503</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_7">
@@ -442,8 +442,15 @@
   <tabstop>scrollArea</tabstop>
   <tabstop>tabWidget</tabstop>
   <tabstop>id</tabstop>
-  <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>measure_variable</tabstop>
+  <tabstop>connection_node_id</tabstop>
+  <tabstop>connection_node_initial_water_level</tabstop>
+  <tabstop>connection_node_initial_water_level_clear</tabstop>
+  <tabstop>connection_node_code</tabstop>
+  <tabstop>connection_node_storage_area</tabstop>
+  <tabstop>connection_node_storage_area_clear</tabstop>
  </tabstops>
  <resources/>
  <connections/>

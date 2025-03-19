@@ -2264,7 +2264,9 @@ class MeasureMap(AbstractFormWithTag):
     @cached_property
     def control_types(self):
         """Return supported structure control data models."""
-        control_data_models = {model_cls.__tablename__: model_cls for model_cls in [dm.TableControl, dm.MemoryControl]}
+        control_data_models = {
+            model_cls.__tablename__.split("_", 1)[0]: model_cls for model_cls in [dm.TableControl, dm.MemoryControl]
+        }
         return control_data_models
 
     def setup_measure_location_on_edit(self):
@@ -2280,7 +2282,7 @@ class MeasureMap(AbstractFormWithTag):
             pass
         try:
             measure_location_handler = self.layer_manager.model_handlers[dm.MeasureLocation]
-            measure_location_feat = measure_location_handler.get_feat_by_id(self.feature["control_measure_location_id"])
+            measure_location_feat = measure_location_handler.get_feat_by_id(self.feature["measure_location_id"])
             self.measure_location_feature = measure_location_feat
         except KeyError:
             pass
@@ -2317,6 +2319,108 @@ class MeasureMap(AbstractFormWithTag):
         self.populate_tag_widgets()
 
 
+class GridRefinementLineForm(AbstractFormWithTag):
+    """Grid refinement line user layer edit form logic."""
+
+    MODEL = dm.GridRefinementLine
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_tag_widgets()
+
+
+class GridRefinementAreaForm(AbstractFormWithTag):
+    """Grid refinement area user layer edit form logic."""
+
+    MODEL = dm.GridRefinementArea
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_tag_widgets()
+
+
+class ObstacleForm(AbstractFormWithTag):
+    """Obstacle user layer edit form logic."""
+
+    MODEL = dm.Obstacle
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_tag_widgets()
+
+
+class SurfaceParametersForm(AbstractFormWithTag):
+    """Surface parameters user layer edit form logic."""
+
+    MODEL = dm.SurfaceParameters
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_tag_widgets()
+
+
+class Windshielding1DForm(AbstractFormWithTag):
+    """1D Windshielding user layer edit form logic."""
+
+    MODEL = dm.Windshielding1D
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.channel = None
+
+    @property
+    def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with id and value = data model feature(s)."""
+        fm_features = {
+            (dm.Channel, 1): self.channel,
+        }
+        return fm_features
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+        channel_handler = self.layer_manager.model_handlers[dm.Channel]
+        channel_layer = channel_handler.layer
+        point_geom = self.feature.geometry()
+        point = point_geom.asPoint()
+        channel_node_feat = find_point_polyline(point, channel_layer)
+        if channel_node_feat:
+            channel_id = channel_node_feat["id"]
+            self.feature["channel_id"] = channel_id
+            self.channel = channel_node_feat
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_tag_widgets()
+
+
 ALL_FORMS = (
     ConnectionNodeForm,
     PipeForm,
@@ -2342,6 +2446,11 @@ ALL_FORMS = (
     MemoryControl,
     TableControl,
     MeasureMap,
+    GridRefinementLineForm,
+    GridRefinementAreaForm,
+    ObstacleForm,
+    SurfaceParametersForm,
+    Windshielding1DForm,
 )
 
 MODEL_FORMS = MappingProxyType({form.MODEL: form for form in ALL_FORMS})

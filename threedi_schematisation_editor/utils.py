@@ -1009,7 +1009,6 @@ class NumericItemDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         validator = QDoubleValidator(editor)
-        validator.setBottom(0)
         validator.setDecimals(3)
         validator.setNotation(QDoubleValidator.StandardNotation)
         editor.setValidator(validator)

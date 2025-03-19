@@ -26,7 +26,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-160</y>
+        <y>0</y>
         <width>553</width>
         <height>790</height>
        </rect>
@@ -2141,12 +2141,19 @@ coefficient positive</string>
   <tabstop>scrollArea</tabstop>
   <tabstop>tabWidget</tabstop>
   <tabstop>id</tabstop>
-  <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>crest_type</tabstop>
   <tabstop>discharge_coefficient_positive</tabstop>
   <tabstop>discharge_coefficient_positive_clear</tabstop>
   <tabstop>discharge_coefficient_negative</tabstop>
   <tabstop>discharge_coefficient_negative_clear</tabstop>
+  <tabstop>material_id</tabstop>
+  <tabstop>friction_type</tabstop>
+  <tabstop>friction_value</tabstop>
+  <tabstop>friction_value_clear</tabstop>
+  <tabstop>crest_level</tabstop>
+  <tabstop>crest_level_clear</tabstop>
   <tabstop>cross_section_shape</tabstop>
   <tabstop>cross_section_width</tabstop>
   <tabstop>cross_section_width_clear</tabstop>
@@ -2157,8 +2164,54 @@ coefficient positive</string>
   <tabstop>cross_section_table_copy</tabstop>
   <tabstop>cross_section_table_paste</tabstop>
   <tabstop>cross_section_table_add</tabstop>
+  <tabstop>sewerage</tabstop>
+  <tabstop>external</tabstop>
   <tabstop>connection_node_id_start</tabstop>
   <tabstop>connection_node_id_end</tabstop>
+  <tabstop>connection_node_1_id</tabstop>
+  <tabstop>connection_node_1_code</tabstop>
+  <tabstop>connection_node_1_display_name</tabstop>
+  <tabstop>connection_node_1_bottom_level</tabstop>
+  <tabstop>connection_node_1_bottom_level_clear</tabstop>
+  <tabstop>connection_node_1_storage_area</tabstop>
+  <tabstop>connection_node_1_storage_area_clear</tabstop>
+  <tabstop>connection_node_1_initial_water_level</tabstop>
+  <tabstop>connection_node_1_initial_water_level_clear</tabstop>
+  <tabstop>connection_node_1_exchange_type</tabstop>
+  <tabstop>connection_node_1_exchange_level</tabstop>
+  <tabstop>connection_node_1_exchange_level_clear</tabstop>
+  <tabstop>connection_node_1_exchange_thickness</tabstop>
+  <tabstop>connection_node_1_exchange_thickness_clear</tabstop>
+  <tabstop>connection_node_1_hydraulic_conductivity_in</tabstop>
+  <tabstop>connection_node_1_hydraulic_conductivity_in_clear</tabstop>
+  <tabstop>connection_node_1_hydraulic_conductivity_out</tabstop>
+  <tabstop>connection_node_1_hydraulic_conductivity_out_clear</tabstop>
+  <tabstop>connection_node_1_visualisation</tabstop>
+  <tabstop>connection_node_1_manhole_surface_level</tabstop>
+  <tabstop>connection_node_1_manhole_surface_level_clear</tabstop>
+  <tabstop>connection_node_1_tags</tabstop>
+  <tabstop>connection_node_2_id</tabstop>
+  <tabstop>connection_node_2_code</tabstop>
+  <tabstop>connection_node_2_display_name</tabstop>
+  <tabstop>connection_node_2_bottom_level</tabstop>
+  <tabstop>connection_node_2_bottom_level_clear</tabstop>
+  <tabstop>connection_node_2_storage_area</tabstop>
+  <tabstop>connection_node_2_storage_area_clear</tabstop>
+  <tabstop>connection_node_2_initial_water_level</tabstop>
+  <tabstop>connection_node_2_initial_water_level_clear</tabstop>
+  <tabstop>connection_node_2_exchange_type</tabstop>
+  <tabstop>connection_node_2_exchange_level</tabstop>
+  <tabstop>connection_node_2_exchange_level_clear</tabstop>
+  <tabstop>connection_node_2_exchange_thickness</tabstop>
+  <tabstop>connection_node_2_exchange_thickness_clear</tabstop>
+  <tabstop>connection_node_2_hydraulic_conductivity_in</tabstop>
+  <tabstop>connection_node_2_hydraulic_conductivity_in_clear</tabstop>
+  <tabstop>connection_node_2_hydraulic_conductivity_out</tabstop>
+  <tabstop>connection_node_2_hydraulic_conductivity_out_clear</tabstop>
+  <tabstop>connection_node_2_visualisation</tabstop>
+  <tabstop>connection_node_2_manhole_surface_level</tabstop>
+  <tabstop>connection_node_2_manhole_surface_level_clear</tabstop>
+  <tabstop>connection_node_2_tags</tabstop>
  </tabstops>
  <resources/>
  <connections/>

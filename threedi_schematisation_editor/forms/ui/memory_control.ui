@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>552</width>
-    <height>557</height>
+    <width>550</width>
+    <height>550</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,8 +27,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>534</width>
-        <height>510</height>
+        <width>532</width>
+        <height>503</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_7">
@@ -371,7 +371,7 @@
                </widget>
               </item>
               <item row="0" column="1" colspan="5">
-               <widget class="QLineEdit" name="action_type"/>
+               <widget class="QComboBox" name="action_type"/>
               </item>
              </layout>
             </widget>
@@ -388,19 +388,16 @@
               <string>Target</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_4">
-              <item row="0" column="2">
-               <widget class="QLabel" name="label_16">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_7">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
                 <property name="text">
-                 <string>Target type</string>
+                 <string>Target ID</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-                <property name="indent">
-                 <number>10</number>
                 </property>
                </widget>
               </item>
@@ -435,23 +432,29 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_7">
+              <item row="0" column="2">
+               <widget class="QLabel" name="label_16">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
                 </property>
                 <property name="text">
-                 <string>Target ID</string>
+                 <string>Target type</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
                 </property>
+                <property name="indent">
+                 <number>10</number>
+                </property>
                </widget>
               </item>
               <item row="0" column="3">
-               <widget class="QLineEdit" name="target_type">
-                <property name="readOnly">
-                 <bool>true</bool>
+               <widget class="QComboBox" name="target_type">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
                 </property>
                </widget>
               </item>
@@ -479,8 +482,21 @@
   <tabstop>scrollArea</tabstop>
   <tabstop>tabWidget</tabstop>
   <tabstop>id</tabstop>
-  <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
+  <tabstop>upper_threshold</tabstop>
+  <tabstop>upper_threshold_clear</tabstop>
+  <tabstop>lower_threshold</tabstop>
+  <tabstop>lower_threshold_clear</tabstop>
+  <tabstop>is_inverse</tabstop>
+  <tabstop>is_active</tabstop>
+  <tabstop>target_id</tabstop>
+  <tabstop>target_type</tabstop>
+  <tabstop>action_type</tabstop>
+  <tabstop>action_value_1</tabstop>
+  <tabstop>action_value_1_clear</tabstop>
+  <tabstop>action_value_2</tabstop>
+  <tabstop>action_value_2_clear</tabstop>
  </tabstops>
  <resources/>
  <connections/>

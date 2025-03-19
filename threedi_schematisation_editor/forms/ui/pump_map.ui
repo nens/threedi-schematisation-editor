@@ -664,17 +664,22 @@
   <tabstop>scrollArea</tabstop>
   <tabstop>tabWidget</tabstop>
   <tabstop>id</tabstop>
-  <tabstop>code</tabstop>
   <tabstop>display_name</tabstop>
+  <tabstop>code</tabstop>
   <tabstop>pump_id</tabstop>
-  <tabstop>pump_code</tabstop>
   <tabstop>pump_display_name</tabstop>
+  <tabstop>pump_code</tabstop>
   <tabstop>pump_start_level</tabstop>
   <tabstop>pump_start_level_clear</tabstop>
-  <tabstop>pump_lower_stop_level</tabstop>
-  <tabstop>pump_lower_stop_level_clear</tabstop>
   <tabstop>pump_capacity</tabstop>
   <tabstop>pump_capacity_clear</tabstop>
+  <tabstop>pump_lower_stop_level</tabstop>
+  <tabstop>pump_lower_stop_level_clear</tabstop>
+  <tabstop>pump_upper_stop_level</tabstop>
+  <tabstop>pump_upper_stop_level_clear</tabstop>
+  <tabstop>pump_type</tabstop>
+  <tabstop>sewerage</tabstop>
+  <tabstop>connection_node_id_end</tabstop>
  </tabstops>
  <resources/>
  <connections/>
