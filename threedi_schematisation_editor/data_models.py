@@ -1077,10 +1077,10 @@ MODEL_0D_INFLOW_ELEMENTS = (
     SurfaceParameters,
 )
 STRUCTURE_CONTROL_ELEMENTS = (
-    MeasureMap,
     MeasureLocation,
     MemoryControl,
     TableControl,
+    MeasureMap,
 )
 HYDROLOGICAL_PROCESSES = (
     InitialConditionsSettings,
