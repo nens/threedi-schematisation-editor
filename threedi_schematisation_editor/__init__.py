@@ -1,9 +1,11 @@
 # Copyright (C) 2025 by Lutra Consulting
 import os.path
+import time
 from collections import defaultdict
 from pathlib import Path
 
 from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
+from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
 
@@ -33,6 +35,7 @@ from threedi_schematisation_editor.utils import (
     get_icon_path,
     is_gpkg_connection_exists,
     migrate_schematisation_schema,
+    progress_bar_callback_factory,
     set_wal_for_sqlite_mode,
 )
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
@@ -256,8 +259,17 @@ class ThreediSchematisationEditorPlugin:
                 self.uc.show_warn(warn_msg)
                 return
             if schematisation_filepath.endswith(".sqlite"):
-                migration_succeed, migration_feedback_msg = migrate_schematisation_schema(schematisation_filepath)
+                QCoreApplication.processEvents()
+                migration_info = "Schema migration..."
+                self.uc.progress_bar(migration_info, 0, 100, 0, clear_msg_bar=True)
+                progress_bar_callback = progress_bar_callback_factory(self.uc, "Schema migration...")
+                migration_succeed, migration_feedback_msg = migrate_schematisation_schema(
+                    schematisation_filepath, progress_bar_callback
+                )
+                self.uc.progress_bar("Migration complete!", 0, 100, 100, clear_msg_bar=True)
+                QCoreApplication.processEvents()
                 if not migration_succeed:
+                    self.uc.clear_message_bar()
                     self.uc.show_warn(migration_feedback_msg)
                     return
                 model_gpkg = schematisation_filepath.rsplit(".", 1)[0] + ".gpkg"
@@ -265,11 +277,13 @@ class ThreediSchematisationEditorPlugin:
                 model_gpkg = schematisation_filepath
         lm = LayersManager(self.iface, self.uc, model_gpkg)
         if lm in self.workspace_context_manager:
+            self.uc.clear_message_bar()
             warn_msg = "Selected schematisation is already loaded. Loading canceled."
             self.uc.show_warn(warn_msg)
             return
         lm.load_all_layers()
         self.workspace_context_manager.register_layer_manager(lm)
+        self.uc.clear_message_bar()
         self.uc.bar_info(f"Schematisation {lm.model_name} loaded!")
         self.check_macros_status()
         self.toggle_active_project_actions()

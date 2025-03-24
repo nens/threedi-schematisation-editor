@@ -35,7 +35,7 @@ from qgis.core import (
     QgsVectorFileWriter,
     QgsVectorLayer,
 )
-from qgis.PyQt.QtCore import QObject, QVariant
+from qgis.PyQt.QtCore import QCoreApplication, QObject, QVariant
 from qgis.PyQt.QtGui import QDoubleValidator, QPainter
 from qgis.PyQt.QtWidgets import QFileDialog, QItemDelegate, QLineEdit
 from qgis.utils import plugins
@@ -719,7 +719,8 @@ def modify_raster_style(raster_layer, limits=QgsRasterMinMaxOrigin.MinMax, exten
     raster_layer.setRenderer(renderer)
 
 
-def migrate_schematisation_schema(schematisation_filepath):
+def migrate_schematisation_schema(schematisation_filepath, progress_callback=None):
+    """Migrate schematisation schema to the latest version."""
     migration_succeed = False
     srid = None
 
@@ -746,7 +747,7 @@ def migrate_schematisation_schema(schematisation_filepath):
 
     if srid is not None:
         try:
-            schema.upgrade(backup=False)
+            schema.upgrade(backup=False, progress_func=progress_callback)
             shutil.rmtree(os.path.dirname(backup_filepath))
             migration_succeed = True
             migration_feedback_msg = "Migration succeeded."
@@ -759,6 +760,15 @@ def migrate_schematisation_schema(schematisation_filepath):
             migration_feedback_msg = f"{e}"
 
     return migration_succeed, migration_feedback_msg
+
+
+def progress_bar_callback_factory(communication, message, minimum=0, maximum=100, clear_msg_bar=True):
+    """Callback function to track schematisation migration progress."""
+
+    def progress_bar_callback(progres_value):
+        communication.progress_bar(message, minimum, maximum, progres_value, clear_msg_bar=clear_msg_bar)
+        QCoreApplication.processEvents()
+    return progress_bar_callback
 
 
 def bypass_max_path_limit(path, is_file=False):
