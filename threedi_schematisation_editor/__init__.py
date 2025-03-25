@@ -1,6 +1,5 @@
 # Copyright (C) 2025 by Lutra Consulting
 import os.path
-import time
 from collections import defaultdict
 from pathlib import Path
 

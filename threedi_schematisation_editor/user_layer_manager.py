@@ -324,6 +324,7 @@ class LayersManager:
             config["LayerSource"] = child_layer.source()
             config["Key"] = key_column
             config["Value"] = value_column
+            config["AllowNull"] = True
             ews = QgsEditorWidgetSetup("ValueRelation", config)
             parent_layer.setEditorWidgetSetup(parent_column_idx, ews)
 

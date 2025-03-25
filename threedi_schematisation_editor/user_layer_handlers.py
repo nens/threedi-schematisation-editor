@@ -857,13 +857,7 @@ class Lateral2DHandler(UserLayerHandler):
 
 class ObstacleHandler(UserLayerHandler):
     MODEL = dm.Obstacle
-    DEFAULTS = MappingProxyType(
-        {
-            "affects_2d": True,
-            "affects_1d2d_open_water": True,
-            "affects_1d2d_closed": False
-        }
-    )
+    DEFAULTS = MappingProxyType({"affects_2d": True, "affects_1d2d_open_water": True, "affects_1d2d_closed": False})
 
 
 class GridRefinementLineHandler(UserLayerHandler):
