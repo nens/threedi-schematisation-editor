@@ -565,10 +565,10 @@ def count_vertices(geometry):
     return c
 
 
-def check_enable_macros_option():
-    """Check if macros are enabled."""
+def check_enable_embedded_python_option():
+    """Check if project's embedded Python code is enabled."""
     settings = QgsSettings()
-    option = settings.value("/qgis/enableMacros", type=str)
+    option = settings.value("/qgis/enablePythonEmbedded", type=str)
     return option
 
 
