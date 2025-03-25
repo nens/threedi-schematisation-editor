@@ -50,7 +50,7 @@
          <item>
           <widget class="QLabel" name="label">
            <property name="text">
-            <string>Surface parameter ID</string>
+            <string>Surface parameters</string>
            </property>
           </widget>
          </item>
