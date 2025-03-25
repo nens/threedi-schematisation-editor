@@ -4,7 +4,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
-from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
+from qgis.core import Qgis, QgsApplication, QgsLayerTreeNode, QgsProject
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
@@ -30,6 +30,7 @@ from threedi_schematisation_editor.utils import (
     add_settings_entry,
     can_write_in_dir,
     check_enable_embedded_python_option,
+    check_enable_macros_option,
     check_wal_for_sqlite,
     get_filepath,
     get_icon_path,
@@ -210,13 +211,22 @@ class ThreediSchematisationEditorPlugin:
             self.action_import_features.setEnabled(True)
 
     def check_embedded_python_status(self):
-        embedded_python_status = check_enable_embedded_python_option()
-        if embedded_python_status != "Always":
-            msg = (
-                f"Required 'Embedded Python code enabled' option is set to '{embedded_python_status}'. "
-                "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable project’s embedded Python code)."
-            )
-            self.uc.bar_warn(msg, dur=10)
+        if Qgis.QGIS_VERSION_INT < 34000:
+            macros_status = check_enable_macros_option()
+            if macros_status != "Always":
+                msg = (
+                    f"Required 'Macros enabled' option is set to '{macros_status}'. "
+                    "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable macros)."
+                )
+                self.uc.bar_warn(msg, dur=10)
+        else:
+            embedded_python_status = check_enable_embedded_python_option()
+            if embedded_python_status != "Always":
+                msg = (
+                    f"Required 'Embedded Python code enabled' option is set to '{embedded_python_status}'. "
+                    "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable project’s embedded Python code)."
+                )
+                self.uc.bar_warn(msg, dur=10)
 
     def ensure_sqlite_wal_status(self):
         wal_status = check_wal_for_sqlite()
