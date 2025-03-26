@@ -185,11 +185,11 @@ class AbstractBaseForm(QObject):
                 continue
             else:
                 if self.layer.isEditable():
-                    self.set_validation_background(widget, field_type)
                     edit_signal = self.get_widget_editing_signal(widget)
                     edit_slot = partial(self.set_validation_background, widget, field_type)
                     connect_signal(edit_signal, edit_slot)
                     self.dialog.active_form_signals.add((edit_signal, edit_slot))
+                    self.set_validation_background(widget, field_type)
                 else:
                     widget.setStyleSheet("")
             real_field_type = optional_type(field_type) if is_optional(field_type) else field_type

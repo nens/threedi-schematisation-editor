@@ -307,26 +307,26 @@ class LayersManager:
         """Return vector layers style configurations."""
         return get_style_configurations()
 
-    def setup_value_relation_widgets(self):
-        """Setup value relation widget."""
-        for parent_model_cls, (
-            child_model_cls,
-            parent_column,
-            key_column,
-            value_column,
-        ) in self.VALUE_RELATIONS.items():
-            parent_layer = self.model_handlers[parent_model_cls].layer
-            parent_column_idx = parent_layer.fields().lookupField(parent_column)
-            child_layer = self.model_handlers[child_model_cls].layer
-            default_ews = parent_layer.editorWidgetSetup(parent_column_idx)
-            config = default_ews.config()
-            config["Layer"] = child_layer.id()
-            config["LayerSource"] = child_layer.source()
-            config["Key"] = key_column
-            config["Value"] = value_column
-            config["AllowNull"] = True
-            ews = QgsEditorWidgetSetup("ValueRelation", config)
-            parent_layer.setEditorWidgetSetup(parent_column_idx, ews)
+    def setup_all_value_relation_widgets(self):
+        """Setup all models value relation widgets."""
+        for parent_model_cls in self.VALUE_RELATIONS.keys():
+            self.setup_value_relation_widgets(parent_model_cls)
+
+    def setup_value_relation_widgets(self, model_cls):
+        """Setup value relation widgets for the particular model class."""
+        child_model_cls, parent_column, key_column, value_column = self.VALUE_RELATIONS[model_cls]
+        parent_layer = self.model_handlers[model_cls].layer
+        parent_column_idx = parent_layer.fields().lookupField(parent_column)
+        child_layer = self.model_handlers[child_model_cls].layer
+        default_ews = parent_layer.editorWidgetSetup(parent_column_idx)
+        config = default_ews.config()
+        config["Layer"] = child_layer.id()
+        config["LayerSource"] = child_layer.source()
+        config["Key"] = key_column
+        config["Value"] = value_column
+        config["AllowNull"] = True
+        ews = QgsEditorWidgetSetup("ValueRelation", config)
+        parent_layer.setEditorWidgetSetup(parent_column_idx, ews)
 
     def create_groups(self):
         """Creating all User Layers groups."""
@@ -493,7 +493,7 @@ class LayersManager:
             self.remove_loaded_layers(dry_remove=True)
             self.register_groups()
             self.register_vector_layers()
-        self.setup_value_relation_widgets()
+        self.setup_all_value_relation_widgets()
         self.iface.setActiveLayer(self.model_handlers[dm.ConnectionNode].layer)
 
     def remove_loaded_layers(self, dry_remove=False):
