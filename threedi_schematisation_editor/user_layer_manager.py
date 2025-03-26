@@ -11,6 +11,7 @@ from qgis.core import (
     QgsEditorWidgetSetup,
     QgsExpression,
     QgsFeatureRequest,
+    QgsFieldConstraints,
     QgsProject,
     QgsRasterLayer,
     QgsSnappingConfig,
@@ -407,6 +408,10 @@ class LayersManager:
                 set_field_default_value(layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))")
             else:
                 set_field_default_value(layer, "id", "")
+            for idx in fields_indexes:
+                # We need to remove NotNull constraint for layers with the custom UI forms.
+                # It is required to prevent QGIS messing with background validation stylesheet.
+                layer.removeFieldConstraint(idx, QgsFieldConstraints.ConstraintNotNull)
         else:
             set_field_default_value(layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))")
         if "area" in layer_fields.names():
