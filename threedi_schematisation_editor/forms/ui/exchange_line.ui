@@ -239,7 +239,7 @@
              <locale language="English" country="UnitedStates"/>
             </property>
             <property name="text">
-             <string>Exchange level [m]</string>
+             <string>Exchange level [m MSL]</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
