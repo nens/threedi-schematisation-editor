@@ -45,8 +45,8 @@ def patch_wheel_imports():
         (GEOALCHEMY_MODULE_NAME, REQUIRED_GEOALCHEMY2_VERSION, GEOALCHEMY2_WHEEL),
         (MAKO_MODULE_NAME, REQUIRED_MAKO_VERSION, MAKO_WHEEL),
         (ALEMBIC_MODULE_NAME, REQUIRED_ALEMBIC_VERSION, ALEMBIC_WHEEL),
-        (THREEDI_MI_UTILS_MODULE_NAME, REQUIRED_3DI_MI_UTILS_VERSION, MI_UTILS_WHEEL),
         (THREEDI_SCHEMA_MODULE_NAME, REQUIRED_3DI_SCHEMA_VERSION, MAIN_DIR),
+        (THREEDI_MI_UTILS_MODULE_NAME, REQUIRED_3DI_MI_UTILS_VERSION, MI_UTILS_WHEEL),
     ]
     for required_module, required_module_version, module_wheel in requirements:
         requirement = f"{required_module}=={required_module_version}"
