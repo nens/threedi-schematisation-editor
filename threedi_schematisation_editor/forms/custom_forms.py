@@ -1343,7 +1343,7 @@ class AbstractFormWithStartEndNode(AbstractBaseForm):
         if connection_node_start_code and connection_node_end_code:
             code_display_name = f"{connection_node_start_code}-{connection_node_end_code}"
         else:
-            code_display_name = ""
+            code_display_name = None
         try:
             self.feature["code"] = code_display_name
             self.feature["display_name"] = code_display_name
@@ -1511,9 +1511,6 @@ class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFo
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
-        code_display_name = f"{self.connection_node_start['code']}-{self.connection_node_end['code']}"
-        self.feature["code"] = code_display_name
-        self.feature["display_name"] = code_display_name
         self.feature["invert_level_start"] = self.connection_node_start["bottom_level"]
         self.feature["invert_level_end"] = self.connection_node_end["bottom_level"]
 

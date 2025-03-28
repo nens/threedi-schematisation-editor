@@ -9,8 +9,7 @@ from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
 
 PLUGIN_DIR = Path(__file__).parent
-from threedi_schematisation_editor.deps.custom_imports import \
-    patch_wheel_imports
+from threedi_schematisation_editor.deps.custom_imports import patch_wheel_imports
 
 patch_wheel_imports()
 from threedi_mi_utils.news import QgsNewsSettingsInjector
@@ -18,21 +17,26 @@ from threedi_mi_utils.news import QgsNewsSettingsInjector
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.custom_widgets import (
-    ImportFeaturesDialog, ImportStructuresDialog, LoadSchematisationDialog)
-from threedi_schematisation_editor.processing import \
-    ThreediSchematisationEditorProcessingProvider
+    ImportFeaturesDialog,
+    ImportStructuresDialog,
+    LoadSchematisationDialog,
+)
+from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager
-from threedi_schematisation_editor.utils import (ConversionError,
-                                                 add_gpkg_connection,
-                                                 add_settings_entry,
-                                                 can_write_in_dir,
-                                                 check_enable_macros_option,
-                                                 check_wal_for_sqlite,
-                                                 get_filepath, get_icon_path,
-                                                 is_gpkg_connection_exists,
-                                                 migrate_schematisation_schema,
-                                                 progress_bar_callback_factory,
-                                                 set_wal_for_sqlite_mode)
+from threedi_schematisation_editor.utils import (
+    ConversionError,
+    add_gpkg_connection,
+    add_settings_entry,
+    can_write_in_dir,
+    check_enable_macros_option,
+    check_wal_for_sqlite,
+    get_filepath,
+    get_icon_path,
+    is_gpkg_connection_exists,
+    migrate_schematisation_schema,
+    progress_bar_callback_factory,
+    set_wal_for_sqlite_mode,
+)
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
 
