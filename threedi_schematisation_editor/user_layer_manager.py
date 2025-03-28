@@ -433,9 +433,16 @@ class LayersManager:
 
     def load_vector_layers(self):
         """Loading all vector layers."""
+        msg = "Loading vector layers and styles..."
+        layer_count = sum([len(group_models) for _, group_models in self.VECTOR_GROUPS])
+        i = 0
         for group_name, group_models in self.VECTOR_GROUPS:
             for model_cls in group_models:
+                msg = f"Loading {model_cls.__layername__} and its styles..."
+                self.uc.progress_bar(msg, 0, layer_count, i, clear_msg_bar=True)
+                QCoreApplication.processEvents()
                 self.initialize_data_model_layer(model_cls)
+                i += 1
 
     def register_vector_layers(self):
         """Register all vector layers."""
