@@ -8,7 +8,7 @@
     <alias field="initial_water_level" name="Initial water level [m MSL]" index="5" />
     <alias field="visualisation" name="Visualisation" index="6" />
     <alias field="manhole_surface_level" name="Manhole surface level [m]" index="7" />
-    <alias field="manhole_bottom_level" name="Bottom level [m MSL]" index="8" />
+    <alias field="bottom_level" name="Bottom level [m MSL]" index="8" />
     <alias field="exchange_level" name="Exchange level [m MSL]" index="9" />
     <alias field="exchange_type" name="Exchange type" index="10" />
     <alias field="exchange_thickness" name="Exchange thickness [m]" index="11" />

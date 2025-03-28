@@ -106,7 +106,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="NoFlag" name="manhole_bottom_level">
+    <field configurationFlags="NoFlag" name="bottom_level">
       <editWidget type="TextEdit">
         <config>
           <Option type="Map">

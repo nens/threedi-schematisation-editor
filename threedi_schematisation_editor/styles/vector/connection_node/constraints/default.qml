@@ -8,7 +8,7 @@
     <constraint exp_strength="0" notnull_strength="0" constraints="0" unique_strength="0" field="initial_water_level" />
     <constraint exp_strength="0" notnull_strength="0" constraints="0" unique_strength="0" field="visualisation" />
     <constraint exp_strength="0" notnull_strength="0" constraints="0" unique_strength="0" field="manhole_surface_level" />
-    <constraint exp_strength="0" notnull_strength="0" constraints="0" unique_strength="0" field="manhole_bottom_level" />
+    <constraint exp_strength="0" notnull_strength="0" constraints="0" unique_strength="0" field="bottom_level" />
     <constraint exp_strength="0" notnull_strength="0" constraints="0" unique_strength="0" field="exchange_level" />
     <constraint exp_strength="0" notnull_strength="2" constraints="1" unique_strength="0" field="exchange_type" />
     <constraint exp_strength="0" notnull_strength="0" constraints="0" unique_strength="0" field="exchange_thickness" />
