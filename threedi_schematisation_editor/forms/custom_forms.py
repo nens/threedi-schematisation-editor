@@ -713,7 +713,7 @@ class AbstractFormWithTable(AbstractBaseForm):
     def get_table_text(self):
         """Get table data as a string representation."""
         table_values = self.get_table_values()
-        table_str = self.ROW_SEPARATOR.join(self.COLUMN_SEPARATOR.join(row) for row in table_values if all(row))
+        table_str = self.ROW_SEPARATOR.join(self.COLUMN_SEPARATOR.join(row) for row in table_values)
         return table_str
 
     def save_table_edits(self):
@@ -796,9 +796,7 @@ class AbstractFormWithTable(AbstractBaseForm):
         else:
             table = ""
         for row_number, row in enumerate(table.split(self.ROW_SEPARATOR)):
-            row_values = [val for val in row.replace(" ", "").split(self.COLUMN_SEPARATOR) if val]
-            if len(row_values) != table_columns_count:
-                continue
+            row_values = [val for val in row.replace(" ", "").split(self.COLUMN_SEPARATOR)]
             for col_idx, row_value in enumerate(row_values):
                 self.table.setItem(row_number, col_idx, QTableWidgetItem(row_value))
         connect_signal(self.table.cellChanged, self.save_table_edits)
