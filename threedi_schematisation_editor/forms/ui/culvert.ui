@@ -546,7 +546,7 @@
                  <locale language="English" country="UnitedStates"/>
                 </property>
                 <property name="text">
-                 <string>Start invert level [m]</string>
+                 <string>Invert level start [m MSL]</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -603,7 +603,7 @@
                  <locale language="English" country="UnitedStates"/>
                 </property>
                 <property name="text">
-                 <string>End invert level [m]</string>
+                 <string>Invert level end [m MSL]</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
