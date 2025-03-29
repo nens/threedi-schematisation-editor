@@ -854,7 +854,7 @@
                  <set>Qt::ImhNone</set>
                 </property>
                 <property name="text">
-                 <string>Start connection node ID</string>
+                 <string>Connection node ID start</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -901,7 +901,7 @@
                  <set>Qt::ImhNone</set>
                 </property>
                 <property name="text">
-                 <string>End connection node ID</string>
+                 <string>Connection node ID end</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
