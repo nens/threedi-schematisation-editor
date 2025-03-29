@@ -178,7 +178,7 @@
               <set>Qt::ImhNone</set>
              </property>
              <property name="title">
-              <string>Cross section definition</string>
+              <string>Cross-section</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_3">
               <item row="3" column="3">

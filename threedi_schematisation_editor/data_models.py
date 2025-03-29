@@ -554,7 +554,7 @@ class DEMAverageArea(ModelObject):
 @dataclass
 class Windshielding1D(ModelObject):
     __tablename__ = "windshielding_1d"
-    __layername__ = "1D Windshielding"
+    __layername__ = "1D Wind shielding"
     __geometrytype__ = GeometryType.Point
 
     id: int
