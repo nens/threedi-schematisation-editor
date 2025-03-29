@@ -5,7 +5,7 @@
     <alias field="porosity" name="Porosity [fraction]" index="2" />
     <alias field="porosity_file" name="Porosity file" index="3" />
     <alias field="porosity_layer_thickness" name="Porosity layer thickness [m]" index="4" />
-    <alias field="impervious_layer_elevation" name="Impervious layer elevation [m MSL]" index="5" />
+    <alias field="impervious_layer_elevation" name="Impervious layer elevation [m]" index="5" />
     <alias field="hydraulic_conductivity" name="Hydraulic conductivity [m/d]" index="6" />
     <alias field="hydraulic_conductivity_file" name="Hydraulic conductivity file" index="7" />
   </aliases>
