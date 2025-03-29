@@ -898,7 +898,7 @@ coefficient positive</string>
          </widget>
          <widget class="QWidget" name="tab_1">
           <attribute name="title">
-           <string>Starting connection node</string>
+           <string>Connection node start</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_19">
            <item row="3" column="0" colspan="2">
@@ -1514,7 +1514,7 @@ coefficient positive</string>
          </widget>
          <widget class="QWidget" name="tab_2">
           <attribute name="title">
-           <string>Ending connection node</string>
+           <string>Connection node end</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_9">
            <item row="1" column="0" colspan="2">

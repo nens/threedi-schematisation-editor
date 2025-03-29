@@ -820,7 +820,7 @@
               <item row="0" column="0">
                <widget class="QLabel" name="label_57">
                 <property name="text">
-                 <string>Distance between calculation points [m]</string>
+                 <string>Calculation point distance [m]</string>
                 </property>
                 <property name="wordWrap">
                  <bool>false</bool>
@@ -1071,7 +1071,7 @@
          </widget>
          <widget class="QWidget" name="tab_manhole_1">
           <attribute name="title">
-           <string>Starting connection node</string>
+           <string>Connection node start</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_19">
            <item row="2" column="0" colspan="2">
@@ -1687,7 +1687,7 @@
          </widget>
          <widget class="QWidget" name="tab_3">
           <attribute name="title">
-           <string>Ending connection node</string>
+           <string>Connection node end</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_20">
            <item row="4" column="0" colspan="2">
