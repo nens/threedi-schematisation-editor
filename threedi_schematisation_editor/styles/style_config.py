@@ -1811,9 +1811,9 @@ style_config_data = MappingProxyType(
             "style_categories": DEFAULT_STYLE_CATEGORIES | {"attributeEditorForm", "editorlayout"},
             "styles": {
                 "default": {
-                    "aliases": Path("aggregation_settings") / "aliases" / "default.qml",
-                    "attributetableconfig": Path("aggregation_settings") / "attributetableconfig" / "default.qml",
-                    "constraints": Path("aggregation_settings") / "constraints" / "default.qml",
+                    "aliases": Path("time_step_settings") / "aliases" / "default.qml",
+                    "attributetableconfig": Path("time_step_settings") / "attributetableconfig" / "default.qml",
+                    "constraints": Path("time_step_settings") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("time_step_settings") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("time_step_settings") / "attributeEditorForm" / "default.qml",
                     "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",

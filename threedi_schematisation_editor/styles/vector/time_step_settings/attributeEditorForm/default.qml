@@ -8,7 +8,7 @@
         <labelFont bold="0" style="" strikethrough="0" italic="0" underline="0" description="MS Shell Dlg 2,7.8,-1,5,50,0,0,0,0,0" />
       </labelStyle>
     </attributeEditorField>
-    <attributeEditorContainer verticalStretch="0" columnCount="1" collapsed="0" showLabel="1" collapsedExpressionEnabled="0" horizontalStretch="0" groupBox="1" collapsedExpression="" visibilityExpressionEnabled="0" name="Calculation time step" type="GroupBox" visibilityExpression="">
+    <attributeEditorContainer verticalStretch="0" columnCount="1" collapsed="0" showLabel="1" collapsedExpressionEnabled="0" horizontalStretch="0" groupBox="1" collapsedExpression="" visibilityExpressionEnabled="0" name="Simulation time step" type="GroupBox" visibilityExpression="">
       <labelStyle labelColor="0,0,0,255" overrideLabelColor="0" overrideLabelFont="0">
         <labelFont bold="0" style="" strikethrough="0" italic="0" underline="0" description="MS Shell Dlg 2,7.8,-1,5,50,0,0,0,0,0" />
       </labelStyle>
