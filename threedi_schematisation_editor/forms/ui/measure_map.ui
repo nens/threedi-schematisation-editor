@@ -168,7 +168,7 @@
               <string>Characteristics</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_3">
-              <item row="1" column="2">
+              <item row="0" column="2">
                <widget class="QLabel" name="label_14">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
@@ -184,7 +184,7 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="2">
+              <item row="1" column="2">
                <widget class="QLabel" name="label_7">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
@@ -263,7 +263,7 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="3">
+              <item row="0" column="3">
                <widget class="QDoubleSpinBox" name="weight">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -291,14 +291,14 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="4">
+              <item row="0" column="4">
                <widget class="QToolButton" name="weight_clear">
                 <property name="text">
                  <string>x</string>
                 </property>
                </widget>
               </item>
-              <item row="0" column="3" colspan="2">
+              <item row="1" column="3" colspan="2">
                <widget class="QSpinBox" name="control_id">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
