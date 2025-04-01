@@ -1,19 +1,20 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 import os
 import shutil
 import sys
-from collections import OrderedDict
-from enum import Enum
+from enum import Enum, IntEnum
 from itertools import groupby
 from operator import attrgetter, itemgetter
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Union
 from uuid import uuid4
+from xml.etree import ElementTree
 
 from qgis.core import (
     NULL,
     QgsBilinearRasterResampler,
     QgsCoordinateTransform,
-    QgsDataSourceUri,
     QgsEditorWidgetSetup,
     QgsExpression,
     QgsFeature,
@@ -34,7 +35,7 @@ from qgis.core import (
     QgsVectorFileWriter,
     QgsVectorLayer,
 )
-from qgis.PyQt.QtCore import QObject, QVariant
+from qgis.PyQt.QtCore import QCoreApplication, QObject, QVariant
 from qgis.PyQt.QtGui import QDoubleValidator, QPainter
 from qgis.PyQt.QtWidgets import QFileDialog, QItemDelegate, QLineEdit
 from qgis.utils import plugins
@@ -54,24 +55,14 @@ field_types_mapping = {
 }
 
 
-def backup_sqlite(filename):
-    """Make a backup of the sqlite database."""
+def backup_schematisation_file(filename):
+    """Make a backup of the schematisation file."""
     backup_folder = os.path.join(os.path.dirname(os.path.dirname(filename)), "_backup")
     os.makedirs(backup_folder, exist_ok=True)
     prefix = str(uuid4())[:8]
-    backup_sqlite_path = os.path.join(backup_folder, f"{prefix}_{os.path.basename(filename)}")
-    shutil.copyfile(filename, backup_sqlite_path)
-    return backup_sqlite_path
-
-
-def cast_if_bool(value):
-    """Function for changing True/False from GeoPackage layers to 0/1 integers used in Spatialite layers."""
-    if value is True:
-        return 1
-    elif value is False:
-        return 0
-    else:
-        return value
+    backup_file_path = os.path.join(backup_folder, f"{prefix}_{os.path.basename(filename)}")
+    shutil.copyfile(filename, backup_file_path)
+    return backup_file_path
 
 
 def vector_layer_factory(annotated_model_cls, epsg=4326):
@@ -140,7 +131,7 @@ def layer_to_gpkg(layer, gpkg_filename, overwrite=False, driver_name="GPKG"):
         QgsVectorFileWriter.CreateOrOverwriteLayer if overwrite is False else QgsVectorFileWriter.CreateOrOverwriteFile
     )
     fields = layer.fields()
-    valid_indexes = [fields.lookupField(fname) for fname in fields.names() if fname != "fid"]
+    valid_indexes = [fields.lookupField(fname) for fname in fields.names()]
     options.attributes = valid_indexes
     options.driverName = driver_name
     options.layerName = layer.name()
@@ -156,22 +147,6 @@ def gpkg_layer(gpkg_path, table_name, layer_name=None):
     return vlayer
 
 
-def sqlite_layer(sqlite_path, table_name, layer_name=None, geom_column="the_geom", schema=""):
-    """Creating vector layer out of Spatialite source."""
-    uri = QgsDataSourceUri()
-    uri.setDatabase(sqlite_path)
-    uri.setDataSource(schema, table_name, geom_column)
-    layer_name = table_name if layer_name is None else layer_name
-    vlayer = QgsVectorLayer(uri.uri(), layer_name, "spatialite")
-    return vlayer
-
-
-def create_empty_model(export_sqlite_path):
-    """Copying Spatialite database template with 3Di model data structure."""
-    empty_sqlite = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "empty.sqlite")
-    shutil.copy(empty_sqlite, export_sqlite_path)
-
-
 def get_qml_style_path(style_name, *subfolders):
     """Getting QML styles path."""
     qml_filename = f"{style_name}.qml"
@@ -185,19 +160,58 @@ def get_multiple_qml_style_paths(styles_folder_name, *subfolders):
     """Getting QML styles paths within given styles folder."""
     styles_folder_path = os.path.join(os.path.dirname(__file__), "styles", *subfolders, styles_folder_name)
     if os.path.exists(styles_folder_path):
-        qml_paths = [os.path.join(styles_folder_path, q) for q in os.listdir(styles_folder_path) if q.endswith(".qml")]
+        qml_paths = [
+            os.path.normpath(os.path.join(styles_folder_path, q))
+            for q in os.listdir(styles_folder_path)
+            if q.endswith(".qml")
+        ]
     else:
         qml_paths = []
     return qml_paths
 
 
+def merge_qml_styles(qml_files) -> Path:
+    """
+    Merges multiple QML files into a single temporary QML file.
+    """
+    if not qml_files:
+        raise ValueError("No QML files provided.")
+
+    # Parse the first QML file as the base
+    base_tree = ElementTree.parse(qml_files[0])
+    base_root = base_tree.getroot()
+
+    for qml_file in qml_files[1:]:
+        tree = ElementTree.parse(qml_file)
+        root = tree.getroot()
+
+        for new_element in root:
+            existing_element = base_root.find(new_element.tag)
+            if existing_element is not None:
+                raise RuntimeError(f"Duplicate tag {new_element.tag} in {qml_files}")
+            base_root.append(new_element)
+
+    # Create a temporary file to save the merged QML
+    temp_qml = NamedTemporaryFile(delete=False, suffix=".qml")
+    temp_tree = ElementTree.ElementTree(base_root)
+    temp_tree.write(temp_qml.name, encoding="utf-8", xml_declaration=True)
+
+    return Path(temp_qml.name)
+
+
 def get_form_ui_path(table_name):
     """Getting UI form path for a given table name."""
     ui_filename = f"{table_name}.ui"
-    filepath = os.path.join(os.path.dirname(__file__), "forms", "ui", ui_filename)
+    filepath = os.path.normpath(os.path.join(os.path.dirname(__file__), "forms", "ui", ui_filename))
     if os.path.isfile(filepath):
         return filepath
     return None
+
+
+def get_icon_path(icon_filename, root_dir=None):
+    """Getting icon path for a given icon file."""
+    icon_filepath = os.path.join(os.path.dirname(__file__) if root_dir is None else root_dir, "icons", icon_filename)
+    return icon_filepath
 
 
 def create_tree_group(name, insert_at_top=False, root=None):
@@ -266,14 +280,45 @@ def get_filepath(
     return file_name
 
 
+def dataclass_field_to_widget_setup(model_cls_field_type, optional=False, **config_overrides):
+    """Create QgsEditorWidgetSetup out of the dataclass field type."""
+    if model_cls_field_type is bool:
+        config_type = "CheckBox"
+        config_map = {"AllowNull": optional}
+    elif model_cls_field_type is int:
+        config_type = "TextEdit"
+        config_map = {"AllowNull": optional}
+    elif model_cls_field_type is float:
+        config_type = "Range"
+        config_map = {
+            "AllowNull": optional,
+            "Max": 10**15,
+            "Min": -(10**15),
+            "Precision": 3,
+            "Step": 1.0,
+            "Style": "SpinBox",
+        }
+    elif model_cls_field_type is dm.HighPrecisionFloat:
+        config_type = "TextEdit"
+        config_map = {"IsMultiline": False, "UseHtml": False}
+    elif model_cls_field_type is str:
+        config_type = "TextEdit"
+        config_map = {"AllowNull": optional}
+    else:
+        return None
+    config_map.update(config_overrides)
+    ews = QgsEditorWidgetSetup(config_type, config_map)
+    return ews
+
+
 def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
-    """Creating QgsEditorWidgetSetup out of the Enum object."""
+    """Create QgsEditorWidgetSetup out of the Enum object."""
     if enum_name_format_fn is None:
 
         def enum_name_format_fn(entry_name):
             return entry_name
 
-    value_map = [{f"{entry.value}: {enum_name_format_fn(entry.name)}": entry.value} for entry in enum]
+    value_map = [{f"{enum_name_format_fn(entry)}": entry.value} for entry in enum]
     if optional:
         null_value = QgsValueMapFieldFormatter.NULL_VALUE
         value_map.insert(0, {"": null_value})
@@ -281,11 +326,22 @@ def enum_to_editor_widget_setup(enum, optional=False, enum_name_format_fn=None):
     return ews
 
 
-def enum_entry_name_format(entry_name):
-    if entry_name not in ["YZ", "HPE", "HDPE", "PVC"]:
-        formatted_entry_name = entry_name.capitalize().replace("_", " ")
+def enum_entry_name_format(entry):
+    if entry.name not in ["YZ", "HPE", "HDPE", "PVC"]:
+        formatted_entry_name = (
+            entry.name.capitalize()
+            .replace("_", " ")
+            .replace("0d", "0D")
+            .replace("1d", "1D")
+            .replace("2d", "2D")
+            .replace("ross section", "ross-section")
+            .replace("M3 seconds", "m³/s")
+        )
     else:
-        formatted_entry_name = entry_name
+        formatted_entry_name = entry.name
+
+    if isinstance(entry, IntEnum):
+        formatted_entry_name = f"{entry.value}: {formatted_entry_name}"
     return formatted_entry_name
 
 
@@ -295,7 +351,6 @@ def set_initial_layer_configuration(layer, model_cls):
     fields = layer.dataProvider().fields()
     columns = attr_table_config.columns()
     model_hidden_fields = model_cls.hidden_fields()
-    model_hidden_fields.add("fid")
     for column in columns:
         column_name = column.name
         if column_name in model_hidden_fields:
@@ -303,14 +358,20 @@ def set_initial_layer_configuration(layer, model_cls):
             continue
         try:
             field_type = model_cls.__annotations__[column_name]
-            if is_optional(field_type):
+            field_is_optional = is_optional(field_type)
+            if field_is_optional:
                 field_type = optional_type(field_type)
-                optional = True
-            else:
-                optional = False
+            field_idx = fields.lookupField(column_name)
             if issubclass(field_type, Enum):
-                field_idx = fields.lookupField(column_name)
-                ews = enum_to_editor_widget_setup(field_type, optional, enum_name_format_fn=enum_entry_name_format)
+                ews = enum_to_editor_widget_setup(
+                    field_type, field_is_optional, enum_name_format_fn=enum_entry_name_format
+                )
+            else:
+                if column_name.startswith("hydraulic_conductivity"):
+                    ews = dataclass_field_to_widget_setup(field_type, optional=field_is_optional, Min=0)
+                else:
+                    ews = dataclass_field_to_widget_setup(field_type, optional=field_is_optional)
+            if ews is not None:
                 layer.setEditorWidgetSetup(field_idx, ews)
         except KeyError:
             continue
@@ -328,81 +389,18 @@ def set_field_default_value(vector_layer, field_name, expression, apply_on_updat
     vector_layer.setDefaultValueDefinition(field_index, default_value_definition)
 
 
-def load_user_layers(gpkg_path):
-    """Loading grouped User Layers from GeoPackage into map canvas."""
-    groups = OrderedDict()
-    groups["1D"] = dm.MODEL_1D_ELEMENTS
-    groups["2D"] = dm.MODEL_2D_ELEMENTS
-    groups["Inflow"] = dm.INFLOW_ELEMENTS
-    groups["Settings"] = dm.SETTINGS_ELEMENTS
-    default_style_name = "default"
-    for group_name, group_models in groups.items():
-        get_tree_group(group_name)
-        for model_cls in group_models:
-            layer = gpkg_layer(gpkg_path, model_cls.__tablename__, model_cls.__layername__)
-            fields_indexes = list(range(len(layer.fields())))
-            form_ui_path = get_form_ui_path(model_cls.__tablename__)
-            qml_paths = get_multiple_qml_style_paths(model_cls.__tablename__, "vector")
-            qml_names = [os.path.basename(qml_path).split(".")[0] for qml_path in qml_paths]
-            try:
-                default_idx = qml_names.index(default_style_name)
-                qml_paths.append(qml_paths.pop(default_idx))
-                qml_names.append(qml_names.pop(default_idx))
-            except ValueError:
-                # There is no default.qml style defined for the model layer
-                pass
-            style_manager = layer.styleManager()
-            for style_name, qml_path in zip(qml_names, qml_paths):
-                layer.loadNamedStyle(qml_path)
-                style_manager.addStyleFromLayer(style_name)
-            all_styles = style_manager.styles()
-            default_widgets_setup = [(idx, layer.editorWidgetSetup(idx)) for idx in fields_indexes]
-            default_edit_form_config = layer.editFormConfig()
-            if form_ui_path:
-                default_edit_form_config.setUiForm(form_ui_path)
-            else:
-                id_increment_expression = "if (maximum(id) is null, 1, maximum(id) + 1)"
-                set_field_default_value(layer, "id", id_increment_expression)
-            for style in all_styles:
-                style_manager.setCurrentStyle(style)
-                layer.setEditFormConfig(default_edit_form_config)
-                for field_idx, field_widget_setup in default_widgets_setup:
-                    layer.setEditorWidgetSetup(field_idx, field_widget_setup)
-            style_manager.setCurrentStyle(default_style_name)
-            add_layer_to_group(group_name, layer, bottom=True)
-    load_model_raster_layers(gpkg_path)
-
-
-def load_model_raster_layers(gpkg_path):
-    """Loading raster layers related with 3Di model."""
-    gpkg_dir = os.path.dirname(gpkg_path)
-    group_name = "Model rasters"
-    get_tree_group(group_name)
-    for settings_cls in dm.SETTINGS_ELEMENTS:
-        if settings_cls.RELATED_RASTERS is None:
-            continue
-        settings_layer = gpkg_layer(gpkg_path, settings_cls.__tablename__)
-        try:
-            feat = next(settings_layer.getFeatures())
-        except StopIteration:
-            continue
-        for raster_file_field, raster_layer_name in settings_cls.RELATED_RASTERS:
-            relative_path = feat[raster_file_field]
-            if not relative_path:
-                continue
-            raster_filepath = os.path.normpath(os.path.join(gpkg_dir, relative_path))
-            if not os.path.isfile(raster_filepath):
-                continue
-            rlayer = QgsRasterLayer(raster_filepath, raster_layer_name)
-            qml_path = get_qml_style_path(raster_file_field, "raster")
-            if qml_path is not None:
-                rlayer.loadNamedStyle(qml_path)
-            add_layer_to_group(group_name, rlayer, bottom=True)
-
-
 def remove_user_layers():
     """Removing all 3Di model User Layers and rasters from the map canvas."""
-    groups = ["1D", "2D", "Inflow", "Settings", "Model rasters"]
+    groups = [
+        "1D",
+        "1D2D",
+        "2D",
+        "Laterals & 0D inflow",
+        "Structure control",
+        "Hydrological processes",
+        "Settings",
+        "Rasters",
+    ]
     for group_name in groups:
         remove_group_with_children(group_name)
 
@@ -421,10 +419,10 @@ def connect_signal(signal, slot):
     signal.connect(slot)
 
 
-def disconnect_signal(signal, slot):
+def disconnect_signal(signal, slot=None):
     """Disconnecting signal with slot."""
     try:
-        signal.disconnect(slot)
+        signal.disconnect(slot) if slot is not None else signal.disconnect()
     except TypeError:
         pass
 
@@ -574,6 +572,24 @@ def check_enable_macros_option():
     return option
 
 
+def check_wal_for_sqlite():
+    """Check if WAL for the SQLite is enabled."""
+    settings = QgsSettings()
+    option = settings.value("/qgis/walForSqlite3")
+    if option == "true":
+        return True
+    elif option == "false":
+        return False
+    else:
+        return True
+
+
+def set_wal_for_sqlite_mode(mode=False):
+    """Set WAL for the SQLite mode."""
+    settings = QgsSettings()
+    settings.setValue("/qgis/walForSqlite3", mode)
+
+
 def get_next_feature_id(layer):
     """Return first available ID within layer features."""
     id_idx = layer.fields().indexFromName("id")
@@ -612,7 +628,7 @@ def get_feature_by_id(layer, object_id, id_field="id"):
 
 def add_settings_entry(gpkg_path, **initial_fields_values):
     """Adding initial settings entry with defined fields values."""
-    settings_layer = gpkg_layer(gpkg_path, dm.GlobalSettings.__tablename__)
+    settings_layer = gpkg_layer(gpkg_path, dm.ModelSettings.__tablename__)
     if settings_layer.featureCount() == 0:
         settings_fields = settings_layer.fields()
         settings_feat = QgsFeature(settings_fields)
@@ -703,29 +719,57 @@ def modify_raster_style(raster_layer, limits=QgsRasterMinMaxOrigin.MinMax, exten
     raster_layer.setRenderer(renderer)
 
 
-def migrate_spatialite_schema(sqlite_filepath):
+def migrate_schematisation_schema(schematisation_filepath, progress_callback=None):
+    """Migrate schematisation schema to the latest version."""
     migration_succeed = False
+    srid = None
+
     try:
         from threedi_schema import ThreediDatabase, errors
 
-        threedi_db = ThreediDatabase(sqlite_filepath)
+        backup_filepath = backup_schematisation_file(schematisation_filepath)
+        threedi_db = ThreediDatabase(schematisation_filepath)
         schema = threedi_db.schema
-        backup_filepath = backup_sqlite(sqlite_filepath)
-        schema.upgrade(backup=False, upgrade_spatialite_version=True)
-        schema.set_spatial_indexes()
-        shutil.rmtree(os.path.dirname(backup_filepath))
-        migration_succeed = True
-        migration_feedback_msg = "Migration succeed."
+        srid, _ = schema._get_epsg_data()
+        if srid is None:
+            try:
+                srid = schema._get_dem_epsg()
+            except errors.InvalidSRIDException:
+                srid = None
+        if srid is None:
+            migration_feedback_msg = (
+                "Could not fetch valid EPSG code from database or DEM; aborting database migration."
+            )
     except ImportError:
-        migration_feedback_msg = "Missing threedi-schema library. Schema migration failed."
-    except errors.UpgradeFailedError:
-        migration_feedback_msg = (
-            "The spatialite database schema cannot be migrated to the current version. "
-            "Please contact the service desk for assistance."
-        )
+        migration_feedback_msg = "Missing threedi-schema library (or its dependencies). Schema migration failed."
     except Exception as e:
         migration_feedback_msg = f"{e}"
+
+    if srid is not None:
+        try:
+            schema.upgrade(backup=False, epsg_code_override=srid, progress_func=progress_callback)
+            shutil.rmtree(os.path.dirname(backup_filepath))
+            migration_succeed = True
+            migration_feedback_msg = "Migration succeeded."
+        except errors.UpgradeFailedError:
+            migration_feedback_msg = (
+                "The schematisation database schema cannot be migrated to the current version. "
+                "Please contact the service desk for assistance."
+            )
+        except Exception as e:
+            migration_feedback_msg = f"{e}"
+
     return migration_succeed, migration_feedback_msg
+
+
+def progress_bar_callback_factory(communication, minimum=0, maximum=100, clear_msg_bar=True):
+    """Callback function to track schematisation migration progress."""
+
+    def progress_bar_callback(progres_value, message):
+        communication.progress_bar(message, minimum, maximum, progres_value, clear_msg_bar=clear_msg_bar)
+        QCoreApplication.processEvents()
+
+    return progress_bar_callback
 
 
 def bypass_max_path_limit(path, is_file=False):
@@ -748,59 +792,6 @@ def bypass_max_path_limit(path, is_file=False):
             else:
                 valid_path = path_str
     return valid_path
-
-
-def ensure_valid_schema(schematisation_sqlite, communication):
-    """Check if schema version is up-to-date and migrate it if needed."""
-    try:
-        from threedi_schema import ThreediDatabase, errors
-    except ImportError:
-        return
-    schematisation_dirname = os.path.dirname(schematisation_sqlite)
-    schematisation_filename = os.path.basename(schematisation_sqlite)
-    backup_folder = os.path.join(schematisation_dirname, "_backup")
-    os.makedirs(bypass_max_path_limit(backup_folder), exist_ok=True)
-    prefix = str(uuid4())[:8]
-    backup_sqlite_path = os.path.join(backup_folder, f"{prefix}_{schematisation_filename}")
-    shutil.copyfile(schematisation_sqlite, bypass_max_path_limit(backup_sqlite_path, is_file=True))
-    threedi_db = ThreediDatabase(schematisation_sqlite)
-    schema = threedi_db.schema
-    try:
-        schema.validate_schema()
-        schema.set_spatial_indexes()
-    except errors.MigrationMissingError:
-        warn_and_ask_msg = (
-            "The selected spatialite cannot be used because its database schema version is out of date. "
-            "Would you like to migrate your spatialite to the current schema version?"
-        )
-        do_migration = communication.ask(None, "Missing migration", warn_and_ask_msg)
-        if not do_migration:
-            return False
-        try:
-            schema.upgrade(backup=False, upgrade_spatialite_version=True)
-            schema.set_spatial_indexes()
-            shutil.rmtree(backup_folder)
-        except errors.MigrationMissingError as e:
-            if "This tool cannot update versions below 160" in str(e):
-                error_msg = (
-                    "This tool cannot update versions below 160. " "Please contact the service desk for assistance."
-                )
-                communication.show_error(error_msg)
-                return False
-            else:
-                raise e
-    except errors.UpgradeFailedError:
-        error_msg = (
-            "The spatialite database schema cannot be migrated to the current version. "
-            "Please contact the service desk for assistance."
-        )
-        communication.show_error(error_msg)
-        return False
-    except Exception as e:
-        error_msg = f"{e}"
-        communication.show_error(error_msg)
-        return False
-    return True
 
 
 def validation_errors_summary(validation_errors):
@@ -854,6 +845,7 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
     cross_section_table_widget_add = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_add")
     cross_section_table_widget_paste = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_paste")
     cross_section_table_widget_delete = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_delete")
+    cross_section_table_widget_copy = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_copy")
     cross_section_table_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_label")
     all_related_widgets = [
         cross_section_width_widget,
@@ -866,6 +858,7 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
         cross_section_table_widget_add,
         cross_section_table_widget_paste,
         cross_section_table_widget_delete,
+        cross_section_table_widget_copy,
         cross_section_table_label_widget,
     ]
     for related_widget in all_related_widgets:
@@ -885,6 +878,7 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
             cross_section_table_widget_add.setDisabled(True)
             cross_section_table_widget_paste.setDisabled(True)
             cross_section_table_widget_delete.setDisabled(True)
+            cross_section_table_widget_copy.setDisabled(True)
             cross_section_table_label_widget.setDisabled(True)
             if cross_section_shape in {
                 en.CrossSectionShape.CLOSED_RECTANGLE.value,
@@ -900,6 +894,7 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
             cross_section_table_widget_add.setEnabled(True)
             cross_section_table_widget_paste.setEnabled(True)
             cross_section_table_widget_delete.setEnabled(True)
+            cross_section_table_widget_copy.setEnabled(True)
             cross_section_table_label_widget.setEnabled(True)
         else:
             pass
@@ -913,6 +908,7 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
     cross_section_friction_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_label")
     cross_section_friction_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_widget")
     cross_section_friction_clear = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_clear")
+    cross_section_friction_copy = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_copy")
     vegetation_stem_density_label_widget = custom_form.dialog.findChild(
         QObject, f"{prefix}vegetation_stem_density_label"
     )
@@ -942,11 +938,13 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
     )
     cross_section_vegetation_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_widget")
     cross_section_vegetation_clear = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_clear")
+    cross_section_vegetation_copy = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_copy")
     single_friction_widgets = [friction_value_label_widget, friction_value_widget, friction_value_clear_widget]
     multi_friction_widgets = [
         cross_section_friction_label_widget,
         cross_section_friction_widget,
         cross_section_friction_clear,
+        cross_section_friction_copy,
     ]
     single_vege_widgets = [
         vegetation_stem_density_label_widget,
@@ -966,13 +964,14 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
         cross_section_vegetation_label_widget,
         cross_section_vegetation_widget,
         cross_section_vegetation_clear,
+        cross_section_vegetation_copy,
     ]
     all_related_widgets = single_friction_widgets + multi_friction_widgets + single_vege_widgets + multi_vege_widgets
     for related_widget in all_related_widgets:
         related_widget.setDisabled(True)
     cross_section_shape = custom_form.get_widget_value(cross_section_shape_widget)
     friction_value = custom_form.get_widget_value(friction_widget)
-    custom_form.update_cross_section_table_header("cross_section_friction_table")
+    custom_form.update_cross_section_table_header("cross_section_friction_values")
     custom_form.update_cross_section_table_header("cross_section_vegetation_table")
     if not custom_form.layer.isEditable():
         return
@@ -1021,7 +1020,6 @@ class NumericItemDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         validator = QDoubleValidator(editor)
-        validator.setBottom(0)
         validator.setDecimals(3)
         validator.setNotation(QDoubleValidator.StandardNotation)
         editor.setValidator(validator)

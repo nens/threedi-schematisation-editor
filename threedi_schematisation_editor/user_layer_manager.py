@@ -1,4 +1,4 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 import os
 import re
 from functools import cached_property
@@ -7,8 +7,11 @@ from types import MappingProxyType
 
 from qgis.core import (
     Qgis,
+    QgsEditFormConfig,
+    QgsEditorWidgetSetup,
     QgsExpression,
     QgsFeatureRequest,
+    QgsFieldConstraints,
     QgsProject,
     QgsRasterLayer,
     QgsSnappingConfig,
@@ -24,16 +27,17 @@ from threedi_schematisation_editor.expressions import (
     cross_section_max_height,
     cross_section_max_width,
 )
+from threedi_schematisation_editor.styles.style_config import get_style_configurations, styles_location
 from threedi_schematisation_editor.user_layer_forms import LayerEditFormFactory
 from threedi_schematisation_editor.user_layer_handlers import MODEL_HANDLERS
 from threedi_schematisation_editor.utils import (
     add_layer_to_group,
     create_tree_group,
     get_form_ui_path,
-    get_multiple_qml_style_paths,
     get_qml_style_path,
     gpkg_layer,
     hillshade_layer,
+    merge_qml_styles,
     modify_raster_style,
     remove_group_with_children,
     remove_layer,
@@ -47,15 +51,27 @@ class LayersManager:
     """Class with methods and attributes used for managing 3Di User Layers."""
 
     VECTOR_GROUPS = (
+        ("Laterals & 0D inflow", dm.MODEL_0D_INFLOW_ELEMENTS),
+        ("Structure control", dm.STRUCTURE_CONTROL_ELEMENTS),
         ("1D", dm.MODEL_1D_ELEMENTS),
         ("1D2D", dm.MODEL_1D2D_ELEMENTS),
         ("2D", dm.MODEL_2D_ELEMENTS),
-        ("Inflow", dm.INFLOW_ELEMENTS),
-        ("Control structures", dm.CONTROL_STRUCTURES_ELEMENTS),
+        ("Hydrological processes", dm.HYDROLOGICAL_PROCESSES),
         ("Settings", dm.SETTINGS_ELEMENTS),
     )
-    RASTER_GROUPS = (("Model rasters", dm.ELEMENTS_WITH_RASTERS),)
+    RASTER_GROUPS = (("Rasters", dm.ELEMENTS_WITH_RASTERS),)
     LAYER_JOINS = MappingProxyType({})
+    VALUE_RELATIONS = MappingProxyType(
+        {
+            # parent model: (child model, parent column, child key column, child value column)
+            dm.Surface: (dm.SurfaceParameters, "surface_parameters_id", "id", "description"),
+            dm.DryWeatherFlow: (dm.DryWeatherFlowDistribution, "dry_weather_flow_distribution_id", "id", "description"),
+            dm.Culvert: (dm.Material, "material_id", "id", "description"),
+            dm.Pipe: (dm.Material, "material_id", "id", "description"),
+            dm.Weir: (dm.Material, "material_id", "id", "description"),
+            dm.Orifice: (dm.Material, "material_id", "id", "description"),
+        }
+    )
 
     def __init__(self, iface, user_communication, model_gpkg_path):
         self.iface = iface
@@ -72,22 +88,26 @@ class LayersManager:
     def snapping_groups(self):
         snap_groups = {
             dm.ConnectionNode: {
-                dm.Manhole,
                 dm.Pipe,
                 dm.Weir,
                 dm.Orifice,
                 dm.Culvert,
-                dm.Pumpstation,
-                dm.PumpstationMap,
+                dm.Pump,
+                dm.PumpMap,
                 dm.Channel,
                 dm.SurfaceMap,
-                dm.ImperviousSurfaceMap,
+                dm.DryWeatherFlowMap,
                 dm.Lateral1D,
                 dm.BoundaryCondition1D,
+                dm.MeasureLocation,
             },
-            dm.Channel: {dm.ConnectionNode, dm.CrossSectionLocation, dm.PotentialBreach},
+            dm.Channel: {dm.ConnectionNode, dm.CrossSectionLocation, dm.PotentialBreach, dm.Windshielding1D},
             dm.CrossSectionLocation: {dm.Channel},
             dm.PotentialBreach: {dm.Channel},
+            dm.Windshielding1D: {dm.Channel},
+            dm.MemoryControl: {dm.Pump, dm.Orifice, dm.Weir},
+            dm.TableControl: {dm.Pump, dm.Orifice, dm.Weir},
+            dm.MeasureMap: {dm.MemoryControl, dm.TableControl, dm.MeasureLocation},
         }
         for model_cls in dm.ALL_MODELS:
             if model_cls.__geometrytype__ == en.GeometryType.NoGeometry:
@@ -102,7 +122,7 @@ class LayersManager:
         """Validate all layers registered within handlers."""
         fixed_errors, unsolved_errors = [], []
         handlers_count = len(self.model_handlers)
-        msg = "Validating data before the export..."
+        msg = "Validating layers data..."
         self.uc.progress_bar(msg, 0, handlers_count, 0, clear_msg_bar=True)
         QCoreApplication.processEvents()
         for i, handler in enumerate(self.model_handlers.values(), start=1):
@@ -141,17 +161,23 @@ class LayersManager:
         snap_config.setMode(QgsSnappingConfig.AdvancedConfiguration)
         snap_config.setIntersectionSnapping(True)
         individual_configs = snap_config.individualLayerSettings()
+        vertex_segment_snapping_models = {
+            dm.CrossSectionLocation,
+            dm.PotentialBreach,
+            dm.TableControl,
+            dm.MemoryControl,
+        }
         try:
             snap_type = (
                 Qgis.SnappingTypes(Qgis.SnappingType.Vertex | Qgis.SnappingType.Segment)
-                if layer_model in {dm.CrossSectionLocation, dm.PotentialBreach}
+                if layer_model in vertex_segment_snapping_models
                 else Qgis.SnappingType.Vertex
             )
         except AttributeError:
             # Backward compatibility for QGIS versions before introducing `Qgis.SnappingTypes`
             snap_type = (
                 QgsSnappingConfig.VertexFlag | QgsSnappingConfig.SegmentFlag
-                if layer_model in {dm.CrossSectionLocation, dm.PotentialBreach}
+                if layer_model in vertex_segment_snapping_models
                 else QgsSnappingConfig.VertexFlag
             )
         for layer in snapped_layers:
@@ -183,11 +209,12 @@ class LayersManager:
             dm.MODEL_1D_ELEMENTS
             + dm.MODEL_1D2D_ELEMENTS
             + (
-                dm.ImperviousSurface,
-                dm.ImperviousSurfaceMap,
+                dm.DryWeatherFlow,
+                dm.DryWeatherFlowMap,
                 dm.Surface,
                 dm.SurfaceMap,
             )
+            + dm.STRUCTURE_CONTROL_ELEMENTS
         )
         return linked_models
 
@@ -276,6 +303,32 @@ class LayersManager:
         QgsExpression.unregisterFunction("cross_section_max_height")
         QgsExpression.unregisterFunction("cross_section_max_width")
 
+    @cached_property
+    def vector_style_configs(self):
+        """Return vector layers style configurations."""
+        return get_style_configurations()
+
+    def setup_all_value_relation_widgets(self):
+        """Setup all models value relation widgets."""
+        for parent_model_cls in self.VALUE_RELATIONS.keys():
+            self.setup_value_relation_widgets(parent_model_cls)
+
+    def setup_value_relation_widgets(self, model_cls):
+        """Setup value relation widgets for the particular model class."""
+        child_model_cls, parent_column, key_column, value_column = self.VALUE_RELATIONS[model_cls]
+        parent_layer = self.model_handlers[model_cls].layer
+        parent_column_idx = parent_layer.fields().lookupField(parent_column)
+        child_layer = self.model_handlers[child_model_cls].layer
+        default_ews = parent_layer.editorWidgetSetup(parent_column_idx)
+        config = default_ews.config()
+        config["Layer"] = child_layer.id()
+        config["LayerSource"] = child_layer.source()
+        config["Key"] = key_column
+        config["Value"] = value_column
+        config["AllowNull"] = True
+        ews = QgsEditorWidgetSetup("ValueRelation", config)
+        parent_layer.setEditorWidgetSetup(parent_column_idx, ews)
+
     def create_groups(self):
         """Creating all User Layers groups."""
         self.remove_groups()
@@ -318,31 +371,51 @@ class LayersManager:
         """Initializing single model layer based on data model class."""
         default_style_name = "default"
         layer = gpkg_layer(self.model_gpkg_path, model_cls.__tablename__, model_cls.__layername__)
-        fields_indexes = list(range(len(layer.fields())))
+        layer_fields = layer.fields()
+        fields_indexes = list(range(len(layer_fields)))
         form_ui_path = get_form_ui_path(model_cls.__tablename__)
-        qml_paths = get_multiple_qml_style_paths(model_cls.__tablename__, "vector")
-        qml_names = [os.path.basename(qml_path).split(".")[0] for qml_path in qml_paths]
-        try:
-            default_idx = qml_names.index(default_style_name)
-            qml_paths.append(qml_paths.pop(default_idx))
-            qml_names.append(qml_names.pop(default_idx))
-        except ValueError:
-            # There is no default.qml style defined for the model layer
-            pass
+        qml_main_dir = styles_location()
         style_manager = layer.styleManager()
-        for style_name, qml_path in zip(qml_names, qml_paths):
-            layer.loadNamedStyle(qml_path)
-            set_initial_layer_configuration(layer, model_cls)
-            style_manager.addStyleFromLayer(style_name)
+        try:
+            layer_style_config = self.vector_style_configs[model_cls.__tablename__]
+            style_names = [
+                style_name for style_name in layer_style_config.styles.keys() if style_name != default_style_name
+            ]
+            style_names.append(default_style_name)  # make sure default is last
+            for style_name in style_names:
+                style_categories = layer_style_config.styles[style_name]
+                style_paths = [qml_main_dir / style_path for style_path in style_categories.values()]
+                merged_qml = merge_qml_styles(style_paths)
+                layer.loadNamedStyle(str(merged_qml))
+                set_initial_layer_configuration(layer, model_cls)
+                style_display_name = style_name.replace("_", " ")
+                style_manager.addStyleFromLayer(style_display_name)
+        except KeyError:
+            pass
         all_styles = style_manager.styles()
         default_widgets_setup = [(idx, layer.editorWidgetSetup(idx)) for idx in fields_indexes]
         default_edit_form_config = layer.editFormConfig()
         if form_ui_path:
             default_edit_form_config.setUiForm(form_ui_path)
+            try:
+                default_edit_form_config.setInitCodeSource(Qgis.AttributeFormPythonInitCodeSource.Dialog)
+            except AttributeError:
+                default_edit_form_config.setInitCodeSource(QgsEditFormConfig.PythonInitCodeSource.Dialog)
+            default_edit_form_config.setInitFunction("open_edit_form")
+            default_edit_form_config.setInitCode("from threedi_schematisation_editor.utils import open_edit_form")
+            set_field_default_value(layer, "id", "")
+            if model_cls.__geometrytype__ == en.GeometryType.NoGeometry:
+                set_field_default_value(layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))")
+            else:
+                set_field_default_value(layer, "id", "")
+            for idx in fields_indexes:
+                # We need to remove NotNull constraint for layers with the custom UI forms.
+                # It is required to prevent QGIS messing with background validation stylesheet.
+                layer.removeFieldConstraint(idx, QgsFieldConstraints.ConstraintNotNull)
         else:
-            if model_cls != dm.SchemaVersion:
-                id_increment_expression = "if (maximum(id) is null, 1, maximum(id) + 1)"
-                set_field_default_value(layer, "id", id_increment_expression)
+            set_field_default_value(layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))")
+        if "area" in layer_fields.names():
+            set_field_default_value(layer, "area", "$area", apply_on_update=True)
         for style in all_styles:
             style_manager.setCurrentStyle(style)
             layer.setEditFormConfig(default_edit_form_config)
@@ -360,9 +433,16 @@ class LayersManager:
 
     def load_vector_layers(self):
         """Loading all vector layers."""
+        msg = "Loading vector layers and styles..."
+        layer_count = sum([len(group_models) for _, group_models in self.VECTOR_GROUPS])
+        i = 0
         for group_name, group_models in self.VECTOR_GROUPS:
             for model_cls in group_models:
+                msg = f"Loading {model_cls.__layername__} and its styles..."
+                self.uc.progress_bar(msg, 0, layer_count, i, clear_msg_bar=True)
+                QCoreApplication.processEvents()
                 self.initialize_data_model_layer(model_cls)
+                i += 1
 
     def register_vector_layers(self):
         """Register all vector layers."""
@@ -398,7 +478,7 @@ class LayersManager:
                     relative_path = feat[raster_file_field]
                     if not relative_path:
                         continue
-                    raster_filepath = os.path.normpath(os.path.join(gpkg_dir, relative_path))
+                    raster_filepath = os.path.normpath(os.path.join(gpkg_dir, "rasters", relative_path))
                     if not os.path.isfile(raster_filepath):
                         continue
                     rlayer = QgsRasterLayer(raster_filepath, raster_layer_name)
@@ -406,10 +486,14 @@ class LayersManager:
                     if qml_path is not None:
                         rlayer.loadNamedStyle(qml_path)
                     modify_raster_style(rlayer)
-                    add_layer_to_group(group_name, rlayer, bottom=True, cached_groups=self.spawned_groups)
                     if raster_file_field == "dem_file":
                         hillshade_raster_layer = hillshade_layer(raster_filepath)
+                        canvas = self.iface.mapCanvas()
+                        canvas.setExtent(rlayer.extent())
+                        add_layer_to_group(group_name, rlayer, cached_groups=self.spawned_groups)
                         add_layer_to_group(group_name, hillshade_raster_layer, cached_groups=self.spawned_groups)
+                    else:
+                        add_layer_to_group(group_name, rlayer, bottom=True, cached_groups=self.spawned_groups)
 
     def load_all_layers(self, from_project=False):
         """Creating/registering groups and loading/registering vector, raster and tabular layers."""
@@ -423,6 +507,7 @@ class LayersManager:
             self.remove_loaded_layers(dry_remove=True)
             self.register_groups()
             self.register_vector_layers()
+        self.setup_all_value_relation_widgets()
         self.iface.setActiveLayer(self.model_handlers[dm.ConnectionNode].layer)
 
     def remove_loaded_layers(self, dry_remove=False):

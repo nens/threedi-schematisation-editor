@@ -1,4 +1,4 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 from qgis.core import Qgis, QgsMessageLog
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QInputDialog, QMessageBox, QProgressBar, QPushButton
@@ -121,9 +121,9 @@ class UICommunication:
             self.iface.messageBar().clearWidgets()
         pmb = self.iface.messageBar().createMessage(msg)
         pb = QProgressBar()
-        pb.setMinimum(minimum)
-        pb.setMaximum(maximum)
-        pb.setValue(init_value)
+        pb.setMinimum(int(minimum))
+        pb.setMaximum(int(maximum))
+        pb.setValue(int(init_value))
         pb.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         pmb.layout().addWidget(pb)
         self.iface.messageBar().pushWidget(pmb, Qgis.Info)

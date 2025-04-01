@@ -122,16 +122,6 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="manhole_tab">
-      <attribute name="title">
-       <string>Manholes</string>
-      </attribute>
-      <layout class="QGridLayout" name="gridLayout_4">
-       <item row="0" column="0">
-        <widget class="QTreeView" name="manhole_tv"/>
-       </item>
-      </layout>
-     </widget>
     </widget>
    </item>
    <item row="10" column="5">
@@ -235,24 +225,6 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QCheckBox" name="create_manholes_cb">
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-        </font>
-       </property>
-       <property name="layoutDirection">
-        <enum>Qt::LeftToRight</enum>
-       </property>
-       <property name="text">
-        <string>Create manholes</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
      <item row="1" column="2">
       <widget class="QLabel" name="length_fallback_value_lbl">
        <property name="font">
@@ -262,39 +234,6 @@
        </property>
        <property name="text">
         <string>Length fallback value</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="3">
-      <widget class="QCheckBox" name="selected_only_cb">
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-        </font>
-       </property>
-       <property name="layoutDirection">
-        <enum>Qt::LeftToRight</enum>
-       </property>
-       <property name="text">
-        <string>Selected features only</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
-      <widget class="QCheckBox" name="create_nodes_cb">
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-        </font>
-       </property>
-       <property name="layoutDirection">
-        <enum>Qt::LeftToRight</enum>
-       </property>
-       <property name="text">
-        <string>Create connection nodes</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -394,6 +333,39 @@
        </property>
       </widget>
      </item>
+     <item row="0" column="1">
+      <widget class="QCheckBox" name="create_nodes_cb">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string>Create connection nodes</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QCheckBox" name="selected_only_cb">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string>Selected features only</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
   </layout>
@@ -413,9 +385,6 @@
  <tabstops>
   <tabstop>structure_layer_cbo</tabstop>
   <tabstop>edit_channels_cb</tabstop>
-  <tabstop>create_manholes_cb</tabstop>
-  <tabstop>create_nodes_cb</tabstop>
-  <tabstop>selected_only_cb</tabstop>
   <tabstop>length_source_field_cbo</tabstop>
   <tabstop>length_fallback_value_dsb</tabstop>
   <tabstop>azimuth_source_field_cbo</tabstop>
@@ -423,7 +392,6 @@
   <tabstop>tab_widget</tabstop>
   <tabstop>structure_tv</tabstop>
   <tabstop>connection_node_tv</tabstop>
-  <tabstop>manhole_tv</tabstop>
   <tabstop>save_pb</tabstop>
   <tabstop>load_pb</tabstop>
   <tabstop>snap_gb</tabstop>

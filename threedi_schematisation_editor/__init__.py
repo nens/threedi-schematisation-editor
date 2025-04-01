@@ -1,37 +1,42 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 import os.path
 from collections import defaultdict
 from pathlib import Path
 
 from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
+from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
 
-from .deps.custom_imports import patch_wheel_imports
+PLUGIN_DIR = Path(__file__).parent
+from threedi_schematisation_editor.deps.custom_imports import patch_wheel_imports
 
 patch_wheel_imports()
 from threedi_mi_utils.news import QgsNewsSettingsInjector
 
-PLUGIN_DIR = Path(__file__).parent
-
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
-from threedi_schematisation_editor.conversion import ModelDataConverter
 from threedi_schematisation_editor.custom_widgets import (
-    ImportStructuresDialog, LoadSchematisationDialog)
-from threedi_schematisation_editor.processing import \
-    ThreediSchematisationEditorProcessingProvider
+    ImportFeaturesDialog,
+    ImportStructuresDialog,
+    LoadSchematisationDialog,
+)
+from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager
-from threedi_schematisation_editor.utils import (ConversionError,
-                                                 add_gpkg_connection,
-                                                 add_settings_entry,
-                                                 can_write_in_dir,
-                                                 check_enable_macros_option,
-                                                 create_empty_model,
-                                                 ensure_valid_schema,
-                                                 get_filepath,
-                                                 is_gpkg_connection_exists,
-                                                 remove_user_layers)
+from threedi_schematisation_editor.utils import (
+    ConversionError,
+    add_gpkg_connection,
+    add_settings_entry,
+    can_write_in_dir,
+    check_enable_macros_option,
+    check_wal_for_sqlite,
+    get_filepath,
+    get_icon_path,
+    is_gpkg_connection_exists,
+    migrate_schematisation_schema,
+    progress_bar_callback_factory,
+    set_wal_for_sqlite_mode,
+)
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
 
@@ -53,7 +58,7 @@ class ThreediSchematisationEditorPlugin:
         self.action_export = None
         self.action_export_as = None
         self.action_remove = None
-        self.action_import_culverts = None
+        self.action_import_features = None
         self.workspace_context_manager = WorkspaceContextManager(self)
         self.provider = ThreediSchematisationEditorProcessingProvider()
         self.project = QgsProject.instance()
@@ -74,35 +79,31 @@ class ThreediSchematisationEditorPlugin:
         self.active_schematisation_combo.currentIndexChanged.connect(self.active_schematisation_changed)
         self.toolbar.addWidget(self.active_schematisation_combo)
         self.toolbar.addSeparator()
-        self.action_open = QAction("Open 3Di Geopackage", self.iface.mainWindow())
-        self.action_open.triggered.connect(self.open_model_from_geopackage)
-        self.action_import = QAction("Load from Spatialite", self.iface.mainWindow())
-        self.action_import.triggered.connect(self.load_from_spatialite)
-        self.action_export = QAction("Save to Spatialite", self.iface.mainWindow())
-        self.action_export.triggered.connect(self.save_to_default)
-        self.action_export_as = QAction("Save As", self.iface.mainWindow())
-        self.action_export_as.triggered.connect(self.save_to_selected)
-        self.action_remove = QAction("Remove 3Di model", self.iface.mainWindow())
+        self.action_open = QAction(
+            QIcon(get_icon_path("icon_load.svg")), "Load 3Di Schematisation", self.iface.mainWindow()
+        )
+        self.action_open.triggered.connect(self.load_schematisation)
+        self.action_remove = QAction(
+            QIcon(get_icon_path("icon_unload.svg")), "Remove 3Di Schematisation", self.iface.mainWindow()
+        )
         self.action_remove.triggered.connect(self.remove_model_from_project)
-        import_culverts_icon_path = os.path.join(os.path.dirname(__file__), "import.png")
+        import_features_icon_path = get_icon_path("icon_import.png")
         import_actions_spec = [
+            ("Connection nodes", self.import_external_connection_nodes, None),
             ("Culverts", self.import_external_culverts, None),
             ("Orifices", self.import_external_orifices, None),
             ("Weirs", self.import_external_weirs, None),
             ("Pipes", self.import_external_pipes, None),
-            ("Manholes", self.import_external_manholes, None),
         ]
-        self.action_import_culverts = self.add_multi_action_button(
-            "Import schematisation objects", import_culverts_icon_path, import_actions_spec
+        self.action_import_features = self.add_multi_action_button(
+            "Import schematisation objects", import_features_icon_path, import_actions_spec
         )
         self.toolbar.addAction(self.action_open)
-        self.toolbar.addAction(self.action_import)
-        self.toolbar.addAction(self.action_export)
-        self.toolbar.addAction(self.action_export_as)
         self.toolbar.addAction(self.action_remove)
-        self.toolbar.addAction(self.action_import_culverts)
+        self.toolbar.addAction(self.action_import_features)
         self.toggle_active_project_actions()
         self.active_schematisation_changed()
+        self.ensure_sqlite_wal_status()
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
@@ -110,11 +111,8 @@ class ThreediSchematisationEditorPlugin:
         del self.toolbar
         del self.active_schematisation_combo
         del self.action_open
-        del self.action_import
-        del self.action_export
-        del self.action_export_as
         del self.action_remove
-        del self.action_import_culverts
+        del self.action_import_features
 
     @property
     def model_gpkg(self):
@@ -204,15 +202,11 @@ class ThreediSchematisationEditorPlugin:
 
     def toggle_active_project_actions(self):
         if self.model_gpkg is None:
-            self.action_export.setDisabled(True)
-            self.action_export_as.setDisabled(True)
             self.action_remove.setDisabled(True)
-            self.action_import_culverts.setDisabled(True)
+            self.action_import_features.setDisabled(True)
         else:
-            self.action_export.setEnabled(True)
-            self.action_export_as.setEnabled(True)
             self.action_remove.setEnabled(True)
-            self.action_import_culverts.setEnabled(True)
+            self.action_import_features.setEnabled(True)
 
     def check_macros_status(self):
         macros_status = check_enable_macros_option()
@@ -223,15 +217,12 @@ class ThreediSchematisationEditorPlugin:
             )
             self.uc.bar_warn(msg, dur=10)
 
-    def select_user_layers_geopackage(self):
-        name_filter = "3Di User Layers (*.gpkg *.GPKG)"
-        filename = get_filepath(self.iface.mainWindow(), extension_filter=name_filter, save=False)
-        return filename
-
-    def select_sqlite_database(self, title):
-        name_filter = "Spatialite Database (*.sqlite)"
-        filename = get_filepath(self.iface.mainWindow(), extension_filter=name_filter, save=False, dialog_title=title)
-        return filename
+    def ensure_sqlite_wal_status(self):
+        wal_status = check_wal_for_sqlite()
+        if wal_status is not False:
+            set_wal_for_sqlite_mode(False)
+            msg = f"WAL (Write-Ahead Logging) for GeoPackage format was disabled. To apply changes please restart QGIS."
+            self.uc.bar_warn(msg, dur=10)
 
     def on_3di_project_read(self):
         custom_vars = self.project.customVariables()
@@ -246,7 +237,7 @@ class ThreediSchematisationEditorPlugin:
             if lm not in self.workspace_context_manager:
                 lm.load_all_layers(from_project=True)
                 self.workspace_context_manager.register_layer_manager(lm)
-        self.uc.bar_info("3Di User Layers registered!")
+        self.uc.bar_info("Project schematisations loaded!")
         self.check_macros_status()
         self.toggle_active_project_actions()
 
@@ -255,153 +246,70 @@ class ThreediSchematisationEditorPlugin:
         if project_model_gpkgs_str:
             self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAMES: project_model_gpkgs_str})
 
-    def open_model_from_geopackage(self, model_gpkg=None):
+    def load_schematisation(self, model_gpkg=None):
         if not model_gpkg:
-            model_gpkg = self.select_user_layers_geopackage()
-            if not model_gpkg:
-                return
-        lm = LayersManager(self.iface, self.uc, model_gpkg)
-        if lm in self.workspace_context_manager:
-            warn_msg = "Selected schematisation is already loaded. Loading canceled."
-            self.uc.show_warn(warn_msg)
-            return
-        lm.load_all_layers()
-        self.workspace_context_manager.register_layer_manager(lm)
-        self.uc.bar_info("3Di User Layers registered!")
-        self.check_macros_status()
-        self.toggle_active_project_actions()
-        if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
-            add_gpkg_connection(self.model_gpkg, self.iface)
-
-    def load_from_spatialite(self, src_sqlite=None):
-        if not src_sqlite:
             schematisation_loader = LoadSchematisationDialog(self.uc)
             result = schematisation_loader.exec_()
             if result != QDialog.Accepted:
                 return
-            src_sqlite = schematisation_loader.selected_schematisation_sqlite
-        if not can_write_in_dir(os.path.dirname(src_sqlite)):
-            warn_msg = "You don't have required write permissions to load data from the selected spatialite."
-            self.uc.show_warn(warn_msg)
-            return
-        schema_version = ModelDataConverter.spatialite_schema_version(src_sqlite)
-        if schema_version is None:
-            warn_msg = (
-                "The selected spatialite cannot be used because its schema version information is missing. "
-                "Please upgrade the 3Di Schematisation Editor and try again."
-            )
-            self.uc.show_warn(warn_msg)
-            self.uc.bar_warn("Loading from the Spatialite aborted!")
-            return
-        if schema_version > ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
-            warn_msg = (
-                "The selected spatialite cannot be used because its database schema version is newer than expected. "
-                "Please upgrade the 3Di Schematisation Editor and try again."
-            )
-            self.uc.show_warn(warn_msg)
-            self.uc.bar_warn("Loading from the Spatialite aborted!")
-            return
-        else:
-            schema_is_valid = ensure_valid_schema(src_sqlite, self.uc)
-            if schema_is_valid is False:
-                self.uc.bar_warn("Loading from the Spatialite aborted!")
+            schematisation_filepath = schematisation_loader.selected_schematisation_filepath
+            if not can_write_in_dir(os.path.dirname(schematisation_filepath)):
+                warn_msg = "You don't have required write permissions to load data from the selected location."
+                self.uc.show_warn(warn_msg)
                 return
-        dst_gpkg = os.path.normpath(src_sqlite.replace(".sqlite", ".gpkg"))
-        if dst_gpkg in set(self.workspace_context_manager.layer_managers.keys()):
+            if schematisation_filepath.endswith(".sqlite"):
+                QCoreApplication.processEvents()
+                migration_info = "Schema migration..."
+                self.uc.progress_bar(migration_info, 0, 100, 0, clear_msg_bar=True)
+                progress_bar_callback = progress_bar_callback_factory(self.uc)
+                migration_succeed, migration_feedback_msg = migrate_schematisation_schema(
+                    schematisation_filepath, progress_bar_callback
+                )
+                self.uc.progress_bar("Migration complete!", 0, 100, 100, clear_msg_bar=True)
+                QCoreApplication.processEvents()
+                if not migration_succeed:
+                    self.uc.clear_message_bar()
+                    self.uc.show_warn(migration_feedback_msg)
+                    return
+                model_gpkg = schematisation_filepath.rsplit(".", 1)[0] + ".gpkg"
+            else:
+                model_gpkg = schematisation_filepath
+        else:
+            if model_gpkg.endswith(".sqlite"):
+                QCoreApplication.processEvents()
+                migration_info = "Schema migration..."
+                self.uc.progress_bar(migration_info, 0, 100, 0, clear_msg_bar=True)
+                progress_bar_callback = progress_bar_callback_factory(self.uc)
+                migration_succeed, migration_feedback_msg = migrate_schematisation_schema(
+                    model_gpkg, progress_bar_callback
+                )
+                self.uc.progress_bar("Migration complete!", 0, 100, 100, clear_msg_bar=True)
+                QCoreApplication.processEvents()
+                if not migration_succeed:
+                    self.uc.clear_message_bar()
+                    self.uc.show_warn(migration_feedback_msg)
+                    return
+                model_gpkg = model_gpkg.rsplit(".", 1)[0] + ".gpkg"
+
+        lm = LayersManager(self.iface, self.uc, model_gpkg)
+        if lm in self.workspace_context_manager:
+            self.uc.clear_message_bar()
             warn_msg = "Selected schematisation is already loaded. Loading canceled."
             self.uc.show_warn(warn_msg)
             return
-        converter = ModelDataConverter(src_sqlite, dst_gpkg, user_communication=self.uc)
-        known_epsg = converter.set_epsg_from_sqlite()
-        if known_epsg is False:
-            return
-        try:
-            converter.create_empty_user_layers()
-            converter.import_all_model_data()
-        except ConversionError:
-            self.uc.bar_warn("Loading from the Spatialite failed!")
-            return
-        if converter.missing_source_settings is True:
-            add_settings_entry(dst_gpkg, id=1, epsg_code=converter.epsg_code)
-        lm = LayersManager(self.iface, self.uc, dst_gpkg)
         lm.load_all_layers()
         self.workspace_context_manager.register_layer_manager(lm)
-        self.uc.show_info("Loading from the Spatialite finished!")
+        self.uc.clear_message_bar()
+        self.uc.bar_info(f"Schematisation {lm.model_name} loaded!")
         self.check_macros_status()
         self.toggle_active_project_actions()
         if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
             add_gpkg_connection(self.model_gpkg, self.iface)
-
-    def save_to_selected(self):
-        self.save_to_spatialite()
-
-    def save_to_default(self):
-        self.save_to_spatialite(pick_destination=False)
-
-    def save_to_spatialite(self, pick_destination=True):
-        if not self.model_gpkg:
-            return
-        if self.layer_manager is None:
-            return
-        fixed_errors_msg, unsolved_errors_msg = self.layer_manager.validate_layers()
-        if unsolved_errors_msg:
-            warn_msg = (
-                "Saving to Spatialite failed. "
-                "The following features have cross sections with incorrect table inputs:\n"
-            )
-            warn_msg += unsolved_errors_msg
-            self.uc.show_warn(warn_msg)
-            return
-        self.layer_manager.stop_model_editing()
-        if pick_destination:
-            dst_sqlite = self.select_sqlite_database(title="Select database to save features to")
-        else:
-            dst_sqlite = self.model_gpkg.replace(".gpkg", ".sqlite")
-        if not dst_sqlite:
-            return
-        if not os.path.isfile(dst_sqlite):
-            warn_msg = "Target spatialite file doesn't exist. Saving to spatialite canceled."
-            self.uc.show_warn(warn_msg)
-            return
-        if not can_write_in_dir(os.path.dirname(dst_sqlite)):
-            warn_msg = "You don't have required write permissions to save data into the selected spatialite."
-            self.uc.show_warn(warn_msg)
-            return
-        schema_version = ModelDataConverter.spatialite_schema_version(dst_sqlite)
-        if schema_version > ModelDataConverter.SUPPORTED_SCHEMA_VERSION:
-            warn_msg = (
-                "The selected spatialite cannot be used because its database schema version is newer than expected. "
-                "Please upgrade the 3Di Schematisation Editor and try again."
-            )
-            self.uc.show_warn(warn_msg)
-            return
-        else:
-            schema_is_valid = ensure_valid_schema(dst_sqlite, self.uc)
-            if schema_is_valid is False:
-                return
-        converter = ModelDataConverter(dst_sqlite, self.model_gpkg, user_communication=self.uc)
-        known_epsg = converter.set_epsg_from_gpkg()
-        if known_epsg is False:
-            return
-        converter.trim_sqlite_targets()
-        converter.report_conversion_errors()
-        converter.export_all_model_data()
-        self.uc.show_info("Saving to the Spatialite finished!")
-
-    def save_to_spatialite_on_action(self):
-        model_modified = self.layer_manager.model_modified()
-        if model_modified:
-            title = "Save to Spatialite?"
-            question = "Would you like to save model to Spatialite before closing project?"
-            answer = self.uc.ask(None, title, question)
-            if answer is True:
-                self.save_to_spatialite()
 
     def remove_model_from_project(self):
         if not self.model_gpkg:
             return
         if self.layer_manager is not None:
-            self.save_to_spatialite_on_action()
             self.iface.currentLayerChanged.disconnect(self.switch_workspace_context)
             self.layer_manager.remove_groups()
             self.iface.currentLayerChanged.connect(self.switch_workspace_context)
@@ -409,6 +317,12 @@ class ThreediSchematisationEditorPlugin:
         self.switch_workspace_context(self.iface.activeLayer())
         self.toggle_active_project_actions()
         self.iface.mapCanvas().refresh()
+
+    def import_external_connection_nodes(self):
+        if not self.model_gpkg:
+            return
+        import_nodes_dlg = ImportFeaturesDialog(dm.ConnectionNode, self.model_gpkg, self.layer_manager, self.uc)
+        import_nodes_dlg.exec_()
 
     def import_external_culverts(self):
         if not self.model_gpkg:
@@ -432,14 +346,9 @@ class ThreediSchematisationEditorPlugin:
         import_pipes_dlg = ImportStructuresDialog(dm.Pipe, self.model_gpkg, self.layer_manager, self.uc)
         import_pipes_dlg.exec_()
 
-    def import_external_manholes(self):
-        import_manholes_dlg = ImportStructuresDialog(dm.Manhole, self.model_gpkg, self.layer_manager, self.uc)
-        import_manholes_dlg.exec_()
-
     def on_project_close(self):
         if self.layer_manager is None:
             return
-        self.save_to_spatialite_on_action()
         for lm in self.workspace_context_manager:
             lm.remove_loaded_layers(dry_remove=True)
         self.workspace_context_manager.unregister_all()

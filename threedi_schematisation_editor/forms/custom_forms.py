@@ -1,14 +1,14 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 import sys
 from collections import defaultdict
 from enum import Enum
-from functools import partial
+from functools import cached_property, partial
 from operator import itemgetter
 from types import MappingProxyType
 
 from qgis.core import NULL, QgsGeometry
-from qgis.gui import QgsDoubleSpinBox, QgsSpinBox
-from qgis.PyQt.QtCore import QObject
+from qgis.gui import QgsCheckableComboBox, QgsDoubleSpinBox, QgsSpinBox
+from qgis.PyQt.QtCore import QObject, Qt
 from qgis.PyQt.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -51,11 +51,12 @@ field_types_widgets = MappingProxyType(
 )
 
 
-class BaseForm(QObject):
+class AbstractBaseForm(QObject):
     """Base edit form for user layers edit form logic."""
 
     MODEL = None
     MIN_FID = -sys.maxsize - 1
+    AUTOGENERATE_ID = "Autogenerate"
 
     def __init__(self, layer_manager, dialog, layer, feature):
         super().__init__(parent=dialog)  # We need to set dialog as a parent to keep form alive
@@ -81,6 +82,12 @@ class BaseForm(QObject):
         self.dialog.active_form_signals.add((self.layer.editingStopped, self.toggle_edit_mode))
         self.dialog.active_form_signals.add((self.button_box.accepted, self.postprocess_on_acceptance))
 
+    def purge_form_dialog_signals(self):
+        """Remove all signals created by this form."""
+        for signal, slot in self.dialog.active_form_signals:
+            disconnect_signal(signal, slot)
+        self.dialog.active_form_signals.clear()
+
     @property
     def foreign_models_features(self):
         """Property returning dictionary where key = data model class with identifier and value = data model feature."""
@@ -89,25 +96,22 @@ class BaseForm(QObject):
 
     def setup_form_widgets(self):
         """Setting up all form widgets."""
-        # TODO: Improve handling of newly added related features
         for field, customisation_fn in self.handler.FORM_CUSTOMIZATIONS.items():
             widget = self.dialog.findChild(QObject, field)
             customisation_fn(widget)
         if self.feature is None:
             return
         fid = self.feature.id()
-        if fid == self.MIN_FID:
-            geometry = self.feature.geometry()
-            if not geometry:
+        if fid < 0:
+            try:
+                feature_id = self.feature["id"]
+            except KeyError:
                 return  # form open for an invalid feature
-            else:
-                if self.feature["id"] is not None:
-                    # This is the case after accepting new feature
-                    return
-                self.creation = True
-                self.handler.set_feature_values(self.feature)
+            self.creation = feature_id == self.AUTOGENERATE_ID
+            self.handler.set_feature_values(self.feature)
         self.activate_field_based_conditions()
         self.toggle_edit_mode()
+        self.populate_with_extra_widgets()
         self.connect_foreign_widgets()
         self.connect_custom_widgets()
 
@@ -145,7 +149,6 @@ class BaseForm(QObject):
 
     def toggle_edit_mode(self):
         """Toggling editing for foreign widgets."""
-        self.populate_with_extra_widgets()
         editing_active = self.layer.isEditable()
         for widget, related_cls, numerical_modifier, field_name in self.foreign_widgets.values():
             widget.setEnabled(editing_active)
@@ -163,8 +166,8 @@ class BaseForm(QObject):
         """
         Populate form's widgets - widgets are named after their attributes in the data model.
         If data_model_cls is given, then populate widgets for this class and feature.
-        start_end_modifier is used when there are multiple features edited in the form, for example two manholes in
-        a pipe form. The modifier should be 1 for starting point and 2 for ending.
+        start_end_modifier is used when there are multiple features edited in the form, for example two connection nodes
+         in a pipe form. The modifier should be 1 for starting point and 2 for ending.
         """
         if data_model_cls is not None:
             field_name_prefix = data_model_cls.__tablename__ + "_"
@@ -182,11 +185,11 @@ class BaseForm(QObject):
                 continue
             else:
                 if self.layer.isEditable():
-                    self.set_validation_background(widget, field_type)
                     edit_signal = self.get_widget_editing_signal(widget)
                     edit_slot = partial(self.set_validation_background, widget, field_type)
                     connect_signal(edit_signal, edit_slot)
                     self.dialog.active_form_signals.add((edit_signal, edit_slot))
+                    self.set_validation_background(widget, field_type)
                 else:
                     widget.setStyleSheet("")
             real_field_type = optional_type(field_type) if is_optional(field_type) else field_type
@@ -392,7 +395,441 @@ class BaseForm(QObject):
         pass
 
 
-class FormWithXSTable(BaseForm):
+class AbstractFormWithTag(AbstractBaseForm):
+    """Base edit form for user layers with tags table reference."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.tags_widget = None
+        self.setup_tag_widgets()
+
+    @cached_property
+    def all_tags_data(self):
+        """Return all available tags data."""
+        tags_handler = self.layer_manager.model_handlers[dm.Tag]
+        tags_layer = tags_handler.layer
+        tags_data = {tag_feat["id"]: tag_feat["description"] for tag_feat in tags_layer.getFeatures()}
+        return tags_data
+
+    @property
+    def assigned_tag_ids(self):
+        """Return all tag IDs assigned to the feature."""
+        try:
+            assigned_tag_ids_str = self.feature["tags"]
+            assigned_tag_ids = (
+                [int(tag_id) for tag_id in assigned_tag_ids_str.split(",")] if assigned_tag_ids_str else []
+            )
+        except KeyError:
+            assigned_tag_ids = []
+        return assigned_tag_ids
+
+    @property
+    def selected_tag_ids(self):
+        """Return current tag IDs selected in the form."""
+        return ",".join(self.tags_widget.checkedItemsData())
+
+    def setup_tag_widgets(self):
+        """Setup tag widgets."""
+        tags_widget_name = "add_remove_tags"
+        self.tags_widget = self.dialog.findChild(QObject, tags_widget_name)
+        if self.tags_widget is None:
+            tags_layout = self.dialog.findChild(QObject, "tags_layout")
+            self.tags_widget = QgsCheckableComboBox()
+            self.tags_widget.setObjectName(tags_widget_name)
+            self.tags_widget.setDefaultText("Click to assign tags...")
+            tags_layout.addWidget(self.tags_widget)
+        self.custom_widgets[tags_widget_name] = self.tags_widget
+
+    def connect_custom_widgets(self):
+        """Connect other widgets."""
+        super().connect_custom_widgets()
+        connect_signal(self.tags_widget.checkedItemsChanged, self.save_tag_edits)
+        self.dialog.active_form_signals.add((self.tags_widget.checkedItemsChanged, self.save_tag_edits))
+
+    def save_tag_edits(self):
+        """Save tag references to the feature attribute."""
+        if self.creation is True:
+            self.feature["tags"] = self.selected_tag_ids
+        else:
+            tags_idx = self.layer.fields().lookupField("tags")
+            changes = {tags_idx: self.selected_tag_ids}
+            self.layer.changeAttributeValues(self.feature.id(), changes)
+
+    def populate_tag_widgets(self):
+        """Populate tag widgets."""
+        disconnect_signal(self.tags_widget.checkedItemsChanged, self.save_tag_edits)
+        self.tags_widget.clear()
+        for tag_id, tag_description in self.all_tags_data.items():
+            tag_text = f"{tag_id}: {tag_description}"
+            check_state = Qt.Checked if tag_id in self.assigned_tag_ids else Qt.Unchecked
+            self.tags_widget.addItemWithCheckState(text=tag_text, state=check_state, userData=tag_id)
+        connect_signal(self.tags_widget.checkedItemsChanged, self.save_tag_edits)
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_tag_widgets()
+
+
+class AbstractFormWithDistribution(AbstractBaseForm):
+    """Base edit form for user layers with distribution table."""
+
+    NUMBER_OF_ROWS = 24
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.distribution_table_field_name = "distribution"
+        self.distribution_table = None
+        self.distribution_table_clear = None
+        self.setup_distribution_table_widgets()
+
+    @property
+    def table_header(self):
+        return ["%"]
+
+    def setup_form_widgets(self):
+        """Setting up all form widgets."""
+        super().setup_form_widgets()
+        self.update_distribution_table_header()
+
+    def setup_distribution_table_widgets(self):
+        """Setup distribution widgets."""
+        distribution_table_widget_name = "distribution_table"
+        self.distribution_table = self.dialog.findChild(QTableWidget, distribution_table_widget_name)
+        # Somehow `cellChanged` signal keeps connected between feature switch within a form view
+        disconnect_signal(self.distribution_table.cellChanged)
+        self.distribution_table_clear = self.dialog.findChild(QPushButton, f"{distribution_table_widget_name}_clear")
+        for widget in [self.distribution_table, self.distribution_table_clear]:
+            self.custom_widgets[widget.objectName()] = self.distribution_table
+
+    def connect_custom_widgets(self):
+        """Connect other widgets."""
+        super().connect_custom_widgets()
+        connect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+        self.dialog.active_form_signals.add((self.distribution_table.cellChanged, self.save_distribution_table_edits))
+        connect_signal(self.distribution_table_clear.clicked, self.clear_table_row_values)
+        self.dialog.active_form_signals.add((self.distribution_table_clear.clicked, self.clear_table_row_values))
+
+    def update_distribution_table_header(self):
+        """Update distribution table headers."""
+        self.distribution_table.setHorizontalHeaderLabels(self.table_header)
+
+    def get_distribution_table_values(self):
+        """Get distribution table values."""
+        distribution_table_values = []
+        for row_num in range(self.NUMBER_OF_ROWS):
+            item = self.distribution_table.item(row_num, 0)
+            row_value = item.text().strip() if item is not None else ""
+            distribution_table_values.append(row_value)
+        return distribution_table_values
+
+    def get_distribution_table_text(self):
+        """Get distribution table data as a string representation."""
+        distribution_table_values = self.get_distribution_table_values()
+        distribution_table_str = ",".join(row for row in distribution_table_values)
+        return distribution_table_str
+
+    def save_distribution_table_edits(self):
+        """Slot for handling table cells edits."""
+        distribution_table_str = self.get_distribution_table_text()
+        if self.creation is True:
+            self.feature[self.distribution_table_field_name] = distribution_table_str
+        else:
+            distribution_table_idx = self.layer.fields().lookupField(self.distribution_table_field_name)
+            changes = {distribution_table_idx: distribution_table_str}
+            self.layer.changeAttributeValues(self.feature.id(), changes)
+
+    def clear_table_row_values(self):
+        """Slot for clearing table values."""
+        disconnect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+        for row_num in range(self.NUMBER_OF_ROWS):
+            self.distribution_table.setItem(row_num, 0, QTableWidgetItem(""))
+        self.save_distribution_table_edits()
+        connect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+
+    def populate_distribution_table_data(self):
+        """Populate distribution tabular data in the table widget."""
+        disconnect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+        self.distribution_table.clearContents()
+        self.distribution_table.setRowCount(self.NUMBER_OF_ROWS)
+        self.distribution_table.setColumnCount(1)
+        self.update_distribution_table_header()
+        self.distribution_table.setItemDelegateForColumn(0, NumericItemDelegate(self.distribution_table))
+        if self.feature is not None:
+            table = self.feature[self.distribution_table_field_name] or ""
+        else:
+            table = ""
+        for row_number, row_value in enumerate(table.split(",")):
+            self.distribution_table.setItem(row_number, 0, QTableWidgetItem(row_value))
+        connect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_distribution_table_data()
+
+
+class AbstractFormWithMaterial(AbstractBaseForm):
+    """Base edit form for user layers with material table reference."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.material_id_field_name = "material_id"
+        self.material_id_widget = self.dialog.findChild(QComboBox, self.material_id_field_name)
+        connect_signal(self.material_id_widget.activated, self.update_material_friction)
+        self.dialog.active_form_signals.add((self.material_id_widget.activated, self.update_material_friction))
+        try:
+            self.initial_material_id = self.feature[self.material_id_field_name]
+        except KeyError:
+            self.initial_material_id = None
+
+    @cached_property
+    def material_friction_widgets(self):
+        """Return material friction widgets."""
+        material_friction_widgets_map = {
+            "friction_coefficient": self.dialog.findChild(QDoubleSpinBox, "friction_value"),
+            "friction_type": self.dialog.findChild(QComboBox, "friction_type"),
+        }
+        return material_friction_widgets_map
+
+    @cached_property
+    def all_material_data(self):
+        """Return all materials with characteristics."""
+        material_handler = self.layer_manager.model_handlers[dm.Material]
+        material_layer = material_handler.layer
+        material_field_names = material_layer.fields().names()
+        material_data = {
+            material_feat["id"]: dict(zip(material_field_names, material_feat.attributes()))
+            for material_feat in material_layer.getFeatures()
+        }
+        return material_data
+
+    def setup_form_widgets(self):
+        """Setting up all form widgets."""
+        super().setup_form_widgets()
+        if self.creation is True:
+            self.update_material_friction()
+
+    def update_material_friction(self):
+        """Update material friction widgets."""
+        if self.feature is None or not self.feature.fields().names():
+            return
+        current_material_id = self.material_id_widget.currentData()
+        if current_material_id not in self.all_material_data:
+            return
+        if current_material_id == self.initial_material_id:
+            return
+        current_material_data = self.all_material_data[current_material_id]
+        for material_field_name, field_name_widget in self.material_friction_widgets.items():
+            widget_value = current_material_data[material_field_name]
+            self.set_widget_value(field_name_widget, widget_value)
+        self.initial_material_id = self.feature[self.material_id_field_name]
+
+
+class AbstractFormWithTable(AbstractBaseForm):
+    """Base edit form for user layers with table."""
+
+    TABLE_NAME = ""
+    ROW_SEPARATOR = "\n"
+    COLUMN_SEPARATOR = ","
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.table = None
+        self.table_add = None
+        self.table_delete = None
+        self.table_copy = None
+        self.table_paste = None
+        self.setup_table_widgets()
+
+    @property
+    def table_header(self):
+        """Return table header."""
+        raise NotImplementedError("Table header not implemented.")
+
+    def setup_form_widgets(self):
+        """Setting up all form widgets."""
+        super().setup_form_widgets()
+        self.update_table_header()
+
+    def setup_table_widgets(self):
+        """Setup timeseries widgets."""
+        table_widget_name = f"{self.TABLE_NAME}_table"
+        self.table = self.dialog.findChild(QTableWidget, table_widget_name)
+        # Somehow `cellChanged` signal keeps connected between feature switch within a form view
+        disconnect_signal(self.table.cellChanged)
+        self.table_add = self.dialog.findChild(QPushButton, f"{table_widget_name}_add")
+        self.table_delete = self.dialog.findChild(QPushButton, f"{table_widget_name}_delete")
+        self.table_copy = self.dialog.findChild(QPushButton, f"{table_widget_name}_copy")
+        self.table_paste = self.dialog.findChild(QPushButton, f"{table_widget_name}_paste")
+        for widget in [
+            self.table,
+            self.table_add,
+            self.table_delete,
+            self.table_copy,
+            self.table_paste,
+        ]:
+            self.custom_widgets[widget.objectName()] = widget
+
+    def connect_custom_widgets(self):
+        """Connect other widgets."""
+        super().connect_custom_widgets()
+        connect_signal(self.table.cellChanged, self.save_table_edits)
+        self.dialog.active_form_signals.add((self.table.cellChanged, self.save_table_edits))
+        connect_signal(self.table_add.clicked, self.add_table_row)
+        self.dialog.active_form_signals.add((self.table_add.clicked, self.add_table_row))
+        connect_signal(self.table_delete.clicked, self.delete_table_rows)
+        self.dialog.active_form_signals.add((self.table_delete.clicked, self.delete_table_rows))
+        connect_signal(self.table_paste.clicked, self.paste_table_rows)
+        self.dialog.active_form_signals.add((self.table_paste.clicked, self.paste_table_rows))
+        connect_signal(self.table_copy.clicked, self.copy_table_rows)
+        self.dialog.active_form_signals.add((self.table_copy.clicked, self.copy_table_rows))
+
+    def update_table_header(self):
+        """Update table headers."""
+        self.table.setHorizontalHeaderLabels(self.table_header)
+
+    def get_table_values(self):
+        """Get table values."""
+        num_of_rows = self.table.rowCount()
+        num_of_cols = self.table.columnCount()
+        table_values = []
+        for row_num in range(num_of_rows):
+            row_values = []
+            for col_num in range(num_of_cols):
+                item = self.table.item(row_num, col_num)
+                if item is not None:
+                    item_text = item.text().strip()
+                else:
+                    item_text = ""
+                row_values.append(item_text)
+            table_values.append(row_values)
+        return table_values
+
+    def get_table_text(self):
+        """Get table data as a string representation."""
+        table_values = self.get_table_values()
+        table_str = self.ROW_SEPARATOR.join(self.COLUMN_SEPARATOR.join(row) for row in table_values)
+        return table_str
+
+    def save_table_edits(self):
+        """Slot for handling table cells edits."""
+        table_str = self.get_table_text()
+        if self.creation is True:
+            self.feature[self.TABLE_NAME] = table_str
+        else:
+            table_idx = self.layer.fields().lookupField(self.TABLE_NAME)
+            changes = {table_idx: table_str}
+            self.layer.changeAttributeValues(self.feature.id(), changes)
+
+    def add_table_row(self):
+        """Slot for handling new row addition."""
+        selected_rows = {idx.row() for idx in self.table.selectedIndexes()}
+        if selected_rows:
+            last_row_number = max(selected_rows) + 1
+        else:
+            last_row_number = self.table.rowCount()
+        self.table.insertRow(last_row_number)
+
+    def delete_table_rows(self):
+        """Slot for handling deletion of the selected rows."""
+        selected_rows = {idx.row() for idx in self.table.selectedIndexes()}
+        for row_number in sorted(selected_rows, reverse=True):
+            self.table.removeRow(row_number)
+        self.save_table_edits()
+
+    def paste_table_rows(self):
+        """Handling pasting new rows from the clipboard."""
+        text = QApplication.clipboard().text()
+        rows = text.split(self.ROW_SEPARATOR)
+        last_row_num = self.table.rowCount()
+        disconnect_signal(self.table.cellChanged, self.save_table_edits)
+        for row in rows:
+            try:
+                height_str, width_str = row.replace(" ", "").split(self.COLUMN_SEPARATOR)
+            except ValueError:
+                continue
+            self.table.insertRow(last_row_num)
+            self.table.setItem(last_row_num, 0, QTableWidgetItem(height_str))
+            self.table.setItem(last_row_num, 1, QTableWidgetItem(width_str))
+            last_row_num += 1
+        connect_signal(self.table.cellChanged, self.save_table_edits)
+        self.save_table_edits()
+
+    def copy_table_rows(self):
+        """Slot for copying table values into the clipboard."""
+        table_values = self.get_table_values()
+        clipboard_values = "\n".join([",".join(row_values) for row_values in table_values])
+        QApplication.clipboard().setText(clipboard_values)
+
+    def clear_table_row_values(self):
+        """Slot for clearing table values."""
+        num_of_rows = self.table.rowCount()
+        num_of_cols = self.table.columnCount()
+        disconnect_signal(self.table.cellChanged, self.save_table_edits)
+        for row_num in range(num_of_rows):
+            for col_num in range(num_of_cols):
+                self.table.setItem(row_num, col_num, QTableWidgetItem(""))
+        connect_signal(self.table.cellChanged, self.save_table_edits)
+        self.save_table_edits()
+
+    def populate_table_data(self):
+        """Populate timeseries tabular data in the table widget."""
+        disconnect_signal(self.table.cellChanged, self.save_table_edits)
+        table = self.feature[self.TABLE_NAME] or ""
+        number_of_rows_main = len(table.split(self.ROW_SEPARATOR))
+        table_columns_count = len(self.table_header)
+        self.table.clearContents()
+        self.table.setRowCount(0)
+        self.table.setColumnCount(table_columns_count)
+        self.update_table_header()
+        for column_idx in range(table_columns_count):
+            self.table.setItemDelegateForColumn(column_idx, NumericItemDelegate(self.table))
+        for row_num_main in range(number_of_rows_main):
+            self.table.insertRow(row_num_main)
+        if self.feature is not None:
+            table = self.feature[self.TABLE_NAME] or ""
+        else:
+            table = ""
+        for row_number, row in enumerate(table.split(self.ROW_SEPARATOR)):
+            row_values = [val for val in row.replace(" ", "").split(self.COLUMN_SEPARATOR)]
+            for col_idx, row_value in enumerate(row_values):
+                self.table.setItem(row_number, col_idx, QTableWidgetItem(row_value))
+        connect_signal(self.table.cellChanged, self.save_table_edits)
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_table_data()
+
+
+class AbstractFormWithTimeseries(AbstractFormWithTable):
+    """Base edit form for user layers with timeseries table."""
+
+    TABLE_NAME = "timeseries"
+
+    @property
+    def table_header(self):
+        return ["Time", "Value"]
+
+
+class AbstractFormWithActionTable(AbstractFormWithTable):
+    """Base edit form for user layers with action table."""
+
+    TABLE_NAME = "action_table"
+
+    @property
+    def table_header(self):
+        return ["Measured value", "Action value 1", "Action value 2"]
+
+
+class AbstractFormWithXSTable(AbstractBaseForm):
     """Base edit form for user layers with cross-section table reference."""
 
     def __init__(self, *args, **kwargs):
@@ -439,7 +876,7 @@ class FormWithXSTable(BaseForm):
     def cross_section_table_field_widget_map(self):
         field_map = {
             "cross_section_table": self.cross_section_table,
-            "cross_section_friction_table": self.cross_section_friction,
+            "cross_section_friction_values": self.cross_section_friction,
             "cross_section_vegetation_table": self.cross_section_vegetation,
         }
         return field_map
@@ -538,11 +975,11 @@ class FormWithXSTable(BaseForm):
             cross_section_vegetation_clear_signal = self.cross_section_vegetation_clear.clicked
             cross_section_friction_copy_signal = self.cross_section_friction_copy.clicked
             cross_section_vegetation_copy_signal = self.cross_section_vegetation_copy.clicked
-            cross_section_friction_edit_slot = partial(self.edit_table_row, "cross_section_friction_table")
+            cross_section_friction_edit_slot = partial(self.edit_table_row, "cross_section_friction_values")
             cross_section_vegetation_edit_slot = partial(self.edit_table_row, "cross_section_vegetation_table")
-            cross_section_friction_clear_slot = partial(self.clear_table_row_values, "cross_section_friction_table")
+            cross_section_friction_clear_slot = partial(self.clear_table_row_values, "cross_section_friction_values")
             cross_section_vegetation_clear_slot = partial(self.clear_table_row_values, "cross_section_vegetation_table")
-            cross_section_friction_copy_slot = partial(self.copy_table_rows, "cross_section_friction_table")
+            cross_section_friction_copy_slot = partial(self.copy_table_rows, "cross_section_friction_values")
             cross_section_vegetation_copy_slot = partial(self.copy_table_rows, "cross_section_vegetation_table")
             connect_signal(cross_section_friction_edit_signal, cross_section_friction_edit_slot)
             connect_signal(cross_section_vegetation_edit_signal, cross_section_vegetation_edit_slot)
@@ -586,7 +1023,7 @@ class FormWithXSTable(BaseForm):
                 table_header += ["Y [m]", "Z [m]"]
             else:
                 table_header += ["Height [m]", "Width [m]"]
-        elif table_field_name == "cross_section_friction_table":
+        elif table_field_name == "cross_section_friction_values":
             table_header += ["Friction coefficient"]
         elif table_field_name == "cross_section_vegetation_table":
             table_header += ["Stem density [m-2]", "Stem diameter [m]", "Height [m]", "Drag coefficient [-]"]
@@ -662,7 +1099,7 @@ class FormWithXSTable(BaseForm):
                 self.cross_section_vegetation.removeRow(frict_vege_last_row_number)
         self.save_cross_section_table_edits()
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
-            self.save_cross_section_table_edits("cross_section_friction_table")
+            self.save_cross_section_table_edits("cross_section_friction_values")
             self.save_cross_section_table_edits("cross_section_vegetation_table")
 
     def paste_table_rows(self):
@@ -749,7 +1186,7 @@ class FormWithXSTable(BaseForm):
                 connect_signal(cell_changed_signal, cell_changed_slot)
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.fill_related_attributes()
         self.populate_widgets()
@@ -779,7 +1216,7 @@ class FormWithXSTable(BaseForm):
             self.dialog.active_form_signals.add((friction_edit_signal, friction_edit_slot))
 
 
-class FormWithNode(BaseForm):
+class AbstractFormWithNode(AbstractBaseForm):
     """Base edit form for user layers with a single connection node."""
 
     def __init__(self, *args, **kwargs):
@@ -819,7 +1256,7 @@ class FormWithNode(BaseForm):
         self.feature["connection_node_id"] = self.connection_node["id"]
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_node_on_creation()
             # Set feature specific attributes
@@ -831,7 +1268,7 @@ class FormWithNode(BaseForm):
         self.populate_widgets()
 
 
-class FormWithStartEndNode(BaseForm):
+class AbstractFormWithStartEndNode(AbstractBaseForm):
     """Base edit form for user layers start and end connection nodes."""
 
     def __init__(self, *args, **kwargs):
@@ -851,10 +1288,10 @@ class FormWithStartEndNode(BaseForm):
     def setup_connection_nodes_on_edit(self):
         """Setting up connection nodes during editing feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        connection_node_start_id = self.feature["connection_node_start_id"]
-        connection_node_end_id = self.feature["connection_node_end_id"]
-        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_start_id)
-        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_end_id)
+        connection_node_id_start = self.feature["connection_node_id_start"]
+        connection_node_id_end = self.feature["connection_node_id_end"]
+        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_id_start)
+        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_id_end)
 
     def setup_connection_nodes_on_creation(self):
         """Setting up connection nodes during adding feature."""
@@ -895,9 +1332,16 @@ class FormWithStartEndNode(BaseForm):
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
-        self.feature["connection_node_start_id"] = self.connection_node_start["id"]
-        self.feature["connection_node_end_id"] = self.connection_node_end["id"]
-        code_display_name = f"{self.connection_node_start['code']}-{self.connection_node_end['code']}"
+        connection_node_id_start = self.connection_node_start["id"]
+        connection_node_id_end = self.connection_node_end["id"]
+        connection_node_start_code = self.connection_node_start["code"]
+        connection_node_end_code = self.connection_node_end["code"]
+        self.feature["connection_node_id_start"] = connection_node_id_start
+        self.feature["connection_node_id_end"] = connection_node_id_end
+        if connection_node_start_code and connection_node_end_code:
+            code_display_name = f"{connection_node_start_code}-{connection_node_end_code}"
+        else:
+            code_display_name = None
         try:
             self.feature["code"] = code_display_name
             self.feature["display_name"] = code_display_name
@@ -905,7 +1349,7 @@ class FormWithStartEndNode(BaseForm):
             pass  # Some layers might not have code and display name
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_nodes_on_creation()
             # Set feature specific attributes
@@ -917,14 +1361,14 @@ class FormWithStartEndNode(BaseForm):
         self.populate_widgets()
 
 
-class NodeToSurfaceMapForm(BaseForm):
+class AbstractNodeToSurfaceMapForm(AbstractFormWithTag):
     """Basic surface to node map edit form logic."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
         self.surface_model = None
         self.surface_id_field = None
-        self.surface = None
+        self.surface_feature = None
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
@@ -939,15 +1383,15 @@ class NodeToSurfaceMapForm(BaseForm):
         connection_node = connection_node_feat
         if connection_node is not None:
             self.feature["connection_node_id"] = connection_node["id"]
-        if self.surface is None:
-            self.surface = find_point_polygons(start_point, surface_layer)
-        if self.surface is not None:
-            self.feature[self.surface_id_field] = self.surface["id"]
+        if self.surface_feature is None:
+            self.surface_feature = find_point_polygons(start_point, surface_layer)
+        if self.surface_feature is not None:
+            self.feature[self.surface_id_field] = self.surface_feature["id"]
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
-            self.surface = self.select_start_surface()
+            self.surface_feature = self.select_start_surface()
             self.fill_related_attributes()
         self.populate_widgets()
 
@@ -974,31 +1418,84 @@ class NodeToSurfaceMapForm(BaseForm):
         return surface_feat
 
 
-class ConnectionNodeForm(BaseForm):
+class AbstractFormWithTargetStructure(AbstractBaseForm):
+    """Base edit form for user layers with a single structure."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.structure_feature = None
+        self.structure_feature_type = None
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+        if self.structure_feature is not None:
+            self.feature["target_type"] = self.structure_feature_type
+            self.feature["target_id"] = self.structure_feature["id"]
+
+    @cached_property
+    def target_structure_types(self):
+        """Return supported target structure type data models."""
+        target_structure_data_models = {
+            model_cls.__tablename__: model_cls for model_cls in [dm.Weir, dm.Orifice, dm.Pump]
+        }
+        return target_structure_data_models
+
+    def setup_target_structure_on_edit(self):
+        """Setting up target structure during editing feature."""
+        try:
+            target_structure_type = self.target_structure_types[self.feature["target_type"]]
+            model_cls = self.target_structure_types[target_structure_type]
+            structure_handler = self.layer_manager.model_handlers[model_cls]
+            structure_feat = structure_handler.get_feat_by_id(self.feature["target_id"])
+        except KeyError:
+            return
+        self.structure_feature = structure_feat
+        self.structure_feature_type = target_structure_type
+
+    def setup_target_structure_on_creation(self):
+        """Setting up target structure during adding feature."""
+        feature_point = self.feature.geometry().asPoint()
+        for structure_type, model_cls in self.target_structure_types.items():
+            structure_handler = self.layer_manager.model_handlers[model_cls]
+            structure_layer = structure_handler.layer
+            dm_geometry_type = model_cls.__geometrytype__
+            if dm_geometry_type == en.GeometryType.Point:
+                structure_feat = find_point_nodes(feature_point, structure_layer)
+            elif dm_geometry_type == en.GeometryType.Linestring:
+                structure_feat = find_point_polyline(feature_point, structure_layer)
+            else:
+                continue
+            if structure_feat is not None:
+                self.structure_feature, self.structure_feature_type = structure_feat, structure_type
+                break
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.setup_target_structure_on_creation()
+            # Set feature specific attributes
+            self.fill_related_attributes()
+        else:
+            self.setup_target_structure_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+
+
+class ConnectionNodeForm(AbstractFormWithTag):
     """Connection node edit form logic."""
 
     MODEL = dm.ConnectionNode
 
-    def populate_with_extra_widgets(self):
-        # Populate widgets based on features attributes
-        self.populate_widgets()
 
-
-class ManholeForm(FormWithNode):
-    """Manhole user layer edit form logic."""
-
-    MODEL = dm.Manhole
-
-
-class PipeForm(FormWithStartEndNode, FormWithXSTable):
+class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag, AbstractFormWithMaterial):
     """Pipe user layer edit form logic."""
 
     MODEL = dm.Pipe
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.manhole_start = None
-        self.manhole_end = None
 
     @property
     def foreign_models_features(self):
@@ -1006,102 +1503,30 @@ class PipeForm(FormWithStartEndNode, FormWithXSTable):
         fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
-            (dm.Manhole, 1): self.manhole_start,
-            (dm.Manhole, 2): self.manhole_end,
         }
         return fm_features
-
-    def setup_manholes_on_edit(self):
-        """Setting up manholes during editing feature."""
-        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        connection_node_start_id = self.feature["connection_node_start_id"]
-        connection_node_end_id = self.feature["connection_node_end_id"]
-        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_start_id)
-        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_end_id)
-        self.manhole_start = connection_node_handler.get_manhole_feat_for_node_id(connection_node_start_id)
-        self.manhole_end = connection_node_handler.get_manhole_feat_for_node_id(connection_node_end_id)
-
-    def setup_manholes_on_creation(self):
-        """Setting up manholes during adding feature."""
-        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        manhole_handler = self.layer_manager.model_handlers[dm.Manhole]
-        manhole_layer = manhole_handler.layer
-        linestring = self.feature.geometry().asPolyline()
-        start_point, end_point = linestring[0], linestring[-1]
-        start_manhole_feat, end_manhole_feat = find_linestring_nodes(linestring, manhole_layer)
-        if start_manhole_feat is not None and end_manhole_feat is None:
-            start_connection_node_id = start_manhole_feat["connection_node_id"]
-            start_connection_node_feat = connection_node_handler.get_feat_by_id(start_connection_node_id)
-            # Create and add ending points
-            end_geom = QgsGeometry.fromPointXY(end_point)
-            end_manhole_feat, end_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
-                end_geom, template_feat=start_manhole_feat
-            )
-            self.extra_features[connection_node_handler].append(end_connection_node_feat)
-            self.extra_features[manhole_handler].append(end_manhole_feat)
-        elif start_manhole_feat is None and end_manhole_feat is not None:
-            end_connection_node_id = end_manhole_feat["connection_node_id"]
-            end_connection_node_feat = connection_node_handler.get_feat_by_id(end_connection_node_id)
-            # Create and add starting points
-            start_geom = QgsGeometry.fromPointXY(start_point)
-            start_manhole_feat, start_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
-                start_geom, template_feat=end_manhole_feat
-            )
-            self.extra_features[connection_node_handler].append(start_connection_node_feat)
-            self.extra_features[manhole_handler].append(start_manhole_feat)
-        elif start_manhole_feat is None and end_manhole_feat is None:
-            # Create and add starting points
-            start_geom = QgsGeometry.fromPointXY(start_point)
-            start_manhole_feat, start_connection_node_feat = manhole_handler.create_manhole_with_connection_node(
-                start_geom
-            )
-            self.extra_features[connection_node_handler].append(start_connection_node_feat)
-            self.extra_features[manhole_handler].append(start_manhole_feat)
-            # Create and add ending points
-            end_geom = QgsGeometry.fromPointXY(end_point)
-            end_manhole_feat, end_connection_node_feat = manhole_handler.create_manhole_with_connection_node(end_geom)
-            self.extra_features[connection_node_handler].append(end_connection_node_feat)
-            self.extra_features[manhole_handler].append(end_manhole_feat)
-        else:
-            start_connection_node_id = start_manhole_feat["connection_node_id"]
-            start_connection_node_feat = connection_node_handler.get_feat_by_id(start_connection_node_id)
-            end_connection_node_id = end_manhole_feat["connection_node_id"]
-            end_connection_node_feat = connection_node_handler.get_feat_by_id(end_connection_node_id)
-
-        # Sequence related features ids
-        self.sequence_related_features_ids()
-        # Reassign manholes connection_node_id after sequencing
-        start_manhole_feat["connection_node_id"] = start_connection_node_feat["id"]
-        end_manhole_feat["connection_node_id"] = end_connection_node_feat["id"]
-        # Assign features as a form instance attributes.
-        self.connection_node_start = start_connection_node_feat
-        self.connection_node_end = end_connection_node_feat
-        self.manhole_start = start_manhole_feat
-        self.manhole_end = end_manhole_feat
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
-        code_display_name = f"{self.manhole_start['code']}-{self.manhole_end['code']}"
-        self.feature["code"] = code_display_name
-        self.feature["display_name"] = code_display_name
-        self.feature["invert_level_start_point"] = self.manhole_start["bottom_level"]
-        self.feature["invert_level_end_point"] = self.manhole_end["bottom_level"]
+        self.feature["invert_level_start"] = self.connection_node_start["bottom_level"]
+        self.feature["invert_level_end"] = self.connection_node_end["bottom_level"]
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
-            self.setup_manholes_on_creation()
+            self.setup_connection_nodes_on_creation()
             self.fill_related_attributes()
         else:
-            self.setup_manholes_on_edit()
+            self.setup_connection_nodes_on_edit()
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_cross_section_table_data()
+        self.populate_tag_widgets()
 
 
-class WeirForm(FormWithStartEndNode, FormWithXSTable):
+class WeirForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag, AbstractFormWithMaterial):
     """Weir user layer edit form logic."""
 
     MODEL = dm.Weir
@@ -1123,7 +1548,7 @@ class WeirForm(FormWithStartEndNode, FormWithXSTable):
         super().fill_related_attributes()
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_nodes_on_creation()
             self.fill_related_attributes()
@@ -1133,9 +1558,10 @@ class WeirForm(FormWithStartEndNode, FormWithXSTable):
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_cross_section_table_data()
+        self.populate_tag_widgets()
 
 
-class CulvertForm(FormWithStartEndNode, FormWithXSTable):
+class CulvertForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag, AbstractFormWithMaterial):
     """Culvert user layer edit form logic."""
 
     MODEL = dm.Culvert
@@ -1157,7 +1583,7 @@ class CulvertForm(FormWithStartEndNode, FormWithXSTable):
         super().fill_related_attributes()
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_nodes_on_creation()
             self.fill_related_attributes()
@@ -1167,9 +1593,10 @@ class CulvertForm(FormWithStartEndNode, FormWithXSTable):
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_cross_section_table_data()
+        self.populate_tag_widgets()
 
 
-class OrificeForm(FormWithStartEndNode, FormWithXSTable):
+class OrificeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag, AbstractFormWithMaterial):
     """Orifice user layer edit form logic."""
 
     MODEL = dm.Orifice
@@ -1191,7 +1618,7 @@ class OrificeForm(FormWithStartEndNode, FormWithXSTable):
         super().fill_related_attributes()
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_nodes_on_creation()
             self.fill_related_attributes()
@@ -1201,65 +1628,62 @@ class OrificeForm(FormWithStartEndNode, FormWithXSTable):
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_cross_section_table_data()
+        self.populate_tag_widgets()
 
 
-class PumpstationForm(FormWithNode):
-    """Pumpstation without end node user layer edit form logic."""
+class PumpForm(AbstractFormWithNode, AbstractFormWithTag):
+    """Pump without end node user layer edit form logic."""
 
-    MODEL = dm.Pumpstation
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, *kwargs)
-
-
-class PumpstationMapForm(FormWithStartEndNode):
-    """Pumpstation with end node user layer edit form logic."""
-
-    MODEL = dm.PumpstationMap
+    MODEL = dm.Pump
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.pumpstation = None
+
+
+class PumpMapForm(AbstractFormWithTag):
+    """Pump with end node user layer edit form logic."""
+
+    MODEL = dm.PumpMap
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.connection_node_end = None
+        self.pump = None
 
     @property
     def foreign_models_features(self):
         """Property returning dictionary where key = data model class with identifier and value = data model feature."""
         fm_features = {
-            (dm.ConnectionNode, 1): self.connection_node_start,
-            (dm.ConnectionNode, 2): self.connection_node_end,
-            (dm.Pumpstation, None): self.pumpstation,
+            (dm.ConnectionNode, None): self.connection_node_end,
+            (dm.Pump, None): self.pump,
         }
         return fm_features
 
-    def setup_pumpstation_on_edit(self):
-        """Setting up pumpstation during editing feature."""
+    def setup_pump_on_edit(self):
+        """Setting up pump during editing feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        pumpstation_handler = self.layer_manager.model_handlers[dm.Pumpstation]
-        connection_node_start_id = self.feature["connection_node_start_id"]
-        connection_node_end_id = self.feature["connection_node_end_id"]
-        pumpstation_id = self.feature["pumpstation_id"]
-        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_start_id)
-        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_end_id)
-        self.pumpstation = pumpstation_handler.get_feat_by_id(pumpstation_id)
+        pump_handler = self.layer_manager.model_handlers[dm.Pump]
+        connection_node_id_end = self.feature["connection_node_id_end"]
+        pump_id = self.feature["pump_id"]
+        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_id_end)
+        self.pump = pump_handler.get_feat_by_id(pump_id)
 
-    def setup_pumpstation_on_creation(self):
-        """Setting up pumpstation during adding feature."""
+    def setup_pump_on_creation(self):
+        """Setting up pump during adding feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        pumpstation_handler = self.layer_manager.model_handlers[dm.Pumpstation]
+        pump_handler = self.layer_manager.model_handlers[dm.Pump]
         connection_node_layer = connection_node_handler.layer
         linestring = self.feature.geometry().asPolyline()
         start_point, end_point = linestring[0], linestring[-1]
         start_connection_node_feat, end_connection_node_feat = find_linestring_nodes(linestring, connection_node_layer)
-        start_pump_feat = self.pumpstation
+        start_pump_feat = self.pump
         if start_pump_feat is None:
             start_geom = QgsGeometry.fromPointXY(start_point)
             if start_connection_node_feat is None:
-                start_pump_feat, start_connection_node_feat = pumpstation_handler.create_pump_with_connection_node(
-                    start_geom
-                )
+                start_pump_feat, start_connection_node_feat = pump_handler.create_pump_with_connection_node(start_geom)
                 self.extra_features[connection_node_handler].append(start_connection_node_feat)
             else:
-                start_pump_feat = pumpstation_handler.create_new_feature(start_geom)
+                start_pump_feat = pump_handler.create_new_feature(start_geom)
                 start_pump_feat["connection_node_id"] = start_connection_node_feat["id"]
             if end_connection_node_feat is None:
                 end_geom = QgsGeometry.fromPointXY(end_point)
@@ -1267,7 +1691,7 @@ class PumpstationMapForm(FormWithStartEndNode):
                     start_connection_node_feat, geometry=end_geom
                 )
                 self.extra_features[connection_node_handler].append(end_connection_node_feat)
-            self.extra_features[pumpstation_handler].append(start_pump_feat)
+            self.extra_features[pump_handler].append(start_pump_feat)
         else:
             if end_connection_node_feat is None:
                 end_geom = QgsGeometry.fromPointXY(end_point)
@@ -1276,63 +1700,62 @@ class PumpstationMapForm(FormWithStartEndNode):
                 )
                 self.extra_features[connection_node_handler].append(end_connection_node_feat)
         # Assign features as a form instance attributes.
-        self.connection_node_start = start_connection_node_feat
         self.connection_node_end = end_connection_node_feat
-        self.pumpstation = start_pump_feat
+        self.pump = start_pump_feat
         self.sequence_related_features_ids()
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
-        self.feature["pumpstation_id"] = self.pumpstation["id"]
+        self.feature["pump_id"] = self.pump["id"]
+        self.feature["connection_node_id_end"] = self.connection_node_end["id"]
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
-            self.pumpstation = self.select_start_pumpstation()
-            self.setup_pumpstation_on_creation()
+            self.pump = self.select_start_pump()
+            self.setup_pump_on_creation()
             self.fill_related_attributes()
         else:
-            self.setup_pumpstation_on_edit()
+            self.setup_pump_on_edit()
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
+        self.populate_tag_widgets()
 
-    def select_start_pumpstation(self):
-        """Selecting start pumpstation"""
-        title = "Select start pumpstation"
-        message = "Pumpstations at location"
+    def select_start_pump(self):
+        """Selecting start pump"""
+        title = "Select start pump"
+        message = "pumps at location"
         linestring = self.feature.geometry().asPolyline()
         start_point, end_point = linestring[0], linestring[-1]
-        pumpstation_handler = self.layer_manager.model_handlers[dm.Pumpstation]
-        pumpstation_layer = pumpstation_handler.layer
-        start_pump_feats = find_point_nodes(start_point, pumpstation_layer, allow_multiple=True)
+        pump_handler = self.layer_manager.model_handlers[dm.Pump]
+        pump_layer = pump_handler.layer
+        start_pump_feats = find_point_nodes(start_point, pump_layer, allow_multiple=True)
         pump_no = len(start_pump_feats)
         if pump_no == 0:
-            pumpstation_feat = None
+            pump_feat = None
         elif pump_no == 1:
-            pumpstation_feat = next(iter(start_pump_feats))
+            pump_feat = next(iter(start_pump_feats))
         else:
             pump_feats_by_id = {feat["id"]: feat for feat in start_pump_feats}
             pump_entries = [f"{feat_id} ({feat['display_name']})" for feat_id, feat in pump_feats_by_id.items()]
-            pumpstation_entry = self.uc.pick_item(title, message, None, *pump_entries)
-            pumpstation_id = int(pumpstation_entry.split()[0]) if pumpstation_entry else None
-            pumpstation_feat = pump_feats_by_id[pumpstation_id] if pumpstation_id else None
-        return pumpstation_feat
+            pump_entry = self.uc.pick_item(title, message, None, *pump_entries)
+            pump_id = int(pump_entry.split()[0]) if pump_entry else None
+            pump_feat = pump_feats_by_id[pump_id] if pump_id else None
+        return pump_feat
 
 
-class ImperviousSurfaceMapForm(NodeToSurfaceMapForm):
-    """Impervious Surface Map user layer edit form logic."""
+class SurfaceForm(AbstractFormWithTag):
+    """Surface user layer edit form logic."""
 
-    MODEL = dm.ImperviousSurfaceMap
+    MODEL = dm.Surface
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.surface_model = dm.ImperviousSurface
-        self.surface_id_field = "impervious_surface_id"
 
 
-class SurfaceMapForm(NodeToSurfaceMapForm):
+class SurfaceMapForm(AbstractNodeToSurfaceMapForm, AbstractFormWithTag):
     """Surface Map user layer edit form logic."""
 
     MODEL = dm.SurfaceMap
@@ -1343,7 +1766,49 @@ class SurfaceMapForm(NodeToSurfaceMapForm):
         self.surface_id_field = "surface_id"
 
 
-class ChannelForm(FormWithStartEndNode, FormWithXSTable):
+class DryWeatherFlowForm(AbstractFormWithTag):
+    """Dry weather flow user layer edit form logic."""
+
+    MODEL = dm.DryWeatherFlow
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+
+class DryWeatherFlowMapForm(AbstractNodeToSurfaceMapForm, AbstractFormWithTag):
+    """Dry weather flow Map user layer edit form logic."""
+
+    MODEL = dm.DryWeatherFlowMap
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.surface_model = dm.DryWeatherFlow
+        self.surface_id_field = "dry_weather_flow_id"
+
+
+class DryWeatherFlowDistributionForm(AbstractFormWithTag, AbstractFormWithDistribution):
+    """Dry weather flow Distribution user layer edit form logic."""
+
+    MODEL = dm.DryWeatherFlowDistribution
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        # Populate widgets based on features attributes
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_distribution_table_data()
+        self.populate_tag_widgets()
+
+
+class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
     """Channel user layer edit form logic."""
 
     MODEL = dm.Channel
@@ -1369,11 +1834,11 @@ class ChannelForm(FormWithStartEndNode, FormWithXSTable):
         """Setting up cross-section location during editing feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
-        connection_node_start_id = self.feature["connection_node_start_id"]
-        connection_node_end_id = self.feature["connection_node_end_id"]
+        connection_node_id_start = self.feature["connection_node_id_start"]
+        connection_node_id_end = self.feature["connection_node_id_end"]
         channel_id = self.feature["id"]
-        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_start_id)
-        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_end_id)
+        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_id_start)
+        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_id_end)
         self.cross_section_locations = cross_section_location_handler.get_multiple_feats_by_id(channel_id, "channel_id")
         if self.cross_section_locations:
             channel_cross_section_location_ids = {str(feat["id"]): feat for feat in self.cross_section_locations}
@@ -1400,7 +1865,7 @@ class ChannelForm(FormWithStartEndNode, FormWithXSTable):
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
-        global_settings_handler = self.layer_manager.model_handlers[dm.GlobalSettings]
+        global_settings_handler = self.layer_manager.model_handlers[dm.ModelSettings]
         global_settings_layer = global_settings_handler.layer
         channel_code = self.feature["code"]
         cross_section_location_code = f"{channel_code}_cross_section_1"
@@ -1411,7 +1876,7 @@ class ChannelForm(FormWithStartEndNode, FormWithXSTable):
         except StopIteration:
             global_settings_feat = None
         if global_settings_feat:
-            self.current_cross_section_location["friction_type"] = global_settings_feat["frict_type"]
+            self.current_cross_section_location["friction_type"] = global_settings_feat["friction_type"]
 
     def set_current_cross_section_location(self, current_text):
         """Set handling of selected channel cross-section location."""
@@ -1464,7 +1929,7 @@ class ChannelForm(FormWithStartEndNode, FormWithXSTable):
                 self.populate_widgets(data_model_cls, feature, start_end_modifier)
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.setup_connection_nodes_on_creation()
             self.setup_cross_section_location_on_creation()
@@ -1475,9 +1940,10 @@ class ChannelForm(FormWithStartEndNode, FormWithXSTable):
         self.populate_foreign_widgets()
         self.populate_widgets()
         self.populate_cross_section_table_data()
+        self.populate_tag_widgets()
 
 
-class CrossSectionLocationForm(FormWithXSTable):
+class CrossSectionLocationForm(AbstractFormWithXSTable):
     """Cross-section location user layer edit form logic."""
 
     MODEL = dm.CrossSectionLocation
@@ -1499,7 +1965,7 @@ class CrossSectionLocationForm(FormWithXSTable):
         super().fill_related_attributes()
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         channel_handler = self.layer_manager.model_handlers[dm.Channel]
-        global_settings_handler = self.layer_manager.model_handlers[dm.GlobalSettings]
+        global_settings_handler = self.layer_manager.model_handlers[dm.ModelSettings]
         channel_layer = channel_handler.layer
         global_settings_layer = global_settings_handler.layer
         point_geom = self.feature.geometry()
@@ -1574,18 +2040,18 @@ class CrossSectionLocationForm(FormWithXSTable):
                     "cross_section_width",
                     "cross_section_height",
                     "cross_section_table",
-                    "cross_section_friction_table",
+                    "cross_section_friction_values",
                     "cross_section_vegetation_table",
                 ]:
                     self.feature[xs_field_name] = closest_existing_cross_section[xs_field_name]
         try:
             global_settings_feat = next(global_settings_layer.getFeatures())
-            self.feature["friction_type"] = global_settings_feat["frict_type"]
+            self.feature["friction_type"] = global_settings_feat["friction_type"]
         except StopIteration:
             pass
 
 
-class PotentialBreachForm(BaseForm):
+class PotentialBreachForm(AbstractFormWithTag):
     """Potential breach user layer edit form logic."""
 
     MODEL = dm.PotentialBreach
@@ -1616,13 +2082,14 @@ class PotentialBreachForm(BaseForm):
             self.channel = channel_node_feat
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.fill_related_attributes()
         self.populate_widgets()
+        self.populate_tag_widgets()
 
 
-class ExchangeLineForm(BaseForm):
+class ExchangeLineForm(AbstractFormWithTag):
     """Exchange line user layer edit form logic."""
 
     MODEL = dm.ExchangeLine
@@ -1631,27 +2098,361 @@ class ExchangeLineForm(BaseForm):
         super().__init__(*args, *kwargs)
 
     def populate_with_extra_widgets(self):
-        """Populate widgets for other layers attributes."""
+        """Populate basic and extra widgets for the given custom form."""
         if self.creation is True:
             self.fill_related_attributes()
         self.populate_widgets()
+        self.populate_tag_widgets()
+
+
+class BoundaryCondition1D(AbstractFormWithTag, AbstractFormWithNode, AbstractFormWithTimeseries):
+    """Boundary Condition 1D user layer edit form logic."""
+
+    MODEL = dm.BoundaryCondition1D
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.setup_connection_node_on_creation()
+            self.fill_related_attributes()
+        else:
+            self.setup_connection_node_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+        self.populate_table_data()
+        self.populate_tag_widgets()
+
+
+class BoundaryCondition2D(AbstractFormWithTag, AbstractFormWithTimeseries):
+    """Boundary Condition 2D user layer edit form logic."""
+
+    MODEL = dm.BoundaryCondition2D
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+        self.populate_table_data()
+        self.populate_tag_widgets()
+
+
+class Lateral1D(AbstractFormWithTag, AbstractFormWithNode, AbstractFormWithTimeseries):
+    """Lateral 1D user layer edit form logic."""
+
+    MODEL = dm.Lateral1D
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.setup_connection_node_on_creation()
+            self.fill_related_attributes()
+        else:
+            self.setup_connection_node_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+        self.populate_table_data()
+        self.populate_tag_widgets()
+
+
+class Lateral2D(AbstractFormWithTag, AbstractFormWithTimeseries):
+    """Lateral 2D user layer edit form logic."""
+
+    MODEL = dm.Lateral2D
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+        self.populate_table_data()
+        self.populate_tag_widgets()
+
+
+class MeasureLocation(AbstractFormWithNode, AbstractFormWithTag):
+    """Measure Location user layer edit form logic."""
+
+    MODEL = dm.MeasureLocation
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+
+class MemoryControl(AbstractFormWithTargetStructure, AbstractFormWithTag):
+    """Memory Control user layer edit form logic."""
+
+    MODEL = dm.MemoryControl
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+
+class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable, AbstractFormWithTag):
+    """Table Control user layer edit form logic."""
+
+    MODEL = dm.TableControl
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        # Populate widgets based on features attributes
+        if self.creation is True:
+            self.setup_target_structure_on_creation()
+            self.fill_related_attributes()
+        else:
+            self.setup_target_structure_on_edit()
+        self.populate_widgets()
+        self.populate_foreign_widgets()
+        self.populate_table_data()
+        self.populate_tag_widgets()
+
+
+class MeasureMap(AbstractFormWithTag):
+    """Measure Map user layer edit form logic."""
+
+    MODEL = dm.MeasureMap
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.measure_location_feature = None
+        self.control_feature = None
+        self.control_feature_type = None
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+        if self.measure_location_feature is not None:
+            self.feature["measure_location_id"] = self.measure_location_feature["id"]
+        if self.control_feature is not None:
+            self.feature["control_id"] = self.control_feature["id"]
+            self.feature["control_type"] = self.control_feature_type
+
+    @cached_property
+    def control_types(self):
+        """Return supported structure control data models."""
+        control_data_models = {
+            model_cls.__tablename__.split("_", 1)[0]: model_cls for model_cls in [dm.TableControl, dm.MemoryControl]
+        }
+        return control_data_models
+
+    def setup_measure_location_on_edit(self):
+        """Setting up measure map location and structure control during editing feature."""
+        try:
+            control_type = self.control_types[self.feature["control_type"]]
+            control_model_cls = self.control_types[control_type]
+            control_handler = self.layer_manager.model_handlers[control_model_cls]
+            control_feat = control_handler.get_feat_by_id(self.feature["control_id"])
+            self.control_feature = control_feat
+            self.control_feature_type = control_type
+        except KeyError:
+            pass
+        try:
+            measure_location_handler = self.layer_manager.model_handlers[dm.MeasureLocation]
+            measure_location_feat = measure_location_handler.get_feat_by_id(self.feature["measure_location_id"])
+            self.measure_location_feature = measure_location_feat
+        except KeyError:
+            pass
+
+    def setup_measure_control_on_creation(self):
+        """Setting up measure map location and structure control during adding feature."""
+        measure_location_handler = self.layer_manager.model_handlers[dm.MeasureLocation]
+        measure_location_layer = measure_location_handler.layer
+        feature_linestring = self.feature.geometry().asPolyline()
+        feature_start_point, feature_end_point = feature_linestring[0], feature_linestring[-1]
+        measure_location_feat = find_point_nodes(feature_start_point, measure_location_layer)
+        if measure_location_feat is not None:
+            self.measure_location_feature = measure_location_feat
+        for control_type, control_model_cls in self.control_types.items():
+            control_handler = self.layer_manager.model_handlers[control_model_cls]
+            control_layer = control_handler.layer
+            feature_end_point = self.feature.geometry().asPolyline()[-1]
+            control_feat = find_point_nodes(feature_end_point, control_layer)
+            if control_feat is not None:
+                self.control_feature, self.control_feature_type = control_feat, control_type
+                break
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.setup_measure_control_on_creation()
+            # Set feature specific attributes
+            self.fill_related_attributes()
+        else:
+            self.setup_measure_location_on_edit()
+        # Populate widgets based on features attributes
+        self.populate_foreign_widgets()
+        self.populate_widgets()
+        self.populate_tag_widgets()
+
+
+class GridRefinementLineForm(AbstractFormWithTag):
+    """Grid refinement line user layer edit form logic."""
+
+    MODEL = dm.GridRefinementLine
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_tag_widgets()
+
+
+class GridRefinementAreaForm(AbstractFormWithTag):
+    """Grid refinement area user layer edit form logic."""
+
+    MODEL = dm.GridRefinementArea
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_tag_widgets()
+
+
+class ObstacleForm(AbstractFormWithTag):
+    """Obstacle user layer edit form logic."""
+
+    MODEL = dm.Obstacle
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_tag_widgets()
+
+
+class SurfaceParametersForm(AbstractFormWithTag):
+    """Surface parameters user layer edit form logic."""
+
+    MODEL = dm.SurfaceParameters
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_tag_widgets()
+
+
+class Windshielding1DForm(AbstractFormWithTag):
+    """1D Windshielding user layer edit form logic."""
+
+    MODEL = dm.Windshielding1D
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.channel = None
+
+    @property
+    def foreign_models_features(self):
+        """Property returning dictionary where key = data model class with id and value = data model feature(s)."""
+        fm_features = {
+            (dm.Channel, 1): self.channel,
+        }
+        return fm_features
+
+    def fill_related_attributes(self):
+        """Filling feature values based on related features attributes."""
+        super().fill_related_attributes()
+        channel_handler = self.layer_manager.model_handlers[dm.Channel]
+        channel_layer = channel_handler.layer
+        point_geom = self.feature.geometry()
+        point = point_geom.asPoint()
+        channel_node_feat = find_point_polyline(point, channel_layer)
+        if channel_node_feat:
+            channel_id = channel_node_feat["id"]
+            self.feature["channel_id"] = channel_id
+            self.channel = channel_node_feat
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        if self.creation is True:
+            self.fill_related_attributes()
+        self.populate_widgets()
+        self.populate_tag_widgets()
 
 
 ALL_FORMS = (
     ConnectionNodeForm,
-    ManholeForm,
     PipeForm,
     WeirForm,
     CulvertForm,
     OrificeForm,
-    PumpstationForm,
-    PumpstationMapForm,
-    ImperviousSurfaceMapForm,
+    PumpForm,
+    PumpMapForm,
+    DryWeatherFlowForm,
+    DryWeatherFlowMapForm,
+    DryWeatherFlowDistributionForm,
+    SurfaceForm,
     SurfaceMapForm,
     ChannelForm,
     CrossSectionLocationForm,
     PotentialBreachForm,
     ExchangeLineForm,
+    BoundaryCondition1D,
+    Lateral1D,
+    BoundaryCondition2D,
+    Lateral2D,
+    MeasureLocation,
+    MemoryControl,
+    TableControl,
+    MeasureMap,
+    GridRefinementLineForm,
+    GridRefinementAreaForm,
+    ObstacleForm,
+    SurfaceParametersForm,
+    Windshielding1DForm,
 )
 
 MODEL_FORMS = MappingProxyType({form.MODEL: form for form in ALL_FORMS})

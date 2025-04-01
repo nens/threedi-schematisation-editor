@@ -1,17 +1,22 @@
-# Copyright (C) 2023 by Lutra Consulting
+# Copyright (C) 2025 by Lutra Consulting
 from dataclasses import dataclass
+from itertools import chain
 from types import MappingProxyType, SimpleNamespace
 from typing import Optional
 
 from threedi_schematisation_editor.enumerators import (
+    ActionType,
     AggregationMethod,
     BoundaryType,
-    CalculationType,
-    CalculationTypeCulvert,
-    CalculationTypeNode,
+    ControlType,
     CrestType,
     CrossSectionShape,
+    ExchangeTypeChannel,
+    ExchangeTypeCulvert,
+    ExchangeTypeNode,
+    ExchangeTypePipe,
     FlowVariable,
+    FrictionShallowWaterDepthCorrection,
     FrictionType,
     FrictionTypeExtended,
     GeometryType,
@@ -19,17 +24,31 @@ from threedi_schematisation_editor.enumerators import (
     InitializationType,
     InterflowType,
     Later2DType,
-    ManholeIndicator,
-    ManholeShape,
-    Material,
-    PipeCalculationType,
+    LimiterSlopeCrossSectionalArea2D,
+    MaxDegreeGaussSeidel,
+    MeasureOperator,
+    MeasureVariable,
+    NodeOpenWaterDetection,
     PipeMaterial,
     PumpType,
     SewerageType,
-    SurfaceClass,
-    SurfaceInclinationType,
-    ZoomCategories,
+    TargetType,
+    TimeIntegrationMethod,
+    TimeUnit,
+    Unit,
+    UseAdvection1D,
+    UseNestedNewton,
+    Visualisation,
 )
+
+
+class HighPrecisionFloat(float):
+    """
+    Used to set the widget type for a field to TextEdit
+    so users can fill in any number of decimals and use scientific notation
+    """
+
+    pass
 
 
 class ModelObject:
@@ -37,10 +56,6 @@ class ModelObject:
     __layername__ = None
     __geometrytype__ = GeometryType.NoGeometry
 
-    SQLITE_SOURCES = tuple()
-    SQLITE_TARGETS = tuple()
-    IMPORT_FIELD_MAPPINGS = MappingProxyType({})
-    EXPORT_FIELD_MAPPINGS = MappingProxyType({})
     RELATED_RASTERS = tuple()
 
     @classmethod
@@ -73,105 +88,23 @@ class ModelObject:
 @dataclass
 class ConnectionNode(ModelObject):
     __tablename__ = "connection_node"
-    __layername__ = "Connection Node"
+    __layername__ = "Connection node"
     __geometrytype__ = GeometryType.Point
 
-    SQLITE_SOURCES = ("v2_connection_nodes",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
-    code: str
-    initial_waterlevel: Optional[float]
+    code: Optional[str]
+    display_name: Optional[str]
     storage_area: Optional[float]
-
-    @staticmethod
-    def display_names() -> list:
-        display_names_list = [
-            "ID",
-            "Code",
-            "Initial water level [m]",
-            "Storage area [m²]",
-        ]
-        return display_names_list
-
-
-@dataclass
-class BoundaryCondition1D(ModelObject):
-    __tablename__ = "1d_boundary_condition"
-    __layername__ = "1D Boundary Condition"
-    __geometrytype__ = GeometryType.Point
-
-    SQLITE_SOURCES = ("v2_1d_boundary_conditions_view",)
-    SQLITE_TARGETS = ("v2_1d_boundary_conditions",)
-
-    id: int
-    boundary_type: BoundaryType
-    connection_node_id: int
-    timeseries: str  # TODO: This is just temporary - remove after finishing Timeseries implementation
-
-
-@dataclass
-class Lateral1D(ModelObject):
-    __tablename__ = "1d_lateral"
-    __layername__ = "1D Lateral"
-    __geometrytype__ = GeometryType.Point
-
-    SQLITE_SOURCES = ("v2_1d_lateral_view",)
-    SQLITE_TARGETS = ("v2_1d_lateral",)
-
-    id: int
-    connection_node_id: int
-    timeseries: str  # TODO: This is just temporary - remove after finishing Timeseries implementation
-
-
-@dataclass
-class Manhole(ModelObject):
-    __tablename__ = "manhole"
-    __layername__ = "Manhole"
-    __geometrytype__ = GeometryType.Point
-
-    SQLITE_SOURCES = ("v2_manhole_view",)
-    SQLITE_TARGETS = ("v2_manhole",)
-
-    IMPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "id": "manh_id",
-            "code": "manh_code",
-            "display_name": "manh_display_name",
-            "calculation_type": "manh_calculation_type",
-            "shape": "manh_shape",
-            "width": "manh_width",
-            "length": "manh_length",
-            "bottom_level": "manh_bottom_level",
-            "surface_level": "manh_surface_level",
-            "drain_level": "manh_drain_level",
-            "sediment_level": "manh_sediment_level",
-            "manhole_indicator": "manh_manhole_indicator",
-            "zoom_category": "manh_zoom_category",
-            "connection_node_id": "manh_connection_node_id",
-            "exchange_thickness": "manh_exchange_thickness",
-            "hydraulic_conductivity_in": "manh_hydraulic_conductivity_in",
-            "hydraulic_conductivity_out": "manh_hydraulic_conductivity_out",
-        }
-    )
-
-    id: int
-    code: str
-    display_name: str
-    calculation_type: Optional[CalculationTypeNode]
-    shape: Optional[ManholeShape]
-    width: Optional[float]
-    length: Optional[float]
-    bottom_level: float
-    surface_level: Optional[float]
-    drain_level: Optional[float]
-    sediment_level: Optional[float]
-    manhole_indicator: Optional[ManholeIndicator]
-    zoom_category: Optional[ZoomCategories]
-    connection_node_id: int
+    initial_water_level: Optional[float]
+    visualisation: Optional[Visualisation]
+    manhole_surface_level: Optional[float]
+    bottom_level: Optional[float]
+    exchange_level: Optional[float]
+    exchange_type: Optional[ExchangeTypeNode]
     exchange_thickness: Optional[float]
     hydraulic_conductivity_in: Optional[float]
     hydraulic_conductivity_out: Optional[float]
+    tags: Optional[str]
 
     @staticmethod
     def display_names() -> list:
@@ -179,83 +112,99 @@ class Manhole(ModelObject):
             "ID",
             "Code",
             "Display name",
-            "Calculation type",
-            "Shape",
-            "Width [m]",
-            "Length [m]",
+            "Storage area [m²]",
+            "Initial water level [m]",
+            "Visualisation",
             "Bottom level [m MSL]",
-            "Surface level [m MSL]",
-            "Drain level [m MSL]",
-            "Sediment level [m MSL]",
-            "Manhole indicator",
-            "Zoom category",
-            "Connection node ID",
+            "Manhole surface level [m MSL]",
+            "Exchange level [m MSL]",
+            "Exchange type",
             "Exchange thickness [m]",
             "Hydraulic conductivity in [m/d]",
             "Hydraulic conductivity out [m/d]",
+            "Tag",
         ]
         return display_names_list
 
 
 @dataclass
-class Pumpstation(ModelObject):
-    __tablename__ = "pumpstation"
-    __layername__ = "Pumpstation (without end node)"
-    __geometrytype__ = GeometryType.Point
-
-    SQLITE_SOURCES = ("v2_pumpstation_point_view",)
-    SQLITE_TARGETS = ("v2_pumpstation",)
-
-    IMPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "id": "pump_id",
-        }
-    )
-    EXPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "connection_node_id": "connection_node_start_id",
-        }
-    )
+class Material(ModelObject):
+    __tablename__ = "material"
+    __layername__ = "Material"
+    __geometrytype__ = GeometryType.NoGeometry
 
     id: int
-    code: str
-    display_name: str
+    description: str
+    friction_coefficient: float
+    friction_type: FrictionType
+
+
+@dataclass
+class BoundaryCondition1D(ModelObject):
+    __tablename__ = "boundary_condition_1d"
+    __layername__ = "1D Boundary condition"
+    __geometrytype__ = GeometryType.Point
+
+    id: int
+    code: Optional[str]
+    display_name: Optional[str]
+    type: BoundaryType
+    connection_node_id: int
+    timeseries: str
+    time_units: TimeUnit
+    interpolate: bool
+    tags: Optional[str]
+
+
+@dataclass
+class Lateral1D(ModelObject):
+    __tablename__ = "lateral_1d"
+    __layername__ = "1D Lateral"
+    __geometrytype__ = GeometryType.Point
+
+    id: int
+    code: Optional[str]
+    display_name: Optional[str]
+    time_units: TimeUnit
+    interpolate: bool
+    offset: int
+    units: Unit
+    connection_node_id: int
+    timeseries: str
+    tags: Optional[str]
+
+
+@dataclass
+class Pump(ModelObject):
+    __tablename__ = "pump"
+    __layername__ = "Pump"
+    __geometrytype__ = GeometryType.Point
+
+    id: int
+    code: Optional[str]
+    display_name: Optional[str]
     start_level: float
     lower_stop_level: float
     upper_stop_level: Optional[float]
     capacity: float
     type: PumpType
-    sewerage: bool
-    zoom_category: Optional[ZoomCategories]
+    sewerage: Optional[bool]
     connection_node_id: int
+    tags: Optional[str]
 
 
 @dataclass
-class PumpstationMap(ModelObject):
-    __tablename__ = "pumpstation_map"
-    __layername__ = "Pumpstation (with end node)"
+class PumpMap(ModelObject):
+    __tablename__ = "pump_map"
+    __layername__ = "Pump map"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = ("v2_pumpstation_view",)
-    SQLITE_TARGETS = ("v2_pumpstation",)
-
-    IMPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "id": "pump_id",
-            "code": "pump_code",
-            "display_name": "pump_display_name",
-            "pumpstation_id": "pump_id",
-            "connection_node_start_id": "pump_connection_node_start_id",
-            "connection_node_end_id": "pump_connection_node_end_id",
-        }
-    )
-
     id: int
-    code: str
-    display_name: str
-    pumpstation_id: int
-    connection_node_start_id: int
-    connection_node_end_id: int
+    code: Optional[str]
+    display_name: Optional[str]
+    pump_id: int
+    connection_node_id_end: int
+    tags: Optional[str]
 
 
 @dataclass
@@ -263,28 +212,6 @@ class Weir(ModelObject):
     __tablename__ = "weir"
     __layername__ = "Weir"
     __geometrytype__ = GeometryType.Linestring
-
-    SQLITE_SOURCES = ("v2_weir_view",)
-    SQLITE_TARGETS = ("v2_weir",)
-
-    IMPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "id": "weir_id",
-            "code": "weir_code",
-            "display_name": "weir_display_name",
-            "crest_level": "weir_crest_level",
-            "crest_type": "weir_crest_type",
-            "discharge_coefficient_positive": "weir_discharge_coefficient_positive",
-            "discharge_coefficient_negative": "weir_discharge_coefficient_negative",
-            "friction_value": "weir_friction_value",
-            "friction_type": "weir_friction_type",
-            "sewerage": "weir_sewerage",
-            "external": "weir_external",
-            "zoom_category": "weir_zoom_category",
-            "connection_node_start_id": "weir_connection_node_start_id",
-            "connection_node_end_id": "weir_connection_node_end_id",
-        }
-    )
 
     @staticmethod
     def display_names() -> list:
@@ -296,38 +223,40 @@ class Weir(ModelObject):
             "Crest type",
             "Discharge coefficient positive",
             "Discharge coefficient negative",
+            "Material ID",
             "Friction value",
             "Friction type",
             "Sewerage",
             "External",
-            "Zoom category",
             "Connection node start ID",
             "Connection node end ID",
             "Cross section shape",
             "Cross section width [m]",
             "Cross section height [m]",
             "Cross section table",
+            "Tag",
         ]
         return display_names_list
 
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     crest_level: float
     crest_type: CrestType
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
+    material_id: Optional[int]
     friction_value: float
     friction_type: FrictionType
     sewerage: bool
     external: Optional[bool]
-    zoom_category: Optional[ZoomCategories]
-    connection_node_start_id: int
-    connection_node_end_id: int
+    connection_node_id_start: int
+    connection_node_id_end: int
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
     cross_section_table: Optional[str]
+    tags: Optional[str]
 
 
 @dataclass
@@ -336,46 +265,25 @@ class Culvert(ModelObject):
     __layername__ = "Culvert"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = ("v2_culvert_view",)
-    SQLITE_TARGETS = ("v2_culvert",)
-
-    IMPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "id": "cul_id",
-            "code": "cul_code",
-            "display_name": "cul_display_name",
-            "calculation_type": "cul_calculation_type",
-            "dist_calc_points": "cul_dist_calc_points",
-            "invert_level_start_point": "cul_invert_level_start_point",
-            "invert_level_end_point": "cul_invert_level_end_point",
-            "discharge_coefficient_positive": "cul_discharge_coefficient_positive",
-            "discharge_coefficient_negative": "cul_discharge_coefficient_negative",
-            "friction_value": "cul_friction_value",
-            "friction_type": "cul_friction_type",
-            "zoom_category": "cul_zoom_category",
-            "connection_node_start_id": "cul_connection_node_start_id",
-            "connection_node_end_id": "cul_connection_node_end_id",
-        }
-    )
-
     id: int
-    code: str
-    display_name: str
-    calculation_type: Optional[CalculationTypeCulvert]
-    dist_calc_points: Optional[float]
-    invert_level_start_point: float
-    invert_level_end_point: float
-    discharge_coefficient_positive: float
-    discharge_coefficient_negative: float
+    code: Optional[str]
+    display_name: Optional[str]
+    exchange_type: Optional[ExchangeTypeCulvert]
+    calculation_point_distance: Optional[float]
+    invert_level_start: float
+    invert_level_end: float
+    discharge_coefficient_positive: Optional[float]
+    discharge_coefficient_negative: Optional[float]
+    material_id: Optional[int]
     friction_value: float
     friction_type: FrictionType
-    zoom_category: Optional[ZoomCategories]
-    connection_node_start_id: int
-    connection_node_end_id: int
+    connection_node_id_start: int
+    connection_node_id_end: int
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
     cross_section_table: Optional[str]
+    tags: Optional[str]
 
     @staticmethod
     def display_names() -> list:
@@ -383,21 +291,22 @@ class Culvert(ModelObject):
             "ID",
             "Code",
             "Display name",
-            "Calculation type",
+            "Exchange type",
             "Calculation point distance [m]",
             "Invert level start point",
             "Invert level end point",
             "Discharge coefficient positive",
             "Discharge coefficient negative",
+            "Material ID",
             "Friction value",
             "Friction type",
-            "Zoom category",
             "Connection node start ID",
             "Connection node end ID",
             "Cross section shape",
             "Cross section width [m]",
             "Cross section height [m]",
             "Cross section table",
+            "Tag",
         ]
         return display_names_list
 
@@ -408,44 +317,24 @@ class Orifice(ModelObject):
     __layername__ = "Orifice"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = ("v2_orifice_view",)
-    SQLITE_TARGETS = ("v2_orifice",)
-
-    IMPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "id": "orf_id",
-            "code": "orf_code",
-            "display_name": "orf_display_name",
-            "crest_level": "orf_crest_level",
-            "crest_type": "orf_crest_type",
-            "discharge_coefficient_positive": "orf_discharge_coefficient_positive",
-            "discharge_coefficient_negative": "orf_discharge_coefficient_negative",
-            "friction_value": "orf_friction_value",
-            "friction_type": "orf_friction_type",
-            "sewerage": "orf_sewerage",
-            "zoom_category": "orf_zoom_category",
-            "connection_node_start_id": "orf_connection_node_start_id",
-            "connection_node_end_id": "orf_connection_node_end_id",
-        }
-    )
-
     id: int
-    code: str
-    display_name: str
+    code: Optional[str]
+    display_name: Optional[str]
     crest_level: float
     crest_type: CrestType
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
+    material_id: Optional[int]
     friction_value: float
     friction_type: FrictionType
     sewerage: bool
-    zoom_category: Optional[ZoomCategories]
-    connection_node_start_id: int
-    connection_node_end_id: int
+    connection_node_id_start: int
+    connection_node_id_end: int
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
     cross_section_table: Optional[str]
+    tags: Optional[str]
 
     @staticmethod
     def display_names() -> list:
@@ -457,16 +346,17 @@ class Orifice(ModelObject):
             "Crest type",
             "Discharge coefficient positive",
             "Discharge coefficient negative",
+            "Material ID",
             "Friction value",
             "Friction type",
             "Sewerage",
-            "Zoom category",
             "Connection node start ID",
             "Connection node end ID",
             "Cross section shape",
             "Cross section width [m]",
             "Cross section height [m]",
             "Cross section table",
+            "Tag",
         ]
         return display_names_list
 
@@ -477,51 +367,19 @@ class Pipe(ModelObject):
     __layername__ = "Pipe"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = ("v2_pipe_view",)
-    SQLITE_TARGETS = ("v2_pipe",)
-
-    IMPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "id": "pipe_id",
-            "code": "pipe_code",
-            "display_name": "pipe_display_name",
-            "calculation_type": "pipe_calculation_type",
-            "dist_calc_points": "pipe_dist_calc_points",
-            "invert_level_start_point": "pipe_invert_level_start_point",
-            "invert_level_end_point": "pipe_invert_level_end_point",
-            "friction_value": "pipe_friction_value",
-            "friction_type": "pipe_friction_type",
-            "material": "pipe_material",
-            "pipe_quality": "pipe_pipe_quality",
-            "sewerage_type": "pipe_sewerage_type",
-            "zoom_category": "pipe_zoom_category",
-            "profile_num": "pipe_profile_num",
-            "original_length": "pipe_original_length",
-            "connection_node_start_id": "pipe_connection_node_start_id",
-            "connection_node_end_id": "pipe_connection_node_end_id",
-            "exchange_thickness": "pipe_exchange_thickness",
-            "hydraulic_conductivity_in": "pipe_hydraulic_conductivity_in",
-            "hydraulic_conductivity_out": "pipe_hydraulic_conductivity_out",
-        }
-    )
-
     id: int
-    code: str
-    display_name: str
-    calculation_type: PipeCalculationType
-    dist_calc_points: Optional[float]
-    invert_level_start_point: float
-    invert_level_end_point: float
+    code: Optional[str]
+    display_name: Optional[str]
+    exchange_type: ExchangeTypePipe
+    calculation_point_distance: Optional[float]
+    invert_level_start: float
+    invert_level_end: float
+    material_id: Optional[int]
     friction_value: float
     friction_type: FrictionType
-    material: Optional[PipeMaterial]
-    pipe_quality: float
     sewerage_type: Optional[SewerageType]
-    zoom_category: Optional[ZoomCategories]
-    profile_num: Optional[int]
-    original_length: Optional[float]
-    connection_node_start_id: int
-    connection_node_end_id: int
+    connection_node_id_start: int
+    connection_node_id_end: int
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
@@ -529,6 +387,7 @@ class Pipe(ModelObject):
     exchange_thickness: Optional[float]
     hydraulic_conductivity_in: Optional[float]
     hydraulic_conductivity_out: Optional[float]
+    tags: Optional[str]
 
     @staticmethod
     def display_names() -> list:
@@ -536,18 +395,14 @@ class Pipe(ModelObject):
             "ID",
             "Code",
             "Display name",
-            "Calculation type",
+            "exchange type",
             "Calculation point distance [m]",
             "Invert level start point",
             "Invert level end point",
+            "Material ID",
             "Friction value",
             "Friction type",
-            "Material",
-            "Pipe quality",
             "Sewerage type",
-            "Zoom category",
-            "Profile number",
-            "Original length",
             "Connection node start ID",
             "Connection node end ID",
             "Cross section shape",
@@ -557,13 +412,9 @@ class Pipe(ModelObject):
             "Exchange thickness [m]",
             "Hydraulic conductivity in [m/d]",
             "Hydraulic conductivity out [m/d]",
+            "Tag",
         ]
         return display_names_list
-
-    @staticmethod
-    def obsolete_fields() -> set:
-        obsolete_fields_set = {"pipe_quality", "profile_num", "original_length"}
-        return obsolete_fields_set
 
 
 @dataclass
@@ -572,42 +423,25 @@ class CrossSectionLocation(ModelObject):
     __layername__ = "Cross section location"
     __geometrytype__ = GeometryType.Point
 
-    SQLITE_SOURCES = ("v2_cross_section_location_view",)
-    SQLITE_TARGETS = ("v2_cross_section_location",)
-
-    IMPORT_FIELD_MAPPINGS = MappingProxyType(
-        {
-            "id": "loc_id",
-            "code": "loc_code",
-            "reference_level": "loc_reference_level",
-            "friction_value": "loc_friction_value",
-            "friction_type": "loc_friction_type",
-            "bank_level": "loc_bank_level",
-            "channel_id": "loc_channel_id",
-            "vegetation_stem_density": "loc_vegetation_stem_density",
-            "vegetation_stem_diameter": "loc_vegetation_stem_diameter",
-            "vegetation_height": "loc_vegetation_height",
-            "vegetation_drag_coefficient": "loc_vegetation_drag_coefficient",
-        }
-    )
-
     id: int
-    code: str
+    code: Optional[str]
+    display_name: Optional[str]
     reference_level: float
     friction_type: FrictionTypeExtended
     friction_value: float
     bank_level: Optional[float]
     channel_id: int
-    vegetation_stem_density: Optional[float]
-    vegetation_stem_diameter: Optional[float]
-    vegetation_height: Optional[float]
-    vegetation_drag_coefficient: Optional[float]
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
     cross_section_table: Optional[str]
-    cross_section_friction_table: Optional[str]
+    cross_section_friction_values: Optional[str]
     cross_section_vegetation_table: Optional[str]
+    vegetation_stem_density: Optional[float]
+    vegetation_stem_diameter: Optional[float]
+    vegetation_height: Optional[float]
+    vegetation_drag_coefficient: Optional[float]
+    tags: Optional[str]
 
 
 @dataclass
@@ -616,78 +450,80 @@ class Channel(ModelObject):
     __layername__ = "Channel"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = ("v2_channel",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
-    code: str
-    display_name: str
-    calculation_type: CalculationType
-    dist_calc_points: Optional[float]
-    zoom_category: Optional[ZoomCategories]
-    connection_node_start_id: int
-    connection_node_end_id: int
+    code: Optional[str]
+    display_name: Optional[str]
+    exchange_type: ExchangeTypeChannel
+    calculation_point_distance: Optional[float]
+    connection_node_id_start: int
+    connection_node_id_end: int
     exchange_thickness: Optional[float]
     hydraulic_conductivity_in: Optional[float]
     hydraulic_conductivity_out: Optional[float]
+    tags: Optional[str]
 
 
 @dataclass
 class BoundaryCondition2D(ModelObject):
-    __tablename__ = "2d_boundary_condition"
+    __tablename__ = "boundary_condition_2d"
     __layername__ = "2D Boundary condition"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = ("v2_2d_boundary_conditions",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
-    display_name: str
-    boundary_type: BoundaryType
-    timeseries: str  # TODO: This is just temporary - remove after finishing Timeseries implementation
+    code: Optional[str]
+    display_name: Optional[str]
+    type: BoundaryType
+    timeseries: str
+    time_units: TimeUnit
+    interpolate: bool
+    tags: Optional[str]
 
 
 @dataclass
 class Lateral2D(ModelObject):
-    __tablename__ = "2d_lateral"
+    __tablename__ = "lateral_2d"
     __layername__ = "2D Lateral"
     __geometrytype__ = GeometryType.Point
 
-    SQLITE_SOURCES = ("v2_2d_lateral",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
+    code: Optional[str]
+    display_name: Optional[str]
     type: Later2DType
-    timeseries: str  # TODO: This is just temporary - remove after finishing Timeseries implementation
+    time_units: TimeUnit
+    interpolate: bool
+    offset: int
+    units: Unit
+    timeseries: str
+    tags: Optional[str]
 
 
 @dataclass
-class LinearObstacle(ModelObject):
-    __tablename__ = "linear_obstacle"
-    __layername__ = "Linear Obstacle"
+class Obstacle(ModelObject):
+    __tablename__ = "obstacle"
+    __layername__ = "Obstacle"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = ("v2_obstacle",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
-    code: str
+    code: Optional[str]
+    display_name: Optional[str]
     crest_level: float
+    affects_2d: bool
+    affects_1d2d_open_water: bool
+    affects_1d2d_closed: bool
+    tags: Optional[str]
 
 
 @dataclass
-class GridRefinement(ModelObject):
-    __tablename__ = "grid_refinement"
-    __layername__ = "Grid refinement"
+class GridRefinementLine(ModelObject):
+    __tablename__ = "grid_refinement_line"
+    __layername__ = "Grid refinement line"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = ("v2_grid_refinement",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
-    code: str
-    display_name: str
-    refinement_level: int
+    code: Optional[str]
+    display_name: Optional[str]
+    grid_level: int
+    tags: Optional[str]
 
 
 @dataclass
@@ -696,13 +532,11 @@ class GridRefinementArea(ModelObject):
     __layername__ = "Grid refinement area"
     __geometrytype__ = GeometryType.Polygon
 
-    SQLITE_SOURCES = ("v2_grid_refinement_area",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
-    code: str
-    display_name: str
-    refinement_level: int
+    code: Optional[str]
+    display_name: Optional[str]
+    grid_level: int
+    tags: Optional[str]
 
 
 @dataclass
@@ -711,22 +545,21 @@ class DEMAverageArea(ModelObject):
     __layername__ = "DEM average area"
     __geometrytype__ = GeometryType.Polygon
 
-    SQLITE_SOURCES = ("v2_dem_average_area",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
+    code: Optional[str]
+    display_name: Optional[str]
+    tags: Optional[str]
 
 
 @dataclass
-class Windshielding(ModelObject):
-    __tablename__ = "windshielding"
-    __layername__ = "Windshielding"
-    __geometrytype__ = GeometryType.NoGeometry
-
-    SQLITE_SOURCES = ("v2_windshielding",)
-    SQLITE_TARGETS = SQLITE_SOURCES
+class Windshielding1D(ModelObject):
+    __tablename__ = "windshielding_1d"
+    __layername__ = "1D Wind shielding"
+    __geometrytype__ = GeometryType.Point
 
     id: int
+    code: Optional[str]
+    display_name: Optional[str]
     north: Optional[float]
     northeast: Optional[float]
     east: Optional[float]
@@ -736,6 +569,7 @@ class Windshielding(ModelObject):
     west: Optional[float]
     northwest: Optional[float]
     channel_id: int
+    tags: Optional[str]
 
 
 @dataclass
@@ -744,16 +578,14 @@ class PotentialBreach(ModelObject):
     __layername__ = "Potential breach"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = ("v2_potential_breach",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
     code: Optional[str]
     display_name: Optional[str]
     channel_id: int
-    exchange_level: Optional[float]
+    initial_exchange_level: float
+    final_exchange_level: Optional[float]
     levee_material: Optional[Material]
-    maximum_breach_depth: Optional[float]
+    tags: Optional[str]
 
 
 @dataclass
@@ -762,49 +594,12 @@ class ExchangeLine(ModelObject):
     __layername__ = "Exchange line"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = ("v2_exchange_line",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
+    code: Optional[str]
+    display_name: Optional[str]
     channel_id: int
     exchange_level: Optional[float]
-
-
-@dataclass
-class ImperviousSurface(ModelObject):
-    __tablename__ = "impervious_surface"
-    __layername__ = "Impervious Surface"
-    __geometrytype__ = GeometryType.Polygon
-
-    SQLITE_SOURCES = ("v2_impervious_surface",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
-    id: int
-    code: str
-    display_name: str
-    surface_inclination: SurfaceInclinationType
-    surface_class: SurfaceClass
-    surface_sub_class: Optional[str]
-    zoom_category: Optional[ZoomCategories]
-    nr_of_inhabitants: Optional[float]
-    area: Optional[float]
-    dry_weather_flow: Optional[float]
-    function: Optional[str]
-
-
-@dataclass
-class ImperviousSurfaceMap(ModelObject):
-    __tablename__ = "impervious_surface_map"
-    __layername__ = "Impervious surface map"
-    __geometrytype__ = GeometryType.Linestring
-
-    SQLITE_SOURCES = ("v2_impervious_surface_map",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
-    id: int
-    percentage: float
-    impervious_surface_id: int
-    connection_node_id: int
+    tags: Optional[str]
 
 
 @dataclass
@@ -813,18 +608,12 @@ class Surface(ModelObject):
     __layername__ = "Surface"
     __geometrytype__ = GeometryType.Polygon
 
-    SQLITE_SOURCES = ("v2_surface",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
-    code: str
-    display_name: str
-    zoom_category: Optional[ZoomCategories]
-    nr_of_inhabitants: Optional[float]
-    area: Optional[float]
-    dry_weather_flow: Optional[float]
-    function: Optional[str]
+    code: Optional[str]
+    display_name: Optional[str]
+    area: float
     surface_parameters_id: int
+    tags: Optional[str]
 
 
 @dataclass
@@ -833,13 +622,13 @@ class SurfaceMap(ModelObject):
     __layername__ = "Surface map"
     __geometrytype__ = GeometryType.Linestring
 
-    SQLITE_SOURCES = ("v2_surface_map",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
-    percentage: Optional[float]
+    code: Optional[str]
+    display_name: Optional[str]
+    percentage: float
     surface_id: int
     connection_node_id: int
+    tags: Optional[str]
 
 
 @dataclass
@@ -848,10 +637,8 @@ class SurfaceParameters(ModelObject):
     __layername__ = "Surface parameters"
     __geometrytype__ = GeometryType.NoGeometry
 
-    SQLITE_SOURCES = ("v2_surface_parameters",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
+    description: str
     outflow_delay: float
     surface_layer_thickness: float
     infiltration: bool
@@ -859,74 +646,121 @@ class SurfaceParameters(ModelObject):
     min_infiltration_capacity: float
     infiltration_decay_constant: float
     infiltration_recovery_constant: float
+    tags: Optional[str]
 
 
 @dataclass
-class GlobalSettings(ModelObject):
-    __tablename__ = "global_settings"
-    __layername__ = "Global settings"
+class DryWeatherFlow(ModelObject):
+    __tablename__ = "dry_weather_flow"
+    __layername__ = "Dry weather flow"
+    __geometrytype__ = GeometryType.Polygon
+
+    id: int
+    code: Optional[str]
+    display_name: Optional[str]
+    multiplier: float
+    daily_total: float
+    interpolate: bool
+    dry_weather_flow_distribution_id: int
+    tags: Optional[str]
+
+
+@dataclass
+class DryWeatherFlowMap(ModelObject):
+    __tablename__ = "dry_weather_flow_map"
+    __layername__ = "Dry weather flow map"
+    __geometrytype__ = GeometryType.Linestring
+
+    id: int
+    code: Optional[str]
+    display_name: Optional[str]
+    percentage: float
+    dry_weather_flow_id: int
+    connection_node_id: int
+    tags: Optional[str]
+
+
+@dataclass
+class DryWeatherFlowDistribution(ModelObject):
+    __tablename__ = "dry_weather_flow_distribution"
+    __layername__ = "Dry weather flow distribution"
     __geometrytype__ = GeometryType.NoGeometry
 
-    SQLITE_SOURCES = ("v2_global_settings",)
-    SQLITE_TARGETS = SQLITE_SOURCES
+    id: int
+    description: str
+    distribution: str
+    tags: Optional[str]
+
+
+@dataclass
+class ModelSettings(ModelObject):
+    __tablename__ = "model_settings"
+    __layername__ = "Model settings"
+    __geometrytype__ = GeometryType.NoGeometry
+
     RELATED_RASTERS = (
         ("dem_file", "Digital elevation model [m MSL]"),
-        ("frict_coef_file", "Friction coefficient [-]"),
-        ("initial_groundwater_level_file", "Initial groundwater level [m MSL]"),
-        ("initial_waterlevel_file", "Initial water level [m MSL]"),
-        ("interception_file", "Interception [m]"),
+        ("friction_coefficient_file", "Friction coefficient [-]"),
     )
 
     id: int
     use_2d_flow: bool
     use_1d_flow: bool
-    manhole_storage_area: Optional[float]
-    name: Optional[str]
-    sim_time_step: float
-    output_time_step: Optional[float]
-    nr_timesteps: int
-    start_time: Optional[str]
-    start_date: str
-    grid_space: float
-    dist_calc_points: float
-    kmax: int
-    guess_dams: Optional[int]
-    table_step_size: float
-    flooding_threshold: float
-    advection_1d: int
-    advection_2d: int
+    manhole_aboveground_storage_area: Optional[float]
+    minimum_cell_size: float
+    calculation_point_distance_1d: float
+    nr_grid_levels: int
+    node_open_water_detection: NodeOpenWaterDetection
+    minimum_table_step_size: float
     dem_file: Optional[str]
-    frict_type: Optional[int]
-    frict_coef: float
-    frict_coef_file: Optional[str]
-    water_level_ini_type: Optional[InitializationType]
-    initial_waterlevel: float
-    initial_waterlevel_file: Optional[str]
-    interception_global: Optional[float]
-    interception_file: Optional[str]
-    dem_obstacle_detection: bool
-    dem_obstacle_height: Optional[float]
+    friction_type: Optional[FrictionType]
+    friction_coefficient: float
+    friction_coefficient_file: Optional[str]
     embedded_cutoff_threshold: Optional[float]
     epsg_code: Optional[int]
-    timestep_plus: bool
     max_angle_1d_advection: Optional[float]
-    minimum_sim_time_step: Optional[float]
-    maximum_sim_time_step: Optional[float]
-    frict_avg: Optional[int]
-    wind_shielding_file: Optional[str]
-    use_0d_inflow: int
+    friction_averaging: Optional[bool]
     table_step_size_1d: Optional[float]
-    use_2d_rain: int
+    use_2d_rain: bool
+    use_interflow: bool
+    use_simple_infiltration: bool
+    use_groundwater_flow: bool
+    use_groundwater_storage: bool
+    use_interception: bool
+    maximum_table_step_size: Optional[float]
+    use_vegetation_drag_2d: Optional[bool]
+
+
+@dataclass
+class InitialConditionsSettings(ModelObject):
+    __tablename__ = "initial_conditions"
+    __layername__ = "Initial conditions"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    RELATED_RASTERS = (
+        ("initial_groundwater_level_file", "Initial groundwater level [m MSL]"),
+        ("initial_water_level_file", "Initial water level [m MSL]"),
+    )
+
+    id: int
+    initial_water_level: Optional[float]
+    initial_water_level_file: Optional[str]
     initial_groundwater_level: Optional[float]
     initial_groundwater_level_file: Optional[str]
-    initial_groundwater_level_type: Optional[InitializationType]
-    numerical_settings_id: int
-    interflow_settings_id: int
-    control_group_id: int
-    simple_infiltration_settings_id: int
-    groundwater_settings_id: int
-    maximum_table_step_size: float
-    vegetation_drag_settings_id: Optional[int]
+    initial_groundwater_level_aggregation: Optional[InitializationType]
+
+
+@dataclass
+class InterceptionSettings(ModelObject):
+    __tablename__ = "interception"
+    __layername__ = "Interception"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    RELATED_RASTERS = (("interception_file", "Interception [m]"),)
+
+    id: int
+    interception: Optional[float]
+    interception_file: Optional[str]
 
 
 @dataclass
@@ -935,50 +769,40 @@ class AggregationSettings(ModelObject):
     __layername__ = "Aggregation settings"
     __geometrytype__ = GeometryType.NoGeometry
 
-    SQLITE_SOURCES = ("v2_aggregation_settings",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
-    global_settings_id: int
-    var_name: str
     flow_variable: FlowVariable
-    aggregation_method: Optional[AggregationMethod]
-    timestep: int
+    aggregation_method: AggregationMethod
+    interval: int
 
 
 @dataclass
 class SimpleInfiltrationSettings(ModelObject):
-    __tablename__ = "simple_infiltration_settings"
-    __layername__ = "Simple infiltration settings"
+    __tablename__ = "simple_infiltration"
+    __layername__ = "Simple infiltration"
     __geometrytype__ = GeometryType.NoGeometry
 
-    SQLITE_SOURCES = ("v2_simple_infiltration",)
-    SQLITE_TARGETS = SQLITE_SOURCES
     RELATED_RASTERS = (
         ("infiltration_rate_file", "Infiltration rate [mm/d]"),
-        ("max_infiltration_capacity_file", "Max infiltration capacity [m]"),
+        ("max_infiltration_volume_file", "Max infiltration volume [m]"),
     )
 
     id: int
-    infiltration_rate: float
+    infiltration_rate: Optional[float]
     infiltration_rate_file: Optional[str]
     infiltration_surface_option: Optional[InfiltrationSurfaceOption]
-    max_infiltration_capacity_file: Optional[str]
-    display_name: str
-    max_infiltration_capacity: Optional[float]
+    max_infiltration_volume_file: Optional[str]
+    max_infiltration_volume: Optional[float]
 
 
 @dataclass
 class GroundWaterSettings(ModelObject):
-    __tablename__ = "groundwater_settings"
-    __layername__ = "Groundwater settings"
+    __tablename__ = "groundwater"
+    __layername__ = "Groundwater"
     __geometrytype__ = GeometryType.NoGeometry
 
-    SQLITE_SOURCES = ("v2_groundwater",)
-    SQLITE_TARGETS = SQLITE_SOURCES
     RELATED_RASTERS = (
         ("equilibrium_infiltration_rate_file", "Equilibrium infiltration rate [mm/d]"),
-        ("groundwater_hydro_connectivity_file", "Hydraulic conductivity [m/day]"),
+        ("groundwater_hydraulic_conductivity_file", "Hydraulic conductivity [m/day]"),
         ("groundwater_impervious_layer_level_file", "Impervious layer level [m MSL]"),
         ("infiltration_decay_period_file", "Infiltration decay period [d]"),
         ("initial_infiltration_rate_file", "Initial infiltration rate [mm/d]"),
@@ -989,35 +813,32 @@ class GroundWaterSettings(ModelObject):
     id: int
     groundwater_impervious_layer_level: Optional[float]
     groundwater_impervious_layer_level_file: Optional[str]
-    groundwater_impervious_layer_level_type: Optional[InitializationType]
+    groundwater_impervious_layer_level_aggregation: Optional[InitializationType]
     phreatic_storage_capacity: Optional[float]
     phreatic_storage_capacity_file: Optional[str]
-    phreatic_storage_capacity_type: Optional[InitializationType]
+    phreatic_storage_capacity_aggregation: Optional[InitializationType]
     equilibrium_infiltration_rate: Optional[float]
     equilibrium_infiltration_rate_file: Optional[str]
-    equilibrium_infiltration_rate_type: Optional[InitializationType]
+    equilibrium_infiltration_rate_aggregation: Optional[InitializationType]
     initial_infiltration_rate: Optional[float]
     initial_infiltration_rate_file: Optional[str]
-    initial_infiltration_rate_type: Optional[InitializationType]
+    initial_infiltration_rate_aggregation: Optional[InitializationType]
     infiltration_decay_period: Optional[float]
     infiltration_decay_period_file: Optional[str]
-    infiltration_decay_period_type: Optional[InitializationType]
-    groundwater_hydro_connectivity: Optional[float]
-    groundwater_hydro_connectivity_file: Optional[str]
-    groundwater_hydro_connectivity_type: Optional[InitializationType]
-    display_name: str
+    infiltration_decay_period_aggregation: Optional[InitializationType]
+    groundwater_hydraulic_conductivity: Optional[float]
+    groundwater_hydraulic_conductivity_file: Optional[str]
+    groundwater_hydraulic_conductivity_aggregation: Optional[InitializationType]
     leakage: Optional[float]
     leakage_file: Optional[str]
 
 
 @dataclass
 class InterflowSettings(ModelObject):
-    __tablename__ = "interflow_settings"
-    __layername__ = "Interflow settings"
+    __tablename__ = "interflow"
+    __layername__ = "Interflow"
     __geometrytype__ = GeometryType.NoGeometry
 
-    SQLITE_SOURCES = ("v2_interflow",)
-    SQLITE_TARGETS = SQLITE_SOURCES
     RELATED_RASTERS = (
         ("hydraulic_conductivity_file", "Hydraulic conductivity [m/d]"),
         ("porosity_file", "Porosity [-]"),
@@ -1031,7 +852,6 @@ class InterflowSettings(ModelObject):
     impervious_layer_elevation: Optional[float]
     hydraulic_conductivity: Optional[float]
     hydraulic_conductivity_file: Optional[str]
-    display_name: str
 
 
 @dataclass
@@ -1040,44 +860,75 @@ class NumericalSettings(ModelObject):
     __layername__ = "Numerical settings"
     __geometrytype__ = GeometryType.NoGeometry
 
-    SQLITE_SOURCES = ("v2_numerical_settings",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
     id: int
     cfl_strictness_factor_1d: Optional[float]
     cfl_strictness_factor_2d: Optional[float]
-    convergence_cg: Optional[float]
-    convergence_eps: Optional[float]
-    flow_direction_threshold: Optional[float]
-    frict_shallow_water_correction: Optional[int]
-    general_numerical_threshold: Optional[float]
-    integration_method: Optional[int]
-    limiter_grad_1d: Optional[int]
-    limiter_grad_2d: Optional[int]
-    limiter_slope_crossectional_area_2d: Optional[int]
-    limiter_slope_friction_2d: Optional[int]
-    max_nonlin_iterations: Optional[int]
-    max_degree: int
-    minimum_friction_velocity: Optional[float]
-    minimum_surface_area: Optional[float]
-    precon_cg: Optional[int]
-    preissmann_slot: Optional[float]
+    convergence_cg: Optional[HighPrecisionFloat]
+    convergence_eps: Optional[HighPrecisionFloat]
+    flow_direction_threshold: Optional[HighPrecisionFloat]
+    friction_shallow_water_depth_correction: Optional[FrictionShallowWaterDepthCorrection]
+    general_numerical_threshold: Optional[HighPrecisionFloat]
+    time_integration_method: Optional[TimeIntegrationMethod]
+    limiter_waterlevel_gradient_1d: Optional[bool]
+    limiter_waterlevel_gradient_2d: Optional[bool]
+    limiter_slope_crossectional_area_2d: Optional[LimiterSlopeCrossSectionalArea2D]
+    limiter_slope_friction_2d: Optional[bool]
+    max_non_linear_newton_iterations: Optional[int]
+    max_degree_gauss_seidel: Optional[MaxDegreeGaussSeidel]
+    min_friction_velocity: Optional[HighPrecisionFloat]
+    min_surface_area: Optional[HighPrecisionFloat]
+    use_preconditioner_cg: Optional[bool]
+    preissmann_slot: Optional[HighPrecisionFloat]
     pump_implicit_ratio: Optional[float]
-    thin_water_layer_definition: Optional[float]
+    limiter_slope_thin_water_layer: Optional[float]
     use_of_cg: int
-    use_of_nested_newton: int
+    use_nested_newton: Optional[UseNestedNewton]
 
 
 @dataclass
-class SchemaVersion(ModelObject):
-    __tablename__ = "schema_version"
-    __layername__ = "Schema version"
+class PhysicalSettings(ModelObject):
+    __tablename__ = "physical_settings"
+    __layername__ = "Physical settings"
     __geometrytype__ = GeometryType.NoGeometry
 
-    SQLITE_SOURCES = ("schema_version",)
-    SQLITE_TARGETS = SQLITE_SOURCES
+    use_advection_1d: UseAdvection1D
+    use_advection_2d: bool
 
-    version_num: str
+
+@dataclass
+class SimulationTemplateSettings(ModelObject):
+    __tablename__ = "simulation_template_settings"
+    __layername__ = "Simulation template settings"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    id: int
+    name: str
+    use_0d_inflow: bool
+    use_structure_control: bool
+
+
+@dataclass
+class TimeStepSettings(ModelObject):
+    __tablename__ = "time_step_settings"
+    __layername__ = "Time step settings"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    id: int
+    max_time_step: Optional[float]
+    min_time_step: Optional[float]
+    output_time_step: Optional[float]
+    time_step: Optional[float]
+    use_time_step_stretch: Optional[bool]
+
+
+@dataclass
+class Tag(ModelObject):
+    __tablename__ = "tags"
+    __layername__ = "Tag"
+    __geometrytype__ = GeometryType.NoGeometry
+
+    id: int
+    description: str
 
 
 @dataclass
@@ -1085,9 +936,6 @@ class CrossSectionDefinition(ModelObject):
     __tablename__ = "cross_section_definition"
     __layername__ = "Cross section definition"
     __geometrytype__ = GeometryType.NoGeometry
-
-    SQLITE_SOURCES = ("v2_cross_section_definition",)
-    SQLITE_TARGETS = SQLITE_SOURCES
 
     id: int
     code: str
@@ -1102,185 +950,79 @@ class CrossSectionDefinition(ModelObject):
 
 
 @dataclass
-class Timeseries(ModelObject):
-    __tablename__ = "timeseries"
-    __layername__ = "Timeseries"
-    __geometrytype__ = GeometryType.NoGeometry
+class MeasureLocation(ModelObject):
+    __tablename__ = "measure_location"
+    __layername__ = "Measure location"
+    __geometrytype__ = GeometryType.Point
 
     id: int
-    reference_layer: str
-    reference_id: int
-    offset: int  # seconds
-    duration: int  # seconds
-    value: float
+    code: Optional[str]
+    display_name: Optional[str]
+    measure_variable: MeasureVariable
+    connection_node_id: int
+    tags: Optional[str]
 
 
 @dataclass
-class Control(ModelObject):
-    __tablename__ = "control"
-    __layername__ = "Control"
-    __geometrytype__ = GeometryType.NoGeometry
-
-    SQLITE_SOURCES = ("v2_control",)
-    SQLITE_TARGETS = SQLITE_SOURCES
+class MeasureMap(ModelObject):
+    __tablename__ = "measure_map"
+    __layername__ = "Measure map"
+    __geometrytype__ = GeometryType.Linestring
 
     id: int
-    control_id: Optional[int]
-    control_group_id: Optional[int]
-    control_type: Optional[str]
-    measure_group_id: Optional[int]
-    measure_frequency: Optional[int]
-    start: Optional[str]
-    end: Optional[str]
+    code: Optional[str]
+    display_name: Optional[str]
+    weight: float
+    measure_location_id: int
+    control_id: int
+    control_type: ControlType
+    tags: Optional[str]
 
 
 @dataclass
-class ControlDelta(ModelObject):
-    __tablename__ = "control_delta"
-    __layername__ = "Control delta"
-    __geometrytype__ = GeometryType.NoGeometry
-
-    SQLITE_SOURCES = ("v2_control_delta",)
-    SQLITE_TARGETS = SQLITE_SOURCES
+class MemoryControl(ModelObject):
+    __tablename__ = "memory_control"
+    __layername__ = "Memory control"
+    __geometrytype__ = GeometryType.Point
 
     id: int
-    measure_variable: Optional[str]
-    measure_delta: Optional[float]
-    measure_dt: Optional[float]
-    action_type: Optional[str]
-    action_value: Optional[str]
-    action_time: Optional[float]
-    target_type: Optional[str]
-    target_id: Optional[int]
-
-
-@dataclass
-class ControlGroup(ModelObject):
-    __tablename__ = "control_group"
-    __layername__ = "Control group"
-    __geometrytype__ = GeometryType.NoGeometry
-
-    SQLITE_SOURCES = ("v2_control_group",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
-    id: Optional[int]
-    name: Optional[str]
-    description: Optional[str]
-
-
-@dataclass
-class ControlMeasureGroup(ModelObject):
-    __tablename__ = "control_measure_group"
-    __layername__ = "Control measure group"
-    __geometrytype__ = GeometryType.NoGeometry
-
-    SQLITE_SOURCES = ("v2_control_measure_group",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
-    id: int
-
-
-@dataclass
-class ControlMeasureMap(ModelObject):
-    __tablename__ = "control_measure_map"
-    __layername__ = "Control measure map"
-    __geometrytype__ = GeometryType.NoGeometry
-
-    SQLITE_SOURCES = ("v2_control_measure_map",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
-    id: int
-    measure_group_id: Optional[int]
-    object_id: Optional[int]
-    object_type: Optional[str]
-    weight: Optional[float]
-
-
-@dataclass
-class ControlMemory(ModelObject):
-    __tablename__ = "control_memory"
-    __layername__ = "Control memory"
-    __geometrytype__ = GeometryType.NoGeometry
-
-    SQLITE_SOURCES = ("v2_control_memory",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
-    id: Optional[int]
-    action_value: Optional[str]
+    code: Optional[str]
+    display_name: Optional[str]
+    action_type: ActionType
+    action_value_1: float
+    action_value_2: Optional[float]
     is_inverse: bool
-    upper_threshold: Optional[float]
-    lower_threshold: Optional[float]
-    target_type: Optional[str]
-    measure_variable: Optional[str]
     is_active: bool
-    action_type: Optional[str]
-    target_id: Optional[int]
+    lower_threshold: float
+    upper_threshold: float
+    target_type: TargetType
+    target_id: int
+    tags: Optional[str]
 
 
 @dataclass
-class ControlPID(ModelObject):
-    __tablename__ = "control_pid"
-    __layername__ = "Control PID"
-    __geometrytype__ = GeometryType.NoGeometry
-
-    SQLITE_SOURCES = ("v2_control_pid",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
-    id: Optional[int]
-    target_lower_limit: Optional[str]
-    setpoint: Optional[float]
-    kd: Optional[float]
-    ki: Optional[float]
-    target_type: Optional[str]
-    measure_variable: Optional[str]
-    kp: Optional[float]
-    action_type: Optional[str]
-    target_upper_limit: Optional[str]
-    target_id: Optional[int]
-
-
-@dataclass
-class ControlTable(ModelObject):
-    __tablename__ = "control_table"
-    __layername__ = "Control table"
-    __geometrytype__ = GeometryType.NoGeometry
-
-    SQLITE_SOURCES = ("v2_control_table",)
-    SQLITE_TARGETS = SQLITE_SOURCES
-
-    id: Optional[int]
-    action_table: Optional[str]
-    measure_operator: Optional[str]
-    target_type: Optional[str]
-    measure_variable: Optional[str]
-    action_type: Optional[str]
-    target_id: Optional[int]
-
-
-@dataclass
-class ControlTimed(ModelObject):
-    __tablename__ = "control_timed"
-    __layername__ = "Control timed"
-    __geometrytype__ = GeometryType.NoGeometry
-
-    SQLITE_SOURCES = ("v2_control_timed",)
-    SQLITE_TARGETS = SQLITE_SOURCES
+class TableControl(ModelObject):
+    __tablename__ = "table_control"
+    __layername__ = "Table control"
+    __geometrytype__ = GeometryType.Point
 
     id: int
-    action_type: Optional[str]
-    action_table: Optional[str]
-    target_type: Optional[str]
-    target_id: Optional[int]
+    code: Optional[str]
+    display_name: Optional[str]
+    action_type: ActionType
+    action_table: str
+    target_type: TargetType
+    target_id: int
+    measure_operator: MeasureOperator
+    tags: Optional[str]
 
 
 @dataclass
-class VegetationDrag(ModelObject):
-    __tablename__ = "vegetation_drag"
-    __layername__ = "Vegetation drag settings"
+class VegetationDrag2D(ModelObject):
+    __tablename__ = "vegetation_drag_2d"
+    __layername__ = "2D Vegetation drag"
     __geometrytype__ = GeometryType.NoGeometry
 
-    SQLITE_SOURCES = ("v2_vegetation_drag",)
-    SQLITE_TARGETS = SQLITE_SOURCES
     RELATED_RASTERS = (
         ("vegetation_height_file", "Vegetation height [m]"),
         ("vegetation_stem_count_file", "Vegetation stem count [-]"),
@@ -1289,7 +1031,6 @@ class VegetationDrag(ModelObject):
     )
 
     id: int
-    display_name: Optional[str]
     vegetation_height: Optional[float]
     vegetation_height_file: Optional[str]
     vegetation_stem_count: Optional[float]
@@ -1301,75 +1042,75 @@ class VegetationDrag(ModelObject):
 
 
 MODEL_1D_ELEMENTS = (
-    ConnectionNode,
     BoundaryCondition1D,
-    Lateral1D,
-    Manhole,
-    Pumpstation,
-    PumpstationMap,
-    Weir,
-    Culvert,
-    Orifice,
+    ConnectionNode,
     Pipe,
+    Culvert,
+    Weir,
+    Orifice,
+    Pump,
+    PumpMap,
     CrossSectionLocation,
     Channel,
+    Windshielding1D,
+    Material,
 )
-
-MODEL_2D_ELEMENTS = (
-    BoundaryCondition2D,
-    Lateral2D,
-    LinearObstacle,
-    GridRefinement,
-    GridRefinementArea,
-    DEMAverageArea,
-    Windshielding,
-)
-
 MODEL_1D2D_ELEMENTS = (
     PotentialBreach,
     ExchangeLine,
 )
-
-INFLOW_ELEMENTS = (
-    ImperviousSurfaceMap,
-    ImperviousSurface,
+MODEL_2D_ELEMENTS = (
+    BoundaryCondition2D,
+    Obstacle,
+    GridRefinementArea,
+    GridRefinementLine,
+    DEMAverageArea,
+)
+MODEL_0D_INFLOW_ELEMENTS = (
+    Lateral1D,
+    Lateral2D,
+    DryWeatherFlowMap,
+    DryWeatherFlow,
+    DryWeatherFlowDistribution,
     SurfaceMap,
     Surface,
     SurfaceParameters,
 )
-
-SETTINGS_ELEMENTS = (
-    GlobalSettings,
-    AggregationSettings,
-    SimpleInfiltrationSettings,
-    GroundWaterSettings,
+STRUCTURE_CONTROL_ELEMENTS = (
+    MeasureLocation,
+    MemoryControl,
+    TableControl,
+    MeasureMap,
+)
+HYDROLOGICAL_PROCESSES = (
+    InitialConditionsSettings,
+    InterceptionSettings,
     InterflowSettings,
+    GroundWaterSettings,
+    SimpleInfiltrationSettings,
+    VegetationDrag2D,
+)
+SETTINGS_ELEMENTS = (
+    ModelSettings,
+    AggregationSettings,
     NumericalSettings,
-    SchemaVersion,
-    VegetationDrag,
+    PhysicalSettings,
+    SimulationTemplateSettings,
+    TimeStepSettings,
+    Tag,
 )
-
-CONTROL_STRUCTURES_ELEMENTS = (
-    Control,
-    ControlDelta,
-    ControlGroup,
-    ControlMeasureGroup,
-    ControlMeasureMap,
-    ControlMemory,
-    ControlPID,
-    ControlTable,
-    ControlTimed,
-)
-
 HIDDEN_ELEMENTS = tuple()
-
-ALL_MODELS = MODEL_1D_ELEMENTS + MODEL_2D_ELEMENTS + MODEL_1D2D_ELEMENTS + INFLOW_ELEMENTS + SETTINGS_ELEMENTS
-ALL_MODELS = ALL_MODELS + (
-    Timeseries,
-    CrossSectionDefinition,
+ALL_MODELS = (
+    MODEL_1D_ELEMENTS
+    + MODEL_1D2D_ELEMENTS
+    + MODEL_2D_ELEMENTS
+    + MODEL_0D_INFLOW_ELEMENTS
+    + STRUCTURE_CONTROL_ELEMENTS
+    + HYDROLOGICAL_PROCESSES
+    + SETTINGS_ELEMENTS
 )
-ALL_MODELS = ALL_MODELS + CONTROL_STRUCTURES_ELEMENTS + HIDDEN_ELEMENTS
-
+ALL_MODELS = ALL_MODELS + (CrossSectionDefinition,)
+ALL_MODELS = ALL_MODELS + HIDDEN_ELEMENTS
 ELEMENTS_WITH_XS_DEF = (
     Weir,
     Culvert,
@@ -1377,7 +1118,6 @@ ELEMENTS_WITH_XS_DEF = (
     Pipe,
     CrossSectionLocation,
 )
-
 ELEMENTS_WITH_TIMESERIES = (
     BoundaryCondition1D,
     Lateral1D,
@@ -1385,7 +1125,9 @@ ELEMENTS_WITH_TIMESERIES = (
     Lateral2D,
 )
 
-ELEMENTS_WITH_RASTERS = tuple(model_cls for model_cls in SETTINGS_ELEMENTS if model_cls.RELATED_RASTERS)
+ELEMENTS_WITH_RASTERS = tuple(
+    model_cls for model_cls in chain(SETTINGS_ELEMENTS, HYDROLOGICAL_PROCESSES) if model_cls.RELATED_RASTERS
+)
 
 TABLE_MANNING = MappingProxyType(
     {
@@ -1421,51 +1163,73 @@ MODEL_DEPENDENCIES = MappingProxyType(
             BoundaryCondition1D: ("connection_node_id",),
             Lateral1D: ("connection_node_id",),
             Channel: (
-                "connection_node_start_id",
-                "connection_node_end_id",
+                "connection_node_id_start",
+                "connection_node_id_end",
             ),
             Culvert: (
-                "connection_node_start_id",
-                "connection_node_end_id",
+                "connection_node_id_start",
+                "connection_node_id_end",
             ),
-            ImperviousSurfaceMap: ("connection_node_id",),
+            DryWeatherFlowMap: ("connection_node_id",),
             SurfaceMap: ("connection_node_id",),
-            Manhole: ("connection_node_id",),
             Orifice: (
-                "connection_node_start_id",
-                "connection_node_end_id",
+                "connection_node_id_start",
+                "connection_node_id_end",
             ),
             Pipe: (
-                "connection_node_start_id",
-                "connection_node_end_id",
+                "connection_node_id_start",
+                "connection_node_id_end",
             ),
             Weir: (
-                "connection_node_start_id",
-                "connection_node_end_id",
+                "connection_node_id_start",
+                "connection_node_id_end",
             ),
-            PumpstationMap: (
-                "connection_node_start_id",
-                "connection_node_end_id",
+            PumpMap: (
+                "connection_node_id_start",
+                "connection_node_id_end",
             ),
-            Pumpstation: ("connection_node_id",),
+            Pump: ("connection_node_id",),
+            MeasureLocation: ("connection_node_id",),
         },
         Channel: {
             CrossSectionLocation: ("channel_id",),
-            Windshielding: ("channel_id",),
+            Windshielding1D: ("channel_id",),
             PotentialBreach: ("channel_id",),
             ExchangeLine: ("channel_id",),
         },
-        ImperviousSurface: {
-            ImperviousSurfaceMap: ("impervious_surface_id",),
+        DryWeatherFlow: {
+            DryWeatherFlowMap: ("dry_weather_flow_id",),
         },
         Surface: {
             SurfaceMap: ("surface_id",),
         },
-        Pumpstation: {
-            PumpstationMap: ("pumpstation_id",),
+        Pump: {
+            PumpMap: ("pump_id",),
+            MemoryControl: (("target_id", "target_type"),),
+            TableControl: (("target_id", "target_type"),),
         },
         SurfaceParameters: {
             Surface: ("surface_parameters_id",),
+        },
+        DryWeatherFlowDistribution: {
+            DryWeatherFlow: ("dry_weather_flow_distribution_id",),
+        },
+        Orifice: {
+            MemoryControl: (("target_id", "target_type"),),
+            TableControl: (("target_id", "target_type"),),
+        },
+        Weir: {
+            MemoryControl: (("target_id", "target_type"),),
+            TableControl: (("target_id", "target_type"),),
+        },
+        MemoryControl: {
+            MeasureMap: (("control_id", "control_type"),),
+        },
+        TableControl: {
+            MeasureMap: (("control_id", "control_type"),),
+        },
+        MeasureLocation: {
+            MeasureMap: ("control_measure_location_id",),
         },
     }
 )
