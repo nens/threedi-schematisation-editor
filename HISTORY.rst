@@ -1,8 +1,8 @@
 History
 =======
 
-2.0 (unreleased)
------------------
+2.0 (2025-04-01)
+----------------
 
 - Update schematisation to >300.
 
