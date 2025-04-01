@@ -1,10 +1,10 @@
 History
 =======
 
-1.17 (unreleased)
+2.0 (unreleased)
 -----------------
 
-- Nothing changed yet.
+- Update schematisation to >300.
 
 
 1.16 (2024-12-03)
