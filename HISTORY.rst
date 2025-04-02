@@ -4,7 +4,7 @@ History
 2.1 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Bumped threedi-mi-utils to 0.1.10.
 
 
 2.0 (2025-04-01)
