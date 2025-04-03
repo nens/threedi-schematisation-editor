@@ -4,7 +4,7 @@ History
 2.2 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Display upgrade warnings (any UserWarning raised during upgrading)
 
 
 2.1 (2025-04-02)
