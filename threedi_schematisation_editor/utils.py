@@ -2,6 +2,8 @@
 import os
 import shutil
 import sys
+import warnings
+
 from enum import Enum, IntEnum
 from itertools import groupby
 from operator import attrgetter, itemgetter
@@ -747,7 +749,12 @@ def migrate_schematisation_schema(schematisation_filepath, progress_callback=Non
 
     if srid is not None:
         try:
-            schema.upgrade(backup=False, epsg_code_override=srid, progress_func=progress_callback)
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always", UserWarning)
+                schema.upgrade(backup=False, epsg_code_override=srid, progress_func=progress_callback)
+            if w:
+                for warning in w:
+                    migration_feedback_msg = f'{warning._category_name}: {warning.message}'
             shutil.rmtree(os.path.dirname(backup_filepath))
             migration_succeed = True
             migration_feedback_msg = "Migration succeeded."
