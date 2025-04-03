@@ -72,7 +72,7 @@
               <Option type="Map" name="properties">
                 <Option type="Map" name="enabled">
                   <Option type="bool" name="active" value="true" />
-                  <Option type="QString" name="expression" value="&quot;invert_level_start_point&quot; !=  &quot;invert_level_end_point&quot;" />
+                  <Option type="QString" name="expression" value="&quot;invert_level_start&quot; !=  &quot;invert_level_end&quot;" />
                   <Option type="int" name="type" value="3" />
                 </Option>
                 <Option type="Map" name="offsetAlongLine">
@@ -120,12 +120,12 @@
                   <Option type="Map" name="properties">
                     <Option type="Map" name="angle">
                       <Option type="bool" name="active" value="true" />
-                      <Option type="QString" name="expression" value="line_interpolate_angle($geometry, length($geometry) * 0.33) + if(invert_level_start_point &gt; invert_level_end_point, -90, 90)" />
+                      <Option type="QString" name="expression" value="line_interpolate_angle($geometry, length($geometry) * 0.33) + if(invert_level_start &gt; invert_level_end, -90, 90)" />
                       <Option type="int" name="type" value="3" />
                     </Option>
                     <Option type="Map" name="enabled">
                       <Option type="bool" name="active" value="true" />
-                      <Option type="QString" name="expression" value="&quot;invert_level_start_point&quot; !=  &quot;invert_level_end_point&quot;" />
+                      <Option type="QString" name="expression" value="&quot;invert_level_start&quot; !=  &quot;invert_level_end&quot;" />
                       <Option type="int" name="type" value="3" />
                     </Option>
                     <Option type="Map" name="size">

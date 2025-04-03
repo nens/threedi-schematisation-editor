@@ -123,11 +123,6 @@
                       <Option type="int" name="type" value="1" />
                       <Option type="QString" name="val" value="" />
                     </Option>
-                    <Option type="Map" name="enabled">
-                      <Option type="bool" name="active" value="true" />
-                      <Option type="QString" name="expression" value="&quot;invert_level_start_point&quot; !=  &quot;invert_level_end_point&quot;" />
-                      <Option type="int" name="type" value="3" />
-                    </Option>
                     <Option type="Map" name="size">
                       <Option type="bool" name="active" value="false" />
                       <Option type="QString" name="expression" value="" />
