@@ -4,7 +4,7 @@ History
 1.17 (unreleased)
 -----------------
 
-- Nothing changed yet.
+- Display upgrade warnings (any UserWarning raised during upgrading)
 
 
 1.16 (2024-12-03)
