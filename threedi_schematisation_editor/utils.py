@@ -758,7 +758,6 @@ def migrate_schematisation_schema(schematisation_filepath, progress_callback=Non
                     migration_feedback_msg += f'{warning._category_name}: {warning.message}\n'
             shutil.rmtree(os.path.dirname(backup_filepath))
             migration_succeed = True
-            # migration_feedback_msg = "Migration succeeded."
         except errors.UpgradeFailedError:
             migration_feedback_msg += (
                 "The schematisation database schema cannot be migrated to the current version. "
