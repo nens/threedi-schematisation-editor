@@ -5,6 +5,7 @@ History
 ------------------
 
 - Display upgrade warnings (any UserWarning raised during upgrading)
+- Added backwards compatibility to load a schematisation in 3.28. (#351)
 
 
 2.1.1 (2025-04-03)
