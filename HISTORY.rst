@@ -4,7 +4,7 @@ History
 2.1.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Added backwards compatibility to load a schematisation in 3.28. (#351)
 
 
 2.1.1 (2025-04-03)

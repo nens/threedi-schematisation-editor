@@ -5,46 +5,26 @@ from functools import cached_property
 from pathlib import Path
 from types import MappingProxyType
 
-from qgis.core import (
-    Qgis,
-    QgsEditFormConfig,
-    QgsEditorWidgetSetup,
-    QgsExpression,
-    QgsFeatureRequest,
-    QgsFieldConstraints,
-    QgsProject,
-    QgsRasterLayer,
-    QgsSnappingConfig,
-    QgsTolerance,
-    QgsVectorLayerJoinInfo,
-)
+from qgis.core import (Qgis, QgsEditFormConfig, QgsEditorWidgetSetup,
+                       QgsExpression, QgsFeatureRequest, QgsFieldConstraints,
+                       QgsProject, QgsRasterLayer, QgsSnappingConfig,
+                       QgsTolerance, QgsVectorLayerJoinInfo)
 from qgis.PyQt.QtCore import QCoreApplication
 
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.enumerators as en
 from threedi_schematisation_editor.expressions import (
-    cross_section_label,
-    cross_section_max_height,
-    cross_section_max_width,
-)
-from threedi_schematisation_editor.styles.style_config import get_style_configurations, styles_location
+    cross_section_label, cross_section_max_height, cross_section_max_width)
+from threedi_schematisation_editor.styles.style_config import (
+    get_style_configurations, styles_location)
 from threedi_schematisation_editor.user_layer_forms import LayerEditFormFactory
 from threedi_schematisation_editor.user_layer_handlers import MODEL_HANDLERS
 from threedi_schematisation_editor.utils import (
-    add_layer_to_group,
-    create_tree_group,
-    get_form_ui_path,
-    get_qml_style_path,
-    gpkg_layer,
-    hillshade_layer,
-    merge_qml_styles,
-    modify_raster_style,
-    remove_group_with_children,
-    remove_layer,
-    set_field_default_value,
-    set_initial_layer_configuration,
-    validation_errors_summary,
-)
+    add_layer_to_group, create_tree_group, get_form_ui_path,
+    get_qml_style_path, gpkg_layer, hillshade_layer, merge_qml_styles,
+    modify_raster_style, remove_group_with_children, remove_layer,
+    set_field_default_value, set_initial_layer_configuration,
+    validation_errors_summary)
 
 
 class LayersManager:
@@ -400,7 +380,10 @@ class LayersManager:
             try:
                 default_edit_form_config.setInitCodeSource(Qgis.AttributeFormPythonInitCodeSource.Dialog)
             except AttributeError:
-                default_edit_form_config.setInitCodeSource(QgsEditFormConfig.PythonInitCodeSource.Dialog)
+                try:
+                    default_edit_form_config.setInitCodeSource(QgsEditFormConfig.PythonInitCodeSource.Dialog)
+                except AttributeError:
+                    default_edit_form_config.setInitCodeSource(QgsEditFormConfig.CodeSourceDialog)
             default_edit_form_config.setInitFunction("open_edit_form")
             default_edit_form_config.setInitCode("from threedi_schematisation_editor.utils import open_edit_form")
             set_field_default_value(layer, "id", "")
