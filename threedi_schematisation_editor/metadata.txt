@@ -2,9 +2,9 @@
 name=3Di Schematisation Editor
 qgisMinimumVersion=3.28
 qgisMaximumVersion=3.99
-description=3Di Schematisation Editor for QGIS
-version=1.99.32
-author=Lutra Consulting for 3Di Water Management
+description=3Di Schematisation Editor
+version=2.1.2
+author=3Di Water Management
 email=servicedesk@nelen-schuurmans.nl
 about=View and edit 3Di schematisations in the Modeller Interface.
 
@@ -17,7 +17,7 @@ repository=https://github.com/nens/threedi-schematisation-editor/issues
 changelog=https://docs.3di.live/a_releasenotes_3di_mi.html
 
 # Tags are comma separated with spaces allowed
-tags=3di, edit, 1D, 2D, hydraulics
+tags=3Di, edit, 1D, 2D, hydraulics
 
 homepage=https://www.3diwatermanagement.com
 category=Plugins
@@ -27,3 +27,4 @@ hasProcessingProvider=no
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
+plugin_dependencies=Dependency Loader

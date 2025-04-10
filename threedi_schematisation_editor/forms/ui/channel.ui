@@ -206,7 +206,7 @@
               <item row="3" column="3">
                <widget class="QLabel" name="label_51">
                 <property name="text">
-                 <string>Distance between calculation points [m]</string>
+                 <string>Calculation point distance [m]</string>
                 </property>
                 <property name="wordWrap">
                  <bool>true</bool>
@@ -344,7 +344,7 @@
                  <set>Qt::ImhNone</set>
                 </property>
                 <property name="text">
-                 <string>Start connection node ID</string>
+                 <string>Connection node ID start</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -391,7 +391,7 @@
                  <set>Qt::ImhNone</set>
                 </property>
                 <property name="text">
-                 <string>End connection node ID</string>
+                 <string>Connection node ID end</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -561,7 +561,7 @@
          </widget>
          <widget class="QWidget" name="tab_3">
           <attribute name="title">
-           <string>Starting connection node</string>
+           <string>Connection node start</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_20">
            <item row="4" column="0" colspan="2">
@@ -1177,7 +1177,7 @@
          </widget>
          <widget class="QWidget" name="tab_4">
           <attribute name="title">
-           <string>Ending connection node</string>
+           <string>Connection node end</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_16">
            <item row="8" column="0">

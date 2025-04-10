@@ -5,45 +5,26 @@ from functools import cached_property
 from pathlib import Path
 from types import MappingProxyType
 
-from qgis.core import (
-    Qgis,
-    QgsEditFormConfig,
-    QgsEditorWidgetSetup,
-    QgsExpression,
-    QgsFeatureRequest,
-    QgsProject,
-    QgsRasterLayer,
-    QgsSnappingConfig,
-    QgsTolerance,
-    QgsVectorLayerJoinInfo,
-)
+from qgis.core import (Qgis, QgsEditFormConfig, QgsEditorWidgetSetup,
+                       QgsExpression, QgsFeatureRequest, QgsFieldConstraints,
+                       QgsProject, QgsRasterLayer, QgsSnappingConfig,
+                       QgsTolerance, QgsVectorLayerJoinInfo)
 from qgis.PyQt.QtCore import QCoreApplication
 
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.enumerators as en
 from threedi_schematisation_editor.expressions import (
-    cross_section_label,
-    cross_section_max_height,
-    cross_section_max_width,
-)
-from threedi_schematisation_editor.styles.style_config import get_style_configurations, styles_location
+    cross_section_label, cross_section_max_height, cross_section_max_width)
+from threedi_schematisation_editor.styles.style_config import (
+    get_style_configurations, styles_location)
 from threedi_schematisation_editor.user_layer_forms import LayerEditFormFactory
 from threedi_schematisation_editor.user_layer_handlers import MODEL_HANDLERS
 from threedi_schematisation_editor.utils import (
-    add_layer_to_group,
-    create_tree_group,
-    get_form_ui_path,
-    get_qml_style_path,
-    gpkg_layer,
-    hillshade_layer,
-    merge_qml_styles,
-    modify_raster_style,
-    remove_group_with_children,
-    remove_layer,
-    set_field_default_value,
-    set_initial_layer_configuration,
-    validation_errors_summary,
-)
+    add_layer_to_group, create_tree_group, get_form_ui_path,
+    get_qml_style_path, gpkg_layer, hillshade_layer, merge_qml_styles,
+    modify_raster_style, remove_group_with_children, remove_layer,
+    set_field_default_value, set_initial_layer_configuration,
+    validation_errors_summary)
 
 
 class LayersManager:
@@ -307,25 +288,26 @@ class LayersManager:
         """Return vector layers style configurations."""
         return get_style_configurations()
 
-    def setup_value_relation_widgets(self):
-        """Setup value relation widget."""
-        for parent_model_cls, (
-            child_model_cls,
-            parent_column,
-            key_column,
-            value_column,
-        ) in self.VALUE_RELATIONS.items():
-            parent_layer = self.model_handlers[parent_model_cls].layer
-            parent_column_idx = parent_layer.fields().lookupField(parent_column)
-            child_layer = self.model_handlers[child_model_cls].layer
-            default_ews = parent_layer.editorWidgetSetup(parent_column_idx)
-            config = default_ews.config()
-            config["Layer"] = child_layer.id()
-            config["LayerSource"] = child_layer.source()
-            config["Key"] = key_column
-            config["Value"] = value_column
-            ews = QgsEditorWidgetSetup("ValueRelation", config)
-            parent_layer.setEditorWidgetSetup(parent_column_idx, ews)
+    def setup_all_value_relation_widgets(self):
+        """Setup all models value relation widgets."""
+        for parent_model_cls in self.VALUE_RELATIONS.keys():
+            self.setup_value_relation_widgets(parent_model_cls)
+
+    def setup_value_relation_widgets(self, model_cls):
+        """Setup value relation widgets for the particular model class."""
+        child_model_cls, parent_column, key_column, value_column = self.VALUE_RELATIONS[model_cls]
+        parent_layer = self.model_handlers[model_cls].layer
+        parent_column_idx = parent_layer.fields().lookupField(parent_column)
+        child_layer = self.model_handlers[child_model_cls].layer
+        default_ews = parent_layer.editorWidgetSetup(parent_column_idx)
+        config = default_ews.config()
+        config["Layer"] = child_layer.id()
+        config["LayerSource"] = child_layer.source()
+        config["Key"] = key_column
+        config["Value"] = value_column
+        config["AllowNull"] = True
+        ews = QgsEditorWidgetSetup("ValueRelation", config)
+        parent_layer.setEditorWidgetSetup(parent_column_idx, ews)
 
     def create_groups(self):
         """Creating all User Layers groups."""
@@ -398,7 +380,10 @@ class LayersManager:
             try:
                 default_edit_form_config.setInitCodeSource(Qgis.AttributeFormPythonInitCodeSource.Dialog)
             except AttributeError:
-                default_edit_form_config.setInitCodeSource(QgsEditFormConfig.PythonInitCodeSource.Dialog)
+                try:
+                    default_edit_form_config.setInitCodeSource(QgsEditFormConfig.PythonInitCodeSource.Dialog)
+                except AttributeError:
+                    default_edit_form_config.setInitCodeSource(QgsEditFormConfig.CodeSourceDialog)
             default_edit_form_config.setInitFunction("open_edit_form")
             default_edit_form_config.setInitCode("from threedi_schematisation_editor.utils import open_edit_form")
             set_field_default_value(layer, "id", "")
@@ -406,6 +391,10 @@ class LayersManager:
                 set_field_default_value(layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))")
             else:
                 set_field_default_value(layer, "id", "")
+            for idx in fields_indexes:
+                # We need to remove NotNull constraint for layers with the custom UI forms.
+                # It is required to prevent QGIS messing with background validation stylesheet.
+                layer.removeFieldConstraint(idx, QgsFieldConstraints.ConstraintNotNull)
         else:
             set_field_default_value(layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))")
         if "area" in layer_fields.names():
@@ -427,9 +416,16 @@ class LayersManager:
 
     def load_vector_layers(self):
         """Loading all vector layers."""
+        msg = "Loading vector layers and styles..."
+        layer_count = sum([len(group_models) for _, group_models in self.VECTOR_GROUPS])
+        i = 0
         for group_name, group_models in self.VECTOR_GROUPS:
             for model_cls in group_models:
+                msg = f"Loading {model_cls.__layername__} and its styles..."
+                self.uc.progress_bar(msg, 0, layer_count, i, clear_msg_bar=True)
+                QCoreApplication.processEvents()
                 self.initialize_data_model_layer(model_cls)
+                i += 1
 
     def register_vector_layers(self):
         """Register all vector layers."""
@@ -475,6 +471,8 @@ class LayersManager:
                     modify_raster_style(rlayer)
                     if raster_file_field == "dem_file":
                         hillshade_raster_layer = hillshade_layer(raster_filepath)
+                        canvas = self.iface.mapCanvas()
+                        canvas.setExtent(rlayer.extent())
                         add_layer_to_group(group_name, rlayer, cached_groups=self.spawned_groups)
                         add_layer_to_group(group_name, hillshade_raster_layer, cached_groups=self.spawned_groups)
                     else:
@@ -492,7 +490,7 @@ class LayersManager:
             self.remove_loaded_layers(dry_remove=True)
             self.register_groups()
             self.register_vector_layers()
-        self.setup_value_relation_widgets()
+        self.setup_all_value_relation_widgets()
         self.iface.setActiveLayer(self.model_handlers[dm.ConnectionNode].layer)
 
     def remove_loaded_layers(self, dry_remove=False):

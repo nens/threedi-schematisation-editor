@@ -56,6 +56,8 @@ class UserLayerHandler:
         self.layer.beforeCommitChanges.connect(self.on_commit_changes)
         self.layer.featureAdded.connect(self.on_added_feature)
         self.layer.featuresDeleted.connect(self.on_delete_features)
+        if self.MODEL in self.layer_manager.VALUE_RELATIONS:
+            self.layer.styleChanged.connect(self.trigger_setup_value_relation_widgets)
         self.connect_additional_signals()
 
     def disconnect_handler_signals(self):
@@ -65,6 +67,8 @@ class UserLayerHandler:
         self.layer.beforeCommitChanges.disconnect(self.on_commit_changes)
         self.layer.featureAdded.disconnect(self.on_added_feature)
         self.layer.featuresDeleted.disconnect(self.on_delete_features)
+        if self.MODEL in self.layer_manager.VALUE_RELATIONS:
+            self.layer.styleChanged.disconnect(self.trigger_setup_value_relation_widgets)
         self.disconnect_additional_signals()
 
     def connect_additional_signals(self):
@@ -390,6 +394,11 @@ class UserLayerHandler:
         """Triggering update of the node references after feature geometry change."""
         update_node_references_method = partial(self.update_node_references, feat_id, geometry)
         QTimer.singleShot(0, update_node_references_method)
+
+    def trigger_setup_value_relation_widgets(self):
+        """Triggering update of the value relation widgets after layer style change."""
+        setup_value_relation_widgets_method = partial(self.layer_manager.setup_value_relation_widgets, self.MODEL)
+        QTimer.singleShot(0, setup_value_relation_widgets_method)
 
 
 class ConnectionNodeHandler(UserLayerHandler):
@@ -857,13 +866,7 @@ class Lateral2DHandler(UserLayerHandler):
 
 class ObstacleHandler(UserLayerHandler):
     MODEL = dm.Obstacle
-    DEFAULTS = MappingProxyType(
-        {
-            "affects_2d": True,
-            "affects_1d2d_open_water": True,
-            "affects_1d2d_closed": False
-        }
-    )
+    DEFAULTS = MappingProxyType({"affects_2d": True, "affects_1d2d_open_water": True, "affects_1d2d_closed": False})
 
 
 class GridRefinementLineHandler(UserLayerHandler):

@@ -65,7 +65,7 @@ class ImportConnectionNodes(QgsProcessingAlgorithm):
             behavior=QgsProcessingParameterFile.File,
         )
         self.addParameter(import_config_file)
-        target_gpkg = QgsProcessingParameterFile(   
+        target_gpkg = QgsProcessingParameterFile(
             self.TARGET_GPKG,
             self.tr("Target schematisation database"),
             extension="gpkg",

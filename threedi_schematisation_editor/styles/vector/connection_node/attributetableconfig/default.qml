@@ -9,7 +9,7 @@
       <column width="-1" hidden="0" type="field" name="initial_water_level" />
       <column width="-1" hidden="0" type="field" name="visualisation" />
       <column width="-1" hidden="0" type="field" name="manhole_surface_level" />
-      <column width="-1" hidden="0" type="field" name="manhole_bottom_level" />
+      <column width="-1" hidden="0" type="field" name="bottom_level" />
       <column width="-1" hidden="0" type="field" name="exchange_level" />
       <column width="-1" hidden="0" type="field" name="exchange_type" />
       <column width="-1" hidden="0" type="field" name="exchange_thickness" />

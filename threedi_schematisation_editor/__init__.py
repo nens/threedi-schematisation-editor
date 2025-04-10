@@ -1,6 +1,5 @@
 # Copyright (C) 2025 by Lutra Consulting
 import os.path
-import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -10,34 +9,28 @@ from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
 
 PLUGIN_DIR = Path(__file__).parent
-from threedi_schematisation_editor.deps.custom_imports import patch_wheel_imports
 
-patch_wheel_imports()
 from threedi_mi_utils.news import QgsNewsSettingsInjector
+from threedi_schema import ThreediDatabase
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
 from threedi_schematisation_editor.custom_widgets import (
-    ImportFeaturesDialog,
-    ImportStructuresDialog,
-    LoadSchematisationDialog,
-)
-from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
+    ImportFeaturesDialog, ImportStructuresDialog, LoadSchematisationDialog)
+from threedi_schematisation_editor.processing import \
+    ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager
-from threedi_schematisation_editor.utils import (
-    ConversionError,
-    add_gpkg_connection,
-    add_settings_entry,
-    can_write_in_dir,
-    check_enable_macros_option,
-    check_wal_for_sqlite,
-    get_filepath,
-    get_icon_path,
-    is_gpkg_connection_exists,
-    migrate_schematisation_schema,
-    progress_bar_callback_factory,
-    set_wal_for_sqlite_mode,
-)
+from threedi_schematisation_editor.utils import (ConversionError,
+                                                 add_gpkg_connection,
+                                                 add_settings_entry,
+                                                 can_write_in_dir,
+                                                 check_enable_macros_option,
+                                                 check_wal_for_sqlite,
+                                                 get_filepath, get_icon_path,
+                                                 is_gpkg_connection_exists,
+                                                 migrate_schematisation_schema,
+                                                 progress_bar_callback_factory,
+                                                 set_wal_for_sqlite_mode)
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
 
@@ -258,23 +251,30 @@ class ThreediSchematisationEditorPlugin:
                 warn_msg = "You don't have required write permissions to load data from the selected location."
                 self.uc.show_warn(warn_msg)
                 return
-            if schematisation_filepath.endswith(".sqlite"):
-                QCoreApplication.processEvents()
-                migration_info = "Schema migration..."
-                self.uc.progress_bar(migration_info, 0, 100, 0, clear_msg_bar=True)
-                progress_bar_callback = progress_bar_callback_factory(self.uc, migration_info)
-                migration_succeed, migration_feedback_msg = migrate_schematisation_schema(
-                    schematisation_filepath, progress_bar_callback
-                )
-                self.uc.progress_bar("Migration complete!", 0, 100, 100, clear_msg_bar=True)
-                QCoreApplication.processEvents()
-                if not migration_succeed:
-                    self.uc.clear_message_bar()
-                    self.uc.show_warn(migration_feedback_msg)
-                    return
-                model_gpkg = schematisation_filepath.rsplit(".", 1)[0] + ".gpkg"
-            else:
-                model_gpkg = schematisation_filepath
+            model_gpkg = schematisation_filepath
+
+        if model_gpkg.endswith(".sqlite"):
+            QCoreApplication.processEvents()
+            migration_info = "Schema migration..."
+            self.uc.progress_bar(migration_info, 0, 100, 0, clear_msg_bar=True)
+            progress_bar_callback = progress_bar_callback_factory(self.uc)
+            migration_succeed, migration_feedback_msg = migrate_schematisation_schema(
+                model_gpkg, progress_bar_callback
+            )
+            self.uc.progress_bar("Migration complete!", 0, 100, 100, clear_msg_bar=True)
+            QCoreApplication.processEvents()
+            if not migration_succeed:
+                self.uc.clear_message_bar()
+                self.uc.show_warn(migration_feedback_msg)
+                return
+            model_gpkg = model_gpkg.rsplit(".", 1)[0] + ".gpkg"
+        elif model_gpkg.endswith(".gpkg"):
+            version_num = ThreediDatabase(model_gpkg).schema.get_version()
+            if version_num < 300:
+                warn_msg = "The selected file is not a valid 3Di schematisation database.\n\nYou may have selected a geopackage that was created by an older version of the 3Di Schematisation Editor (before version 2.0). In that case, there will probably be a Spatialite (*.sqlite) in the same folder. Please use that file instead."
+                self.uc.show_warn(warn_msg, None, "3Di Schematisation Editor")
+                return
+
         lm = LayersManager(self.iface, self.uc, model_gpkg)
         if lm in self.workspace_context_manager:
             self.uc.clear_message_bar()

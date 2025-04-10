@@ -226,10 +226,7 @@ class ActionType(Enum):
 
 
 class TargetType(Enum):
-    CHANNEL = "v2_channel"
-    CULVERT = "v2_culvert"
     ORIFICE = "v2_orifice"
-    PIPE = "v2_pipe"
     PUMP = "v2_pumpstation"
     WEIR = "v2_weir"
 

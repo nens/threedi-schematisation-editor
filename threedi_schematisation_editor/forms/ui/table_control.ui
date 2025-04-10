@@ -60,6 +60,16 @@
               <string>Action</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_3">
+              <item row="0" column="1">
+               <widget class="QComboBox" name="action_type">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
+              </item>
               <item row="0" column="2">
                <widget class="QLabel" name="label_4">
                 <property name="text">
@@ -70,26 +80,7 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="4">
-               <widget class="QLineEdit" name="measure_operator"/>
-              </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_5">
-                <property name="locale">
-                 <locale language="English" country="UnitedStates"/>
-                </property>
-                <property name="inputMethodHints">
-                 <set>Qt::ImhNone</set>
-                </property>
-                <property name="text">
-                 <string>Action type</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="1" colspan="4">
+              <item row="2" column="1" colspan="4">
                <layout class="QHBoxLayout" name="horizontalLayout">
                 <property name="bottomMargin">
                  <number>0</number>
@@ -133,14 +124,7 @@
                 </item>
                </layout>
               </item>
-              <item row="2" column="0">
-               <widget class="QLabel" name="table_label">
-                <property name="text">
-                 <string>Table</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="1" colspan="4">
+              <item row="1" column="1" colspan="4">
                <widget class="QTableWidget" name="action_table_table">
                 <property name="minimumSize">
                  <size>
@@ -170,8 +154,38 @@
                 </attribute>
                </widget>
               </item>
-              <item row="0" column="1">
-               <widget class="QLineEdit" name="action_type"/>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_5">
+                <property name="locale">
+                 <locale language="English" country="UnitedStates"/>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhNone</set>
+                </property>
+                <property name="text">
+                 <string>Action type</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="table_label">
+                <property name="text">
+                 <string>Action table</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <widget class="QComboBox" name="measure_operator">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
               </item>
              </layout>
             </widget>
@@ -333,7 +347,7 @@
               <string>Target</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_4">
-              <item row="0" column="2">
+              <item row="0" column="0">
                <widget class="QLabel" name="label_16">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
@@ -349,7 +363,7 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="4">
+              <item row="0" column="2">
                <widget class="QLabel" name="label_7">
                 <property name="locale">
                  <locale language="English" country="UnitedStates"/>
@@ -366,13 +380,6 @@
                </widget>
               </item>
               <item row="0" column="3">
-               <widget class="QLineEdit" name="target_type">
-                <property name="readOnly">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="5">
                <widget class="QSpinBox" name="target_id">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -400,6 +407,16 @@
                 </property>
                 <property name="expressionsEnabled" stdset="0">
                  <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="target_type">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
                 </property>
                </widget>
               </item>

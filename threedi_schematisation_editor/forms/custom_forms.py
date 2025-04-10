@@ -185,11 +185,11 @@ class AbstractBaseForm(QObject):
                 continue
             else:
                 if self.layer.isEditable():
-                    self.set_validation_background(widget, field_type)
                     edit_signal = self.get_widget_editing_signal(widget)
                     edit_slot = partial(self.set_validation_background, widget, field_type)
                     connect_signal(edit_signal, edit_slot)
                     self.dialog.active_form_signals.add((edit_signal, edit_slot))
+                    self.set_validation_background(widget, field_type)
                 else:
                     widget.setStyleSheet("")
             real_field_type = optional_type(field_type) if is_optional(field_type) else field_type
@@ -713,7 +713,7 @@ class AbstractFormWithTable(AbstractBaseForm):
     def get_table_text(self):
         """Get table data as a string representation."""
         table_values = self.get_table_values()
-        table_str = self.ROW_SEPARATOR.join(self.COLUMN_SEPARATOR.join(row) for row in table_values if all(row))
+        table_str = self.ROW_SEPARATOR.join(self.COLUMN_SEPARATOR.join(row) for row in table_values)
         return table_str
 
     def save_table_edits(self):
@@ -796,9 +796,7 @@ class AbstractFormWithTable(AbstractBaseForm):
         else:
             table = ""
         for row_number, row in enumerate(table.split(self.ROW_SEPARATOR)):
-            row_values = [val for val in row.replace(" ", "").split(self.COLUMN_SEPARATOR) if val]
-            if len(row_values) != table_columns_count:
-                continue
+            row_values = [val for val in row.replace(" ", "").split(self.COLUMN_SEPARATOR)]
             for col_idx, row_value in enumerate(row_values):
                 self.table.setItem(row_number, col_idx, QTableWidgetItem(row_value))
         connect_signal(self.table.cellChanged, self.save_table_edits)
@@ -1334,9 +1332,16 @@ class AbstractFormWithStartEndNode(AbstractBaseForm):
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
-        self.feature["connection_node_id_start"] = self.connection_node_start["id"]
-        self.feature["connection_node_id_end"] = self.connection_node_end["id"]
-        code_display_name = f"{self.connection_node_start['code']}-{self.connection_node_end['code']}"
+        connection_node_id_start = self.connection_node_start["id"]
+        connection_node_id_end = self.connection_node_end["id"]
+        connection_node_start_code = self.connection_node_start["code"]
+        connection_node_end_code = self.connection_node_end["code"]
+        self.feature["connection_node_id_start"] = connection_node_id_start
+        self.feature["connection_node_id_end"] = connection_node_id_end
+        if connection_node_start_code and connection_node_end_code:
+            code_display_name = f"{connection_node_start_code}-{connection_node_end_code}"
+        else:
+            code_display_name = None
         try:
             self.feature["code"] = code_display_name
             self.feature["display_name"] = code_display_name
@@ -1504,9 +1509,6 @@ class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFo
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
         super().fill_related_attributes()
-        code_display_name = f"{self.connection_node_start['code']}-{self.connection_node_end['code']}"
-        self.feature["code"] = code_display_name
-        self.feature["display_name"] = code_display_name
         self.feature["invert_level_start"] = self.connection_node_start["bottom_level"]
         self.feature["invert_level_end"] = self.connection_node_end["bottom_level"]
 

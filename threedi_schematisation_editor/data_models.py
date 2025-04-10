@@ -245,7 +245,7 @@ class Weir(ModelObject):
     crest_type: CrestType
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
-    material_id: int
+    material_id: Optional[int]
     friction_value: float
     friction_type: FrictionType
     sewerage: bool
@@ -274,7 +274,7 @@ class Culvert(ModelObject):
     invert_level_end: float
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
-    material_id: int
+    material_id: Optional[int]
     friction_value: float
     friction_type: FrictionType
     connection_node_id_start: int
@@ -324,7 +324,7 @@ class Orifice(ModelObject):
     crest_type: CrestType
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
-    material_id: int
+    material_id: Optional[int]
     friction_value: float
     friction_type: FrictionType
     sewerage: bool
@@ -374,7 +374,7 @@ class Pipe(ModelObject):
     calculation_point_distance: Optional[float]
     invert_level_start: float
     invert_level_end: float
-    material_id: int
+    material_id: Optional[int]
     friction_value: float
     friction_type: FrictionType
     sewerage_type: Optional[SewerageType]
@@ -554,7 +554,7 @@ class DEMAverageArea(ModelObject):
 @dataclass
 class Windshielding1D(ModelObject):
     __tablename__ = "windshielding_1d"
-    __layername__ = "1D Windshielding"
+    __layername__ = "1D Wind shielding"
     __geometrytype__ = GeometryType.Point
 
     id: int
