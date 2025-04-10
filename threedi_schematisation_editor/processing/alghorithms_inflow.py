@@ -1,5 +1,4 @@
 # Copyright (C) 2025 by Lutra Consulting
-from abc import ABC, abstractmethod
 from operator import itemgetter
 
 from qgis.core import (
@@ -20,7 +19,7 @@ from threedi_schematisation_editor.enumerators import SewerageType
 from threedi_schematisation_editor.utils import get_feature_by_id, get_next_feature_id, spatial_index
 
 
-class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm, ABC):
+class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
     """Base algorithm for linking surface or DWF polygons to connection nodes."""
 
     POLYGON_LAYER = "POLYGON_LAYER"
@@ -34,20 +33,20 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm, ABC):
     SANITARY_SEWER_PREFERENCE = "SANITARY_SEWER_PREFERENCE"
     SEARCH_DISTANCE = "SEARCH_DISTANCE"
 
-    @property
-    @abstractmethod
     def parameter_names(self):
-        return {}
+        # Not implemented as proper abstractmethod because QgsProcessingAlgorithm already has a metaclass
+        # and setting ABCMeta as metaclass creates complicated problems
+        return NotImplementedError("Subclasses must implement this method")
 
-    @property
-    @abstractmethod
     def default_values(self):
-        return {}
+        # Not implemented as proper abstractmethod because QgsProcessingAlgorithm already has a metaclass
+        # and setting ABCMeta as metaclass creates complicated problems
+        return NotImplementedError("Subclasses must implement this method")
 
-    @property
-    @abstractmethod
     def polygon_id_field(self):
-        return ""
+        # Not implemented as proper abstractmethod because QgsProcessingAlgorithm already has a metaclass
+        # and setting ABCMeta as metaclass creates complicated problems
+        return NotImplementedError("Subclasses must implement this method")
 
     def group(self):
         return "Inflow"
@@ -303,7 +302,6 @@ class LinkSurfacesWithConnectionNodes(LinkToConnectionNodesAlgorithm):
         }
 
     @property
-    @abstractmethod
     def polygon_id_field(self):
         return "surface_id"
 
