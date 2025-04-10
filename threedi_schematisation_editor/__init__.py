@@ -10,16 +10,8 @@ from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
 
 PLUGIN_DIR = Path(__file__).parent
 
-
-from threedi_schematisation_editor.deps.custom_imports import \
-    patch_wheel_imports
-
-# Make sure to run this before importing anything from plugin dependencies!
-patch_wheel_imports()
-
-from threedi_schema import ThreediDatabase
-
 from threedi_mi_utils.news import QgsNewsSettingsInjector
+from threedi_schema import ThreediDatabase
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
