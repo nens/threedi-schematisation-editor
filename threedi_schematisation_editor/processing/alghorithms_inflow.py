@@ -1,4 +1,5 @@
 # Copyright (C) 2025 by Lutra Consulting
+from abc import ABC, abstractmethod
 from operator import itemgetter
 
 from qgis.core import (
@@ -14,13 +15,12 @@ from qgis.core import (
     QgsProcessingParameterVectorLayer,
     QgsProject,
 )
-from qgis.PyQt.QtCore import QCoreApplication
 
 from threedi_schematisation_editor.enumerators import SewerageType
 from threedi_schematisation_editor.utils import get_feature_by_id, get_next_feature_id, spatial_index
 
 
-class _AbstractLinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
+class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm, ABC):
     """Base algorithm for linking surface or DWF polygons to connection nodes."""
 
     POLYGON_LAYER = "POLYGON_LAYER"
@@ -34,18 +34,20 @@ class _AbstractLinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
     SANITARY_SEWER_PREFERENCE = "SANITARY_SEWER_PREFERENCE"
     SEARCH_DISTANCE = "SEARCH_DISTANCE"
 
-    # Attributes to be re-implemented in child classes
-    PARAMETER_NAMES = {
-        POLYGON_LAYER: "",
-        SELECTED_POLYGONS: "",
-        MAP_LAYER: ""
-    }
-    DEFAULT_VALUES = {
-        POLYGON_LAYER: "",
-        MAP_LAYER: "",
-        SEWERAGE_TYPES: []
-    }
-    POLYGON_ID_FIELD = ""
+    @property
+    @abstractmethod
+    def parameter_names(self):
+        return {}
+
+    @property
+    @abstractmethod
+    def default_values(self):
+        return {}
+
+    @property
+    @abstractmethod
+    def polygon_id_field(self):
+        return ""
 
     def group(self):
         return "Inflow"
@@ -56,14 +58,14 @@ class _AbstractLinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
     def shortHelpString(self):
         return (
             f"""
-            <p>Connect {self.PARAMETER_NAMES[self.POLYGON_LAYER]} features to the sewer system by creating {self.DEFAULT_VALUES[self.MAP_LAYER]} features. The new features are added to the {self.PARAMETER_NAMES[self.MAP_LAYER]} directly.</p>
-            <p>For each {self.PARAMETER_NAMES[self.POLYGON_LAYER]} feature, the nearest pipe is found; it is mapped to the nearest of this pipe's connection nodes.</p>
+            <p>Connect {self.parameter_names[self.POLYGON_LAYER]} features to the sewer system by creating {self.default_values[self.MAP_LAYER]} features. The new features are added to the {self.parameter_names[self.MAP_LAYER]} directly.</p>
+            <p>For each {self.parameter_names[self.POLYGON_LAYER]} feature, the nearest pipe is found; it is mapped to the nearest of this pipe's connection nodes.</p>
             <p>In some cases, you may want to prefer e.g. stormwater drains or sanitary sewers over combined sewers. This can be done by setting the stormwater sewer preference to a value greater than zero.</p>
             <h3>Parameters</h3>
-            <h4>{self.PARAMETER_NAMES[self.POLYGON_LAYER]}</h4>
-            <p>{self.PARAMETER_NAMES[self.POLYGON_LAYER]} that is added to the project with the 3Di Schematisation Editor.</p>
-            <h4>{self.PARAMETER_NAMES[self.MAP_LAYER]}</h4>
-            <p>{self.PARAMETER_NAMES[self.MAP_LAYER]} that is added to the project with the 3Di Schematisation Editor.</p>
+            <h4>{self.parameter_names[self.POLYGON_LAYER]}</h4>
+            <p>{self.parameter_names[self.POLYGON_LAYER]} that is added to the project with the 3Di Schematisation Editor.</p>
+            <h4>{self.parameter_names[self.MAP_LAYER]}</h4>
+            <p>{self.parameter_names[self.MAP_LAYER]} that is added to the project with the 3Di Schematisation Editor.</p>
             <h4>Pipe layer</h4>
             <p>Pipe layer that is added to the project with the 3Di Schematisation Editor.</p>
             <h4>Connection node layer</h4>
@@ -71,9 +73,9 @@ class _AbstractLinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
             <h4>Sewerage types</h4>
             <p>Only pipes of the selected sewerage types will be used in the algorithm</p>
             <h4>Stormwater sewer preference</h4>
-            <p>This value (in meters) will be subtracted from the distance between the {self.DEFAULT_VALUES[self.POLYGON_LAYER]} and the stormwater drain. For example: there is a combined sewer within 10 meters from the {self.DEFAULT_VALUES[self.POLYGON_LAYER]}, and a stormwater drain within 11 meters; if the stormwater sewer preference is 2 m, the algorithm will use 11 - 2 = 9 m as distance to the stormwater sewer, so the {self.DEFAULT_VALUES[self.POLYGON_LAYER]} will be mapped to one of the stormwater drain's connection nodes, instead of to the combined sewer's connection nodes.</p>
+            <p>This value (in meters) will be subtracted from the distance between the {self.default_values[self.POLYGON_LAYER]} and the stormwater drain. For example: there is a combined sewer within 10 meters from the {self.default_values[self.POLYGON_LAYER]}, and a stormwater drain within 11 meters; if the stormwater sewer preference is 2 m, the algorithm will use 11 - 2 = 9 m as distance to the stormwater sewer, so the {self.default_values[self.POLYGON_LAYER]} will be mapped to one of the stormwater drain's connection nodes, instead of to the combined sewer's connection nodes.</p>
             <h4>Sanitary sewer preference</h4>
-            <p>This value (in meters) will be subtracted from the distance between the {self.DEFAULT_VALUES[self.POLYGON_LAYER]} and the sanitary sewer. See 'stormwater sewer preference' for further explanation.</p>
+            <p>This value (in meters) will be subtracted from the distance between the {self.default_values[self.POLYGON_LAYER]} and the sanitary sewer. See 'stormwater sewer preference' for further explanation.</p>
             <h4>Search distance</h4>
             <p>Only pipes within search distance (m) from the surface will be used in the algorithm.</p>
             """
@@ -83,23 +85,23 @@ class _AbstractLinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.POLYGON_LAYER,
-                self.PARAMETER_NAMES[self.POLYGON_LAYER],
+                self.parameter_names[self.POLYGON_LAYER],
                 [QgsProcessing.TypeVectorPolygon],
-                defaultValue=self.DEFAULT_VALUES[self.POLYGON_LAYER],
+                defaultValue=self.default_values[self.POLYGON_LAYER],
             )
         )
         self.addParameter(
             QgsProcessingParameterBoolean(
                 self.SELECTED_POLYGONS,
-                self.PARAMETER_NAMES[self.SELECTED_POLYGONS],
+                self.parameter_names[self.SELECTED_POLYGONS],
             )
         )
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.MAP_LAYER,
-                self.PARAMETER_NAMES[self.MAP_LAYER],
+                self.parameter_names[self.MAP_LAYER],
                 [QgsProcessing.TypeVectorLine],
-                defaultValue=self.DEFAULT_VALUES[self.MAP_LAYER],
+                defaultValue=self.default_values[self.MAP_LAYER],
             )
         )
         self.addParameter(
@@ -130,7 +132,7 @@ class _AbstractLinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
                 "Sewerage types",
                 allowMultiple=True,
                 options=[e.name for e in SewerageType],
-                defaultValue=self.DEFAULT_VALUES[self.SEWERAGE_TYPES],
+                defaultValue=self.default_values[self.SEWERAGE_TYPES],
             )
         )
         storm_pref = QgsProcessingParameterNumber(
@@ -226,7 +228,6 @@ class _AbstractLinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
         surface_map_feats = []
         surface_map_fields = surface_map_lyr.fields()
         next_surface_map_id = get_next_feature_id(surface_map_lyr)
-        polygon_id_field = self.POLYGON_ID_FIELD
         for surface_id, surface_pipes in surface_to_pipes_distances.items():
             if feedback.isCanceled():
                 return {}
@@ -256,7 +257,7 @@ class _AbstractLinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
                 node_geom = end_node_geom
             surface_map_feat = QgsFeature(surface_map_fields)
             surface_map_feat["id"] = next_surface_map_id
-            surface_map_feat[polygon_id_field] = surface_feat["id"]
+            surface_map_feat[self.polygon_id_field] = surface_feat["id"]
             surface_map_feat["connection_node_id"] = surface_node_id
             surface_map_feat["percentage"] = 100.0
             surface_map_geom = QgsGeometry.fromPolylineXY([surface_centroid.asPoint(), node_geom.asPoint()])
@@ -279,26 +280,35 @@ class _AbstractLinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
         return {}
 
 
-class LinkSurfacesWithNodes(_AbstractLinkToConnectionNodesAlgorithm):
+class LinkSurfacesWithConnectionNodes(LinkToConnectionNodesAlgorithm):
     """Link surfaces to connection nodes."""
 
-    PARAMETER_NAMES = {
-        _AbstractLinkToConnectionNodesAlgorithm.POLYGON_LAYER: "Surface layer",
-        _AbstractLinkToConnectionNodesAlgorithm.SELECTED_POLYGONS: "Selected surfaces only",
-        _AbstractLinkToConnectionNodesAlgorithm.MAP_LAYER: "Surface map layer"
-    }
-    DEFAULT_VALUES = {
-        _AbstractLinkToConnectionNodesAlgorithm.POLYGON_LAYER: "Surface",
-        _AbstractLinkToConnectionNodesAlgorithm.MAP_LAYER: "Surface map",
-        _AbstractLinkToConnectionNodesAlgorithm.SEWERAGE_TYPES: [
-            SewerageType.COMBINED_SEWER.value,
-            SewerageType.STORM_DRAIN.value
-        ]
-    }
-    POLYGON_ID_FIELD = "surface_id"
+    @property
+    def parameter_names(self):
+        return {
+            LinkToConnectionNodesAlgorithm.POLYGON_LAYER: "Surface layer",
+            LinkToConnectionNodesAlgorithm.SELECTED_POLYGONS: "Selected surfaces only",
+            LinkToConnectionNodesAlgorithm.MAP_LAYER: "Surface map layer"
+        }
+
+    @property
+    def default_values(self):
+        return {
+            LinkToConnectionNodesAlgorithm.POLYGON_LAYER: "Surface",
+            LinkToConnectionNodesAlgorithm.MAP_LAYER: "Surface map",
+            LinkToConnectionNodesAlgorithm.SEWERAGE_TYPES: [
+                SewerageType.COMBINED_SEWER.value,
+                SewerageType.STORM_DRAIN.value
+            ]
+        }
+
+    @property
+    @abstractmethod
+    def polygon_id_field(self):
+        return "surface_id"
 
     def createInstance(self):
-        return LinkSurfacesWithNodes()
+        return LinkSurfacesWithConnectionNodes()
 
     def name(self):
         return "threedi_map_surfaces_to_connection_nodes"
@@ -307,30 +317,37 @@ class LinkSurfacesWithNodes(_AbstractLinkToConnectionNodesAlgorithm):
         return "Map surfaces to connection nodes"
 
 
-class LinkDWFWithNodes(_AbstractLinkToConnectionNodesAlgorithm):
+class LinkDWFWithConnectionNodes(LinkToConnectionNodesAlgorithm):
     """Link dry weather flow polygons to connection nodes."""
 
-    PARAMETER_NAMES = {
-        _AbstractLinkToConnectionNodesAlgorithm.POLYGON_LAYER: "Dry weather flow layer",
-        _AbstractLinkToConnectionNodesAlgorithm.SELECTED_POLYGONS: "Selected DWF polygons only",
-        _AbstractLinkToConnectionNodesAlgorithm.MAP_LAYER: "Dry weather flow map layer"
-    }
-    DEFAULT_VALUES = {
-        _AbstractLinkToConnectionNodesAlgorithm.POLYGON_LAYER: "Dry weather flow",
-        _AbstractLinkToConnectionNodesAlgorithm.MAP_LAYER: "Dry weather flow map",
-        _AbstractLinkToConnectionNodesAlgorithm.SEWERAGE_TYPES: [
-            SewerageType.COMBINED_SEWER.value,
-            SewerageType.SANITARY_SEWER.value
-        ]
-    }
-    POLYGON_ID_FIELD = "dry_weather_flow_id"
+    @property
+    def parameter_names(self):
+        return {
+            LinkToConnectionNodesAlgorithm.POLYGON_LAYER: "Dry weather flow layer",
+            LinkToConnectionNodesAlgorithm.SELECTED_POLYGONS: "Selected DWF polygons only",
+            LinkToConnectionNodesAlgorithm.MAP_LAYER: "Dry weather flow map layer"
+        }
+
+    @property
+    def default_values(self):
+        return {
+            LinkToConnectionNodesAlgorithm.POLYGON_LAYER: "Dry weather flow",
+            LinkToConnectionNodesAlgorithm.MAP_LAYER: "Dry weather flow map",
+            LinkToConnectionNodesAlgorithm.SEWERAGE_TYPES: [
+                SewerageType.COMBINED_SEWER.value,
+                SewerageType.SANITARY_SEWER.value
+            ]
+        }
+
+    @property
+    def polygon_id_field(self):
+        return "dry_weather_flow_id"
 
     def createInstance(self):
-        return LinkDWFWithNodes()
+        return LinkDWFWithConnectionNodes()
 
     def name(self):
         return "threedi_map_dwf_to_connection_nodes"
 
     def displayName(self):
         return "Map dry weather flow to connection nodes"
-
