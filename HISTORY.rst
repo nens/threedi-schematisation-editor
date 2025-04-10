@@ -4,6 +4,7 @@ History
 2.1.2 (unreleased)
 ------------------
 
+- Display upgrade warnings (any UserWarning raised during upgrading)
 - Added backwards compatibility to load a schematisation in 3.28. (#351)
 
 

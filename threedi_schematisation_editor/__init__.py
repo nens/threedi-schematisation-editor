@@ -1,9 +1,11 @@
 # Copyright (C) 2025 by Lutra Consulting
 import os.path
+import logging
+
 from collections import defaultdict
 from pathlib import Path
 
-from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
+from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject, QgsMessageLog, Qgis
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
@@ -263,7 +265,10 @@ class ThreediSchematisationEditorPlugin:
             )
             self.uc.progress_bar("Migration complete!", 0, 100, 100, clear_msg_bar=True)
             QCoreApplication.processEvents()
-            if not migration_succeed:
+            if len(migration_feedback_msg) > 0 and migration_succeed:
+                self.uc.show_info(migration_feedback_msg)
+                QgsMessageLog.logMessage(migration_feedback_msg, level=Qgis.Warning, tag="Messages")
+            elif not migration_succeed:
                 self.uc.clear_message_bar()
                 self.uc.show_warn(migration_feedback_msg)
                 return
