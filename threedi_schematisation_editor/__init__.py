@@ -271,8 +271,8 @@ class ThreediSchematisationEditorPlugin:
         elif model_gpkg.endswith(".gpkg"):
             version_num = ThreediDatabase(model_gpkg).schema.get_version()
             if version_num < 300:
-                warn_msg = "Perhaps you have selected a geopackage that was created by an older version (< 2.0) of the 3Di Schematisation Editor. In that case, please use the processing algorithm Migrate schematisation database on the Spatialite in the same folder to solve this problem."
-                self.uc.show_warn(warn_msg, None, "The selected file is not a valid 3Di schematisation database")
+                warn_msg = "The selected file is not a valid 3Di schematisation database.\n\nYou may have selected a geopackage that was created by an older version of the 3Di Schematisation Editor (before version 2.0). In that case, there will probably be a Spatialite (*.sqlite) in the same folder. Please use that file instead."
+                self.uc.show_warn(warn_msg, None, "3Di Schematisation Editor")
                 return
 
         lm = LayersManager(self.iface, self.uc, model_gpkg)

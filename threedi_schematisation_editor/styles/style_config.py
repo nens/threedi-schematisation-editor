@@ -1901,7 +1901,7 @@ style_config_data = MappingProxyType(
                     "fieldConfiguration": Path("weir") / "fieldConfiguration" / "default.qml",
                     "labeling": Path("weir") / "labeling" / "levels.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
-                    "renderer-v2": Path("weir") / "renderer-v2" / "levels.qml",  # symbology
+                    "renderer-v2": Path("weir") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "line.qml",
                 },
             },
