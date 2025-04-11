@@ -9,15 +9,24 @@ class GeometryType(Enum):
     Polygon = "Polygon"
 
 
-class BoundaryType(IntEnum):
+class BoundaryType1D(IntEnum):
     WATER_LEVEL = 1
     VELOCITY = 2
     DISCHARGE = 3
     SOMMERFELD = 5
     GROUNDWATER_LEVEL = 6
     GROUNDWATER_DISCHARGE = 7
-    TOTAL_DISCHARGE_2D = 8
-    GROUNDWATER_TOTAL_DISCHARGE_2D = 9
+
+
+class BoundaryType2D(IntEnum):
+    WATER_LEVEL = 1
+    VELOCITY = 2
+    SOMMERFELD = 5
+    GROUNDWATER_LEVEL = 6
+    DISCHARGE_TOTAL = 8
+    GROUNDWATER_DISCHARGE_TOTAL = 9
+    DISCHARGE_PER_FLOWLINE = 3
+    GROUNDWATER_DISCHARGE_PER_FLOWLINE = 7
 
 
 class Later2DType(IntEnum):

@@ -7,7 +7,8 @@ from typing import Optional
 from threedi_schematisation_editor.enumerators import (
     ActionType,
     AggregationMethod,
-    BoundaryType,
+    BoundaryType1D,
+    BoundaryType2D,
     ControlType,
     CrestType,
     CrossSectionShape,
@@ -148,7 +149,7 @@ class BoundaryCondition1D(ModelObject):
     id: int
     code: Optional[str]
     display_name: Optional[str]
-    type: BoundaryType
+    type: BoundaryType1D
     connection_node_id: int
     timeseries: str
     time_units: TimeUnit
@@ -472,7 +473,7 @@ class BoundaryCondition2D(ModelObject):
     id: int
     code: Optional[str]
     display_name: Optional[str]
-    type: BoundaryType
+    type: BoundaryType2D
     timeseries: str
     time_units: TimeUnit
     interpolate: bool
