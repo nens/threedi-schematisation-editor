@@ -27,12 +27,14 @@ from threedi_schematisation_editor.utils import (ConversionError,
                                                  add_settings_entry,
                                                  can_write_in_dir,
                                                  check_enable_macros_option,
+                                                 check_enable_embedded_python_option,
                                                  check_wal_for_sqlite,
                                                  get_filepath, get_icon_path,
                                                  is_gpkg_connection_exists,
                                                  migrate_schematisation_schema,
                                                  progress_bar_callback_factory,
-                                                 set_wal_for_sqlite_mode)
+                                                 set_wal_for_sqlite_mode,
+                                                 )
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
 
@@ -204,14 +206,23 @@ class ThreediSchematisationEditorPlugin:
             self.action_remove.setEnabled(True)
             self.action_import_features.setEnabled(True)
 
-    def check_macros_status(self):
-        macros_status = check_enable_macros_option()
-        if macros_status != "Always":
-            msg = (
-                f"Required 'Macros enabled' option is set to '{macros_status}'. "
-                "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable macros)."
-            )
-            self.uc.bar_warn(msg, dur=10)
+    def check_embedded_python_status(self):
+        if Qgis.QGIS_VERSION_INT < 34000:
+            macros_status = check_enable_macros_option()
+            if macros_status != "Always":
+                msg = (
+                    f"Required 'Macros enabled' option is set to '{macros_status}'. "
+                    "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable macros)."
+                )
+                self.uc.bar_warn(msg, dur=10)
+        else:
+            embedded_python_status = check_enable_embedded_python_option()
+            if embedded_python_status != "Always":
+                msg = (
+                    f"Required 'Embedded Python code enabled' option is set to '{embedded_python_status}'. "
+                    "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable project’s embedded Python code)."
+                )
+                self.uc.bar_warn(msg, dur=10)
 
     def ensure_sqlite_wal_status(self):
         wal_status = check_wal_for_sqlite()
@@ -234,7 +245,7 @@ class ThreediSchematisationEditorPlugin:
                 lm.load_all_layers(from_project=True)
                 self.workspace_context_manager.register_layer_manager(lm)
         self.uc.bar_info("Project schematisations loaded!")
-        self.check_macros_status()
+        self.check_embedded_python_status()
         self.toggle_active_project_actions()
 
     def on_3di_project_save(self):
@@ -290,7 +301,7 @@ class ThreediSchematisationEditorPlugin:
         self.workspace_context_manager.register_layer_manager(lm)
         self.uc.clear_message_bar()
         self.uc.bar_info(f"Schematisation {lm.model_name} loaded!")
-        self.check_macros_status()
+        self.check_embedded_python_status()
         self.toggle_active_project_actions()
         if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
             add_gpkg_connection(self.model_gpkg, self.iface)
