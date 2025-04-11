@@ -16,6 +16,8 @@ class BoundaryType(IntEnum):
     SOMMERFELD = 5
     GROUNDWATER_LEVEL = 6
     GROUNDWATER_DISCHARGE = 7
+    TOTAL_DISCHARGE_2D = 8
+    GROUNDWATER_TOTAL_DISCHARGE_2D = 9
 
 
 class Later2DType(IntEnum):
