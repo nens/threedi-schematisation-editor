@@ -8,7 +8,8 @@ from qgis.PyQt.QtCore import QTimer
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.enumerators import (
-    BoundaryType,
+    BoundaryType1D,
+    BoundaryType2D,
     CrestType,
     CrossSectionShape,
     GeometryType,
@@ -409,7 +410,7 @@ class BoundaryCondition1DHandler(UserLayerHandler):
     MODEL = dm.BoundaryCondition1D
     DEFAULTS = MappingProxyType(
         {
-            "type": BoundaryType.WATER_LEVEL.value,
+            "type": BoundaryType1D.WATER_LEVEL.value,
             "time_units": "seconds",
         }
     )
@@ -846,7 +847,7 @@ class BoundaryCondition2DHandler(UserLayerHandler):
     MODEL = dm.BoundaryCondition2D
     DEFAULTS = MappingProxyType(
         {
-            "type": BoundaryType.WATER_LEVEL.value,
+            "type": BoundaryType2D.WATER_LEVEL.value,
             "time_units": TimeUnit.SECONDS.value,
         }
     )

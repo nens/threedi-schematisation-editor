@@ -338,6 +338,8 @@ def enum_entry_name_format(entry):
             .replace("2d", "2D")
             .replace("ross section", "ross-section")
             .replace("M3 seconds", "m³/s")
+            .replace("ischarge total", "ischarge (total)")
+            .replace("ischarge per flowline", "ischarge (per flowline)")
         )
     else:
         formatted_entry_name = entry.name
