@@ -471,6 +471,8 @@ class LayersManager:
                     modify_raster_style(rlayer)
                     if raster_file_field == "dem_file":
                         hillshade_raster_layer = hillshade_layer(raster_filepath)
+                        # zoom to layer extent to prevent that raster is loaded when zoomed in too much, because that
+                        # will break the raster styling
                         zoom_to_layer(layer=rlayer, iface=self.iface)
                         add_layer_to_group(group_name, rlayer, cached_groups=self.spawned_groups)
                         add_layer_to_group(group_name, hillshade_raster_layer, cached_groups=self.spawned_groups)
