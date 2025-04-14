@@ -5,6 +5,7 @@ History
 ------------------
 
 - Styling no longer causes unresponsiveness when editing vertices (#359)
+- Added backwards compatibility to load a schematisation in 3.28. (#351)
 
 
 2.1.1 (2025-04-03)
