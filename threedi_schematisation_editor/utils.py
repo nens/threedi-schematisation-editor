@@ -286,7 +286,12 @@ def dataclass_field_to_widget_setup(model_cls_field_type, optional=False, **conf
     """Create QgsEditorWidgetSetup out of the dataclass field type."""
     if model_cls_field_type is bool:
         config_type = "CheckBox"
-        config_map = {"AllowNull": optional}
+        config_map = {
+            'AllowNullState': False,
+            'CheckedState': '1',
+            'TextDisplayMethod': 0,
+            'UncheckedState': '0'
+        }
     elif model_cls_field_type is int:
         config_type = "TextEdit"
         config_map = {"AllowNull": optional}
