@@ -37,6 +37,7 @@ from qgis.core import (
     QgsVectorFileWriter,
     QgsVectorLayer,
 )
+from qgis.gui import QgisInterface
 from qgis.PyQt.QtCore import QCoreApplication, QObject, QVariant
 from qgis.PyQt.QtGui import QDoubleValidator, QPainter
 from qgis.PyQt.QtWidgets import QFileDialog, QItemDelegate, QLineEdit
@@ -733,6 +734,19 @@ def modify_raster_style(raster_layer, limits=QgsRasterMinMaxOrigin.MinMax, exten
     min_max_origin.setExtent(extent)
     renderer.setMinMaxOrigin(min_max_origin)
     raster_layer.setRenderer(renderer)
+
+
+def zoom_to_layer(layer: QgsMapLayer, iface: QgisInterface):
+    """Set the canvas extent to the layer's extent, including reprojection to project crs"""
+    canvas = iface.mapCanvas()
+    layer_crs = layer.crs()
+    canvas_crs = canvas.mapSettings().destinationCrs()
+    if layer_crs != canvas_crs:
+        transform = QgsCoordinateTransform(layer_crs, canvas_crs, QgsProject.instance())
+        extent = transform.transformBoundingBox(layer.extent())
+    else:
+        extent = layer.extent()
+    canvas.setExtent(extent)
 
 
 def migrate_schematisation_schema(schematisation_filepath, progress_callback=None):
