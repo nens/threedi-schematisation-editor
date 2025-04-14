@@ -4,7 +4,7 @@ History
 2.1.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Styling no longer causes unresponsiveness when editing vertices (#359)
 
 
 2.1.2 (2025-04-14)
