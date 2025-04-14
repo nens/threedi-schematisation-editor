@@ -2,6 +2,8 @@
 import os
 import shutil
 import sys
+import warnings
+
 from enum import Enum, IntEnum
 from itertools import groupby
 from operator import attrgetter, itemgetter
@@ -336,6 +338,8 @@ def enum_entry_name_format(entry):
             .replace("2d", "2D")
             .replace("ross section", "ross-section")
             .replace("M3 seconds", "m³/s")
+            .replace("ischarge total", "ischarge (total)")
+            .replace("ischarge per flowline", "ischarge (per flowline)")
         )
     else:
         formatted_entry_name = entry.name
@@ -566,9 +570,16 @@ def count_vertices(geometry):
 
 
 def check_enable_macros_option():
-    """Check if macros are enabled."""
+    """Check if macros are enabled (QGIS < 3.40)."""
     settings = QgsSettings()
     option = settings.value("/qgis/enableMacros", type=str)
+    return option
+
+
+def check_enable_embedded_python_option():
+    """Check if project's embedded Python code is enabled (QGIS > 3.40)."""
+    settings = QgsSettings()
+    option = settings.value("/qgis/enablePythonEmbedded", type=str)
     return option
 
 
@@ -746,18 +757,23 @@ def migrate_schematisation_schema(schematisation_filepath, progress_callback=Non
         migration_feedback_msg = f"{e}"
 
     if srid is not None:
+        migration_feedback_msg = ""
         try:
-            schema.upgrade(backup=False, epsg_code_override=srid, progress_func=progress_callback)
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always", UserWarning)
+                schema.upgrade(backup=False, epsg_code_override=srid, progress_func=progress_callback)
+            if w:
+                for warning in w:
+                    migration_feedback_msg += f'{warning._category_name}: {warning.message}\n'
             shutil.rmtree(os.path.dirname(backup_filepath))
             migration_succeed = True
-            migration_feedback_msg = "Migration succeeded."
         except errors.UpgradeFailedError:
-            migration_feedback_msg = (
+            migration_feedback_msg += (
                 "The schematisation database schema cannot be migrated to the current version. "
                 "Please contact the service desk for assistance."
             )
         except Exception as e:
-            migration_feedback_msg = f"{e}"
+            migration_feedback_msg += f"{e}"
 
     return migration_succeed, migration_feedback_msg
 

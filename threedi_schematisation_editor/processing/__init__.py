@@ -4,7 +4,7 @@ import os
 from qgis.core import QgsProcessingProvider
 from qgis.PyQt.QtGui import QIcon
 
-from threedi_schematisation_editor.processing.alghorithms_inflow import LinkSurfacesWithNodes
+from threedi_schematisation_editor.processing.alghorithms_inflow import LinkDWFWithConnectionNodes, LinkSurfacesWithConnectionNodes
 from threedi_schematisation_editor.processing.algorithms_1d import BottomLevelCalculator
 from threedi_schematisation_editor.processing.algorithms_1d2d import GenerateExchangeLines
 from threedi_schematisation_editor.processing.algorithms_conversion import (
@@ -42,7 +42,8 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
 
     def loadAlgorithms(self):
         self.algorithms_list = [
-            LinkSurfacesWithNodes(),
+            LinkSurfacesWithConnectionNodes(),
+            LinkDWFWithConnectionNodes(),
             GenerateExchangeLines(),
             ImportConnectionNodes(),
             ImportCulverts(),
