@@ -1,12 +1,19 @@
 History
 =======
 
-2.1.2 (unreleased)
+2.1.3 (unreleased)
 ------------------
 
 - Display upgrade warnings (any UserWarning raised during upgrading)
 - Added backwards compatibility to load a schematisation in 3.28. (#351)
 - Split BoundaryTypes in 1D and 2D types and add boundary types Discharge (total) and Groundwater discharge (total) to BoundaryType2D
+
+
+2.1.2 (2025-04-14)
+------------------
+
+- Styling no longer causes unresponsiveness when editing vertices (#359)
+- Added backwards compatibility to load a schematisation in 3.28. (#351)
 
 
 2.1.1 (2025-04-03)
