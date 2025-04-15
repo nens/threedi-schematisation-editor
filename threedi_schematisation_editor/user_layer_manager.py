@@ -367,7 +367,6 @@ class LayersManager:
         """Initializing single model layer based on data model class."""
         default_style_name = "default"
         layer = gpkg_layer(self.model_gpkg_path, model_cls.__tablename__, model_cls.__layername__)
-        QgsExpressionContextUtils.setLayerVariable(layer, 'schematisation_uuid', self.uuid)
         layer_fields = layer.fields()
         fields_indexes = list(range(len(layer_fields)))
         form_ui_path = get_form_ui_path(model_cls.__tablename__)
@@ -430,6 +429,7 @@ class LayersManager:
         handler.connect_handler_signals()
         self.model_handlers[model_cls] = handler
         self.layer_handlers[layer.id()] = handler
+        QgsExpressionContextUtils.setLayerVariable(layer, 'schematisation_uuid', self.uuid)
 
     def load_vector_layers(self):
         """Loading all vector layers."""
@@ -440,7 +440,6 @@ class LayersManager:
             for model_cls in group_models:
                 msg = f"Loading {model_cls.__layername__} and its styles..."
                 self.uc.progress_bar(msg, 0, layer_count, i, clear_msg_bar=True)
-                QCoreApplication.processEvents()
                 self.initialize_data_model_layer(model_cls)
                 i += 1
 

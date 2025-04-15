@@ -53,7 +53,8 @@ class UserLayerHandler:
     def connect_handler_signals(self):
         """Connecting layer signals."""
         self.layer.editingStarted.connect(self.on_editing_started)
-        self.layer.editingStopped.connect(self.on_editing_stopped)
+        self.layer.editingStarted.connect(self.increase_nr_editable_layers)
+        self.layer.editingStopped.connect(self.decrease_nr_editable_layers)
         self.layer.beforeRollBack.connect(self.on_rollback)
         self.layer.beforeCommitChanges.connect(self.on_commit_changes)
         self.layer.featureAdded.connect(self.on_added_feature)
@@ -65,6 +66,8 @@ class UserLayerHandler:
     def disconnect_handler_signals(self):
         """Disconnecting layer signals."""
         self.layer.editingStarted.disconnect(self.on_editing_started)
+        self.layer.editingStarted.disconnect(self.increase_nr_editable_layers)
+        self.layer.editingStopped.disconnect(self.decrease_nr_editable_layers)
         self.layer.beforeRollBack.disconnect(self.on_rollback)
         self.layer.beforeCommitChanges.disconnect(self.on_commit_changes)
         self.layer.featureAdded.disconnect(self.on_added_feature)
@@ -187,12 +190,12 @@ class UserLayerHandler:
 
     def on_editing_started(self):
         """Action on editing started signal."""
+
+    def increase_nr_editable_layers(self):
         if isinstance(self.layer, QgsVectorLayer) and self.layer.isSpatial():
             self.layer_manager.nr_editable_layers += 1
-        self.multi_start_editing()
 
-    def on_editing_stopped(self):
-        """Action on editing started signal."""
+    def decrease_nr_editable_layers(self):
         if isinstance(self.layer, QgsVectorLayer) and self.layer.isSpatial():
             self.layer_manager.nr_editable_layers -= 1
 
