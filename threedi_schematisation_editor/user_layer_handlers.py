@@ -190,6 +190,7 @@ class UserLayerHandler:
 
     def on_editing_started(self):
         """Action on editing started signal."""
+        self.multi_start_editing()
 
     def increase_nr_editable_layers(self):
         if isinstance(self.layer, QgsVectorLayer) and self.layer.isSpatial():
