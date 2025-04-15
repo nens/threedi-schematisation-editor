@@ -3,7 +3,7 @@ from collections import defaultdict
 from functools import cached_property, partial
 from types import MappingProxyType
 
-from qgis.core import NULL, QgsExpression, QgsFeature, QgsFeatureRequest, QgsGeometry
+from qgis.core import NULL, QgsExpression, QgsFeature, QgsFeatureRequest, QgsGeometry, QgsVectorLayer
 from qgis.PyQt.QtCore import QTimer
 
 import threedi_schematisation_editor.data_models as dm
@@ -53,6 +53,7 @@ class UserLayerHandler:
     def connect_handler_signals(self):
         """Connecting layer signals."""
         self.layer.editingStarted.connect(self.on_editing_started)
+        self.layer.editingStopped.connect(self.on_editing_stopped)
         self.layer.beforeRollBack.connect(self.on_rollback)
         self.layer.beforeCommitChanges.connect(self.on_commit_changes)
         self.layer.featureAdded.connect(self.on_added_feature)
@@ -186,7 +187,14 @@ class UserLayerHandler:
 
     def on_editing_started(self):
         """Action on editing started signal."""
+        if isinstance(self.layer, QgsVectorLayer) and self.layer.isSpatial():
+            self.layer_manager.nr_editable_layers += 1
         self.multi_start_editing()
+
+    def on_editing_stopped(self):
+        """Action on editing started signal."""
+        if isinstance(self.layer, QgsVectorLayer) and self.layer.isSpatial():
+            self.layer_manager.nr_editable_layers -= 1
 
     def on_rollback(self):
         """Action on rollback signal."""

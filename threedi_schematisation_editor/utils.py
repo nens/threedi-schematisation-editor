@@ -19,6 +19,7 @@ from qgis.core import (
     QgsCoordinateTransform,
     QgsEditorWidgetSetup,
     QgsExpression,
+    QgsExpressionContextUtils,
     QgsFeature,
     QgsFeatureRequest,
     QgsField,
@@ -55,6 +56,47 @@ field_types_mapping = {
     float: QVariant.Double,
     str: QVariant.String,
 }
+
+import json
+
+
+class ProjectVariableDict:
+    """Class with the same (basic) API as a dict, but the data is stored as project variable in JSON representation """
+    def __init__(self, name: str):
+        self.name = name
+        project_scope = QgsExpressionContextUtils.projectScope(QgsProject.instance())
+        if project_scope.variable(self.name) is None:
+            QgsExpressionContextUtils.setProjectVariable(
+                QgsProject.instance(),
+                name,
+                json.dumps({})
+            )
+
+    def _load(self):
+        project_scope = QgsExpressionContextUtils.projectScope(QgsProject.instance())
+        return json.loads(project_scope.variable(self.name))
+
+    def _save(self, data):
+        QgsExpressionContextUtils.setProjectVariable(
+            QgsProject.instance(),
+            self.name,
+            json.dumps(data)
+        )
+
+    def __getitem__(self, key):
+        data = self._load()
+        return data[key]
+
+    def __setitem__(self, key, value):
+        data = self._load()
+        data[key] = value
+        self._save(data)
+
+    def __str__(self):
+        return str(self._load())
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self._load()})"
 
 
 def backup_schematisation_file(filename):
