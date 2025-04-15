@@ -4,9 +4,10 @@ import re
 from functools import cached_property
 from pathlib import Path
 from types import MappingProxyType
+from uuid import uuid4
 
 from qgis.core import (Qgis, QgsEditFormConfig, QgsEditorWidgetSetup,
-                       QgsExpression, QgsFeatureRequest, QgsFieldConstraints,
+                       QgsExpression, QgsExpressionContextUtils, QgsFeatureRequest, QgsFieldConstraints,
                        QgsProject, QgsRasterLayer, QgsSnappingConfig,
                        QgsTolerance, QgsVectorLayerJoinInfo)
 from qgis.PyQt.QtCore import QCoreApplication
@@ -24,7 +25,7 @@ from threedi_schematisation_editor.utils import (
     get_qml_style_path, gpkg_layer, hillshade_layer, merge_qml_styles,
     modify_raster_style, remove_group_with_children, remove_layer,
     set_field_default_value, set_initial_layer_configuration,
-    validation_errors_summary)
+    validation_errors_summary, ProjectVariableDict)
 
 
 class LayersManager:
@@ -204,6 +205,11 @@ class LayersManager:
         return os.path.basename(self.model_gpkg_path).rsplit(".", 1)[0]
 
     @cached_property
+    def uuid(self) -> str:
+        """Unique identifier for the schematisation within the plugin"""
+        return str(uuid4())
+
+    @cached_property
     def model_revision(self):
         """3Di model schematisation revision."""
         model_gpkg_path_obj = Path(self.model_gpkg_path)
@@ -287,6 +293,16 @@ class LayersManager:
     def vector_style_configs(self):
         """Return vector layers style configurations."""
         return get_style_configurations()
+
+    @property
+    def nr_editable_layers(self) -> int:
+        project_variable = ProjectVariableDict(name="nr_editable_layers")
+        return project_variable[self.uuid]
+
+    @nr_editable_layers.setter
+    def nr_editable_layers(self, value: int):
+        store = ProjectVariableDict(name="nr_editable_layers")
+        store[self.uuid] = value
 
     def setup_all_value_relation_widgets(self):
         """Setup all models value relation widgets."""
@@ -413,6 +429,7 @@ class LayersManager:
         handler.connect_handler_signals()
         self.model_handlers[model_cls] = handler
         self.layer_handlers[layer.id()] = handler
+        QgsExpressionContextUtils.setLayerVariable(layer, 'schematisation_uuid', self.uuid)
 
     def load_vector_layers(self):
         """Loading all vector layers."""
@@ -423,7 +440,6 @@ class LayersManager:
             for model_cls in group_models:
                 msg = f"Loading {model_cls.__layername__} and its styles..."
                 self.uc.progress_bar(msg, 0, layer_count, i, clear_msg_bar=True)
-                QCoreApplication.processEvents()
                 self.initialize_data_model_layer(model_cls)
                 i += 1
 
@@ -490,6 +506,7 @@ class LayersManager:
             self.remove_loaded_layers(dry_remove=True)
             self.register_groups()
             self.register_vector_layers()
+        self.nr_editable_layers = 0
         self.setup_all_value_relation_widgets()
         self.iface.setActiveLayer(self.model_handlers[dm.ConnectionNode].layer)
 
@@ -506,6 +523,7 @@ class LayersManager:
         self.model_handlers.clear()
         self.layer_handlers.clear()
         self.spawned_groups.clear()
+        ProjectVariableDict(name="nr_editable_layers").pop(self.uuid, default=0)
 
     def add_joins(self):
         """Setting joins between layers."""

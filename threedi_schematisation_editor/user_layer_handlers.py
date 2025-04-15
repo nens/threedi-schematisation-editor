@@ -3,7 +3,7 @@ from collections import defaultdict
 from functools import cached_property, partial
 from types import MappingProxyType
 
-from qgis.core import NULL, QgsExpression, QgsFeature, QgsFeatureRequest, QgsGeometry
+from qgis.core import NULL, QgsExpression, QgsFeature, QgsFeatureRequest, QgsGeometry, QgsVectorLayer
 from qgis.PyQt.QtCore import QTimer
 
 import threedi_schematisation_editor.data_models as dm
@@ -53,6 +53,8 @@ class UserLayerHandler:
     def connect_handler_signals(self):
         """Connecting layer signals."""
         self.layer.editingStarted.connect(self.on_editing_started)
+        self.layer.editingStarted.connect(self.increase_nr_editable_layers)
+        self.layer.editingStopped.connect(self.decrease_nr_editable_layers)
         self.layer.beforeRollBack.connect(self.on_rollback)
         self.layer.beforeCommitChanges.connect(self.on_commit_changes)
         self.layer.featureAdded.connect(self.on_added_feature)
@@ -64,6 +66,8 @@ class UserLayerHandler:
     def disconnect_handler_signals(self):
         """Disconnecting layer signals."""
         self.layer.editingStarted.disconnect(self.on_editing_started)
+        self.layer.editingStarted.disconnect(self.increase_nr_editable_layers)
+        self.layer.editingStopped.disconnect(self.decrease_nr_editable_layers)
         self.layer.beforeRollBack.disconnect(self.on_rollback)
         self.layer.beforeCommitChanges.disconnect(self.on_commit_changes)
         self.layer.featureAdded.disconnect(self.on_added_feature)
@@ -123,10 +127,9 @@ class UserLayerHandler:
         """Rollback changes for all layers with 1D group."""
         if self.MODEL not in self.layer_manager.common_editing_group:
             return
-        other_1d_handlers = self.other_linked_handlers
-        for layer_handler in other_1d_handlers:
+        for layer_handler in self.other_linked_handlers:
             layer_handler.disconnect_handler_signals()
-        for layer_handler in other_1d_handlers:
+        for layer_handler in self.other_linked_handlers:
             layer = layer_handler.layer
             if layer.isEditable():
                 if layer.isModified():
@@ -135,8 +138,10 @@ class UserLayerHandler:
                     answer = self.layer_manager.uc.ask(None, title, question)
                     if answer is True:
                         layer.commitChanges(stopEditing=True)
+                        layer_handler.decrease_nr_editable_layers()  # because signals are temporarily disconnected
                         continue
                 layer.rollBack()
+                layer_handler.decrease_nr_editable_layers()  # because signals are temporarily disconnected
         for layer_handler in self.other_linked_handlers:
             layer_handler.connect_handler_signals()
 
@@ -187,6 +192,14 @@ class UserLayerHandler:
     def on_editing_started(self):
         """Action on editing started signal."""
         self.multi_start_editing()
+
+    def increase_nr_editable_layers(self):
+        if isinstance(self.layer, QgsVectorLayer) and self.layer.isSpatial():
+            self.layer_manager.nr_editable_layers += 1
+
+    def decrease_nr_editable_layers(self):
+        if isinstance(self.layer, QgsVectorLayer) and self.layer.isSpatial():
+            self.layer_manager.nr_editable_layers -= 1
 
     def on_rollback(self):
         """Action on rollback signal."""
