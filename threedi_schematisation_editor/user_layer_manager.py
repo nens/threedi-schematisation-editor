@@ -295,14 +295,14 @@ class LayersManager:
         return get_style_configurations()
 
     @property
-    def nr_editable_layers(self):
+    def nr_editable_layers(self) -> int:
         project_variable = ProjectVariableDict(name="nr_editable_layers")
         return project_variable[self.uuid]
 
     @nr_editable_layers.setter
-    def nr_editable_layers(self, value):
-        nr_editable_layers = ProjectVariableDict(name="nr_editable_layers")
-        nr_editable_layers[self.uuid] = value
+    def nr_editable_layers(self, value: int):
+        store = ProjectVariableDict(name="nr_editable_layers")
+        store[self.uuid] = value
 
     def setup_all_value_relation_widgets(self):
         """Setup all models value relation widgets."""
@@ -497,7 +497,6 @@ class LayersManager:
     def load_all_layers(self, from_project=False):
         """Creating/registering groups and loading/registering vector, raster and tabular layers."""
         self.register_custom_functions()
-        self.nr_editable_layers = 0
         if not from_project:
             self.create_groups()
             self.load_vector_layers()
@@ -507,6 +506,7 @@ class LayersManager:
             self.remove_loaded_layers(dry_remove=True)
             self.register_groups()
             self.register_vector_layers()
+        self.nr_editable_layers = 0
         self.setup_all_value_relation_widgets()
         self.iface.setActiveLayer(self.model_handlers[dm.ConnectionNode].layer)
 
@@ -523,6 +523,7 @@ class LayersManager:
         self.model_handlers.clear()
         self.layer_handlers.clear()
         self.spawned_groups.clear()
+        ProjectVariableDict(name="nr_editable_layers").pop(self.uuid, default=0)
 
     def add_joins(self):
         """Setting joins between layers."""

@@ -127,10 +127,9 @@ class UserLayerHandler:
         """Rollback changes for all layers with 1D group."""
         if self.MODEL not in self.layer_manager.common_editing_group:
             return
-        other_1d_handlers = self.other_linked_handlers
-        for layer_handler in other_1d_handlers:
+        for layer_handler in self.other_linked_handlers:
             layer_handler.disconnect_handler_signals()
-        for layer_handler in other_1d_handlers:
+        for layer_handler in self.other_linked_handlers:
             layer = layer_handler.layer
             if layer.isEditable():
                 if layer.isModified():
@@ -139,8 +138,10 @@ class UserLayerHandler:
                     answer = self.layer_manager.uc.ask(None, title, question)
                     if answer is True:
                         layer.commitChanges(stopEditing=True)
+                        layer_handler.decrease_nr_editable_layers()  # because signals are temporarily disconnected
                         continue
                 layer.rollBack()
+                layer_handler.decrease_nr_editable_layers()  # because signals are temporarily disconnected
         for layer_handler in self.other_linked_handlers:
             layer_handler.connect_handler_signals()
 

@@ -98,6 +98,17 @@ class ProjectVariableDict:
     def __repr__(self):
         return f"{self.__class__.__name__}({self._load()})"
 
+    def pop(self, key, default=None):
+        data = self._load()
+        if key in data:
+            value = data.pop(key)
+            self._save(data)
+            return value
+        elif default is not None:
+            return default
+        else:
+            raise KeyError(key)
+
 
 def backup_schematisation_file(filename):
     """Make a backup of the schematisation file."""
