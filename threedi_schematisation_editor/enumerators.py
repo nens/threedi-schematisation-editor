@@ -237,9 +237,9 @@ class ActionType(Enum):
 
 
 class TargetType(Enum):
-    ORIFICE = "v2_orifice"
-    PUMP = "v2_pumpstation"
-    WEIR = "v2_weir"
+    ORIFICE = "orifice"
+    PUMP = "pump"
+    WEIR = "weir"
 
 
 class MeasureOperator(Enum):
