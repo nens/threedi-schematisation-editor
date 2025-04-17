@@ -9,7 +9,7 @@ from itertools import groupby
 from operator import attrgetter, itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Union
+from typing import get_origin, get_args, Union, Optional
 from uuid import uuid4
 from xml.etree import ElementTree
 
@@ -1089,3 +1089,30 @@ def extract_substring(linestring_geometry, start_distance, end_distance):
     before_start_geometry = QgsGeometry(before_start_substring)
     after_end_geometry = QgsGeometry(after_end_substring)
     return substring_geometry, before_start_geometry, after_end_geometry
+
+
+class TypeConversionError(Exception):
+    """Custom exception raised when type conversion fails."""
+
+    def __init__(self, value, target_type):
+        self.value = value
+        self.target_type = target_type
+        super().__init__(f"Type conversion error: Cannot convert {value} to {target_type}")
+
+
+def convert_to_type(value, expected_type):
+    """Convert a value to the expected type using typing utilities."""
+    if value is None or value == NULL:
+        return NULL
+    # Handle Optional[T] or Union types
+    origin = get_origin(expected_type)
+    if origin is Union:
+        # Get non-None type args to handle Optional types
+        types = [t for t in get_args(expected_type) if t is not type(None)]
+        if types:
+            # Take first non-None type as the target type
+            expected_type = types[0]
+    try:
+        return expected_type(value)
+    except (ValueError, TypeError):
+        raise TypeConversionError(value, expected_type)
