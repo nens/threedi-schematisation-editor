@@ -21,6 +21,7 @@ from qgis.PyQt.QtWidgets import QComboBox, QLabel, QLineEdit, QPushButton
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
+    convert_to_type,
     enum_entry_name_format,
     find_line_endpoints_nodes,
     find_point_nodes,
@@ -30,6 +31,7 @@ from threedi_schematisation_editor.utils import (
     is_optional,
     optional_type,
     spatial_index,
+    TypeConversionError
 )
 
 
@@ -196,8 +198,9 @@ class AbstractFeaturesImporter:
         fields_config = self.fields_configurations[model_cls]
         expression_context = QgsExpressionContext()
         expression_context.setFeature(source_feat)
+        type_annotations = model_cls.__annotations__
         for new_feat in new_features:
-            for field_name in model_cls.__annotations__.keys():
+            for field_name, field_type in type_annotations.items():
                 try:
                     field_config = fields_config[field_name]
                 except KeyError:
@@ -219,7 +222,10 @@ class AbstractFeaturesImporter:
                     field_value = expression.evaluate(expression_context)
                 elif method == ColumnImportMethod.DEFAULT:
                     field_value = field_config["default_value"]
-                new_feat[field_name] = field_value
+                try:
+                    new_feat[field_name] = convert_to_type(field_value, field_type)
+                except TypeConversionError as e:
+                    new_feat[field_name] = NULL
 
     @staticmethod
     def process_commit_errors(layer):
