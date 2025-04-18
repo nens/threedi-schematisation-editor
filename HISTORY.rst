@@ -4,7 +4,10 @@ History
 2.1.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Correct TargetType Enum for memory and table control
+- Surface styling 25% transparent
+- Fix disconnect between integer fields with boolean widgets
+- Fix for grid level
 
 
 2.1.3 (2025-04-14)
