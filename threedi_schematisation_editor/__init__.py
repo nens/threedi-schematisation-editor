@@ -1,22 +1,19 @@
 # Copyright (C) 2025 by Lutra Consulting
 import os.path
+import logging
+
 from collections import defaultdict
 from pathlib import Path
 
-from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject
+from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject, QgsMessageLog, Qgis
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QCursor, QIcon
 from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
 
 PLUGIN_DIR = Path(__file__).parent
 
-from threedi_schema import ThreediDatabase
-
-from threedi_schematisation_editor.deps.custom_imports import \
-    patch_wheel_imports
-
-patch_wheel_imports()
 from threedi_mi_utils.news import QgsNewsSettingsInjector
+from threedi_schema import ThreediDatabase
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
@@ -30,12 +27,14 @@ from threedi_schematisation_editor.utils import (ConversionError,
                                                  add_settings_entry,
                                                  can_write_in_dir,
                                                  check_enable_macros_option,
+                                                 check_enable_embedded_python_option,
                                                  check_wal_for_sqlite,
                                                  get_filepath, get_icon_path,
                                                  is_gpkg_connection_exists,
                                                  migrate_schematisation_schema,
                                                  progress_bar_callback_factory,
-                                                 set_wal_for_sqlite_mode)
+                                                 set_wal_for_sqlite_mode,
+                                                 )
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
 
@@ -207,14 +206,23 @@ class ThreediSchematisationEditorPlugin:
             self.action_remove.setEnabled(True)
             self.action_import_features.setEnabled(True)
 
-    def check_macros_status(self):
-        macros_status = check_enable_macros_option()
-        if macros_status != "Always":
-            msg = (
-                f"Required 'Macros enabled' option is set to '{macros_status}'. "
-                "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable macros)."
-            )
-            self.uc.bar_warn(msg, dur=10)
+    def check_embedded_python_status(self):
+        if Qgis.QGIS_VERSION_INT < 34000:
+            macros_status = check_enable_macros_option()
+            if macros_status != "Always":
+                msg = (
+                    f"Required 'Macros enabled' option is set to '{macros_status}'. "
+                    "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable macros)."
+                )
+                self.uc.bar_warn(msg, dur=10)
+        else:
+            embedded_python_status = check_enable_embedded_python_option()
+            if embedded_python_status != "Always":
+                msg = (
+                    f"Required 'Embedded Python code enabled' option is set to '{embedded_python_status}'. "
+                    "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable project’s embedded Python code)."
+                )
+                self.uc.bar_warn(msg, dur=10)
 
     def ensure_sqlite_wal_status(self):
         wal_status = check_wal_for_sqlite()
@@ -237,7 +245,7 @@ class ThreediSchematisationEditorPlugin:
                 lm.load_all_layers(from_project=True)
                 self.workspace_context_manager.register_layer_manager(lm)
         self.uc.bar_info("Project schematisations loaded!")
-        self.check_macros_status()
+        self.check_embedded_python_status()
         self.toggle_active_project_actions()
 
     def on_3di_project_save(self):
@@ -268,7 +276,10 @@ class ThreediSchematisationEditorPlugin:
             )
             self.uc.progress_bar("Migration complete!", 0, 100, 100, clear_msg_bar=True)
             QCoreApplication.processEvents()
-            if not migration_succeed:
+            if len(migration_feedback_msg) > 0 and migration_succeed:
+                self.uc.show_info(migration_feedback_msg)
+                QgsMessageLog.logMessage(migration_feedback_msg, level=Qgis.Warning, tag="Messages")
+            elif not migration_succeed:
                 self.uc.clear_message_bar()
                 self.uc.show_warn(migration_feedback_msg)
                 return
@@ -276,8 +287,8 @@ class ThreediSchematisationEditorPlugin:
         elif model_gpkg.endswith(".gpkg"):
             version_num = ThreediDatabase(model_gpkg).schema.get_version()
             if version_num < 300:
-                warn_msg = "Perhaps you have selected a geopackage that was created by an older version (< 2.0) of the 3Di Schematisation Editor. In that case, please use the processing algorithm Migrate schematisation database on the Spatialite in the same folder to solve this problem."
-                self.uc.show_warn(warn_msg, None, "The selected file is not a valid 3Di schematisation database")
+                warn_msg = "The selected file is not a valid 3Di schematisation database.\n\nYou may have selected a geopackage that was created by an older version of the 3Di Schematisation Editor (before version 2.0). In that case, there will probably be a Spatialite (*.sqlite) in the same folder. Please use that file instead."
+                self.uc.show_warn(warn_msg, None, "3Di Schematisation Editor")
                 return
 
         lm = LayersManager(self.iface, self.uc, model_gpkg)
@@ -290,7 +301,7 @@ class ThreediSchematisationEditorPlugin:
         self.workspace_context_manager.register_layer_manager(lm)
         self.uc.clear_message_bar()
         self.uc.bar_info(f"Schematisation {lm.model_name} loaded!")
-        self.check_macros_status()
+        self.check_embedded_python_status()
         self.toggle_active_project_actions()
         if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
             add_gpkg_connection(self.model_gpkg, self.iface)
