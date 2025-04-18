@@ -1,13 +1,21 @@
 History
 =======
 
-2.1.4 (unreleased)
+2.1.5 (unreleased)
 ------------------
 
 - Display upgrade warnings (any UserWarning raised during upgrading)
-- Added backwards compatibility to load a schematisation in 3.28. (#351)
 - Split BoundaryTypes in 1D and 2D types and add boundary types Discharge (total) and Groundwater discharge (total) to BoundaryType2D
+
+
+2.1.4 (2025-04-18)
+------------------
+
 - Correct TargetType Enum for memory and table control
+- Surface styling 25% transparent
+- Fix disconnect between integer fields with boolean widgets
+- Fix for grid level
+
 
 2.1.3 (2025-04-14)
 ------------------
