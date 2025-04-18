@@ -1,7 +1,7 @@
 History
 =======
 
-2.1.4 (unreleased)
+2.1.4 (2025-04-18)
 ------------------
 
 - Correct TargetType Enum for memory and table control
