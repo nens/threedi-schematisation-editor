@@ -6,6 +6,7 @@ History
 
 - Display upgrade warnings (any UserWarning raised during upgrading)
 - Split BoundaryTypes in 1D and 2D types and add boundary types Discharge (total) and Groundwater discharge (total) to BoundaryType2D
+- Force conversion on importing feature attributes and show warnings when this is not possible
 
 
 2.1.4 (2025-04-18)
