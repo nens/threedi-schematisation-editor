@@ -1,4 +1,6 @@
 # Copyright (C) 2025 by Lutra Consulting
+import warnings
+
 from collections import defaultdict, namedtuple
 from enum import Enum
 from functools import cached_property
@@ -234,7 +236,7 @@ class AbstractFeaturesImporter:
                         "Warning",  # Add a tag here
                         Qgis.Warning
                     )
-
+                    warnings.warn(f"Problem loading field '{field_name}': {e}", Warning)
 
     @staticmethod
     def process_commit_errors(layer):
