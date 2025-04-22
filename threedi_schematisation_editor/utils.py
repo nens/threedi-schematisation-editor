@@ -1095,9 +1095,8 @@ class TypeConversionError(Exception):
     """Custom exception raised when type conversion fails."""
 
     def __init__(self, value, target_type):
-        self.value = value
-        self.target_type = target_type
-        super().__init__(f"Type conversion error: Cannot convert {value} to {target_type}")
+        target_type_str = str(target_type).split("'")[1]
+        super().__init__(f"Type conversion error: Cannot convert '{value}' to {target_type_str}")
 
 
 def convert_to_type(value, expected_type):

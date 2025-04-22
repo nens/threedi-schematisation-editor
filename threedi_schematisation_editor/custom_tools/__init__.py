@@ -7,11 +7,13 @@ from operator import attrgetter, itemgetter
 
 from qgis.core import (
     NULL,
+    Qgis,
     QgsCoordinateTransform,
     QgsExpression,
     QgsExpressionContext,
     QgsFeature,
     QgsGeometry,
+    QgsMessageLog,
     QgsPointLocator,
     QgsProject,
     QgsWkbTypes,
@@ -226,6 +228,13 @@ class AbstractFeaturesImporter:
                     new_feat[field_name] = convert_to_type(field_value, field_type)
                 except TypeConversionError as e:
                     new_feat[field_name] = NULL
+                    # Log to QGIS message log
+                    QgsMessageLog.logMessage(
+                        f"Problem loading field '{field_name}': {e}",
+                        "Warning",  # Add a tag here
+                        Qgis.Warning
+                    )
+
 
     @staticmethod
     def process_commit_errors(layer):
