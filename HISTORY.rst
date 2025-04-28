@@ -1,7 +1,7 @@
 History
 =======
 
-2.1.5 (unreleased)
+2.1.5 (2025-04-28)
 ------------------
 
 - Fix calculation point distance is not editable for Pipe
