@@ -4,7 +4,9 @@ History
 2.1.5 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix calculation point distance is not editable for Pipe
+- Calculation point distance: fix clear button
+- Fix max angle 1d advection precision
 
 
 2.1.4 (2025-04-18)
