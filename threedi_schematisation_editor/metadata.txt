@@ -27,4 +27,4 @@ hasProcessingProvider=no
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
-plugin_dependencies=Dependency Loader
+plugin_dependencies=Nelen and Schuurmans Dependency Loader
