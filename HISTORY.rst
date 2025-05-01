@@ -6,6 +6,7 @@ History
 
 - Display upgrade warnings (any UserWarning raised during upgrading)
 - Split BoundaryTypes in 1D and 2D types and add boundary types Discharge (total) and Groundwater discharge (total) to BoundaryType2D
+- Correctly set id's when importing orifices or weirs with edit channels option active
 
 
 2.1.4 (2025-04-18)
