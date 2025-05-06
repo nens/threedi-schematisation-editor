@@ -8,7 +8,7 @@ History
 - Split BoundaryTypes in 1D and 2D types and add boundary types Discharge (total) and Groundwater discharge (total) to BoundaryType2D
 - Correctly set id's when importing orifices or weirs with edit channels option active (#363)
 - Fix zooming to DEM extent when schematisation CRS differs from project CRS
-
+- Add new sewerage types: Infiltration drain (8), Slot/trench drain (9), Pressure sewer (10)
 
 2.1.4 (2025-04-18)
 ------------------
