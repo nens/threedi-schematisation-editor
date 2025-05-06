@@ -230,13 +230,17 @@ class AbstractFeaturesImporter:
                     new_feat[field_name] = convert_to_type(field_value, field_type)
                 except TypeConversionError as e:
                     new_feat[field_name] = NULL
+                    if "id" in new_feat:
+                        message = f"Attribute {field_name} of feature with id {new_feat['id']} was not filled in"
+                    else:
+                        message = f"Attribute {field_name} was not filled in"
                     # Log to QGIS message log
                     QgsMessageLog.logMessage(
-                        f"Problem loading field '{field_name}': {e}",
+                        f"{message}: {e}",
                         "Warning",  # Add a tag here
                         Qgis.Warning
                     )
-                    warnings.warn(f"Problem loading field '{field_name}': {e}", Warning)
+                    warnings.warn(f"{message}: {e}", Warning)
 
     @staticmethod
     def process_commit_errors(layer):
