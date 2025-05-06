@@ -943,9 +943,11 @@ class StructuresIntegrator(LinearStructuresImporter):
         self.remove_hanging_cross_sections()
         # Process structures
         structures_to_add = []
-        for structure_id, structure_feat in enumerate(self.features_to_add[self.target_layer_name], start=1):
-            structure_feat["id"] = structure_id
+        next_feature_id = get_next_feature_id(self.target_layer)
+        for structure_feat in self.features_to_add[self.target_layer_name]:
+            structure_feat["id"] = next_feature_id
             structures_to_add.append(structure_feat)
+            next_feature_id += 1
         self.target_layer.startEditing()
         self.target_layer.addFeatures(structures_to_add)
         # Fallback import for disconnected structures.
