@@ -7,6 +7,8 @@ History
 - Display upgrade warnings (any UserWarning raised during upgrading)
 - Split BoundaryTypes in 1D and 2D types and add boundary types Discharge (total) and Groundwater discharge (total) to BoundaryType2D
 - Fix zooming to DEM extent when schematisation CRS differs from project CRS
+- Fix associating imported structures with existing channels (#369)
+
 
 2.1.4 (2025-04-18)
 ------------------
