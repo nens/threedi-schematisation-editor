@@ -231,10 +231,8 @@ class AbstractFeaturesImporter:
                     new_feat[field_name] = convert_to_type(field_value, field_type)
                 except TypeConversionError as e:
                     new_feat[field_name] = NULL
-                    if "id" in new_feat:
-                        message = f"Attribute {field_name} of feature with id {new_feat['id']} was not filled in"
-                    else:
-                        message = f"Attribute {field_name} was not filled in"
+                    feat_id = new_feat["id"]
+                    message = f"Attribute {field_name} of feature with id {feat_id} was not filled in"
                     # Log to QGIS message log
                     QgsMessageLog.logMessage(
                         f"{message}: {e}",
