@@ -185,6 +185,9 @@ class SewerageType(IntEnum):
     SYPHON = 5
     STORAGE = 6
     STORAGE_AND_SETTLEMENT_TANK = 7
+    INFILTRATION_DRAIN = 8
+    SLOT_OR_TRENCH_DRAIN = 9
+    PRESSURE_SEWER = 10
 
 
 class PumpType(IntEnum):

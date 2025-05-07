@@ -500,7 +500,7 @@ style_config_data = MappingProxyType(
                     "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "constraints": Path("dem_average_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dem_average_area") / "fieldConfiguration" / "default.qml",
-                    "labeling": Path("general") / "labeling" / "id.qml",
+                    "labeling": Path("general") / "labeling" / "id_polygon.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dem_average_area") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
@@ -512,7 +512,7 @@ style_config_data = MappingProxyType(
                     "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "constraints": Path("dem_average_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dem_average_area") / "fieldConfiguration" / "default.qml",
-                    "labeling": Path("general") / "labeling" / "code.qml",
+                    "labeling": Path("general") / "labeling" / "code_polygon.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dem_average_area") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
@@ -524,7 +524,7 @@ style_config_data = MappingProxyType(
                     "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
                     "constraints": Path("dem_average_area") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dem_average_area") / "fieldConfiguration" / "default.qml",
-                    "labeling": Path("general") / "labeling" / "display_name.qml",
+                    "labeling": Path("general") / "labeling" / "display_name_polygon.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dem_average_area") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
@@ -549,7 +549,7 @@ style_config_data = MappingProxyType(
                     "attributetableconfig": Path("dry_weather_flow") / "attributetableconfig" / "default.qml",
                     "constraints": Path("dry_weather_flow") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dry_weather_flow") / "fieldConfiguration" / "default.qml",
-                    "labeling": Path("general") / "labeling" / "id.qml",
+                    "labeling": Path("general") / "labeling" / "id_polygon.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dry_weather_flow") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
@@ -559,7 +559,7 @@ style_config_data = MappingProxyType(
                     "attributetableconfig": Path("dry_weather_flow") / "attributetableconfig" / "default.qml",
                     "constraints": Path("dry_weather_flow") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dry_weather_flow") / "fieldConfiguration" / "default.qml",
-                    "labeling": Path("general") / "labeling" / "code.qml",
+                    "labeling": Path("general") / "labeling" / "code_polygon.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dry_weather_flow") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
@@ -569,7 +569,7 @@ style_config_data = MappingProxyType(
                     "attributetableconfig": Path("dry_weather_flow") / "attributetableconfig" / "default.qml",
                     "constraints": Path("dry_weather_flow") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("dry_weather_flow") / "fieldConfiguration" / "default.qml",
-                    "labeling": Path("general") / "labeling" / "display_name.qml",
+                    "labeling": Path("general") / "labeling" / "display_name_polygon.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("dry_weather_flow") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
@@ -721,7 +721,7 @@ style_config_data = MappingProxyType(
                     "fieldConfiguration": Path("grid_refinement_area") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_area") / "attributeEditorForm" / "default.qml",
                     "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
-                    "labeling": Path("general") / "labeling" / "id.qml",
+                    "labeling": Path("general") / "labeling" / "id_polygon.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_area") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
@@ -733,7 +733,7 @@ style_config_data = MappingProxyType(
                     "fieldConfiguration": Path("grid_refinement_area") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_area") / "attributeEditorForm" / "default.qml",
                     "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
-                    "labeling": Path("general") / "labeling" / "code.qml",
+                    "labeling": Path("general") / "labeling" / "code_polygon.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_area") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
@@ -745,7 +745,7 @@ style_config_data = MappingProxyType(
                     "fieldConfiguration": Path("grid_refinement_area") / "fieldConfiguration" / "default.qml",
                     "attributeEditorForm": Path("grid_refinement_area") / "attributeEditorForm" / "default.qml",
                     "editorlayout": Path("general") / "editorlayout" / "tablayout.qml",
-                    "labeling": Path("general") / "labeling" / "display_name.qml",
+                    "labeling": Path("general") / "labeling" / "display_name_polygon.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("grid_refinement_area") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
@@ -1632,7 +1632,7 @@ style_config_data = MappingProxyType(
                     "attributetableconfig": Path("surface") / "attributetableconfig" / "default.qml",
                     "constraints": Path("surface") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("surface") / "fieldConfiguration" / "default.qml",
-                    "labeling": Path("general") / "labeling" / "id.qml",
+                    "labeling": Path("general") / "labeling" / "id_polygon.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("surface") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
@@ -1642,7 +1642,7 @@ style_config_data = MappingProxyType(
                     "attributetableconfig": Path("surface") / "attributetableconfig" / "default.qml",
                     "constraints": Path("surface") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("surface") / "fieldConfiguration" / "default.qml",
-                    "labeling": Path("general") / "labeling" / "code.qml",
+                    "labeling": Path("general") / "labeling" / "code_polygon.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("surface") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
@@ -1652,7 +1652,7 @@ style_config_data = MappingProxyType(
                     "attributetableconfig": Path("surface") / "attributetableconfig" / "default.qml",
                     "constraints": Path("surface") / "constraints" / "default.qml",
                     "fieldConfiguration": Path("surface") / "fieldConfiguration" / "default.qml",
-                    "labeling": Path("general") / "labeling" / "display_name.qml",
+                    "labeling": Path("general") / "labeling" / "display_name_polygon.qml",
                     "previewExpression": Path("general") / "previewExpression" / "default.qml",  # display name
                     "renderer-v2": Path("surface") / "renderer-v2" / "default.qml",  # symbology
                     "layerGeometryType": Path("general") / "layerGeometryType" / "polygon.qml",
