@@ -1,7 +1,7 @@
 History
 =======
 
-2.1.5 (unreleased)
+2.2.0 (2025-05-07)
 ------------------
 
 - Display upgrade warnings (any UserWarning raised during upgrading)
