@@ -1125,13 +1125,12 @@ def convert_to_type(value, expected_type):
         if types:
             # Take first non-None type as the target type
             expected_type = types[0]
+    if isinstance(expected_type, type):
+        if issubclass(expected_type, IntEnum):
+            expected_type = int
+        elif issubclass(expected_type, Enum):
+            expected_type = str
     try:
-        if isinstance(expected_type, type):
-            if issubclass(expected_type, IntEnum):
-                return int(value)
-            elif issubclass(expected_type, Enum):
-                return str(value)
-        else:
-            return expected_type(value)
+        return expected_type(value)
     except (ValueError, TypeError):
         raise TypeConversionError(value, expected_type)

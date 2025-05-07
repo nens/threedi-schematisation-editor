@@ -232,10 +232,10 @@ class AbstractFeaturesImporter:
                 except TypeConversionError as e:
                     new_feat[field_name] = NULL
                     feat_id = new_feat["id"]
-                    message = f"Attribute {field_name} of feature with id {feat_id} was not filled in"
+                    message = f"Attribute {field_name} of feature with id {feat_id} in layer {self.target_layer_name} was not filled in"
                     # Log to QGIS message log
                     QgsMessageLog.logMessage(
-                        f"{message}: {e}",
+                        f"{message}. {e}",
                         "Warning",  # Add a tag here
                         Qgis.Warning
                     )
