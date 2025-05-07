@@ -1115,7 +1115,7 @@ class TypeConversionError(Exception):
 
 def convert_to_type(value, expected_type):
     """Convert a value to the expected type using typing utilities."""
-    if value is None or value == NULL:
+    if value is None or value in [NULL, "NULL", "None", ""]:
         return NULL
     # Handle Optional[T] or Union types
     origin = get_origin(expected_type)
