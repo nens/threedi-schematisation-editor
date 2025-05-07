@@ -116,8 +116,8 @@ class ConnectionNode(ModelObject):
             "Storage area [m²]",
             "Initial water level [m]",
             "Visualisation",
-            "Bottom level [m MSL]",
             "Manhole surface level [m MSL]",
+            "Bottom level [m MSL]",
             "Exchange level [m MSL]",
             "Exchange type",
             "Exchange thickness [m]",
@@ -719,7 +719,7 @@ class ModelSettings(ModelObject):
     friction_coefficient_file: Optional[str]
     embedded_cutoff_threshold: Optional[float]
     epsg_code: Optional[int]
-    max_angle_1d_advection: Optional[float]
+    max_angle_1d_advection: Optional[HighPrecisionFloat]
     friction_averaging: Optional[bool]
     table_step_size_1d: Optional[float]
     use_2d_rain: bool

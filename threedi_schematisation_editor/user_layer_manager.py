@@ -24,7 +24,7 @@ from threedi_schematisation_editor.utils import (
     get_qml_style_path, gpkg_layer, hillshade_layer, merge_qml_styles,
     modify_raster_style, remove_group_with_children, remove_layer,
     set_field_default_value, set_initial_layer_configuration,
-    validation_errors_summary)
+    validation_errors_summary, zoom_to_layer)
 
 
 class LayersManager:
@@ -471,8 +471,9 @@ class LayersManager:
                     modify_raster_style(rlayer)
                     if raster_file_field == "dem_file":
                         hillshade_raster_layer = hillshade_layer(raster_filepath)
-                        canvas = self.iface.mapCanvas()
-                        canvas.setExtent(rlayer.extent())
+                        # zoom to layer extent to prevent that raster is loaded when zoomed in too much, because that
+                        # will break the raster styling
+                        zoom_to_layer(layer=rlayer, iface=self.iface)
                         add_layer_to_group(group_name, rlayer, cached_groups=self.spawned_groups)
                         add_layer_to_group(group_name, hillshade_raster_layer, cached_groups=self.spawned_groups)
                     else:

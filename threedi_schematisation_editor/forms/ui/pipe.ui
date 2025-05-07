@@ -775,7 +775,7 @@
              </property>
              <layout class="QGridLayout" name="gridLayout_26">
               <item row="0" column="1">
-               <widget class="QDoubleSpinBox" name="calculation_point_distance_2">
+               <widget class="QDoubleSpinBox" name="calculation_point_distance">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -816,7 +816,7 @@
                </widget>
               </item>
               <item row="0" column="2">
-               <widget class="QToolButton" name="calculation_point_distance_clear_2">
+               <widget class="QToolButton" name="calculation_point_distance_clear">
                 <property name="text">
                  <string>x</string>
                 </property>
@@ -2311,8 +2311,8 @@
   <tabstop>invert_level_start_clear</tabstop>
   <tabstop>invert_level_end</tabstop>
   <tabstop>invert_level_end_clear</tabstop>
-  <tabstop>calculation_point_distance_2</tabstop>
-  <tabstop>calculation_point_distance_clear_2</tabstop>
+  <tabstop>calculation_point_distance</tabstop>
+  <tabstop>calculation_point_distance_clear</tabstop>
   <tabstop>material_id</tabstop>
   <tabstop>friction_type</tabstop>
   <tabstop>friction_value</tabstop>
