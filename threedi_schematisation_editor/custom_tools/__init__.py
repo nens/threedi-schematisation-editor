@@ -16,6 +16,7 @@ from qgis.core import (
     QgsProject,
     QgsWkbTypes,
 )
+
 from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt.QtWidgets import QComboBox, QLabel, QLineEdit, QPushButton
 
@@ -768,15 +769,11 @@ class StructuresIntegrator(LinearStructuresImporter):
             for channel_feat in channels:
                 channel_xs_count = 0
                 channel_id = channel_feat["id"]
-                channel_code = channel_feat["code"]
                 channel_geometry = channel_feat.geometry()
                 channel_geometry_middle = channel_geometry.interpolate(channel_geometry.length() * 0.5)
                 xs_fids = xs_location_index.intersects(channel_geometry.boundingBox())
                 for xs_fid in xs_fids:
                     xs_feat = xs_location_features_map[xs_fid]
-                    xs_code = xs_feat["code"]
-                    if xs_code and not xs_code.startswith(channel_code):
-                        continue
                     xs_geom = xs_feat.geometry()
                     xs_buffer = xs_geom.buffer(
                         self.DEFAULT_INTERSECTION_BUFFER, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS
