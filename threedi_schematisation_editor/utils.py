@@ -1126,6 +1126,12 @@ def convert_to_type(value, expected_type):
             # Take first non-None type as the target type
             expected_type = types[0]
     try:
-        return expected_type(value)
+        if isinstance(expected_type, type):
+            if issubclass(expected_type, IntEnum):
+                return int(value)
+            elif issubclass(expected_type, Enum):
+                return str(value)
+        else:
+            return expected_type(value)
     except (ValueError, TypeError):
         raise TypeConversionError(value, expected_type)
