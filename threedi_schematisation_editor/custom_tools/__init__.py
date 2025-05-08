@@ -1,4 +1,6 @@
 # Copyright (C) 2025 by Lutra Consulting
+import warnings
+
 from collections import defaultdict, namedtuple
 from enum import Enum
 from functools import cached_property
@@ -863,6 +865,7 @@ class StructuresIntegrator(LinearStructuresImporter):
             message = (f'Cannot integrate weirs with total length {total_length:.2f} into channel {channel_feat["id"]} '
                        f'with length {channel_geom.length():.2f}. Weir ids: {id_str}')
             QgsMessageLog.logMessage(message, "Warning", level=Qgis.Warning)
+            warnings.warn(f"{message}", Warning)
             return
         for channel_structure in sorted(channel_structures, key=lambda x: x.m):
             new_nodes = []
