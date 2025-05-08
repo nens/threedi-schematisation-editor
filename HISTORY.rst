@@ -4,7 +4,7 @@ History
 2.2.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Handle importing and integrating overlapping objects on channels (#370)
 
 
 2.2.0 (2025-05-07)
