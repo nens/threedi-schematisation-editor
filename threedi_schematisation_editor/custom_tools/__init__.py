@@ -843,7 +843,7 @@ class StructuresIntegrator(LinearStructuresImporter):
         channel_geom = channel_feat.geometry()
         channel_polyline = channel_geom.asPolyline()
         first_point = channel_polyline[0]
-        first_node_id = self.node_by_location[first_point]
+        first_node_id = self.node_by_location.get(first_point, channel_attributes['connection_node_id_start'])
         first_node_feat = next(get_features_by_expression(self.node_layer, f'"id" = {first_node_id}'))
         node_field_names = self.layer_field_names_mapping[self.node_layer.name()]
         node_attributes = {field_name: first_node_feat[field_name] for field_name in node_field_names}
