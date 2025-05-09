@@ -944,7 +944,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
             )
             with warnings.catch_warnings(record=True) as caught_warnings:
                 warnings.simplefilter("always")
-                features_importer.import_features(selected_ids=selected_feat_ids)
+                structures_importer.import_structures(selected_ids=selected_feat_ids)
 
                 warnings_msg = ""
                 if caught_warnings:
