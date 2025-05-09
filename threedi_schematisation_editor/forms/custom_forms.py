@@ -5,7 +5,7 @@ from enum import Enum
 from functools import cached_property, partial
 from operator import itemgetter
 from types import MappingProxyType
-
+from qgis.core import QgsMessageLog, Qgis
 from qgis.core import NULL, QgsGeometry
 from qgis.gui import QgsCheckableComboBox, QgsDoubleSpinBox, QgsSpinBox
 from qgis.PyQt.QtCore import QObject, Qt
@@ -2223,6 +2223,7 @@ class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable,
     MODEL = dm.TableControl
 
     def __init__(self, *args, **kwargs):
+        QgsMessageLog.logMessage("komkomm2er", level=Qgis.Critical)
         super().__init__(*args, *kwargs)
 
     def fill_related_attributes(self):
@@ -2241,6 +2242,24 @@ class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable,
         self.populate_foreign_widgets()
         self.populate_table_data()
         self.populate_tag_widgets()
+
+        action_type_widget = self.dialog.findChild(QObject, "action_type")
+        edit_signal = self.get_widget_editing_signal(action_type_widget)
+        edit_slot = partial(self.action_type_changed, action_type_widget)
+        connect_signal(edit_signal, edit_slot)
+        self.dialog.active_form_signals.add((edit_signal, edit_slot))
+
+    def action_type_changed(self, widget, idx):
+        action_type_str = widget.itemText(idx)
+        # If action type is anything other than "set_discharge_coefficients", do not show the column for Action value 2
+        if action_type_str != en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " "):
+            QgsMessageLog.logMessage(str(idx), level=Qgis.Critical)
+
+        # Rename the column headers for "action value 1" and "action value 2" based on action type:
+        # set_crest_level: action value 1 -> "Crest level [m MSL]"; action value 2 -> hidden
+        # set_gate_level: action value 1 -> "Gate level [m MSL]"; action value 2 -> hidden
+        # set_pump_capacity: : action value 1 -> "Pump capacity [L/s]"; action value 2 -> hidden
+        # set_discharge_coefficients: : action value 1 -> "Discharge coefficient positive [-]"; action value 2 -> "Discharge coefficient negative [-]"
 
 
 class MeasureMap(AbstractFormWithTag):
