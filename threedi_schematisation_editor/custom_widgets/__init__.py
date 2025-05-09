@@ -2,6 +2,8 @@
 import ast
 import json
 import os
+import warnings
+
 from functools import partial
 from itertools import chain
 
@@ -521,12 +523,23 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
                 import_settings,
                 target_layer=target_layer,
             )
-            features_importer.import_features(selected_ids=selected_feat_ids)
-            success_msg = (
-                "Features imported successfully.\n\n"
-                "The layers to which the features have been added are still in editing mode, "
-                "so you can review the changes before saving them to the layers."
-            )
+            with warnings.catch_warnings(record=True) as caught_warnings:
+                warnings.simplefilter("always")
+                features_importer.import_features(selected_ids=selected_feat_ids)
+
+                warnings_msg = ""
+                if caught_warnings:
+                    warnings_msg = (
+                        "\n\nNote: Some warnings were raised during the import process. " 
+                        "Check the 'Warnings' log for more details."
+                    )
+
+                success_msg = (
+                    "Features imported successfully.\n\n"
+                    "The layers to which the features have been added are still in editing mode, "
+                    "so you can review the changes before saving them to the layers."
+                    f"{warnings_msg}"
+                )
             self.uc.show_info(success_msg, self)
         except Exception as e:
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
@@ -929,12 +942,23 @@ class ImportStructuresDialog(is_basecls, is_uicls):
                 import_settings,
                 **processed_layers,
             )
-            structures_importer.import_structures(selected_ids=selected_feat_ids)
-            success_msg = (
-                "Features imported successfully.\n\n"
-                "The layers to which the features have been added are still in editing mode, "
-                "so you can review the changes before saving them to the layers."
-            )
+            with warnings.catch_warnings(record=True) as caught_warnings:
+                warnings.simplefilter("always")
+                structures_importer.import_structures(selected_ids=selected_feat_ids)
+
+                warnings_msg = ""
+                if caught_warnings:
+                    warnings_msg = (
+                        "\n\nNote: Some warnings were raised during the import process. " 
+                        "Check the 'Warnings' log for more details."
+                    )
+
+                success_msg = (
+                    "Features imported successfully.\n\n"
+                    "The layers to which the features have been added are still in editing mode, "
+                    "so you can review the changes before saving them to the layers."
+                    f"{warnings_msg}"
+                )
             self.uc.show_info(success_msg, self)
         except Exception as e:
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
