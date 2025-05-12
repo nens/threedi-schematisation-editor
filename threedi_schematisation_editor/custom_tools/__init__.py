@@ -243,7 +243,7 @@ class AbstractFeaturesImporter:
                         "Warning",  # Add a tag here
                         Qgis.Warning
                     )
-                    warnings.warn(f"{message}: {e}", Warning)
+                    warnings.warn(f"{message}: {e}", UserWarning)
 
     @staticmethod
     def process_commit_errors(layer):
@@ -877,7 +877,7 @@ class StructuresIntegrator(LinearStructuresImporter):
             message = (f'Cannot integrate objects with total length {total_length:.2f} into channel {channel_feat["id"]} '
                        f'with length {channel_geom.length():.2f}. Object ids: {id_str}')
             QgsMessageLog.logMessage(message, "Warning", level=Qgis.Warning)
-            warnings.warn(f"{message}", Warning)
+            warnings.warn(f"{message}", UserWarning)
             return
         for channel_structure in sorted(channel_structures, key=lambda x: x.m):
             new_nodes = []

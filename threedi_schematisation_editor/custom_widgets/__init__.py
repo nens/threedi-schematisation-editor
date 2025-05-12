@@ -524,9 +524,9 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
                 target_layer=target_layer,
             )
             with warnings.catch_warnings(record=True) as caught_warnings:
-                warnings.simplefilter("always")
+                warnings.simplefilter("ignore")  # Ignore all warnings by default
+                warnings.simplefilter("always", UserWarning)  # But always record UserWarning
                 features_importer.import_features(selected_ids=selected_feat_ids)
-
                 warnings_msg = ""
                 if caught_warnings:
                     warnings_msg = (
@@ -943,9 +943,9 @@ class ImportStructuresDialog(is_basecls, is_uicls):
                 **processed_layers,
             )
             with warnings.catch_warnings(record=True) as caught_warnings:
-                warnings.simplefilter("always")
+                warnings.simplefilter("ignore")  # Ignore all warnings by default
+                warnings.simplefilter("always", UserWarning)  # But always record UserWarning
                 structures_importer.import_structures(selected_ids=selected_feat_ids)
-
                 warnings_msg = ""
                 if caught_warnings:
                     warnings_msg = (
