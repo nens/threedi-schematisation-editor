@@ -1,7 +1,7 @@
 History
 =======
 
-2.2.1 (unreleased)
+2.2.1 (2025-05-12)
 ------------------
 
 - Fix integrating objects in channels when connection node and channel start do not match exactly (#372)
