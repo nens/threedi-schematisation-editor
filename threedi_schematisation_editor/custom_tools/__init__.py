@@ -874,8 +874,8 @@ class StructuresIntegrator(LinearStructuresImporter):
             # TODO: use single implementation for warning (see update_attributes) - waiting for merge with master
             id_str = ','.join(str(channel_structure.feature["id"]) for channel_structure in channel_structures)
             total_length = sum(channel_structure.m for channel_structure in channel_structures)
-            message = (f'Cannot integrate weirs with total length {total_length:.2f} into channel {channel_feat["id"]} '
-                       f'with length {channel_geom.length():.2f}. Weir ids: {id_str}')
+            message = (f'Cannot integrate objects with total length {total_length:.2f} into channel {channel_feat["id"]} '
+                       f'with length {channel_geom.length():.2f}. Object ids: {id_str}')
             QgsMessageLog.logMessage(message, "Warning", level=Qgis.Warning)
             warnings.warn(f"{message}", Warning)
             return
