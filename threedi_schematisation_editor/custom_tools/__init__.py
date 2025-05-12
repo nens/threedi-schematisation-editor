@@ -9,11 +9,13 @@ from operator import attrgetter, itemgetter
 
 from qgis.core import (
     NULL,
+    Qgis,
     QgsCoordinateTransform,
     QgsExpression,
     QgsExpressionContext,
     QgsFeature,
     QgsGeometry,
+    QgsMessageLog,
     QgsPointLocator,
     QgsProject,
     QgsWkbTypes,
@@ -28,6 +30,7 @@ from qgis.PyQt.QtWidgets import QComboBox, QLabel, QLineEdit, QPushButton
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
+    convert_to_type,
     enum_entry_name_format,
     find_line_endpoints_nodes,
     find_point_nodes,
@@ -37,6 +40,7 @@ from threedi_schematisation_editor.utils import (
     is_optional,
     optional_type,
     spatial_index,
+    TypeConversionError
 )
 
 
@@ -203,8 +207,9 @@ class AbstractFeaturesImporter:
         fields_config = self.fields_configurations[model_cls]
         expression_context = QgsExpressionContext()
         expression_context.setFeature(source_feat)
+        type_annotations = model_cls.__annotations__
         for new_feat in new_features:
-            for field_name in model_cls.__annotations__.keys():
+            for field_name, field_type in type_annotations.items():
                 try:
                     field_config = fields_config[field_name]
                 except KeyError:
@@ -212,26 +217,33 @@ class AbstractFeaturesImporter:
                 method = ColumnImportMethod(field_config["method"])
                 if method == ColumnImportMethod.AUTO:
                     continue
-                elif method == ColumnImportMethod.ATTRIBUTE:
+                field_value = NULL
+                if method == ColumnImportMethod.ATTRIBUTE:
                     src_field_name = field_config[ColumnImportMethod.ATTRIBUTE.value]
                     src_value = source_feat[src_field_name]
-                    try:
-                        value_map = field_config["value_map"]
-                        field_value = value_map[src_value]
-                    except KeyError:
-                        field_value = src_value
+                    value_map = field_config.get("value_map", {})
+                    field_value = value_map.get(src_value, src_value)
                     if field_value == NULL:
                         field_value = field_config.get("default_value", NULL)
-                    new_feat[field_name] = field_value
                 elif method == ColumnImportMethod.EXPRESSION:
                     expression_str = field_config["expression"]
                     expression = QgsExpression(expression_str)
-                    new_feat[field_name] = expression.evaluate(expression_context)
+                    field_value = expression.evaluate(expression_context)
                 elif method == ColumnImportMethod.DEFAULT:
-                    default_value = field_config["default_value"]
-                    new_feat[field_name] = default_value
-                else:
+                    field_value = field_config["default_value"]
+                try:
+                    new_feat[field_name] = convert_to_type(field_value, field_type)
+                except TypeConversionError as e:
                     new_feat[field_name] = NULL
+                    feat_id = new_feat["id"]
+                    message = f"Attribute {field_name} of feature with id {feat_id} in layer {self.target_layer_name} was not filled in"
+                    # Log to QGIS message log
+                    QgsMessageLog.logMessage(
+                        f"{message}. {e}",
+                        "Warning",  # Add a tag here
+                        Qgis.Warning
+                    )
+                    warnings.warn(f"{message}: {e}", Warning)
 
     @staticmethod
     def process_commit_errors(layer):

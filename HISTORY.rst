@@ -12,6 +12,7 @@ History
 
 - Display upgrade warnings (any UserWarning raised during upgrading)
 - Split BoundaryTypes in 1D and 2D types and add boundary types Discharge (total) and Groundwater discharge (total) to BoundaryType2D
+- Force conversion on importing feature attributes and show warnings when this is not possible
 - Correctly set id's when importing orifices or weirs with edit channels option active (#363)
 - Fix zooming to DEM extent when schematisation CRS differs from project CRS
 - Fix associating imported structures with existing channels (#369)
