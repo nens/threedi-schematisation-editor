@@ -9,20 +9,14 @@ from operator import attrgetter, itemgetter
 
 from qgis.core import (
     NULL,
-    Qgis,
     QgsCoordinateTransform,
     QgsExpression,
     QgsExpressionContext,
     QgsFeature,
     QgsGeometry,
-    QgsMessageLog,
     QgsPointLocator,
     QgsProject,
     QgsWkbTypes,
-)
-from qgis.core import (
-    Qgis,
-    QgsMessageLog,
 )
 
 from qgis.gui import QgsFieldExpressionWidget
@@ -42,6 +36,8 @@ from threedi_schematisation_editor.utils import (
     spatial_index,
     TypeConversionError
 )
+
+from threedi_schematisation_editor.warnings import FeaturesImporterWarning, StructuresIntegratorWarning
 
 
 class ColumnImportMethod(Enum):
@@ -237,13 +233,7 @@ class AbstractFeaturesImporter:
                     new_feat[field_name] = NULL
                     feat_id = new_feat["id"]
                     message = f"Attribute {field_name} of feature with id {feat_id} in layer {self.target_layer_name} was not filled in"
-                    # Log to QGIS message log
-                    QgsMessageLog.logMessage(
-                        f"{message}. {e}",
-                        "Warning",  # Add a tag here
-                        Qgis.Warning
-                    )
-                    warnings.warn(f"{message}: {e}", UserWarning)
+                    warnings.warn(f"{message}. {e}", FeaturesImporterWarning)
 
     @staticmethod
     def process_commit_errors(layer):
@@ -871,13 +861,12 @@ class StructuresIntegrator(LinearStructuresImporter):
         structure_fields = self.layer_fields_mapping[self.target_layer_name]
         structure_field_names = self.layer_field_names_mapping[self.target_layer_name]
         if channel_geom.length() < sum(channel_structure.m for channel_structure in channel_structures):
-            # TODO: use single implementation for warning (see update_attributes) - waiting for merge with master
             id_str = ','.join(str(channel_structure.feature["id"]) for channel_structure in channel_structures)
             total_length = sum(channel_structure.m for channel_structure in channel_structures)
-            message = (f'Cannot integrate objects with total length {total_length:.2f} into channel {channel_feat["id"]} '
+            message = (f'Cannot integrate {self.target_model_cls.__tablename__}s with total length {total_length:.2f} '
+                       f'into channel {channel_feat["id"]} '
                        f'with length {channel_geom.length():.2f}. Object ids: {id_str}')
-            QgsMessageLog.logMessage(message, "Warning", level=Qgis.Warning)
-            warnings.warn(f"{message}", UserWarning)
+            warnings.warn(f"{message}", StructuresIntegratorWarning)
             return
         for channel_structure in sorted(channel_structures, key=lambda x: x.m):
             new_nodes = []

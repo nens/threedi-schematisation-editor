@@ -7,7 +7,7 @@ import warnings
 from functools import partial
 from itertools import chain
 
-from qgis.core import NULL, QgsMapLayerProxyModel, QgsSettings
+from qgis.core import NULL, Qgis, QgsMapLayerProxyModel, QgsMessageLog, QgsSettings
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QItemSelectionModel, Qt
 from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
@@ -42,6 +42,73 @@ if_basecls, if_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "u
 is_basecls, is_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "import_structures.ui"))
 vm_basecls, vm_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "attribute_value_map.ui"))
 load_basecls, load_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "load_schematisation.ui"))
+
+
+class CatchThreediWarnings:
+    """
+    A context manager that catches warnings from threedi_schematisation_editor.warnings,
+    compiles them into a warnings_msg, and logs them to QGIS log system.
+    """
+
+    def __init__(self, log_category="Warnings"):
+        self.caught_warnings = []
+        self.warnings_msg = ""
+        self.log_category = log_category
+
+    def __enter__(self):
+        # Create a warnings list to store caught warnings
+        self._warnings_list = []
+
+        # Save the old showwarning function to restore it later
+        self._old_showwarning = warnings.showwarning
+
+        # Define a custom function to intercept warnings
+        def _showwarning(message, category, filename, lineno, file=None, line=None):
+            self._warnings_list.append((message, category, filename, lineno))
+
+        # Replace the default showwarning with our custom one
+        warnings.showwarning = _showwarning
+
+        # Set up the warnings filter
+        warnings.simplefilter("ignore")  # Ignore all warnings by default
+
+        # Import all warning classes from the module for reference
+        import threedi_schematisation_editor.warnings as threedi_warnings
+        import inspect
+
+        # Enable warnings for all warning classes in the threedi module
+        for name, obj in inspect.getmembers(threedi_warnings):
+            if inspect.isclass(obj) and issubclass(obj, Warning):
+                warnings.simplefilter("always", obj)
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Restore the original showwarning function
+        warnings.showwarning = self._old_showwarning
+
+        # Process the warnings
+        self.caught_warnings = self._warnings_list
+
+        # Generate the warning message if any warnings were caught
+        if self.caught_warnings:
+            self.warnings_msg = (
+                "\n\nNote: Some warnings were raised during the process. "
+                "Check the 'Warnings' log for more details."
+            )
+
+            # Log each warning to QGIS
+            for warning_info in self.caught_warnings:
+                message, category, filename, lineno = warning_info
+                warning_text = f"{category.__name__}: {message} (in {filename}, line {lineno})"
+                QgsMessageLog.logMessage(warning_text, self.log_category, level=Qgis.Warning)
+
+        # Reset the warnings filter
+        warnings.resetwarnings()
+
+        # Don't suppress any exceptions
+        return False
+
 
 
 class AttributeValueMapDialog(vm_basecls, vm_uicls):
@@ -523,23 +590,14 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
                 import_settings,
                 target_layer=target_layer,
             )
-            with warnings.catch_warnings(record=True) as caught_warnings:
-                warnings.simplefilter("ignore")  # Ignore all warnings by default
-                warnings.simplefilter("always", UserWarning)  # But always record UserWarning
+            with CatchThreediWarnings() as warnings_catcher:
                 features_importer.import_features(selected_ids=selected_feat_ids)
-                warnings_msg = ""
-                if caught_warnings:
-                    warnings_msg = (
-                        "\n\nNote: Some warnings were raised during the import process. " 
-                        "Check the 'Warnings' log for more details."
-                    )
-
-                success_msg = (
-                    "Features imported successfully.\n\n"
-                    "The layers to which the features have been added are still in editing mode, "
-                    "so you can review the changes before saving them to the layers."
-                    f"{warnings_msg}"
-                )
+            success_msg = (
+                "Features imported successfully.\n\n"
+                "The layers to which the features have been added are still in editing mode, "
+                "so you can review the changes before saving them to the layers."
+                f"{warnings_catcher.warnings_msg}"
+            )
             self.uc.show_info(success_msg, self)
         except Exception as e:
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
@@ -942,23 +1000,14 @@ class ImportStructuresDialog(is_basecls, is_uicls):
                 import_settings,
                 **processed_layers,
             )
-            with warnings.catch_warnings(record=True) as caught_warnings:
-                warnings.simplefilter("ignore")  # Ignore all warnings by default
-                warnings.simplefilter("always", UserWarning)  # But always record UserWarning
+            with CatchThreediWarnings() as warnings_catcher:
                 structures_importer.import_structures(selected_ids=selected_feat_ids)
-                warnings_msg = ""
-                if caught_warnings:
-                    warnings_msg = (
-                        "\n\nNote: Some warnings were raised during the import process. " 
-                        "Check the 'Warnings' log for more details."
-                    )
-
-                success_msg = (
-                    "Features imported successfully.\n\n"
-                    "The layers to which the features have been added are still in editing mode, "
-                    "so you can review the changes before saving them to the layers."
-                    f"{warnings_msg}"
-                )
+            success_msg = (
+                "Structures imported successfully.\n\n"
+                "The layers to which the structures have been added are still in editing mode, "
+                "so you can review the changes before saving them to the layers."
+                f"{warnings_catcher.warnings_msg}"
+            )
             self.uc.show_info(success_msg, self)
         except Exception as e:
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
