@@ -860,7 +860,8 @@ class StructuresIntegrator(LinearStructuresImporter):
         simplify_structure_geometry = self.target_model_cls != dm.Culvert
         structure_fields = self.layer_fields_mapping[self.target_layer_name]
         structure_field_names = self.layer_field_names_mapping[self.target_layer_name]
-        if channel_geom.length() < sum(channel_structure.m for channel_structure in channel_structures):
+        total_length = sum(channel_structure.length for channel_structure in channel_structures)
+        if channel_geom.length() < total_length:
             id_str = ','.join(str(channel_structure.feature["id"]) for channel_structure in channel_structures)
             total_length = sum(channel_structure.m for channel_structure in channel_structures)
             message = (f'Cannot integrate {self.target_model_cls.__tablename__}s with total length {total_length:.2f} '
