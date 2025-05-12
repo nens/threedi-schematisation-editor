@@ -100,7 +100,7 @@ class CatchThreediWarnings:
             # Log each warning to QGIS
             for warning_info in self.caught_warnings:
                 message, category, filename, lineno = warning_info
-                warning_text = f"{category.__name__}: {message} (in {filename}, line {lineno})"
+                warning_text = f"{category.__name__}: {message}"
                 QgsMessageLog.logMessage(warning_text, self.log_category, level=Qgis.Warning)
 
         # Reset the warnings filter
