@@ -1,10 +1,16 @@
 History
 =======
 
-2.2.1 (unreleased)
+2.2.2 (unreleased)
 ------------------
 
 - Add processing algorithm to add NWRW parameters to surface parameters (#333)
+
+
+2.2.1 (2025-05-12)
+------------------
+
+- Fix integrating objects in channels when connection node and channel start do not match exactly (#372)
 
 
 2.2.0 (2025-05-07)
@@ -12,6 +18,7 @@ History
 
 - Display upgrade warnings (any UserWarning raised during upgrading)
 - Split BoundaryTypes in 1D and 2D types and add boundary types Discharge (total) and Groundwater discharge (total) to BoundaryType2D
+- Force conversion on importing feature attributes and show warnings when this is not possible
 - Correctly set id's when importing orifices or weirs with edit channels option active (#363)
 - Fix zooming to DEM extent when schematisation CRS differs from project CRS
 - Fix associating imported structures with existing channels (#369)

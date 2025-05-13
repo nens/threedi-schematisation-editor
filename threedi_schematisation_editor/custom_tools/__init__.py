@@ -1,4 +1,6 @@
 # Copyright (C) 2025 by Lutra Consulting
+import warnings
+
 from collections import defaultdict, namedtuple
 from enum import Enum
 from functools import cached_property
@@ -7,21 +9,25 @@ from operator import attrgetter, itemgetter
 
 from qgis.core import (
     NULL,
+    Qgis,
     QgsCoordinateTransform,
     QgsExpression,
     QgsExpressionContext,
     QgsFeature,
     QgsGeometry,
+    QgsMessageLog,
     QgsPointLocator,
     QgsProject,
     QgsWkbTypes,
 )
+
 
 from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt.QtWidgets import QComboBox, QLabel, QLineEdit, QPushButton
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
+    convert_to_type,
     enum_entry_name_format,
     find_line_endpoints_nodes,
     find_point_nodes,
@@ -31,6 +37,7 @@ from threedi_schematisation_editor.utils import (
     is_optional,
     optional_type,
     spatial_index,
+    TypeConversionError
 )
 
 
@@ -197,8 +204,9 @@ class AbstractFeaturesImporter:
         fields_config = self.fields_configurations[model_cls]
         expression_context = QgsExpressionContext()
         expression_context.setFeature(source_feat)
+        type_annotations = model_cls.__annotations__
         for new_feat in new_features:
-            for field_name in model_cls.__annotations__.keys():
+            for field_name, field_type in type_annotations.items():
                 try:
                     field_config = fields_config[field_name]
                 except KeyError:
@@ -206,26 +214,33 @@ class AbstractFeaturesImporter:
                 method = ColumnImportMethod(field_config["method"])
                 if method == ColumnImportMethod.AUTO:
                     continue
-                elif method == ColumnImportMethod.ATTRIBUTE:
+                field_value = NULL
+                if method == ColumnImportMethod.ATTRIBUTE:
                     src_field_name = field_config[ColumnImportMethod.ATTRIBUTE.value]
                     src_value = source_feat[src_field_name]
-                    try:
-                        value_map = field_config["value_map"]
-                        field_value = value_map[src_value]
-                    except KeyError:
-                        field_value = src_value
+                    value_map = field_config.get("value_map", {})
+                    field_value = value_map.get(src_value, src_value)
                     if field_value == NULL:
                         field_value = field_config.get("default_value", NULL)
-                    new_feat[field_name] = field_value
                 elif method == ColumnImportMethod.EXPRESSION:
                     expression_str = field_config["expression"]
                     expression = QgsExpression(expression_str)
-                    new_feat[field_name] = expression.evaluate(expression_context)
+                    field_value = expression.evaluate(expression_context)
                 elif method == ColumnImportMethod.DEFAULT:
-                    default_value = field_config["default_value"]
-                    new_feat[field_name] = default_value
-                else:
+                    field_value = field_config["default_value"]
+                try:
+                    new_feat[field_name] = convert_to_type(field_value, field_type)
+                except TypeConversionError as e:
                     new_feat[field_name] = NULL
+                    feat_id = new_feat["id"]
+                    message = f"Attribute {field_name} of feature with id {feat_id} in layer {self.target_layer_name} was not filled in"
+                    # Log to QGIS message log
+                    QgsMessageLog.logMessage(
+                        f"{message}. {e}",
+                        "Warning",  # Add a tag here
+                        Qgis.Warning
+                    )
+                    warnings.warn(f"{message}: {e}", Warning)
 
     @staticmethod
     def process_commit_errors(layer):
@@ -841,9 +856,7 @@ class StructuresIntegrator(LinearStructuresImporter):
         channel_field_names = self.layer_field_names_mapping[channel_layer_name]
         channel_attributes = {field_name: channel_feat[field_name] for field_name in channel_field_names}
         channel_geom = channel_feat.geometry()
-        channel_polyline = channel_geom.asPolyline()
-        first_point = channel_polyline[0]
-        first_node_id = self.node_by_location[first_point]
+        first_node_id = channel_attributes['connection_node_id_start']
         first_node_feat = next(get_features_by_expression(self.node_layer, f'"id" = {first_node_id}'))
         node_field_names = self.layer_field_names_mapping[self.node_layer.name()]
         node_attributes = {field_name: first_node_feat[field_name] for field_name in node_field_names}
