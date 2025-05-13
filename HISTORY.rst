@@ -4,7 +4,7 @@ History
 2.2.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Add processing algorithm to add NWRW parameters to surface parameters (#333)
 
 
 2.2.0 (2025-05-07)
