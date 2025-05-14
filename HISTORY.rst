@@ -4,7 +4,7 @@ History
 2.2.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix integrating objects with line geometries that contain more than 2 points (#382)
 
 
 2.2.1 (2025-05-12)
