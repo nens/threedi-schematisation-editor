@@ -5,6 +5,8 @@ History
 ------------------
 
 - Add processing algorithm to add NWRW parameters to surface parameters (#333)
+- Fix integrating objects with line geometries that contain more than 2 points (#382)
+- Fix bug that showed error on loading channel attribute table (#379)
 
 
 2.2.1 (2025-05-12)
