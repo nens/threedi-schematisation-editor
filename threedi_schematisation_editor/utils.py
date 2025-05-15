@@ -848,7 +848,7 @@ def spatial_index(layer, request=None):
     for feat in layer.getFeatures() if request is None else layer.getFeatures(request):
         feat_copy = QgsFeature(feat)
         features[feat.id()] = feat_copy
-        index.insertFeature(feat_copy)
+        index.addFeature(feat_copy)
     return features, index
 
 

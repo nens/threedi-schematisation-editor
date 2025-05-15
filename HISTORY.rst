@@ -6,6 +6,7 @@ History
 
 - Fix integrating objects with line geometries that contain more than 2 points (#382)
 - Fix bug that showed error on loading channel attribute table (#379)
+- Handle importing and integrating overlapping objects on channels (#370)
 
 
 2.2.1 (2025-05-12)
