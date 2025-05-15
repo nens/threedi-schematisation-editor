@@ -4,7 +4,7 @@ History
 2.2.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix bug that showed error on loading channel attribute table (#379)
 
 
 2.2.1 (2025-05-12)
