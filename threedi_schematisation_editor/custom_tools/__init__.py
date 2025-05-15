@@ -700,7 +700,9 @@ class StructuresIntegrator(LinearStructuresImporter):
             structure_geom = structure_feat.geometry()
             structure_geom_type = structure_geom.type()
             if structure_geom_type == QgsWkbTypes.GeometryType.LineGeometry:
-                start_point, end_point = structure_geom.asPolyline()
+                poly_line = structure_geom.asPolyline()
+                start_point = poly_line[0]
+                end_point = poly_line[-1]
                 start_geom, end_geom = QgsGeometry.fromPointXY(start_point), QgsGeometry.fromPointXY(end_point)
                 start_buffer = start_geom.buffer(
                     self.conversion_settings.snapping_distance, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS

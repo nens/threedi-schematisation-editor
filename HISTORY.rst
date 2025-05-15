@@ -4,6 +4,7 @@ History
 2.2.2 (unreleased)
 ------------------
 
+- Fix integrating objects with line geometries that contain more than 2 points (#382)
 - Fix bug that showed error on loading channel attribute table (#379)
 
 
