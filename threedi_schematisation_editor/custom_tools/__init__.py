@@ -863,7 +863,6 @@ class StructuresIntegrator(LinearStructuresImporter):
         total_length = sum(channel_structure.length for channel_structure in channel_structures)
         if channel_geom.length() < total_length:
             id_str = ', '.join(str(channel_structure.feature["id"]) if "id" in channel_structure.feature else "?" for channel_structure in channel_structures)
-            total_length = sum(channel_structure.m for channel_structure in channel_structures)
             message = (f'Cannot integrate {self.target_model_cls.__tablename__}s with total length {total_length:.2f} '
                        f'into channel {channel_feat["id"]} with length {channel_geom.length():.2f}. '
                        f'{self.target_model_cls.__tablename__.capitalize()} ids: {id_str}')
