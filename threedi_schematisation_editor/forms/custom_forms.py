@@ -5,7 +5,6 @@ from enum import Enum
 from functools import cached_property, partial
 from operator import itemgetter
 from types import MappingProxyType
-from qgis.core import QgsMessageLog, Qgis
 from qgis.core import NULL, QgsGeometry
 from qgis.gui import QgsCheckableComboBox, QgsDoubleSpinBox, QgsSpinBox
 from qgis.PyQt.QtCore import QObject, Qt
@@ -13,6 +12,7 @@ from qgis.PyQt.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
+    QLabel,
     QDoubleSpinBox,
     QLineEdit,
     QPlainTextEdit,
@@ -2207,6 +2207,18 @@ class MeasureLocation(AbstractFormWithNode, AbstractFormWithTag):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
 
+def map_action_type_to_labels(action_type_str: str):
+    if action_type_str == en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " "):
+        return ("Discharge coefficient positive [-]", "Discharge coefficient negative [-]")
+    elif action_type_str == en.ActionType.SET_CREST_LEVEL.value.capitalize().replace("_", " "):
+        return ("Crest level [m MSL]", "")
+    elif action_type_str == en.ActionType.SET_GATE_LEVEL.value.capitalize().replace("_", " "):
+        return ("Gate level [m MSL]", "")
+    elif action_type_str == en.ActionType.SET_PUMP_CAPACITY.value.capitalize().replace("_", " "):
+        return ("Pump capacity [L/s]", "")
+    else:
+        raise NotImplementedError(f"Unsupported action type: {action_type_str}")
+
 
 class MemoryControl(AbstractFormWithTargetStructure, AbstractFormWithTag):
     """Memory Control user layer edit form logic."""
@@ -2215,7 +2227,34 @@ class MemoryControl(AbstractFormWithTargetStructure, AbstractFormWithTag):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
+        action_type_widget = self.dialog.findChild(QComboBox, "action_type")
+        action_type_widget.currentIndexChanged.connect(self.update_actions)
+        self.dialog.active_form_signals.add((action_type_widget, self.update_actions))
+        self.update_actions()
 
+    def update_actions(self):
+        action_type_widget = self.dialog.findChild(QComboBox, "action_type")
+        action_value_1_label = self.dialog.findChild(QLabel, "action_value_1_label")
+        action_value_2_label = self.dialog.findChild(QLabel, "action_value_2_label")
+        action_value_2 = self.dialog.findChild(QDoubleSpinBox, "action_value_2")
+
+        action_type_str = action_type_widget.currentText()
+        if action_type_str == "(NULL)":
+            # Just set the default values
+            action_value_1_label.setText("Action value 1")
+            action_value_2_label.setText("Action value 2")
+            return
+
+        if action_type_str != en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " "):
+            # If action type is anything other than "set_discharge_coefficients", disable action value 2
+            action_value_2.setValue(0.0) # TODO: also fires save_table_edits?
+            action_value_2.setEnabled(False) 
+        else:
+            action_value_2.setEnabled(True)
+
+        label1, label2 = map_action_type_to_labels(action_type_str)
+        action_value_1_label.setText(label1 or "Action value")
+        action_value_2_label.setText(label2 or "Action value 2")
 
 class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable, AbstractFormWithTag):
     """Table Control user layer edit form logic."""
@@ -2223,7 +2262,6 @@ class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable,
     MODEL = dm.TableControl
 
     def __init__(self, *args, **kwargs):
-        QgsMessageLog.logMessage("komkomm2er", level=Qgis.Critical)
         super().__init__(*args, *kwargs)
 
     def fill_related_attributes(self):
@@ -2253,10 +2291,11 @@ class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable,
         """Update table headers."""
         action_type_widget = self.dialog.findChild(QComboBox, "action_type")
         action_type_str = action_type_widget.currentText()
-        if not action_type_str:
+        if action_type_str == "(NULL)":
+            # Just set the default values
             super().update_table_header()
             return
-        
+
         action_type_column_idx = 2
         if action_type_str != en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " "):
             # Clear the values in the to-be-hidden column, also fires save_table_edits
@@ -2266,16 +2305,12 @@ class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable,
                     item.setText("")
             # If action type is anything other than "set_discharge_coefficients", do not show the column for Action value 2
             self.table.setColumnHidden(action_type_column_idx, True)
-
-        if action_type_str == en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " "):
+        else:
             self.table.setColumnHidden(action_type_column_idx, False)
-            self.table.setHorizontalHeaderLabels(["Measured value", "Discharge coefficient positive [-]", "Discharge coefficient negative [-]"])
-        elif action_type_str == en.ActionType.SET_CREST_LEVEL.value.capitalize().replace("_", " "):
-            self.table.setHorizontalHeaderLabels(["Measured value", "Crest level [m MSL]", ""])
-        elif action_type_str == en.ActionType.SET_GATE_LEVEL.value.capitalize().replace("_", " "):
-            self.table.setHorizontalHeaderLabels(["Measured value", "Gate level [m MSL]", ""])
-        elif action_type_str == en.ActionType.SET_PUMP_CAPACITY.value.capitalize().replace("_", " "):
-            self.table.setHorizontalHeaderLabels(["Measured value", "Pump capacity [L/s]", ""])
+
+        # Update the table headers given the action type
+        label1, label2 = map_action_type_to_labels(action_type_str)
+        self.table.setHorizontalHeaderLabels(["Measured value", label1, label2])
 
 
 class MeasureMap(AbstractFormWithTag):
