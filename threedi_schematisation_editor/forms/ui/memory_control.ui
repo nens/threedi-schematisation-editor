@@ -321,14 +321,14 @@
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QLabel" name="label_4">
+               <widget class="QLabel" name="action_value_1_label">
                 <property name="text">
                  <string>Action value 1</string>
                 </property>
                </widget>
               </item>
               <item row="1" column="3">
-               <widget class="QLabel" name="label_6">
+               <widget class="QLabel" name="action_value_2_label">
                 <property name="text">
                  <string>Action value 2</string>
                 </property>
