@@ -2257,11 +2257,18 @@ class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable,
             super().update_table_header()
             return
         
-        self.table.setColumnHidden(2, True)
-        # If action type is anything other than "set_discharge_coefficients", do not show the column for Action value 2
+        action_type_column_idx = 2
+        if action_type_str != en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " "):
+            # Clear the values in the to-be-hidden column, also fires save_table_edits
+            for r in range(self.table.rowCount()):
+                item = self.table.item(r, action_type_column_idx)
+                if item:
+                    item.setText("")
+            # If action type is anything other than "set_discharge_coefficients", do not show the column for Action value 2
+            self.table.setColumnHidden(action_type_column_idx, True)
+
         if action_type_str == en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " "):
-            self.table.setColumnHidden(2, False)
-            # TODO: Clear the values in the column as well?
+            self.table.setColumnHidden(action_type_column_idx, False)
             self.table.setHorizontalHeaderLabels(["Measured value", "Discharge coefficient positive [-]", "Discharge coefficient negative [-]"])
         elif action_type_str == en.ActionType.SET_CREST_LEVEL.value.capitalize().replace("_", " "):
             self.table.setHorizontalHeaderLabels(["Measured value", "Crest level [m MSL]", ""])
