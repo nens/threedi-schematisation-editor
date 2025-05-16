@@ -5,6 +5,7 @@ from enum import Enum
 from functools import cached_property, partial
 from operator import itemgetter
 from types import MappingProxyType
+
 from qgis.core import NULL, QgsGeometry
 from qgis.gui import QgsCheckableComboBox, QgsDoubleSpinBox, QgsSpinBox
 from qgis.PyQt.QtCore import QObject, Qt
