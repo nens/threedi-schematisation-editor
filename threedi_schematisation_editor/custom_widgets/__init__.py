@@ -1,5 +1,6 @@
 # Copyright (C) 2025 by Lutra Consulting
 import ast
+import inspect
 import json
 import os
 import warnings
@@ -37,6 +38,8 @@ from threedi_schematisation_editor.utils import (
     is_optional,
     optional_type,
 )
+import threedi_schematisation_editor.warnings as threedi_warnings
+
 
 if_basecls, if_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "import_features.ui"))
 is_basecls, is_uicls = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ui", "import_structures.ui"))
@@ -71,10 +74,6 @@ class CatchThreediWarnings:
 
         # Set up the warnings filter
         warnings.simplefilter("ignore")  # Ignore all warnings by default
-
-        # Import all warning classes from the module for reference
-        import threedi_schematisation_editor.warnings as threedi_warnings
-        import inspect
 
         # Enable warnings for all warning classes in the threedi module
         for name, obj in inspect.getmembers(threedi_warnings):
