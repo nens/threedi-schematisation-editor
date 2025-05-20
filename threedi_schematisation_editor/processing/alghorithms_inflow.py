@@ -376,7 +376,7 @@ class AddNWRWSurfaceParameters(QgsProcessingAlgorithm):
         return 'threedi_add_nwrw_surface_parameters'
 
     def displayName(self):
-        return self.tr('Add NWRW Surface Parameters')
+        return self.tr('Add NWRW surface parameters')
 
     def group(self):
         return self.tr("Inflow")
@@ -385,7 +385,12 @@ class AddNWRWSurfaceParameters(QgsProcessingAlgorithm):
         return "0d"
 
     def shortHelpString(self):
-        return self.tr('')
+        return  f"""
+            <p>Add surface parameters from the Dutch NWRW inflow model to a schematisation.</p>
+            <h3>Parameters</h3>
+            <h4>Target surface parameters layer</h4>
+            <p>Surface parameters layer of the 3Di schematisation that you want to add NWRW surface parameters to. Add it to your project to be able to select it.</p>
+            """
 
     def initAlgorithm(self, config=None):
         """Define input and output parameters."""

@@ -13,6 +13,7 @@ from qgis.PyQt.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
+    QLabel,
     QDoubleSpinBox,
     QLineEdit,
     QPlainTextEdit,
@@ -1156,7 +1157,9 @@ class AbstractFormWithXSTable(AbstractBaseForm):
             if cell_changed_signal is not None and cell_changed_slot is not None:
                 disconnect_signal(cell_changed_signal, cell_changed_slot)
         leading_table_name = "cross_section_table"
-        table = self.current_cross_section_location[leading_table_name] or ""
+        table = ""
+        if self.current_cross_section_location is not None:
+            table = self.current_cross_section_location[leading_table_name] or ""
         number_of_rows_main = len(table.split("\n"))
         for table_field_name, table_widget in self.cross_section_table_field_widget_map.items():
             if table_widget is None:
@@ -2207,6 +2210,18 @@ class MeasureLocation(AbstractFormWithNode, AbstractFormWithTag):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
 
+def map_action_type_to_labels(action_type_str: str):
+    if action_type_str == en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " "):
+        return ("Discharge coefficient positive [-]", "Discharge coefficient negative [-]")
+    elif action_type_str == en.ActionType.SET_CREST_LEVEL.value.capitalize().replace("_", " "):
+        return ("Crest level [m MSL]", "")
+    elif action_type_str == en.ActionType.SET_GATE_LEVEL.value.capitalize().replace("_", " "):
+        return ("Gate level [m MSL]", "")
+    elif action_type_str == en.ActionType.SET_PUMP_CAPACITY.value.capitalize().replace("_", " "):
+        return ("Pump capacity [L/s]", "")
+    else:
+        raise NotImplementedError(f"Unsupported action type: {action_type_str}")
+
 
 class MemoryControl(AbstractFormWithTargetStructure, AbstractFormWithTag):
     """Memory Control user layer edit form logic."""
@@ -2215,7 +2230,34 @@ class MemoryControl(AbstractFormWithTargetStructure, AbstractFormWithTag):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
+        action_type_widget = self.dialog.findChild(QComboBox, "action_type")
+        action_type_widget.currentIndexChanged.connect(self.update_actions)
+        self.dialog.active_form_signals.add((action_type_widget, self.update_actions))
+        self.update_actions()
 
+    def update_actions(self):
+        action_type_widget = self.dialog.findChild(QComboBox, "action_type")
+        action_value_1_label = self.dialog.findChild(QLabel, "action_value_1_label")
+        action_value_2_label = self.dialog.findChild(QLabel, "action_value_2_label")
+        action_value_2 = self.dialog.findChild(QDoubleSpinBox, "action_value_2")
+
+        action_type_str = action_type_widget.currentText()
+        if action_type_str == "(NULL)":
+            # Just set the default values
+            action_value_1_label.setText("Action value 1")
+            action_value_2_label.setText("Action value 2")
+            return
+
+        if action_type_str != en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " "):
+            # If action type is anything other than "set_discharge_coefficients", disable action value 2
+            action_value_2.setValue(0.0) # TODO: also fires save_table_edits?
+            action_value_2.setEnabled(False) 
+        else:
+            action_value_2.setEnabled(True)
+
+        label1, label2 = map_action_type_to_labels(action_type_str)
+        action_value_1_label.setText(label1 or "Action value")
+        action_value_2_label.setText(label2 or "Action value 2")
 
 class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable, AbstractFormWithTag):
     """Table Control user layer edit form logic."""
@@ -2241,6 +2283,37 @@ class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable,
         self.populate_foreign_widgets()
         self.populate_table_data()
         self.populate_tag_widgets()
+
+        action_type_widget = self.dialog.findChild(QComboBox, "action_type")
+        edit_signal = self.get_widget_editing_signal(action_type_widget)
+        edit_slot = partial(self.update_table_header)
+        connect_signal(edit_signal, edit_slot)
+        self.dialog.active_form_signals.add((edit_signal, edit_slot))
+
+    def update_table_header(self):
+        """Update table headers."""
+        action_type_widget = self.dialog.findChild(QComboBox, "action_type")
+        action_type_str = action_type_widget.currentText()
+        if action_type_str == "(NULL)":
+            # Just set the default values
+            super().update_table_header()
+            return
+
+        action_type_column_idx = 2
+        if action_type_str != en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " "):
+            # Clear the values in the to-be-hidden column, also fires save_table_edits
+            for r in range(self.table.rowCount()):
+                item = self.table.item(r, action_type_column_idx)
+                if item:
+                    item.setText("")
+            # If action type is anything other than "set_discharge_coefficients", do not show the column for Action value 2
+            self.table.setColumnHidden(action_type_column_idx, True)
+        else:
+            self.table.setColumnHidden(action_type_column_idx, False)
+
+        # Update the table headers given the action type
+        label1, label2 = map_action_type_to_labels(action_type_str)
+        self.table.setHorizontalHeaderLabels(["Measured value", label1, label2])
 
 
 class MeasureMap(AbstractFormWithTag):

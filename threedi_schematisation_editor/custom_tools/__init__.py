@@ -9,13 +9,11 @@ from operator import attrgetter, itemgetter
 
 from qgis.core import (
     NULL,
-    Qgis,
     QgsCoordinateTransform,
     QgsExpression,
     QgsExpressionContext,
     QgsFeature,
     QgsGeometry,
-    QgsMessageLog,
     QgsPointLocator,
     QgsProject,
     QgsWkbTypes,
@@ -39,6 +37,8 @@ from threedi_schematisation_editor.utils import (
     spatial_index,
     TypeConversionError
 )
+
+from threedi_schematisation_editor.warnings import FeaturesImporterWarning, StructuresIntegratorWarning
 
 
 class ColumnImportMethod(Enum):
@@ -234,13 +234,7 @@ class AbstractFeaturesImporter:
                     new_feat[field_name] = NULL
                     feat_id = new_feat["id"]
                     message = f"Attribute {field_name} of feature with id {feat_id} in layer {self.target_layer_name} was not filled in"
-                    # Log to QGIS message log
-                    QgsMessageLog.logMessage(
-                        f"{message}. {e}",
-                        "Warning",  # Add a tag here
-                        Qgis.Warning
-                    )
-                    warnings.warn(f"{message}: {e}", Warning)
+                    warnings.warn(f"{message}. {e}", FeaturesImporterWarning)
 
     @staticmethod
     def process_commit_errors(layer):
@@ -700,7 +694,9 @@ class StructuresIntegrator(LinearStructuresImporter):
             structure_geom = structure_feat.geometry()
             structure_geom_type = structure_geom.type()
             if structure_geom_type == QgsWkbTypes.GeometryType.LineGeometry:
-                start_point, end_point = structure_geom.asPolyline()
+                poly_line = structure_geom.asPolyline()
+                start_point = poly_line[0]
+                end_point = poly_line[-1]
                 start_geom, end_geom = QgsGeometry.fromPointXY(start_point), QgsGeometry.fromPointXY(end_point)
                 start_buffer = start_geom.buffer(
                     self.conversion_settings.snapping_distance, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS
@@ -861,11 +857,19 @@ class StructuresIntegrator(LinearStructuresImporter):
         node_field_names = self.layer_field_names_mapping[self.node_layer.name()]
         node_attributes = {field_name: first_node_feat[field_name] for field_name in node_field_names}
         channel_curve = channel_geom.constGet()
-        before_substring_start, before_substring_end = 0, 0
+        previous_structure_end = 0
         simplify_structure_geometry = self.target_model_cls != dm.Culvert
         structure_fields = self.layer_fields_mapping[self.target_layer_name]
         structure_field_names = self.layer_field_names_mapping[self.target_layer_name]
-        for channel_structure in channel_structures:
+        total_length = sum(channel_structure.length for channel_structure in channel_structures)
+        if channel_geom.length() < total_length:
+            id_str = ', '.join(str(channel_structure.feature.id()) for channel_structure in channel_structures)
+            message = (f'Cannot integrate {self.target_model_cls.__tablename__}s with total length {total_length:.2f} '
+                       f'into channel {channel_feat["id"]} with length {channel_geom.length():.2f}. '
+                       f'Primary keys {self.target_model_cls.__tablename__}s: {id_str}')
+            warnings.warn(f"{message}", StructuresIntegratorWarning)
+            return
+        for channel_structure in sorted(channel_structures, key=lambda x: x.m):
             new_nodes = []
             src_structure_feat = channel_structure.feature
             structure_feat = QgsFeature(structure_fields)
@@ -873,10 +877,13 @@ class StructuresIntegrator(LinearStructuresImporter):
             self.update_attributes(self.target_model_cls, src_structure_feat, structure_feat)
             structure_attributes = {field_name: structure_feat[field_name] for field_name in structure_field_names}
             structure_length = channel_structure.length
+            channel_structure_m = channel_structure.m
             half_length = structure_length * 0.5
-            structure_m = channel_structure.m
-            start_distance = structure_m - half_length
-            end_distance = structure_m + half_length
+            # when structures overlap, move them to the end of the previous structure
+            if channel_structure_m - half_length < previous_structure_end:
+                channel_structure_m = previous_structure_end + half_length
+            start_distance = channel_structure_m - half_length
+            end_distance = channel_structure_m + half_length
             # Setup structure feature
             substring_feat = self.substring_feature(
                 channel_curve,
@@ -889,20 +896,20 @@ class StructuresIntegrator(LinearStructuresImporter):
             new_nodes += self.update_feature_endpoints(substring_feat, **node_attributes)
             self.features_to_add[self.target_layer_name].append(substring_feat)
             # Setup channel leftover feature
-            before_substring_end = start_distance
-            before_substring_feat = self.substring_feature(
-                channel_curve, before_substring_start, before_substring_end, channel_fields, False, **channel_attributes
-            )
-            new_nodes += self.update_feature_endpoints(before_substring_feat, **node_attributes)
-            self.features_to_add[channel_layer_name].append(before_substring_feat)
-            before_substring_start = end_distance
+            if start_distance > previous_structure_end:
+                before_substring_feat = self.substring_feature(
+                    channel_curve, previous_structure_end, start_distance, channel_fields, False, **channel_attributes
+                )
+                new_nodes += self.update_feature_endpoints(before_substring_feat, **node_attributes)
+                self.features_to_add[channel_layer_name].append(before_substring_feat)
+            previous_structure_end = end_distance
             if new_nodes:
                 self.update_attributes(dm.ConnectionNode, src_structure_feat, *new_nodes)
         # Setup last channel leftover feature
         last_substring_end = channel_geom.length()
-        if last_substring_end - before_substring_start > 0:
+        if last_substring_end - previous_structure_end > 0:
             last_substring_feat = self.substring_feature(
-                channel_curve, before_substring_start, last_substring_end, channel_fields, False, **channel_attributes
+                channel_curve, previous_structure_end, last_substring_end, channel_fields, False, **channel_attributes
             )
             self.update_feature_endpoints(last_substring_feat, **node_attributes)
             self.features_to_add[channel_layer_name].append(last_substring_feat)
@@ -914,7 +921,6 @@ class StructuresIntegrator(LinearStructuresImporter):
         input_feature_ids = (
             {feat.id() for feat in self.external_source.getFeatures()} if not selected_ids else set(selected_ids)
         )
-
         for channel_feature in self.channel_layer.getFeatures():
             channel_structures, processed_structures_fids = self.get_channel_structures_data(
                 channel_feature, selected_ids
