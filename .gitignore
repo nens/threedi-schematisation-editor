@@ -6,3 +6,5 @@ threedi_schematisation_editor/__pycache__
 .idea
 *.zip
 
+/.idea
+*.zip
