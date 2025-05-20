@@ -1157,7 +1157,9 @@ class AbstractFormWithXSTable(AbstractBaseForm):
             if cell_changed_signal is not None and cell_changed_slot is not None:
                 disconnect_signal(cell_changed_signal, cell_changed_slot)
         leading_table_name = "cross_section_table"
-        table = self.current_cross_section_location[leading_table_name] or ""
+        table = ""
+        if self.current_cross_section_location is not None:
+            table = self.current_cross_section_location[leading_table_name] or ""
         number_of_rows_main = len(table.split("\n"))
         for table_field_name, table_widget in self.cross_section_table_field_widget_map.items():
             if table_widget is None:

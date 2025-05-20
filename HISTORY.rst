@@ -1,11 +1,19 @@
 History
 =======
 
-2.2.1 (unreleased)
+2.2.2 (unreleased)
 ------------------
 
 - Table control, memory control: dynamically change form based on "action type" (#381)
+- Fix integrating objects with line geometries that contain more than 2 points (#382)
+- Fix bug that showed error on loading channel attribute table (#379)
+- Handle importing and integrating overlapping objects on channels (#370)
 
+
+2.2.1 (2025-05-12)
+------------------
+
+- Fix integrating objects in channels when connection node and channel start do not match exactly (#372)
 
 2.2.0 (2025-05-07)
 ------------------
