@@ -863,10 +863,10 @@ class StructuresIntegrator(LinearStructuresImporter):
         structure_field_names = self.layer_field_names_mapping[self.target_layer_name]
         total_length = sum(channel_structure.length for channel_structure in channel_structures)
         if channel_geom.length() < total_length:
-            id_str = ', '.join(str(channel_structure.feature["id"]) if "id" in channel_structure.feature else "?" for channel_structure in channel_structures)
+            id_str = ', '.join(str(channel_structure.feature.id()) for channel_structure in channel_structures)
             message = (f'Cannot integrate {self.target_model_cls.__tablename__}s with total length {total_length:.2f} '
                        f'into channel {channel_feat["id"]} with length {channel_geom.length():.2f}. '
-                       f'{self.target_model_cls.__tablename__.capitalize()} ids: {id_str}')
+                       f'Primary keys {self.target_model_cls.__tablename__}s: {id_str}')
             warnings.warn(f"{message}", StructuresIntegratorWarning)
             return
         for channel_structure in sorted(channel_structures, key=lambda x: x.m):
