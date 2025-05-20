@@ -16,5 +16,14 @@
       "content": "<p>We are currently working on a large overhaul of the schematisation Spatialite. We will switch to GeoPackage as file format. The database schema (table names and column names) will also be redesigned.</p><p>The new database schema will be released to all users on January 28th, 2025. In the meantime, you can prepare yourself for any changes to your workflow. Also make sure to update any SQL or Python scripts that interact with the schematisation.</p>Double-click this message for more information.",
       "link": "https://docs.3di.live/h_schema_300.html",
       "sticky": false
+    },
+    {
+      "key": 20000007,
+      "expiry": "2025-06-20",
+      "title": "Join the Nelen & Schuurmans Technology User Day 2025 on June 19th",
+      "image-url": "https://nelen-schuurmans.nl/uploads/user_day_2025.png",
+      "content": "<p>The Nelen & Schuurmans Technology User Day 2025 will take place in Utrecht on June 19th.</p><p>During this afternoon, the use of our software tools and applications will be highlighted through use cases.</p><p>Double-click this message to sign up!</p>",
+      "link": "https://share.hsforms.com/1IOjaf06tQGuHl7PbZpS2dg1ncb2",
+      "sticky": false
     }
 ]
