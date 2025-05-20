@@ -1,7 +1,7 @@
 History
 =======
 
-2.2.2 (unreleased)
+2.2.2 (2025-05-20)
 ------------------
 
 - Table control, memory control: dynamically change form based on "action type" (#381)
