@@ -436,11 +436,13 @@ class AddNWRWSurfaceParameters(QgsProcessingAlgorithm):
             # Process each parameter from the JSON file
             for param in nwrw_parameters:
                 if param['id'] in existing_ids:
+                    feedback.pushInfo(f"Skipped adding NWRW surface parameter {param['id']}, because id already exists")
                     continue
                 feature = QgsFeature(target_layer.fields())
                 for field_name, value in param.items():
                     feature[field_name] = value
                 target_layer.addFeature(feature)
+                feedback.pushInfo(f"Added NWRW surface parameter {param['id']}")
             # Commit the changes
             target_layer.commitChanges()
             feedback.pushInfo(f"Added NWRW surface parameters")
