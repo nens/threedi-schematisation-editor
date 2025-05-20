@@ -10,13 +10,20 @@ from qgis.core import (
     QgsProcessingException,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterEnum,
+    QgsProcessingParameterMapLayer,
     QgsProcessingParameterNumber,
     QgsProcessingParameterVectorLayer,
     QgsProject,
 )
 
+from qgis.PyQt.QtCore import QCoreApplication
+
+import json
+from pathlib import Path
+
 from threedi_schematisation_editor.enumerators import SewerageType
 from threedi_schematisation_editor.utils import get_feature_by_id, get_next_feature_id, spatial_index
+from threedi_schematisation_editor.data_models import SurfaceParameters
 
 
 class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
@@ -349,3 +356,104 @@ class LinkDWFWithConnectionNodes(LinkToConnectionNodesAlgorithm):
 
     def displayName(self):
         return "Map dry weather flow to connection nodes"
+
+
+class AddNWRWSurfaceParameters(QgsProcessingAlgorithm):
+    """
+    Add NWRW surface parameters to a surface parameter layer.
+    """
+
+    SURFACE_PARAMETERS = 'SURFACE_PARAMETERS_LAYER'
+
+    def tr(self, string):
+        """Returns a translatable string"""
+        return QCoreApplication.translate('Processing', string)
+
+    def createInstance(self):
+        return AddNWRWSurfaceParameters()
+
+    def name(self):
+        return 'threedi_add_nwrw_surface_parameters'
+
+    def displayName(self):
+        return self.tr('Add NWRW surface parameters')
+
+    def group(self):
+        return self.tr("Inflow")
+
+    def groupId(self):
+        return "0d"
+
+    def shortHelpString(self):
+        return  f"""
+            <p>Add surface parameters from the Dutch NWRW inflow model to a schematisation.</p>
+            <h3>Parameters</h3>
+            <h4>Target surface parameters layer</h4>
+            <p>Surface parameters layer of the 3Di schematisation that you want to add NWRW surface parameters to. Add it to your project to be able to select it.</p>
+            """
+
+    def initAlgorithm(self, config=None):
+        """Define input and output parameters."""
+        self.addParameter(
+            QgsProcessingParameterMapLayer(
+                self.SURFACE_PARAMETERS,
+                'Target surface parameters layer',
+                defaultValue='Surface parameters'
+            )
+        )
+
+    def processAlgorithm(self, parameters, context, feedback):
+        """
+        Process the algorithm.
+        """
+        # Get the target layer
+        target_layer = self.parameterAsVectorLayer(parameters, self.SURFACE_PARAMETERS, context)
+        if not target_layer:
+            raise QgsProcessingException(f"Target layer {target_layer.name()} is not found")
+            return {}
+
+        # Check if the target layer exists and has the required fields
+        if not target_layer.isValid():
+            raise QgsProcessingException(f"Target layer {target_layer.name()} is not valid")
+            return {}
+
+        required_fields = [field for field in SurfaceParameters.__annotations__.keys()]
+        layer_fields = [field.name() for field in target_layer.fields()]
+        if set(required_fields) - set(layer_fields):
+            raise QgsProcessingException(f"Target layer {target_layer.name()} does not contain the expected fields")
+
+        # Load the surface parameters from the JSON file
+        # No error handling because the json is not supplied by the user
+        json_path = Path(__file__).parent.absolute() / 'data' / 'nwrw_surface_parameters.json'
+        feedback.pushInfo(f"load {str(json_path)}")
+        with json_path.open('r', encoding='utf-8') as f:
+            nwrw_parameters = json.load(f)
+
+        # Get the existing IDs from the target layer
+        request = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)
+        existing_ids = set(
+            [feature['id'] for feature in target_layer.getFeatures(request) if 'id' in feature.fields().names()])
+
+        # Start editing the target layer
+        target_layer.startEditing()
+
+        try:
+            # Process each parameter from the JSON file
+            for param in nwrw_parameters:
+                if param['id'] in existing_ids:
+                    feedback.pushInfo(f"Skipped adding NWRW surface parameter {param['id']}, because id already exists")
+                    continue
+                feature = QgsFeature(target_layer.fields())
+                for field_name, value in param.items():
+                    feature[field_name] = value
+                target_layer.addFeature(feature)
+                feedback.pushInfo(f"Added NWRW surface parameter {param['id']}")
+            # Commit the changes
+            target_layer.commitChanges()
+            feedback.pushInfo(f"Added NWRW surface parameters")
+        except Exception as e:
+            target_layer.rollBack()
+            # manual raise is needed to ensure the processing fails when there is no output
+            raise QgsProcessingException(f"Error adding NWRW surface parameters to layer {target_layer.name()}")
+
+        return {}
