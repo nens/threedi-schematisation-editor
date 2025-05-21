@@ -289,7 +289,7 @@ class AbstractFeaturesImporter:
 class AbstractStructuresImporter(AbstractFeaturesImporter):
     """Base class for the importing structure features from the external data source."""
 
-    DEFAULT_INTERSECTION_BUFFER = 0.0000001
+    DEFAULT_INTERSECTION_BUFFER = 1
     DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
 
     def __init__(self, external_source, target_gpkg, import_settings):
