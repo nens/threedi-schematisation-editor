@@ -5,6 +5,7 @@ History
 ------------------
 
 - Add processing algorithm to add NWRW parameters to surface parameters (#333)
+- Fix handling string keys in import with value_map (#279)
 
 
 2.2.2 (2025-05-20)
