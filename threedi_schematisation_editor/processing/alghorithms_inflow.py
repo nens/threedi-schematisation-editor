@@ -244,9 +244,9 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
             surface_pipes.sort(key=itemgetter(1))
             surface_feat = surface_lyr.getFeature(surface_id)
             surface_geom = surface_feat.geometry()
-            surface_centroid = surface_geom.centroid()
             pipe_id, surface_pipe_distance = surface_pipes[0]
             pipe_feat = pipe_features[pipe_id]
+            surface_centroid = surface_geom.pointOnSurface()
             start_node_id = pipe_feat["connection_node_id_start"]
             end_node_id = pipe_feat["connection_node_id_end"]
             start_node = get_feature_by_id(node_lyr, start_node_id)
