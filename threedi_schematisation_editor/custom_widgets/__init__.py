@@ -431,6 +431,26 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
         self.connect_configuration_widgets()
         self.on_layer_changed(self.source_layer)
 
+    def reset_settings_widget(self):
+        tree_view = self.field_map_tv
+        tree_view_model = self.field_map_model
+        for row in range(tree_view_model.rowCount()):
+            for col in range(tree_view_model.columnCount()):
+                widget = tree_view.indexWidget(tree_view_model.index(row, col))
+                # Reset widgets based on their type
+                if isinstance(widget, QComboBox):
+                    QgsMessageLog.logMessage('reset combobox', 'Warning', Qgis.Warning)
+                    # Reset combobox to first index
+                    widget.setCurrentIndex(0)
+                elif isinstance(widget, QLineEdit):
+                    QgsMessageLog.logMessage('reset line edit', 'Warning', Qgis.Warning)
+                    # Clear text in line edit
+                    widget.setText("")
+                elif isinstance(widget, QgsFieldExpressionWidget):
+                    QgsMessageLog.logMessage('reset expression', 'Warning', Qgis.Warning)
+                    # Clear field expression widget
+                    widget.setExpression("")
+
     def connect_configuration_widgets(self):
         row_idx = 0
         for field_name in self.import_model_cls.__annotations__.keys():
@@ -544,6 +564,7 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
             return
         settings = QgsSettings()
         settings.setValue(ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
+        self.reset_settings_widget()
         try:
             with open(template_filepath, "r") as template_file:
                 import_settings = json.loads(template_file.read())
@@ -926,7 +947,6 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         if not template_filepath:
             return
         settings = QgsSettings()
-        # self.populate_conversion_settings_widgets()
         settings.setValue(ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
         self.reset_settings_widget()
         try:
