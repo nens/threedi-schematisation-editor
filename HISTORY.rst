@@ -6,6 +6,7 @@ History
 
 - Add processing algorithm to add NWRW parameters to surface parameters (#333)
 - Fix removing of cross-section locations associated to channels not modified by object import (#378)
+- Processing algorithms 'Map surfaces/DWF to connection nodes' now use point on surface instead of centroid as start vertex of mapping line (#396)
 
 
 2.2.2 (2025-05-20)
