@@ -289,7 +289,7 @@ class AbstractFeaturesImporter:
 class AbstractStructuresImporter(AbstractFeaturesImporter):
     """Base class for the importing structure features from the external data source."""
 
-    DEFAULT_INTERSECTION_BUFFER = 0.0000001
+    DEFAULT_INTERSECTION_BUFFER = 1
     DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
 
     def __init__(self, external_source, target_gpkg, import_settings):
@@ -812,7 +812,7 @@ class StructuresIntegrator(LinearStructuresImporter):
         if cross_section_location_copies:
             self.cross_section_location_layer.addFeatures(cross_section_location_copies)
 
-    def remove_hanging_cross_sections(self):
+    def remove_hanging_cross_sections(self, visited_channel_ids):
         """Remove cross-sections not aligned with the channels."""
         xs_leftovers = []
         channel_feats, channels_spatial_index = spatial_index(self.channel_layer)
@@ -820,6 +820,10 @@ class StructuresIntegrator(LinearStructuresImporter):
             xs_geom = xs_feat.geometry()
             xs_buffer = xs_geom.buffer(self.DEFAULT_INTERSECTION_BUFFER, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
             channel_fids = channels_spatial_index.intersects(xs_buffer.boundingBox())
+            # only modify channels that were visited
+            channel_fids = list(set(channel_fids).intersection(visited_channel_ids))
+            if len(channel_fids) == 0:
+                continue
             xs_intersects = False
             for channel_fid in channel_fids:
                 channel_feat = channel_feats[channel_fid]
@@ -956,7 +960,7 @@ class StructuresIntegrator(LinearStructuresImporter):
         # Update cross-section location features
         self.cross_section_location_layer.startEditing()
         self.update_channel_cross_section_references(channels_to_add, source_channel_xs_locations)
-        self.remove_hanging_cross_sections()
+        self.remove_hanging_cross_sections(visited_channel_ids)
         # Process structures
         structures_to_add = []
         next_feature_id = get_next_feature_id(self.target_layer)
