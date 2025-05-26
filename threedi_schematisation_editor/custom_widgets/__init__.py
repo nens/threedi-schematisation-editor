@@ -8,11 +8,6 @@ import warnings
 from functools import partial
 from itertools import chain
 
-from qgis.core import (
-    Qgis,
-    QgsMessageLog,
-)
-
 from qgis.core import NULL, Qgis, QgsMapLayerProxyModel, QgsMessageLog, QgsSettings
 from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt import uic
@@ -439,16 +434,10 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
                 widget = tree_view.indexWidget(tree_view_model.index(row, col))
                 # Reset widgets based on their type
                 if isinstance(widget, QComboBox):
-                    QgsMessageLog.logMessage('reset combobox', 'Warning', Qgis.Warning)
-                    # Reset combobox to first index
                     widget.setCurrentIndex(0)
                 elif isinstance(widget, QLineEdit):
-                    QgsMessageLog.logMessage('reset line edit', 'Warning', Qgis.Warning)
-                    # Clear text in line edit
                     widget.setText("")
                 elif isinstance(widget, QgsFieldExpressionWidget):
-                    QgsMessageLog.logMessage('reset expression', 'Warning', Qgis.Warning)
-                    # Clear field expression widget
                     widget.setExpression("")
 
     def connect_configuration_widgets(self):
@@ -805,16 +794,10 @@ class ImportStructuresDialog(is_basecls, is_uicls):
                     widget = tree_view.indexWidget(tree_view_model.index(row, col))
                     # Reset widgets based on their type
                     if isinstance(widget, QComboBox):
-                        QgsMessageLog.logMessage('reset combobox', 'Warning', Qgis.Warning)
-                        # Reset combobox to first index
                         widget.setCurrentIndex(0)
                     elif isinstance(widget, QLineEdit):
-                        QgsMessageLog.logMessage('reset line edit', 'Warning', Qgis.Warning)
-                        # Clear text in line edit
                         widget.setText("")
                     elif isinstance(widget, QgsFieldExpressionWidget):
-                        QgsMessageLog.logMessage('reset expression', 'Warning', Qgis.Warning)
-                        # Clear field expression widget
                         widget.setExpression("")
 
     def connect_configuration_widgets(self):
