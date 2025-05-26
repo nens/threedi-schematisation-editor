@@ -8,11 +8,17 @@ import warnings
 from functools import partial
 from itertools import chain
 
+from qgis.core import (
+    Qgis,
+    QgsMessageLog,
+)
+
 from qgis.core import NULL, Qgis, QgsMapLayerProxyModel, QgsMessageLog, QgsSettings
+from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QItemSelectionModel, Qt
 from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
-from qgis.PyQt.QtWidgets import QComboBox, QInputDialog, QTableWidgetItem
+from qgis.PyQt.QtWidgets import QComboBox, QInputDialog, QLineEdit, QTableWidgetItem
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.custom_tools import (
@@ -770,6 +776,26 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         self.connect_configuration_widgets()
         self.on_layer_changed(self.source_layer)
 
+    def reset_settings_widget(self):
+        # Iterate over all settings widgets are stored in the data_models_tree_views
+        for model_cls, (tree_view, tree_view_model) in self.data_models_tree_views.items():
+            for row in range(tree_view_model.rowCount()):
+                for col in range(tree_view_model.columnCount()):
+                    widget = tree_view.indexWidget(tree_view_model.index(row, col))
+                    # Reset widgets based on their type
+                    if isinstance(widget, QComboBox):
+                        QgsMessageLog.logMessage('reset combobox', 'Warning', Qgis.Warning)
+                        # Reset combobox to first index
+                        widget.setCurrentIndex(0)
+                    elif isinstance(widget, QLineEdit):
+                        QgsMessageLog.logMessage('reset line edit', 'Warning', Qgis.Warning)
+                        # Clear text in line edit
+                        widget.setText("")
+                    elif isinstance(widget, QgsFieldExpressionWidget):
+                        QgsMessageLog.logMessage('reset expression', 'Warning', Qgis.Warning)
+                        # Clear field expression widget
+                        widget.setExpression("")
+
     def connect_configuration_widgets(self):
         data_models = [self.structure_model_cls, dm.ConnectionNode]
         for model_cls in data_models:
@@ -900,7 +926,9 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         if not template_filepath:
             return
         settings = QgsSettings()
+        # self.populate_conversion_settings_widgets()
         settings.setValue(ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
+        self.reset_settings_widget()
         try:
             with open(template_filepath, "r") as template_file:
                 import_settings = json.loads(template_file.read())
