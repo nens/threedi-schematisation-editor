@@ -133,49 +133,71 @@ class ImportWidgetFactory:
     def create_widgets(self):
         """Create widgets for the data model fields."""
         widgets_to_add = defaultdict(dict)
-        combobox_column_indexes = {self.config.METHOD_COLUMN_IDX, self.config.SOURCE_ATTRIBUTE_COLUMN_IDX}
+
         for model_cls, field_methods_mapping in self.config.field_methods_mapping.items():
             model_obsolete_fields = model_cls.obsolete_fields()
             model_fields_display_names = model_cls.fields_display_names()
             row_idx = 0
+
             for field_name, field_methods in field_methods_mapping.items():
                 if field_name in model_obsolete_fields:
                     continue
+
                 field_type = model_cls.__annotations__[field_name]
                 if is_optional(field_type):
                     field_type = optional_type(field_type)
+
                 for column_idx, column_name in enumerate(self.config.config_header):
                     if column_idx == self.config.FIELD_NAME_COLUMN_IDX:
-                        field_display_name = model_fields_display_names[field_name]
-                        label_text = f"{field_display_name}\t"
-                        widget = QLabel(label_text)
-                    elif column_idx in combobox_column_indexes:
-                        widget = QComboBox()
-                        if column_idx == self.config.METHOD_COLUMN_IDX:
-                            for method in field_methods:
-                                widget.addItem(method.name.capitalize(), method.value)
+                        widget = self._create_label_widget(model_fields_display_names[field_name])
+                    elif column_idx == self.config.METHOD_COLUMN_IDX:
+                        widget = self._create_method_widget(field_methods)
+                    elif column_idx == self.config.SOURCE_ATTRIBUTE_COLUMN_IDX:
+                        widget = self._create_combobox_widget()
                     elif column_idx == self.config.VALUE_MAP_COLUMN_IDX:
-                        widget = QPushButton("Set...")
-                        widget.value_map = {}
+                        widget = self._create_set_value_map_widget()
                     elif column_idx == self.config.EXPRESSION_COLUMN_IDX:
-                        widget = QgsFieldExpressionWidget()
-                    else:
-                        if column_idx == self.config.DEFAULT_VALUE_COLUMN_IDX and (
-                            issubclass(field_type, Enum) or field_type == bool
-                        ):
-                            widget = QComboBox()
-                            items = (
-                                [["False", False], ["True", True]]
-                                if field_type == bool
-                                else [["NULL", "NULL"]] + [[enum_entry_name_format(e), e.value] for e in field_type]
-                            )
-                            for item_str, item_data in items:
-                                widget.addItem(item_str, item_data)
-                        else:
-                            widget = QLineEdit()
+                        widget = self._create_expression_widget()
+                    elif column_idx == self.config.DEFAULT_VALUE_COLUMN_IDX:
+                        widget = self._create_default_value_widget(field_type)
+
                     widgets_to_add[model_cls][row_idx, column_idx] = widget
+
                 row_idx += 1
+
         return widgets_to_add
+
+    def _create_label_widget(self, field_display_name):
+        return QLabel(f"{field_display_name}\t")
+
+    def _create_method_widget(self, field_methods):
+        items = [[method.name.capitalize(), method.value] for method in field_methods]
+        return self._create_combobox_widget(items)
+
+    def _create_combobox_widget(self, items=None):
+        widget = QComboBox()
+        if items:
+            for item in items:
+                widget.addItem(*item)
+        return widget
+
+    def _create_set_value_map_widget(self):
+        widget = QPushButton("Set...")
+        widget.value_map = {}
+        return widget
+
+    def _create_expression_widget(self):
+        return QgsFieldExpressionWidget()
+
+    def _create_default_value_widget(self, field_type):
+        if issubclass(field_type, Enum) or field_type == bool:
+            if field_type == bool:
+                items = [["False", False], ["True", True]]
+            else:
+                items = [["NULL", "NULL"]] + [[enum_entry_name_format(e), e.value] for e in field_type]
+            return self._create_combobox_widget(items)
+        else:
+            return QLineEdit()
 
 
 class FeaturesImportConfig(BaseImportConfig):
