@@ -1,6 +1,7 @@
 # Copyright (C) 2025 by Lutra Consulting
 import warnings
 
+from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from enum import Enum
 from functools import cached_property
@@ -52,8 +53,8 @@ class ColumnImportMethod(Enum):
         return self.name.capitalize()
 
 
-class FeaturesImportConfig:
-    """Features import tool configuration class."""
+class BaseImportConfig(ABC):
+    """Base class for import tool configuration."""
 
     FIELD_NAME_COLUMN_IDX = 0
     METHOD_COLUMN_IDX = 1
@@ -64,6 +65,8 @@ class FeaturesImportConfig:
 
     def __init__(self, import_model_cls):
         self.import_model_cls = import_model_cls
+        self.field_methods_provider = FieldMethodsProvider(self)
+        self.widget_factory = ImportWidgetFactory(self)
 
     @property
     def config_header(self):
@@ -76,16 +79,33 @@ class FeaturesImportConfig:
         return header
 
     @property
+    @abstractmethod
     def models_fields_iterator(self):
-        fields_iterator = ((k, self.import_model_cls) for k in self.import_model_cls.__annotations__.keys())
-        return fields_iterator
+        """Return an iterator over model fields. To be implemented by subclasses."""
+        pass
 
     @property
     def field_methods_mapping(self):
+        """Return a mapping of fields to import methods."""
+        return self.field_methods_provider.get_field_methods_mapping()
+
+    def data_model_widgets(self):
+        """Create widgets for the data model fields."""
+        return self.widget_factory.create_widgets()
+
+
+class FieldMethodsProvider:
+    """Class that handles mapping of fields to import methods."""
+
+    def __init__(self, config):
+        self.config = config
+
+    def get_field_methods_mapping(self):
+        """Return a mapping of fields to import methods."""
         methods_mapping = defaultdict(dict)
         auto_fields = {"id"}
         auto_attribute_fields = {"connection_node_id", "connection_node_id_start", "connection_node_id_end"}
-        for field_name, model_cls in self.models_fields_iterator:
+        for field_name, model_cls in self.config.models_fields_iterator:
             if field_name in auto_fields:
                 methods_mapping[model_cls][field_name] = [ColumnImportMethod.AUTO]
             elif field_name in auto_attribute_fields:
@@ -103,10 +123,18 @@ class FeaturesImportConfig:
                 ]
         return methods_mapping
 
-    def data_model_widgets(self):
+
+class ImportWidgetFactory:
+    """Class that creates UI widgets for import configuration."""
+
+    def __init__(self, config):
+        self.config = config
+
+    def create_widgets(self):
+        """Create widgets for the data model fields."""
         widgets_to_add = defaultdict(dict)
-        combobox_column_indexes = {self.METHOD_COLUMN_IDX, self.SOURCE_ATTRIBUTE_COLUMN_IDX}
-        for model_cls, field_methods_mapping in self.field_methods_mapping.items():
+        combobox_column_indexes = {self.config.METHOD_COLUMN_IDX, self.config.SOURCE_ATTRIBUTE_COLUMN_IDX}
+        for model_cls, field_methods_mapping in self.config.field_methods_mapping.items():
             model_obsolete_fields = model_cls.obsolete_fields()
             model_fields_display_names = model_cls.fields_display_names()
             row_idx = 0
@@ -116,23 +144,23 @@ class FeaturesImportConfig:
                 field_type = model_cls.__annotations__[field_name]
                 if is_optional(field_type):
                     field_type = optional_type(field_type)
-                for column_idx, column_name in enumerate(self.config_header):
-                    if column_idx == self.FIELD_NAME_COLUMN_IDX:
+                for column_idx, column_name in enumerate(self.config.config_header):
+                    if column_idx == self.config.FIELD_NAME_COLUMN_IDX:
                         field_display_name = model_fields_display_names[field_name]
                         label_text = f"{field_display_name}\t"
                         widget = QLabel(label_text)
                     elif column_idx in combobox_column_indexes:
                         widget = QComboBox()
-                        if column_idx == self.METHOD_COLUMN_IDX:
+                        if column_idx == self.config.METHOD_COLUMN_IDX:
                             for method in field_methods:
                                 widget.addItem(method.name.capitalize(), method.value)
-                    elif column_idx == self.VALUE_MAP_COLUMN_IDX:
+                    elif column_idx == self.config.VALUE_MAP_COLUMN_IDX:
                         widget = QPushButton("Set...")
                         widget.value_map = {}
-                    elif column_idx == self.EXPRESSION_COLUMN_IDX:
+                    elif column_idx == self.config.EXPRESSION_COLUMN_IDX:
                         widget = QgsFieldExpressionWidget()
                     else:
-                        if column_idx == self.DEFAULT_VALUE_COLUMN_IDX and (
+                        if column_idx == self.config.DEFAULT_VALUE_COLUMN_IDX and (
                             issubclass(field_type, Enum) or field_type == bool
                         ):
                             widget = QComboBox()
@@ -150,7 +178,16 @@ class FeaturesImportConfig:
         return widgets_to_add
 
 
-class StructuresImportConfig(FeaturesImportConfig):
+class FeaturesImportConfig(BaseImportConfig):
+    """Features import tool configuration class."""
+
+    @property
+    def models_fields_iterator(self):
+        fields_iterator = ((k, self.import_model_cls) for k in self.import_model_cls.__annotations__.keys())
+        return fields_iterator
+
+
+class StructuresImportConfig(BaseImportConfig):
     """Structures import tool configuration class."""
 
     def __init__(self, import_model_cls):

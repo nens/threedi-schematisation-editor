@@ -16,11 +16,14 @@ from qgis.PyQt.QtWidgets import QComboBox, QInputDialog, QTableWidgetItem
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.custom_tools import (
+    BaseImportConfig,
     ColumnImportMethod,
     ConnectionNodesImporter,
     CulvertsImporter,
     CulvertsIntegrator,
     FeaturesImportConfig,
+    FieldMethodsProvider,
+    ImportWidgetFactory,
     OrificesImporter,
     OrificesIntegrator,
     PipesImporter,
