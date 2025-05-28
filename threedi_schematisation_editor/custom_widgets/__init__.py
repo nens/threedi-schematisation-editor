@@ -9,10 +9,11 @@ from functools import partial
 from itertools import chain
 
 from qgis.core import NULL, Qgis, QgsMapLayerProxyModel, QgsMessageLog, QgsSettings
+from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QItemSelectionModel, Qt
 from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
-from qgis.PyQt.QtWidgets import QComboBox, QInputDialog, QTableWidgetItem
+from qgis.PyQt.QtWidgets import QComboBox, QInputDialog, QLineEdit, QTableWidgetItem
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.custom_tools import (
@@ -425,6 +426,20 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
         self.connect_configuration_widgets()
         self.on_layer_changed(self.source_layer)
 
+    def reset_settings_widget(self):
+        tree_view = self.field_map_tv
+        tree_view_model = self.field_map_model
+        for row in range(tree_view_model.rowCount()):
+            for col in range(tree_view_model.columnCount()):
+                widget = tree_view.indexWidget(tree_view_model.index(row, col))
+                # Reset widgets based on their type
+                if isinstance(widget, QComboBox):
+                    widget.setCurrentIndex(0)
+                elif isinstance(widget, QLineEdit):
+                    widget.setText("")
+                elif isinstance(widget, QgsFieldExpressionWidget):
+                    widget.setExpression("")
+
     def connect_configuration_widgets(self):
         row_idx = 0
         for field_name in self.import_model_cls.__annotations__.keys():
@@ -538,6 +553,7 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
             return
         settings = QgsSettings()
         settings.setValue(ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
+        self.reset_settings_widget()
         try:
             with open(template_filepath, "r") as template_file:
                 import_settings = json.loads(template_file.read())
@@ -770,6 +786,20 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         self.connect_configuration_widgets()
         self.on_layer_changed(self.source_layer)
 
+    def reset_settings_widget(self):
+        # Iterate over all settings widgets are stored in the data_models_tree_views
+        for model_cls, (tree_view, tree_view_model) in self.data_models_tree_views.items():
+            for row in range(tree_view_model.rowCount()):
+                for col in range(tree_view_model.columnCount()):
+                    widget = tree_view.indexWidget(tree_view_model.index(row, col))
+                    # Reset widgets based on their type
+                    if isinstance(widget, QComboBox):
+                        widget.setCurrentIndex(0)
+                    elif isinstance(widget, QLineEdit):
+                        widget.setText("")
+                    elif isinstance(widget, QgsFieldExpressionWidget):
+                        widget.setExpression("")
+
     def connect_configuration_widgets(self):
         data_models = [self.structure_model_cls, dm.ConnectionNode]
         for model_cls in data_models:
@@ -901,16 +931,17 @@ class ImportStructuresDialog(is_basecls, is_uicls):
             return
         settings = QgsSettings()
         settings.setValue(ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
+        self.reset_settings_widget()
         try:
             with open(template_filepath, "r") as template_file:
                 import_settings = json.loads(template_file.read())
             conversion_settings = import_settings["conversion_settings"]
-            self.snap_gb.setChecked(conversion_settings.get("use_snapping", False))
+            self.snap_gb.setChecked(conversion_settings.get("use_snapping", True))
             self.snap_dsb.setValue(conversion_settings.get("snapping_distance", 0.1))
-            self.create_nodes_cb.setChecked(conversion_settings.get("create_connection_nodes", False))
+            self.create_nodes_cb.setChecked(conversion_settings.get("create_connection_nodes", True))
             self.edit_channels_cb.setChecked(conversion_settings.get("edit_channels", False))
             self.length_source_field_cbo.setField(conversion_settings.get("length_source_field", ""))
-            self.length_fallback_value_dsb.setValue(conversion_settings.get("length_fallback_value", 10.0))
+            self.length_fallback_value_dsb.setValue(conversion_settings.get("length_fallback_value", 1.0))
             self.azimuth_source_field_cbo.setField(conversion_settings.get("azimuth_source_field", ""))
             self.azimuth_fallback_value_sb.setValue(conversion_settings.get("azimuth_fallback_value", 90))
             self.update_fields_settings(self.structure_model_cls, import_settings["fields"])
