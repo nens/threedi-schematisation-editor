@@ -21,7 +21,7 @@ from threedi_schematisation_editor.custom_tools.import_config import (
 )
 from threedi_schematisation_editor.custom_tools.importers import CulvertsImporter, CulvertsIntegrator, OrificesImporter, \
     OrificesIntegrator, WeirsImporter, WeirsIntegrator, PipesImporter, ConnectionNodesImporter
-from threedi_schematisation_editor.custom_tools.import_config import FeaturesImportConfig, StructuresImportConfig, ColumnImportIndex, CONFIG_KEYS, CONFIG_HEADER
+from threedi_schematisation_editor.custom_tools.import_config import ColumnImportIndex, CONFIG_KEYS, CONFIG_HEADER, create_widgets
 from threedi_schematisation_editor.utils import (
     NULL_STR,
     QUOTED_NULL,
@@ -320,7 +320,6 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self.uc = uc
-        self.import_configuration = FeaturesImportConfig(self.import_model_cls)
         self.field_map_model = QStandardItemModel()
         self.field_map_tv.setModel(self.field_map_model)
         if self.import_model_cls.__geometrytype__ == dm.GeometryType.Point:
@@ -407,7 +406,7 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
         return model_widgets
 
     def populate_conversion_settings_widgets(self):
-        widgets_to_add = self.import_configuration.data_model_widgets()
+        widgets_to_add = create_widgets(self.import_model_cls)
         model_widgets = widgets_to_add[self.import_model_cls]
         self.field_map_model.clear()
         self.field_map_model.setHorizontalHeaderLabels(CONFIG_HEADER)
@@ -638,7 +637,6 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self.uc = uc
-        self.import_configuration = StructuresImportConfig(self.structure_model_cls)
         self.structure_model = QStandardItemModel()
         self.structure_tv.setModel(self.structure_model)
         self.connection_node_model = QStandardItemModel()
@@ -766,7 +764,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         return column_widgets
 
     def populate_conversion_settings_widgets(self):
-        widgets_to_add = self.import_configuration.data_model_widgets()
+        widgets_to_add = create_widgets(self.structure_model_cls, dm.ConnectionNode)
         for model_cls, (tree_view, tree_view_model) in self.data_models_tree_views.items():
             tree_view_model.clear()
             tree_view_model.setHorizontalHeaderLabels(CONFIG_HEADER)
