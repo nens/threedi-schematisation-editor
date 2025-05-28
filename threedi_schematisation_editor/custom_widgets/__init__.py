@@ -936,12 +936,12 @@ class ImportStructuresDialog(is_basecls, is_uicls):
             with open(template_filepath, "r") as template_file:
                 import_settings = json.loads(template_file.read())
             conversion_settings = import_settings["conversion_settings"]
-            self.snap_gb.setChecked(conversion_settings.get("use_snapping", False))
+            self.snap_gb.setChecked(conversion_settings.get("use_snapping", True))
             self.snap_dsb.setValue(conversion_settings.get("snapping_distance", 0.1))
-            self.create_nodes_cb.setChecked(conversion_settings.get("create_connection_nodes", False))
+            self.create_nodes_cb.setChecked(conversion_settings.get("create_connection_nodes", True))
             self.edit_channels_cb.setChecked(conversion_settings.get("edit_channels", False))
             self.length_source_field_cbo.setField(conversion_settings.get("length_source_field", ""))
-            self.length_fallback_value_dsb.setValue(conversion_settings.get("length_fallback_value", 10.0))
+            self.length_fallback_value_dsb.setValue(conversion_settings.get("length_fallback_value", 1.0))
             self.azimuth_source_field_cbo.setField(conversion_settings.get("azimuth_source_field", ""))
             self.azimuth_fallback_value_sb.setValue(conversion_settings.get("azimuth_fallback_value", 90))
             self.update_fields_settings(self.structure_model_cls, import_settings["fields"])
