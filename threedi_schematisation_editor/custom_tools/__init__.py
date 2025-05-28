@@ -278,7 +278,8 @@ class AbstractFeaturesImporter:
                     src_field_name = field_config[ColumnImportMethod.ATTRIBUTE.value]
                     src_value = source_feat[src_field_name]
                     value_map = field_config.get("value_map", {})
-                    field_value = value_map.get(src_value, src_value)
+                    # Prevent type mismatches in keys by casting keys to strings to match those the dict in src_value['value_map'] which is also forced to be strings
+                    field_value = value_map.get(str(src_value), src_value)
                     if field_value == NULL:
                         field_value = field_config.get("default_value", NULL)
                 elif method == ColumnImportMethod.EXPRESSION:
