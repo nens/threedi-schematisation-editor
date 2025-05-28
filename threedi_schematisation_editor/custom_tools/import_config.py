@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from enum import Enum
+from enum import Enum, IntEnum
 from itertools import chain
 
 from qgis.gui import QgsFieldExpressionWidget
@@ -21,7 +21,7 @@ class ColumnImportMethod(Enum):
         return self.name.capitalize()
 
 
-class BaseImportConfig(ABC):
+class ColumnImportIndex(IntEnum):
     """Base class for import tool configuration."""
 
     FIELD_NAME_COLUMN_IDX = 0
@@ -31,8 +31,13 @@ class BaseImportConfig(ABC):
     DEFAULT_VALUE_COLUMN_IDX = 4
     EXPRESSION_COLUMN_IDX = 5
 
-    def __init__(self, import_model_cls):
+
+class BaseImportConfig(ABC):
+    """Base class for import tool configuration."""
+
+    def __init__(self, import_model_cls, nodes_model_cls=None):
         self.import_model_cls = import_model_cls
+        self.nodes_model_cls = nodes_model_cls
         self.field_methods_provider = FieldMethodsProvider(self)
         self.widget_factory = ImportWidgetFactory(self)
 
@@ -47,10 +52,14 @@ class BaseImportConfig(ABC):
         return header
 
     @property
-    @abstractmethod
     def models_fields_iterator(self):
-        """Return an iterator over model fields. To be implemented by subclasses."""
-        pass
+        structure_fields = ((k, self.import_model_cls) for k in self.import_model_cls.__annotations__.keys())
+        if self.nodes_model_cls is not None:
+            node_fields = ((k, self.nodes_model_cls) for k in self.nodes_model_cls.__annotations__.keys())
+        else:
+            node_fields = ()
+        fields_iterator = chain(structure_fields, node_fields)
+        return fields_iterator
 
     @property
     def field_methods_mapping(self):
@@ -116,17 +125,17 @@ class ImportWidgetFactory:
                     field_type = optional_type(field_type)
 
                 for column_idx, column_name in enumerate(self.config.config_header):
-                    if column_idx == self.config.FIELD_NAME_COLUMN_IDX:
+                    if column_idx == ColumnImportIndex.FIELD_NAME_COLUMN_IDX:
                         widget = self._create_label_widget(model_fields_display_names[field_name])
-                    elif column_idx == self.config.METHOD_COLUMN_IDX:
+                    elif column_idx == ColumnImportIndex.METHOD_COLUMN_IDX:
                         widget = self._create_method_widget(field_methods)
-                    elif column_idx == self.config.SOURCE_ATTRIBUTE_COLUMN_IDX:
+                    elif column_idx == ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX:
                         widget = self._create_combobox_widget()
-                    elif column_idx == self.config.VALUE_MAP_COLUMN_IDX:
+                    elif column_idx == ColumnImportIndex.VALUE_MAP_COLUMN_IDX:
                         widget = self._create_set_value_map_widget()
-                    elif column_idx == self.config.EXPRESSION_COLUMN_IDX:
+                    elif column_idx == ColumnImportIndex.EXPRESSION_COLUMN_IDX:
                         widget = self._create_expression_widget()
-                    elif column_idx == self.config.DEFAULT_VALUE_COLUMN_IDX:
+                    elif column_idx == ColumnImportIndex.DEFAULT_VALUE_COLUMN_IDX:
                         widget = self._create_default_value_widget(field_type)
 
                     widgets_to_add[model_cls][row_idx, column_idx] = widget
@@ -171,29 +180,9 @@ class ImportWidgetFactory:
 class FeaturesImportConfig(BaseImportConfig):
     """Features import tool configuration class."""
 
-    @property
-    def models_fields_iterator(self):
-        fields_iterator = ((k, self.import_model_cls) for k in self.import_model_cls.__annotations__.keys())
-        return fields_iterator
-
 
 class StructuresImportConfig(BaseImportConfig):
     """Structures import tool configuration class."""
 
     def __init__(self, import_model_cls):
-        super().__init__(import_model_cls)
-        self.nodes_model_cls = dm.ConnectionNode
-        self.related_models_classes = set()
-
-    def add_related_model_class(self, model_cls):
-        self.related_models_classes.add(model_cls)
-
-    @property
-    def models_fields_iterator(self):
-        structure_fields = ((k, self.import_model_cls) for k in self.import_model_cls.__annotations__.keys())
-        node_fields = ((k, self.nodes_model_cls) for k in self.nodes_model_cls.__annotations__.keys())
-        related_models_fields = (
-            (k, model_cls) for model_cls in self.related_models_classes for k in model_cls.__annotations__.keys()
-        )
-        fields_iterator = chain(structure_fields, node_fields, related_models_fields)
-        return fields_iterator
+        super().__init__(import_model_cls, dm.ConnectionNode)
