@@ -9,6 +9,8 @@ from qgis.PyQt.QtWidgets import QComboBox, QLabel, QLineEdit, QPushButton
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import is_optional, optional_type, enum_entry_name_format
 
+CONFIG_HEADER = ["Field name", "Method", "Source attribute", "Value map", "Default value", "Expression"]
+CONFIG_KEYS = ["method", "source_attribute", "value_map", "default_value", "expression"]
 
 class ColumnImportMethod(Enum):
     AUTO = "auto"
@@ -40,16 +42,6 @@ class BaseImportConfig(ABC):
         self.nodes_model_cls = nodes_model_cls
         self.field_methods_provider = FieldMethodsProvider(self)
         self.widget_factory = ImportWidgetFactory(self)
-
-    @property
-    def config_header(self):
-        header = ["Field name", "Method", "Source attribute", "Value map", "Default value", "Expression"]
-        return header
-
-    @property
-    def config_keys(self):
-        header = ["method", "source_attribute", "value_map", "default_value", "expression"]
-        return header
 
     @property
     def models_fields_iterator(self):
@@ -124,7 +116,7 @@ class ImportWidgetFactory:
                 if is_optional(field_type):
                     field_type = optional_type(field_type)
 
-                for column_idx, column_name in enumerate(self.config.config_header):
+                for column_idx, column_name in enumerate(CONFIG_HEADER):
                     if column_idx == ColumnImportIndex.FIELD_NAME_COLUMN_IDX:
                         widget = self._create_label_widget(model_fields_display_names[field_name])
                     elif column_idx == ColumnImportIndex.METHOD_COLUMN_IDX:

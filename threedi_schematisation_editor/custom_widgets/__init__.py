@@ -21,7 +21,7 @@ from threedi_schematisation_editor.custom_tools.import_config import (
 )
 from threedi_schematisation_editor.custom_tools.importers import CulvertsImporter, CulvertsIntegrator, OrificesImporter, \
     OrificesIntegrator, WeirsImporter, WeirsIntegrator, PipesImporter, ConnectionNodesImporter
-from threedi_schematisation_editor.custom_tools.import_config import FeaturesImportConfig, StructuresImportConfig, ColumnImportIndex
+from threedi_schematisation_editor.custom_tools.import_config import FeaturesImportConfig, StructuresImportConfig, ColumnImportIndex, CONFIG_KEYS, CONFIG_HEADER
 from threedi_schematisation_editor.utils import (
     NULL_STR,
     QUOTED_NULL,
@@ -410,11 +410,11 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
         widgets_to_add = self.import_configuration.data_model_widgets()
         model_widgets = widgets_to_add[self.import_model_cls]
         self.field_map_model.clear()
-        self.field_map_model.setHorizontalHeaderLabels(self.import_configuration.config_header)
+        self.field_map_model.setHorizontalHeaderLabels(CONFIG_HEADER)
         for (row_idx, column_idx), widget in model_widgets.items():
             self.field_map_model.setItem(row_idx, column_idx, QStandardItem(""))
             self.field_map_tv.setIndexWidget(self.field_map_model.index(row_idx, column_idx), widget)
-        for i in range(len(self.import_configuration.config_header)):
+        for i in range(len(CONFIG_HEADER)):
             self.field_map_tv.resizeColumnToContents(i)
         self.connect_configuration_widgets()
         self.on_layer_changed(self.source_layer)
@@ -493,7 +493,7 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
                 continue
             single_field_config = {}
             field_type = core_field_type(field_type)
-            for column_idx, key_name in enumerate(self.import_configuration.config_keys, start=1):
+            for column_idx, key_name in enumerate(CONFIG_KEYS, start=1):
                 item = self.field_map_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = self.field_map_tv.indexWidget(index)
@@ -513,7 +513,7 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
             if is_optional(field_type):
                 field_type = optional_type(field_type)
             field_config = fields_setting.get(field_name, {})
-            for column_idx, key_name in enumerate(self.import_configuration.config_keys, start=1):
+            for column_idx, key_name in enumerate(CONFIG_KEYS, start=1):
                 item = self.field_map_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = self.field_map_tv.indexWidget(index)
@@ -769,12 +769,12 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         widgets_to_add = self.import_configuration.data_model_widgets()
         for model_cls, (tree_view, tree_view_model) in self.data_models_tree_views.items():
             tree_view_model.clear()
-            tree_view_model.setHorizontalHeaderLabels(self.import_configuration.config_header)
+            tree_view_model.setHorizontalHeaderLabels(CONFIG_HEADER)
             model_widgets = widgets_to_add[model_cls]
             for (row_idx, column_idx), widget in model_widgets.items():
                 tree_view_model.setItem(row_idx, column_idx, QStandardItem(""))
                 tree_view.setIndexWidget(tree_view_model.index(row_idx, column_idx), widget)
-            for i in range(len(self.import_configuration.config_header)):
+            for i in range(len(CONFIG_HEADER)):
                 tree_view.resizeColumnToContents(i)
         self.connect_configuration_widgets()
         self.on_layer_changed(self.source_layer)
@@ -870,7 +870,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
                 continue
             single_field_config = {}
             field_type = core_field_type(field_type)
-            for column_idx, key_name in enumerate(self.import_configuration.config_keys, start=1):
+            for column_idx, key_name in enumerate(CONFIG_KEYS, start=1):
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
@@ -891,7 +891,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
             if is_optional(field_type):
                 field_type = optional_type(field_type)
             field_config = fields_setting.get(field_name, {})
-            for column_idx, key_name in enumerate(self.import_configuration.config_keys, start=1):
+            for column_idx, key_name in enumerate(CONFIG_KEYS, start=1):
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
