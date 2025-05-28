@@ -297,7 +297,7 @@ class ImportFieldMappingUtils:
                 else widget.currentData()
             )
         elif column_idx == FeaturesImportConfig.VALUE_MAP_COLUMN_IDX:
-            key_value = widget.value_map
+            key_value = {str(key) : value for key, value in widget.value_map.items()}
             if not key_value:
                 return None
         elif column_idx == FeaturesImportConfig.EXPRESSION_COLUMN_IDX:
