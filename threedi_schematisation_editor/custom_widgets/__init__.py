@@ -16,22 +16,13 @@ from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
 from qgis.PyQt.QtWidgets import QComboBox, QInputDialog, QLineEdit, QTableWidgetItem
 
 import threedi_schematisation_editor.data_models as dm
-from threedi_schematisation_editor.custom_tools import (
-    BaseImportConfig,
+from threedi_schematisation_editor.custom_tools.import_config import (
     ColumnImportMethod,
-    ConnectionNodesImporter,
-    CulvertsImporter,
-    CulvertsIntegrator,
-    FeaturesImportConfig,
-    FieldMethodsProvider,
-    ImportWidgetFactory,
-    OrificesImporter,
-    OrificesIntegrator,
-    PipesImporter,
-    StructuresImportConfig,
-    WeirsImporter,
-    WeirsIntegrator,
 )
+from threedi_schematisation_editor.custom_tools.importers import CulvertsImporter, CulvertsIntegrator, OrificesImporter, \
+    OrificesIntegrator, WeirsImporter, WeirsIntegrator, PipesImporter, ConnectionNodesImporter
+from threedi_schematisation_editor.custom_tools.import_config import BaseImportConfig, FieldMethodsProvider, \
+    ImportWidgetFactory, FeaturesImportConfig, StructuresImportConfig
 from threedi_schematisation_editor.utils import (
     NULL_STR,
     QUOTED_NULL,
