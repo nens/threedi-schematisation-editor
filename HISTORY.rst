@@ -9,6 +9,7 @@ History
 - Processing algorithms 'Map surfaces/DWF to connection nodes' now use point on surface instead of centroid as start vertex of mapping line (#396)
 - Reset unspecified import settings on loading new import configuration (#286)
 - Fix handling string keys in import with value_map (#279)
+- Changing Material back to what it was does not update the friction value (#345)
 
 
 2.2.2 (2025-05-20)
