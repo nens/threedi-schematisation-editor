@@ -639,84 +639,11 @@ class PipeHandler(UserLayerHandler):
 
     def connect_additional_signals(self):
         """Connecting signals to action specific for the particular layers."""
-        self.layer.featureAdded.connect(self.trigger_segmentize_pipe)
         self.layer.geometryChanged.connect(self.trigger_update_node_references)
 
     def disconnect_additional_signals(self):
         """Disconnecting signals to action specific for the particular layers."""
-        self.layer.featureAdded.disconnect(self.trigger_segmentize_pipe)
         self.layer.geometryChanged.disconnect(self.trigger_update_node_references)
-
-    def trigger_segmentize_pipe(self, pipe_feat_id):
-        """
-        We have to run pipe segmentation after QGIS will finish adding feature procedure.
-        Pipe segmentation will be triggered in the next event loop after adding new pipe.
-        Editing added pipe directly by the slot connected to the `featureAdded` signal breaks adding feature tool.
-        That leads to the QGIS crash.
-        """
-        segmentize_method = partial(self.segmentize_pipe, pipe_feat_id)
-        QTimer.singleShot(0, segmentize_method)
-
-    def segmentize_pipe(self, pipe_feat_id):
-        """Method to split single pipe into 2 vertices segments."""
-        connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        connection_node_layer = connection_node_handler.layer
-        pipe_feat = self.layer.getFeature(pipe_feat_id)
-        pipe_geom = pipe_feat.geometry()
-        vertices_count = count_vertices(pipe_geom)
-        if vertices_count < 3:
-            return
-        start_vertex_idx, end_vertex_idx = 0, vertices_count - 1
-        points_connection_nodes = {}
-        intermediate_bottom_levels = {}
-        pipe_polyline = pipe_geom.asPolyline()
-        connection_node_template = None
-        for idx, point in enumerate(pipe_polyline):
-            if idx == start_vertex_idx:
-                connection_node_id = pipe_feat["connection_node_id_start"]
-                points_connection_nodes[point] = connection_node_id
-                connection_node_template = connection_node_handler.get_feat_by_id(connection_node_id)
-            elif idx == end_vertex_idx:
-                connection_node_id = pipe_feat["connection_node_id_end"]
-                points_connection_nodes[point] = connection_node_id
-                intermediate_bottom_levels[point] = pipe_feat["invert_level_end"]
-            else:
-                geom = QgsGeometry.fromPointXY(point)
-                existing_node_feat = find_point_nodes(point, connection_node_layer)
-                if existing_node_feat is not None:
-                    new_node_feat = existing_node_feat
-                    points_connection_nodes[point] = new_node_feat["id"]
-                    intermediate_bottom_levels[point] = existing_node_feat["bottom_level"]
-                else:
-                    new_node_feat = connection_node_handler.create_new_feature_from_template(
-                        connection_node_template, geom
-                    )
-                    points_connection_nodes[point] = new_node_feat["id"]
-                    intermediate_bottom_levels[point] = new_node_feat["bottom_level"]
-                    connection_node_handler.layer.addFeature(new_node_feat)
-        # Split pipe into segments
-        segments = zip(pipe_polyline, pipe_polyline[1:])
-        # Extract first segment and update source pipe
-        first_seg_start_point, first_seg_end_point = next(segments)
-        new_source_pipe_geom = QgsGeometry.fromPolylineXY([first_seg_start_point, first_seg_end_point])
-        pipe_feat.setGeometry(new_source_pipe_geom)
-        pipe_feat["connection_node_id_end"] = points_connection_nodes[first_seg_end_point]
-        if first_seg_end_point in intermediate_bottom_levels:
-            pipe_feat["invert_level_end"] = intermediate_bottom_levels[first_seg_end_point]
-        self.layer.updateFeature(pipe_feat)
-        # Let's add a new pipes
-        skip_fields = ["connection_node_id_start", "connection_node_id_end"]
-        for start_point, end_point in segments:
-            new_geom = QgsGeometry.fromPolylineXY([start_point, end_point])
-            new_feat = self.create_new_feature_from_template(pipe_feat, geometry=new_geom, fields_to_skip=skip_fields)
-            new_feat["connection_node_id_start"] = points_connection_nodes[start_point]
-            new_feat["connection_node_id_end"] = points_connection_nodes[end_point]
-            if start_point in intermediate_bottom_levels:
-                new_feat["invert_level_start"] = intermediate_bottom_levels[start_point]
-            if end_point in intermediate_bottom_levels:
-                new_feat["invert_level_end"] = intermediate_bottom_levels[end_point]
-            self.layer.addFeature(new_feat)
-
 
 class CrossSectionLocationHandler(UserLayerHandler):
     MODEL = dm.CrossSectionLocation
