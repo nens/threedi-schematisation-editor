@@ -23,8 +23,8 @@ from threedi_schematisation_editor.custom_tools import (
 )
 
 
-class ImportConnectionNodes(QgsProcessingAlgorithm):
-    """Import connection nodes."""
+class BaseImporter(QgsProcessingAlgorithm):
+    """Base class for all importers."""
 
     SOURCE_LAYER = "SOURCE_LAYER"
     IMPORT_CONFIG = "IMPORT_CONFIG"
@@ -32,6 +32,81 @@ class ImportConnectionNodes(QgsProcessingAlgorithm):
 
     def tr(self, string):
         return QCoreApplication.translate("Processing", string)
+
+    def group(self):
+        return self.tr("Conversion")
+
+    def groupId(self):
+        return "conversion"
+
+    def initAlgorithm(self, config=None):
+        source_layer = QgsProcessingParameterFeatureSource(
+            self.SOURCE_LAYER,
+            self.tr(f"Source {self.get_feature_type()} layer"),
+            self.get_source_layer_types(),
+        )
+        self.addParameter(source_layer)
+        import_config_file = QgsProcessingParameterFile(
+            self.IMPORT_CONFIG,
+            self.tr(f"{self.get_feature_type().title()} import configuration file"),
+            extension="json",
+            behavior=QgsProcessingParameterFile.File,
+        )
+        self.addParameter(import_config_file)
+        target_gpkg = QgsProcessingParameterFile(
+            self.TARGET_GPKG,
+            self.tr("Target schematisation database"),
+            extension="gpkg",
+            behavior=QgsProcessingParameterFile.File,
+        )
+        self.addParameter(target_gpkg)
+
+    def get_source_layer_types(self):
+        # Default is both line and point, overridden in connection nodes
+        return [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint]
+
+    def postProcessAlgorithm(self, context, feedback):
+        for layer in QgsProject.instance().mapLayers().values():
+            layer.triggerRepaint()
+        return {}
+
+    # Abstract methods to be implemented by subclasses
+    def get_feature_type(self):
+        """Return the type of feature being imported."""
+        raise NotImplementedError
+
+    def create_importer(self, source_layer, target_gpkg, import_config):
+        """Create the appropriate importer instance."""
+        raise NotImplementedError
+
+    def processAlgorithm(self, parameters, context, feedback):
+        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
+        if source_layer is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
+        import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
+        if import_config_file is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.IMPORT_CONFIG))
+        target_gpkg = self.parameterAsFile(parameters, self.TARGET_GPKG, context)
+        if target_gpkg is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
+
+        with open(import_config_file) as import_config_json:
+            import_config = json.loads(import_config_json.read())
+
+        importer = self.create_importer(source_layer, target_gpkg, import_config)
+
+        # Use the right import method based on the importer type
+        if hasattr(importer, 'import_features'):
+            importer.import_features(context=context)
+        else:
+            importer.import_structures(context=context)
+
+        importer.commit_pending_changes()
+        return {}
+
+
+class ImportConnectionNodes(BaseImporter):
+    """Import connection nodes."""
 
     def createInstance(self):
         return ImportConnectionNodes()
@@ -42,306 +117,75 @@ class ImportConnectionNodes(QgsProcessingAlgorithm):
     def displayName(self):
         return self.tr("Import connection nodes")
 
-    def group(self):
-        return self.tr("Conversion")
-
-    def groupId(self):
-        return "conversion"
-
     def shortHelpString(self):
         return self.tr("""Import connection nodes from the external source layer.""")
 
-    def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
-            self.SOURCE_LAYER,
-            self.tr("Source connection nodes layer"),
-            [QgsProcessing.TypeVectorPoint],
-        )
-        self.addParameter(source_layer)
-        import_config_file = QgsProcessingParameterFile(
-            self.IMPORT_CONFIG,
-            self.tr("Connection nodes import configuration file"),
-            extension="json",
-            behavior=QgsProcessingParameterFile.File,
-        )
-        self.addParameter(import_config_file)
-        target_gpkg = QgsProcessingParameterFile(
-            self.TARGET_GPKG,
-            self.tr("Target schematisation database"),
-            extension="gpkg",
-            behavior=QgsProcessingParameterFile.File,
-        )
-        self.addParameter(target_gpkg)
+    def get_feature_type(self):
+        return "connection nodes"
 
-    def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
-        if source_layer is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
-        import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
-        if import_config_file is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.IMPORT_CONFIG))
-        target_gpkg = self.parameterAsFile(parameters, self.TARGET_GPKG, context)
-        if target_gpkg is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
-        with open(import_config_file) as import_config_json:
-            import_config = json.loads(import_config_json.read())
-        nodes_importer = ConnectionNodesImporter(source_layer, target_gpkg, import_config)
-        nodes_importer.import_features(context=context)
-        nodes_importer.commit_pending_changes()
-        return {}
+    def get_source_layer_types(self):
+        return [QgsProcessing.TypeVectorPoint]
 
-    def postProcessAlgorithm(self, context, feedback):
-        for layer in QgsProject.instance().mapLayers().values():
-            layer.triggerRepaint()
-        return {}
+    def create_importer(self, source_layer, target_gpkg, import_config):
+        return ConnectionNodesImporter(source_layer, target_gpkg, import_config)
 
 
-class ImportCulverts(QgsProcessingAlgorithm):
-    """Import culverts."""
+class StructureImporter(BaseImporter):
+    """Base class for importing different feature types."""
 
-    SOURCE_LAYER = "SOURCE_LAYER"
-    IMPORT_CONFIG = "IMPORT_CONFIG"
-    TARGET_GPKG = "TARGET_GPKG"
-
-    def tr(self, string):
-        return QCoreApplication.translate("Processing", string)
+    FEATURE_TYPE = None  # To be overridden by subclasses
+    DISPLAY_NAME = None  # To be overridden by subclasses
+    IMPORTER_CLASS = None  # To be overridden by subclasses
+    INTEGRATOR_CLASS = None  # To be overridden by subclasses
 
     def createInstance(self):
-        return ImportCulverts()
+        return self.__class__()
 
     def name(self):
-        return "threedi_import_culverts"
+        return f"threedi_import_{self.FEATURE_TYPE}s"
 
     def displayName(self):
-        return self.tr("Import culverts")
-
-    def group(self):
-        return self.tr("Conversion")
-
-    def groupId(self):
-        return "conversion"
+        return self.tr(f"Import {self.FEATURE_TYPE}s")
 
     def shortHelpString(self):
-        return self.tr("""Import culverts from the external source layer.""")
+        return self.tr(f"""Import {self.FEATURE_TYPE}s from the external source layer.""")
 
-    def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
-            self.SOURCE_LAYER,
-            self.tr("Source culvert layer"),
-            [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
-        )
-        self.addParameter(source_layer)
-        import_config_file = QgsProcessingParameterFile(
-            self.IMPORT_CONFIG,
-            self.tr("Culvert import configuration file"),
-            extension="json",
-            behavior=QgsProcessingParameterFile.File,
-        )
-        self.addParameter(import_config_file)
-        target_gpkg = QgsProcessingParameterFile(
-            self.TARGET_GPKG,
-            self.tr("Target schematisation database"),
-            extension="gpkg",
-            behavior=QgsProcessingParameterFile.File,
-        )
-        self.addParameter(target_gpkg)
+    def get_feature_type(self):
+        return self.FEATURE_TYPE
 
-    def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
-        if source_layer is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
-        import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
-        if import_config_file is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.IMPORT_CONFIG))
-        target_gpkg = self.parameterAsFile(parameters, self.TARGET_GPKG, context)
-        if target_gpkg is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
-        with open(import_config_file) as import_config_json:
-            import_config = json.loads(import_config_json.read())
+    def create_importer(self, source_layer, target_gpkg, import_config):
         conversion_settings = import_config["conversion_settings"]
         edit_channels = conversion_settings.get("edit_channels", False)
 
         if edit_channels:
-            culverts_importer = CulvertsIntegrator(source_layer, target_gpkg, import_config)
+            return self.INTEGRATOR_CLASS(source_layer, target_gpkg, import_config)
         else:
-            culverts_importer = CulvertsImporter(source_layer, target_gpkg, import_config)
-        culverts_importer.import_structures(context=context)
-        culverts_importer.commit_pending_changes()
-        return {}
-
-    def postProcessAlgorithm(self, context, feedback):
-        for layer in QgsProject.instance().mapLayers().values():
-            layer.triggerRepaint()
-        return {}
+            return self.IMPORTER_CLASS(source_layer, target_gpkg, import_config)
 
 
-class ImportOrifices(QgsProcessingAlgorithm):
+class ImportCulverts(StructureImporter):
+    """Import culverts."""
+    FEATURE_TYPE = "culvert"
+    IMPORTER_CLASS = CulvertsImporter
+    INTEGRATOR_CLASS = CulvertsIntegrator
+
+
+class ImportOrifices(StructureImporter):
     """Import orifices."""
-
-    SOURCE_LAYER = "SOURCE_LAYER"
-    IMPORT_CONFIG = "IMPORT_CONFIG"
-    TARGET_GPKG = "TARGET_GPKG"
-
-    def tr(self, string):
-        return QCoreApplication.translate("Processing", string)
-
-    def createInstance(self):
-        return ImportOrifices()
-
-    def name(self):
-        return "threedi_import_orifices"
-
-    def displayName(self):
-        return self.tr("Import orifices")
-
-    def group(self):
-        return self.tr("Conversion")
-
-    def groupId(self):
-        return "conversion"
-
-    def shortHelpString(self):
-        return self.tr("""Import orifices from the external source layer.""")
-
-    def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
-            self.SOURCE_LAYER,
-            self.tr("Source orifice layer"),
-            [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
-        )
-        self.addParameter(source_layer)
-        import_config_file = QgsProcessingParameterFile(
-            self.IMPORT_CONFIG,
-            self.tr("Orifice import configuration file"),
-            extension="json",
-            behavior=QgsProcessingParameterFile.File,
-        )
-        self.addParameter(import_config_file)
-        target_gpkg = QgsProcessingParameterFile(
-            self.TARGET_GPKG,
-            self.tr("Target schematisation database"),
-            extension="gpkg",
-            behavior=QgsProcessingParameterFile.File,
-        )
-        self.addParameter(target_gpkg)
-
-    def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
-        if source_layer is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
-        import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
-        if import_config_file is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.IMPORT_CONFIG))
-        target_gpkg = self.parameterAsFile(parameters, self.TARGET_GPKG, context)
-        if target_gpkg is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
-        with open(import_config_file) as import_config_json:
-            import_config = json.loads(import_config_json.read())
-        conversion_settings = import_config["conversion_settings"]
-        edit_channels = conversion_settings.get("edit_channels", False)
-        orifices_importer = (
-            OrificesIntegrator(source_layer, target_gpkg, import_config)
-            if edit_channels
-            else OrificesImporter(source_layer, target_gpkg, import_config)
-        )
-        orifices_importer.import_structures(context=context)
-        orifices_importer.commit_pending_changes()
-        return {}
-
-    def postProcessAlgorithm(self, context, feedback):
-        for layer in QgsProject.instance().mapLayers().values():
-            layer.triggerRepaint()
-        return {}
+    FEATURE_TYPE = "orifice"
+    IMPORTER_CLASS = OrificesImporter
+    INTEGRATOR_CLASS = OrificesIntegrator
 
 
-class ImportWeirs(QgsProcessingAlgorithm):
+class ImportWeirs(StructureImporter):
     """Import weirs."""
-
-    SOURCE_LAYER = "SOURCE_LAYER"
-    IMPORT_CONFIG = "IMPORT_CONFIG"
-    TARGET_GPKG = "TARGET_GPKG"
-
-    def tr(self, string):
-        return QCoreApplication.translate("Processing", string)
-
-    def createInstance(self):
-        return ImportWeirs()
-
-    def name(self):
-        return "threedi_import_weirs"
-
-    def displayName(self):
-        return self.tr("Import weirs")
-
-    def group(self):
-        return self.tr("Conversion")
-
-    def groupId(self):
-        return "conversion"
-
-    def shortHelpString(self):
-        return self.tr("""Import weirs from the external source layer.""")
-
-    def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
-            self.SOURCE_LAYER,
-            self.tr("Source weir layer"),
-            [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
-        )
-        self.addParameter(source_layer)
-        import_config_file = QgsProcessingParameterFile(
-            self.IMPORT_CONFIG,
-            self.tr("Weir import configuration file"),
-            extension="json",
-            behavior=QgsProcessingParameterFile.File,
-        )
-        self.addParameter(import_config_file)
-        target_gpkg = QgsProcessingParameterFile(
-            self.TARGET_GPKG,
-            self.tr("Target schematisation database"),
-            extension="gpkg",
-            behavior=QgsProcessingParameterFile.File,
-        )
-        self.addParameter(target_gpkg)
-
-    def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
-        if source_layer is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
-        import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
-        if import_config_file is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.IMPORT_CONFIG))
-        target_gpkg = self.parameterAsFile(parameters, self.TARGET_GPKG, context)
-        if target_gpkg is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
-        with open(import_config_file) as import_config_json:
-            import_config = json.loads(import_config_json.read())
-        conversion_settings = import_config["conversion_settings"]
-        edit_channels = conversion_settings.get("edit_channels", False)
-        weirs_importer = (
-            WeirsIntegrator(source_layer, target_gpkg, import_config)
-            if edit_channels
-            else WeirsImporter(source_layer, target_gpkg, import_config)
-        )
-        weirs_importer.import_structures(context=context)
-        weirs_importer.commit_pending_changes()
-        return {}
-
-    def postProcessAlgorithm(self, context, feedback):
-        for layer in QgsProject.instance().mapLayers().values():
-            layer.triggerRepaint()
-        return {}
+    FEATURE_TYPE = "weir"
+    IMPORTER_CLASS = WeirsImporter
+    INTEGRATOR_CLASS = WeirsIntegrator
 
 
-class ImportPipes(QgsProcessingAlgorithm):
+class ImportPipes(BaseImporter):
     """Import pipes."""
-
-    SOURCE_LAYER = "SOURCE_LAYER"
-    IMPORT_CONFIG = "IMPORT_CONFIG"
-    TARGET_GPKG = "TARGET_GPKG"
-
-    def tr(self, string):
-        return QCoreApplication.translate("Processing", string)
 
     def createInstance(self):
         return ImportPipes()
@@ -352,55 +196,11 @@ class ImportPipes(QgsProcessingAlgorithm):
     def displayName(self):
         return self.tr("Import pipes")
 
-    def group(self):
-        return self.tr("Conversion")
-
-    def groupId(self):
-        return "conversion"
-
     def shortHelpString(self):
         return self.tr("""Import pipes from the external source layer.""")
 
-    def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
-            self.SOURCE_LAYER,
-            self.tr("Source pipes layer"),
-            [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
-        )
-        self.addParameter(source_layer)
-        import_config_file = QgsProcessingParameterFile(
-            self.IMPORT_CONFIG,
-            self.tr("Pipes import configuration file"),
-            extension="json",
-            behavior=QgsProcessingParameterFile.File,
-        )
-        self.addParameter(import_config_file)
-        target_gpkg = QgsProcessingParameterFile(
-            self.TARGET_GPKG,
-            self.tr("Target schematisation database"),
-            extension="gpkg",
-            behavior=QgsProcessingParameterFile.File,
-        )
-        self.addParameter(target_gpkg)
+    def get_feature_type(self):
+        return "pipes"
 
-    def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
-        if source_layer is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
-        import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
-        if import_config_file is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.IMPORT_CONFIG))
-        target_gpkg = self.parameterAsFile(parameters, self.TARGET_GPKG, context)
-        if target_gpkg is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
-        with open(import_config_file) as import_config_json:
-            import_config = json.loads(import_config_json.read())
-        pipes_importer = PipesImporter(source_layer, target_gpkg, import_config)
-        pipes_importer.import_structures(context=context)
-        pipes_importer.commit_pending_changes()
-        return {}
-
-    def postProcessAlgorithm(self, context, feedback):
-        for layer in QgsProject.instance().mapLayers().values():
-            layer.triggerRepaint()
-        return {}
+    def create_importer(self, source_layer, target_gpkg, import_config):
+        return PipesImporter(source_layer, target_gpkg, import_config)
