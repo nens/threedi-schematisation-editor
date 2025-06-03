@@ -66,7 +66,7 @@ class ImportConnectionNodes(QgsProcessingAlgorithm):
         self.addParameter(target_gpkg)
 
     def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
         if source_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
         import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
@@ -139,7 +139,7 @@ class ImportCulverts(QgsProcessingAlgorithm):
         self.addParameter(target_gpkg)
 
     def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
         if source_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
         import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
@@ -218,7 +218,7 @@ class ImportOrifices(QgsProcessingAlgorithm):
         self.addParameter(target_gpkg)
 
     def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
         if source_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
         import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
@@ -297,7 +297,7 @@ class ImportWeirs(QgsProcessingAlgorithm):
         self.addParameter(target_gpkg)
 
     def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
         if source_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
         import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
@@ -376,7 +376,7 @@ class ImportPipes(QgsProcessingAlgorithm):
         self.addParameter(target_gpkg)
 
     def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
         if source_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
         import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
