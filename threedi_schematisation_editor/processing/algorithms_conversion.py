@@ -5,7 +5,7 @@ from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,
-    QgsProcessingParameterFeatureSource,
+    QgsProcessingParameterVectorLayer,
     QgsProcessingParameterFile,
     QgsProject,
 )
@@ -44,7 +44,7 @@ class ImportConnectionNodes(QgsProcessingAlgorithm):
         return self.tr("""Import connection nodes from the external source layer.""")
 
     def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
+        source_layer = QgsProcessingParameterVectorLayer(
             self.SOURCE_LAYER,
             self.tr("Source connection nodes layer"),
             [QgsProcessing.TypeVectorPoint],
@@ -117,7 +117,7 @@ class ImportCulverts(QgsProcessingAlgorithm):
         return self.tr("""Import culverts from the external source layer.""")
 
     def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
+        source_layer = QgsProcessingParameterVectorLayer(
             self.SOURCE_LAYER,
             self.tr("Source culvert layer"),
             [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
@@ -196,7 +196,7 @@ class ImportOrifices(QgsProcessingAlgorithm):
         return self.tr("""Import orifices from the external source layer.""")
 
     def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
+        source_layer = QgsProcessingParameterVectorLayer(
             self.SOURCE_LAYER,
             self.tr("Source orifice layer"),
             [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
@@ -275,7 +275,7 @@ class ImportWeirs(QgsProcessingAlgorithm):
         return self.tr("""Import weirs from the external source layer.""")
 
     def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
+        source_layer = QgsProcessingParameterVectorLayer(
             self.SOURCE_LAYER,
             self.tr("Source weir layer"),
             [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
@@ -354,7 +354,7 @@ class ImportPipes(QgsProcessingAlgorithm):
         return self.tr("""Import pipes from the external source layer.""")
 
     def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
+        source_layer = QgsProcessingParameterVectorLayer(
             self.SOURCE_LAYER,
             self.tr("Source pipes layer"),
             [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
