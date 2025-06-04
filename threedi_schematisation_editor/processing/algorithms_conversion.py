@@ -5,8 +5,8 @@ from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,
-    QgsProcessingParameterFeatureSource,
     QgsProcessingParameterFile,
+    QgsProcessingParameterVectorLayer,
     QgsProject,
 )
 from qgis.PyQt.QtCore import QCoreApplication
@@ -40,7 +40,7 @@ class BaseImporter(QgsProcessingAlgorithm):
         return "conversion"
 
     def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
+        source_layer = QgsProcessingParameterVectorLayer(
             self.SOURCE_LAYER,
             self.tr(f"Source {self.get_feature_type()} layer"),
             self.get_source_layer_types(),
