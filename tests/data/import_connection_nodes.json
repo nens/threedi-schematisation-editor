@@ -1,0 +1,63 @@
+{
+  "target_layer": "connection_node",
+  "fields": {
+    "id": {
+      "method": "auto",
+      "source_attribute": ""
+    },
+    "code": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "display_name": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "storage_area": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "initial_water_level": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "visualisation": {
+      "method": "source_attribute",
+      "source_attribute": "veld",
+      "default_value": "NULL"
+    },
+    "manhole_surface_level": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "bottom_level": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "exchange_level": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "exchange_type": {
+      "method": "ignore",
+      "source_attribute": "",
+      "default_value": "NULL"
+    },
+    "exchange_thickness": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "hydraulic_conductivity_in": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "hydraulic_conductivity_out": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "tags": {
+      "method": "ignore",
+      "source_attribute": ""
+    }
+  }
+}
