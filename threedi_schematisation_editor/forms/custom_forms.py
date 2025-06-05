@@ -622,14 +622,10 @@ class AbstractFormWithMaterial(AbstractBaseForm):
         current_material_id = self.material_id_widget.currentData()
         if current_material_id not in self.all_material_data:
             return
-        if current_material_id == self.initial_material_id:
-            return
         current_material_data = self.all_material_data[current_material_id]
         for material_field_name, field_name_widget in self.material_friction_widgets.items():
             widget_value = current_material_data[material_field_name]
             self.set_widget_value(field_name_widget, widget_value)
-        self.initial_material_id = self.feature[self.material_id_field_name]
-
 
 class AbstractFormWithTable(AbstractBaseForm):
     """Base edit form for user layers with table."""
