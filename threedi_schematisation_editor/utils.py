@@ -1070,41 +1070,6 @@ def get_plugin_instance(plugin_name="threedi_schematisation_editor"):
     return plugin_instance
 
 
-def extract_multiple_substrings(linestring_geometry, *start_end_distances):
-    """
-    Cut out line segments between given start and end distances along the line and return them with a line leftovers.
-    """
-    curve = linestring_geometry.constGet()
-    start_end_distances.sort(key=itemgetter(0))
-    substring_geometries, linestring_parts_left = [], []
-    before_substring_start, before_substring_end = 0, 0
-    for start_distance, end_distance in start_end_distances:
-        curve_substring = curve.curveSubstring(start_distance, end_distance)
-        substring_geometry = QgsGeometry(curve_substring)
-        substring_geometries.append(substring_geometry)
-        before_substring_end = start_distance
-        before_substring_curve = curve.curveSubstring(before_substring_start, before_substring_end)
-        before_substring_geometry = QgsGeometry(before_substring_curve)
-        before_substring_start = end_distance
-        linestring_parts_left.append(before_substring_geometry)
-    last_substring_curve = curve.curveSubstring(before_substring_start, linestring_geometry.length())
-    last_substring_geometry = QgsGeometry(last_substring_curve)
-    linestring_parts_left.append(last_substring_geometry)
-    return substring_geometries, linestring_parts_left
-
-
-def extract_substring(linestring_geometry, start_distance, end_distance):
-    """Cut out line segment between given start and end distance along the line and return it with a line leftovers."""
-    curve = linestring_geometry.constGet()
-    curve_substring = curve.curveSubstring(start_distance, end_distance)
-    before_start_substring = curve.curveSubstring(0, start_distance)
-    after_end_substring = curve.curveSubstring(end_distance, linestring_geometry.length())
-    substring_geometry = QgsGeometry(curve_substring)
-    before_start_geometry = QgsGeometry(before_start_substring)
-    after_end_geometry = QgsGeometry(after_end_substring)
-    return substring_geometry, before_start_geometry, after_end_geometry
-
-
 class TypeConversionError(Exception):
     """Custom exception raised when type conversion fails."""
 
