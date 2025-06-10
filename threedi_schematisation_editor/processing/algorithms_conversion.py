@@ -1,5 +1,8 @@
 # Copyright (C) 2025 by Lutra Consulting
+
+
 import json
+from abc import ABC, abstractmethod
 
 from qgis.core import (
     QgsProcessing,
@@ -23,7 +26,7 @@ from threedi_schematisation_editor.custom_tools import (
 )
 
 
-class BaseImporter(QgsProcessingAlgorithm):
+class BaseImporter(QgsProcessingAlgorithm, ABC):
     """Base class for all importers."""
 
     SOURCE_LAYER = "SOURCE_LAYER"
@@ -71,13 +74,15 @@ class BaseImporter(QgsProcessingAlgorithm):
         return {}
 
     # Abstract methods to be implemented by subclasses
+    @abstractmethod
     def get_feature_type(self):
         """Return the type of feature being imported."""
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def create_importer(self, source_layer, target_gpkg, import_config):
         """Create the appropriate importer instance."""
-        raise NotImplementedError
+        pass
 
     def processAlgorithm(self, parameters, context, feedback):
         source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
