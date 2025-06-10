@@ -9,7 +9,9 @@ History
 - Processing algorithms 'Map surfaces/DWF to connection nodes' now use point on surface instead of centroid as start vertex of mapping line (#396)
 - Reset unspecified import settings on loading new import configuration (#286)
 - Fix handling string keys in import with value_map (#279)
-- Ensure source layer in conversion processing algorithms is a `QgsVectorLayer` (#404)
+- Handle using source layer from conversion processing algorithms which is not a `QgsVectorLayer` (#404)
+- Changing Material back to what it was does not update the friction value (#345)
+- Allow digitising and importing pipes with > 2 vertices (#342)
 
 
 2.2.2 (2025-05-20)
