@@ -29,7 +29,7 @@ class BaseImporter(QgsProcessingAlgorithm):
     SOURCE_LAYER = "SOURCE_LAYER"
     IMPORT_CONFIG = "IMPORT_CONFIG"
     TARGET_GPKG = "TARGET_GPKG"
-    FEATURE_TYPE = None  # To be overridden by subclasses
+    FEATURE_TYPE = ""  # To be overridden by subclasses
 
     def createInstance(self):
         return self.__class__()
@@ -47,24 +47,24 @@ class BaseImporter(QgsProcessingAlgorithm):
         return f"threedi_import_{self.FEATURE_TYPE}s"
 
     def displayName(self):
-        return self.tr(f"Import {self.FEATURE_TYPE.replace('_', ' ')}s")
+        return self.tr(f"Import {self.get_feature_repr()}s")
 
     def shortHelpString(self):
-        return self.tr(f"""Import {self.FEATURE_TYPE}s from the external source layer.""")
+        return self.tr(f"""Import {get_feature_type()}s from the external source layer.""")
 
-    def get_feature_type(self):
-        return self.FEATURE_TYPE
+    def get_feature_repr(self):
+        return self.FEATURE_TYPE.replace('_',' ')
 
     def initAlgorithm(self, config=None):
         source_layer = QgsProcessingParameterFeatureSource(
             self.SOURCE_LAYER,
-            self.tr(f"Source {self.get_feature_type()} layer"),
+            self.tr(f"Source {self.get_feature_repr()} layer"),
             self.get_source_layer_types(),
         )
         self.addParameter(source_layer)
         import_config_file = QgsProcessingParameterFile(
             self.IMPORT_CONFIG,
-            self.tr(f"{self.get_feature_type().title()} import configuration file"),
+            self.tr(f"{self.get_feature_repr().title()} import configuration file"),
             extension="json",
             behavior=QgsProcessingParameterFile.File,
         )
