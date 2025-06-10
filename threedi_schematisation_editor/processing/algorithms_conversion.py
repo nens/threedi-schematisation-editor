@@ -1,8 +1,5 @@
 # Copyright (C) 2025 by Lutra Consulting
-
-
 import json
-from abc import ABC, abstractmethod
 
 from qgis.core import (
     QgsProcessing,
@@ -26,12 +23,16 @@ from threedi_schematisation_editor.custom_tools import (
 )
 
 
-class BaseImporter(QgsProcessingAlgorithm, ABC):
+class BaseImporter(QgsProcessingAlgorithm):
     """Base class for all importers."""
 
     SOURCE_LAYER = "SOURCE_LAYER"
     IMPORT_CONFIG = "IMPORT_CONFIG"
     TARGET_GPKG = "TARGET_GPKG"
+    FEATURE_TYPE = None  # To be overridden by subclasses
+
+    def createInstance(self):
+        return self.__class__()
 
     def tr(self, string):
         return QCoreApplication.translate("Processing", string)
@@ -41,6 +42,18 @@ class BaseImporter(QgsProcessingAlgorithm, ABC):
 
     def groupId(self):
         return "conversion"
+
+    def name(self):
+        return f"threedi_import_{self.FEATURE_TYPE}s"
+
+    def displayName(self):
+        return self.tr(f"Import {self.FEATURE_TYPE.replace('_', ' ')}s")
+
+    def shortHelpString(self):
+        return self.tr(f"""Import {self.FEATURE_TYPE}s from the external source layer.""")
+
+    def get_feature_type(self):
+        return self.FEATURE_TYPE
 
     def initAlgorithm(self, config=None):
         source_layer = QgsProcessingParameterVectorLayer(
@@ -73,16 +86,9 @@ class BaseImporter(QgsProcessingAlgorithm, ABC):
             layer.triggerRepaint()
         return {}
 
-    # Abstract methods to be implemented by subclasses
-    @abstractmethod
-    def get_feature_type(self):
-        """Return the type of feature being imported."""
-        pass
-
-    @abstractmethod
     def create_importer(self, source_layer, target_gpkg, import_config):
         """Create the appropriate importer instance."""
-        pass
+        raise NotImplementedError("Subclasses must implement create_importer()")
 
     def processAlgorithm(self, parameters, context, feedback):
         source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
@@ -110,53 +116,32 @@ class BaseImporter(QgsProcessingAlgorithm, ABC):
         return {}
 
 
-class ImportConnectionNodes(BaseImporter):
+class SimpleImporter(BaseImporter):
+    IMPORTER_CLASS = None  # To be overridden by subclasses
+
+    def create_importer(self, source_layer, target_gpkg, import_config):
+        return self.IMPORTER_CLASS(source_layer, target_gpkg, import_config)
+
+
+class ImportConnectionNodes(SimpleImporter):
     """Import connection nodes."""
-
-    def createInstance(self):
-        return ImportConnectionNodes()
-
-    def name(self):
-        return "threedi_import_connection_nodes"
-
-    def displayName(self):
-        return self.tr("Import connection nodes")
-
-    def shortHelpString(self):
-        return self.tr("""Import connection nodes from the external source layer.""")
-
-    def get_feature_type(self):
-        return "connection nodes"
+    IMPORTER_CLASS = ConnectionNodesImporter
+    FEATURE_TYPE = "connection_node"  # To be overridden by subclasses
 
     def get_source_layer_types(self):
         return [QgsProcessing.TypeVectorPoint]
 
-    def create_importer(self, source_layer, target_gpkg, import_config):
-        return ConnectionNodesImporter(source_layer, target_gpkg, import_config)
+
+class ImportPipes(SimpleImporter):
+    """Import pipes."""
+    IMPORTER_CLASS = PipesImporter
+    FEATURE_TYPE = "pipe"  # To be overridden by subclasses
 
 
 class StructureImporter(BaseImporter):
     """Base class for importing different feature types."""
-
-    FEATURE_TYPE = None  # To be overridden by subclasses
-    DISPLAY_NAME = None  # To be overridden by subclasses
     IMPORTER_CLASS = None  # To be overridden by subclasses
     INTEGRATOR_CLASS = None  # To be overridden by subclasses
-
-    def createInstance(self):
-        return self.__class__()
-
-    def name(self):
-        return f"threedi_import_{self.FEATURE_TYPE}s"
-
-    def displayName(self):
-        return self.tr(f"Import {self.FEATURE_TYPE}s")
-
-    def shortHelpString(self):
-        return self.tr(f"""Import {self.FEATURE_TYPE}s from the external source layer.""")
-
-    def get_feature_type(self):
-        return self.FEATURE_TYPE
 
     def create_importer(self, source_layer, target_gpkg, import_config):
         conversion_settings = import_config["conversion_settings"]
@@ -189,23 +174,3 @@ class ImportWeirs(StructureImporter):
     INTEGRATOR_CLASS = WeirsIntegrator
 
 
-class ImportPipes(BaseImporter):
-    """Import pipes."""
-
-    def createInstance(self):
-        return ImportPipes()
-
-    def name(self):
-        return "threedi_import_pipes"
-
-    def displayName(self):
-        return self.tr("Import pipes")
-
-    def shortHelpString(self):
-        return self.tr("""Import pipes from the external source layer.""")
-
-    def get_feature_type(self):
-        return "pipes"
-
-    def create_importer(self, source_layer, target_gpkg, import_config):
-        return PipesImporter(source_layer, target_gpkg, import_config)
