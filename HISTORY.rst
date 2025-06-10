@@ -1,8 +1,8 @@
 History
 =======
 
-2.2.3 (unreleased)
-------------------
+2.3 (2025-06-10)
+----------------
 
 - Add processing algorithm to add NWRW parameters to surface parameters (#333)
 - Fix removing of cross-section locations associated to channels not modified by object import (#378)
