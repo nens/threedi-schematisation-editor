@@ -985,7 +985,9 @@ class StructuresIntegrator(LinearStructuresImporter):
             next_structure_id = get_next_feature_id(self.target_layer)
             next_connection_node_id = get_next_feature_id(self.node_layer)
             locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
-            for disconnected_structure in self.external_source.getFeatures(disconnected_structure_ids):
+            for disconnected_structure in self.external_source.getFeatures():
+                if disconnected_structure.id() not in disconnected_structure_ids:
+                    continue
                 new_structure_feat, new_nodes, next_connection_node_id = self.process_structure_feature(
                     disconnected_structure,
                     structure_fields,

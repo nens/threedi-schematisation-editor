@@ -91,7 +91,7 @@ class BaseImporter(QgsProcessingAlgorithm):
         raise NotImplementedError("Subclasses must implement create_importer()")
 
     def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
+        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
         if source_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
         import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
