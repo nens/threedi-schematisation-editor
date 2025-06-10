@@ -50,7 +50,7 @@ class BaseImporter(QgsProcessingAlgorithm):
         return self.tr(f"Import {self.get_feature_repr()}s")
 
     def shortHelpString(self):
-        return self.tr(f"""Import {get_feature_type()}s from the external source layer.""")
+        return self.tr(f"""Import {self.get_feature_repr()}s from the external source layer.""")
 
     def get_feature_repr(self):
         return self.FEATURE_TYPE.replace('_',' ')
