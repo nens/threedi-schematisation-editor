@@ -5,22 +5,14 @@ from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,
-    QgsProcessingParameterFeatureSource,
+    QgsProcessingParameterVectorLayer,
     QgsProcessingParameterFile,
     QgsProject,
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
-from threedi_schematisation_editor.custom_tools import (
-    ConnectionNodesImporter,
-    CulvertsImporter,
-    CulvertsIntegrator,
-    OrificesImporter,
-    OrificesIntegrator,
-    PipesImporter,
-    WeirsImporter,
-    WeirsIntegrator,
-)
+from threedi_schematisation_editor.custom_tools.importers import CulvertsImporter, CulvertsIntegrator, OrificesImporter, \
+    OrificesIntegrator, WeirsImporter, WeirsIntegrator, PipesImporter, ConnectionNodesImporter
 
 
 class ImportConnectionNodes(QgsProcessingAlgorithm):
@@ -52,7 +44,7 @@ class ImportConnectionNodes(QgsProcessingAlgorithm):
         return self.tr("""Import connection nodes from the external source layer.""")
 
     def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
+        source_layer = QgsProcessingParameterVectorLayer(
             self.SOURCE_LAYER,
             self.tr("Source connection nodes layer"),
             [QgsProcessing.TypeVectorPoint],
@@ -74,7 +66,7 @@ class ImportConnectionNodes(QgsProcessingAlgorithm):
         self.addParameter(target_gpkg)
 
     def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
         if source_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
         import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
@@ -125,7 +117,7 @@ class ImportCulverts(QgsProcessingAlgorithm):
         return self.tr("""Import culverts from the external source layer.""")
 
     def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
+        source_layer = QgsProcessingParameterVectorLayer(
             self.SOURCE_LAYER,
             self.tr("Source culvert layer"),
             [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
@@ -147,7 +139,7 @@ class ImportCulverts(QgsProcessingAlgorithm):
         self.addParameter(target_gpkg)
 
     def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
         if source_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
         import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
@@ -204,7 +196,7 @@ class ImportOrifices(QgsProcessingAlgorithm):
         return self.tr("""Import orifices from the external source layer.""")
 
     def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
+        source_layer = QgsProcessingParameterVectorLayer(
             self.SOURCE_LAYER,
             self.tr("Source orifice layer"),
             [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
@@ -226,7 +218,7 @@ class ImportOrifices(QgsProcessingAlgorithm):
         self.addParameter(target_gpkg)
 
     def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
         if source_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
         import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
@@ -283,7 +275,7 @@ class ImportWeirs(QgsProcessingAlgorithm):
         return self.tr("""Import weirs from the external source layer.""")
 
     def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
+        source_layer = QgsProcessingParameterVectorLayer(
             self.SOURCE_LAYER,
             self.tr("Source weir layer"),
             [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
@@ -305,7 +297,7 @@ class ImportWeirs(QgsProcessingAlgorithm):
         self.addParameter(target_gpkg)
 
     def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
         if source_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
         import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
@@ -362,7 +354,7 @@ class ImportPipes(QgsProcessingAlgorithm):
         return self.tr("""Import pipes from the external source layer.""")
 
     def initAlgorithm(self, config=None):
-        source_layer = QgsProcessingParameterFeatureSource(
+        source_layer = QgsProcessingParameterVectorLayer(
             self.SOURCE_LAYER,
             self.tr("Source pipes layer"),
             [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint],
@@ -384,7 +376,7 @@ class ImportPipes(QgsProcessingAlgorithm):
         self.addParameter(target_gpkg)
 
     def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        source_layer = self.parameterAsVectorLayer(parameters, self.SOURCE_LAYER, context)
         if source_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
         import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)

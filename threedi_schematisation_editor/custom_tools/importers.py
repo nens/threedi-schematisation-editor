@@ -1,11 +1,8 @@
-# Copyright (C) 2025 by Lutra Consulting
 import warnings
-
-from collections import defaultdict, namedtuple
-from enum import Enum
+from _operator import attrgetter, itemgetter
+from collections import namedtuple, defaultdict
 from functools import cached_property
 from itertools import chain
-from operator import attrgetter, itemgetter
 
 from qgis.core import (
     NULL,
@@ -19,157 +16,48 @@ from qgis.core import (
     QgsWkbTypes,
 )
 
-
-from qgis.gui import QgsFieldExpressionWidget
-from qgis.PyQt.QtWidgets import QComboBox, QLabel, QLineEdit, QPushButton
-
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.utils import (
-    convert_to_type,
-    enum_entry_name_format,
-    find_line_endpoints_nodes,
-    find_point_nodes,
-    get_features_by_expression,
-    get_next_feature_id,
-    gpkg_layer,
-    is_optional,
-    optional_type,
-    spatial_index,
-    TypeConversionError
-)
-
+from threedi_schematisation_editor.custom_tools.import_config import ColumnImportMethod
+from threedi_schematisation_editor.utils import gpkg_layer, convert_to_type, TypeConversionError, find_point_nodes, \
+    get_next_feature_id, find_line_endpoints_nodes, spatial_index, get_features_by_expression
 from threedi_schematisation_editor.warnings import FeaturesImporterWarning, StructuresIntegratorWarning
 
 
-class ColumnImportMethod(Enum):
-    AUTO = "auto"
-    ATTRIBUTE = "source_attribute"
-    DEFAULT = "default"
-    EXPRESSION = "expression"
-    IGNORE = "ignore"
-
-    def __str__(self):
-        return self.name.capitalize()
-
-
-class FeaturesImportConfig:
-    """Features import tool configuration class."""
-
-    FIELD_NAME_COLUMN_IDX = 0
-    METHOD_COLUMN_IDX = 1
-    SOURCE_ATTRIBUTE_COLUMN_IDX = 2
-    VALUE_MAP_COLUMN_IDX = 3
-    DEFAULT_VALUE_COLUMN_IDX = 4
-    EXPRESSION_COLUMN_IDX = 5
-
-    def __init__(self, import_model_cls):
-        self.import_model_cls = import_model_cls
-
-    @property
-    def config_header(self):
-        header = ["Field name", "Method", "Source attribute", "Value map", "Default value", "Expression"]
-        return header
-
-    @property
-    def config_keys(self):
-        header = ["method", "source_attribute", "value_map", "default_value", "expression"]
-        return header
-
-    @property
-    def models_fields_iterator(self):
-        fields_iterator = ((k, self.import_model_cls) for k in self.import_model_cls.__annotations__.keys())
-        return fields_iterator
-
-    @property
-    def field_methods_mapping(self):
-        methods_mapping = defaultdict(dict)
-        auto_fields = {"id"}
-        auto_attribute_fields = {"connection_node_id", "connection_node_id_start", "connection_node_id_end"}
-        for field_name, model_cls in self.models_fields_iterator:
-            if field_name in auto_fields:
-                methods_mapping[model_cls][field_name] = [ColumnImportMethod.AUTO]
-            elif field_name in auto_attribute_fields:
-                methods_mapping[model_cls][field_name] = [
-                    ColumnImportMethod.AUTO,
-                    ColumnImportMethod.ATTRIBUTE,
-                    ColumnImportMethod.EXPRESSION,
-                ]
-            else:
-                methods_mapping[model_cls][field_name] = [
-                    ColumnImportMethod.ATTRIBUTE,
-                    ColumnImportMethod.DEFAULT,
-                    ColumnImportMethod.EXPRESSION,
-                    ColumnImportMethod.IGNORE,
-                ]
-        return methods_mapping
-
-    def data_model_widgets(self):
-        widgets_to_add = defaultdict(dict)
-        combobox_column_indexes = {self.METHOD_COLUMN_IDX, self.SOURCE_ATTRIBUTE_COLUMN_IDX}
-        for model_cls, field_methods_mapping in self.field_methods_mapping.items():
-            model_obsolete_fields = model_cls.obsolete_fields()
-            model_fields_display_names = model_cls.fields_display_names()
-            row_idx = 0
-            for field_name, field_methods in field_methods_mapping.items():
-                if field_name in model_obsolete_fields:
-                    continue
-                field_type = model_cls.__annotations__[field_name]
-                if is_optional(field_type):
-                    field_type = optional_type(field_type)
-                for column_idx, column_name in enumerate(self.config_header):
-                    if column_idx == self.FIELD_NAME_COLUMN_IDX:
-                        field_display_name = model_fields_display_names[field_name]
-                        label_text = f"{field_display_name}\t"
-                        widget = QLabel(label_text)
-                    elif column_idx in combobox_column_indexes:
-                        widget = QComboBox()
-                        if column_idx == self.METHOD_COLUMN_IDX:
-                            for method in field_methods:
-                                widget.addItem(method.name.capitalize(), method.value)
-                    elif column_idx == self.VALUE_MAP_COLUMN_IDX:
-                        widget = QPushButton("Set...")
-                        widget.value_map = {}
-                    elif column_idx == self.EXPRESSION_COLUMN_IDX:
-                        widget = QgsFieldExpressionWidget()
-                    else:
-                        if column_idx == self.DEFAULT_VALUE_COLUMN_IDX and (
-                            issubclass(field_type, Enum) or field_type == bool
-                        ):
-                            widget = QComboBox()
-                            items = (
-                                [["False", False], ["True", True]]
-                                if field_type == bool
-                                else [["NULL", "NULL"]] + [[enum_entry_name_format(e), e.value] for e in field_type]
-                            )
-                            for item_str, item_data in items:
-                                widget.addItem(item_str, item_data)
-                        else:
-                            widget = QLineEdit()
-                    widgets_to_add[model_cls][row_idx, column_idx] = widget
-                row_idx += 1
-        return widgets_to_add
-
-
-class StructuresImportConfig(FeaturesImportConfig):
-    """Structures import tool configuration class."""
-
-    def __init__(self, import_model_cls):
-        super().__init__(import_model_cls)
-        self.nodes_model_cls = dm.ConnectionNode
-        self.related_models_classes = set()
-
-    def add_related_model_class(self, model_cls):
-        self.related_models_classes.add(model_cls)
-
-    @property
-    def models_fields_iterator(self):
-        structure_fields = ((k, self.import_model_cls) for k in self.import_model_cls.__annotations__.keys())
-        node_fields = ((k, self.nodes_model_cls) for k in self.nodes_model_cls.__annotations__.keys())
-        related_models_fields = (
-            (k, model_cls) for model_cls in self.related_models_classes for k in model_cls.__annotations__.keys()
-        )
-        fields_iterator = chain(structure_fields, node_fields, related_models_fields)
-        return fields_iterator
+def update_attributes(fields_config, model_cls, source_feat, *new_features):
+    expression_context = QgsExpressionContext()
+    expression_context.setFeature(source_feat)
+    type_annotations = model_cls.__annotations__
+    for new_feat in new_features:
+        for field_name, field_type in type_annotations.items():
+            try:
+                field_config = fields_config[field_name]
+            except KeyError:
+                continue
+            method = ColumnImportMethod(field_config["method"])
+            if method == ColumnImportMethod.AUTO:
+                continue
+            field_value = NULL
+            if method == ColumnImportMethod.ATTRIBUTE:
+                src_field_name = field_config[ColumnImportMethod.ATTRIBUTE.value]
+                src_value = source_feat[src_field_name]
+                value_map = field_config.get("value_map", {})
+                # Prevent type mismatches in keys by casting keys to strings to match those the dict in src_value['value_map'] which is also forced to be strings
+                field_value = value_map.get(str(src_value), src_value)
+                if field_value == NULL:
+                    field_value = field_config.get("default_value", NULL)
+            elif method == ColumnImportMethod.EXPRESSION:
+                expression_str = field_config["expression"]
+                expression = QgsExpression(expression_str)
+                field_value = expression.evaluate(expression_context)
+            elif method == ColumnImportMethod.DEFAULT:
+                field_value = field_config["default_value"]
+            try:
+                new_feat[field_name] = convert_to_type(field_value, field_type)
+            except TypeConversionError as e:
+                new_feat[field_name] = NULL
+                feat_id = new_feat["id"]
+                message = f"Attribute {field_name} of feature with id {feat_id} was not filled in"
+                warnings.warn(f"{message}. {e}", FeaturesImporterWarning)
 
 
 class AbstractFeaturesImporter:
@@ -199,43 +87,6 @@ class AbstractFeaturesImporter:
         )
         self.target_layer_name = self.target_layer.name()
         self.fields_configurations = {target_model_cls: self.import_settings.get("fields", {})}
-
-    def update_attributes(self, model_cls, source_feat, *new_features):
-        fields_config = self.fields_configurations[model_cls]
-        expression_context = QgsExpressionContext()
-        expression_context.setFeature(source_feat)
-        type_annotations = model_cls.__annotations__
-        for new_feat in new_features:
-            for field_name, field_type in type_annotations.items():
-                try:
-                    field_config = fields_config[field_name]
-                except KeyError:
-                    continue
-                method = ColumnImportMethod(field_config["method"])
-                if method == ColumnImportMethod.AUTO:
-                    continue
-                field_value = NULL
-                if method == ColumnImportMethod.ATTRIBUTE:
-                    src_field_name = field_config[ColumnImportMethod.ATTRIBUTE.value]
-                    src_value = source_feat[src_field_name]
-                    value_map = field_config.get("value_map", {})
-                    # Prevent type mismatches in keys by casting keys to strings to match those the dict in src_value['value_map'] which is also forced to be strings
-                    field_value = value_map.get(str(src_value), src_value)
-                    if field_value == NULL:
-                        field_value = field_config.get("default_value", NULL)
-                elif method == ColumnImportMethod.EXPRESSION:
-                    expression_str = field_config["expression"]
-                    expression = QgsExpression(expression_str)
-                    field_value = expression.evaluate(expression_context)
-                elif method == ColumnImportMethod.DEFAULT:
-                    field_value = field_config["default_value"]
-                try:
-                    new_feat[field_name] = convert_to_type(field_value, field_type)
-                except TypeConversionError as e:
-                    new_feat[field_name] = NULL
-                    feat_id = new_feat["id"]
-                    message = f"Attribute {field_name} of feature with id {feat_id} in layer {self.target_layer_name} was not filled in"
-                    warnings.warn(f"{message}. {e}", FeaturesImporterWarning)
 
     @staticmethod
     def process_commit_errors(layer):
@@ -454,10 +305,10 @@ class PointStructuresImporter(AbstractStructuresImporter):
             if find_point_nodes(new_structure_geom.asPoint(), self.target_layer) is not None:
                 continue
             if new_nodes:
-                self.update_attributes(dm.ConnectionNode, external_src_feat, *new_nodes)
+                update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, external_src_feat, *new_nodes)
                 self.node_layer.addFeatures(new_nodes)
                 locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
-            self.update_attributes(self.target_model_cls, external_src_feat, new_structure_feat)
+            update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, external_src_feat, new_structure_feat)
             next_structure_id += 1
             new_structures.append(new_structure_feat)
         self.target_layer.addFeatures(new_structures)
@@ -598,10 +449,10 @@ class LinearStructuresImporter(AbstractStructuresImporter):
                 transformation,
             )
             if new_nodes:
-                self.update_attributes(dm.ConnectionNode, external_src_feat, *new_nodes)
+                update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, external_src_feat, *new_nodes)
                 self.node_layer.addFeatures(new_nodes)
                 locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
-            self.update_attributes(self.target_model_cls, external_src_feat, new_structure_feat)
+            update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, external_src_feat, new_structure_feat)
             next_structure_id += 1
             new_structures.append(new_structure_feat)
             external_source_structures.append(external_src_feat)
@@ -879,7 +730,7 @@ class StructuresIntegrator(LinearStructuresImporter):
             src_structure_feat = channel_structure.feature
             structure_feat = QgsFeature(structure_fields)
             # Update with values from the widgets.
-            self.update_attributes(self.target_model_cls, src_structure_feat, structure_feat)
+            update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, src_structure_feat, structure_feat)
             structure_attributes = {field_name: structure_feat[field_name] for field_name in structure_field_names}
             structure_length = channel_structure.length
             channel_structure_m = channel_structure.m
@@ -909,7 +760,7 @@ class StructuresIntegrator(LinearStructuresImporter):
                 self.features_to_add[channel_layer_name].append(before_substring_feat)
             previous_structure_end = end_distance
             if new_nodes:
-                self.update_attributes(dm.ConnectionNode, src_structure_feat, *new_nodes)
+                update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, src_structure_feat, *new_nodes)
         # Setup last channel leftover feature
         last_substring_end = channel_geom.length()
         if last_substring_end - previous_structure_end > 0:
@@ -996,10 +847,10 @@ class StructuresIntegrator(LinearStructuresImporter):
                     transformation,
                 )
                 if new_nodes:
-                    self.update_attributes(dm.ConnectionNode, disconnected_structure, *new_nodes)
+                    update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, disconnected_structure, *new_nodes)
                     self.node_layer.addFeatures(new_nodes)
                     locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
-                self.update_attributes(self.target_model_cls, disconnected_structure, new_structure_feat)
+                update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, disconnected_structure, new_structure_feat)
                 next_structure_id += 1
                 disconnected_structures_to_add.append(new_structure_feat)
                 external_source_structures.append(disconnected_structure)
@@ -1121,7 +972,7 @@ class ConnectionNodesImporter(AbstractFeaturesImporter):
                 next_feature_id,
                 transformation,
             )
-            self.update_attributes(self.target_model_cls, external_src_feat, new_feat)
+            update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, external_src_feat, new_feat)
             next_feature_id += 1
             new_feats.append(new_feat)
         self.target_layer.addFeatures(new_feats)
