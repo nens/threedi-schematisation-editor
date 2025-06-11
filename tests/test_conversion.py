@@ -3,6 +3,7 @@ import os
 import gc
 import json
 import pytest
+import tempfile
 
 from functools import wraps
 from pathlib import Path
@@ -13,6 +14,8 @@ import processing
 from processing.core.Processing import Processing
 from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
 
+
+TEMP_DIR = Path(tempfile.gettempdir())
 
 @pytest.fixture(scope="session")
 def ref_data():
@@ -41,8 +44,7 @@ def get_schematisation_path(schematisation):
 
 
 def get_schematisation_copy(schematisation, test_name):
-    data_dir = Path(__file__).parent.absolute().joinpath('data')
-    tgt = data_dir.joinpath('results', test_name)
+    tgt = TEMP_DIR.joinpath(test_name)
     shutil.copy(get_schematisation_path(schematisation), tgt)
     return str(tgt.absolute())
 
