@@ -325,7 +325,7 @@ class LinearStructuresImporter(AbstractStructuresImporter):
         geometry_type = src_geometry.type()
         if geometry_type == QgsWkbTypes.GeometryType.LineGeometry:
             src_polyline = src_geometry.asPolyline()
-            dst_polyline = src_polyline if self.target_model_cls == dm.Culvert else [src_polyline[0], src_polyline[-1]]
+            dst_polyline = src_polyline if (self.target_model_cls == dm.Culvert or self.target_model_cls == dm.Pipe) else [src_polyline[0], src_polyline[-1]]
             dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
         elif geometry_type == QgsWkbTypes.GeometryType.PointGeometry:
             start_point = src_geometry.asPoint()
