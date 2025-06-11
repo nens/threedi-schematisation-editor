@@ -50,7 +50,10 @@ def get_schematisation_copy(schematisation, test_name):
 
 
 def get_source_layer_path(source_layer):
-    return str(Path(__file__).parent.absolute().joinpath('data', source_layer))
+    tgt = TEMP_DIR.joinpath(source_layer)
+    src = Path(__file__).parent.absolute().joinpath('data', source_layer)
+    shutil.copy(src, tgt)
+    return str(tgt)
 
 
 def get_import_config_path(import_config_name):
