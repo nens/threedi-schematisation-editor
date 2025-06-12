@@ -60,6 +60,22 @@ def update_attributes(fields_config, model_cls, source_feat, *new_features):
                 warnings.warn(f"{message}. {e}", FeaturesImporterWarning)
 
 
+class ConnectionNodeManager:
+    def __init__(self, next_connection_node_id=1):
+        self.next_connection_node_id = next_connection_node_id
+
+    def create_node_for_point(self, node_point, node_fields):
+        """
+        Create a new connection node at the given point.
+        """
+        node_id = self.next_connection_node_id
+        self.next_connection_node_id += 1
+        new_node_feat = QgsFeature(node_fields)
+        new_node_feat.setGeometry(QgsGeometry.fromPointXY(node_point))
+        new_node_feat["id"] = node_id
+        return new_node_feat
+
+
 class AbstractFeaturesImporter:
     """Base class for the importing features from the external data source."""
 
@@ -200,6 +216,7 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
             target_model_cls: self.import_settings.get("fields", {}),
             dm.ConnectionNode: self.import_settings.get("connection_node_fields", {}),
         }
+        self.node_manager = ConnectionNodeManager(get_next_feature_id(self.node_layer))
 
     @property
     def modifiable_layers(self):
@@ -222,6 +239,9 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
 class PointStructuresImporter(AbstractStructuresImporter):
     """Point structures importer class."""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def new_structure_geometry(self, src_structure_feat):
         """Create new structure geometry based on the source structure feature."""
         return self.new_point_geometry(src_structure_feat)
@@ -232,7 +252,6 @@ class PointStructuresImporter(AbstractStructuresImporter):
         structure_fields,
         next_structure_id,
         node_fields,
-        next_connection_node_id,
         locator,
         transformation=None,
     ):
@@ -254,24 +273,16 @@ class PointStructuresImporter(AbstractStructuresImporter):
                 new_structure_feat["connection_node_id"] = node_feat["id"]
             else:
                 if self.conversion_settings.create_connection_nodes:
-                    node_point = point
-                    new_node_feat = QgsFeature(node_fields)
-                    new_node_feat.setGeometry(QgsGeometry.fromPointXY(node_point))
-                    new_node_feat["id"] = next_connection_node_id
-                    new_structure_feat["connection_node_id"] = next_connection_node_id
-                    next_connection_node_id += 1
+                    new_node_feat = self.node_manager.create_node_for_point(point, node_fields)
+                    new_structure_feat["connection_node_id"] = new_node_feat["id"]
                     new_nodes.append(new_node_feat)
         else:
             if self.conversion_settings.create_connection_nodes:
-                node_point = point
-                new_node_feat = QgsFeature(node_fields)
-                new_node_feat.setGeometry(QgsGeometry.fromPointXY(node_point))
-                new_node_feat["id"] = next_connection_node_id
-                new_structure_feat["connection_node_id"] = next_connection_node_id
-                next_connection_node_id += 1
+                new_node_feat = self.node_manager.create_node_for_point(point, node_fields)
+                new_structure_feat["connection_node_id"] = new_node_feat["id"]
                 new_nodes.append(new_node_feat)
         new_structure_feat.setGeometry(new_geom)
-        return new_structure_feat, new_nodes, next_connection_node_id
+        return new_structure_feat, new_nodes
 
     def import_structures(self, context=None, selected_ids=None):
         """Method responsible for the importing structures from the external feature source."""
@@ -283,7 +294,6 @@ class PointStructuresImporter(AbstractStructuresImporter):
         transform_ctx = project.transformContext()
         transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx) if src_crs != dst_crs else None
         next_structure_id = get_next_feature_id(self.target_layer)
-        next_connection_node_id = get_next_feature_id(self.node_layer)
         locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
         new_structures = []
         self.node_layer.startEditing()
@@ -292,12 +302,11 @@ class PointStructuresImporter(AbstractStructuresImporter):
             self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
         )
         for external_src_feat in features_iterator:
-            new_structure_feat, new_nodes, next_connection_node_id = self.process_structure_feature(
+            new_structure_feat, new_nodes = self.process_structure_feature(
                 external_src_feat,
                 structure_fields,
                 next_structure_id,
                 node_fields,
-                next_connection_node_id,
                 locator,
                 transformation,
             )
@@ -316,6 +325,8 @@ class PointStructuresImporter(AbstractStructuresImporter):
 
 class LinearStructuresImporter(AbstractStructuresImporter):
     """Linear structures importer class."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def new_structure_geometry(self, src_structure_feat):
         """Create new structure geometry based on the source structure feature."""
@@ -352,7 +363,6 @@ class LinearStructuresImporter(AbstractStructuresImporter):
         structure_fields,
         next_structure_id,
         node_fields,
-        next_connection_node_id,
         locator,
         transformation=None,
     ):
@@ -369,6 +379,7 @@ class LinearStructuresImporter(AbstractStructuresImporter):
                 polyline, locator, self.conversion_settings.snapping_distance
             )
             if node_start_feat:
+                # todo: implement snap structure
                 node_start_point = node_start_feat.geometry().asPoint()
                 polyline[0] = node_start_point
                 new_geom = QgsGeometry.fromPolylineXY(polyline)
@@ -376,15 +387,11 @@ class LinearStructuresImporter(AbstractStructuresImporter):
                 new_structure_feat["connection_node_id_start"] = node_start_id
             else:
                 if self.conversion_settings.create_connection_nodes:
-                    new_start_node_feat = QgsFeature(node_fields)
-                    node_start_point = polyline[0]
-                    new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
-                    new_node_start_id = next_connection_node_id
-                    new_start_node_feat["id"] = new_node_start_id
-                    new_structure_feat["connection_node_id_start"] = new_node_start_id
-                    next_connection_node_id += 1
+                    new_start_node_feat = self.node_manager.create_node_for_point(polyline[0], node_fields)
+                    new_structure_feat["connection_node_id_start"] = new_start_node_feat["id"]
                     new_nodes.append(new_start_node_feat)
             if node_end_feat:
+                # todo: implement snap structure
                 node_end_point = node_end_feat.geometry().asPoint()
                 polyline[-1] = node_end_point
                 new_geom = QgsGeometry.fromPolylineXY(polyline)
@@ -392,33 +399,18 @@ class LinearStructuresImporter(AbstractStructuresImporter):
                 new_structure_feat["connection_node_id_end"] = node_end_id
             else:
                 if self.conversion_settings.create_connection_nodes:
-                    new_end_node_feat = QgsFeature(node_fields)
-                    node_end_point = polyline[-1]
-                    new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
-                    new_node_end_id = next_connection_node_id
-                    new_end_node_feat["id"] = new_node_end_id
-                    new_structure_feat["connection_node_id_end"] = new_node_end_id
-                    next_connection_node_id += 1
+                    new_end_node_feat = self.node_manager.create_node_for_point(polyline[-1], node_fields)
+                    new_structure_feat["connection_node_id_end"] = new_end_node_feat["id"]
                     new_nodes.append(new_end_node_feat)
         else:
             if self.conversion_settings.create_connection_nodes:
-                new_start_node_feat = QgsFeature(node_fields)
-                node_start_point = polyline[0]
-                new_start_node_feat.setGeometry(QgsGeometry.fromPointXY(node_start_point))
-                new_start_node_id = next_connection_node_id
-                new_start_node_feat["id"] = new_start_node_id
-                new_structure_feat["connection_node_id_start"] = new_start_node_id
-                next_connection_node_id += 1
-                new_end_node_feat = QgsFeature(node_fields)
-                node_end_point = polyline[-1]
-                new_end_node_feat.setGeometry(QgsGeometry.fromPointXY(node_end_point))
-                new_end_node_id = next_connection_node_id
-                new_end_node_feat["id"] = new_end_node_id
-                new_structure_feat["connection_node_id_end"] = new_end_node_id
-                next_connection_node_id += 1
+                new_start_node_feat = self.node_manager.create_node_for_point(polyline[0], node_fields)
+                new_structure_feat["connection_node_id_start"] = new_start_node_feat["id"]
+                new_end_node_feat = self.node_manager.create_node_for_point(polyline[-1], node_fields)
+                new_structure_feat["connection_node_id_end"] = new_end_node_feat["id"]
                 new_nodes += [new_start_node_feat, new_end_node_feat]
         new_structure_feat.setGeometry(new_geom)
-        return new_structure_feat, new_nodes, next_connection_node_id
+        return new_structure_feat, new_nodes
 
     def import_structures(self, context=None, selected_ids=None):
         """Method responsible for the importing structures from the external feature source."""
@@ -430,7 +422,6 @@ class LinearStructuresImporter(AbstractStructuresImporter):
         transform_ctx = project.transformContext()
         transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx) if src_crs != dst_crs else None
         next_structure_id = get_next_feature_id(self.target_layer)
-        next_connection_node_id = get_next_feature_id(self.node_layer)
         locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
         new_structures, external_source_structures = [], []
         self.node_layer.startEditing()
@@ -439,12 +430,11 @@ class LinearStructuresImporter(AbstractStructuresImporter):
             self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
         )
         for external_src_feat in features_iterator:
-            new_structure_feat, new_nodes, next_connection_node_id = self.process_structure_feature(
+            new_structure_feat, new_nodes = self.process_structure_feature(
                 external_src_feat,
                 structure_fields,
                 next_structure_id,
                 node_fields,
-                next_connection_node_id,
                 locator,
                 transformation,
             )
@@ -834,15 +824,13 @@ class StructuresIntegrator(LinearStructuresImporter):
             transform_ctx = project.transformContext()
             transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx) if src_crs != dst_crs else None
             next_structure_id = get_next_feature_id(self.target_layer)
-            next_connection_node_id = get_next_feature_id(self.node_layer)
             locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
             for disconnected_structure in self.external_source.getFeatures(disconnected_structure_ids):
-                new_structure_feat, new_nodes, next_connection_node_id = self.process_structure_feature(
+                new_structure_feat, new_nodes = self.process_structure_feature(
                     disconnected_structure,
                     structure_fields,
                     next_structure_id,
                     node_fields,
-                    next_connection_node_id,
                     locator,
                     transformation,
                 )
