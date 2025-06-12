@@ -64,16 +64,20 @@ class ConnectionNodeManager:
     def __init__(self, next_connection_node_id=1):
         self.next_connection_node_id = next_connection_node_id
 
+    def create_node(self, geom, node_fields):
+        node_id = self.next_connection_node_id
+        self.next_connection_node_id += 1
+        new_node_feat = QgsFeature(node_fields)
+        new_node_feat.setGeometry(geom)
+        new_node_feat["id"] = node_id
+        return new_node_feat
+
     def create_node_for_point(self, node_point, node_fields):
         """
         Create a new connection node at the given point.
         """
-        node_id = self.next_connection_node_id
-        self.next_connection_node_id += 1
-        new_node_feat = QgsFeature(node_fields)
-        new_node_feat.setGeometry(QgsGeometry.fromPointXY(node_point))
-        new_node_feat["id"] = node_id
-        return new_node_feat
+        return self.create_node(QgsGeometry.fromPointXY(node_point), node_fields)
+
 
 
 class AbstractFeaturesImporter:
@@ -103,6 +107,7 @@ class AbstractFeaturesImporter:
         )
         self.target_layer_name = self.target_layer.name()
         self.fields_configurations = {target_model_cls: self.import_settings.get("fields", {})}
+        self.node_manager = ConnectionNodeManager(get_next_feature_id(self.target_layer))
 
     @staticmethod
     def process_commit_errors(layer):
@@ -929,15 +934,12 @@ class ConnectionNodesImporter(AbstractFeaturesImporter):
         super().__init__(*args)
         self.setup_target_layers(dm.ConnectionNode, target_layer)
 
-    def process_feature(self, src_feat, target_fields, next_connection_node_id, transformation=None):
+    def process_feature(self, src_feat, target_fields, transformation=None):
         """Process source point into connection node feature."""
-        new_node_feat = QgsFeature(target_fields)
-        new_node_feat["id"] = next_connection_node_id
         new_geom = self.new_point_geometry(src_feat)
         if transformation:
             new_geom.transform(transformation)
-        new_node_feat.setGeometry(new_geom)
-        return new_node_feat
+        return self.node_manager.create_node(new_geom, target_fields)
 
     def import_features(self, context=None, selected_ids=None):
         """Method responsible for the importing connection nodes from the external feature source."""
@@ -947,20 +949,13 @@ class ConnectionNodesImporter(AbstractFeaturesImporter):
         dst_crs = self.target_layer.crs()
         transform_ctx = project.transformContext()
         transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx) if src_crs != dst_crs else None
-        next_feature_id = get_next_feature_id(self.target_layer)
         new_feats = []
         self.target_layer.startEditing()
         features_iterator = (
             self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
         )
         for external_src_feat in features_iterator:
-            new_feat = self.process_feature(
-                external_src_feat,
-                target_fields,
-                next_feature_id,
-                transformation,
-            )
+            new_feat = self.process_feature(external_src_feat, target_fields, transformation)
             update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, external_src_feat, new_feat)
-            next_feature_id += 1
             new_feats.append(new_feat)
         self.target_layer.addFeatures(new_feats)
