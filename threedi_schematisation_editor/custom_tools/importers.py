@@ -79,7 +79,6 @@ class ConnectionNodeManager:
         return self.create_node(QgsGeometry.fromPointXY(node_point), node_fields)
 
 
-
 class AbstractFeaturesImporter:
     """Base class for the importing features from the external data source."""
 
@@ -273,14 +272,15 @@ class PointStructuresImporter(AbstractStructuresImporter):
                 point, self.node_layer, self.conversion_settings.snapping_distance, False, locator
             )
             if node_feat:
+                # snap to existing node
                 node_point = node_feat.geometry().asPoint()
                 new_geom = QgsGeometry.fromPointXY(node_point)
                 new_structure_feat["connection_node_id"] = node_feat["id"]
-            else:
-                if self.conversion_settings.create_connection_nodes:
-                    new_node_feat = self.node_manager.create_node_for_point(point, node_fields)
-                    new_structure_feat["connection_node_id"] = new_node_feat["id"]
-                    new_nodes.append(new_node_feat)
+            elif self.conversion_settings.create_connection_nodes:
+                # create new node if no close node is found
+                new_node_feat = self.node_manager.create_node_for_point(point, node_fields)
+                new_structure_feat["connection_node_id"] = new_node_feat["id"]
+                new_nodes.append(new_node_feat)
         else:
             if self.conversion_settings.create_connection_nodes:
                 new_node_feat = self.node_manager.create_node_for_point(point, node_fields)
@@ -383,37 +383,23 @@ class LinearStructuresImporter(AbstractStructuresImporter):
             node_start_feat, node_end_feat = find_line_endpoints_nodes(
                 polyline, locator, self.conversion_settings.snapping_distance
             )
-            if node_start_feat:
-                # todo: implement snap structure
-                node_start_point = node_start_feat.geometry().asPoint()
-                polyline[0] = node_start_point
-                new_geom = QgsGeometry.fromPolylineXY(polyline)
-                node_start_id = node_start_feat["id"]
-                new_structure_feat["connection_node_id_start"] = node_start_id
-            else:
-                if self.conversion_settings.create_connection_nodes:
-                    new_start_node_feat = self.node_manager.create_node_for_point(polyline[0], node_fields)
-                    new_structure_feat["connection_node_id_start"] = new_start_node_feat["id"]
-                    new_nodes.append(new_start_node_feat)
-            if node_end_feat:
-                # todo: implement snap structure
-                node_end_point = node_end_feat.geometry().asPoint()
-                polyline[-1] = node_end_point
-                new_geom = QgsGeometry.fromPolylineXY(polyline)
-                node_end_id = node_end_feat["id"]
-                new_structure_feat["connection_node_id_end"] = node_end_id
-            else:
-                if self.conversion_settings.create_connection_nodes:
-                    new_end_node_feat = self.node_manager.create_node_for_point(polyline[-1], node_fields)
-                    new_structure_feat["connection_node_id_end"] = new_end_node_feat["id"]
-                    new_nodes.append(new_end_node_feat)
-        else:
-            if self.conversion_settings.create_connection_nodes:
-                new_start_node_feat = self.node_manager.create_node_for_point(polyline[0], node_fields)
-                new_structure_feat["connection_node_id_start"] = new_start_node_feat["id"]
-                new_end_node_feat = self.node_manager.create_node_for_point(polyline[-1], node_fields)
-                new_structure_feat["connection_node_id_end"] = new_end_node_feat["id"]
-                new_nodes += [new_start_node_feat, new_end_node_feat]
+            for name, node, idx in [('start', node_start_feat, 0), ('end', node_end_feat, -1)]:
+                if node:
+                    # snap to existing node
+                    polyline[idx] = node.geometry().asPoint()
+                    new_geom = QgsGeometry.fromPolylineXY(polyline)
+                    new_structure_feat[f"connection_node_id_{name}"] = node["id"]
+                elif self.conversion_settings.create_connection_nodes:
+                    # create new node if no close node is found
+                    new_node_feat = self.node_manager.create_node_for_point(polyline[idx], node_fields)
+                    new_structure_feat[f"connection_node_id_{name}"] = new_node_feat["id"]
+                    new_nodes.append(new_node_feat)
+        elif self.conversion_settings.create_connection_nodes:
+            new_start_node_feat = self.node_manager.create_node_for_point(polyline[0], node_fields)
+            new_structure_feat["connection_node_id_start"] = new_start_node_feat["id"]
+            new_end_node_feat = self.node_manager.create_node_for_point(polyline[-1], node_fields)
+            new_structure_feat["connection_node_id_end"] = new_end_node_feat["id"]
+            new_nodes += [new_start_node_feat, new_end_node_feat]
         new_structure_feat.setGeometry(new_geom)
         return new_structure_feat, new_nodes
 
