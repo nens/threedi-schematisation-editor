@@ -411,7 +411,6 @@ class StructuresIntegrator(LinearStructuresImporter):
         self.spatial_indexes_map = {}
         self.node_by_location = {}
         self.next_node_id = 0
-        self.features_to_add = defaultdict(list)
         self.channel_structure_cls = namedtuple("channel_structure", ["channel_id", "feature", "m", "length"])
 
     @property
@@ -528,6 +527,7 @@ class StructuresIntegrator(LinearStructuresImporter):
         start_node_point, end_node_point = channel_polyline[0], channel_polyline[-1]
         node_layer_name = self.node_layer.name()
         node_layer_fields = self.layer_fields_mapping[node_layer_name]
+        # TODO: remove duplicate code
         try:
             start_node_id = self.node_by_location[start_node_point]
         except KeyError:
@@ -540,7 +540,6 @@ class StructuresIntegrator(LinearStructuresImporter):
             start_node_feat["id"] = start_node_id
             self.next_node_id += 1
             self.node_by_location[start_node_point] = start_node_id
-            self.features_to_add[node_layer_name].append(start_node_feat)
             new_nodes.append(start_node_feat)
         try:
             end_node_id = self.node_by_location[end_node_point]
@@ -554,7 +553,6 @@ class StructuresIntegrator(LinearStructuresImporter):
             end_node_feat["id"] = end_node_id
             self.next_node_id += 1
             self.node_by_location[end_node_point] = end_node_id
-            self.features_to_add[node_layer_name].append(end_node_feat)
             new_nodes.append(end_node_feat)
         dst_feature["connection_node_id_start"] = start_node_id
         dst_feature["connection_node_id_end"] = end_node_id
@@ -568,39 +566,38 @@ class StructuresIntegrator(LinearStructuresImporter):
         channel_id_idx = xs_fields.lookupField("channel_id")
         next_cross_section_location_id = get_next_feature_id(self.cross_section_location_layer)
         cross_section_location_copies = []
-        for src_channel_id, channels in new_channels.items():
-            for channel_feat in channels:
-                channel_xs_count = 0
-                channel_id = channel_feat["id"]
-                channel_geometry = channel_feat.geometry()
-                channel_geometry_middle = channel_geometry.interpolate(channel_geometry.length() * 0.5)
-                xs_fids = xs_location_index.intersects(channel_geometry.boundingBox())
-                for xs_fid in xs_fids:
-                    xs_feat = xs_location_features_map[xs_fid]
-                    xs_geom = xs_feat.geometry()
-                    xs_buffer = xs_geom.buffer(
-                        self.DEFAULT_INTERSECTION_BUFFER, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS
-                    )
-                    if channel_geometry.intersects(xs_buffer):
-                        self.cross_section_location_layer.changeAttributeValue(xs_fid, channel_id_idx, channel_id)
-                        channel_xs_count += 1
-                if channel_xs_count == 0:
-                    src_channel_xs_ids = [str(xs_id) for xs_id in source_channel_xs_locations[src_channel_id]]
-                    if src_channel_xs_ids:
-                        xs_ids_str = ",".join(src_channel_xs_ids)
-                        xs_distance_map = [
-                            (xs_feat, channel_geometry.distance(xs_feat.geometry()))
-                            for xs_feat in get_features_by_expression(
-                                self.cross_section_location_layer, f'"id" in ({xs_ids_str})', with_geometry=True
-                            )
-                        ]
-                        xs_distance_map.sort(key=itemgetter(1))
-                        closest_xs_feat_copy = QgsFeature(xs_distance_map[0][0])
-                        closest_xs_feat_copy.setGeometry(channel_geometry_middle)
-                        closest_xs_feat_copy["channel_id"] = channel_id
-                        closest_xs_feat_copy["id"] = next_cross_section_location_id
-                        next_cross_section_location_id += 1
-                        cross_section_location_copies.append(closest_xs_feat_copy)
+        for channel_feat in new_channels:
+            channel_xs_count = 0
+            channel_id = channel_feat["id"]
+            channel_geometry = channel_feat.geometry()
+            channel_geometry_middle = channel_geometry.interpolate(channel_geometry.length() * 0.5)
+            xs_fids = xs_location_index.intersects(channel_geometry.boundingBox())
+            for xs_fid in xs_fids:
+                xs_feat = xs_location_features_map[xs_fid]
+                xs_geom = xs_feat.geometry()
+                xs_buffer = xs_geom.buffer(
+                    self.DEFAULT_INTERSECTION_BUFFER, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+                )
+                if channel_geometry.intersects(xs_buffer):
+                    self.cross_section_location_layer.changeAttributeValue(xs_fid, channel_id_idx, channel_id)
+                    channel_xs_count += 1
+            if channel_xs_count == 0:
+                src_channel_xs_ids = [str(xs_id) for xs_id in source_channel_xs_locations]
+                if src_channel_xs_ids:
+                    xs_ids_str = ",".join(src_channel_xs_ids)
+                    xs_distance_map = [
+                        (xs_feat, channel_geometry.distance(xs_feat.geometry()))
+                        for xs_feat in get_features_by_expression(
+                            self.cross_section_location_layer, f'"id" in ({xs_ids_str})', with_geometry=True
+                        )
+                    ]
+                    xs_distance_map.sort(key=itemgetter(1))
+                    closest_xs_feat_copy = QgsFeature(xs_distance_map[0][0])
+                    closest_xs_feat_copy.setGeometry(channel_geometry_middle)
+                    closest_xs_feat_copy["channel_id"] = channel_id
+                    closest_xs_feat_copy["id"] = next_cross_section_location_id
+                    next_cross_section_location_id += 1
+                    cross_section_location_copies.append(closest_xs_feat_copy)
         if cross_section_location_copies:
             self.cross_section_location_layer.addFeatures(cross_section_location_copies)
 
@@ -658,6 +655,7 @@ class StructuresIntegrator(LinearStructuresImporter):
         structure_fields = self.layer_fields_mapping[self.target_layer_name]
         structure_field_names = self.layer_field_names_mapping[self.target_layer_name]
         total_length = sum(channel_structure.length for channel_structure in channel_structures)
+        added_features = defaultdict(list)
         if channel_geom.length() < total_length:
             id_str = ', '.join(str(channel_structure.feature.id()) for channel_structure in channel_structures)
             message = (f'Cannot integrate {self.target_model_cls.__tablename__}s with total length {total_length:.2f} '
@@ -690,19 +688,19 @@ class StructuresIntegrator(LinearStructuresImporter):
                 simplify_structure_geometry,
                 **structure_attributes,
             )
-            new_nodes += self.update_feature_endpoints(substring_feat, **node_attributes)
-            self.features_to_add[self.target_layer_name].append(substring_feat)
+            added_features[self.node_layer.name()] += self.update_feature_endpoints(substring_feat, **node_attributes)
+            added_features[self.target_layer_name].append(substring_feat)
             # Setup channel leftover feature
             # todo: is this check necessary?
             if start_distance > previous_structure_end:
                 before_substring_feat = self.substring_feature(
                     channel_curve, previous_structure_end, start_distance, channel_fields, False, **channel_attributes
                 )
-                new_nodes += self.update_feature_endpoints(before_substring_feat, **node_attributes)
-                # if i > 0:
-                #     before_substring_feat["id"] = next_channel_id
-                #     next_channel_id += 1
-                self.features_to_add[channel_layer_name].append(before_substring_feat)
+                added_features[self.node_layer.name()] += self.update_feature_endpoints(before_substring_feat, **node_attributes)
+                if i > 0:
+                    before_substring_feat["id"] = next_channel_id
+                    next_channel_id += 1
+                added_features[channel_layer_name].append(before_substring_feat)
             previous_structure_end = end_distance
             if new_nodes:
                 update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, src_structure_feat, *new_nodes)
@@ -712,14 +710,16 @@ class StructuresIntegrator(LinearStructuresImporter):
             last_substring_feat = self.substring_feature(
                 channel_curve, previous_structure_end, last_substring_end, channel_fields, False, **channel_attributes
             )
-            self.update_feature_endpoints(last_substring_feat, **node_attributes)
-            self.features_to_add[channel_layer_name].append(last_substring_feat)
+            added_features[self.node_layer.name()] += self.update_feature_endpoints(last_substring_feat, **node_attributes)
+            last_substring_feat["id"] = next_channel_id
+            added_features[channel_layer_name].append(last_substring_feat)
+        return added_features
 
     def import_structures(self, context=None, selected_ids=None):
         """Method responsible for the importing/integrating structures from the external feature source."""
         all_processed_structure_ids = set()
+        features_to_add = defaultdict(list)
         channels_replaced = []
-        source_channel_xs_locations = defaultdict(set)
         input_feature_ids = (
             {feat.id() for feat in self.external_source.getFeatures()} if not selected_ids else set(selected_ids)
         )
@@ -728,44 +728,31 @@ class StructuresIntegrator(LinearStructuresImporter):
                 channel_feature, selected_ids
             )
             ch_id = channel_feature["id"]
-            source_channel_xs_locations[ch_id] |= {
-                xs["id"]
-                for xs in get_features_by_expression(self.cross_section_location_layer, f'"channel_id" = {ch_id}')
-            }
+            source_channel_xs_locations = [xs["id"] for xs in get_features_by_expression(self.cross_section_location_layer, f'"channel_id" = {ch_id}')]
             if channel_structures:
-                self.integrate_structure_features(channel_feature, channel_structures)
+                added_features = self.integrate_structure_features(channel_feature, channel_structures)
+                self.update_channel_cross_section_references(added_features[self.channel_layer.name()], source_channel_xs_locations)
+                features_to_add.update(added_features)
                 all_processed_structure_ids |= processed_structures_fids
                 channels_replaced.append(ch_id)
         # Process nodes
         self.node_layer.startEditing()
-        self.node_layer.addFeatures(self.features_to_add[self.node_layer.name()])
+        self.node_layer.addFeatures(features_to_add[self.node_layer.name()])
         # Process channels
-        next_channel_id = get_next_feature_id(self.channel_layer)
         self.channel_layer.startEditing()
-        visited_channel_ids = set()
-        channels_to_add = defaultdict(list)
-        next_channel_id = get_next_feature_id(self.channel_layer)
         for ch_id in channels_replaced:
             self.channel_layer.deleteFeature(ch_id)
-        # self.channel_layer.addFeatures(self.features_to_add[self.channel_layer.name()])
-        for channel_feat in self.features_to_add[self.channel_layer.name()]:
-            channel_id = channel_feat["id"]
-            if channel_id not in visited_channel_ids:
-                visited_channel_ids.add(channel_id)
-                channel_feat["id"] = channel_id
-            else:
-                channel_feat["id"] = next_channel_id
-                next_channel_id += 1
-            channels_to_add[channel_id].append(channel_feat)
-        self.channel_layer.addFeatures(list(chain.from_iterable(channels_to_add.values())))
+        self.channel_layer.addFeatures(features_to_add[self.channel_layer.name()])
         # Update cross-section location features
         self.cross_section_location_layer.startEditing()
-        self.update_channel_cross_section_references(channels_to_add, source_channel_xs_locations)
-        self.remove_hanging_cross_sections(visited_channel_ids)
+        self.remove_hanging_cross_sections(channels_replaced)
         # Process structures
         structures_to_add = []
         next_feature_id = get_next_feature_id(self.target_layer)
-        for structure_feat in self.features_to_add[self.target_layer_name]:
+        # TODO: fill features_to_add[self.target_layer_name] before integrating and use it for integration
+        # TODO: manage feature id increment there
+        # TODO: make the same for all structure importers
+        for structure_feat in features_to_add[self.target_layer_name]:
             structure_feat["id"] = next_feature_id
             structures_to_add.append(structure_feat)
             next_feature_id += 1
