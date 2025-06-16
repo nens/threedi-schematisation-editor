@@ -60,6 +60,18 @@ def update_attributes(fields_config, model_cls, source_feat, *new_features):
                 warnings.warn(f"{message}. {e}", FeaturesImporterWarning)
 
 
+def create_new_point_geometry(src_feat):
+    # TODO: add test
+    """Create a new point feature geometry based on the source feature."""
+    src_geometry = QgsGeometry(src_feat.geometry())
+    if src_geometry.isMultipart():
+        src_geometry.convertToSingleType()
+    src_point = src_geometry.asPoint()
+    dst_point = src_point
+    dst_geometry = QgsGeometry.fromPointXY(dst_point)
+    return dst_geometry
+
+
 class ConnectionNodeManager:
     def __init__(self, next_connection_node_id=1):
         self.next_connection_node_id = next_connection_node_id
@@ -276,12 +288,9 @@ class PointStructuresImporter(AbstractStructuresImporter):
     """Point structures importer class."""
     # This class is not used atm, but will likely be needed for pump imports
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def new_structure_geometry(self, src_structure_feat):
         """Create new structure geometry based on the source structure feature."""
-        return self.new_point_geometry(src_structure_feat)
+        return create_new_point_geometry(src_structure_feat)
 
     def process_structure_feature(
         self,
@@ -325,8 +334,6 @@ class PointStructuresImporter(AbstractStructuresImporter):
 
 class LinearStructuresImporter(AbstractStructuresImporter):
     """Linear structures importer class."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def new_structure_geometry(self, src_structure_feat):
         """Create new structure geometry based on the source structure feature."""
@@ -878,7 +885,7 @@ class ConnectionNodesImporter(AbstractFeaturesImporter):
 
     def process_feature(self, src_feat, target_fields, transformation=None):
         """Process source point into connection node feature."""
-        new_geom = self.new_point_geometry(src_feat)
+        new_geom = create_new_point_geometry(src_feat)
         if transformation:
             new_geom.transform(transformation)
         return self.node_manager.create_node(new_geom, target_fields)
