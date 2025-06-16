@@ -93,6 +93,8 @@ class ConnectionNodeManager:
 
 class AbstractFeaturesImporter:
     """Base class for the importing features from the external data source."""
+    DEFAULT_INTERSECTION_BUFFER = 1
+    DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
 
     def __init__(self, external_source, target_gpkg, import_settings):
         self.external_source = external_source
@@ -102,82 +104,6 @@ class AbstractFeaturesImporter:
         self.target_layer = None
         self.target_layer_name = None
         self.fields_configurations = {}
-
-    @cached_property
-    def external_source_name(self):
-        try:
-            layer_name = self.external_source.name()
-        except AttributeError:
-            layer_name = self.external_source.sourceName()
-        return layer_name
-
-    def setup_target_layers(self, target_model_cls, target_layer=None):
-        self.target_model_cls = target_model_cls
-        self.target_layer = (
-            gpkg_layer(self.target_gpkg, target_model_cls.__tablename__) if target_layer is None else target_layer
-        )
-        self.target_layer_name = self.target_layer.name()
-        self.fields_configurations = {target_model_cls: self.import_settings.get("fields", {})}
-        self.node_manager = ConnectionNodeManager(get_next_feature_id(self.target_layer))
-
-    @staticmethod
-    def process_commit_errors(layer):
-        commit_errors = layer.commitErrors()
-        commit_errors_message = "\n".join(commit_errors)
-        return commit_errors_message
-
-    def commit_pending_changes(self):
-        for layer in self.modifiable_layers:
-            if layer.isModified():
-                layer.commitChanges()
-
-    @property
-    def modifiable_layers(self):
-        """Return a list of the layers that can be modified."""
-        return [self.target_layer]
-
-    @staticmethod
-    def new_point_geometry(src_feat):
-        """Create a new point feature geometry based on the source feature."""
-        src_geometry = QgsGeometry(src_feat.geometry())
-        if src_geometry.isMultipart():
-            src_geometry.convertToSingleType()
-        src_point = src_geometry.asPoint()
-        dst_point = src_point
-        dst_geometry = QgsGeometry.fromPointXY(dst_point)
-        return dst_geometry
-
-    @staticmethod
-    def new_polyline_geometry(src_feat):
-        """Create a new polyline feature geometry based on the source feature."""
-        src_geometry = QgsGeometry(src_feat.geometry())
-        if src_geometry.isMultipart():
-            src_geometry.convertToSingleType()
-        src_polyline = src_geometry.asPolyline()
-        dst_polyline = src_polyline
-        dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
-        return dst_geometry
-
-    @staticmethod
-    def new_polygon_geometry(src_feat):
-        """Create a new polygon feature geometry based on the source feature."""
-        src_geometry = QgsGeometry(src_feat.geometry())
-        if src_geometry.isMultipart():
-            src_geometry.convertToSingleType()
-        src_polygon = src_geometry.asPolygon()
-        dst_polygon = src_polygon
-        dst_geometry = QgsGeometry.fromPolygonXY(dst_polygon)
-        return dst_geometry
-
-
-class AbstractStructuresImporter(AbstractFeaturesImporter):
-    """Base class for the importing structure features from the external data source."""
-    # TODO: rename, this is not abstract anymore
-    DEFAULT_INTERSECTION_BUFFER = 1
-    DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
-
-    def __init__(self, external_source, target_gpkg, import_settings):
-        super().__init__(external_source, target_gpkg, import_settings)
         self.node_layer = None
         self.conversion_settings_cls = namedtuple(
             "conversion_settings",
@@ -219,6 +145,14 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
         )
         return cs
 
+    @cached_property
+    def external_source_name(self):
+        try:
+            layer_name = self.external_source.name()
+        except AttributeError:
+            layer_name = self.external_source.sourceName()
+        return layer_name
+
     def setup_target_layers(self, target_model_cls, target_layer=None, node_layer=None):
         self.target_model_cls = target_model_cls
         self.target_layer = (
@@ -234,19 +168,58 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
         }
         self.node_manager = ConnectionNodeManager(get_next_feature_id(self.node_layer))
 
+    @staticmethod
+    def process_commit_errors(layer):
+        commit_errors = layer.commitErrors()
+        commit_errors_message = "\n".join(commit_errors)
+        return commit_errors_message
+
+    def commit_pending_changes(self):
+        for layer in self.modifiable_layers:
+            if layer.isModified():
+                layer.commitChanges()
+
     @property
     def modifiable_layers(self):
         """Return a list of the layers that can be modified."""
         return [self.target_layer, self.node_layer]
 
-    def new_structure_geometry(self, src_structure_feat):
-        """Create new structure geometry based on the source structure feature."""
-        raise NotImplementedError("Function called from the abstract class.")
+    @staticmethod
+    def new_point_geometry(src_feat):
+        """Create a new point feature geometry based on the source feature."""
+        src_geometry = QgsGeometry(src_feat.geometry())
+        if src_geometry.isMultipart():
+            src_geometry.convertToSingleType()
+        src_point = src_geometry.asPoint()
+        dst_point = src_point
+        dst_geometry = QgsGeometry.fromPointXY(dst_point)
+        return dst_geometry
 
-    def process_structure_feature(self, *args, **kwargs):
-        """Process source structure feature."""
-        raise NotImplementedError("Function called from the abstract class.")
+    @staticmethod
+    def new_polyline_geometry(src_feat):
+        """Create a new polyline feature geometry based on the source feature."""
+        src_geometry = QgsGeometry(src_feat.geometry())
+        if src_geometry.isMultipart():
+            src_geometry.convertToSingleType()
+        src_polyline = src_geometry.asPolyline()
+        dst_polyline = src_polyline
+        dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
+        return dst_geometry
 
+    @staticmethod
+    def new_polygon_geometry(src_feat):
+        """Create a new polygon feature geometry based on the source feature."""
+        src_geometry = QgsGeometry(src_feat.geometry())
+        if src_geometry.isMultipart():
+            src_geometry.convertToSingleType()
+        src_polygon = src_geometry.asPolygon()
+        dst_polygon = src_polygon
+        dst_geometry = QgsGeometry.fromPolygonXY(dst_polygon)
+        return dst_geometry
+
+
+class AbstractStructuresImporter(AbstractFeaturesImporter):
+    """Base class for the importing structure features from the external data source."""
 
     def import_structures(self, context=None, selected_ids=None):
         """Method responsible for the importing structures from the external feature source."""
@@ -850,7 +823,7 @@ class WeirsImporter(LinearStructuresImporter):
 
     def __init__(self, *args, structure_layer=None, node_layer=None):
         super().__init__(*args)
-        self.setup_target_layers(dm.Weir, structure_layer, node_layer)
+        self.setup_target_layers(dm.Weir, target_layer=structure_layer, node_layer=node_layer)
 
 
 class WeirsIntegrator(StructuresIntegrator):
