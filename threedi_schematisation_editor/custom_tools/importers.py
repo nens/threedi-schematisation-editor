@@ -229,7 +229,6 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
             if new_nodes:
                 update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, external_src_feat, *new_nodes)
                 new_features['nodes'] += new_nodes
-                locator = QgsPointLocator(self.node_layer, dst_crs, transform_ctx)
             update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, external_src_feat, new_structure_feat)
             next_structure_id += 1
             new_features['structures'].append(new_structure_feat)
