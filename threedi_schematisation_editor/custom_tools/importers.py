@@ -179,17 +179,6 @@ class AbstractFeaturesImporter:
         return [self.target_layer, self.node_layer]
 
     @staticmethod
-    def new_point_geometry(src_feat):
-        """Create a new point feature geometry based on the source feature."""
-        src_geometry = QgsGeometry(src_feat.geometry())
-        if src_geometry.isMultipart():
-            src_geometry.convertToSingleType()
-        src_point = src_geometry.asPoint()
-        dst_point = src_point
-        dst_geometry = QgsGeometry.fromPointXY(dst_point)
-        return dst_geometry
-
-    @staticmethod
     def new_polyline_geometry(src_feat):
         """Create a new polyline feature geometry based on the source feature."""
         src_geometry = QgsGeometry(src_feat.geometry())
