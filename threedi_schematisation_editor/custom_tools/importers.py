@@ -22,6 +22,8 @@ from threedi_schematisation_editor.utils import gpkg_layer, convert_to_type, Typ
     get_next_feature_id, find_line_endpoints_nodes, spatial_index, get_features_by_expression
 from threedi_schematisation_editor.warnings import FeaturesImporterWarning, StructuresIntegratorWarning
 
+DEFAULT_INTERSECTION_BUFFER = 1
+DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
 
 def update_attributes(fields_config, model_cls, source_feat, *new_features):
     expression_context = QgsExpressionContext()
@@ -91,11 +93,23 @@ class ConnectionNodeManager:
         return self.create_node(QgsGeometry.fromPointXY(node_point), node_fields)
 
 
+class ConversionSettings:
+    def __init__(self, conversion_config):
+        self.use_snapping = conversion_config.get("use_snapping", False)
+        if self.use_snapping:
+            self.snapping_distance = conversion_config.get("snapping_distance")
+        else:
+            self.snapping_distance = DEFAULT_INTERSECTION_BUFFER
+        self.create_connection_nodes = conversion_config.get("create_connection_nodes", False)
+        self.length_source_field = conversion_config.get("length_source_field", None)
+        self.length_fallback_value = conversion_config.get("length_fallback_value", 10.0)
+        self.azimuth_source_field = conversion_config.get("azimuth_source_field", None)
+        self.azimuth_fallback_value = conversion_config.get("azimuth_fallback_value", 90.0)
+        self.edit_channels = conversion_config.get("edit_channels", False)
+
+
 class AbstractFeaturesImporter:
     """Base class for the importing features from the external data source."""
-    DEFAULT_INTERSECTION_BUFFER = 1
-    DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
-
     def __init__(self, external_source, target_gpkg, import_settings):
         self.external_source = external_source
         self.target_gpkg = target_gpkg
@@ -105,45 +119,11 @@ class AbstractFeaturesImporter:
         self.target_layer_name = None
         self.fields_configurations = {}
         self.node_layer = None
-        self.conversion_settings_cls = namedtuple(
-            "conversion_settings",
-            [
-                "use_snapping",
-                "snapping_distance",
-                "create_connection_nodes",
-                "length_source_field",
-                "length_fallback_value",
-                "azimuth_source_field",
-                "azimuth_fallback_value",
-                "edit_channels",
-            ],
-        )
 
     @cached_property
     def conversion_settings(self):
         conversion_config = self.import_settings["conversion_settings"]
-        use_snapping = conversion_config.get("use_snapping", False)
-        if use_snapping:
-            snapping_distance = conversion_config.get("snapping_distance")
-        else:
-            snapping_distance = self.DEFAULT_INTERSECTION_BUFFER
-        create_connection_nodes = conversion_config.get("create_connection_nodes", False)
-        length_source_field = conversion_config.get("length_source_field", None)
-        length_fallback_value = conversion_config.get("length_fallback_value", 10.0)
-        azimuth_source_field = conversion_config.get("azimuth_source_field", None)
-        azimuth_fallback_value = conversion_config.get("azimuth_fallback_value", 90.0)
-        edit_channels = conversion_config.get("edit_channels", False)
-        cs = self.conversion_settings_cls(
-            use_snapping,
-            snapping_distance,
-            create_connection_nodes,
-            length_source_field,
-            length_fallback_value,
-            azimuth_source_field,
-            azimuth_fallback_value,
-            edit_channels,
-        )
-        return cs
+        return ConversionSettings(conversion_config)
 
     @cached_property
     def external_source_name(self):
@@ -470,10 +450,10 @@ class StructuresIntegrator(LinearStructuresImporter):
                 end_point = poly_line[-1]
                 start_geom, end_geom = QgsGeometry.fromPointXY(start_point), QgsGeometry.fromPointXY(end_point)
                 start_buffer = start_geom.buffer(
-                    self.conversion_settings.snapping_distance, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+                    self.conversion_settings.snapping_distance, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
                 )
                 end_buffer = end_geom.buffer(
-                    self.conversion_settings.snapping_distance, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+                    self.conversion_settings.snapping_distance, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
                 )
                 intersection_m = channel_geometry.lineLocatePoint(structure_geom.centroid())
                 structure_length = structure_geom.length()
@@ -481,7 +461,7 @@ class StructuresIntegrator(LinearStructuresImporter):
                     continue
             elif structure_geom_type == QgsWkbTypes.GeometryType.PointGeometry:
                 structure_buffer = structure_geom.buffer(
-                    self.conversion_settings.snapping_distance, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+                    self.conversion_settings.snapping_distance, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
                 )
                 if not structure_buffer.intersects(channel_geometry):
                     continue
@@ -556,7 +536,7 @@ class StructuresIntegrator(LinearStructuresImporter):
                 xs_feat = xs_location_features_map[xs_fid]
                 xs_geom = xs_feat.geometry()
                 xs_buffer = xs_geom.buffer(
-                    self.DEFAULT_INTERSECTION_BUFFER, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+                    DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
                 )
                 if channel_geometry.intersects(xs_buffer):
                     self.cross_section_location_layer.changeAttributeValue(xs_fid, channel_id_idx, channel_id)
@@ -587,7 +567,7 @@ class StructuresIntegrator(LinearStructuresImporter):
         channel_feats, channels_spatial_index = spatial_index(self.channel_layer)
         for xs_feat in self.cross_section_location_layer.getFeatures():
             xs_geom = xs_feat.geometry()
-            xs_buffer = xs_geom.buffer(self.DEFAULT_INTERSECTION_BUFFER, self.DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
+            xs_buffer = xs_geom.buffer(DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
             channel_fids = channels_spatial_index.intersects(xs_buffer.boundingBox())
             # only modify channels that were visited
             channel_fids = list(set(channel_fids).intersection(visited_channel_ids))
