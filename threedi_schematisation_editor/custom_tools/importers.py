@@ -475,27 +475,23 @@ class StructuresIntegrator(LinearStructuresImporter):
         try:
             start_node_id = self.node_by_location[start_node_point]
         except KeyError:
-            start_node_id = self.next_node_id
-            start_node_feat = QgsFeature(node_layer_fields)
-            start_node = QgsGeometry.fromPointXY(start_node_point)
-            start_node_feat.setGeometry(start_node)
+            start_node_feat = self.node_manager.create_node_for_point(start_node_point, node_layer_fields)
+            start_node_id = start_node_feat["id"]
             for field_name, field_value in template_node_attributes.items():
+                if field_name == "id":
+                    continue
                 start_node_feat[field_name] = field_value
-            start_node_feat["id"] = start_node_id
-            self.next_node_id += 1
             self.node_by_location[start_node_point] = start_node_id
             new_nodes.append(start_node_feat)
         try:
             end_node_id = self.node_by_location[end_node_point]
         except KeyError:
-            end_node_id = self.next_node_id
-            end_node_feat = QgsFeature(node_layer_fields)
-            end_node = QgsGeometry.fromPointXY(end_node_point)
-            end_node_feat.setGeometry(end_node)
+            end_node_feat = self.node_manager.create_node_for_point(end_node_point, node_layer_fields)
+            end_node_id = end_node_feat["id"]
             for field_name, field_value in template_node_attributes.items():
+                if field_name == "id":
+                    continue
                 end_node_feat[field_name] = field_value
-            end_node_feat["id"] = end_node_id
-            self.next_node_id += 1
             self.node_by_location[end_node_point] = end_node_id
             new_nodes.append(end_node_feat)
         dst_feature["connection_node_id_start"] = start_node_id
@@ -718,7 +714,7 @@ class StructuresIntegrator(LinearStructuresImporter):
             for disconnected_structure in self.external_source.getFeatures():
                 if disconnected_structure.id() not in disconnected_structure_ids:
                     continue
-                new_structure_feat, new_nodes, next_connection_node_id = self.process_structure_feature(
+                new_structure_feat, new_nodes = self.process_structure_feature(
                     disconnected_structure,
                     structure_fields,
                     next_structure_id,

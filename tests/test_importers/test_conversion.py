@@ -121,7 +121,7 @@ def test_conversion_connection_nodes(qgis_application, ref_data):
 
 
 class TestConversionWeir:
-    source_layer = get_source_layer_path('weir.gpkg')
+    source_layer = get_source_layer_path('weirs.gpkg')
     schematisation = 'schematisation_channel_with_weir.gpkg'
 
     def get_task(self, task_name):
@@ -149,21 +149,21 @@ class TestConversionWeir:
         assert len(target_connection_nodes) - len(original_connection_nodes) == 2
 
     def test_import_weir_snap(self, qgis_application, ref_data):
-        task = self.get_task('import_weir_snap')
+        task = self.get_task('import_weirs_snap')
         run_processing_operation('threedi_import_weirs', task)
-        compare_to_ref(ref_data, 'test_import_weir_snap', task['TARGET_GPKG'])
+        compare_to_ref(ref_data, 'test_import_weirs_snap', task['TARGET_GPKG'])
 
     def test_import_weir_nosnap(self, qgis_application, ref_data):
-        task = self.get_task('import_weir_nosnap')
+        task = self.get_task('import_weirs_nosnap')
         run_processing_operation('threedi_import_weirs', task)
-        compare_to_ref(ref_data, 'test_import_weir_nosnap', task['TARGET_GPKG'])
+        compare_to_ref(ref_data, 'test_import_weirs_nosnap', task['TARGET_GPKG'])
 
     def test_integrate_weir_snap(self, qgis_application, ref_data):
-        task = self.get_task('integrate_weir_snap')
+        task = self.get_task('integrate_weirs_snap')
         run_processing_operation('threedi_import_weirs', task)
-        compare_to_ref(ref_data, 'test_integrate_weir_snap', task['TARGET_GPKG'])
+        compare_to_ref(ref_data, 'test_integrate_weirs_snap', task['TARGET_GPKG'])
 
     def test_integrate_weir_nosnap(self, qgis_application, ref_data):
-        task = self.get_task('integrate_weir_nosnap')
+        task = self.get_task('integrate_weirs_nosnap')
         run_processing_operation('threedi_import_weirs', task)
-        compare_to_ref(ref_data, 'test_integrate_weir_nosnap', task['TARGET_GPKG'])
+        compare_to_ref(ref_data, 'test_integrate_weirs_nosnap', task['TARGET_GPKG'])
