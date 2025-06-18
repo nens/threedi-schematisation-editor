@@ -155,21 +155,12 @@ class AbstractFeaturesImporter:
         self.node_layer = (
             gpkg_layer(self.target_gpkg, dm.ConnectionNode.__tablename__) if node_layer is None else node_layer
         )
-        self.channel_layer = (
-            gpkg_layer(self.target_gpkg, dm.Channel.__tablename__) if channel_layer is None else channel_layer
-        )
-        self.cross_section_location_layer = (
-            gpkg_layer(self.target_gpkg, dm.CrossSectionLocation.__tablename__)
-            if cross_section_location_layer is None else cross_section_location_layer
-        )
         self.fields_configurations = {
             target_model_cls: self.import_settings.get("fields", {}),
             dm.ConnectionNode: self.import_settings.get("connection_node_fields", {}),
         }
         self.node_manager = FeatureManager(get_next_feature_id(self.node_layer))
         self.target_manager = FeatureManager(get_next_feature_id(self.target_layer))
-        self.channel_manager = FeatureManager(get_next_feature_id(self.channel_layer))
-        self.cross_section_manager = FeatureManager(get_next_feature_id(self.cross_section_location_layer))
 
     @staticmethod
     def process_commit_errors(layer):
@@ -390,6 +381,15 @@ class StructuresIntegrator(LinearStructuresImporter):
     ):
         """Setup target layers with fields configuration."""
         super().setup_target_layers(target_model_cls, target_layer, node_layer)
+        self.channel_layer = (
+            gpkg_layer(self.target_gpkg, dm.Channel.__tablename__) if channel_layer is None else channel_layer
+        )
+        self.cross_section_location_layer = (
+            gpkg_layer(self.target_gpkg, dm.CrossSectionLocation.__tablename__)
+            if cross_section_location_layer is None else cross_section_location_layer
+        )
+        self.channel_manager = FeatureManager(get_next_feature_id(self.channel_layer))
+        self.cross_section_manager = FeatureManager(get_next_feature_id(self.cross_section_location_layer))
         self.setup_fields_map()
         self.setup_spatial_indexes()
         self.setup_node_by_location()
