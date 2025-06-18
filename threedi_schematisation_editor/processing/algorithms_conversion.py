@@ -11,7 +11,7 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
-from threedi_schematisation_editor.custom_tools import (
+from threedi_schematisation_editor.custom_tools.importers import (
     ConnectionNodesImporter,
     CulvertsImporter,
     CulvertsIntegrator,

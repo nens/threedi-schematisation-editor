@@ -16,19 +16,12 @@ from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
 from qgis.PyQt.QtWidgets import QComboBox, QInputDialog, QLineEdit, QTableWidgetItem
 
 import threedi_schematisation_editor.data_models as dm
-from threedi_schematisation_editor.custom_tools import (
+from threedi_schematisation_editor.custom_tools.import_config import (
     ColumnImportMethod,
-    ConnectionNodesImporter,
-    CulvertsImporter,
-    CulvertsIntegrator,
-    FeaturesImportConfig,
-    OrificesImporter,
-    OrificesIntegrator,
-    PipesImporter,
-    StructuresImportConfig,
-    WeirsImporter,
-    WeirsIntegrator,
 )
+from threedi_schematisation_editor.custom_tools.importers import CulvertsImporter, CulvertsIntegrator, OrificesImporter, \
+    OrificesIntegrator, WeirsImporter, WeirsIntegrator, PipesImporter, ConnectionNodesImporter
+from threedi_schematisation_editor.custom_tools.import_config import ColumnImportIndex, CONFIG_KEYS, CONFIG_HEADER, create_widgets
 from threedi_schematisation_editor.utils import (
     NULL_STR,
     QUOTED_NULL,
@@ -294,14 +287,14 @@ class ImportFieldMappingUtils:
         if isinstance(widget, QComboBox):
             key_value = (
                 widget.currentText()
-                if column_idx == FeaturesImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX
+                if column_idx == ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX
                 else widget.currentData()
             )
-        elif column_idx == FeaturesImportConfig.VALUE_MAP_COLUMN_IDX:
+        elif column_idx == ColumnImportIndex.VALUE_MAP_COLUMN_IDX:
             key_value = {str(key) : value for key, value in widget.value_map.items()}
             if not key_value:
                 return None
-        elif column_idx == FeaturesImportConfig.EXPRESSION_COLUMN_IDX:
+        elif column_idx == ColumnImportIndex.EXPRESSION_COLUMN_IDX:
             if not widget.isValidExpression():
                 return None
             key_value = widget.expression()
@@ -309,7 +302,7 @@ class ImportFieldMappingUtils:
             key_value = widget.text()
             if not key_value:
                 return None
-            if column_idx == FeaturesImportConfig.DEFAULT_VALUE_COLUMN_IDX and key_name != NULL_STR:
+            if column_idx == ColumnImportIndex.DEFAULT_VALUE_COLUMN_IDX and key_name != NULL_STR:
                 key_value = field_type(key_value)
         return key_value
 
@@ -327,7 +320,6 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self.uc = uc
-        self.import_configuration = FeaturesImportConfig(self.import_model_cls)
         self.field_map_model = QStandardItemModel()
         self.field_map_tv.setModel(self.field_map_model)
         if self.import_model_cls.__geometrytype__ == dm.GeometryType.Point:
@@ -390,12 +382,12 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
             self.activate_layer_dependent_widgets()
         else:
             self.deactivate_layer_dependent_widgets()
-        source_attribute_widgets = self.get_column_widgets(FeaturesImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX)
+        source_attribute_widgets = self.get_column_widgets(ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX)
         for combobox in source_attribute_widgets:
             combobox.clear()
             combobox.addItems(layer_field_names)
             combobox.setCurrentText(combobox.data_model_field_name)
-        expression_widgets = self.get_column_widgets(FeaturesImportConfig.EXPRESSION_COLUMN_IDX)
+        expression_widgets = self.get_column_widgets(ColumnImportIndex.EXPRESSION_COLUMN_IDX)
         for expression_widget in expression_widgets:
             expression_widget.setLayer(layer)
 
@@ -414,14 +406,14 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
         return model_widgets
 
     def populate_conversion_settings_widgets(self):
-        widgets_to_add = self.import_configuration.data_model_widgets()
+        widgets_to_add = create_widgets(self.import_model_cls)
         model_widgets = widgets_to_add[self.import_model_cls]
         self.field_map_model.clear()
-        self.field_map_model.setHorizontalHeaderLabels(self.import_configuration.config_header)
+        self.field_map_model.setHorizontalHeaderLabels(CONFIG_HEADER)
         for (row_idx, column_idx), widget in model_widgets.items():
             self.field_map_model.setItem(row_idx, column_idx, QStandardItem(""))
             self.field_map_tv.setIndexWidget(self.field_map_model.index(row_idx, column_idx), widget)
-        for i in range(len(self.import_configuration.config_header)):
+        for i in range(len(CONFIG_HEADER)):
             self.field_map_tv.resizeColumnToContents(i)
         self.connect_configuration_widgets()
         self.on_layer_changed(self.source_layer)
@@ -445,16 +437,16 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
         for field_name in self.import_model_cls.__annotations__.keys():
             if self.is_obsolete_field(self.import_model_cls, field_name):
                 continue
-            method_item = self.field_map_model.item(row_idx, FeaturesImportConfig.METHOD_COLUMN_IDX)
+            method_item = self.field_map_model.item(row_idx, ColumnImportIndex.METHOD_COLUMN_IDX)
             method_index = method_item.index()
             method_combobox = self.field_map_tv.indexWidget(method_index)
-            source_attribute_item = self.field_map_model.item(row_idx, FeaturesImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX)
+            source_attribute_item = self.field_map_model.item(row_idx, ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX)
             source_attribute_index = source_attribute_item.index()
             source_attribute_combobox = self.field_map_tv.indexWidget(source_attribute_index)
-            value_map_item = self.field_map_model.item(row_idx, FeaturesImportConfig.VALUE_MAP_COLUMN_IDX)
+            value_map_item = self.field_map_model.item(row_idx, ColumnImportIndex.VALUE_MAP_COLUMN_IDX)
             value_map_index = value_map_item.index()
             value_map_button = self.field_map_tv.indexWidget(value_map_index)
-            expression_item = self.field_map_model.item(row_idx, FeaturesImportConfig.EXPRESSION_COLUMN_IDX)
+            expression_item = self.field_map_model.item(row_idx, ColumnImportIndex.EXPRESSION_COLUMN_IDX)
             expression_index = expression_item.index()
             expression_widget = self.field_map_tv.indexWidget(expression_index)
             method_combobox.currentTextChanged.connect(
@@ -500,7 +492,7 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
                 continue
             single_field_config = {}
             field_type = core_field_type(field_type)
-            for column_idx, key_name in enumerate(self.import_configuration.config_keys, start=1):
+            for column_idx, key_name in enumerate(CONFIG_KEYS, start=1):
                 item = self.field_map_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = self.field_map_tv.indexWidget(index)
@@ -520,7 +512,7 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
             if is_optional(field_type):
                 field_type = optional_type(field_type)
             field_config = fields_setting.get(field_name, {})
-            for column_idx, key_name in enumerate(self.import_configuration.config_keys, start=1):
+            for column_idx, key_name in enumerate(CONFIG_KEYS, start=1):
                 item = self.field_map_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = self.field_map_tv.indexWidget(index)
@@ -563,9 +555,9 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
 
     def missing_source_fields(self):
-        field_labels = self.get_column_widgets(FeaturesImportConfig.FIELD_NAME_COLUMN_IDX)
-        method_widgets = self.get_column_widgets(FeaturesImportConfig.METHOD_COLUMN_IDX)
-        source_attribute_widgets = self.get_column_widgets(FeaturesImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX)
+        field_labels = self.get_column_widgets(ColumnImportIndex.FIELD_NAME_COLUMN_IDX)
+        method_widgets = self.get_column_widgets(ColumnImportIndex.METHOD_COLUMN_IDX)
+        source_attribute_widgets = self.get_column_widgets(ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX)
         missing_fields = []
         for field_lbl, method_cbo, source_attribute_cbo in zip(field_labels, method_widgets, source_attribute_widgets):
             field_name, method_txt, source_attribute_txt = (
@@ -645,7 +637,6 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self.uc = uc
-        self.import_configuration = StructuresImportConfig(self.structure_model_cls)
         self.structure_model = QStandardItemModel()
         self.structure_tv.setModel(self.structure_model)
         self.connection_node_model = QStandardItemModel()
@@ -744,13 +735,13 @@ class ImportStructuresDialog(is_basecls, is_uicls):
             self.azimuth_source_field_cbo.setLayer(None)
         data_models = [self.structure_model_cls, dm.ConnectionNode]
         source_attribute_widgets = self.get_column_widgets(
-            StructuresImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, *data_models
+            ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX, *data_models
         )
         for combobox in chain.from_iterable(source_attribute_widgets.values()):
             combobox.clear()
             combobox.addItems(layer_field_names)
             combobox.setCurrentText(combobox.data_model_field_name)
-        expression_widgets = self.get_column_widgets(StructuresImportConfig.EXPRESSION_COLUMN_IDX, *data_models)
+        expression_widgets = self.get_column_widgets(ColumnImportIndex.EXPRESSION_COLUMN_IDX, *data_models)
         for expression_widget in chain.from_iterable(expression_widgets.values()):
             expression_widget.setLayer(layer)
 
@@ -773,15 +764,15 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         return column_widgets
 
     def populate_conversion_settings_widgets(self):
-        widgets_to_add = self.import_configuration.data_model_widgets()
+        widgets_to_add = create_widgets(self.structure_model_cls, dm.ConnectionNode)
         for model_cls, (tree_view, tree_view_model) in self.data_models_tree_views.items():
             tree_view_model.clear()
-            tree_view_model.setHorizontalHeaderLabels(self.import_configuration.config_header)
+            tree_view_model.setHorizontalHeaderLabels(CONFIG_HEADER)
             model_widgets = widgets_to_add[model_cls]
             for (row_idx, column_idx), widget in model_widgets.items():
                 tree_view_model.setItem(row_idx, column_idx, QStandardItem(""))
                 tree_view.setIndexWidget(tree_view_model.index(row_idx, column_idx), widget)
-            for i in range(len(self.import_configuration.config_header)):
+            for i in range(len(CONFIG_HEADER)):
                 tree_view.resizeColumnToContents(i)
         self.connect_configuration_widgets()
         self.on_layer_changed(self.source_layer)
@@ -808,18 +799,18 @@ class ImportStructuresDialog(is_basecls, is_uicls):
             for field_name in model_cls.__annotations__.keys():
                 if self.is_obsolete_field(model_cls, field_name):
                     continue
-                method_item = tree_view_model.item(row_idx, StructuresImportConfig.METHOD_COLUMN_IDX)
+                method_item = tree_view_model.item(row_idx, ColumnImportIndex.METHOD_COLUMN_IDX)
                 method_index = method_item.index()
                 method_combobox = tree_view.indexWidget(method_index)
                 source_attribute_item = tree_view_model.item(
-                    row_idx, StructuresImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX
+                    row_idx, ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX
                 )
                 source_attribute_index = source_attribute_item.index()
                 source_attribute_combobox = tree_view.indexWidget(source_attribute_index)
-                value_map_item = tree_view_model.item(row_idx, StructuresImportConfig.VALUE_MAP_COLUMN_IDX)
+                value_map_item = tree_view_model.item(row_idx, ColumnImportIndex.VALUE_MAP_COLUMN_IDX)
                 value_map_index = value_map_item.index()
                 value_map_button = tree_view.indexWidget(value_map_index)
-                expression_item = tree_view_model.item(row_idx, StructuresImportConfig.EXPRESSION_COLUMN_IDX)
+                expression_item = tree_view_model.item(row_idx, ColumnImportIndex.EXPRESSION_COLUMN_IDX)
                 expression_index = expression_item.index()
                 expression_widget = tree_view.indexWidget(expression_index)
                 method_combobox.currentTextChanged.connect(
@@ -877,7 +868,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
                 continue
             single_field_config = {}
             field_type = core_field_type(field_type)
-            for column_idx, key_name in enumerate(self.import_configuration.config_keys, start=1):
+            for column_idx, key_name in enumerate(CONFIG_KEYS, start=1):
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
@@ -898,7 +889,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
             if is_optional(field_type):
                 field_type = optional_type(field_type)
             field_config = fields_setting.get(field_name, {})
-            for column_idx, key_name in enumerate(self.import_configuration.config_keys, start=1):
+            for column_idx, key_name in enumerate(CONFIG_KEYS, start=1):
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
@@ -958,10 +949,10 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         data_models = [self.structure_model_cls]
         if self.create_nodes_cb.isChecked():
             data_models.append(dm.ConnectionNode)
-        field_labels = self.get_column_widgets(StructuresImportConfig.FIELD_NAME_COLUMN_IDX, *data_models)
-        method_widgets = self.get_column_widgets(StructuresImportConfig.METHOD_COLUMN_IDX, *data_models)
+        field_labels = self.get_column_widgets(ColumnImportIndex.FIELD_NAME_COLUMN_IDX, *data_models)
+        method_widgets = self.get_column_widgets(ColumnImportIndex.METHOD_COLUMN_IDX, *data_models)
         source_attribute_widgets = self.get_column_widgets(
-            StructuresImportConfig.SOURCE_ATTRIBUTE_COLUMN_IDX, *data_models
+            ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX, *data_models
         )
         missing_fields = {}
         for model_cls in data_models:
