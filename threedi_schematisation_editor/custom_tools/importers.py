@@ -139,6 +139,17 @@ class AbstractFeaturesImporter:
             layer_name = self.external_source.sourceName()
         return layer_name
 
+    def get_transformation(self, context=None):
+        if self.external_source.sourceCrs() == self.target_layer.crs():
+            return None
+        project = context.project() if context else QgsProject.instance()
+        transform_ctx = project.transformContext()
+        return QgsCoordinateTransform(self.external_source.sourceCrs(), self.target_layer.crs(), transform_ctx)
+
+    def get_locator(self, context=None):
+        project = context.project() if context else QgsProject.instance()
+        return QgsPointLocator(self.node_layer, self.target_layer.crs(), project.transformContext())
+
     def setup_target_layers(
         self,
         target_model_cls,
@@ -218,17 +229,6 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
         feat[connection_id_name] = new_node_feat["id"]
         return new_node_feat
 
-    def get_transformation(self, context=None):
-        if self.external_source.sourceCrs() == self.target_layer.crs():
-            return None
-        project = context.project() if context else QgsProject.instance()
-        transform_ctx = project.transformContext()
-        return QgsCoordinateTransform(self.external_source.sourceCrs(), self.target_layer.crs(), transform_ctx)
-
-    def get_locator(self, context=None):
-        project = context.project() if context else QgsProject.instance()
-        return QgsPointLocator(self.node_layer, self.target_layer.crs(), project.transformContext())
-
     def import_structures(self, context=None, selected_ids=None):
         """Method responsible for the importing structures from the external feature source."""
         transformation = self.get_transformation(context)
@@ -250,13 +250,6 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
         for layer in self.modifiable_layers:
             layer.startEditing()
             layer.addFeatures(new_features[layer.name()])
-        # return new_features
-        # self.node_layer.startEditing()
-        # self.target_layer.startEditing()
-        # self.target_layer.addFeatures(new_features[self.target_layer.name()])
-        # self.node_layer.addFeatures(new_features[self.node_layer.name()])
-
-
 
 class PointStructuresImporter(AbstractStructuresImporter):
     """Point structures importer class."""
@@ -676,12 +669,6 @@ class StructuresIntegrator(LinearStructuresImporter):
                     features_to_add[key] += added_features[key]
                 all_processed_structure_ids |= processed_structures_fids
                 channels_replaced.append(ch_id)
-        for layer in self.modifiable_layers:
-            layer.startEditing()
-            if layer == self.channel_layer:
-                for ch_id in channels_replaced:
-                    self.channel_layer.deleteFeature(ch_id)
-            layer.addFeatures(features_to_add[layer.name()])
         # Fallback import for disconnected structures.
         # TODO: use LinearStructuresImporter.import_structures for this because this is a duplicate
         disconnected_structure_ids = list(input_feature_ids.difference(all_processed_structure_ids))
@@ -703,10 +690,16 @@ class StructuresIntegrator(LinearStructuresImporter):
                 )
                 if new_nodes:
                     update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, disconnected_structure, *new_nodes)
-                    self.node_layer.addFeatures(new_nodes)
+                    features_to_add[self.node_layer.name()] += new_nodes
                 update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, disconnected_structure, new_structure_feat)
-                disconnected_structures_to_add.append(new_structure_feat)
-            self.target_layer.addFeatures(disconnected_structures_to_add)
+                features_to_add[self.target_layer_name].append(new_structure_feat)
+        for layer in self.modifiable_layers:
+            layer.startEditing()
+            if layer == self.channel_layer:
+                for ch_id in channels_replaced:
+                    self.channel_layer.deleteFeature(ch_id)
+            layer.addFeatures(features_to_add[layer.name()])
+
 
 
 class CulvertsImporter(LinearStructuresImporter):
@@ -798,16 +791,12 @@ class ConnectionNodesImporter(AbstractFeaturesImporter):
         new_geom = create_new_point_geometry(src_feat)
         if transformation:
             new_geom.transform(transformation)
-        return self.node_manager.create_new(new_geom, target_fields)
+        return self.target_manager.create_new(new_geom, target_fields)
 
     def import_features(self, context=None, selected_ids=None):
         """Method responsible for the importing connection nodes from the external feature source."""
         target_fields = self.target_layer.fields()
-        project = context.project() if context else QgsProject.instance()
-        src_crs = self.external_source.sourceCrs()
-        dst_crs = self.target_layer.crs()
-        transform_ctx = project.transformContext()
-        transformation = QgsCoordinateTransform(src_crs, dst_crs, transform_ctx) if src_crs != dst_crs else None
+        transformation = self.get_transformation(context)
         new_feats = []
         self.target_layer.startEditing()
         features_iterator = (
