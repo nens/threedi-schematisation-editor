@@ -247,10 +247,14 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
             )
             new_features[self.target_layer.name()].append(new_structure_feat)
             new_features[self.node_layer.name()] += new_nodes
-        self.node_layer.startEditing()
-        self.target_layer.startEditing()
-        self.target_layer.addFeatures(new_features[self.target_layer.name()])
-        self.node_layer.addFeatures(new_features[self.node_layer.name()])
+        for layer in self.modifiable_layers:
+            layer.startEditing()
+            layer.addFeatures(new_features[layer.name()])
+        # return new_features
+        # self.node_layer.startEditing()
+        # self.target_layer.startEditing()
+        # self.target_layer.addFeatures(new_features[self.target_layer.name()])
+        # self.node_layer.addFeatures(new_features[self.node_layer.name()])
 
 
 
@@ -672,20 +676,12 @@ class StructuresIntegrator(LinearStructuresImporter):
                     features_to_add[key] += added_features[key]
                 all_processed_structure_ids |= processed_structures_fids
                 channels_replaced.append(ch_id)
-        # Process nodes
-        self.node_layer.startEditing()
-        self.node_layer.addFeatures(features_to_add[self.node_layer.name()])
-        # Process channels
-        self.channel_layer.startEditing()
-        for ch_id in channels_replaced:
-            self.channel_layer.deleteFeature(ch_id)
-        self.channel_layer.addFeatures(features_to_add[self.channel_layer.name()])
-        # Update cross-section location features
-        self.cross_section_location_layer.startEditing()
-        self.remove_hanging_cross_sections(channels_replaced)
-        # Add new structures
-        self.target_layer.startEditing()
-        self.target_layer.addFeatures(features_to_add[self.target_layer_name])
+        for layer in self.modifiable_layers:
+            layer.startEditing()
+            if layer == self.channel_layer:
+                for ch_id in channels_replaced:
+                    self.channel_layer.deleteFeature(ch_id)
+            layer.addFeatures(features_to_add[layer.name()])
         # Fallback import for disconnected structures.
         # TODO: use LinearStructuresImporter.import_structures for this because this is a duplicate
         disconnected_structure_ids = list(input_feature_ids.difference(all_processed_structure_ids))
