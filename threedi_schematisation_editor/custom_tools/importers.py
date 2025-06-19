@@ -18,8 +18,8 @@ from qgis.core import (
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.custom_tools.import_config import ColumnImportMethod
-from threedi_schematisation_editor.utils import gpkg_layer, convert_to_type, TypeConversionError, find_point_nodes, \
-    get_next_feature_id, find_line_endpoints_nodes, spatial_index, get_features_by_expression
+from threedi_schematisation_editor.utils import gpkg_layer, convert_to_type, TypeConversionError, find_connection_node, \
+    get_next_feature_id, spatial_index, get_features_by_expression
 from threedi_schematisation_editor.warnings import FeaturesImporterWarning, StructuresIntegratorWarning
 
 DEFAULT_INTERSECTION_BUFFER = 1
@@ -204,6 +204,20 @@ class AbstractFeaturesImporter:
 class AbstractStructuresImporter(AbstractFeaturesImporter):
     """Base class for the importing structure features from the external data source."""
 
+    def snap_connection_node(self, feat, point, locator, connection_id_name):
+        node = find_connection_node(point, locator, self.conversion_settings.snapping_distance)
+        if node:
+            feat.setGeometry(QgsGeometry.fromPointXY(node.geometry().asPoint()))
+            feat[connection_id_name] = node["id"]
+            return True
+        else:
+            return False
+
+    def add_connection_node(self, feat, geom, connection_id_name, node_fields):
+        new_node_feat = self.node_manager.create_new(QgsGeometry.fromPointXY(geom), node_fields)
+        feat[connection_id_name] = new_node_feat["id"]
+        return new_node_feat
+
     def get_transformation(self, context=None):
         if self.external_source.sourceCrs() == self.target_layer.crs():
             return None
@@ -224,7 +238,6 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
             self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
         )
         for external_src_feat in features_iterator:
-            # TODO change return to dict that can be used to update new_features
             new_structure_feat, new_nodes = self.process_structure_feature(
                 external_src_feat,
                 self.target_layer.fields(),
@@ -264,20 +277,11 @@ class PointStructuresImporter(AbstractStructuresImporter):
             new_geom.transform(transformation)
         new_structure_feat = self.target_manager.create_new(new_geom, structure_fields)
         point = new_geom.asPoint()
-        node_feat = None
+        snapped = False
         if self.conversion_settings.use_snapping:
-            node_feat = find_point_nodes(
-                point, self.node_layer, self.conversion_settings.snapping_distance, False, locator
-            )
-        if node_feat:
-            # snap to existing node
-            node_point = node_feat.geometry().asPoint()
-            new_structure_feat.setGeometry(QgsGeometry.fromPointXY(node_point))
-            new_structure_feat["connection_node_id"] = node_feat["id"]
-        if self.conversion_settings.create_connection_nodes or (self.conversion_settings.use_snapping and not node_feat):
-            new_node_feat = self.node_manager.create_new(QgsGeometry.fromPointXY(point), node_fields)
-            new_structure_feat["connection_node_id"] = new_node_feat["id"]
-            new_nodes.append(new_node_feat)
+            snapped = self.snap_connection_node(new_structure_feat, point, locator, "connection_node_id")
+        if not snapped or self.conversion_settings.create_connection_nodes:
+            new_nodes.append(self.add_connection_node(new_structure_feat, point, "connection_node_id", node_fields))
         update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, src_feat,
                           *new_nodes)
         update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, src_feat,
@@ -331,23 +335,13 @@ class LinearStructuresImporter(AbstractStructuresImporter):
         if transformation:
             new_geom.transform(transformation)
         new_structure_feat = self.target_manager.create_new(new_geom, structure_fields)
-        polyline = new_geom.asPolyline()
-        node_start_feat, node_end_feat = None, None
-        if self.conversion_settings.use_snapping:
-            node_start_feat, node_end_feat = find_line_endpoints_nodes(
-                polyline, locator, self.conversion_settings.snapping_distance
-            )
-        for name, node, idx in [('start', node_start_feat, 0), ('end', node_end_feat, -1)]:
-            if node:
-                # snap to existing node
-                polyline[idx] = node.geometry().asPoint()
-                new_structure_feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
-                new_structure_feat[f"connection_node_id_{name}"] = node["id"]
-            elif self.conversion_settings.create_connection_nodes:
-                # create new node if no close node is found
-                new_node_feat = self.node_manager.create_new(QgsGeometry.fromPointXY(polyline[idx]), node_fields)
-                new_structure_feat[f"connection_node_id_{name}"] = new_node_feat["id"]
-                new_nodes.append(new_node_feat)
+        polyline = new_structure_feat.geometry().asPolyline()
+        for (idx, name) in [(0, 'connection_node_id_start'), (1, 'connection_node_id_end')]:
+            snapped = False
+            if self.conversion_settings.use_snapping:
+                snapped = self.snap_connection_node(new_structure_feat, polyline[idx], locator, name)
+            if not snapped or self.conversion_settings.create_connection_nodes:
+                new_nodes.append(self.add_connection_node(new_structure_feat, polyline[idx], name, node_fields))
         update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, src_feat,
                           *new_nodes)
         update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, src_feat,
