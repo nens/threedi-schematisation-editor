@@ -219,7 +219,7 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
         """Method responsible for the importing structures from the external feature source."""
         transformation = self.get_transformation(context)
         locator = self.get_locator(context=context)
-        new_features = {'nodes': [], 'structures': []}
+        new_features = defaultdict(list)
         features_iterator = (
             self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
         )
@@ -232,15 +232,12 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
                 locator,
                 transformation,
             )
-            if new_nodes:
-                update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, external_src_feat, *new_nodes)
-                new_features['nodes'] += new_nodes
-            update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, external_src_feat, new_structure_feat)
-            new_features['structures'].append(new_structure_feat)
+            new_features[self.target_layer.name()].append(new_structure_feat)
+            new_features[self.node_layer.name()] += new_nodes
         self.node_layer.startEditing()
         self.target_layer.startEditing()
-        self.target_layer.addFeatures(new_features['structures'])
-        self.node_layer.addFeatures(new_features['nodes'])
+        self.target_layer.addFeatures(new_features[self.target_layer.name()])
+        self.node_layer.addFeatures(new_features[self.node_layer.name()])
 
 
 
@@ -281,7 +278,10 @@ class PointStructuresImporter(AbstractStructuresImporter):
             new_node_feat = self.node_manager.create_new(QgsGeometry.fromPointXY(point), node_fields)
             new_structure_feat["connection_node_id"] = new_node_feat["id"]
             new_nodes.append(new_node_feat)
-        # new_structure_feat.setGeometry(new_geom)
+        update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, src_feat,
+                          *new_nodes)
+        update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, src_feat,
+                          new_structure_feat)
         return new_structure_feat, new_nodes
 
 
@@ -348,7 +348,10 @@ class LinearStructuresImporter(AbstractStructuresImporter):
                 new_node_feat = self.node_manager.create_new(QgsGeometry.fromPointXY(polyline[idx]), node_fields)
                 new_structure_feat[f"connection_node_id_{name}"] = new_node_feat["id"]
                 new_nodes.append(new_node_feat)
-        # new_structure_feat.setGeometry(new_geom)
+        update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, src_feat,
+                          *new_nodes)
+        update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, src_feat,
+                          new_structure_feat)
         return new_structure_feat, new_nodes
 
 
@@ -671,7 +674,8 @@ class StructuresIntegrator(LinearStructuresImporter):
             if channel_structures:
                 added_features = self.integrate_structure_features(channel_feature, channel_structures)
                 self.update_channel_cross_section_references(added_features[self.channel_layer.name()], source_channel_xs_locations)
-                features_to_add.update(added_features)
+                for key in added_features:
+                    features_to_add[key] += added_features[key]
                 all_processed_structure_ids |= processed_structures_fids
                 channels_replaced.append(ch_id)
         # Process nodes
