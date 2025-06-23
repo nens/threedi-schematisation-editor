@@ -251,6 +251,7 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
             layer.startEditing()
             layer.addFeatures(new_features[layer.name()])
 
+
 class PointStructuresImporter(AbstractStructuresImporter):
     """Point structures importer class."""
     # This class is not used atm, but will likely be needed for pump imports
@@ -339,10 +340,10 @@ class LinearStructuresImporter(AbstractStructuresImporter):
                 snapped = self.snap_connection_node(new_structure_feat, polyline[idx], locator, name)
             if not snapped or self.conversion_settings.create_connection_nodes:
                 new_nodes.append(self.add_connection_node(new_structure_feat, polyline[idx], name, node_fields))
-        update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, src_feat,
-                          *new_nodes)
         update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, src_feat,
                           new_structure_feat)
+        update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, src_feat,
+                          *new_nodes)
         return new_structure_feat, new_nodes
 
 
@@ -357,7 +358,6 @@ class StructuresIntegrator(LinearStructuresImporter):
         self.layer_field_names_mapping = {}
         self.spatial_indexes_map = {}
         self.node_by_location = {}
-        self.next_node_id = 0
         self.channel_structure_cls = namedtuple("channel_structure", ["channel_id", "feature", "m", "length"])
 
     @property
@@ -412,7 +412,6 @@ class StructuresIntegrator(LinearStructuresImporter):
             node_geom = node_feat.geometry()
             node_point = node_geom.asPoint()
             self.node_by_location[node_point] = node_feat["id"]
-        self.next_node_id = get_next_feature_id(self.node_layer)
 
     def get_channel_structures_data(self, channel_feat, selected_ids=None):
         """Extract and calculate channel structures data."""
@@ -649,31 +648,11 @@ class StructuresIntegrator(LinearStructuresImporter):
         return added_features
 
     def import_structures(self, context=None, selected_ids=None):
-        """Method responsible for the importing/integrating structures from the external feature source."""
-        all_processed_structure_ids = set()
-        features_to_add = defaultdict(list)
-        channels_replaced = []
         input_feature_ids = (
             {feat.id() for feat in self.external_source.getFeatures()} if not selected_ids else set(selected_ids)
         )
-        for channel_feature in self.channel_layer.getFeatures():
-            channel_structures, processed_structures_fids = self.get_channel_structures_data(
-                channel_feature, selected_ids
-            )
-            ch_id = channel_feature["id"]
-            source_channel_xs_locations = [xs["id"] for xs in get_features_by_expression(self.cross_section_location_layer, f'"channel_id" = {ch_id}')]
-            if channel_structures:
-                added_features = self.integrate_structure_features(channel_feature, channel_structures)
-                self.update_channel_cross_section_references(added_features[self.channel_layer.name()], source_channel_xs_locations)
-                for key in added_features:
-                    features_to_add[key] += added_features[key]
-                all_processed_structure_ids |= processed_structures_fids
-                channels_replaced.append(ch_id)
-        # Fallback import for disconnected structures.
-        # TODO: use LinearStructuresImporter.import_structures for this because this is a duplicate
-        disconnected_structure_ids = list(input_feature_ids.difference(all_processed_structure_ids))
+        features_to_add, disconnected_structure_ids = self.integrate_features(input_feature_ids, selected_ids)
         if disconnected_structure_ids:
-            disconnected_structures_to_add = []
             structure_fields = self.layer_fields_mapping[self.target_layer_name]
             node_fields = self.layer_fields_mapping[self.node_layer.name()]
             transformation = self.get_transformation(context)
@@ -688,17 +667,36 @@ class StructuresIntegrator(LinearStructuresImporter):
                     locator,
                     transformation,
                 )
-                if new_nodes:
-                    update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, disconnected_structure, *new_nodes)
-                    features_to_add[self.node_layer.name()] += new_nodes
-                update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, disconnected_structure, new_structure_feat)
+                features_to_add[self.node_layer.name()] += new_nodes
                 features_to_add[self.target_layer_name].append(new_structure_feat)
         for layer in self.modifiable_layers:
             layer.startEditing()
-            if layer == self.channel_layer:
-                for ch_id in channels_replaced:
-                    self.channel_layer.deleteFeature(ch_id)
             layer.addFeatures(features_to_add[layer.name()])
+
+    def integrate_features(self, input_feature_ids, selected_ids):
+        """Method responsible for the importing/integrating structures from the external feature source."""
+        all_processed_structure_ids = set()
+        features_to_add = defaultdict(list)
+        channels_replaced = []
+        for channel_feature in self.channel_layer.getFeatures():
+            channel_structures, processed_structures_fids = self.get_channel_structures_data(
+                channel_feature, selected_ids
+            )
+            ch_id = channel_feature["id"]
+            source_channel_xs_locations = [xs["id"] for xs in get_features_by_expression(self.cross_section_location_layer, f'"channel_id" = {ch_id}')]
+            if channel_structures:
+                added_features = self.integrate_structure_features(channel_feature, channel_structures)
+                self.update_channel_cross_section_references(added_features[self.channel_layer.name()], source_channel_xs_locations)
+                for key in added_features:
+                    features_to_add[key] += added_features[key]
+                all_processed_structure_ids |= processed_structures_fids
+                channels_replaced.append(ch_id)
+        self.channel_layer.startEditing()
+        for ch_id in channels_replaced:
+            self.channel_layer.deleteFeature(ch_id)
+        disconnected_ids = list(input_feature_ids.difference(all_processed_structure_ids))
+        return features_to_add, disconnected_ids
+
 
 
 
