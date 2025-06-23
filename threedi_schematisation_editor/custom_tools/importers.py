@@ -18,6 +18,7 @@ from qgis.core import (
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.custom_tools.import_config import ColumnImportMethod
+from threedi_schematisation_editor.expressions import cross_section_label
 from threedi_schematisation_editor.utils import gpkg_layer, convert_to_type, TypeConversionError, find_connection_node, \
     get_next_feature_id, spatial_index, get_features_by_expression
 from threedi_schematisation_editor.warnings import FeaturesImporterWarning, StructuresIntegratorWarning
@@ -130,6 +131,7 @@ class AbstractFeaturesImporter:
         self.target_gpkg = target_gpkg
         self.import_settings = import_settings
         self.setup_target_layers(target_model_cls, target_layer, node_layer, channel_layer, cross_section_location_layer)
+        self.integrator = None
 
     @cached_property
     def conversion_settings(self):
@@ -191,7 +193,11 @@ class AbstractFeaturesImporter:
     @property
     def modifiable_layers(self):
         """Return a list of the layers that can be modified."""
-        return [self.target_layer, self.node_layer]
+        layers = [self.target_layer, self.node_layer]
+        if self.integrator:
+            layers += [self.integrator.integrate_layer,
+                       self.integrator.cross_section_layer]
+        return layers
 
     @staticmethod
     def new_polyline_geometry(src_feat):
@@ -235,13 +241,20 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
 
     def import_structures(self, context=None, selected_ids=None):
         """Method responsible for the importing structures from the external feature source."""
+        if selected_ids is None:
+            selected_ids = []
         transformation = self.get_transformation(context)
         locator = self.get_locator(context=context)
-        new_features = defaultdict(list)
-        features_iterator = (
-            self.external_source.getFeatures(selected_ids) if selected_ids else self.external_source.getFeatures()
-        )
-        for external_src_feat in features_iterator:
+        if self.integrator:
+            # TODO: check usage of selected ids, this seems to give issues with different types
+            input_feature_ids = [feat.id() for feat in self.external_source.getFeatures() if feat.id() not in selected_ids]
+            new_features, integrated_ids = self.integrator.integrate_features(input_feature_ids, selected_ids)
+            selected_ids += integrated_ids
+        else:
+            new_features = defaultdict(list)
+        for external_src_feat in self.external_source.getFeatures():
+            if external_src_feat.id() in selected_ids:
+                continue
             new_structure_feat, new_nodes = self.process_structure_feature(
                 external_src_feat,
                 self.target_layer.fields(),
@@ -252,6 +265,8 @@ class AbstractStructuresImporter(AbstractFeaturesImporter):
             new_features[self.target_layer.name()].append(new_structure_feat)
             new_features[self.node_layer.name()] += new_nodes
         for layer in self.modifiable_layers:
+            if layer.name() not in new_features:
+                continue
             layer.startEditing()
             layer.addFeatures(new_features[layer.name()])
 
@@ -351,62 +366,60 @@ class LinearStructuresImporter(AbstractStructuresImporter):
         return new_structure_feat, new_nodes
 
 
-class StructuresIntegrator(LinearStructuresImporter):
-    """External structures integrator class."""
+class LinearIntegrator:
+    """ Integrate linear structures onto a channel or similar """
+    # shorthand with channel_structure properties
+    channel_structure_cls = namedtuple("channel_structure", ["channel_id", "feature", "m", "length"])
 
-    def __init__(self, *args,
-                 target_model_cls,
-                 target_layer=None,
-                 node_layer=None,
-                 channel_layer=None,
-                 cross_section_location_layer=None,
-                 ):
-        super().__init__(*args, target_model_cls=target_model_cls,
-                         target_layer=target_layer,
-                         node_layer=node_layer,
-                         channel_layer=channel_layer,
-                         cross_section_location_layer=cross_section_location_layer)
-        self.layer_fields_mapping = {}
-        self.layer_field_names_mapping = {}
-        self.spatial_indexes_map = {}
-        self.node_by_location = {}
-        self.channel_manager = FeatureManager(get_next_feature_id(self.channel_layer))
-        self.cross_section_manager = FeatureManager(get_next_feature_id(self.cross_section_location_layer))
+    def __init__(self, integrate_model_cls, integrate_layer,
+                 target_model_cls, target_layer, target_manager,
+                 node_layer, node_manager,
+                 fields_configurations, conversion_settings,
+                 cross_section_layer, external_source,
+                 target_gpkg):
+        # TODO: add tests
+        self.external_source = external_source
+        self.integrate_model_cls = integrate_model_cls
+        self.target_model_cls = target_model_cls
+        self.fields_configurations = fields_configurations
+        self.conversion_settings = conversion_settings
+        # set schematisation layer to add - if any are missing retrieve them from the gpkg
+        self.integrate_layer = integrate_layer if integrate_layer else gpkg_layer(target_gpkg, self.integrate_model_cls.__tablename__)
+        self.target_layer = target_layer if target_layer else gpkg_layer(target_gpkg, self.target_model_cls.__tablename__)
+        self.node_layer = node_layer if node_layer else gpkg_layer(target_gpkg, dm.ConnectionNode.__tablename__)
+        self.cross_section_layer = cross_section_layer if cross_section_layer else gpkg_layer(target_gpkg, dm.CrossSectionLocation.__tablename__)
+        # feature managers that handle id's for added features
+        # for target features and nodes a manager can be supplied such that they match the associated importer
+        self.target_manager = target_manager if target_manager else FeatureManager(self.target_model_cls)
+        self.node_manager = node_manager if node_manager else FeatureManager(dm.ConnectionNode)
+        self.integrate_manager = FeatureManager(get_next_feature_id(self.integrate_layer))
+        self.cross_section_manager = FeatureManager(get_next_feature_id(self.cross_section_layer))
+        # initialize mappings and indices
         self.setup_fields_map()
         self.setup_spatial_indexes()
         self.setup_node_by_location()
-        self.channel_structure_cls = namedtuple("channel_structure", ["channel_id", "feature", "m", "length"])
 
-    @property
-    def modifiable_layers(self):
-        """Return a list of the layers that can be modified."""
-        return super().modifiable_layers + [self.channel_layer, self.cross_section_location_layer]
-
-    def setup_target_layers(
-        self,
-        target_model_cls,
-        target_layer=None,
-        node_layer=None,
-        channel_layer=None,
-        cross_section_location_layer=None,
-    ):
-        """Setup target layers with fields configuration."""
-        super().setup_target_layers(target_model_cls, target_layer, node_layer)
-        self.channel_layer = (
-            gpkg_layer(self.target_gpkg, dm.Channel.__tablename__) if channel_layer is None else channel_layer
-        )
-        self.cross_section_location_layer = (
-            gpkg_layer(self.target_gpkg, dm.CrossSectionLocation.__tablename__)
-            if cross_section_location_layer is None else cross_section_location_layer
-        )
-        self.channel_manager = FeatureManager(get_next_feature_id(self.channel_layer))
-        self.cross_section_manager = FeatureManager(get_next_feature_id(self.cross_section_location_layer))
-
+    @classmethod
+    def from_importer(cls, integrate_model_cls, integrate_layer, cross_section_layer, importer):
+        """ extract data from importer to created matching integrator """
+        return cls(integrate_model_cls=integrate_model_cls,
+                   integrate_layer=integrate_layer,
+                   target_model_cls=importer.target_model_cls,
+                   target_layer=importer.target_layer,
+                   target_manager=importer.target_manager,
+                   node_layer=importer.node_layer,
+                   node_manager=importer.node_manager,
+                   fields_configurations=importer.fields_configurations,
+                   conversion_settings=importer.conversion_settings,
+                   cross_section_layer=cross_section_layer,
+                   external_source=importer.external_source,
+                   target_gpkg=importer.target_gpkg)
 
     def setup_fields_map(self):
         """Setup input layer fields map."""
-        self.layer_fields_mapping.clear()
-        for layer in [self.target_layer, self.node_layer, self.channel_layer, self.cross_section_location_layer]:
+        self.layer_fields_mapping = {}
+        self.layer_field_names_mapping = {}
+        for layer in [self.target_layer, self.node_layer, self.integrate_layer, self.cross_section_layer]:
             layer_name = layer.name()
             layer_fields = layer.fields()
             self.layer_fields_mapping[layer_name] = layer_fields
@@ -414,15 +427,15 @@ class StructuresIntegrator(LinearStructuresImporter):
 
     def setup_spatial_indexes(self):
         """Setup input layer spatial indexes."""
-        self.spatial_indexes_map.clear()
-        self.spatial_indexes_map[self.external_source_name] = spatial_index(self.external_source)
-        for layer in [self.node_layer, self.cross_section_location_layer]:
+        self.spatial_indexes_map = {}
+        self.spatial_indexes_map['source'] = spatial_index(self.external_source)
+        for layer in [self.node_layer, self.cross_section_layer]:
             layer_name = layer.name()
             self.spatial_indexes_map[layer_name] = spatial_index(layer)
 
     def setup_node_by_location(self):
         """Setup nodes by location."""
-        self.node_by_location.clear()
+        self.node_by_location = {}
         for node_feat in self.node_layer.getFeatures():
             node_geom = node_feat.geometry()
             node_point = node_geom.asPoint()
@@ -436,7 +449,7 @@ class StructuresIntegrator(LinearStructuresImporter):
             selected_ids = set()
         channel_id = channel_feat["id"]
         channel_geometry = channel_feat.geometry()
-        structure_features_map, structure_index = self.spatial_indexes_map[self.external_source_name]
+        structure_features_map, structure_index = self.spatial_indexes_map['source']
         structure_fids = structure_index.intersects(channel_geometry.boundingBox())
         for structure_fid in structure_fids:
             if structure_fid in processed_structure_ids:
@@ -518,11 +531,11 @@ class StructuresIntegrator(LinearStructuresImporter):
 
     def update_channel_cross_section_references(self, new_channels, source_channel_xs_locations):
         """Update channel cross-section references."""
-        xs_location_layer_name = self.cross_section_location_layer.name()
+        xs_location_layer_name = self.cross_section_layer.name()
         xs_location_features_map, xs_location_index = self.spatial_indexes_map[xs_location_layer_name]
         xs_fields = self.layer_fields_mapping[xs_location_layer_name]
         channel_id_idx = xs_fields.lookupField("channel_id")
-        next_cross_section_location_id = get_next_feature_id(self.cross_section_location_layer)
+        next_cross_section_location_id = get_next_feature_id(self.cross_section_layer)
         cross_section_location_copies = []
         for channel_feat in new_channels:
             channel_xs_count = 0
@@ -537,7 +550,7 @@ class StructuresIntegrator(LinearStructuresImporter):
                     DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
                 )
                 if channel_geometry.intersects(xs_buffer):
-                    self.cross_section_location_layer.changeAttributeValue(xs_fid, channel_id_idx, channel_id)
+                    self.cross_section_layer.changeAttributeValue(xs_fid, channel_id_idx, channel_id)
                     channel_xs_count += 1
             if channel_xs_count == 0:
                 src_channel_xs_ids = [str(xs_id) for xs_id in source_channel_xs_locations]
@@ -546,7 +559,7 @@ class StructuresIntegrator(LinearStructuresImporter):
                     xs_distance_map = [
                         (xs_feat, channel_geometry.distance(xs_feat.geometry()))
                         for xs_feat in get_features_by_expression(
-                            self.cross_section_location_layer, f'"id" in ({xs_ids_str})', with_geometry=True
+                            self.cross_section_layer, f'"id" in ({xs_ids_str})', with_geometry=True
                         )
                     ]
                     xs_distance_map.sort(key=itemgetter(1))
@@ -557,13 +570,13 @@ class StructuresIntegrator(LinearStructuresImporter):
                     next_cross_section_location_id += 1
                     cross_section_location_copies.append(closest_xs_feat_copy)
         if cross_section_location_copies:
-            self.cross_section_location_layer.addFeatures(cross_section_location_copies)
+            self.cross_section_layer.addFeatures(cross_section_location_copies)
 
     def remove_hanging_cross_sections(self, visited_channel_ids):
         """Remove cross-sections not aligned with the channels."""
         xs_leftovers = []
-        channel_feats, channels_spatial_index = spatial_index(self.channel_layer)
-        for xs_feat in self.cross_section_location_layer.getFeatures():
+        channel_feats, channels_spatial_index = spatial_index(self.integrate_layer)
+        for xs_feat in self.cross_section_layer.getFeatures():
             xs_geom = xs_feat.geometry()
             xs_buffer = xs_geom.buffer(DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
             channel_fids = channels_spatial_index.intersects(xs_buffer.boundingBox())
@@ -580,7 +593,7 @@ class StructuresIntegrator(LinearStructuresImporter):
             if not xs_intersects:
                 xs_leftovers.append(xs_feat.id())
         if xs_leftovers:
-            self.cross_section_location_layer.deleteFeatures(xs_leftovers)
+            self.cross_section_layer.deleteFeatures(xs_leftovers)
 
     @staticmethod
     def substring_feature(curve, start_distance, end_distance, fields, simplify=False, **attributes):
@@ -593,7 +606,7 @@ class StructuresIntegrator(LinearStructuresImporter):
 
     def integrate_structure_features(self, channel_feat, channel_structures):
         """Integrate structures with a channel network."""
-        channel_layer_name = self.channel_layer.name()
+        channel_layer_name = self.integrate_layer.name()
         channel_fields = self.layer_fields_mapping[channel_layer_name]
         channel_field_names = self.layer_field_names_mapping[channel_layer_name]
         channel_attributes = {field_name: channel_feat[field_name] for field_name in channel_field_names}
@@ -616,7 +629,7 @@ class StructuresIntegrator(LinearStructuresImporter):
                        f'Primary keys {self.target_model_cls.__tablename__}s: {id_str}')
             warnings.warn(f"{message}", StructuresIntegratorWarning)
             return
-        next_channel_id = get_next_feature_id(self.channel_layer)
+        next_channel_id = get_next_feature_id(self.integrate_layer)
         for i, channel_structure in enumerate(sorted(channel_structures, key=lambda x: x.m)):
             new_nodes = []
             src_structure_feat = channel_structure.feature
@@ -662,57 +675,28 @@ class StructuresIntegrator(LinearStructuresImporter):
             added_features[channel_layer_name].append(last_substring_feat)
         return added_features
 
-    def import_structures(self, context=None, selected_ids=None):
-        input_feature_ids = (
-            {feat.id() for feat in self.external_source.getFeatures()} if not selected_ids else set(selected_ids)
-        )
-        features_to_add, disconnected_structure_ids = self.integrate_features(input_feature_ids, selected_ids)
-        if disconnected_structure_ids:
-            structure_fields = self.layer_fields_mapping[self.target_layer.name()]
-            node_fields = self.layer_fields_mapping[self.node_layer.name()]
-            transformation = self.get_transformation(context)
-            locator = self.get_locator(context=context)
-            for disconnected_structure in self.external_source.getFeatures():
-                if disconnected_structure.id() not in disconnected_structure_ids:
-                    continue
-                new_structure_feat, new_nodes = self.process_structure_feature(
-                    disconnected_structure,
-                    structure_fields,
-                    node_fields,
-                    locator,
-                    transformation,
-                )
-                features_to_add[self.node_layer.name()] += new_nodes
-                features_to_add[self.target_layer.name()].append(new_structure_feat)
-        for layer in self.modifiable_layers:
-            layer.startEditing()
-            layer.addFeatures(features_to_add[layer.name()])
-
     def integrate_features(self, input_feature_ids, selected_ids):
         """Method responsible for the importing/integrating structures from the external feature source."""
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
         channels_replaced = []
-        for channel_feature in self.channel_layer.getFeatures():
+        for channel_feature in self.integrate_layer.getFeatures():
             channel_structures, processed_structures_fids = self.get_channel_structures_data(
                 channel_feature, selected_ids
             )
             ch_id = channel_feature["id"]
-            source_channel_xs_locations = [xs["id"] for xs in get_features_by_expression(self.cross_section_location_layer, f'"channel_id" = {ch_id}')]
+            source_channel_xs_locations = [xs["id"] for xs in get_features_by_expression(self.cross_section_layer, f'"channel_id" = {ch_id}')]
             if channel_structures:
                 added_features = self.integrate_structure_features(channel_feature, channel_structures)
-                self.update_channel_cross_section_references(added_features[self.channel_layer.name()], source_channel_xs_locations)
+                self.update_channel_cross_section_references(added_features[self.integrate_layer.name()], source_channel_xs_locations)
                 for key in added_features:
                     features_to_add[key] += added_features[key]
                 all_processed_structure_ids |= processed_structures_fids
                 channels_replaced.append(ch_id)
-        self.channel_layer.startEditing()
+        self.integrate_layer.startEditing()
         for ch_id in channels_replaced:
-            self.channel_layer.deleteFeature(ch_id)
-        disconnected_ids = list(input_feature_ids.difference(all_processed_structure_ids))
-        return features_to_add, disconnected_ids
-
-
+            self.integrate_layer.deleteFeature(ch_id)
+        return features_to_add, list(all_processed_structure_ids)
 
 
 class CulvertsImporter(LinearStructuresImporter):
@@ -722,7 +706,7 @@ class CulvertsImporter(LinearStructuresImporter):
         super().__init__(*args, target_model_cls=dm.Culvert, target_layer=structure_layer,
                          node_layer=node_layer)
 
-class CulvertsIntegrator(StructuresIntegrator):
+class CulvertsIntegrator(LinearStructuresImporter):
     """Class with methods responsible for the integrating culverts from the external data source."""
 
     def __init__(
@@ -734,7 +718,8 @@ class CulvertsIntegrator(StructuresIntegrator):
         cross_section_location_layer=None,
     ):
         super().__init__(*args, target_model_cls=dm.Culvert, target_layer=structure_layer,
-                         node_layer=node_layer, channel_layer=channel_layer, cross_section_location_layer=cross_section_location_layer)
+                         node_layer=node_layer)
+        self.integrator = LinearIntegrator.from_importer(dm.Channel, channel_layer, cross_section_location_layer, self)
 
 
 class OrificesImporter(LinearStructuresImporter):
@@ -745,7 +730,7 @@ class OrificesImporter(LinearStructuresImporter):
                          node_layer=node_layer)
 
 
-class OrificesIntegrator(StructuresIntegrator):
+class OrificesIntegrator(LinearStructuresImporter):
     """Class with methods responsible for the integrating orifices from the external data source."""
 
     def __init__(
@@ -757,8 +742,8 @@ class OrificesIntegrator(StructuresIntegrator):
         cross_section_location_layer=None,
     ):
         super().__init__(*args, target_model_cls=dm.Orifice, target_layer=structure_layer,
-                         node_layer=node_layer, channel_layer=channel_layer,
-                         cross_section_location_layer=cross_section_location_layer)
+                         node_layer=node_layer, channel_layer=channel_layer)
+        self.integrator = LinearIntegrator.from_importer(dm.Channel, channel_layer, cross_section_location_layer, self)
 
 
 class WeirsImporter(LinearStructuresImporter):
@@ -769,7 +754,7 @@ class WeirsImporter(LinearStructuresImporter):
                          node_layer=node_layer)
 
 
-class WeirsIntegrator(StructuresIntegrator):
+class WeirsIntegrator(LinearStructuresImporter):
     """Class with methods responsible for the integrating weirs from the external data source."""
 
     def __init__(
@@ -781,8 +766,8 @@ class WeirsIntegrator(StructuresIntegrator):
         cross_section_location_layer=None,
     ):
         super().__init__(*args, target_model_cls=dm.Weir, target_layer=structure_layer,
-                         node_layer=node_layer, channel_layer=channel_layer,
-                         cross_section_location_layer=cross_section_location_layer)
+                         node_layer=node_layer)
+        self.integrator = LinearIntegrator.from_importer(dm.Channel, channel_layer, cross_section_location_layer, self)
 
 
 class PipesImporter(LinearStructuresImporter):
