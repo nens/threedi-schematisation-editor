@@ -167,7 +167,6 @@ class AbstractFeaturesImporter:
         self.target_layer = (
             gpkg_layer(self.target_gpkg, target_model_cls.__tablename__) if target_layer is None else target_layer
         )
-        self.target_layer_name = self.target_layer.name()
         self.node_layer = (
             gpkg_layer(self.target_gpkg, dm.ConnectionNode.__tablename__) if node_layer is None else node_layer
         )
@@ -606,8 +605,8 @@ class StructuresIntegrator(LinearStructuresImporter):
         channel_curve = channel_geom.constGet()
         previous_structure_end = 0
         simplify_structure_geometry = self.target_model_cls != dm.Culvert
-        structure_fields = self.layer_fields_mapping[self.target_layer_name]
-        structure_field_names = self.layer_field_names_mapping[self.target_layer_name]
+        structure_fields = self.layer_fields_mapping[self.target_layer.name()]
+        structure_field_names = self.layer_field_names_mapping[self.target_layer.name()]
         total_length = sum(channel_structure.length for channel_structure in channel_structures)
         added_features = defaultdict(list)
         if channel_geom.length() < total_length:
@@ -637,7 +636,7 @@ class StructuresIntegrator(LinearStructuresImporter):
             substring_geom = get_substring_geometry(channel_curve, start_distance, end_distance, simplify_structure_geometry)
             substring_feat = self.target_manager.create_new(substring_geom, structure_fields, structure_attributes)
             added_features[self.node_layer.name()] += self.update_feature_endpoints(substring_feat, **node_attributes)
-            added_features[self.target_layer_name].append(substring_feat)
+            added_features[self.target_layer.name()].append(substring_feat)
             # Setup channel leftover feature
             # todo: is this check necessary?
             if start_distance > previous_structure_end:
@@ -669,7 +668,7 @@ class StructuresIntegrator(LinearStructuresImporter):
         )
         features_to_add, disconnected_structure_ids = self.integrate_features(input_feature_ids, selected_ids)
         if disconnected_structure_ids:
-            structure_fields = self.layer_fields_mapping[self.target_layer_name]
+            structure_fields = self.layer_fields_mapping[self.target_layer.name()]
             node_fields = self.layer_fields_mapping[self.node_layer.name()]
             transformation = self.get_transformation(context)
             locator = self.get_locator(context=context)
@@ -684,7 +683,7 @@ class StructuresIntegrator(LinearStructuresImporter):
                     transformation,
                 )
                 features_to_add[self.node_layer.name()] += new_nodes
-                features_to_add[self.target_layer_name].append(new_structure_feat)
+                features_to_add[self.target_layer.name()].append(new_structure_feat)
         for layer in self.modifiable_layers:
             layer.startEditing()
             layer.addFeatures(features_to_add[layer.name()])
