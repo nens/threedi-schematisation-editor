@@ -116,15 +116,20 @@ class ConversionSettings:
 
 class AbstractFeaturesImporter:
     """Base class for the importing features from the external data source."""
-    def __init__(self, external_source, target_gpkg, import_settings):
+    def __init__(self,
+                 external_source,
+                 target_gpkg,
+                 import_settings,
+                 target_model_cls,
+                 target_layer=None,
+                 node_layer=None,
+                 channel_layer=None,
+                 cross_section_location_layer=None,
+                 ):
         self.external_source = external_source
         self.target_gpkg = target_gpkg
         self.import_settings = import_settings
-        self.target_model_cls = None
-        self.target_layer = None
-        self.target_layer_name = None
-        self.fields_configurations = {}
-        self.node_layer = None
+        self.setup_target_layers(target_model_cls, target_layer, node_layer, channel_layer, cross_section_location_layer)
 
     @cached_property
     def conversion_settings(self):
@@ -350,14 +355,27 @@ class LinearStructuresImporter(AbstractStructuresImporter):
 class StructuresIntegrator(LinearStructuresImporter):
     """External structures integrator class."""
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.channel_layer = None
-        self.cross_section_location_layer = None
+    def __init__(self, *args,
+                 target_model_cls,
+                 target_layer=None,
+                 node_layer=None,
+                 channel_layer=None,
+                 cross_section_location_layer=None,
+                 ):
+        super().__init__(*args, target_model_cls=target_model_cls,
+                         target_layer=target_layer,
+                         node_layer=node_layer,
+                         channel_layer=channel_layer,
+                         cross_section_location_layer=cross_section_location_layer)
         self.layer_fields_mapping = {}
         self.layer_field_names_mapping = {}
         self.spatial_indexes_map = {}
         self.node_by_location = {}
+        self.channel_manager = FeatureManager(get_next_feature_id(self.channel_layer))
+        self.cross_section_manager = FeatureManager(get_next_feature_id(self.cross_section_location_layer))
+        self.setup_fields_map()
+        self.setup_spatial_indexes()
+        self.setup_node_by_location()
         self.channel_structure_cls = namedtuple("channel_structure", ["channel_id", "feature", "m", "length"])
 
     @property
@@ -384,9 +402,7 @@ class StructuresIntegrator(LinearStructuresImporter):
         )
         self.channel_manager = FeatureManager(get_next_feature_id(self.channel_layer))
         self.cross_section_manager = FeatureManager(get_next_feature_id(self.cross_section_location_layer))
-        self.setup_fields_map()
-        self.setup_spatial_indexes()
-        self.setup_node_by_location()
+
 
     def setup_fields_map(self):
         """Setup input layer fields map."""
@@ -704,9 +720,8 @@ class CulvertsImporter(LinearStructuresImporter):
     """Class with methods responsible for the importing culverts from the external data source."""
 
     def __init__(self, *args, structure_layer=None, node_layer=None):
-        super().__init__(*args)
-        self.setup_target_layers(dm.Culvert, structure_layer, node_layer)
-
+        super().__init__(*args, target_model_cls=dm.Culvert, target_layer=structure_layer,
+                         node_layer=node_layer)
 
 class CulvertsIntegrator(StructuresIntegrator):
     """Class with methods responsible for the integrating culverts from the external data source."""
@@ -719,16 +734,16 @@ class CulvertsIntegrator(StructuresIntegrator):
         channel_layer=None,
         cross_section_location_layer=None,
     ):
-        super().__init__(*args)
-        self.setup_target_layers(dm.Culvert, structure_layer, node_layer, channel_layer, cross_section_location_layer)
+        super().__init__(*args, target_model_cls=dm.Culvert, target_layer=structure_layer,
+                         node_layer=node_layer, channel_layer=channel_layer, cross_section_location_layer=cross_section_location_layer)
 
 
 class OrificesImporter(LinearStructuresImporter):
     """Class with methods responsible for the importing orifices from the external data source."""
 
     def __init__(self, *args, structure_layer=None, node_layer=None):
-        super().__init__(*args)
-        self.setup_target_layers(dm.Orifice, structure_layer, node_layer)
+        super().__init__(*args, target_model_cls=dm.Orifice, target_layer=structure_layer,
+                         node_layer=node_layer)
 
 
 class OrificesIntegrator(StructuresIntegrator):
@@ -742,16 +757,17 @@ class OrificesIntegrator(StructuresIntegrator):
         channel_layer=None,
         cross_section_location_layer=None,
     ):
-        super().__init__(*args)
-        self.setup_target_layers(dm.Orifice, structure_layer, node_layer, channel_layer, cross_section_location_layer)
+        super().__init__(*args, target_model_cls=dm.Orifice, target_layer=structure_layer,
+                         node_layer=node_layer, channel_layer=channel_layer,
+                         cross_section_location_layer=cross_section_location_layer)
 
 
 class WeirsImporter(LinearStructuresImporter):
     """Class with methods responsible for the importing weirs from the external data source."""
 
     def __init__(self, *args, structure_layer=None, node_layer=None):
-        super().__init__(*args)
-        self.setup_target_layers(dm.Weir, target_layer=structure_layer, node_layer=node_layer)
+        super().__init__(*args, target_model_cls=dm.Weir, target_layer=structure_layer,
+                         node_layer=node_layer)
 
 
 class WeirsIntegrator(StructuresIntegrator):
@@ -765,24 +781,24 @@ class WeirsIntegrator(StructuresIntegrator):
         channel_layer=None,
         cross_section_location_layer=None,
     ):
-        super().__init__(*args)
-        self.setup_target_layers(dm.Weir, structure_layer, node_layer, channel_layer, cross_section_location_layer)
+        super().__init__(*args, target_model_cls=dm.Weir, target_layer=structure_layer,
+                         node_layer=node_layer, channel_layer=channel_layer,
+                         cross_section_location_layer=cross_section_location_layer)
 
 
 class PipesImporter(LinearStructuresImporter):
     """Class with methods responsible for the importing pipes from the external data source."""
 
     def __init__(self, *args, structure_layer=None, node_layer=None):
-        super().__init__(*args)
-        self.setup_target_layers(dm.Pipe, structure_layer, node_layer)
+        super().__init__(*args, target_model_cls=dm.Pipe, target_layer=structure_layer,
+                         node_layer=node_layer)
 
 
 class ConnectionNodesImporter(AbstractFeaturesImporter):
     """Connection nodes importer class."""
 
     def __init__(self, *args, target_layer=None):
-        super().__init__(*args)
-        self.setup_target_layers(dm.ConnectionNode, target_layer)
+        super().__init__(*args, target_model_cls=dm.ConnectionNode, target_layer=target_layer)
 
     def process_feature(self, src_feat, target_fields, transformation=None):
         """Process source point into connection node feature."""
