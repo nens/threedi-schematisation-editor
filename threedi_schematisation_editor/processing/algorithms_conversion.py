@@ -107,11 +107,7 @@ class BaseImporter(QgsProcessingAlgorithm):
         importer = self.create_importer(source_layer, target_gpkg, import_config)
 
         # Use the right import method based on the importer type
-        if hasattr(importer, 'import_features'):
-            importer.import_features(context=context)
-        else:
-            importer.import_structures(context=context)
-
+        importer.import_features(context=context)
         importer.commit_pending_changes()
         return {}
 
