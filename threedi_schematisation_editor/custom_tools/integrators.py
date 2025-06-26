@@ -7,6 +7,8 @@ from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.custom_tools.utils import update_attributes, FeatureManager, \
     DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+from threedi_schematisation_editor.expressions import cross_section_label, cross_section_max_height, \
+    cross_section_max_width
 from threedi_schematisation_editor.utils import gpkg_layer, get_next_feature_id, spatial_index, \
     get_features_by_expression
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
@@ -181,45 +183,57 @@ class LinearIntegrator:
         dst_feature["connection_node_id_end"] = self.node_by_location[end_node_point]
         return new_nodes
 
-    def update_channel_cross_section_references(self, new_channels, source_channel_xs_locations):
+    @staticmethod
+    def get_cross_sections_for_channel(channel_feat, cross_section_fids, cross_section_location_features_map):
+        cross_sections_for_channel = []
+        for cross_section_fid in cross_section_fids:
+            cross_section_feat = cross_section_location_features_map[cross_section_fid]
+            buffer = cross_section_feat.geometry().buffer(
+                DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+            )
+            if channel_feat.geometry().intersects(buffer):
+                cross_sections_for_channel.append(cross_section_fid)
+        return cross_sections_for_channel
+
+    @staticmethod
+    def get_closest_cross_section_location(channel_feat, cross_section_layer, source_channel_cross_section_locations):
+        channel_geometry = channel_feat.geometry()
+        src_channel_cross_section_ids = [str(id) for id in source_channel_cross_section_locations]
+        if src_channel_cross_section_ids:
+            id_str = ",".join(src_channel_cross_section_ids)
+            distance_map = [
+                (cross_section_feat, channel_geometry.distance(cross_section_feat.geometry()))
+                for cross_section_feat in get_features_by_expression(
+                    cross_section_layer, f'"id" in ({id_str})', with_geometry=True
+                )
+            ]
+            distance_map.sort(key=itemgetter(1))
+            closest_cross_section_copy = QgsFeature(distance_map[0][0])
+            return closest_cross_section_copy
+
+    def update_channel_cross_section_references(self, new_channels, source_channel_cross_section_locations):
         """Update channel cross-section references."""
-        xs_location_features_map, xs_location_index = self.spatial_indexes_map[self.cross_section_layer.name()]
-        xs_fields = self.layer_fields_mapping[self.cross_section_layer.name()]
-        channel_id_idx = xs_fields.lookupField("channel_id")
-        next_cross_section_location_id = get_next_feature_id(self.cross_section_layer)
+        cross_section_location_features_map, cross_section_location_index = self.spatial_indexes_map[self.cross_section_layer.name()]
+        channel_id_idx = self.layer_fields_mapping[self.cross_section_layer.name()].lookupField("channel_id")
         cross_section_location_copies = []
         for channel_feat in new_channels:
-            channel_xs_count = 0
-            channel_id = channel_feat["id"]
-            channel_geometry = channel_feat.geometry()
-            channel_geometry_middle = channel_geometry.interpolate(channel_geometry.length() * 0.5)
-            xs_fids = xs_location_index.intersects(channel_geometry.boundingBox())
-            for xs_fid in xs_fids:
-                xs_feat = xs_location_features_map[xs_fid]
-                xs_geom = xs_feat.geometry()
-                xs_buffer = xs_geom.buffer(
-                    DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
-                )
-                if channel_geometry.intersects(xs_buffer):
-                    self.cross_section_layer.changeAttributeValue(xs_fid, channel_id_idx, channel_id)
-                    channel_xs_count += 1
-            if channel_xs_count == 0:
-                src_channel_xs_ids = [str(xs_id) for xs_id in source_channel_xs_locations]
-                if src_channel_xs_ids:
-                    xs_ids_str = ",".join(src_channel_xs_ids)
-                    xs_distance_map = [
-                        (xs_feat, channel_geometry.distance(xs_feat.geometry()))
-                        for xs_feat in get_features_by_expression(
-                            self.cross_section_layer, f'"id" in ({xs_ids_str})', with_geometry=True
-                        )
-                    ]
-                    xs_distance_map.sort(key=itemgetter(1))
-                    closest_xs_feat_copy = QgsFeature(xs_distance_map[0][0])
-                    closest_xs_feat_copy.setGeometry(channel_geometry_middle)
-                    closest_xs_feat_copy["channel_id"] = channel_id
-                    closest_xs_feat_copy["id"] = next_cross_section_location_id
-                    next_cross_section_location_id += 1
-                    cross_section_location_copies.append(closest_xs_feat_copy)
+            channel_geom = channel_feat.geometry()
+            cross_section_fids = cross_section_location_index.intersects(channel_geom.boundingBox())
+            cross_sections_for_channel = LinearIntegrator.get_cross_sections_for_channel(channel_feat,
+                                                                                         cross_section_fids,
+                                                                                         cross_section_location_features_map)
+            for cross_section_fid in cross_sections_for_channel:
+                self.cross_section_layer.changeAttributeValue(cross_section_fid, channel_id_idx, channel_feat["id"])
+            if len(cross_sections_for_channel) == 0:
+                closest_cross_section_copy = self.get_closest_cross_section_location(channel_feat,
+                                                                                     self.cross_section_layer,
+                                                                                     source_channel_cross_section_locations)
+                if closest_cross_section_copy:
+                    self.cross_section_manager.add_feature(closest_cross_section_copy,
+                                                           geom=channel_geom.interpolate(channel_geom.length() * 0.5))
+                    closest_cross_section_copy["channel_id"] = channel_feat["id"]
+                    self.cross_section_layer.addFeatures([closest_cross_section_copy])
+                    cross_section_location_copies.append(closest_cross_section_copy)
         if cross_section_location_copies:
             self.cross_section_layer.addFeatures(cross_section_location_copies)
 

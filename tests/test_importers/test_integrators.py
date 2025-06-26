@@ -1,8 +1,10 @@
 import pytest
+from unittest.mock import MagicMock, patch
 from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes, QgsPointXY, QgsFields, QgsField
 from PyQt5.QtCore import QVariant
 
 from threedi_schematisation_editor.custom_tools.integrators import LinearIntegrator
+from threedi_schematisation_editor.custom_tools.utils import DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
 
 
 @pytest.fixture
@@ -74,6 +76,55 @@ def point_structure_feature_far(structure_fields):
     feature.setAttribute("id", 5)
     feature.setAttribute("length", 10.0)
     return feature
+
+
+@pytest.fixture
+def cross_section_fields():
+    """Create fields for cross section features."""
+    fields = QgsFields()
+    fields.append(QgsField("id", QVariant.Int))
+    fields.append(QgsField("channel_id", QVariant.Int))
+    return fields
+
+
+@pytest.fixture
+def cross_section_feature_near(cross_section_fields):
+    """Create a cross section feature near the channel."""
+    feature = QgsFeature(cross_section_fields)
+    feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(25, 1)))
+    feature.setAttribute("id", 10)
+    feature.setAttribute("channel_id", 1)
+    return feature
+
+
+@pytest.fixture
+def cross_section_feature_middle(cross_section_fields):
+    """Create a cross section feature in the middle of the channel."""
+    feature = QgsFeature(cross_section_fields)
+    feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 0)))
+    feature.setAttribute("id", 11)
+    feature.setAttribute("channel_id", 1)
+    return feature
+
+
+@pytest.fixture
+def cross_section_feature_far(cross_section_fields):
+    """Create a cross section feature far from the channel."""
+    feature = QgsFeature(cross_section_fields)
+    feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(75, 10)))
+    feature.setAttribute("id", 12)
+    feature.setAttribute("channel_id", 1)
+    return feature
+
+
+@pytest.fixture
+def cross_section_features_map(cross_section_feature_near, cross_section_feature_middle, cross_section_feature_far):
+    """Create a map of cross section features."""
+    return {
+        10: cross_section_feature_near,
+        11: cross_section_feature_middle,
+        12: cross_section_feature_far
+    }
 
 
 class TestLinearIntegrator:
@@ -158,3 +209,67 @@ class TestLinearIntegrator:
 
         # The method should return None if the point is too far from the channel
         assert result is None
+
+    def test_get_cross_sections_for_channel(self, channel_feature, cross_section_features_map):
+        """Test get_cross_sections_for_channel with features that intersect and don't intersect."""
+        # The near and middle cross sections should intersect, but the far one shouldn't
+        cross_section_fids = [10, 11, 12]
+
+        result = LinearIntegrator.get_cross_sections_for_channel(
+            channel_feature, cross_section_fids, cross_section_features_map
+        )
+
+        # Check that the result contains the expected cross section IDs
+        assert 10 in result  # Near cross section should intersect
+        assert 11 in result  # Middle cross section should intersect
+        assert 12 not in result  # Far cross section should not intersect
+
+    def test_get_cross_sections_for_channel_none_intersect(self, channel_feature, cross_section_features_map):
+        """Test get_cross_sections_for_channel with features that don't intersect."""
+        # Only include the far cross section
+        cross_section_fids = [12]
+
+        result = LinearIntegrator.get_cross_sections_for_channel(
+            channel_feature, cross_section_fids, cross_section_features_map
+        )
+
+        # Check that the result is empty
+        assert len(result) == 0
+
+    @patch('threedi_schematisation_editor.custom_tools.integrators.get_features_by_expression')
+    def test_get_closest_cross_section_location(self, mock_get_features, channel_feature, 
+                                               cross_section_feature_near, cross_section_feature_middle):
+        """Test get_closest_cross_section_location with features at different distances."""
+        # Mock the get_features_by_expression function to return our test features
+        mock_get_features.return_value = [cross_section_feature_near, cross_section_feature_middle]
+
+        # Create a mock cross section layer
+        mock_cross_section_layer = MagicMock()
+
+        # Call the method with source channel cross section locations
+        result = LinearIntegrator.get_closest_cross_section_location(
+            channel_feature, mock_cross_section_layer, [10, 11]
+        )
+
+        # Check that the result is not None
+        assert result is not None
+
+        # Check that the result is a copy of the middle cross section (which is closest to the channel)
+        assert result["id"] == 11
+
+    @patch('threedi_schematisation_editor.custom_tools.integrators.get_features_by_expression')
+    def test_get_closest_cross_section_location_empty(self, mock_get_features, channel_feature):
+        """Test get_closest_cross_section_location with no source channel cross section locations."""
+        # Create a mock cross section layer
+        mock_cross_section_layer = MagicMock()
+
+        # Call the method with no source channel cross section locations
+        result = LinearIntegrator.get_closest_cross_section_location(
+            channel_feature, mock_cross_section_layer, []
+        )
+
+        # Check that the result is None
+        assert result is None
+
+        # Verify that get_features_by_expression was not called
+        mock_get_features.assert_not_called()
