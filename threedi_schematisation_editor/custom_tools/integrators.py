@@ -158,39 +158,27 @@ class LinearIntegrator:
         channel_structures.sort(key=attrgetter("m"))
         return channel_structures, processed_structure_ids
 
+    def add_node(self, point, node_layer_fields, node_attributes):
+        node_feat = self.node_manager.create_new(QgsGeometry.fromPointXY(point), node_layer_fields)
+        for field_name, field_value in node_attributes.items():
+            if field_name == "id":
+                continue
+            node_feat[field_name] = field_value
+        self.node_by_location[point] = node_feat["id"]
+        return node_feat
+
     def update_feature_endpoints(self, dst_feature, **template_node_attributes):
         """Update feature endpoint references."""
         new_nodes = []
-        linear_geom = dst_feature.geometry()
-        channel_polyline = linear_geom.asPolyline()
+        channel_polyline = dst_feature.geometry().asPolyline()
         start_node_point, end_node_point = channel_polyline[0], channel_polyline[-1]
-        node_layer_name = self.node_layer.name()
-        node_layer_fields = self.layer_fields_mapping[node_layer_name]
-        # TODO: remove duplicate code
-        try:
-            start_node_id = self.node_by_location[start_node_point]
-        except KeyError:
-            start_node_feat = self.node_manager.create_new(QgsGeometry.fromPointXY(start_node_point), node_layer_fields)
-            start_node_id = start_node_feat["id"]
-            for field_name, field_value in template_node_attributes.items():
-                if field_name == "id":
-                    continue
-                start_node_feat[field_name] = field_value
-            self.node_by_location[start_node_point] = start_node_id
-            new_nodes.append(start_node_feat)
-        try:
-            end_node_id = self.node_by_location[end_node_point]
-        except KeyError:
-            end_node_feat = self.node_manager.create_new(QgsGeometry.fromPointXY(end_node_point), node_layer_fields)
-            end_node_id = end_node_feat["id"]
-            for field_name, field_value in template_node_attributes.items():
-                if field_name == "id":
-                    continue
-                end_node_feat[field_name] = field_value
-            self.node_by_location[end_node_point] = end_node_id
-            new_nodes.append(end_node_feat)
-        dst_feature["connection_node_id_start"] = start_node_id
-        dst_feature["connection_node_id_end"] = end_node_id
+        node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
+        for point in [start_node_point, end_node_point]:
+            if point not in self.node_by_location:
+                node_feat = self.add_node(point, node_layer_fields, template_node_attributes)
+                new_nodes.append(node_feat)
+        dst_feature["connection_node_id_start"] =  self.node_by_location[start_node_point]
+        dst_feature["connection_node_id_end"] = self.node_by_location[end_node_point]
         return new_nodes
 
     def update_channel_cross_section_references(self, new_channels, source_channel_xs_locations):
