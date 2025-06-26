@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import pytest
 from qgis.core import QgsFeature, QgsExpression, QgsExpressionContext, NULL, QgsFields, QgsField
 
-from threedi_schematisation_editor.custom_tools.importers import update_attributes
+from threedi_schematisation_editor.custom_tools.utils import update_attributes
 from threedi_schematisation_editor.custom_tools.import_config import ColumnImportMethod
 
 

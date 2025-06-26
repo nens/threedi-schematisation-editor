@@ -1,7 +1,7 @@
 import pytest
 from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes, QgsPointXY, QgsFields, QgsField
 from PyQt5.QtCore import QVariant
-from threedi_schematisation_editor.custom_tools.importers import FeatureManager
+from threedi_schematisation_editor.custom_tools.utils import FeatureManager
 
 
 @pytest.fixture
