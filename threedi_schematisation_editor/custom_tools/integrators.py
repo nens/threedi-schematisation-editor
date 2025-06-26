@@ -219,11 +219,13 @@ class LinearIntegrator:
         for channel_feat in new_channels:
             channel_geom = channel_feat.geometry()
             cross_section_fids = cross_section_location_index.intersects(channel_geom.boundingBox())
+            # Find any nearby cross sections and associate those to this channel
             cross_sections_for_channel = LinearIntegrator.get_cross_sections_for_channel(channel_feat,
                                                                                          cross_section_fids,
                                                                                          cross_section_location_features_map)
             for cross_section_fid in cross_sections_for_channel:
                 self.cross_section_layer.changeAttributeValue(cross_section_fid, channel_id_idx, channel_feat["id"])
+            # If no nearby cross sections were found, find the closest cross section create a copy of that one
             if len(cross_sections_for_channel) == 0:
                 closest_cross_section_copy = self.get_closest_cross_section_location(channel_feat,
                                                                                      self.cross_section_layer,
@@ -234,31 +236,40 @@ class LinearIntegrator:
                     closest_cross_section_copy["channel_id"] = channel_feat["id"]
                     self.cross_section_layer.addFeatures([closest_cross_section_copy])
                     cross_section_location_copies.append(closest_cross_section_copy)
+        # TODO move modifying layers out of here!
         if cross_section_location_copies:
             self.cross_section_layer.addFeatures(cross_section_location_copies)
 
-    def remove_hanging_cross_sections(self, visited_channel_ids):
+    @staticmethod
+    def is_hanging_cross_section(cross_section_feat, channel_feats, channel_fids):
+        """Get cross-sections that are not aligned with any channel."""
+        xs_buffer = cross_section_feat.geometry().buffer(DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
+        # channel_fids = channels_spatial_index.intersects(xs_buffer.boundingBox())
+        # only check channels that were visited
+        # channel_fids = list(set(channel_fids).intersection(visited_channel_ids))
+        if len(channel_fids) > 0:
+            for channel_fid in channel_fids:
+                if xs_buffer.intersects(channel_feats[channel_fid].geometry()):
+                    return True
+        return False
+
+
+    def get_hanging_cross_sections(self, visited_channel_ids):
         """Remove cross-sections not aligned with the channels."""
-        xs_leftovers = []
+        hanging_cross_section_ids = []
         channel_feats, channels_spatial_index = spatial_index(self.integrate_layer)
-        for xs_feat in self.cross_section_layer.getFeatures():
-            xs_geom = xs_feat.geometry()
-            xs_buffer = xs_geom.buffer(DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
-            channel_fids = channels_spatial_index.intersects(xs_buffer.boundingBox())
-            # only modify channels that were visited
+        for cross_section_feat in self.cross_section_layer.getFeatures():
+            buffer = cross_section_feat.geometry().buffer(DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
+            channel_fids = channels_spatial_index.intersects(buffer.boundingBox())
+            # only consider channels that were visited
             channel_fids = list(set(channel_fids).intersection(visited_channel_ids))
             if len(channel_fids) == 0:
                 continue
-            xs_intersects = False
-            for channel_fid in channel_fids:
-                channel_feat = channel_feats[channel_fid]
-                if xs_buffer.intersects(channel_feat.geometry()):
-                    xs_intersects = True
-                    break
-            if not xs_intersects:
-                xs_leftovers.append(xs_feat.id())
-        if xs_leftovers:
-            self.cross_section_layer.deleteFeatures(xs_leftovers)
+            is_hanging = LinearIntegrator.is_hanging_cross_section(cross_section_feat, channel_feats, channel_fids)
+            if is_hanging:
+                hanging_cross_section_ids.append(cross_section_feat.id())
+        return hanging_cross_section_ids
+
 
     @staticmethod
     def substring_feature(curve, start_distance, end_distance, fields, simplify=False, **attributes):
@@ -359,6 +370,10 @@ class LinearIntegrator:
         self.integrate_layer.startEditing()
         for ch_id in channels_replaced:
             self.integrate_layer.deleteFeature(ch_id)
+        # TODO: check handling of cross section stuff
+        self.cross_section_layer.startEditing()
+        visited_channel_ids = [channel["id"] for channel in features_to_add[self.integrate_layer.name()]]
+        self.cross_section_layer.deleteFeatures(self.get_hanging_cross_sections(visited_channel_ids))
         return features_to_add, list(all_processed_structure_ids)
 
 

@@ -273,3 +273,67 @@ class TestLinearIntegrator:
 
         # Verify that get_features_by_expression was not called
         mock_get_features.assert_not_called()
+
+    def test_is_hanging_cross_section_intersects(self, channel_feature, cross_section_feature_near):
+        """Test is_hanging_cross_section with a cross-section that intersects a channel."""
+        # Create a dictionary of channel features
+        channel_feats = {1: channel_feature}
+        channel_fids = [1]
+
+        # Call the method
+        result = LinearIntegrator.is_hanging_cross_section(
+            cross_section_feature_near, channel_feats, channel_fids
+        )
+
+        # The method should return True if the cross-section intersects with a channel
+        assert result is True
+
+    def test_is_hanging_cross_section_no_intersect(self, channel_feature, cross_section_feature_far):
+        """Test is_hanging_cross_section with a cross-section that doesn't intersect any channel."""
+        # Create a dictionary of channel features
+        channel_feats = {1: channel_feature}
+        channel_fids = [1]
+
+        # Call the method
+        result = LinearIntegrator.is_hanging_cross_section(
+            cross_section_feature_far, channel_feats, channel_fids
+        )
+
+        # The method should return False if the cross-section doesn't intersect with any channel
+        assert result is False
+
+    @patch('threedi_schematisation_editor.custom_tools.integrators.spatial_index')
+    def test_get_hanging_cross_sections(self, mock_spatial_index, channel_feature):
+        """Test get_hanging_cross_sections collects IDs correctly.
+
+        Note: The core functionality of determining if a cross-section is hanging
+        is already tested in test_is_hanging_cross_section_* methods.
+        """
+        # Create a mock LinearIntegrator instance
+        integrator = MagicMock()
+
+        # Create a mock cross-section feature
+        mock_feature = MagicMock()
+        mock_feature.id.return_value = 10
+
+        # Set up the mock cross_section_layer to return our mock feature
+        mock_cross_section_layer = MagicMock()
+        mock_cross_section_layer.getFeatures.return_value = [mock_feature]
+        integrator.cross_section_layer = mock_cross_section_layer
+
+        # Set up the mock integrate_layer
+        integrator.integrate_layer = MagicMock()
+
+        # Set up the mock spatial_index to return our channel feature and a spatial index
+        channel_feats = {1: channel_feature}
+        channels_spatial_index = MagicMock()
+        channels_spatial_index.intersects.return_value = [1]
+        mock_spatial_index.return_value = (channel_feats, channels_spatial_index)
+
+        # Mock is_hanging_cross_section to return True
+        with patch.object(LinearIntegrator, 'is_hanging_cross_section', return_value=True):
+            # Call the method with a list of visited channel IDs
+            result = LinearIntegrator.get_hanging_cross_sections(integrator, [1])
+
+        # The method should return a list containing the ID of the hanging cross-section
+        assert result == [10]
