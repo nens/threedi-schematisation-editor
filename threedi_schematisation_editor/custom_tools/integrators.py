@@ -2,12 +2,7 @@ import warnings
 from _operator import attrgetter, itemgetter
 from collections import namedtuple, defaultdict
 
-from qgis.core import (
-    QgsFeature,
-    QgsGeometry,
-    QgsWkbTypes,
-)
-
+from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.custom_tools.utils import update_attributes, FeatureManager, \

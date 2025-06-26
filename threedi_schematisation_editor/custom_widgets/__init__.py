@@ -5,7 +5,7 @@ import json
 import os
 import warnings
 
-from functools import partial
+from functools import partial, cached_property
 from itertools import chain
 
 from qgis.core import NULL, Qgis, QgsMapLayerProxyModel, QgsMessageLog, QgsSettings
@@ -19,8 +19,13 @@ import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.custom_tools.import_config import (
     ColumnImportMethod,
 )
-from threedi_schematisation_editor.custom_tools.importers import CulvertsImporter, CulvertsIntegrator, OrificesImporter, \
-    OrificesIntegrator, WeirsImporter, WeirsIntegrator, PipesImporter, ConnectionNodesImporter
+from threedi_schematisation_editor.custom_tools.importers import (
+    CulvertsImporter,
+    OrificesImporter,
+    WeirsImporter,
+    PipesImporter,
+    ConnectionNodesImporter
+)
 from threedi_schematisation_editor.custom_tools.import_config import ColumnImportIndex, CONFIG_KEYS, CONFIG_HEADER, create_widgets
 from threedi_schematisation_editor.utils import (
     NULL_STR,
@@ -622,11 +627,6 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         dm.Weir: WeirsImporter,
         dm.Pipe: PipesImporter,
     }
-    STRUCTURE_INTEGRATORS = {
-        dm.Culvert: CulvertsIntegrator,
-        dm.Orifice: OrificesIntegrator,
-        dm.Weir: WeirsIntegrator,
-    }
 
     LAST_CONFIG_DIR_ENTRY = "threedi/last_import_config_dir"
 
@@ -674,9 +674,10 @@ class ImportStructuresDialog(is_basecls, is_uicls):
     def is_obsolete_field(model_cls, field_name):
         return field_name in model_cls.obsolete_fields()
 
-    @property
+    @cached_property
     def enable_structures_integration(self):
-        return self.structure_model_cls in self.STRUCTURE_INTEGRATORS
+        import_settings = self.collect_settings()
+        return import_settings["conversion_settings"].get("edit_channels", False)
 
     @property
     def structures_integration_widgets(self):
@@ -1000,12 +1001,8 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         if self.selected_only_cb.isChecked():
             selected_feat_ids = source_layer.selectedFeatureIds()
         import_settings = self.collect_settings()
-        conversion_settings = import_settings["conversion_settings"]
-        edit_channels = conversion_settings.get("edit_channels", False)
-        if edit_channels:
-            structure_importer_cls = self.STRUCTURE_INTEGRATORS[self.structure_model_cls]
-        else:
-            structure_importer_cls = self.STRUCTURE_IMPORTERS[self.structure_model_cls]
+        edit_channels = import_settings["conversion_settings"].get("edit_channels", False)
+        structure_importer_cls = self.STRUCTURE_IMPORTERS[self.structure_model_cls]
         processed_handlers = [structures_handler, node_handler]
         processed_layers = {"structure_layer": structure_layer, "node_layer": node_layer}
         if edit_channels:
@@ -1022,7 +1019,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
                 **processed_layers,
             )
             with CatchThreediWarnings() as warnings_catcher:
-                structures_importer.import_structures(selected_ids=selected_feat_ids)
+                structures_importer.import_features(selected_ids=selected_feat_ids)
             success_msg = (
                 "Structures imported successfully.\n\n"
                 "The layers to which the structures have been added are still in editing mode, "

@@ -1,9 +1,7 @@
 from abc import ABC
 
-from qgis.core import (
-    QgsGeometry,
-    QgsWkbTypes,
-)
+from qgis.core import QgsGeometry, QgsWkbTypes
+
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.custom_tools.utils import update_attributes, FeatureManager

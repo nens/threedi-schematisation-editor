@@ -2,17 +2,7 @@ from collections import defaultdict
 from functools import cached_property
 from abc import ABC
 
-from qgis.core import (
-    NULL,
-    QgsCoordinateTransform,
-    QgsExpression,
-    QgsExpressionContext,
-    QgsFeature,
-    QgsGeometry,
-    QgsPointLocator,
-    QgsProject,
-    QgsWkbTypes,
-)
+from qgis.core import QgsCoordinateTransform, QgsPointLocator, QgsProject
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.custom_tools.integrators import LinearIntegrator
@@ -23,6 +13,7 @@ from threedi_schematisation_editor.utils import gpkg_layer
 
 class Importer(ABC):
     """Base class for the importing features from the external data source."""
+
     def __init__(self,
                  external_source,
                  target_gpkg,
@@ -30,8 +21,6 @@ class Importer(ABC):
                  target_model_cls,
                  target_layer=None,
                  node_layer=None,
-                 channel_layer=None,
-                 cross_section_location_layer=None,
                  ):
         self.external_source = external_source
         self.target_gpkg = target_gpkg
@@ -65,10 +54,10 @@ class Importer(ABC):
         return QgsPointLocator(self.node_layer, self.target_layer.crs(), project.transformContext())
 
     def setup_target_layers(
-        self,
-        target_model_cls,
-        target_layer=None,
-        node_layer=None,
+            self,
+            target_model_cls,
+            target_layer=None,
+            node_layer=None,
     ):
         self.target_model_cls = target_model_cls
         self.target_layer = (
@@ -113,7 +102,8 @@ class Importer(ABC):
         # Integrate features using the integrator (if any)
         # items that are integrated are skipped in further processing
         if self.integrator:
-            input_feature_ids = [feat.id() for feat in self.external_source.getFeatures() if feat.id() not in selected_ids]
+            input_feature_ids = [feat.id() for feat in self.external_source.getFeatures() if
+                                 feat.id() not in selected_ids]
             new_features, integrated_ids = self.integrator.integrate_features(input_feature_ids, selected_ids)
             selected_ids += integrated_ids
         else:
@@ -136,88 +126,69 @@ class Importer(ABC):
 class LinesImporter(Importer):
 
     def __init__(
-        self,
-        *args,
-        target_model_cls,
-        target_layer=None,
-        node_layer=None,
-        channel_layer=None,
-        cross_section_location_layer=None,
+            self,
+            *args,
+            target_model_cls,
+            target_layer=None,
+            node_layer=None,
+            channel_layer=None,
+            cross_section_location_layer=None,
     ):
         super().__init__(*args, target_model_cls=target_model_cls, target_layer=target_layer,
                          node_layer=node_layer)
-        self.processor = LineProcessor(self.target_layer, self.target_model_cls, self.node_layer, self.fields_configurations, self.conversion_settings)
+        self.processor = LineProcessor(self.target_layer, self.target_model_cls, self.node_layer,
+                                       self.fields_configurations, self.conversion_settings)
         if self.conversion_settings.integrate:
-            self.integrator = LinearIntegrator.from_importer(dm.Channel, channel_layer, cross_section_location_layer, self)
+            self.integrator = LinearIntegrator.from_importer(dm.Channel, channel_layer, cross_section_location_layer,
+                                                             self)
 
 
 class CulvertsImporter(LinesImporter):
-    """Class with methods responsible for the importing culverts from the external data source."""
-
-    def __init__(self, *args, structure_layer=None, node_layer=None):
-        super().__init__(*args, target_model_cls=dm.Culvert, target_layer=structure_layer,
-                         node_layer=node_layer)
-
-
-class CulvertsIntegrator(LinesImporter):
     """Class with methods responsible for the integrating culverts from the external data source."""
 
     def __init__(
-        self,
-        *args,
-        structure_layer=None,
-        node_layer=None,
-        channel_layer=None,
-        cross_section_location_layer=None,
+            self,
+            *args,
+            structure_layer=None,
+            node_layer=None,
+            channel_layer=None,
+            cross_section_location_layer=None,
     ):
         super().__init__(*args, target_model_cls=dm.Culvert, target_layer=structure_layer,
-                         node_layer=node_layer, channel_layer=channel_layer, cross_section_location_layer=cross_section_location_layer)
+                         node_layer=node_layer, channel_layer=channel_layer,
+                         cross_section_location_layer=cross_section_location_layer)
 
 
 class OrificesImporter(LinesImporter):
-    """Class with methods responsible for the importing orifices from the external data source."""
-
-    def __init__(self, *args, structure_layer=None, node_layer=None):
-        super().__init__(*args, target_model_cls=dm.Orifice, target_layer=structure_layer,
-                         node_layer=node_layer)
-
-
-class OrificesIntegrator(LinesImporter):
     """Class with methods responsible for the integrating orifices from the external data source."""
 
     def __init__(
-        self,
-        *args,
-        structure_layer=None,
-        node_layer=None,
-        channel_layer=None,
-        cross_section_location_layer=None,
+            self,
+            *args,
+            structure_layer=None,
+            node_layer=None,
+            channel_layer=None,
+            cross_section_location_layer=None,
     ):
         super().__init__(*args, target_model_cls=dm.Orifice, target_layer=structure_layer,
-                         node_layer=node_layer, cchannel_layer=channel_layer, cross_section_location_layer=cross_section_location_layer)
+                         node_layer=node_layer, cchannel_layer=channel_layer,
+                         cross_section_location_layer=cross_section_location_layer)
 
 
 class WeirsImporter(LinesImporter):
-    """Class with methods responsible for the importing weirs from the external data source."""
-
-    def __init__(self, *args, structure_layer=None, node_layer=None):
-        super().__init__(*args, target_model_cls=dm.Weir, target_layer=structure_layer,
-                         node_layer=node_layer)
-
-
-class WeirsIntegrator(LinesImporter):
     """Class with methods responsible for the integrating weirs from the external data source."""
 
     def __init__(
-        self,
-        *args,
-        structure_layer=None,
-        node_layer=None,
-        channel_layer=None,
-        cross_section_location_layer=None,
+            self,
+            *args,
+            structure_layer=None,
+            node_layer=None,
+            channel_layer=None,
+            cross_section_location_layer=None,
     ):
         super().__init__(*args, target_model_cls=dm.Weir, target_layer=structure_layer,
-                         node_layer=node_layer, channel_layer=channel_layer, cross_section_location_layer=cross_section_location_layer)
+                         node_layer=node_layer, channel_layer=channel_layer,
+                         cross_section_location_layer=cross_section_location_layer)
 
 
 class PipesImporter(LinesImporter):

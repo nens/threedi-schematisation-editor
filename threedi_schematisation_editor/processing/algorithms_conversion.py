@@ -14,12 +14,9 @@ from qgis.PyQt.QtCore import QCoreApplication
 from threedi_schematisation_editor.custom_tools.importers import (
     ConnectionNodesImporter,
     CulvertsImporter,
-    CulvertsIntegrator,
     OrificesImporter,
-    OrificesIntegrator,
     PipesImporter,
     WeirsImporter,
-    WeirsIntegrator,
 )
 
 
@@ -153,20 +150,20 @@ class ImportCulverts(StructureImporter):
     """Import culverts."""
     FEATURE_TYPE = "culvert"
     IMPORTER_CLASS = CulvertsImporter
-    INTEGRATOR_CLASS = CulvertsIntegrator
+    INTEGRATOR_CLASS = CulvertsImporter
 
 
 class ImportOrifices(StructureImporter):
     """Import orifices."""
     FEATURE_TYPE = "orifice"
     IMPORTER_CLASS = OrificesImporter
-    INTEGRATOR_CLASS = OrificesIntegrator
+    INTEGRATOR_CLASS = OrificesImporter
 
 
 class ImportWeirs(StructureImporter):
     """Import weirs."""
     FEATURE_TYPE = "weir"
     IMPORTER_CLASS = WeirsImporter
-    INTEGRATOR_CLASS = WeirsIntegrator
+    INTEGRATOR_CLASS = WeirsImporter
 
 
