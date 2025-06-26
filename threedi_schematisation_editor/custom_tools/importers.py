@@ -17,8 +17,8 @@ from qgis.core import (
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.custom_tools.integrators import LinearIntegrator
 from threedi_schematisation_editor.custom_tools.processors import ConnectionNodeProcessor, LineProcessor
-from threedi_schematisation_editor.custom_tools.utils import FeatureManager, ConversionSettings
-from threedi_schematisation_editor.utils import gpkg_layer, get_next_feature_id
+from threedi_schematisation_editor.custom_tools.utils import ConversionSettings
+from threedi_schematisation_editor.utils import gpkg_layer
 
 
 class Importer(ABC):
@@ -81,8 +81,8 @@ class Importer(ABC):
             target_model_cls: self.import_settings.get("fields", {}),
             dm.ConnectionNode: self.import_settings.get("connection_node_fields", {}),
         }
-        self.node_manager = FeatureManager(get_next_feature_id(self.node_layer))
-        self.target_manager = FeatureManager(get_next_feature_id(self.target_layer))
+        # self.node_manager = FeatureManager(get_next_feature_id(self.node_layer))
+        # self.target_manager = FeatureManager(get_next_feature_id(self.target_layer))
 
     @staticmethod
     def process_commit_errors(layer):
@@ -125,7 +125,7 @@ class Importer(ABC):
             processed_features = self.processor.process_feature(external_src_feat)
             for name, features in processed_features.items():
                 new_features[name] += features
-    `   # Add newly created features to layers
+        # Add newly created features to layers
         for layer in self.modifiable_layers:
             if layer.name() not in new_features:
                 continue
@@ -146,7 +146,7 @@ class LinesImporter(Importer):
     ):
         super().__init__(*args, target_model_cls=target_model_cls, target_layer=target_layer,
                          node_layer=node_layer)
-        self.processor = LineProcessor(self.target_layer, self.target_model_cls, self.target_manager, self.node_layer, self.node_manager, self.fields_configurations, self.conversion_settings)
+        self.processor = LineProcessor(self.target_layer, self.target_model_cls, self.node_layer, self.fields_configurations, self.conversion_settings)
         if self.conversion_settings.integrate:
             self.integrator = LinearIntegrator.from_importer(dm.Channel, channel_layer, cross_section_location_layer, self)
 
@@ -233,4 +233,4 @@ class ConnectionNodesImporter(Importer):
 
     def __init__(self, *args, target_layer=None):
         super().__init__(*args, target_model_cls=dm.ConnectionNode, target_layer=target_layer)
-        self.processor = ConnectionNodeProcessor(self.target_layer, self.target_model_cls, self.target_manager)
+        self.processor = ConnectionNodeProcessor(self.target_layer, self.target_model_cls)

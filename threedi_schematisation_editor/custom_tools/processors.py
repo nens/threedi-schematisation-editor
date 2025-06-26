@@ -6,15 +6,16 @@ from qgis.core import (
 )
 
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.custom_tools.utils import update_attributes
+from threedi_schematisation_editor.custom_tools.utils import update_attributes, FeatureManager
 from threedi_schematisation_editor.utils import find_connection_node
+from threedi_schematisation_editor.utils import get_next_feature_id
 
 
 class Processor(ABC):
-    def __init__(self, target_layer, target_model_cls, target_manager):
+    def __init__(self, target_layer, target_model_cls):
         self.target_fields = target_layer.fields()
         self.target_name = target_layer.name()
-        self.target_manager = target_manager
+        self.target_manager = FeatureManager(get_next_feature_id(target_layer))
         self.target_model_cls = target_model_cls
         self.transformation = None
         self.locator = None
@@ -34,11 +35,11 @@ class ConnectionNodeProcessor(Processor):
 
 
 class StructureProcessor(Processor, ABC):
-    def __init__(self, target_layer, target_model_cls, target_manager, node_layer, node_manager, fields_configurations, conversion_settings):
-        super().__init__(target_layer, target_model_cls, target_manager)
+    def __init__(self, target_layer, target_model_cls, node_layer, fields_configurations, conversion_settings):
+        super().__init__(target_layer, target_model_cls)
         self.node_fields = node_layer.fields()
         self.node_name = node_layer.name()
-        self.node_manager = node_manager
+        self.node_manager = FeatureManager(get_next_feature_id(node_layer))
         self.fields_configurations = fields_configurations
         self.conversion_settings = conversion_settings
 
