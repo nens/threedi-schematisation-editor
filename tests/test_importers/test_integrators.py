@@ -1,0 +1,160 @@
+import pytest
+from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes, QgsPointXY, QgsFields, QgsField
+from PyQt5.QtCore import QVariant
+
+from threedi_schematisation_editor.custom_tools.integrators import LinearIntegrator
+
+
+@pytest.fixture
+def channel_fields():
+    fields = QgsFields()
+    fields.append(QgsField("id", QVariant.Int))
+    return fields
+
+
+@pytest.fixture
+def structure_fields():
+    fields = QgsFields()
+    fields.append(QgsField("id", QVariant.Int))
+    fields.append(QgsField("length", QVariant.Double))
+    return fields
+
+
+@pytest.fixture
+def channel_feature(channel_fields):
+    """Create a simple channel feature with a straight line geometry."""
+    feature = QgsFeature(channel_fields)
+    feature.setGeometry(QgsGeometry.fromPolylineXY([
+        QgsPointXY(0, 0),
+        QgsPointXY(100, 0)
+    ]))
+    feature.setAttribute("id", 1)
+    return feature
+
+
+@pytest.fixture
+def line_structure_feature(structure_fields):
+    """Create a line structure feature perpendicular to the channel."""
+    feature = QgsFeature(structure_fields)
+    feature.setGeometry(QgsGeometry.fromPolylineXY([
+        QgsPointXY(50, -10),
+        QgsPointXY(50, 10)
+    ]))
+    feature.setAttribute("id", 2)
+    return feature
+
+
+@pytest.fixture
+def line_structure_feature_both_ends_intersect(structure_fields):
+    """Create a line structure feature that intersects the channel at both ends."""
+    feature = QgsFeature(structure_fields)
+    feature.setGeometry(QgsGeometry.fromPolylineXY([
+        QgsPointXY(25, 0),
+        QgsPointXY(75, 0)
+    ]))
+    feature.setAttribute("id", 3)
+    return feature
+
+
+@pytest.fixture
+def point_structure_feature(structure_fields):
+    """Create a point structure feature near the channel."""
+    feature = QgsFeature(structure_fields)
+    feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 1)))
+    feature.setAttribute("id", 4)
+    feature.setAttribute("length", 10.0)
+    return feature
+
+
+@pytest.fixture
+def point_structure_feature_far(structure_fields):
+    """Create a point structure feature far from the channel."""
+    feature = QgsFeature(structure_fields)
+    feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 20)))
+    feature.setAttribute("id", 5)
+    feature.setAttribute("length", 10.0)
+    return feature
+
+
+class TestLinearIntegrator:
+    """Tests for the LinearIntegrator class."""
+
+    def test_get_channel_structure_from_line(self, channel_feature, line_structure_feature):
+        """Test get_channel_structure_from_line with a line that intersects the channel."""
+        snapping_distance = 5.0
+        result = LinearIntegrator.get_channel_structure_from_line(
+            line_structure_feature, channel_feature, snapping_distance
+        )
+
+        # Check that the result is not None
+        assert result is not None
+
+        # Check that the result has the expected attributes
+        assert result.channel_id == 1
+        assert result.feature["id"] == 2
+        assert result.m == 50.0  # The line is at x=50, so the intersection is at 50% of the channel
+        assert result.length == 20.0  # The line is 20 units long
+
+    def test_get_channel_structure_from_line_both_ends_intersect(self, channel_feature, line_structure_feature_both_ends_intersect):
+        """Test get_channel_structure_from_line with a line that intersects the channel at both ends."""
+        snapping_distance = 5.0
+        result = LinearIntegrator.get_channel_structure_from_line(
+            line_structure_feature_both_ends_intersect, channel_feature, snapping_distance
+        )
+
+        # The method should return None if both ends of the line intersect the channel
+        assert result is None
+
+    def test_get_channel_structure_from_point(self, channel_feature, point_structure_feature):
+        """Test get_channel_structure_from_point with a point near the channel."""
+        snapping_distance = 5.0
+        length_source_field = "length"
+        length_fallback_value = 5.0
+
+        result = LinearIntegrator.get_channel_structure_from_point(
+            point_structure_feature, channel_feature, snapping_distance,
+            length_source_field, length_fallback_value
+        )
+
+        # Check that the result is not None
+        assert result is not None
+
+        # Check that the result has the expected attributes
+        assert result.channel_id == 1
+        assert result.feature["id"] == 4
+        assert result.m == 50.0  # The point is at x=50, so the intersection is at 50% of the channel
+        assert result.length == 10.0  # The length from the feature attribute
+
+    def test_get_channel_structure_from_point_with_fallback(self, channel_feature, point_structure_feature):
+        """Test get_channel_structure_from_point with a fallback length value."""
+        snapping_distance = 5.0
+        length_source_field = None  # No source field, use fallback
+        length_fallback_value = 5.0
+
+        result = LinearIntegrator.get_channel_structure_from_point(
+            point_structure_feature, channel_feature, snapping_distance,
+            length_source_field, length_fallback_value
+        )
+
+        # Check that the result is not None
+        assert result is not None
+
+        # Check that the result has the expected attributes
+        assert result.channel_id == 1
+        assert result.feature["id"] == 4
+        assert result.m == 50.0
+        assert result.length == 5.0  # The fallback length value
+
+    def test_get_channel_structure_from_point_too_far(self, channel_feature, point_structure_feature_far):
+        """Test get_channel_structure_from_point with a point too far from the channel."""
+        snapping_distance = 5.0
+        length_source_field = "length"
+        length_fallback_value = 5.0
+
+        result = LinearIntegrator.get_channel_structure_from_point(
+            point_structure_feature_far, channel_feature, snapping_distance,
+            length_source_field, length_fallback_value
+        )
+
+        # The method should return None if the point is too far from the channel
+        assert result is None

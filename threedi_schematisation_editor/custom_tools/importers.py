@@ -70,8 +70,6 @@ class Importer(ABC):
             target_model_cls: self.import_settings.get("fields", {}),
             dm.ConnectionNode: self.import_settings.get("connection_node_fields", {}),
         }
-        # self.node_manager = FeatureManager(get_next_feature_id(self.node_layer))
-        # self.target_manager = FeatureManager(get_next_feature_id(self.target_layer))
 
     @staticmethod
     def process_commit_errors(layer):

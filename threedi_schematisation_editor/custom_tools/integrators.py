@@ -15,7 +15,7 @@ from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 class LinearIntegrator:
     """ Integrate linear structures onto a channel or similar """
     # shorthand with channel_structure properties
-    channel_structure_cls = namedtuple("channel_structure", ["channel_id", "feature", "m", "length"])
+    integrate_structure_data = namedtuple("integrate_structure_data", ["channel_id", "feature", "m", "length"])
 
     def __init__(self, integrate_model_cls, integrate_layer,
                  target_model_cls, target_layer, target_manager,
@@ -87,13 +87,48 @@ class LinearIntegrator:
             node_point = node_geom.asPoint()
             self.node_by_location[node_point] = node_feat["id"]
 
+    @staticmethod
+    def get_channel_structure_from_line(structure_feat, channel_feat, snapping_distance):
+        channel_geometry = channel_feat.geometry()
+        structure_geom = structure_feat.geometry()
+        poly_line = structure_geom.asPolyline()
+        start_point = poly_line[0]
+        end_point = poly_line[-1]
+        start_geom, end_geom = QgsGeometry.fromPointXY(start_point), QgsGeometry.fromPointXY(end_point)
+        start_buffer = start_geom.buffer(snapping_distance, DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
+        end_buffer = end_geom.buffer(snapping_distance, DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
+        if all([start_buffer.intersects(channel_geometry), end_buffer.intersects(channel_geometry)]):
+            return
+        intersection_m = channel_geometry.lineLocatePoint(structure_geom.centroid())
+        structure_length = structure_geom.length()
+        return LinearIntegrator.integrate_structure_data(
+            channel_feat["id"],
+            structure_feat,
+            intersection_m,
+            structure_length)
+
+    @staticmethod
+    def get_channel_structure_from_point(structure_feat, channel_feat, snapping_distance,
+                                         length_source_field, length_fallback_value):
+        structure_geom = structure_feat.geometry()
+        channel_geometry = channel_feat.geometry()
+        structure_buffer = structure_geom.buffer(snapping_distance, DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
+        if not structure_buffer.intersects(channel_geometry):
+            return
+        intersection_m = channel_geometry.lineLocatePoint(structure_geom)
+        structure_length = structure_feat[length_source_field] if length_source_field else length_fallback_value
+        return LinearIntegrator.integrate_structure_data(
+            channel_feat["id"],
+            structure_feat,
+            intersection_m,
+            structure_length)
+
     def get_channel_structures_data(self, channel_feat, selected_ids=None):
         """Extract and calculate channel structures data."""
         channel_structures = []
         processed_structure_ids = set()
         if selected_ids is None:
             selected_ids = set()
-        channel_id = channel_feat["id"]
         channel_geometry = channel_feat.geometry()
         structure_features_map, structure_index = self.spatial_indexes_map['source']
         structure_fids = structure_index.intersects(channel_geometry.boundingBox())
@@ -103,38 +138,21 @@ class LinearIntegrator:
             if selected_ids and structure_fid not in selected_ids:
                 continue
             structure_feat = structure_features_map[structure_fid]
-            structure_geom = structure_feat.geometry()
-            structure_geom_type = structure_geom.type()
-            if structure_geom_type == QgsWkbTypes.GeometryType.LineGeometry:
-                poly_line = structure_geom.asPolyline()
-                start_point = poly_line[0]
-                end_point = poly_line[-1]
-                start_geom, end_geom = QgsGeometry.fromPointXY(start_point), QgsGeometry.fromPointXY(end_point)
-                start_buffer = start_geom.buffer(
-                    self.conversion_settings.snapping_distance, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+            if structure_feat.geometry().type() == QgsWkbTypes.GeometryType.LineGeometry:
+                channel_structure = LinearIntegrator.get_channel_structure_from_line(
+                    structure_feat,
+                    channel_feat,
+                    self.conversion_settings.snapping_distance
                 )
-                end_buffer = end_geom.buffer(
-                    self.conversion_settings.snapping_distance, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
-                )
-                intersection_m = channel_geometry.lineLocatePoint(structure_geom.centroid())
-                structure_length = structure_geom.length()
-                if not all([start_buffer.intersects(channel_geometry), end_buffer.intersects(channel_geometry)]):
-                    continue
-            elif structure_geom_type == QgsWkbTypes.GeometryType.PointGeometry:
-                structure_buffer = structure_geom.buffer(
-                    self.conversion_settings.snapping_distance, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
-                )
-                if not structure_buffer.intersects(channel_geometry):
-                    continue
-                intersection_m = channel_geometry.lineLocatePoint(structure_geom)
-                structure_length = (
-                    structure_feat[self.conversion_settings.length_source_field]
-                    if self.conversion_settings.length_source_field
-                    else self.conversion_settings.length_fallback_value
-                )
+            elif structure_feat.geometry().type() == QgsWkbTypes.GeometryType.PointGeometry:
+                channel_structure = LinearIntegrator.get_channel_structure_from_point(
+                    structure_feat,
+                    channel_feat,
+                    self.conversion_settings.snapping_distance,
+                    self.conversion_settings.length_source_field,
+                    self.conversion_settings.length_fallback_value)
             else:
                 continue
-            channel_structure = self.channel_structure_cls(channel_id, structure_feat, intersection_m, structure_length)
             channel_structures.append(channel_structure)
             processed_structure_ids.add(structure_fid)
         channel_structures.sort(key=attrgetter("m"))
@@ -326,9 +344,7 @@ class LinearIntegrator:
         features_to_add = defaultdict(list)
         channels_replaced = []
         for channel_feature in self.integrate_layer.getFeatures():
-            channel_structures, processed_structures_fids = self.get_channel_structures_data(
-                channel_feature, selected_ids
-            )
+            channel_structures, processed_structures_fids = self.get_channel_structures_data(channel_feature, selected_ids)
             ch_id = channel_feature["id"]
             source_channel_xs_locations = [xs["id"] for xs in get_features_by_expression(self.cross_section_layer, f'"channel_id" = {ch_id}')]
             if channel_structures:
