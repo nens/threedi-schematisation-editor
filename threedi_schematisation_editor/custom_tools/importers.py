@@ -93,22 +93,23 @@ class Importer(ABC):
 
     def import_features(self, context=None, selected_ids=None):
         """Method responsible for the importing structures from the external feature source."""
-        if selected_ids is None:
-            selected_ids = []
         self.processor.transformation = self.get_transformation(context)
         self.processor.locator = self.get_locator(context=context)
         # Integrate features using the integrator (if any)
         # items that are integrated are skipped in further processing
         if self.integrator:
-            input_feature_ids = [feat.id() for feat in self.external_source.getFeatures() if
-                                 feat.id() not in selected_ids]
-            new_features, integrated_ids = self.integrator.integrate_features(input_feature_ids, selected_ids)
-            selected_ids += integrated_ids
+            input_feature_ids = [feat.id() for feat in self.external_source.getFeatures()]
+            if selected_ids:
+                input_feature_ids = [id for id in input_feature_ids if id in selected_ids]
+            new_features, integrated_ids = self.integrator.integrate_features(input_feature_ids)
         else:
             new_features = defaultdict(list)
+            integrated_ids = []
         # Process remaining features that are not integrated
         for external_src_feat in self.external_source.getFeatures():
-            if external_src_feat.id() in selected_ids:
+            if selected_ids and external_src_feat.id() not in selected_ids:
+                continue
+            if external_src_feat.id() in integrated_ids:
                 continue
             processed_features = self.processor.process_feature(external_src_feat)
             for name, features in processed_features.items():

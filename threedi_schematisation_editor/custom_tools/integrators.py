@@ -308,6 +308,7 @@ class LinearIntegrator:
         next_channel_id = get_next_feature_id(self.integrate_layer)
         for i, channel_structure in enumerate(sorted(channel_structures, key=lambda x: x.m)):
             new_nodes = []
+
             src_structure_feat = channel_structure.feature
             structure_feat = QgsFeature(structure_fields)
             # Update with values from the widgets.
@@ -351,13 +352,13 @@ class LinearIntegrator:
             added_features[channel_layer_name].append(last_substring_feat)
         return added_features
 
-    def integrate_features(self, input_feature_ids, selected_ids):
+    def integrate_features(self, input_feature_ids):
         """Method responsible for the importing/integrating structures from the external feature source."""
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
         channels_replaced = []
         for channel_feature in self.integrate_layer.getFeatures():
-            channel_structures, processed_structures_fids = self.get_channel_structures_data(channel_feature, selected_ids)
+            channel_structures, processed_structures_fids = self.get_channel_structures_data(channel_feature, input_feature_ids)
             ch_id = channel_feature["id"]
             source_channel_xs_locations = [xs["id"] for xs in get_features_by_expression(self.cross_section_layer, f'"channel_id" = {ch_id}')]
             if channel_structures:
