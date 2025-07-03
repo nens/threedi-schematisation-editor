@@ -47,6 +47,13 @@ def test_feature_manager_increment_id(next_id, node_geom, node_fields):
     assert manager.next_id == next_id + 1
 
 
+def test_feature_manager_not_set_id(node_geom, node_fields):
+    manager = FeatureManager(next_id=1)
+    node_feat = manager.create_new(node_geom, node_fields, set_id=False)
+    assert node_feat["id"] is None
+    assert manager.next_id == 1
+
+
 def test_feature_manager_create_new(node_geom, node_fields):
     manager = FeatureManager()
     node_feat = manager.create_new(node_geom, node_fields)

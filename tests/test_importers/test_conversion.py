@@ -13,6 +13,7 @@ from qgis.analysis import QgsNativeAlgorithms
 import processing
 from processing.core.Processing import Processing
 from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
+from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 
 
 TEMP_DIR = Path(tempfile.gettempdir())
@@ -167,3 +168,15 @@ class TestConversionWeir:
         task = self.get_task('integrate_weirs_nosnap')
         run_processing_operation('threedi_import_weirs', task)
         compare_to_ref(ref_data, 'test_integrate_weirs_nosnap', task['TARGET_GPKG'])
+
+def test_integrate_weir_too_long(qgis_application):
+    schematisation = get_schematisation_copy('schematisation_channel.gpkg', 'test_weirs_too_long.gpkg')
+    task = {
+        'SOURCE_LAYER': get_source_layer_path('weirs_too_long.gpkg'),
+        'IMPORT_CONFIG': get_import_config_path('integrate_weirs_nosnap_too_long.json'),
+        'TARGET_GPKG': schematisation
+    }
+    with pytest.warns(StructuresIntegratorWarning):
+        run_processing_operation('threedi_import_weirs', task)
+    assert len(read_layer(task['TARGET_GPKG'], 'weir')) == 0
+

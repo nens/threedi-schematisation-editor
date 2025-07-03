@@ -7,8 +7,6 @@ from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.custom_tools.utils import update_attributes, FeatureManager, \
     DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
-from threedi_schematisation_editor.expressions import cross_section_label, cross_section_max_height, \
-    cross_section_max_width
 from threedi_schematisation_editor.utils import gpkg_layer, get_next_feature_id, spatial_index, \
     get_features_by_expression
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
@@ -211,8 +209,11 @@ class LinearIntegrator:
             closest_cross_section_copy = QgsFeature(distance_map[0][0])
             return closest_cross_section_copy
 
-    def update_channel_cross_section_references(self, new_channels, source_channel_cross_section_locations):
+    def update_channel_cross_section_references(self, new_channels, original_channel_id):
         """Update channel cross-section references."""
+        source_channel_cross_section_locations = [xs["id"] for xs in
+                                       get_features_by_expression(self.cross_section_layer,
+                                                                  f'"channel_id" = {original_channel_id}')]
         cross_section_location_features_map, cross_section_location_index = self.spatial_indexes_map[self.cross_section_layer.name()]
         channel_id_idx = self.layer_fields_mapping[self.cross_section_layer.name()].lookupField("channel_id")
         cross_section_location_copies = []
@@ -233,12 +234,12 @@ class LinearIntegrator:
                 if closest_cross_section_copy:
                     self.cross_section_manager.add_feature(closest_cross_section_copy,
                                                            geom=channel_geom.interpolate(channel_geom.length() * 0.5))
+
                     closest_cross_section_copy["channel_id"] = channel_feat["id"]
                     self.cross_section_layer.addFeatures([closest_cross_section_copy])
                     cross_section_location_copies.append(closest_cross_section_copy)
-        # TODO move modifying layers out of here!
-        if cross_section_location_copies:
-            self.cross_section_layer.addFeatures(cross_section_location_copies)
+        return cross_section_location_copies
+
 
     @staticmethod
     def is_hanging_cross_section(cross_section_feat, channel_feats, channel_fids):
@@ -282,62 +283,47 @@ class LinearIntegrator:
 
     def integrate_structure_features(self, channel_feat, channel_structures):
         """Integrate structures with a channel network."""
-        channel_layer_name = self.integrate_layer.name()
-        channel_fields = self.layer_fields_mapping[channel_layer_name]
-        channel_field_names = self.layer_field_names_mapping[channel_layer_name]
-        channel_attributes = {field_name: channel_feat[field_name] for field_name in channel_field_names}
-        channel_geom = channel_feat.geometry()
-        first_node_id = channel_attributes['connection_node_id_start']
-        first_node_feat = next(get_features_by_expression(self.node_layer, f'"id" = {first_node_id}'))
-        node_field_names = self.layer_field_names_mapping[self.node_layer.name()]
-        node_attributes = {field_name: first_node_feat[field_name] for field_name in node_field_names}
-        channel_curve = channel_geom.constGet()
-        previous_structure_end = 0
-        simplify_structure_geometry = self.target_model_cls != dm.Culvert
-        structure_fields = self.layer_fields_mapping[self.target_layer.name()]
-        structure_field_names = self.layer_field_names_mapping[self.target_layer.name()]
-        total_length = sum(channel_structure.length for channel_structure in channel_structures)
         added_features = defaultdict(list)
+        channel_geom = channel_feat.geometry()
+        total_length = sum(channel_structure.length for channel_structure in channel_structures)
         if channel_geom.length() < total_length:
             id_str = ', '.join(str(channel_structure.feature.id()) for channel_structure in channel_structures)
             message = (f'Cannot integrate {self.target_model_cls.__tablename__}s with total length {total_length:.2f} '
                        f'into channel {channel_feat["id"]} with length {channel_geom.length():.2f}. '
                        f'Primary keys {self.target_model_cls.__tablename__}s: {id_str}')
             warnings.warn(f"{message}", StructuresIntegratorWarning)
-            return
-        next_channel_id = get_next_feature_id(self.integrate_layer)
+            return added_features
+        channel_fields = self.layer_fields_mapping[self.integrate_layer.name()]
+        channel_attributes = {field_name: channel_feat[field_name] for field_name in self.layer_field_names_mapping[self.integrate_layer.name()]}
+        first_node_feat = next(get_features_by_expression(self.node_layer,
+                                                          f'"id" = {channel_attributes["connection_node_id_start"]}'))
+        node_attributes = {field_name: first_node_feat[field_name] for field_name in self.layer_field_names_mapping[self.node_layer.name()]}
+        simplify_structure_geometry = self.target_model_cls != dm.Culvert
+        previous_structure_end = 0
         for i, channel_structure in enumerate(sorted(channel_structures, key=lambda x: x.m)):
             new_nodes = []
-
-            src_structure_feat = channel_structure.feature
-            structure_feat = QgsFeature(structure_fields)
-            # Update with values from the widgets.
-            update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, src_structure_feat, structure_feat)
-            structure_attributes = {field_name: structure_feat[field_name] for field_name in structure_field_names}
-            structure_length = channel_structure.length
             channel_structure_m = channel_structure.m
-            half_length = structure_length * 0.5
+            half_length = channel_structure.length * 0.5
             # when structures overlap, move them to the end of the previous structure
             if channel_structure_m - half_length < previous_structure_end:
                 channel_structure_m = previous_structure_end + half_length
             start_distance = channel_structure_m - half_length
             end_distance = channel_structure_m + half_length
             # Setup structure feature
-            substring_geom = get_substring_geometry(channel_curve, start_distance, end_distance, simplify_structure_geometry)
-            substring_feat = self.target_manager.create_new(substring_geom, structure_fields, structure_attributes)
-            added_features[self.node_layer.name()] += self.update_feature_endpoints(substring_feat, **node_attributes)
+            substring_geom = get_substring_geometry(channel_geom.constGet(), start_distance, end_distance, simplify_structure_geometry)
+            substring_feat = self.target_manager.create_new(substring_geom,
+                                                            self.layer_fields_mapping[self.target_layer.name()])
+            update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, channel_structure.feature, substring_feat)
             added_features[self.target_layer.name()].append(substring_feat)
+            added_features[self.node_layer.name()] += self.update_feature_endpoints(substring_feat, **node_attributes)
             # Setup channel leftover feature
-            # todo: is this check necessary?
             if start_distance > previous_structure_end:
                 before_substring_feat = self.substring_feature(
-                    channel_curve, previous_structure_end, start_distance, channel_fields, False, **channel_attributes
+                    channel_geom.constGet(), previous_structure_end, start_distance, channel_fields, False, **channel_attributes
                 )
+                self.integrate_manager.add_feature(before_substring_feat, set_id=(i>0))
+                added_features[self.integrate_layer.name()].append(before_substring_feat)
                 added_features[self.node_layer.name()] += self.update_feature_endpoints(before_substring_feat, **node_attributes)
-                if i > 0:
-                    before_substring_feat["id"] = next_channel_id
-                    next_channel_id += 1
-                added_features[channel_layer_name].append(before_substring_feat)
             previous_structure_end = end_distance
             if new_nodes:
                 update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, src_structure_feat, *new_nodes)
@@ -345,11 +331,11 @@ class LinearIntegrator:
         last_substring_end = channel_geom.length()
         if last_substring_end - previous_structure_end > 0:
             last_substring_feat = self.substring_feature(
-                channel_curve, previous_structure_end, last_substring_end, channel_fields, False, **channel_attributes
+                channel_geom.constGet(), previous_structure_end, last_substring_end, channel_fields, False, **channel_attributes
             )
+            self.integrate_manager.add_feature(last_substring_feat)
             added_features[self.node_layer.name()] += self.update_feature_endpoints(last_substring_feat, **node_attributes)
-            last_substring_feat["id"] = next_channel_id
-            added_features[channel_layer_name].append(last_substring_feat)
+            added_features[self.integrate_layer.name()].append(last_substring_feat)
         return added_features
 
     def integrate_features(self, input_feature_ids):
@@ -359,19 +345,18 @@ class LinearIntegrator:
         channels_replaced = []
         for channel_feature in self.integrate_layer.getFeatures():
             channel_structures, processed_structures_fids = self.get_channel_structures_data(channel_feature, input_feature_ids)
-            ch_id = channel_feature["id"]
-            source_channel_xs_locations = [xs["id"] for xs in get_features_by_expression(self.cross_section_layer, f'"channel_id" = {ch_id}')]
-            if channel_structures:
-                added_features = self.integrate_structure_features(channel_feature, channel_structures)
-                self.update_channel_cross_section_references(added_features[self.integrate_layer.name()], source_channel_xs_locations)
-                for key in added_features:
-                    features_to_add[key] += added_features[key]
-                all_processed_structure_ids |= processed_structures_fids
-                channels_replaced.append(ch_id)
+            if not channel_structures:
+                continue
+            added_features = self.integrate_structure_features(channel_feature, channel_structures)
+            added_features[self.cross_section_layer.name()] = self.update_channel_cross_section_references(
+                added_features[self.integrate_layer.name()], channel_feature["id"])
+            for key in added_features:
+                features_to_add[key] += added_features[key]
+            all_processed_structure_ids |= processed_structures_fids
+            channels_replaced.append(channel_feature["id"])
         self.integrate_layer.startEditing()
         for ch_id in channels_replaced:
             self.integrate_layer.deleteFeature(ch_id)
-        # TODO: check handling of cross section stuff
         self.cross_section_layer.startEditing()
         visited_channel_ids = [channel["id"] for channel in features_to_add[self.integrate_layer.name()]]
         self.cross_section_layer.deleteFeatures(self.get_hanging_cross_sections(visited_channel_ids))

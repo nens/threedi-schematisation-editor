@@ -53,27 +53,20 @@ class FeatureManager:
     def __init__(self, next_id=1):
         self.next_id = next_id
 
-    def create_new(self, geom, fields, attributes=None):
+    def create_new(self, geom, fields, attributes=None, set_id=True):
         new_feat = QgsFeature(fields)
-        self.add_feature(new_feat, geom, fields, attributes)
-        # new_feat = QgsFeature(fields)
-        # new_feat.setGeometry(geom)
-        # if attributes:
-        #     for field_name, field_value in attributes.items():
-        #         new_feat[field_name] = field_value
-        # new_feat["id"] = self.next_id
-        # self.next_id += 1
+        self.add_feature(new_feat, geom, attributes, set_id)
         return new_feat
 
-    def add_feature(self, new_feat, geom=None, fields=None, attributes=None):
+    def add_feature(self, new_feat, geom=None, attributes=None, set_id=True):
         if geom:
             new_feat.setGeometry(geom)
         if attributes:
             for field_name, field_value in attributes.items():
                 new_feat[field_name] = field_value
-        new_feat["id"] = self.next_id
-        self.next_id += 1
-        # return new_feat
+        if set_id:
+            new_feat["id"] = self.next_id
+            self.next_id += 1
 
 class ConversionSettings:
     def __init__(self, conversion_config):
