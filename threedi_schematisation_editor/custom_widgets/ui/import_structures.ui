@@ -15,7 +15,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
-    <widget class="QLabel" name="structure_layer_label">
+    <widget class="QLabel" name="source_layer_label">
      <property name="font">
       <font>
        <pointsize>10</pointsize>
@@ -161,7 +161,7 @@
     </layout>
    </item>
    <item row="0" column="1">
-    <widget class="QgsMapLayerComboBox" name="structure_layer_cbo">
+    <widget class="QgsMapLayerComboBox" name="source_layer_cbo">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -383,7 +383,7 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>structure_layer_cbo</tabstop>
+  <tabstop>source_layer_cbo</tabstop>
   <tabstop>edit_channels_cb</tabstop>
   <tabstop>length_source_field_cbo</tabstop>
   <tabstop>length_fallback_value_dsb</tabstop>
