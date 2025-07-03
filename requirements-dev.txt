@@ -1,0 +1,10 @@
+# Dependencies for development and tests.
+#
+# So... this is for *development* dependencies, not for
+# installing our application's dependencies like numpy or Shapely!
+#
+pytest < 8.0
+pytest-cov
+pytest-flake8
+pytest-qt
+
