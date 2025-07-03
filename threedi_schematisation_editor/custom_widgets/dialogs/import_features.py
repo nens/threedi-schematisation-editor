@@ -7,7 +7,10 @@ from qgis.core import QgsMapLayerProxyModel, QgsSettings
 from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
 from qgis.PyQt.QtWidgets import QComboBox, QLineEdit
-
+from qgis.core import (
+    Qgis,
+    QgsMessageLog,
+)
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import core_field_type, is_optional, optional_type, get_filepath
 from threedi_schematisation_editor.custom_tools.import_config import ColumnImportIndex, create_widgets, CONFIG_HEADER, \
@@ -18,49 +21,41 @@ from threedi_schematisation_editor.custom_widgets import if_basecls, if_uicls, i
 from threedi_schematisation_editor.custom_widgets.utils import CatchThreediWarnings, ImportFieldMappingUtils
 
 
+class ImportDialog:
 
-
-
-class ImportFeaturesDialog(if_basecls, if_uicls):
-
-    FEATURE_IMPORTERS = {
-        dm.ConnectionNode: ConnectionNodesImporter,
-    }
-
-    def __init__(self, import_model_cls, model_gpkg, layer_manager, uc, parent=None):
-        super().__init__(parent)
+    def __init__(self, basecls, uicls, import_model_cls, model_gpkg, layer_manager, uc, parent=None):
+        basecls.__init__(self)
+        uicls.__init__(self, parent)
         self.setupUi(self)
         self.import_model_cls = import_model_cls
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self.uc = uc
-        self.field_map_model = QStandardItemModel()
-        self.field_map_tv.setModel(self.field_map_model)
-        if self.import_model_cls.__geometrytype__ == dm.GeometryType.Point:
-            layer_filter = QgsMapLayerProxyModel.PointLayer
-        elif self.import_model_cls.__geometrytype__ == dm.GeometryType.Linestring:
-            layer_filter = QgsMapLayerProxyModel.LineLayer
-        elif self.import_model_cls.__geometrytype__ == dm.GeometryType.Polygon:
-            layer_filter = QgsMapLayerProxyModel.PolygonLayer
-        else:
-            layer_filter = None
-        if layer_filter is not None:
-            self.source_layer_cbo.setFilters(layer_filter)
-        self.source_layer_cbo.setCurrentIndex(0)
+        self.set_source_layer_filter()
+        self.setup_models()
         self.populate_conversion_settings_widgets()
+        self.source_layer_cbo.setCurrentIndex(0)
         self.source_layer_cbo.layerChanged.connect(self.on_layer_changed)
         self.save_pb.clicked.connect(self.save_import_settings)
         self.load_pb.clicked.connect(self.load_import_settings)
-        self.run_pb.clicked.connect(self.run_import_features)
+        self.run_pb.clicked.connect(self.run_import)
         self.close_pb.clicked.connect(self.close)
         self.setup_labels()
 
+    def set_source_layer_filter(self):
+        raise NotImplementedError
+
+    def setup_models(self):
+        raise NotImplementedError
+
+    def populate_converstion_settings_widgets(self):
+        raise NotImplementedError
+
     def setup_labels(self):
-        import_model_name = self.import_model_cls.__layername__
-        import_model_name_lower = import_model_name.lower()
-        self.setWindowTitle(self.windowTitle().format(import_model_name_lower))
-        self.source_layer_label.setText(self.source_layer_label.text().format(import_model_name_lower))
-        self.tab_widget.setTabText(0, self.tab_widget.tabText(0).format(import_model_name))
+        model_name = self.import_model_cls.__layername__
+        self.setWindowTitle(self.windowTitle().format(model_name.lower()))
+        self.source_layer_label.setText(self.source_layer_label.text().format(model_name.lower()))
+        self.tab_widget.setTabText(0, self.tab_widget.tabText(0).format(model_name))
 
     @staticmethod
     def is_obsolete_field(model_cls, field_name):
@@ -89,6 +84,43 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
         for widget in self.layer_dependent_widgets:
             widget.setDisabled(True)
 
+    def save_import_settings(self):
+        extension_filter = "JSON (*.json)"
+        template_filepath = get_filepath(
+            self, extension_filter, default_settings_entry=ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY
+        )
+        if not template_filepath:
+            return
+        settings = QgsSettings()
+        settings.setValue(ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
+        try:
+            import_settings = self.collect_settings()
+            with open(template_filepath, "w") as template_file:
+                json.dump(import_settings, template_file, indent=2)
+            self.uc.show_info(f"Settings saved to the template.", self)
+        except Exception as e:
+            self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
+
+    def get_column_widgets_for_model(self, column_idx, data_model):
+        model_widgets = []
+        if data_model not in self.data_models_tree_views:
+            return model_widgets
+        tree_view, tree_view_model = self.data_models_tree_views[data_model]
+        row_idx = 0
+        for field_name in data_model.__annotations__.keys():
+            if self.is_obsolete_field(data_model, field_name):
+                continue
+            item = tree_view_model.item(row_idx, column_idx)
+            index = item.index()
+            widget = tree_view.indexWidget(index)
+            widget.data_model_field_name = field_name
+            model_widgets.append(widget)
+            row_idx += 1
+        return model_widgets
+
+    def get_all_column_widgets(self, col_idx):
+        raise NotImplementedError
+
     def on_layer_changed(self, layer):
         layer_field_names = [""]
         if layer:
@@ -96,41 +128,69 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
             self.activate_layer_dependent_widgets()
         else:
             self.deactivate_layer_dependent_widgets()
-        source_attribute_widgets = self.get_column_widgets(ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX)
+        source_attribute_widgets = self.get_all_column_widgets(
+            ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX)
         for combobox in source_attribute_widgets:
             combobox.clear()
             combobox.addItems(layer_field_names)
             combobox.setCurrentText(combobox.data_model_field_name)
-        expression_widgets = self.get_column_widgets(ColumnImportIndex.EXPRESSION_COLUMN_IDX)
+        expression_widgets = self.get_all_column_widgets(ColumnImportIndex.EXPRESSION_COLUMN_IDX)
         for expression_widget in expression_widgets:
             expression_widget.setLayer(layer)
 
-    def get_column_widgets(self, column_idx):
-        model_widgets = []
-        row_idx = 0
-        for field_name in self.import_model_cls.__annotations__.keys():
-            if self.is_obsolete_field(self.import_model_cls, field_name):
-                continue
-            item = self.field_map_model.item(row_idx, column_idx)
-            index = item.index()
-            widget = self.field_map_tv.indexWidget(index)
-            widget.data_model_field_name = field_name
-            model_widgets.append(widget)
-            row_idx += 1
-        return model_widgets
-
     def populate_conversion_settings_widgets(self):
-        widgets_to_add = create_widgets(self.import_model_cls)
-        model_widgets = widgets_to_add[self.import_model_cls]
-        self.field_map_model.clear()
-        self.field_map_model.setHorizontalHeaderLabels(CONFIG_HEADER)
-        for (row_idx, column_idx), widget in model_widgets.items():
-            self.field_map_model.setItem(row_idx, column_idx, QStandardItem(""))
-            self.field_map_tv.setIndexWidget(self.field_map_model.index(row_idx, column_idx), widget)
-        for i in range(len(CONFIG_HEADER)):
-            self.field_map_tv.resizeColumnToContents(i)
+        widgets_to_add = create_widgets(*self.models)
+        for model_cls in self.models:
+            model_widgets = widgets_to_add[model_cls]
+            tree_view, tree_view_model = self.data_models_tree_views[model_cls]
+            tree_view_model.clear()
+            tree_view_model.setHorizontalHeaderLabels(CONFIG_HEADER)
+            for (row_idx, column_idx), widget in model_widgets.items():
+                tree_view_model.setItem(row_idx, column_idx, QStandardItem(""))
+                tree_view.setIndexWidget(tree_view_model.index(row_idx, column_idx), widget)
+            for i in range(len(CONFIG_HEADER)):
+                tree_view.resizeColumnToContents(i)
         self.connect_configuration_widgets()
         self.on_layer_changed(self.source_layer)
+
+
+class ImportFeaturesDialog(ImportDialog, if_basecls, if_uicls):
+
+    FEATURE_IMPORTERS = {
+        dm.ConnectionNode: ConnectionNodesImporter,
+    }
+
+    def __init__(self, import_model_cls, model_gpkg, layer_manager, uc, parent=None):
+        super().__init__(if_basecls, if_uicls, import_model_cls, model_gpkg, layer_manager, uc, parent)
+
+    def setup_models(self):
+        self.field_map_model = QStandardItemModel()
+        self.field_map_tv.setModel(self.field_map_model)
+        self.data_models_tree_views = {self.import_model_cls : (self.field_map_tv, self.field_map_model)}
+
+    def set_source_layer_filter(self):
+        if self.import_model_cls.__geometrytype__ == dm.GeometryType.Point:
+            layer_filter = QgsMapLayerProxyModel.PointLayer
+        elif self.import_model_cls.__geometrytype__ == dm.GeometryType.Linestring:
+            layer_filter = QgsMapLayerProxyModel.LineLayer
+        elif self.import_model_cls.__geometrytype__ == dm.GeometryType.Polygon:
+            layer_filter = QgsMapLayerProxyModel.PolygonLayer
+        else:
+            layer_filter = None
+        if layer_filter is not None:
+            self.source_layer_cbo.setFilters(layer_filter)
+
+    def get_column_widgets(self, column_idx):
+        return self.get_column_widgets_for_model(column_idx,
+                                               self.import_model_cls)
+
+    def get_all_column_widgets(self, column_idx):
+        return self.get_column_widgets_for_model(column_idx,
+                                                     self.import_model_cls)
+
+    @property
+    def models(self):
+        return [self.import_model_cls]
 
     def reset_settings_widget(self):
         tree_view = self.field_map_tv
@@ -233,23 +293,6 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
                 ImportFieldMappingUtils.update_widget_with_config(widget, key_name, field_type, field_config)
             row_idx += 1
 
-    def save_import_settings(self):
-        extension_filter = "JSON (*.json)"
-        template_filepath = get_filepath(
-            self, extension_filter, default_settings_entry=ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY
-        )
-        if not template_filepath:
-            return
-        settings = QgsSettings()
-        settings.setValue(ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
-        try:
-            import_settings = self.collect_settings()
-            with open(template_filepath, "w") as template_file:
-                json.dump(import_settings, template_file, indent=2)
-            self.uc.show_info(f"Settings saved to the template.", self)
-        except Exception as e:
-            self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
-
     def load_import_settings(self):
         extension_filter = "JSON (*.json)"
         template_filepath = get_filepath(
@@ -283,7 +326,7 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
                 missing_fields.append(field_name)
         return missing_fields
 
-    def run_import_features(self):
+    def run_import(self):
         missing_fields = self.missing_source_fields()
         if missing_fields:
             missing_fields_lines = []
@@ -327,7 +370,7 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
         target_layer.triggerRepaint()
 
 
-class ImportStructuresDialog(is_basecls, is_uicls):
+class ImportStructuresDialog(ImportDialog, is_basecls, is_uicls):
     """Dialog for the importing structures tool."""
 
     STRUCTURE_IMPORTERS = {
@@ -339,49 +382,29 @@ class ImportStructuresDialog(is_basecls, is_uicls):
 
     LAST_CONFIG_DIR_ENTRY = "threedi/last_import_config_dir"
 
-    def __init__(self, structure_model_cls, model_gpkg, layer_manager, uc, parent=None):
-        super().__init__(parent)
-        self.setupUi(self)
-        self.structure_model_cls = structure_model_cls
-        self.model_gpkg = model_gpkg
-        self.layer_manager = layer_manager
-        self.uc = uc
+    def __init__(self, import_model_cls, model_gpkg, layer_manager, uc, parent=None):
+        super().__init__(is_basecls, is_uicls, import_model_cls, model_gpkg, layer_manager, uc, parent)
+        self.create_nodes_cb.stateChanged.connect(self.on_create_nodes_change)
+        if not self.enable_structures_integration:
+            for widget in self.structures_integration_widgets:
+                widget.hide()
+
+    def setup_models(self):
         self.structure_model = QStandardItemModel()
         self.structure_tv.setModel(self.structure_model)
         self.connection_node_model = QStandardItemModel()
         self.connection_node_tv.setModel(self.connection_node_model)
         self.data_models_tree_views = {
-            self.structure_model_cls: (self.structure_tv, self.structure_model),
+            self.import_model_cls: (self.structure_tv, self.structure_model),
             dm.ConnectionNode: (self.connection_node_tv, self.connection_node_model),
         }
-        self.structure_layer_cbo.setFilters(
+
+    def set_source_layer_filter(self):
+        self.source_layer_cbo.setFilters(
             QgsMapLayerProxyModel.PointLayer
-            if self.structure_model_cls.__geometrytype__ == dm.GeometryType.Point
+            if self.import_model_cls.__geometrytype__ == dm.GeometryType.Point
             else QgsMapLayerProxyModel.LineLayer | QgsMapLayerProxyModel.PointLayer
         )
-        self.structure_layer_cbo.setCurrentIndex(0)
-        self.populate_conversion_settings_widgets()
-        self.structure_layer_cbo.layerChanged.connect(self.on_layer_changed)
-        self.create_nodes_cb.stateChanged.connect(self.on_create_nodes_change)
-        self.save_pb.clicked.connect(self.save_import_settings)
-        self.load_pb.clicked.connect(self.load_import_settings)
-        self.run_pb.clicked.connect(self.run_import_structures)
-        self.close_pb.clicked.connect(self.close)
-        self.setup_labels()
-        if not self.enable_structures_integration:
-            for widget in self.structures_integration_widgets:
-                widget.hide()
-
-    def setup_labels(self):
-        structure_name = self.structure_model_cls.__layername__
-        structure_name_lower = structure_name.lower()
-        self.setWindowTitle(self.windowTitle().format(structure_name_lower))
-        self.structure_layer_label.setText(self.structure_layer_label.text().format(structure_name_lower))
-        self.tab_widget.setTabText(0, self.tab_widget.tabText(0).format(structure_name))
-
-    @staticmethod
-    def is_obsolete_field(model_cls, field_name):
-        return field_name in model_cls.obsolete_fields()
 
     @cached_property
     def enable_structures_integration(self):
@@ -403,89 +426,31 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         ]
 
     @property
-    def source_layer(self):
-        return self.structure_layer_cbo.currentLayer()
-
-    @property
     def layer_dependent_widgets(self):
-        widgets = [
-            self.tab_widget,
-            self.save_pb,
-            self.load_pb,
-            self.run_pb,
-            self.selected_only_cb,
-            self.create_nodes_cb,
-            self.snap_gb,
-        ]
+        widgets = super().layer_dependent_widgets + [self.create_nodes_cb, self.snap_gb,]
         if self.enable_structures_integration:
             widgets += self.structures_integration_widgets
         return widgets
-
-    def activate_layer_dependent_widgets(self):
-        for widget in self.layer_dependent_widgets:
-            widget.setEnabled(True)
-
-    def deactivate_layer_dependent_widgets(self):
-        for widget in self.layer_dependent_widgets:
-            widget.setDisabled(True)
 
     def on_create_nodes_change(self, is_checked):
         self.connection_node_tab.setEnabled(is_checked)
 
     def on_layer_changed(self, layer):
-        layer_field_names = [""]
-        if layer:
-            layer_field_names += [field.name() for field in layer.fields()]
-            self.activate_layer_dependent_widgets()
-            self.length_source_field_cbo.setLayer(layer)
-            self.azimuth_source_field_cbo.setLayer(layer)
-        else:
-            self.deactivate_layer_dependent_widgets()
-            self.length_source_field_cbo.setLayer(None)
-            self.azimuth_source_field_cbo.setLayer(None)
-        data_models = [self.structure_model_cls, dm.ConnectionNode]
-        source_attribute_widgets = self.get_column_widgets(
-            ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX, *data_models
-        )
-        for combobox in chain.from_iterable(source_attribute_widgets.values()):
-            combobox.clear()
-            combobox.addItems(layer_field_names)
-            combobox.setCurrentText(combobox.data_model_field_name)
-        expression_widgets = self.get_column_widgets(ColumnImportIndex.EXPRESSION_COLUMN_IDX, *data_models)
-        for expression_widget in chain.from_iterable(expression_widgets.values()):
-            expression_widget.setLayer(layer)
+        super().on_layer_changed(layer)
+        self.length_source_field_cbo.setLayer(None)
+        self.azimuth_source_field_cbo.setLayer(None)
 
-    def get_column_widgets(self, column_idx, *data_models):
-        column_widgets = {}
-        for model_cls in data_models:
-            model_widgets = []
-            tree_view, tree_view_model = self.data_models_tree_views[model_cls]
-            row_idx = 0
-            for field_name in model_cls.__annotations__.keys():
-                if self.is_obsolete_field(model_cls, field_name):
-                    continue
-                item = tree_view_model.item(row_idx, column_idx)
-                index = item.index()
-                widget = tree_view.indexWidget(index)
-                widget.data_model_field_name = field_name
-                model_widgets.append(widget)
-                row_idx += 1
-            column_widgets[model_cls] = model_widgets
-        return column_widgets
+    def get_column_widgets(self, column_idx, data_models=None, flatten=False):
+        if data_models is None:
+            data_models = [self.import_model_cls, dm.ConnectionNode]
+        return {self.get_column_widgets_for_model(column_idx, model_cls) for model_cls in data_models}
 
-    def populate_conversion_settings_widgets(self):
-        widgets_to_add = create_widgets(self.structure_model_cls, dm.ConnectionNode)
-        for model_cls, (tree_view, tree_view_model) in self.data_models_tree_views.items():
-            tree_view_model.clear()
-            tree_view_model.setHorizontalHeaderLabels(CONFIG_HEADER)
-            model_widgets = widgets_to_add[model_cls]
-            for (row_idx, column_idx), widget in model_widgets.items():
-                tree_view_model.setItem(row_idx, column_idx, QStandardItem(""))
-                tree_view.setIndexWidget(tree_view_model.index(row_idx, column_idx), widget)
-            for i in range(len(CONFIG_HEADER)):
-                tree_view.resizeColumnToContents(i)
-        self.connect_configuration_widgets()
-        self.on_layer_changed(self.source_layer)
+    def get_all_column_widgets(self, column_idx):
+        return self.get_column_widgets_for_model(column_idx, self.import_model_cls) + self.get_column_widgets_for_model(column_idx, dm.ConnectionNode)
+
+    @property
+    def models(self):
+        return [self.import_model_cls, dm.ConnectionNode]
 
     def reset_settings_widget(self):
         # Iterate over all settings widgets are stored in the data_models_tree_views
@@ -502,7 +467,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
                         widget.setExpression("")
 
     def connect_configuration_widgets(self):
-        data_models = [self.structure_model_cls, dm.ConnectionNode]
+        data_models = [self.import_model_cls, dm.ConnectionNode]
         for model_cls in data_models:
             tree_view, tree_view_model = self.data_models_tree_views[model_cls]
             row_idx = 0
@@ -542,7 +507,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
                 value_map_button.clicked.connect(
                     partial(
                         ImportFieldMappingUtils.on_value_map_clicked,
-                        self.structure_layer_cbo,
+                        self.source_layer_cbo,
                         source_attribute_combobox,
                         value_map_button,
                         self.uc,
@@ -553,7 +518,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
 
     def collect_settings(self):
         import_settings = {
-            "target_layer": self.structure_model_cls.__tablename__,
+            "target_layer": self.import_model_cls.__tablename__,
             "conversion_settings": {
                 "use_snapping": self.snap_gb.isChecked(),
                 "snapping_distance": self.snap_dsb.value(),
@@ -564,7 +529,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
                 "azimuth_fallback_value": self.azimuth_fallback_value_sb.value(),
                 "edit_channels": self.edit_channels_cb.isChecked(),
             },
-            "fields": self.collect_fields_settings(self.structure_model_cls),
+            "fields": self.collect_fields_settings(self.import_model_cls),
             "connection_node_fields": self.collect_fields_settings(dm.ConnectionNode),
         }
         return import_settings
@@ -606,23 +571,6 @@ class ImportStructuresDialog(is_basecls, is_uicls):
                 ImportFieldMappingUtils.update_widget_with_config(widget, key_name, field_type, field_config)
             row_idx += 1
 
-    def save_import_settings(self):
-        extension_filter = "JSON (*.json)"
-        template_filepath = get_filepath(
-            self, extension_filter, default_settings_entry=ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY
-        )
-        if not template_filepath:
-            return
-        settings = QgsSettings()
-        settings.setValue(ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(template_filepath))
-        try:
-            import_settings = self.collect_settings()
-            with open(template_filepath, "w") as template_file:
-                json.dump(import_settings, template_file, indent=2)
-            self.uc.show_info(f"Settings saved to the template.", self)
-        except Exception as e:
-            self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
-
     def load_import_settings(self):
         extension_filter = "JSON (*.json)"
         template_filepath = get_filepath(
@@ -645,7 +593,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
             self.length_fallback_value_dsb.setValue(conversion_settings.get("length_fallback_value", 1.0))
             self.azimuth_source_field_cbo.setField(conversion_settings.get("azimuth_source_field", ""))
             self.azimuth_fallback_value_sb.setValue(conversion_settings.get("azimuth_fallback_value", 90))
-            self.update_fields_settings(self.structure_model_cls, import_settings["fields"])
+            self.update_fields_settings(self.import_model_cls, import_settings["fields"])
             try:
                 connection_node_fields = import_settings["connection_node_fields"]
                 self.update_fields_settings(dm.ConnectionNode, connection_node_fields)
@@ -656,7 +604,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
 
     def missing_source_fields(self):
-        data_models = [self.structure_model_cls]
+        data_models = [self.import_model_cls]
         if self.create_nodes_cb.isChecked():
             data_models.append(dm.ConnectionNode)
         field_labels = self.get_column_widgets(ColumnImportIndex.FIELD_NAME_COLUMN_IDX, *data_models)
@@ -666,6 +614,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         )
         missing_fields = {}
         for model_cls in data_models:
+
             model_missing_fields = []
             model_field_labels, model_method_widgets, model_source_attribute_widgets = [
                 column_widgets[model_cls] for column_widgets in [field_labels, method_widgets, source_attribute_widgets]
@@ -684,7 +633,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
                 missing_fields[model_cls] = model_missing_fields
         return missing_fields
 
-    def run_import_structures(self):
+    def run_import(self):
         missing_fields = self.missing_source_fields()
         if missing_fields:
             missing_fields_lines = []
@@ -698,7 +647,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
             )
             return
         source_layer = self.source_layer
-        structures_handler = self.layer_manager.model_handlers[self.structure_model_cls]
+        structures_handler = self.layer_manager.model_handlers[self.import_model_cls]
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         channel_handler = self.layer_manager.model_handlers[dm.Channel]
         cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
@@ -711,7 +660,7 @@ class ImportStructuresDialog(is_basecls, is_uicls):
             selected_feat_ids = source_layer.selectedFeatureIds()
         import_settings = self.collect_settings()
         edit_channels = import_settings["conversion_settings"].get("edit_channels", False)
-        structure_importer_cls = self.STRUCTURE_IMPORTERS[self.structure_model_cls]
+        structure_importer_cls = self.STRUCTURE_IMPORTERS[self.import_model_cls]
         processed_handlers = [structures_handler, node_handler]
         processed_layers = {"structure_layer": structure_layer, "node_layer": node_layer}
         if edit_channels:
