@@ -5,10 +5,19 @@ from collections import namedtuple, defaultdict
 from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes
 
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.custom_tools.utils import update_attributes, FeatureManager, \
-    DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
-from threedi_schematisation_editor.utils import gpkg_layer, get_next_feature_id, spatial_index, \
-    get_features_by_expression
+from threedi_schematisation_editor.custom_tools.utils import (
+    update_attributes,
+    FeatureManager,
+    get_substring_geometry,
+    DEFAULT_INTERSECTION_BUFFER,
+    DEFAULT_INTERSECTION_BUFFER_SEGMENTS,
+)
+from threedi_schematisation_editor.utils import (
+    gpkg_layer,
+    get_next_feature_id,
+    spatial_index,
+    get_features_by_expression,
+)
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 
 
@@ -246,7 +255,8 @@ class LinearIntegrator:
     @staticmethod
     def is_hanging_cross_section(cross_section_feat, channel_feats, channel_fids):
         """Get cross-sections that are not aligned with any channel."""
-        xs_buffer = cross_section_feat.geometry().buffer(DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
+        xs_buffer = cross_section_feat.geometry().buffer(DEFAULT_INTERSECTION_BUFFER,
+                                                         DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
         # channel_fids = channels_spatial_index.intersects(xs_buffer.boundingBox())
         # only check channels that were visited
         # channel_fids = list(set(channel_fids).intersection(visited_channel_ids))
@@ -262,7 +272,8 @@ class LinearIntegrator:
         hanging_cross_section_ids = []
         channel_feats, channels_spatial_index = spatial_index(self.integrate_layer)
         for cross_section_feat in self.cross_section_layer.getFeatures():
-            buffer = cross_section_feat.geometry().buffer(DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
+            buffer = cross_section_feat.geometry().buffer(DEFAULT_INTERSECTION_BUFFER,
+                                                          DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
             channel_fids = channels_spatial_index.intersects(buffer.boundingBox())
             # only consider channels that were visited
             channel_fids = list(set(channel_fids).intersection(visited_channel_ids))
@@ -365,10 +376,3 @@ class LinearIntegrator:
         return features_to_add, list(all_processed_structure_ids)
 
 
-def get_substring_geometry(curve, start_distance, end_distance, simplify=False):
-    curve_substring = curve.curveSubstring(start_distance, end_distance)
-    substring_geometry = QgsGeometry(curve_substring)
-    if simplify:
-        substring_polyline = substring_geometry.asPolyline()
-        substring_geometry = QgsGeometry.fromPolylineXY([substring_polyline[0], substring_polyline[-1]])
-    return substring_geometry

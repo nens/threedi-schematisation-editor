@@ -4,7 +4,6 @@ from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes, QgsPointXY, QgsField
 from PyQt5.QtCore import QVariant
 
 from threedi_schematisation_editor.custom_tools.integrators import LinearIntegrator
-from threedi_schematisation_editor.custom_tools.utils import DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
 
 
 @pytest.fixture

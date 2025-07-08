@@ -5,12 +5,15 @@ from qgis.core import (
     QgsExpression,
     QgsExpressionContext,
     QgsFeature,
+    QgsGeometry,
 )
 
 from threedi_schematisation_editor.custom_tools.import_config import ColumnImportMethod
 from threedi_schematisation_editor.utils import convert_to_type, TypeConversionError
 from threedi_schematisation_editor.warnings import FeaturesImporterWarning
 
+DEFAULT_INTERSECTION_BUFFER = 1
+DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
 
 def update_attributes(fields_config, model_cls, source_feat, *new_features):
     expression_context = QgsExpressionContext()
@@ -84,5 +87,13 @@ class ConversionSettings:
         self.edit_channels = conversion_config.get("edit_channels", False)
 
 
-DEFAULT_INTERSECTION_BUFFER = 1
-DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
+def get_substring_geometry(curve, start_distance, end_distance, simplify=False):
+    curve_substring = curve.curveSubstring(start_distance, end_distance)
+    substring_geometry = QgsGeometry(curve_substring)
+    if simplify:
+        substring_polyline = substring_geometry.asPolyline()
+        substring_geometry = QgsGeometry.fromPolylineXY([substring_polyline[0], substring_polyline[-1]])
+    return substring_geometry
+
+
+
