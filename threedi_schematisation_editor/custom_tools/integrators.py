@@ -32,7 +32,6 @@ class LinearIntegrator:
                  fields_configurations, conversion_settings,
                  cross_section_layer, external_source,
                  target_gpkg):
-        # TODO: add tests
         self.external_source = external_source
         self.integrate_model_cls = integrate_model_cls
         self.target_model_cls = target_model_cls

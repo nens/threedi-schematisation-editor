@@ -369,6 +369,16 @@ class TestCrossSectionIntegration:
         assert result == [10]
 
 
+def test_substring_feature(channel_feature):
+    """Test that substring_feature correctly creates a new feature with the provided fields and attributes."""
+    curve = channel_feature.geometry().constGet()
+    fields = QgsFields()
+    fields.append(QgsField("id", QVariant.Int))
+    attributes = {"id": 42}
+    result = LinearIntegrator.substring_feature(curve, 25, 75, fields, False, **attributes)
+    assert result["id"] == 42
+
+
 class TestNodeManagement:
     """Tests for node management methods of the LinearIntegrator class."""
 
