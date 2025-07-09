@@ -73,7 +73,7 @@ class PointProcessor(StructureProcessor):
 class LineProcessor(StructureProcessor):
 
     @staticmethod
-    def new_geometry(src_feat, conversion_settings):
+    def new_geometry(src_feat, conversion_settings, target_model_cls):
         """Create new structure geometry based on the source structure feature."""
         src_geometry = QgsGeometry(src_feat.geometry())
         if src_geometry.isMultipart():
@@ -81,7 +81,7 @@ class LineProcessor(StructureProcessor):
         geometry_type = src_geometry.type()
         if geometry_type == QgsWkbTypes.GeometryType.LineGeometry:
             src_polyline = src_geometry.asPolyline()
-            dst_polyline = src_polyline if (self.target_model_cls == dm.Culvert or self.target_model_cls == dm.Pipe) else [src_polyline[0], src_polyline[-1]]
+            dst_polyline = src_polyline if (target_model_cls == dm.Culvert or target_model_cls == dm.Pipe) else [src_polyline[0], src_polyline[-1]]
             dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
         elif geometry_type == QgsWkbTypes.GeometryType.PointGeometry:
             start_point = src_geometry.asPoint()
@@ -105,7 +105,7 @@ class LineProcessor(StructureProcessor):
     def process_feature(self, src_feat):
         """Process source linear structure feature."""
         new_nodes = []
-        new_geom = self.new_geometry(src_feat, self.conversion_settings)
+        new_geom = LineProcessor.new_geometry(src_feat, self.conversion_settings, self.target_model_cls)
         if self.transformation:
             new_geom.transform(transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
@@ -122,7 +122,6 @@ class LineProcessor(StructureProcessor):
 
 
 def create_new_point_geometry(src_feat):
-    # TODO: add test
     """Create a new point feature geometry based on the source feature."""
     src_geometry = QgsGeometry(src_feat.geometry())
     if src_geometry.isMultipart():
