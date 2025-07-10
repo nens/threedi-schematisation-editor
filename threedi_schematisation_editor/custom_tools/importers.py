@@ -11,6 +11,8 @@ from threedi_schematisation_editor.custom_tools.utils import ConversionSettings
 from threedi_schematisation_editor.utils import gpkg_layer
 
 
+
+
 class Importer(ABC):
     """Base class for the importing features from the external data source."""
 
@@ -25,7 +27,17 @@ class Importer(ABC):
         self.external_source = external_source
         self.target_gpkg = target_gpkg
         self.import_settings = import_settings
-        self.setup_target_layers(target_model_cls, target_layer, node_layer)
+        self.target_model_cls = target_model_cls
+        self.target_layer = (
+            gpkg_layer(self.target_gpkg, target_model_cls.__tablename__) if target_layer is None else target_layer
+        )
+        self.node_layer = (
+            gpkg_layer(self.target_gpkg, dm.ConnectionNode.__tablename__) if node_layer is None else node_layer
+        )
+        self.fields_configurations = {
+            target_model_cls: self.import_settings.get("fields", {}),
+            dm.ConnectionNode: self.import_settings.get("connection_node_fields", {}),
+        }
         self.integrator = None
         self.processor = None
 
@@ -52,24 +64,6 @@ class Importer(ABC):
     def get_locator(self, context=None):
         project = context.project() if context else QgsProject.instance()
         return QgsPointLocator(self.node_layer, self.target_layer.crs(), project.transformContext())
-
-    def setup_target_layers(
-            self,
-            target_model_cls,
-            target_layer=None,
-            node_layer=None,
-    ):
-        self.target_model_cls = target_model_cls
-        self.target_layer = (
-            gpkg_layer(self.target_gpkg, target_model_cls.__tablename__) if target_layer is None else target_layer
-        )
-        self.node_layer = (
-            gpkg_layer(self.target_gpkg, dm.ConnectionNode.__tablename__) if node_layer is None else node_layer
-        )
-        self.fields_configurations = {
-            target_model_cls: self.import_settings.get("fields", {}),
-            dm.ConnectionNode: self.import_settings.get("connection_node_fields", {}),
-        }
 
     @staticmethod
     def process_commit_errors(layer):

@@ -132,18 +132,6 @@ class TestConversionWeir:
             'TARGET_GPKG': get_schematisation_copy(self.schematisation, f'test_{task_name}.gpkg')
         }
 
-    # def compare_result(self, task_name):
-
-
-    def check_weir_added(self, task):
-        # todo: consider just comparing with reference instead of this complicated stuff!
-
-        original_weirs = read_layer(get_schematisation_path(self.schematisation), 'weir')
-        target_weirs = read_layer(task['TARGET_GPKG'], 'weir')
-        assert len(target_weirs) - len(original_weirs) == 1
-        # check geometry
-
-
     def check_connection_nodes_added(self, task):
         original_connection_nodes = read_layer(get_schematisation_path(self.schematisation), 'connection_node')
         target_connection_nodes = read_layer(task['TARGET_GPKG'], 'connection_node')

@@ -170,10 +170,6 @@ class LinearIntegrator:
         node_feat = self.node_manager.create_new(QgsGeometry.fromPointXY(point),
                                                  node_layer_fields,
                                                  node_attributes)
-        # for field_name, field_value in node_attributes.items():
-        #     if field_name == "id":
-        #         continue
-        #     node_feat[field_name] = field_value
         self.node_by_location[point] = node_feat["id"]
         return node_feat
 
