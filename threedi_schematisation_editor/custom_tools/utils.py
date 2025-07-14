@@ -1,4 +1,5 @@
 import warnings
+from enum import Enum
 
 from qgis.core import (
     NULL,
@@ -7,8 +8,6 @@ from qgis.core import (
     QgsFeature,
     QgsGeometry,
 )
-
-from threedi_schematisation_editor.custom_tools.import_config import ColumnImportMethod
 from threedi_schematisation_editor.utils import convert_to_type, TypeConversionError
 from threedi_schematisation_editor.warnings import FeaturesImporterWarning
 
@@ -95,5 +94,15 @@ def get_substring_geometry(curve, start_distance, end_distance, simplify=False):
         substring_geometry = QgsGeometry.fromPolylineXY([substring_polyline[0], substring_polyline[-1]])
     return substring_geometry
 
+
+class ColumnImportMethod(Enum):
+    AUTO = "auto"
+    ATTRIBUTE = "source_attribute"
+    DEFAULT = "default"
+    EXPRESSION = "expression"
+    IGNORE = "ignore"
+
+    def __str__(self):
+        return self.name.capitalize()
 
 

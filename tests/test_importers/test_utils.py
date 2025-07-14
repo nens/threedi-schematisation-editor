@@ -15,8 +15,8 @@ from qgis.core import (
     QgsPointXY,
 )
 
-from threedi_schematisation_editor.custom_tools.utils import update_attributes, FeatureManager, get_substring_geometry
-from threedi_schematisation_editor.custom_tools.import_config import ColumnImportMethod
+from threedi_schematisation_editor.custom_tools.utils import update_attributes, FeatureManager, get_substring_geometry, \
+    ColumnImportMethod
 
 
 @pytest.fixture

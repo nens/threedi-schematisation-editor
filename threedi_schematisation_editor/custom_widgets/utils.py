@@ -1,11 +1,12 @@
 import inspect
 import warnings
+from enum import IntEnum
 
 from qgis.core import NULL, Qgis, QgsMessageLog, QgsSettings
 from qgis.PyQt.QtWidgets import QComboBox
 
 from threedi_schematisation_editor import warnings as threedi_warnings
-from threedi_schematisation_editor.custom_tools.import_config import ColumnImportMethod, ColumnImportIndex
+from threedi_schematisation_editor.custom_tools.utils import ColumnImportMethod
 from threedi_schematisation_editor.custom_widgets.dialogs.attribute_value_map import AttributeValueMapDialog
 from threedi_schematisation_editor.utils import REQUIRED_VALUE_STYLESHEET, NULL_STR, enum_entry_name_format
 
@@ -160,3 +161,14 @@ class ImportFieldMappingUtils:
             if column_idx == ColumnImportIndex.DEFAULT_VALUE_COLUMN_IDX and key_name != NULL_STR:
                 key_value = field_type(key_value)
         return key_value
+
+
+class ColumnImportIndex(IntEnum):
+    """Base class for import tool configuration."""
+
+    FIELD_NAME_COLUMN_IDX = 0
+    METHOD_COLUMN_IDX = 1
+    SOURCE_ATTRIBUTE_COLUMN_IDX = 2
+    VALUE_MAP_COLUMN_IDX = 3
+    DEFAULT_VALUE_COLUMN_IDX = 4
+    EXPRESSION_COLUMN_IDX = 5

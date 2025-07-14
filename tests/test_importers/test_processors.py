@@ -5,7 +5,7 @@ from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes, QgsPointXY, QgsField
 from PyQt5.QtCore import QVariant
 
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.custom_tools.import_config import ColumnImportMethod
+from threedi_schematisation_editor.custom_tools.utils import ColumnImportMethod
 from threedi_schematisation_editor.custom_tools.processors import (
     ConnectionNodeProcessor,
     PointProcessor,
