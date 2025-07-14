@@ -13,7 +13,6 @@ from threedi_schematisation_editor.custom_tools.processors import (
     StructureProcessor,
     Processor,
     create_new_point_geometry,
-    add_connection_node
 )
 
 
@@ -169,7 +168,7 @@ class TestStructureProcessor:
         with patch("threedi_schematisation_editor.custom_tools.processors.StructureProcessor.snap_connection_node",
                    return_value=snap_result):
             # Mock the add_connection_node function to return new_node or None based on should_add_node
-            with patch("threedi_schematisation_editor.custom_tools.processors.add_connection_node", 
+            with patch("threedi_schematisation_editor.custom_tools.processors.StructureProcessor.add_connection_node",
                       return_value=new_node if should_add_node else None) as mock_add_connection_node:
                 # Call the method
                 result = StructureProcessor.add_node(processor, new_feat, point, "connection_node_id")
@@ -398,7 +397,7 @@ class TestUtilityFunctions:
         node_manager.create_new.return_value = new_node
 
         # Call the function
-        add_connection_node(feat, QgsPointXY(10, 20), node_manager, "connection_node_id", node_fields)
+        Processor.add_connection_node(feat, QgsPointXY(10, 20), node_manager, "connection_node_id", node_fields)
 
         # Check that the feature was updated
         assert feat["connection_node_id"] == 42

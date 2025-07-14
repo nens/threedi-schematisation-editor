@@ -28,6 +28,12 @@ class Processor(ABC):
         else:
             return False
 
+    @classmethod
+    def add_connection_node(cls, feat, geom, node_manager, connection_id_name, node_fields):
+        new_node_feat = node_manager.create_new(QgsGeometry.fromPointXY(geom), node_fields)
+        feat[connection_id_name] = new_node_feat["id"]
+        return new_node_feat
+
     def process_feature(self, src_feat):
         raise NotImplementedError
 
@@ -57,7 +63,7 @@ class StructureProcessor(Processor, ABC):
             snapped = StructureProcessor.snap_connection_node(new_feat, point, self.conversion_settings.snapping_distance, self.locator,
                                            name)
         if not snapped or self.conversion_settings.create_connection_nodes:
-            return add_connection_node(new_feat, point, self.node_manager, name, self.node_fields)
+            return StructureProcessor.add_connection_node(new_feat, point, self.node_manager, name, self.node_fields)
 
 
 class PointProcessor(StructureProcessor):
@@ -140,9 +146,3 @@ def create_new_point_geometry(src_feat):
     dst_point = src_point
     dst_geometry = QgsGeometry.fromPointXY(dst_point)
     return dst_geometry
-
-
-def add_connection_node(feat, geom, node_manager, connection_id_name, node_fields):
-    new_node_feat = node_manager.create_new(QgsGeometry.fromPointXY(geom), node_fields)
-    feat[connection_id_name] = new_node_feat["id"]
-    return new_node_feat
