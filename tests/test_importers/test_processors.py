@@ -11,8 +11,8 @@ from threedi_schematisation_editor.custom_tools.processors import (
     PointProcessor,
     LineProcessor,
     StructureProcessor,
+    Processor,
     create_new_point_geometry,
-    snap_connection_node,
     add_connection_node
 )
 
@@ -166,7 +166,8 @@ class TestStructureProcessor:
         new_node.setAttribute("id", 42)
 
         # Mock the snap_connection_node function
-        with patch("threedi_schematisation_editor.custom_tools.processors.snap_connection_node", return_value=snap_result):
+        with patch("threedi_schematisation_editor.custom_tools.processors.StructureProcessor.snap_connection_node",
+                   return_value=snap_result):
             # Mock the add_connection_node function to return new_node or None based on should_add_node
             with patch("threedi_schematisation_editor.custom_tools.processors.add_connection_node", 
                       return_value=new_node if should_add_node else None) as mock_add_connection_node:
@@ -353,7 +354,7 @@ class TestUtilityFunctions:
         # Mock the find_connection_node function to return our mock node
         with patch("threedi_schematisation_editor.custom_tools.processors.find_connection_node", return_value=node):
             # Call the function
-            result = snap_connection_node(feat, QgsPointXY(10, 20), 10.0, locator, "connection_node_id")
+            result = Processor.snap_connection_node(feat, QgsPointXY(10, 20), 10.0, locator, "connection_node_id")
 
             # Check that the result is True
             assert result is True
@@ -376,7 +377,7 @@ class TestUtilityFunctions:
         # Mock the find_connection_node function to return None
         with patch("threedi_schematisation_editor.custom_tools.processors.find_connection_node", return_value=None):
             # Call the function
-            result = snap_connection_node(feat, QgsPointXY(10, 20), 10.0, locator, "connection_node_id")
+            result = Processor.snap_connection_node(feat, QgsPointXY(10, 20), 10.0, locator, "connection_node_id")
 
             # Check that the result is False
             assert result is False
