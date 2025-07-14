@@ -468,3 +468,34 @@ class TestNodeManagement:
         # Assert that the node_by_location dictionary has the correct values
         assert integrator.node_by_location[start_point] == 101
         assert integrator.node_by_location[end_point] == 102
+
+
+@pytest.mark.parametrize('simplify', [True, False])
+def test_get_substring_geometry_argument_processing(simplify):
+    """Test that get_substring_geometry processes the simplify argument correctly."""
+    # Create a simple line geometry for testing
+    line_geom = QgsGeometry.fromPolylineXY([
+        QgsPointXY(0, 0),
+        QgsPointXY(50, 0),
+        QgsPointXY(100, 0)
+    ])
+
+    # Get the underlying curve object
+    curve = line_geom.constGet()
+
+    # Test parameters
+    start_distance = 25.0
+    end_distance = 75.0
+
+    # Call the function with simplify=False
+    result = LinearIntegrator.get_substring_geometry(curve, start_distance, end_distance, simplify=simplify)
+
+    # Verify that both calls return a QgsGeometry object
+    assert isinstance(result, QgsGeometry)
+
+    if simplify:
+        assert len(result.asPolyline()) == 2
+    else:
+        assert len(result.asPolyline()) >= 2
+
+    assert result.length() == end_distance - start_distance

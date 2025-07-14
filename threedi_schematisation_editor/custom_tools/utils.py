@@ -70,6 +70,7 @@ class FeatureManager:
             new_feat["id"] = self.next_id
             self.next_id += 1
 
+
 class ConversionSettings:
     def __init__(self, conversion_config):
         self.integrate = conversion_config.get("edit_channels", False)
@@ -84,15 +85,6 @@ class ConversionSettings:
         self.azimuth_source_field = conversion_config.get("azimuth_source_field", None)
         self.azimuth_fallback_value = conversion_config.get("azimuth_fallback_value", 90.0)
         self.edit_channels = conversion_config.get("edit_channels", False)
-
-
-def get_substring_geometry(curve, start_distance, end_distance, simplify=False):
-    curve_substring = curve.curveSubstring(start_distance, end_distance)
-    substring_geometry = QgsGeometry(curve_substring)
-    if simplify:
-        substring_polyline = substring_geometry.asPolyline()
-        substring_geometry = QgsGeometry.fromPolylineXY([substring_polyline[0], substring_polyline[-1]])
-    return substring_geometry
 
 
 class ColumnImportMethod(Enum):

@@ -8,7 +8,6 @@ from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.custom_tools.utils import (
     update_attributes,
     FeatureManager,
-    get_substring_geometry,
     DEFAULT_INTERSECTION_BUFFER,
     DEFAULT_INTERSECTION_BUFFER_SEGMENTS,
 )
@@ -68,6 +67,15 @@ class LinearIntegrator:
                    cross_section_layer=cross_section_layer,
                    external_source=importer.external_source,
                    target_gpkg=importer.target_gpkg)
+
+    @classmethod
+    def get_substring_geometry(cls, curve, start_distance, end_distance, simplify=False):
+        curve_substring = curve.curveSubstring(start_distance, end_distance)
+        substring_geometry = QgsGeometry(curve_substring)
+        if simplify:
+            substring_polyline = substring_geometry.asPolyline()
+            substring_geometry = QgsGeometry.fromPolylineXY([substring_polyline[0], substring_polyline[-1]])
+        return substring_geometry
 
     def setup_fields_map(self):
         """Setup input layer fields map."""
@@ -284,7 +292,7 @@ class LinearIntegrator:
     def substring_feature(curve, start_distance, end_distance, fields, simplify=False, **attributes):
         """Extract part of the curve as a new structure feature."""
         substring_feat = QgsFeature(fields)
-        substring_feat.setGeometry(get_substring_geometry(curve, start_distance, end_distance, simplify))
+        substring_feat.setGeometry(LinearIntegrator.get_substring_geometry(curve, start_distance, end_distance, simplify))
         for field_name, field_value in attributes.items():
             substring_feat[field_name] = field_value
         return substring_feat
@@ -318,7 +326,7 @@ class LinearIntegrator:
             start_distance = channel_structure_m - half_length
             end_distance = channel_structure_m + half_length
             # Setup structure feature
-            substring_geom = get_substring_geometry(channel_geom.constGet(), start_distance, end_distance, simplify_structure_geometry)
+            substring_geom = LinearIntegrator.get_substring_geometry(channel_geom.constGet(), start_distance, end_distance, simplify_structure_geometry)
             substring_feat = self.target_manager.create_new(substring_geom,
                                                             self.layer_fields_mapping[self.target_layer.name()])
             update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, channel_structure.feature, substring_feat)
@@ -369,5 +377,4 @@ class LinearIntegrator:
         visited_channel_ids = [channel["id"] for channel in features_to_add[self.integrate_layer.name()]]
         self.cross_section_layer.deleteFeatures(self.get_hanging_cross_sections(visited_channel_ids))
         return features_to_add, list(all_processed_structure_ids)
-
 
