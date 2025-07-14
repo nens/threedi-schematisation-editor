@@ -15,7 +15,7 @@ from qgis.core import (
     QgsPointXY,
 )
 
-from threedi_schematisation_editor.custom_tools.utils import update_attributes, FeatureManager, ColumnImportMethod
+from threedi_schematisation_editor.vector_data_importer.utils import update_attributes, FeatureManager, ColumnImportMethod
 
 
 @pytest.fixture

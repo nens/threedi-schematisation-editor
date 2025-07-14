@@ -5,7 +5,7 @@ from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes, QgsPointXY, QgsField
 from PyQt5.QtCore import QVariant
 
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.custom_tools.importers import (
+from threedi_schematisation_editor.vector_data_importer.importers import (
     Importer,
     LinesImporter,
     CulvertsImporter,
@@ -14,7 +14,7 @@ from threedi_schematisation_editor.custom_tools.importers import (
     PipesImporter,
     ConnectionNodesImporter
 )
-from threedi_schematisation_editor.custom_tools.utils import ConversionSettings
+from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
 
 
 @pytest.fixture
@@ -136,7 +136,7 @@ def importer_different_crs(external_source, target_gpkg, import_settings, target
 
 @pytest.fixture
 def mock_project():
-    with patch('threedi_schematisation_editor.custom_tools.importers.QgsProject') as mock:
+    with patch('threedi_schematisation_editor.vector_data_importer.importers.QgsProject') as mock:
         mock_instance = MagicMock()
         mock.instance.return_value = mock_instance
         mock_instance.transformContext.return_value = "transform_context"
@@ -189,12 +189,12 @@ class TestImporter:
         )
         assert importer.external_source_name == "alt_source"
 
-    # @patch('threedi_schematisation_editor.custom_tools.importers.QgsCoordinateTransform')
+    # @patch('threedi_schematisation_editor.vector_data_importer.importers.QgsCoordinateTransform')
     def test_get_transformation_same_crs(self, importer):
         """Test that get_transformation returns None when the CRS is the same."""
         assert importer.get_transformation() is None
 
-    @patch('threedi_schematisation_editor.custom_tools.importers.QgsCoordinateTransform')
+    @patch('threedi_schematisation_editor.vector_data_importer.importers.QgsCoordinateTransform')
     def test_get_transformation_different_crs(self, mock_transform, mock_project, importer_different_crs):
         """Test that get_transformation returns a QgsCoordinateTransform when the CRS is different."""
         # Mock the QgsProject instance and transform context
@@ -204,7 +204,7 @@ class TestImporter:
         result = importer_different_crs.get_transformation()
         mock_transform.assert_called_once_with("EPSG:4326", "EPSG:28992", "transform_context")
 
-    @patch('threedi_schematisation_editor.custom_tools.importers.QgsPointLocator')
+    @patch('threedi_schematisation_editor.vector_data_importer.importers.QgsPointLocator')
     def test_get_locator(self, mock_locator, mock_project, importer, node_layer):
         """Test that get_locator returns a QgsPointLocator."""
         # Mock the QgsProject instance and transform context

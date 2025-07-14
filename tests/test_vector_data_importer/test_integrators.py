@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch, call
 from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes, QgsPointXY, QgsFields, QgsField
 from PyQt5.QtCore import QVariant
 
-from threedi_schematisation_editor.custom_tools.integrators import LinearIntegrator
+from threedi_schematisation_editor.vector_data_importer.integrators import LinearIntegrator
 
 
 @pytest.fixture
@@ -294,7 +294,7 @@ class TestCrossSectionIntegration:
         ],
         ids=["multiple_features", "single_feature", "all_features", "same_distance_features", "empty_source_ids"]
     )
-    @patch('threedi_schematisation_editor.custom_tools.integrators.get_features_by_expression')
+    @patch('threedi_schematisation_editor.vector_data_importer.integrators.get_features_by_expression')
     def test_get_closest_cross_section_location(self, mock_get_features, channel_feature, 
                                               features, expected_id, request):
         """Test get_closest_cross_section_location with different scenarios."""
@@ -332,7 +332,7 @@ class TestCrossSectionIntegration:
         )
         assert result is expected_result
 
-    @patch('threedi_schematisation_editor.custom_tools.integrators.spatial_index')
+    @patch('threedi_schematisation_editor.vector_data_importer.integrators.spatial_index')
     def test_get_hanging_cross_sections(self, mock_spatial_index, channel_feature):
         """Test get_hanging_cross_sections collects IDs correctly.
 
@@ -389,7 +389,7 @@ class TestNodeManagement:
         integrator.node_by_location = {}
 
         # Create a real FeatureManager for the node_manager
-        from threedi_schematisation_editor.custom_tools.utils import FeatureManager
+        from threedi_schematisation_editor.vector_data_importer.utils import FeatureManager
         integrator.node_manager = FeatureManager(42)  # Start with ID 42
 
         # Create a point, node_layer_fields, and node_attributes

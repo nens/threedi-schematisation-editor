@@ -2,7 +2,7 @@ from qgis.core import QgsSettings
 from qgis.PyQt.QtCore import QItemSelectionModel, Qt
 from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
 
-from threedi_schematisation_editor.custom_widgets import load_basecls, load_uicls
+from threedi_schematisation_editor.vector_data_importer.dialogs import load_basecls, load_uicls
 
 
 class LoadSchematisationDialog(load_basecls, load_uicls):

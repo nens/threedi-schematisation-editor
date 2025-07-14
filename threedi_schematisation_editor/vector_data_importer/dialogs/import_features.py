@@ -11,13 +11,13 @@ from qgis.core import (
     QgsMessageLog,
 )
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.custom_widgets.dialogs.import_widgets import create_widgets, CONFIG_HEADER, CONFIG_KEYS
+from threedi_schematisation_editor.vector_data_importer.dialogs.import_widgets import create_widgets, CONFIG_HEADER, CONFIG_KEYS
 from threedi_schematisation_editor.utils import core_field_type, is_optional, optional_type, get_filepath
-from threedi_schematisation_editor.custom_tools.utils import ColumnImportMethod
-from threedi_schematisation_editor.custom_tools.importers import ConnectionNodesImporter, CulvertsImporter, \
+from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+from threedi_schematisation_editor.vector_data_importer.importers import ConnectionNodesImporter, CulvertsImporter, \
     OrificesImporter, WeirsImporter, PipesImporter
-from threedi_schematisation_editor.custom_widgets import if_basecls, if_uicls, is_basecls, is_uicls
-from threedi_schematisation_editor.custom_widgets.utils import CatchThreediWarnings, ImportFieldMappingUtils, \
+from threedi_schematisation_editor.vector_data_importer.dialogs import if_basecls, if_uicls, is_basecls, is_uicls
+from threedi_schematisation_editor.vector_data_importer.dialogs.utils import CatchThreediWarnings, ImportFieldMappingUtils, \
     ColumnImportIndex
 
 

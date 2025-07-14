@@ -5,8 +5,8 @@ from itertools import chain
 from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt.QtWidgets import QComboBox, QLineEdit, QLabel, QPushButton
 
-from threedi_schematisation_editor.custom_tools.utils import ColumnImportMethod
-from threedi_schematisation_editor.custom_widgets.utils import ColumnImportIndex
+from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+from threedi_schematisation_editor.vector_data_importer.dialogs.utils import ColumnImportIndex
 from threedi_schematisation_editor.utils import is_optional, optional_type, enum_entry_name_format
 
 

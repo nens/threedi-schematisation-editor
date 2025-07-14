@@ -1,6 +1,5 @@
 # Copyright (C) 2025 by Lutra Consulting
 import os.path
-import logging
 
 from collections import defaultdict
 from pathlib import Path
@@ -17,9 +16,9 @@ from threedi_schema import ThreediDatabase
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
-from threedi_schematisation_editor.custom_widgets.dialogs.import_features import ImportFeaturesDialog, \
+from threedi_schematisation_editor.vector_data_importer.dialogs.import_features import ImportFeaturesDialog, \
     ImportStructuresDialog
-from threedi_schematisation_editor.custom_widgets.dialogs.load_schematisation import LoadSchematisationDialog
+from threedi_schematisation_editor.vector_data_importer.dialogs.load_schematisation import LoadSchematisationDialog
 from threedi_schematisation_editor.processing import \
     ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.user_layer_manager import LayersManager

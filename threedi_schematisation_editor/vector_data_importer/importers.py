@@ -5,9 +5,9 @@ from abc import ABC
 from qgis.core import QgsCoordinateTransform, QgsPointLocator, QgsProject
 
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.custom_tools.integrators import LinearIntegrator
-from threedi_schematisation_editor.custom_tools.processors import ConnectionNodeProcessor, LineProcessor
-from threedi_schematisation_editor.custom_tools.utils import ConversionSettings
+from threedi_schematisation_editor.vector_data_importer.integrators import LinearIntegrator
+from threedi_schematisation_editor.vector_data_importer.processors import ConnectionNodeProcessor, LineProcessor
+from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
 from threedi_schematisation_editor.utils import gpkg_layer
 
 

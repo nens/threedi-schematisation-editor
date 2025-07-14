@@ -5,7 +5,7 @@ from collections import namedtuple, defaultdict
 from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes
 
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.custom_tools.utils import (
+from threedi_schematisation_editor.vector_data_importer.utils import (
     update_attributes,
     FeatureManager,
     DEFAULT_INTERSECTION_BUFFER,

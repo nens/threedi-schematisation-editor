@@ -5,8 +5,8 @@ from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes, QgsPointXY, QgsField
 from PyQt5.QtCore import QVariant
 
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.custom_tools.utils import ColumnImportMethod
-from threedi_schematisation_editor.custom_tools.processors import (
+from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
     PointProcessor,
     LineProcessor,
@@ -164,10 +164,10 @@ class TestStructureProcessor:
         new_node.setAttribute("id", 42)
 
         # Mock the snap_connection_node function
-        with patch("threedi_schematisation_editor.custom_tools.processors.StructureProcessor.snap_connection_node",
+        with patch("threedi_schematisation_editor.vector_data_importer.processors.StructureProcessor.snap_connection_node",
                    return_value=snap_result):
             # Mock the add_connection_node function to return new_node or None based on should_add_node
-            with patch("threedi_schematisation_editor.custom_tools.processors.StructureProcessor.add_connection_node",
+            with patch("threedi_schematisation_editor.vector_data_importer.processors.StructureProcessor.add_connection_node",
                       return_value=new_node if should_add_node else None) as mock_add_connection_node:
                 # Call the method
                 result = StructureProcessor.add_node(processor, new_feat, point, "connection_node_id")
@@ -247,7 +247,7 @@ class TestLineProcessor:
         conversion_settings = MagicMock()
 
         # Call the actual method (no need to mock it since we're testing its behavior)
-        with patch('threedi_schematisation_editor.custom_tools.processors.LineProcessor.new_geometry',
+        with patch('threedi_schematisation_editor.vector_data_importer.processors.LineProcessor.new_geometry',
                    return_value=QgsGeometry.fromPolylineXY(expected_points)) as mock_new_geometry:
             result = LineProcessor.new_geometry(feature, conversion_settings, model_class)
 
@@ -278,7 +278,7 @@ class TestLineProcessor:
         expected_geometry = QgsGeometry.fromPolylineXY([QgsPointXY(10, 20), QgsPointXY(25, 35)])
 
         # Call the method
-        with patch('threedi_schematisation_editor.custom_tools.processors.LineProcessor.new_geometry',
+        with patch('threedi_schematisation_editor.vector_data_importer.processors.LineProcessor.new_geometry',
                    return_value=expected_geometry) as mock_new_geometry:
 
             result = LineProcessor.new_geometry(feature, conversion_settings, dm.Pipe)
@@ -309,7 +309,7 @@ class TestLineProcessor:
         expected_geometry = QgsGeometry.fromPolylineXY([QgsPointXY(10, 20), QgsPointXY(20, 20)])
 
         # Call the method
-        with patch('threedi_schematisation_editor.custom_tools.processors.LineProcessor.new_geometry',
+        with patch('threedi_schematisation_editor.vector_data_importer.processors.LineProcessor.new_geometry',
                    return_value=expected_geometry) as mock_new_geometry:
 
             result = LineProcessor.new_geometry(feature, conversion_settings, dm.Pipe)
@@ -350,7 +350,7 @@ class TestUtilityFunctions:
         locator = MagicMock()
 
         # Mock the find_connection_node function to return our mock node
-        with patch("threedi_schematisation_editor.custom_tools.processors.find_connection_node", return_value=node):
+        with patch("threedi_schematisation_editor.vector_data_importer.processors.find_connection_node", return_value=node):
             # Call the function
             result = Processor.snap_connection_node(feat, QgsPointXY(10, 20), 10.0, locator, "connection_node_id")
 
@@ -373,7 +373,7 @@ class TestUtilityFunctions:
         locator = MagicMock()
 
         # Mock the find_connection_node function to return None
-        with patch("threedi_schematisation_editor.custom_tools.processors.find_connection_node", return_value=None):
+        with patch("threedi_schematisation_editor.vector_data_importer.processors.find_connection_node", return_value=None):
             # Call the function
             result = Processor.snap_connection_node(feat, QgsPointXY(10, 20), 10.0, locator, "connection_node_id")
 

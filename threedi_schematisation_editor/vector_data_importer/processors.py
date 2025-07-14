@@ -4,7 +4,7 @@ from qgis.core import QgsGeometry, QgsWkbTypes
 
 
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.custom_tools.utils import update_attributes, FeatureManager
+from threedi_schematisation_editor.vector_data_importer.utils import update_attributes, FeatureManager
 from threedi_schematisation_editor.utils import find_connection_node
 from threedi_schematisation_editor.utils import get_next_feature_id
 

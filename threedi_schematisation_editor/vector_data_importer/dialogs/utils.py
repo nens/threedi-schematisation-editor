@@ -6,8 +6,8 @@ from qgis.core import NULL, Qgis, QgsMessageLog, QgsSettings
 from qgis.PyQt.QtWidgets import QComboBox
 
 from threedi_schematisation_editor import warnings as threedi_warnings
-from threedi_schematisation_editor.custom_tools.utils import ColumnImportMethod
-from threedi_schematisation_editor.custom_widgets.dialogs.attribute_value_map import AttributeValueMapDialog
+from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+from threedi_schematisation_editor.vector_data_importer.dialogs.attribute_value_map import AttributeValueMapDialog
 from threedi_schematisation_editor.utils import REQUIRED_VALUE_STYLESHEET, NULL_STR, enum_entry_name_format
 
 
