@@ -12,7 +12,6 @@ from threedi_schematisation_editor.custom_tools.processors import (
     LineProcessor,
     StructureProcessor,
     Processor,
-    create_new_point_geometry,
 )
 
 
@@ -328,7 +327,7 @@ class TestUtilityFunctions:
 
     def test_create_new_point_geometry(self, source_feature):
         """Test that create_new_point_geometry returns a point geometry."""
-        result = create_new_point_geometry(source_feature)
+        result = Processor.create_new_point_geometry(source_feature)
         assert isinstance(result, QgsGeometry)
         assert result.type() == QgsWkbTypes.PointGeometry
         assert result.asPoint() == QgsPointXY(10, 20)

@@ -34,6 +34,17 @@ class Processor(ABC):
         feat[connection_id_name] = new_node_feat["id"]
         return new_node_feat
 
+    @classmethod
+    def create_new_point_geometry(cls, src_feat):
+        """Create a new point feature geometry based on the source feature."""
+        src_geometry = QgsGeometry(src_feat.geometry())
+        if src_geometry.isMultipart():
+            src_geometry.convertToSingleType()
+        src_point = src_geometry.asPoint()
+        dst_point = src_point
+        dst_geometry = QgsGeometry.fromPointXY(dst_point)
+        return dst_geometry
+
     def process_feature(self, src_feat):
         raise NotImplementedError
 
@@ -42,7 +53,7 @@ class ConnectionNodeProcessor(Processor):
 
     def process_feature(self, src_feat):
         """Process source point into connection node feature."""
-        new_geom = create_new_point_geometry(src_feat)
+        new_geom = ConnectionNodeProcessor.create_new_point_geometry(src_feat)
         if self.transformation:
             new_geom.transform(self.transformation)
         return {self.target_name : [self.target_manager.create_new(new_geom, self.target_fields)]}
@@ -71,7 +82,7 @@ class PointProcessor(StructureProcessor):
     def process_feature(self, src_feat):
         """Process source point structure feature."""
         new_nodes = []
-        new_geom = create_new_point_geometry(src_feat)
+        new_geom = PointProcessor.create_new_point_geometry(src_feat)
         if self.transformation:
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
@@ -136,13 +147,3 @@ class LineProcessor(StructureProcessor):
                           *new_nodes)
         return {self.target_name : [new_feat], self.node_name : new_nodes}
 
-
-def create_new_point_geometry(src_feat):
-    """Create a new point feature geometry based on the source feature."""
-    src_geometry = QgsGeometry(src_feat.geometry())
-    if src_geometry.isMultipart():
-        src_geometry.convertToSingleType()
-    src_point = src_geometry.asPoint()
-    dst_point = src_point
-    dst_geometry = QgsGeometry.fromPointXY(dst_point)
-    return dst_geometry
