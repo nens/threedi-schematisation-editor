@@ -410,6 +410,8 @@ class ImportFeaturesDialog(ImportDialog, if_basecls, if_uicls):
 class ImportStructuresDialog(ImportDialog, is_basecls, is_uicls):
     """Dialog for the importing structures tool."""
 
+    HAS_INTEGRATOR = [dm.Culvert, dm.Orifice, dm.Weir]
+
     def __init__(self, import_model_cls, model_gpkg, layer_manager, uc, parent=None):
         super().__init__(is_basecls, is_uicls, import_model_cls, model_gpkg, layer_manager, uc, parent)
         self.create_nodes_cb.stateChanged.connect(self.on_create_nodes_change)
@@ -439,8 +441,7 @@ class ImportStructuresDialog(ImportDialog, is_basecls, is_uicls):
 
     @cached_property
     def enable_structures_integration(self):
-        import_settings = self.collect_settings()
-        return import_settings["conversion_settings"].get("edit_channels", False)
+        return self.structure_model_cls in self.HAS_INTEGRATOR
 
     @property
     def structures_integration_widgets(self):
