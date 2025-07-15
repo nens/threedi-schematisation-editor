@@ -41,9 +41,9 @@ class ImportDialog:
         self.uc = uc
         self.set_source_layer_filter()
         self.setup_models()
-        self.populate_conversion_settings_widgets()
         self.source_layer_cbo.setCurrentIndex(0)
         self.source_layer_cbo.layerChanged.connect(self.on_layer_changed)
+        self.populate_conversion_settings_widgets()
         self.save_pb.clicked.connect(self.save_import_settings)
         self.load_pb.clicked.connect(self.load_import_settings)
         self.run_pb.clicked.connect(self.run_import)
@@ -441,7 +441,8 @@ class ImportStructuresDialog(ImportDialog, is_basecls, is_uicls):
 
     @cached_property
     def enable_structures_integration(self):
-        return self.structure_model_cls in self.HAS_INTEGRATOR
+        return False
+        # return self.structure_model_cls in self.HAS_INTEGRATOR
 
     @property
     def structures_integration_widgets(self):
