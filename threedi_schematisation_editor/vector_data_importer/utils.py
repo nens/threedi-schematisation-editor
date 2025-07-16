@@ -51,6 +51,16 @@ def update_attributes(fields_config, model_cls, source_feat, *new_features):
                 warnings.warn(f"{message}. {e}", FeaturesImporterWarning)
 
 
+def get_value_from_feature(feature, field_name, fallback_value):
+    value = fallback_value
+    if field_name and feature[field_name] != NULL:
+        try:
+            value = convert_to_type(feature[field_name], type(fallback_value))
+        except TypeConversionError:
+            pass
+    return value
+
+
 class FeatureManager:
     def __init__(self, next_id=1):
         self.next_id = next_id

@@ -10,6 +10,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     FeatureManager,
     DEFAULT_INTERSECTION_BUFFER,
     DEFAULT_INTERSECTION_BUFFER_SEGMENTS,
+    get_value_from_feature
 )
 from threedi_schematisation_editor.utils import (
     gpkg_layer,
@@ -132,7 +133,7 @@ class LinearIntegrator:
         if not structure_buffer.intersects(channel_geometry):
             return
         intersection_m = channel_geometry.lineLocatePoint(structure_geom)
-        structure_length = structure_feat[length_source_field] if length_source_field else length_fallback_value
+        structure_length = get_value_from_feature(structure_feat, length_source_field, length_fallback_value)
         return LinearIntegrator.integrate_structure_data(
             channel_feat["id"],
             structure_feat,
@@ -260,9 +261,7 @@ class LinearIntegrator:
         """Get cross-sections that are not aligned with any channel."""
         xs_buffer = cross_section_feat.geometry().buffer(DEFAULT_INTERSECTION_BUFFER,
                                                          DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
-        # channel_fids = channels_spatial_index.intersects(xs_buffer.boundingBox())
         # only check channels that were visited
-        # channel_fids = list(set(channel_fids).intersection(visited_channel_ids))
         if len(channel_fids) > 0:
             for channel_fid in channel_fids:
                 if xs_buffer.intersects(channel_feats[channel_fid].geometry()):

@@ -15,7 +15,13 @@ from qgis.core import (
     QgsPointXY,
 )
 
-from threedi_schematisation_editor.vector_data_importer.utils import update_attributes, FeatureManager, ColumnImportMethod
+from threedi_schematisation_editor.vector_data_importer.utils import (
+    update_attributes,
+    FeatureManager,
+    ColumnImportMethod,
+    get_value_from_feature
+)
+
 
 
 @pytest.fixture
@@ -176,3 +182,21 @@ def test_feature_manager_create_new_with_attributes(node_geom, node_fields):
     manager = FeatureManager()
     node_feat = manager.create_new(node_geom, node_fields, attributes={"foo": "bar"})
     assert node_feat["foo"] == "bar"
+
+
+@pytest.mark.parametrize("value, expected_value", [
+    (1, 1),
+    ("1", 1),
+    ("foo", 0),
+    (NULL, 0),
+])
+def test_get_value_from_feature_with_field(value, expected_value):
+    feat = {"foo": value}
+    assert get_value_from_feature(feat, "foo", 0) == expected_value
+
+
+@pytest.mark.parametrize("field", ["", None])
+def test_get_value_from_feature_no_field(field):
+    feat = {"foo": 1}
+    assert get_value_from_feature(feat, "", 0) == 0
+
