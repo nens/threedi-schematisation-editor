@@ -5,7 +5,7 @@ from qgis.core import QgsGeometry, QgsWkbTypes
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.vector_data_importer.utils import update_attributes, FeatureManager, \
-    get_value_from_feature
+    get_float_value_from_feature
 from threedi_schematisation_editor.utils import find_connection_node, get_next_feature_id
 
 
@@ -112,12 +112,12 @@ class LineProcessor(StructureProcessor):
             dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
         elif geometry_type == QgsWkbTypes.GeometryType.PointGeometry:
             start_point = src_geometry.asPoint()
-            length = get_value_from_feature(src_feat,
-                                            conversion_settings.length_source_field,
-                                            conversion_settings.length_fallback_value)
-            azimuth = get_value_from_feature(src_feat,
-                                             conversion_settings.azimuth_source_field,
-                                             conversion_settings.azimuth_fallback_value)
+            length = get_float_value_from_feature(src_feat,
+                                                  conversion_settings.length_source_field,
+                                                  conversion_settings.length_fallback_value)
+            azimuth = get_float_value_from_feature(src_feat,
+                                                   conversion_settings.azimuth_source_field,
+                                                   conversion_settings.azimuth_fallback_value)
             end_point = start_point.project(length, azimuth)
             dst_polyline = [start_point, end_point]
             dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)

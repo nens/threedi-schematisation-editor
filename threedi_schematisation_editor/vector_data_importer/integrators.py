@@ -10,7 +10,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     FeatureManager,
     DEFAULT_INTERSECTION_BUFFER,
     DEFAULT_INTERSECTION_BUFFER_SEGMENTS,
-    get_value_from_feature
+    get_float_value_from_feature
 )
 from threedi_schematisation_editor.utils import (
     gpkg_layer,
@@ -133,7 +133,7 @@ class LinearIntegrator:
         if not structure_buffer.intersects(channel_geometry):
             return
         intersection_m = channel_geometry.lineLocatePoint(structure_geom)
-        structure_length = get_value_from_feature(structure_feat, length_source_field, length_fallback_value)
+        structure_length = get_float_value_from_feature(structure_feat, length_source_field, length_fallback_value)
         return LinearIntegrator.integrate_structure_data(
             channel_feat["id"],
             structure_feat,

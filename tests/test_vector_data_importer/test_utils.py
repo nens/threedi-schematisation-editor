@@ -19,7 +19,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     update_attributes,
     FeatureManager,
     ColumnImportMethod,
-    get_value_from_feature
+    get_float_value_from_feature
 )
 
 
@@ -192,11 +192,11 @@ def test_feature_manager_create_new_with_attributes(node_geom, node_fields):
 ])
 def test_get_value_from_feature_with_field(value, expected_value):
     feat = {"foo": value}
-    assert get_value_from_feature(feat, "foo", 0) == expected_value
+    assert get_float_value_from_feature(feat, "foo", 0) == expected_value
 
 
 @pytest.mark.parametrize("field", ["", None])
 def test_get_value_from_feature_no_field(field):
     feat = {"foo": 1}
-    assert get_value_from_feature(feat, "", 0) == 0
+    assert get_float_value_from_feature(feat, "", 0) == 0
 
