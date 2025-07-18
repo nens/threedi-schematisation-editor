@@ -3,9 +3,14 @@ import os
 from functools import partial, cached_property
 
 from qgis.core import QgsMapLayerProxyModel, QgsSettings
-from qgis.gui import QgsFieldExpressionWidget
+from qgis.gui import QgsFieldExpressionWidget, QgsMapLayerComboBox
 from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
-from qgis.PyQt.QtWidgets import QComboBox, QLineEdit
+from qgis.PyQt.QtWidgets import (
+    QComboBox, QLineEdit, QDialog, QGridLayout, QLabel, QPushButton, 
+    QTabWidget, QTreeView, QWidget, QHBoxLayout, QCheckBox, QSpacerItem,
+    QSizePolicy
+)
+from qgis.PyQt.QtCore import Qt
 from qgis.core import (
     Qgis,
     QgsMessageLog,
@@ -16,7 +21,6 @@ from threedi_schematisation_editor.utils import core_field_type, is_optional, op
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.importers import ConnectionNodesImporter, CulvertsImporter, \
     OrificesImporter, WeirsImporter, PipesImporter
-from threedi_schematisation_editor.vector_data_importer.dialogs import if_basecls, if_uicls, is_basecls, is_uicls
 from threedi_schematisation_editor.vector_data_importer.dialogs.utils import CatchThreediWarnings, ImportFieldMappingUtils, \
     ColumnImportIndex
 
@@ -196,15 +200,18 @@ class ImportDialogUtils:
                 tree_view.resizeColumnToContents(i)
 
 
-class ImportFeaturesDialog(if_basecls, if_uicls):
+class ImportFeaturesDialog(QDialog):
 
     def __init__(self, import_model_cls, model_gpkg, layer_manager, uc, parent=None):
         super().__init__(parent)
-        self.setupUi(self)
         self.import_model_cls = import_model_cls
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self.uc = uc
+
+        # Create UI elements
+        self.setupUi()
+
         self.set_source_layer_filter()
         self.setup_models()
         self.source_layer_cbo.setCurrentIndex(0)
@@ -215,6 +222,95 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
         self.run_pb.clicked.connect(self.run_import)
         self.close_pb.clicked.connect(self.close)
         self.setup_labels()
+
+    def setupUi(self):
+        # Set window properties
+        self.setWindowTitle("Import {}s")
+        self.resize(1002, 757)
+
+        # Create main layout
+        self.gridLayout = QGridLayout(self)
+
+        # Create source layer label and combo box
+        self.source_layer_label = QLabel("Source layer")
+        self.source_layer_label.setFont(self.create_font(10))
+        self.gridLayout.addWidget(self.source_layer_label, 0, 0)
+
+        self.source_layer_cbo = QgsMapLayerComboBox()
+        self.source_layer_cbo.setFont(self.create_font(10))
+        self.source_layer_cbo.setAllowEmptyLayer(True)
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.source_layer_cbo.setSizePolicy(sizePolicy)
+        self.gridLayout.addWidget(self.source_layer_cbo, 0, 1)
+
+        # Create save button
+        self.save_pb = QPushButton("Save as template...")
+        self.save_pb.setFont(self.create_font(10))
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.save_pb.setSizePolicy(sizePolicy)
+        self.gridLayout.addWidget(self.save_pb, 0, 4, 1, 2)
+
+        # Create selected features checkbox
+        horizontalLayout = QHBoxLayout()
+        horizontalLayout.setContentsMargins(0, 0, 0, 0)
+
+        horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        horizontalLayout.addItem(horizontalSpacer)
+
+        self.selected_only_cb = QCheckBox("Selected features only")
+        self.selected_only_cb.setFont(self.create_font(10))
+        self.selected_only_cb.setLayoutDirection(Qt.LeftToRight)
+        horizontalLayout.addWidget(self.selected_only_cb)
+
+        self.gridLayout.addLayout(horizontalLayout, 1, 1)
+
+        # Create load button
+        self.load_pb = QPushButton("Load template...")
+        self.load_pb.setFont(self.create_font(10))
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.load_pb.setSizePolicy(sizePolicy)
+        self.gridLayout.addWidget(self.load_pb, 1, 4, 1, 2)
+
+        # Create tab widget
+        self.tab_widget = QTabWidget()
+        self.tab_widget.setFont(self.create_font(10))
+
+        # Create field map tab
+        self.field_map_tab = QWidget()
+        self.field_map_tab.setObjectName("field_map_tab")
+        gridLayout_3 = QGridLayout(self.field_map_tab)
+
+        self.field_map_tv = QTreeView()
+        gridLayout_3.addWidget(self.field_map_tv, 0, 0)
+
+        self.tab_widget.addTab(self.field_map_tab, "{}")
+        self.gridLayout.addWidget(self.tab_widget, 6, 0, 4, 4)
+
+        # Create vertical spacer
+        verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.gridLayout.addItem(verticalSpacer, 9, 5)
+
+        # Create run and close buttons
+        gridLayout_6 = QGridLayout()
+        gridLayout_6.setContentsMargins(-1, -1, 0, 0)
+
+        self.run_pb = QPushButton("Run")
+        self.run_pb.setFont(self.create_font(10, bold=True))
+        gridLayout_6.addWidget(self.run_pb, 0, 0)
+
+        self.close_pb = QPushButton("Close")
+        self.close_pb.setFont(self.create_font(10))
+        gridLayout_6.addWidget(self.close_pb, 0, 1)
+
+        self.gridLayout.addLayout(gridLayout_6, 10, 5)
+
+    def create_font(self, point_size, bold=False):
+        font = self.font()
+        font.setPointSize(point_size)
+        if bold:
+            font.setBold(True)
+            font.setWeight(75)
+        return font
 
     def setup_models(self):
         self.field_map_model = QStandardItemModel()
@@ -328,18 +424,21 @@ class ImportFeaturesDialog(if_basecls, if_uicls):
                                           uc=self.uc)
 
 
-class ImportStructuresDialog(is_basecls, is_uicls):
+class ImportStructuresDialog(QDialog):
     """Dialog for the importing structures tool."""
 
     HAS_INTEGRATOR = [dm.Culvert, dm.Orifice, dm.Weir]
 
     def __init__(self, import_model_cls, model_gpkg, layer_manager, uc, parent=None):
         super().__init__(parent)
-        self.setupUi(self)
         self.import_model_cls = import_model_cls
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self.uc = uc
+
+        # Create UI elements
+        self.setupUi()
+
         self.set_source_layer_filter()
         self.setup_models()
         self.source_layer_cbo.setCurrentIndex(0)
@@ -354,6 +453,172 @@ class ImportStructuresDialog(is_basecls, is_uicls):
         if not self.enable_structures_integration:
             for widget in self.structures_integration_widgets:
                 widget.hide()
+
+    def setupUi(self):
+        # Set window properties
+        self.setWindowTitle("Import {}s")
+        self.resize(1000, 750)
+
+        # Create main layout
+        self.gridLayout = QGridLayout(self)
+
+        # Create source layer label and combo box
+        self.source_layer_label = QLabel("Source {} layer")
+        self.source_layer_label.setFont(self.create_font(10))
+        self.gridLayout.addWidget(self.source_layer_label, 0, 0)
+
+        self.source_layer_cbo = QgsMapLayerComboBox()
+        self.source_layer_cbo.setFont(self.create_font(10))
+        self.source_layer_cbo.setAllowEmptyLayer(True)
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.source_layer_cbo.setSizePolicy(sizePolicy)
+        self.gridLayout.addWidget(self.source_layer_cbo, 0, 1)
+
+        # Create save button
+        self.save_pb = QPushButton("Save as template...")
+        self.save_pb.setFont(self.create_font(10))
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.save_pb.setSizePolicy(sizePolicy)
+        self.gridLayout.addWidget(self.save_pb, 0, 4, 1, 2)
+
+        # Create load button
+        self.load_pb = QPushButton("Load template...")
+        self.load_pb.setFont(self.create_font(10))
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.load_pb.setSizePolicy(sizePolicy)
+        self.gridLayout.addWidget(self.load_pb, 1, 4, 1, 2)
+
+        # Create grid layout for checkboxes and fields
+        gridLayout_7 = QGridLayout()
+        gridLayout_7.setContentsMargins(-1, -1, -1, 0)
+
+        # Create checkboxes
+        self.edit_channels_cb = QCheckBox("Edit channels")
+        self.edit_channels_cb.setFont(self.create_font(10))
+        self.edit_channels_cb.setLayoutDirection(Qt.LeftToRight)
+        gridLayout_7.addWidget(self.edit_channels_cb, 0, 0)
+
+        self.create_nodes_cb = QCheckBox("Create connection nodes")
+        self.create_nodes_cb.setFont(self.create_font(10))
+        self.create_nodes_cb.setLayoutDirection(Qt.LeftToRight)
+        self.create_nodes_cb.setChecked(True)
+        gridLayout_7.addWidget(self.create_nodes_cb, 0, 1)
+
+        self.selected_only_cb = QCheckBox("Selected features only")
+        self.selected_only_cb.setFont(self.create_font(10))
+        self.selected_only_cb.setLayoutDirection(Qt.LeftToRight)
+        gridLayout_7.addWidget(self.selected_only_cb, 0, 2)
+
+        # Create length source field widgets
+        self.length_source_field_lbl = QLabel("Length source field")
+        self.length_source_field_lbl.setFont(self.create_font(10))
+        self.length_source_field_lbl.setLayoutDirection(Qt.LeftToRight)
+        gridLayout_7.addWidget(self.length_source_field_lbl, 1, 0)
+
+        from qgis.gui import QgsFieldComboBox
+        self.length_source_field_cbo = QgsFieldComboBox()
+        self.length_source_field_cbo.setFont(self.create_font(10))
+        self.length_source_field_cbo.setAllowEmptyFieldName(True)
+        gridLayout_7.addWidget(self.length_source_field_cbo, 1, 1)
+
+        self.length_fallback_value_lbl = QLabel("Length fallback value")
+        self.length_fallback_value_lbl.setFont(self.create_font(10))
+        gridLayout_7.addWidget(self.length_fallback_value_lbl, 1, 2)
+
+        from qgis.PyQt.QtWidgets import QDoubleSpinBox, QSpinBox
+        self.length_fallback_value_dsb = QDoubleSpinBox()
+        self.length_fallback_value_dsb.setFont(self.create_font(10))
+        self.length_fallback_value_dsb.setMinimum(0.01)
+        self.length_fallback_value_dsb.setValue(1.0)
+        gridLayout_7.addWidget(self.length_fallback_value_dsb, 1, 3)
+
+        # Create azimuth source field widgets
+        self.azimuth_source_field_lbl = QLabel("Azimuth source field")
+        self.azimuth_source_field_lbl.setFont(self.create_font(10))
+        gridLayout_7.addWidget(self.azimuth_source_field_lbl, 2, 0)
+
+        self.azimuth_source_field_cbo = QgsFieldComboBox()
+        self.azimuth_source_field_cbo.setFont(self.create_font(10))
+        self.azimuth_source_field_cbo.setAllowEmptyFieldName(True)
+        gridLayout_7.addWidget(self.azimuth_source_field_cbo, 2, 1)
+
+        self.azimuth_fallback_value_lbl = QLabel("Azimuth fallback value")
+        self.azimuth_fallback_value_lbl.setFont(self.create_font(10))
+        gridLayout_7.addWidget(self.azimuth_fallback_value_lbl, 2, 2)
+
+        self.azimuth_fallback_value_sb = QSpinBox()
+        self.azimuth_fallback_value_sb.setFont(self.create_font(10))
+        self.azimuth_fallback_value_sb.setMaximum(359)
+        self.azimuth_fallback_value_sb.setValue(90)
+        gridLayout_7.addWidget(self.azimuth_fallback_value_sb, 2, 3)
+
+        self.gridLayout.addLayout(gridLayout_7, 1, 0, 2, 2)
+
+        # Create tab widget
+        self.tab_widget = QTabWidget()
+        self.tab_widget.setFont(self.create_font(10))
+
+        # Create structure tab
+        self.structure_tab = QWidget()
+        gridLayout_2 = QGridLayout(self.structure_tab)
+
+        self.structure_tv = QTreeView()
+        gridLayout_2.addWidget(self.structure_tv, 1, 0)
+
+        self.tab_widget.addTab(self.structure_tab, "{}")
+
+        # Create connection node tab
+        self.connection_node_tab = QWidget()
+        gridLayout_3 = QGridLayout(self.connection_node_tab)
+
+        self.connection_node_tv = QTreeView()
+        gridLayout_3.addWidget(self.connection_node_tv, 0, 0)
+
+        self.tab_widget.addTab(self.connection_node_tab, "Connection nodes")
+
+        self.gridLayout.addWidget(self.tab_widget, 5, 0, 5, 4)
+
+        # Create snap group box
+        from qgis.PyQt.QtWidgets import QGroupBox
+        self.snap_gb = QGroupBox("Snap within:")
+        self.snap_gb.setFont(self.create_font(9))
+        self.snap_gb.setCheckable(True)
+        gridLayout_5 = QGridLayout(self.snap_gb)
+
+        self.snap_dsb = QDoubleSpinBox()
+        self.snap_dsb.setFont(self.create_font(10))
+        self.snap_dsb.setSuffix(" meters")
+        self.snap_dsb.setMaximum(1000000.0)
+        self.snap_dsb.setValue(0.1)
+        gridLayout_5.addWidget(self.snap_dsb, 0, 0)
+
+        self.gridLayout.addWidget(self.snap_gb, 8, 4, 1, 2)
+
+        # Create vertical spacer
+        verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.gridLayout.addItem(verticalSpacer, 9, 5)
+
+        # Create run and close buttons
+        gridLayout_6 = QGridLayout()
+        gridLayout_6.setContentsMargins(-1, -1, 0, 0)
+
+        self.run_pb = QPushButton("Run")
+        self.run_pb.setFont(self.create_font(10, bold=True))
+        gridLayout_6.addWidget(self.run_pb, 0, 0)
+
+        self.close_pb = QPushButton("Close")
+        self.close_pb.setFont(self.create_font(10))
+        gridLayout_6.addWidget(self.close_pb, 0, 1)
+
+        self.gridLayout.addLayout(gridLayout_6, 10, 5)
+
+    def create_font(self, point_size, bold=False):
+        font = self.font()
+        font.setPointSize(point_size)
+        if bold:
+            font.setBold(True)
+            font.setWeight(75)
+        return font
 
     def setup_models(self):
         self.structure_model = QStandardItemModel()
@@ -543,5 +808,3 @@ class ImportStructuresDialog(is_basecls, is_uicls):
             processed_layers["channel_layer"] = channel_layer
             processed_layers["cross_section_location_layer"] = cross_section_location_layer
         return processed_handlers, processed_layers
-
-
