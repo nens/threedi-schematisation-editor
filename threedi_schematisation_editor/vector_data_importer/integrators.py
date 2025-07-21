@@ -170,8 +170,9 @@ class LinearIntegrator:
                     self.conversion_settings.length_fallback_value)
             else:
                 continue
-            channel_structures.append(channel_structure)
-            processed_structure_ids.add(structure_fid)
+            if channel_structure is not None:
+                channel_structures.append(channel_structure)
+                processed_structure_ids.add(structure_fid)
         channel_structures.sort(key=attrgetter("m"))
         return channel_structures, processed_structure_ids
 
