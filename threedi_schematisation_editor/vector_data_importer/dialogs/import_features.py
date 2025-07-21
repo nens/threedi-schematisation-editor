@@ -762,17 +762,12 @@ class ImportStructuresDialog(ImportDialog):
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         channel_handler = self.layer_manager.model_handlers[dm.Channel]
         cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
-        structure_layer = structures_handler.layer
-        node_layer = node_handler.layer
         import_settings = self.collect_settings()
         processed_handlers = [structures_handler, node_handler]
-        processed_layers = {"structure_layer": structure_layer, "node_layer": node_layer}
+        processed_layers = {"structure_layer": structures_handler.layer, "node_layer": node_handler.layer}
         edit_channels = import_settings["conversion_settings"].get("edit_channels", False)
         if edit_channels:
-            channel_layer = channel_handler.layer
-            cross_section_location_layer = cross_section_location_handler.layer
             processed_handlers += [channel_handler, cross_section_location_handler]
-            processed_layers["channel_layer"] = channel_layer
-            processed_layers["cross_section_location_layer"] = cross_section_location_layer
-        # TODO: simplify, processed_handlers = processed_layers.values()
+            processed_layers["channel_layer"] = channel_handler.layer
+            processed_layers["cross_section_location_layer"] = cross_section_location_handler.layer
         return processed_handlers, processed_layers
