@@ -250,9 +250,7 @@ class LinearIntegrator:
                 if closest_cross_section_copy:
                     self.cross_section_manager.add_feature(closest_cross_section_copy,
                                                            geom=channel_geom.interpolate(channel_geom.length() * 0.5))
-
                     closest_cross_section_copy["channel_id"] = channel_feat["id"]
-                    self.cross_section_layer.addFeatures([closest_cross_section_copy])
                     cross_section_location_copies.append(closest_cross_section_copy)
         return cross_section_location_copies
 

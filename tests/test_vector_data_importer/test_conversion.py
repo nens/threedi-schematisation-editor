@@ -5,7 +5,6 @@ import json
 import pytest
 import tempfile
 
-from functools import wraps
 from pathlib import Path
 
 from qgis.core import QgsApplication, QgsProcessingFeedback, QgsVectorLayer, QgsWkbTypes, NULL
@@ -167,4 +166,5 @@ def test_integrate_weir_too_long(qgis_application):
     with pytest.warns(StructuresIntegratorWarning):
         run_processing_operation('threedi_import_weirs', task)
     assert len(read_layer(task['TARGET_GPKG'], 'weir')) == 0
+
 

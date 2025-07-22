@@ -89,6 +89,9 @@ class Importer(ABC):
         """Method responsible for the importing structures from the external feature source."""
         self.processor.transformation = self.get_transformation(context)
         self.processor.locator = self.get_locator(context=context)
+        # start editing in all layers to support changes during import
+        for layer in self.modifiable_layers:
+            layer.startEditing()
         # Integrate features using the integrator (if any)
         # items that are integrated are skipped in further processing
         if self.integrator:
@@ -110,10 +113,8 @@ class Importer(ABC):
                 new_features[name] += features
         # Add newly created features to layers
         for layer in self.modifiable_layers:
-            if layer.name() not in new_features:
-                continue
-            layer.startEditing()
-            layer.addFeatures(new_features[layer.name()])
+            if layer.name() in new_features:
+                layer.addFeatures(new_features[layer.name()])
 
 
 class LinesImporter(Importer):
