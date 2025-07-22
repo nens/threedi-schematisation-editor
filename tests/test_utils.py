@@ -1,7 +1,7 @@
 from enum import Enum, IntEnum
 from typing import Optional
 
-from threedi_schematisation_editor.utils import convert_to_type, TypeConversionError
+from threedi_schematisation_editor.utils import convert_to_type, TypeConversionError, get_type_for_casting
 
 import pytest
 
@@ -13,6 +13,11 @@ class TestEnum(Enum):
 
 class TestIntEnum(IntEnum):
     ONE = 1
+
+
+@pytest.mark.parametrize('full_type', [str, Optional[str]])
+def test_get_type_for_casting(full_type):
+    assert get_type_for_casting(full_type) == str
 
 
 @pytest.mark.parametrize('value,field_type,expected_value',

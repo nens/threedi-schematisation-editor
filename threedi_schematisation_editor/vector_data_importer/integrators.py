@@ -109,12 +109,11 @@ class LinearIntegrator:
         channel_geometry = channel_feat.geometry()
         structure_geom = structure_feat.geometry()
         poly_line = structure_geom.asPolyline()
-        start_point = poly_line[0]
-        end_point = poly_line[-1]
-        start_geom, end_geom = QgsGeometry.fromPointXY(start_point), QgsGeometry.fromPointXY(end_point)
+        start_geom = QgsGeometry.fromPointXY(poly_line[0])
+        end_geom = QgsGeometry.fromPointXY(poly_line[-1])
         start_buffer = start_geom.buffer(snapping_distance, DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
         end_buffer = end_geom.buffer(snapping_distance, DEFAULT_INTERSECTION_BUFFER_SEGMENTS)
-        if all([start_buffer.intersects(channel_geometry), end_buffer.intersects(channel_geometry)]):
+        if not all([start_buffer.intersects(channel_geometry), end_buffer.intersects(channel_geometry)]):
             return
         intersection_m = channel_geometry.lineLocatePoint(structure_geom.centroid())
         structure_length = structure_geom.length()
