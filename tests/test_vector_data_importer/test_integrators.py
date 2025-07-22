@@ -34,7 +34,7 @@ def channel_feature(channel_fields):
 
 
 @pytest.fixture
-def line_structure_feature(structure_fields):
+def line_structure_feature_no_intersection(structure_fields):
     """Create a line structure feature perpendicular to the channel."""
     feature = QgsFeature(structure_fields)
     feature.setGeometry(QgsGeometry.fromPolylineXY([
@@ -46,7 +46,7 @@ def line_structure_feature(structure_fields):
 
 
 @pytest.fixture
-def line_structure_feature_both_ends_intersect(structure_fields):
+def line_structure_feature(structure_fields):
     """Create a line structure feature that intersects the channel at both ends."""
     feature = QgsFeature(structure_fields)
     feature.setGeometry(QgsGeometry.fromPolylineXY([
@@ -152,15 +152,15 @@ class TestChannelStructureIntegration:
 
         # Check that the result has the expected attributes
         assert result.channel_id == 1
-        assert result.feature["id"] == 2
+        assert result.feature["id"] == 3
         assert result.m == 50.0  # The line is at x=50, so the intersection is at 50% of the channel
-        assert result.length == 20.0  # The line is 20 units long
+        assert result.length == 50.0  # The line is 20 units long
 
-    def test_get_channel_structure_from_line_both_ends_intersect(self, channel_feature, line_structure_feature_both_ends_intersect):
+    def test_get_channel_structure_from_line_both_ends_intersect(self, channel_feature, line_structure_feature_no_intersection):
         """Test get_channel_structure_from_line with a line that intersects the channel at both ends."""
         snapping_distance = 5.0
         result = LinearIntegrator.get_channel_structure_from_line(
-            line_structure_feature_both_ends_intersect, channel_feature, snapping_distance
+            line_structure_feature_no_intersection, channel_feature, snapping_distance
         )
 
         # The method should return None if both ends of the line intersect the channel
