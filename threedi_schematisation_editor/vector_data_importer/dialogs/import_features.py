@@ -729,6 +729,7 @@ class ImportStructuresDialog(ImportDialog):
                 "azimuth_fallback_value": self.azimuth_fallback_value_sb.value(),
                 "edit_channels": self.edit_channels_cb.isChecked(),
             },
+            "connection_node_fields": self.collect_fields_settings(dm.ConnectionNode),
         }
 
     def source_fields_missing(self) -> bool:
