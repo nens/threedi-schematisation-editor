@@ -1066,18 +1066,24 @@ class TypeConversionError(Exception):
         super().__init__(f"Type conversion error: Cannot convert '{value}' to {target_type_str}")
 
 
+def get_type_for_casting(full_type):
+    """ Return single type that can be used for casting"""
+    origin = get_origin(full_type)
+    # Handle Optional[T] or Union types
+    if origin is Union:
+        # Get non-None type args to handle Optional types
+        types = [t for t in get_args(full_type) if t is not type(None)]
+        if types:
+            # Take first non-None type as the target type
+            return types[0]
+    else:
+        return full_type
+
 def convert_to_type(value, expected_type):
     """Convert a value to the expected type using typing utilities."""
     if value is None or value in [NULL, "NULL", "None", ""]:
         return NULL
-    # Handle Optional[T] or Union types
-    origin = get_origin(expected_type)
-    if origin is Union:
-        # Get non-None type args to handle Optional types
-        types = [t for t in get_args(expected_type) if t is not type(None)]
-        if types:
-            # Take first non-None type as the target type
-            expected_type = types[0]
+    expected_type = get_type_for_casting(expected_type)
     if isinstance(expected_type, type):
         if issubclass(expected_type, IntEnum):
             expected_type = int

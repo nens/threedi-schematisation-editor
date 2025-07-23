@@ -13,10 +13,6 @@ from qgis.PyQt.QtWidgets import (
     QSizePolicy
 )
 from qgis.PyQt.QtCore import Qt
-from qgis.core import (
-    Qgis,
-    QgsMessageLog,
-)
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.vector_data_importer.dialogs.import_widgets import create_widgets, CONFIG_HEADER, CONFIG_KEYS
 from threedi_schematisation_editor.utils import is_optional, optional_type, get_filepath
@@ -26,11 +22,6 @@ from threedi_schematisation_editor.vector_data_importer.importers import Connect
 from threedi_schematisation_editor.vector_data_importer.dialogs.utils import CatchThreediWarnings, ImportFieldMappingUtils, \
     ColumnImportIndex
 
-
-from qgis.core import (
-    Qgis,
-    QgsMessageLog,
-)
 
 class ImportDialog(QDialog):
     """Base class for import dialogs that handles common functionality."""

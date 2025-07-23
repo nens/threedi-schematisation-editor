@@ -8,7 +8,7 @@ from qgis.PyQt.QtWidgets import QComboBox
 from threedi_schematisation_editor import warnings as threedi_warnings
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.dialogs.attribute_value_map import AttributeValueMapDialog
-from threedi_schematisation_editor.utils import REQUIRED_VALUE_STYLESHEET, NULL_STR, enum_entry_name_format
+from threedi_schematisation_editor.utils import REQUIRED_VALUE_STYLESHEET, NULL_STR, enum_entry_name_format, get_type_for_casting
 
 
 class CatchThreediWarnings:
@@ -116,6 +116,7 @@ class ImportFieldMappingUtils:
 
     @staticmethod
     def update_widget_with_config(widget, key_name, field_type, field_config):
+        field_type = get_type_for_casting(field_type)
         try:
             key_value = field_config[key_name]
         except KeyError:
@@ -140,6 +141,7 @@ class ImportFieldMappingUtils:
 
     @staticmethod
     def collect_config_from_widget(widget, key_name, field_type, column_idx):
+        field_type = get_type_for_casting(field_type)
         if isinstance(widget, QComboBox):
             key_value = (
                 widget.currentText()
