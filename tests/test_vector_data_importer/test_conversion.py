@@ -6,6 +6,8 @@ import pytest
 import tempfile
 
 from pathlib import Path
+import shapely
+from shapely.testing import assert_geometries_equal
 
 from qgis.core import QgsApplication, QgsProcessingFeedback, QgsVectorLayer, QgsWkbTypes, NULL
 from qgis.analysis import QgsNativeAlgorithms
@@ -34,7 +36,7 @@ def read_layer(gpkg_path, layername):
     # Read features
     result_dict = {}
     for feature in layer.getFeatures():
-        result_dict[str(feature['id'])] = feature.geometry().asWkt(6).replace(' (','(').upper()
+        result_dict[str(feature['id'])] = feature.geometry().asWkt()
 
     return result_dict
 
@@ -107,7 +109,10 @@ def run_processing_operation(algo_name, task):
 def compare_to_ref(ref_data, task_name, target_gpkg):
     for table, data in ref_data[task_name].items():
         new_data = read_layer(target_gpkg, table)
-        assert set(new_data.items()) == set(data.items())
+        ref_geom = [shapely.wkt.loads(wkt) for wkt in list(data.values())]
+        new_geom = [shapely.wkt.loads(wkt) for wkt in list(new_data.values())]
+        assert_geometries_equal(ref_geom, new_geom, 1e-5)
+        assert new_data.keys() == data.keys()
 
 
 def test_conversion_connection_nodes(qgis_application, ref_data):
@@ -116,6 +121,7 @@ def test_conversion_connection_nodes(qgis_application, ref_data):
         'IMPORT_CONFIG': get_import_config_path('import_connection_nodes'),
         'TARGET_GPKG': get_schematisation_copy('schematisation_channel.gpkg', 'test_connection_node.gpkg')
     }
+    # TODO: fails with new data
     run_processing_operation('threedi_import_connection_nodes', task)
     compare_to_ref(ref_data, 'test_import_connection_nodes', task['TARGET_GPKG'])
 
@@ -156,6 +162,7 @@ class TestConversionWeir:
         run_processing_operation('threedi_import_weirs', task)
         compare_to_ref(ref_data, 'test_integrate_weirs_nosnap', task['TARGET_GPKG'])
 
+
 def test_integrate_weir_too_long(qgis_application):
     schematisation = get_schematisation_copy('schematisation_channel.gpkg', 'test_weirs_too_long.gpkg')
     task = {
@@ -166,5 +173,16 @@ def test_integrate_weir_too_long(qgis_application):
     with pytest.warns(StructuresIntegratorWarning):
         run_processing_operation('threedi_import_weirs', task)
     assert len(read_layer(task['TARGET_GPKG'], 'weir')) == 0
+
+
+def test_integrate_isolated_weir(qgis_application, ref_data):
+    schematisation = get_schematisation_copy('schematisation_channel_with_weir.gpkg', 'test_weir_isolated.gpkg')
+    task = {
+        'SOURCE_LAYER': get_source_layer_path('weir_isolated.gpkg'),
+        'IMPORT_CONFIG': get_import_config_path('integrate_weirs_snap.json'),
+        'TARGET_GPKG': schematisation
+    }
+    run_processing_operation('threedi_import_weirs', task)
+    compare_to_ref(ref_data, 'test_isolated_weir', schematisation)
 
 
