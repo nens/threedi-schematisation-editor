@@ -335,6 +335,8 @@ class LinearIntegrator:
                     channel_geom.constGet(), previous_structure_end, start_distance, channel_fields, False, **channel_attributes
                 )
                 self.integrate_manager.add_feature(before_substring_feat, set_id=(i>0))
+                if i == 0:
+                    self.integrate_layer.deleteFeature(channel_feat.id())
                 added_features[self.integrate_layer.name()].append(before_substring_feat)
                 added_features[self.node_layer.name()] += self.update_feature_endpoints(before_substring_feat, **node_attributes)
             previous_structure_end = end_distance
@@ -355,7 +357,6 @@ class LinearIntegrator:
         """Method responsible for the importing/integrating structures from the external feature source."""
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
-        channels_replaced = []
         for channel_feature in self.integrate_layer.getFeatures():
             channel_structures, processed_structures_fids = self.get_channel_structures_data(channel_feature, input_feature_ids)
             if not channel_structures:
@@ -366,11 +367,6 @@ class LinearIntegrator:
             for key in added_features:
                 features_to_add[key] += added_features[key]
             all_processed_structure_ids |= processed_structures_fids
-            channels_replaced.append(channel_feature["id"])
-        self.integrate_layer.startEditing()
-        for ch_id in channels_replaced:
-            self.integrate_layer.deleteFeature(ch_id)
-        self.cross_section_layer.startEditing()
         visited_channel_ids = [channel["id"] for channel in features_to_add[self.integrate_layer.name()]]
         self.cross_section_layer.deleteFeatures(self.get_hanging_cross_sections(visited_channel_ids))
         return features_to_add, list(all_processed_structure_ids)

@@ -326,8 +326,8 @@ class ImportDialog(QDialog):
         finally:
             for handler in handlers:
                 handler.connect_handler_signals()
-        for layer in layers.values():
-            layer.triggerRepaint()
+        for handler in handlers:
+            handler.layer.triggerRepaint()
 
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         raise NotImplementedError
@@ -520,7 +520,7 @@ class ImportFeaturesDialog(ImportDialog):
         return self.source_fields_missing_for_models(self.import_model_cls)
 
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
-        return [], {}
+        return [self.layer_manager.model_handlers[self.import_model_cls]], {}
 
 
 class ImportStructuresDialog(ImportDialog):
