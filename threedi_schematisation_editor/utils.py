@@ -462,23 +462,11 @@ def find_point_nodes(point, node_layer, tolerance=0.0000001, allow_multiple=Fals
     return node_feats if allow_multiple else node_feat
 
 
-def find_line_endpoints_nodes(linestring, locator, tolerance=0.1):
-    """
-    Find features from given locator layer which are in the tolerance distance from the linestring endpoints.
-    """
-    node_start_feat, node_end_feat = None, None
-    start_point, end_point = linestring[0], linestring[-1]
-    start_match = locator.nearestVertex(start_point, tolerance)
-    end_match = locator.nearestVertex(end_point, tolerance)
-    start_match_layer = start_match.layer()
-    if start_match_layer:
-        node_start_fid = start_match.featureId()
-        node_start_feat = start_match_layer.getFeature(node_start_fid)
-    end_match_layer = end_match.layer()
-    if end_match_layer:
-        node_end_fid = end_match.featureId()
-        node_end_feat = end_match_layer.getFeature(node_end_fid)
-    return node_start_feat, node_end_feat
+def find_connection_node(point, locator, tolerance=0.0000001):
+    match = locator.nearestVertex(point, tolerance)
+    match_layer = match.layer()
+    if match_layer:
+        return match_layer.getFeature(match.featureId())
 
 
 def find_linestring_nodes(linestring, node_layer, tolerance=0.0000001, allow_multiple=False, locator=None):
@@ -1078,18 +1066,24 @@ class TypeConversionError(Exception):
         super().__init__(f"Type conversion error: Cannot convert '{value}' to {target_type_str}")
 
 
+def get_type_for_casting(full_type):
+    """ Return single type that can be used for casting"""
+    origin = get_origin(full_type)
+    # Handle Optional[T] or Union types
+    if origin is Union:
+        # Get non-None type args to handle Optional types
+        types = [t for t in get_args(full_type) if t is not type(None)]
+        if types:
+            # Take first non-None type as the target type
+            return types[0]
+    else:
+        return full_type
+
 def convert_to_type(value, expected_type):
     """Convert a value to the expected type using typing utilities."""
     if value is None or value in [NULL, "NULL", "None", ""]:
         return NULL
-    # Handle Optional[T] or Union types
-    origin = get_origin(expected_type)
-    if origin is Union:
-        # Get non-None type args to handle Optional types
-        types = [t for t in get_args(expected_type) if t is not type(None)]
-        if types:
-            # Take first non-None type as the target type
-            expected_type = types[0]
+    expected_type = get_type_for_casting(expected_type)
     if isinstance(expected_type, type):
         if issubclass(expected_type, IntEnum):
             expected_type = int
