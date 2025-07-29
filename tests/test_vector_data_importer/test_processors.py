@@ -1,18 +1,25 @@
-import pytest
 from unittest.mock import MagicMock, patch
 
-from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes, QgsPointXY, QgsFields, QgsField
+import pytest
 from PyQt5.QtCore import QVariant
+from qgis.core import (
+    QgsFeature,
+    QgsField,
+    QgsFields,
+    QgsGeometry,
+    QgsPointXY,
+    QgsWkbTypes,
+)
 
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
-    PointProcessor,
     LineProcessor,
-    StructureProcessor,
+    PointProcessor,
     Processor,
+    StructureProcessor,
 )
+from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 
 
 @pytest.fixture
@@ -49,10 +56,9 @@ def source_line_feature():
     fields.append(QgsField("id", QVariant.Int))
     fields.append(QgsField("length", QVariant.Double))
     feature = QgsFeature(fields)
-    feature.setGeometry(QgsGeometry.fromPolylineXY([
-        QgsPointXY(10, 20),
-        QgsPointXY(30, 40)
-    ]))
+    feature.setGeometry(
+        QgsGeometry.fromPolylineXY([QgsPointXY(10, 20), QgsPointXY(30, 40)])
+    )
     feature.setAttribute("id", 2)
     feature.setAttribute("length", 10.0)
     return feature
@@ -79,7 +85,6 @@ class TestConnectionNodeProcessor:
         assert len(result["connection_nodes"]) == 1
 
 
-
 class TestPointProcessor:
     """Tests for the PointProcessor class."""
 
@@ -97,11 +102,13 @@ class TestPointProcessor:
         # Create mock fields configurations
         fields_configurations = {
             dm.ConnectionNode: {"id": {"method": ColumnImportMethod.AUTO}},
-            dm.Pump: {"id": {"method": ColumnImportMethod.AUTO}}
+            dm.Pump: {"id": {"method": ColumnImportMethod.AUTO}},
         }
 
         # Create a processor
-        processor = PointProcessor(target_layer, dm.Pump, node_layer, fields_configurations, {})
+        processor = PointProcessor(
+            target_layer, dm.Pump, node_layer, fields_configurations, {}
+        )
 
         # Mock the add_node method to return a new node feature
         new_node = QgsFeature(node_fields)
@@ -136,9 +143,16 @@ class TestStructureProcessor:
             "snapping_fail_create_disabled",
             "no_snapping_create_enabled",
             "no_snapping_create_disabled",
-        ]
+        ],
     )
-    def test_add_node(self, use_snapping, create_connection_nodes, snap_result, should_add_node, node_fields):
+    def test_add_node(
+        self,
+        use_snapping,
+        create_connection_nodes,
+        snap_result,
+        should_add_node,
+        node_fields,
+    ):
         """Test add_node with different configurations."""
         # Create a mock StructureProcessor instance
         processor = MagicMock()
@@ -164,13 +178,19 @@ class TestStructureProcessor:
         new_node.setAttribute("id", 42)
 
         # Mock the snap_connection_node function
-        with patch("threedi_schematisation_editor.vector_data_importer.processors.StructureProcessor.snap_connection_node",
-                   return_value=snap_result):
+        with patch(
+            "threedi_schematisation_editor.vector_data_importer.processors.StructureProcessor.snap_connection_node",
+            return_value=snap_result,
+        ):
             # Mock the add_connection_node function to return new_node or None based on should_add_node
-            with patch("threedi_schematisation_editor.vector_data_importer.processors.StructureProcessor.add_connection_node",
-                      return_value=new_node if should_add_node else None) as mock_add_connection_node:
+            with patch(
+                "threedi_schematisation_editor.vector_data_importer.processors.StructureProcessor.add_connection_node",
+                return_value=new_node if should_add_node else None,
+            ) as mock_add_connection_node:
                 # Call the method
-                result = StructureProcessor.add_node(processor, new_feat, point, "connection_node_id")
+                result = StructureProcessor.add_node(
+                    processor, new_feat, point, "connection_node_id"
+                )
                 if should_add_node:
                     assert result is new_node
                 else:
@@ -194,7 +214,7 @@ class TestLineProcessor:
         # Create mock fields configurations
         fields_configurations = {
             dm.ConnectionNode: {"id": {"method": ColumnImportMethod.AUTO}},
-            dm.Pipe: {"id": {"method": ColumnImportMethod.AUTO}}
+            dm.Pipe: {"id": {"method": ColumnImportMethod.AUTO}},
         }
 
         # Create a processor
@@ -202,10 +222,11 @@ class TestLineProcessor:
             target_layer, dm.Pipe, node_layer, fields_configurations, {}
         )
 
-        LineProcessor.new_geometry = MagicMock(return_value=QgsGeometry.fromPolylineXY([
-            QgsPointXY(10, 20),
-            QgsPointXY(30, 40)
-        ]))
+        LineProcessor.new_geometry = MagicMock(
+            return_value=QgsGeometry.fromPolylineXY(
+                [QgsPointXY(10, 20), QgsPointXY(30, 40)]
+            )
+        )
 
         # Mock the add_node method to return new node features
         start_node = QgsFeature(node_fields)
@@ -231,11 +252,14 @@ class TestLineProcessor:
         settings.azimuth_fallback_value = 90.0
         return settings
 
-    @pytest.mark.parametrize("model_class, expected_points", [
-        (dm.Pipe, [QgsPointXY(0, 0), QgsPointXY(5, 5), QgsPointXY(10, 10)]),
-        (dm.Culvert, [QgsPointXY(0, 0), QgsPointXY(5, 5), QgsPointXY(10, 10)]),
-        (dm.Weir, [QgsPointXY(0, 0), QgsPointXY(10, 10)]),
-    ])
+    @pytest.mark.parametrize(
+        "model_class, expected_points",
+        [
+            (dm.Pipe, [QgsPointXY(0, 0), QgsPointXY(5, 5), QgsPointXY(10, 10)]),
+            (dm.Culvert, [QgsPointXY(0, 0), QgsPointXY(5, 5), QgsPointXY(10, 10)]),
+            (dm.Weir, [QgsPointXY(0, 0), QgsPointXY(10, 10)]),
+        ],
+    )
     def test_new_geometry_line(self, model_class, expected_points):
         """Test new_geometry with line geometry for different model classes."""
         # Create a mock feature with line geometry
@@ -247,12 +271,18 @@ class TestLineProcessor:
         conversion_settings = MagicMock()
 
         # Call the actual method (no need to mock it since we're testing its behavior)
-        with patch('threedi_schematisation_editor.vector_data_importer.processors.LineProcessor.new_geometry',
-                   return_value=QgsGeometry.fromPolylineXY(expected_points)) as mock_new_geometry:
-            result = LineProcessor.new_geometry(feature, conversion_settings, model_class)
+        with patch(
+            "threedi_schematisation_editor.vector_data_importer.processors.LineProcessor.new_geometry",
+            return_value=QgsGeometry.fromPolylineXY(expected_points),
+        ) as mock_new_geometry:
+            result = LineProcessor.new_geometry(
+                feature, conversion_settings, model_class
+            )
 
             # Verify the mock was called with the correct arguments
-            mock_new_geometry.assert_called_once_with(feature, conversion_settings, model_class)
+            mock_new_geometry.assert_called_once_with(
+                feature, conversion_settings, model_class
+            )
 
             # Verify the result
             assert result.type() == QgsWkbTypes.LineGeometry
@@ -275,21 +305,25 @@ class TestLineProcessor:
         conversion_settings.azimuth_source_field = "azimuth"
 
         # Expected geometry
-        expected_geometry = QgsGeometry.fromPolylineXY([QgsPointXY(10, 20), QgsPointXY(25, 35)])
+        expected_geometry = QgsGeometry.fromPolylineXY(
+            [QgsPointXY(10, 20), QgsPointXY(25, 35)]
+        )
 
         # Call the method
-        with patch('threedi_schematisation_editor.vector_data_importer.processors.LineProcessor.new_geometry',
-                   return_value=expected_geometry) as mock_new_geometry:
-
+        with patch(
+            "threedi_schematisation_editor.vector_data_importer.processors.LineProcessor.new_geometry",
+            return_value=expected_geometry,
+        ) as mock_new_geometry:
             result = LineProcessor.new_geometry(feature, conversion_settings, dm.Pipe)
 
             # Verify the mock was called with the correct arguments
-            mock_new_geometry.assert_called_once_with(feature, conversion_settings, dm.Pipe)
+            mock_new_geometry.assert_called_once_with(
+                feature, conversion_settings, dm.Pipe
+            )
 
             # Verify the result
             assert result.type() == QgsWkbTypes.LineGeometry
             assert result.asPolyline() == expected_geometry.asPolyline()
-
 
     def test_new_geometry_point_with_fallback(self):
         """Test new_geometry with point geometry."""
@@ -306,16 +340,21 @@ class TestLineProcessor:
         conversion_settings.azimuth_fallback_value = 90.0
 
         # Expected geometry
-        expected_geometry = QgsGeometry.fromPolylineXY([QgsPointXY(10, 20), QgsPointXY(20, 20)])
+        expected_geometry = QgsGeometry.fromPolylineXY(
+            [QgsPointXY(10, 20), QgsPointXY(20, 20)]
+        )
 
         # Call the method
-        with patch('threedi_schematisation_editor.vector_data_importer.processors.LineProcessor.new_geometry',
-                   return_value=expected_geometry) as mock_new_geometry:
-
+        with patch(
+            "threedi_schematisation_editor.vector_data_importer.processors.LineProcessor.new_geometry",
+            return_value=expected_geometry,
+        ) as mock_new_geometry:
             result = LineProcessor.new_geometry(feature, conversion_settings, dm.Pipe)
 
             # Verify the mock was called with the correct arguments
-            mock_new_geometry.assert_called_once_with(feature, conversion_settings, dm.Pipe)
+            mock_new_geometry.assert_called_once_with(
+                feature, conversion_settings, dm.Pipe
+            )
 
             # Verify the result
             assert result.type() == QgsWkbTypes.LineGeometry
@@ -350,9 +389,14 @@ class TestUtilityFunctions:
         locator = MagicMock()
 
         # Mock the find_connection_node function to return our mock node
-        with patch("threedi_schematisation_editor.vector_data_importer.processors.find_connection_node", return_value=node):
+        with patch(
+            "threedi_schematisation_editor.vector_data_importer.processors.find_connection_node",
+            return_value=node,
+        ):
             # Call the function
-            result = Processor.snap_connection_node(feat, QgsPointXY(10, 20), 10.0, locator, "connection_node_id")
+            result = Processor.snap_connection_node(
+                feat, QgsPointXY(10, 20), 10.0, locator, "connection_node_id"
+            )
 
             # Check that the result is True
             assert result is True
@@ -373,9 +417,14 @@ class TestUtilityFunctions:
         locator = MagicMock()
 
         # Mock the find_connection_node function to return None
-        with patch("threedi_schematisation_editor.vector_data_importer.processors.find_connection_node", return_value=None):
+        with patch(
+            "threedi_schematisation_editor.vector_data_importer.processors.find_connection_node",
+            return_value=None,
+        ):
             # Call the function
-            result = Processor.snap_connection_node(feat, QgsPointXY(10, 20), 10.0, locator, "connection_node_id")
+            result = Processor.snap_connection_node(
+                feat, QgsPointXY(10, 20), 10.0, locator, "connection_node_id"
+            )
 
             # Check that the result is False
             assert result is False
@@ -396,8 +445,9 @@ class TestUtilityFunctions:
         node_manager.create_new.return_value = new_node
 
         # Call the function
-        Processor.add_connection_node(feat, QgsPointXY(10, 20), node_manager, "connection_node_id", node_fields)
+        Processor.add_connection_node(
+            feat, QgsPointXY(10, 20), node_manager, "connection_node_id", node_fields
+        )
 
         # Check that the feature was updated
         assert feat["connection_node_id"] == 42
-

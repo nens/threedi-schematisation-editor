@@ -8,11 +8,13 @@ from qgis.core import (
     QgsFeature,
     QgsGeometry,
 )
-from threedi_schematisation_editor.utils import convert_to_type, TypeConversionError
+
+from threedi_schematisation_editor.utils import TypeConversionError, convert_to_type
 from threedi_schematisation_editor.warnings import FeaturesImporterWarning
 
 DEFAULT_INTERSECTION_BUFFER = 1
 DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
+
 
 def update_attributes(fields_config, model_cls, source_feat, *new_features):
     expression_context = QgsExpressionContext()
@@ -89,11 +91,17 @@ class ConversionSettings:
             self.snapping_distance = conversion_config.get("snapping_distance")
         else:
             self.snapping_distance = DEFAULT_INTERSECTION_BUFFER
-        self.create_connection_nodes = conversion_config.get("create_connection_nodes", False)
+        self.create_connection_nodes = conversion_config.get(
+            "create_connection_nodes", False
+        )
         self.length_source_field = conversion_config.get("length_source_field", None)
-        self.length_fallback_value = conversion_config.get("length_fallback_value", 10.0)
+        self.length_fallback_value = conversion_config.get(
+            "length_fallback_value", 10.0
+        )
         self.azimuth_source_field = conversion_config.get("azimuth_source_field", None)
-        self.azimuth_fallback_value = conversion_config.get("azimuth_fallback_value", 90.0)
+        self.azimuth_fallback_value = conversion_config.get(
+            "azimuth_fallback_value", 90.0
+        )
         self.edit_channels = conversion_config.get("edit_channels", False)
 
 
@@ -106,5 +114,3 @@ class ColumnImportMethod(Enum):
 
     def __str__(self):
         return self.name.capitalize()
-
-

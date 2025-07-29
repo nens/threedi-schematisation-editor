@@ -3,18 +3,28 @@ from enum import Enum
 from itertools import chain
 
 from qgis.gui import QgsFieldExpressionWidget
-from qgis.PyQt.QtWidgets import QComboBox, QLineEdit, QLabel, QPushButton
+from qgis.PyQt.QtWidgets import QComboBox, QLabel, QLineEdit, QPushButton
 
+from threedi_schematisation_editor.utils import (
+    enum_entry_name_format,
+    is_optional,
+    optional_type,
+)
+from threedi_schematisation_editor.vector_data_importer.dialogs.utils import (
+    ColumnImportIndex,
+)
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
-from threedi_schematisation_editor.vector_data_importer.dialogs.utils import ColumnImportIndex
-from threedi_schematisation_editor.utils import is_optional, optional_type, enum_entry_name_format
 
 
 def get_field_methods_mapping(fields_iterator):
     """Return a mapping of fields to import methods."""
     methods_mapping = defaultdict(dict)
     auto_fields = {"id"}
-    auto_attribute_fields = {"connection_node_id", "connection_node_id_start", "connection_node_id_end"}
+    auto_attribute_fields = {
+        "connection_node_id",
+        "connection_node_id_start",
+        "connection_node_id_end",
+    }
 
     for field_name, model_cls in fields_iterator:
         if field_name in auto_fields:
@@ -37,9 +47,13 @@ def get_field_methods_mapping(fields_iterator):
 
 def create_widgets(import_model_cls, nodes_model_cls=None):
     """Create widgets for the data model fields."""
-    import_fields = ((k, import_model_cls) for k in import_model_cls.__annotations__.keys())
+    import_fields = (
+        (k, import_model_cls) for k in import_model_cls.__annotations__.keys()
+    )
     if nodes_model_cls is not None:
-        node_fields = ((k, nodes_model_cls) for k in nodes_model_cls.__annotations__.keys())
+        node_fields = (
+            (k, nodes_model_cls) for k in nodes_model_cls.__annotations__.keys()
+        )
     else:
         node_fields = ()
     fields_iterator = chain(import_fields, node_fields)
@@ -111,11 +125,20 @@ def create_default_value_widget(field_type):
         if field_type == bool:
             items = [["False", False], ["True", True]]
         else:
-            items = [["NULL", "NULL"]] + [[enum_entry_name_format(e), e.value] for e in field_type]
+            items = [["NULL", "NULL"]] + [
+                [enum_entry_name_format(e), e.value] for e in field_type
+            ]
         return create_combobox_widget(items)
     else:
         return QLineEdit()
 
 
-CONFIG_HEADER = ["Field name", "Method", "Source attribute", "Value map", "Default value", "Expression"]
+CONFIG_HEADER = [
+    "Field name",
+    "Method",
+    "Source attribute",
+    "Value map",
+    "Default value",
+    "Expression",
+]
 CONFIG_KEYS = ["method", "source_attribute", "value_map", "default_value", "expression"]

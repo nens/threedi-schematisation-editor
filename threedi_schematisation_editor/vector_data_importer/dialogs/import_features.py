@@ -1,26 +1,48 @@
 import json
 import os
+from functools import cached_property, partial
+from typing import Any, Dict, List, Optional, Tuple, Type
 
-from functools import partial, cached_property
-from typing import Dict, List, Tuple, Any, Optional, Type
-
-from qgis.core import QgsMapLayerProxyModel, QgsSettings, QgsMapLayer
+from qgis.core import QgsMapLayer, QgsMapLayerProxyModel, QgsSettings
 from qgis.gui import QgsFieldExpressionWidget, QgsMapLayerComboBox
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
 from qgis.PyQt.QtWidgets import (
-    QComboBox, QLineEdit, QDialog, QGridLayout, QLabel, QPushButton, 
-    QTabWidget, QTreeView, QWidget, QHBoxLayout, QCheckBox, QSpacerItem,
-    QSizePolicy
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QSizePolicy,
+    QSpacerItem,
+    QTabWidget,
+    QTreeView,
+    QWidget,
 )
-from qgis.PyQt.QtCore import Qt
+
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.vector_data_importer.dialogs.import_widgets import create_widgets, CONFIG_HEADER, CONFIG_KEYS
-from threedi_schematisation_editor.utils import is_optional, optional_type, get_filepath
+from threedi_schematisation_editor.utils import get_filepath, is_optional, optional_type
+from threedi_schematisation_editor.vector_data_importer.dialogs.import_widgets import (
+    CONFIG_HEADER,
+    CONFIG_KEYS,
+    create_widgets,
+)
+from threedi_schematisation_editor.vector_data_importer.dialogs.utils import (
+    CatchThreediWarnings,
+    ColumnImportIndex,
+    ImportFieldMappingUtils,
+)
+from threedi_schematisation_editor.vector_data_importer.importers import (
+    ConnectionNodesImporter,
+    CulvertsImporter,
+    OrificesImporter,
+    PipesImporter,
+    WeirsImporter,
+)
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
-from threedi_schematisation_editor.vector_data_importer.importers import ConnectionNodesImporter, CulvertsImporter, \
-    OrificesImporter, WeirsImporter, PipesImporter
-from threedi_schematisation_editor.vector_data_importer.dialogs.utils import CatchThreediWarnings, ImportFieldMappingUtils, \
-    ColumnImportIndex
 
 
 class ImportDialog(QDialog):
@@ -34,7 +56,14 @@ class ImportDialog(QDialog):
         dm.Pipe: PipesImporter,
     }
 
-    def __init__(self, import_model_cls: Type, model_gpkg: str, layer_manager: Any, uc: Any, parent: Optional[QWidget] = None):
+    def __init__(
+        self,
+        import_model_cls: Type,
+        model_gpkg: str,
+        layer_manager: Any,
+        uc: Any,
+        parent: Optional[QWidget] = None,
+    ):
         super().__init__(parent)
         self.import_model_cls = import_model_cls
         self.model_gpkg = model_gpkg
@@ -134,7 +163,9 @@ class ImportDialog(QDialog):
         """Set up the labels with the model name."""
         model_name = self.import_model_cls.__layername__
         self.setWindowTitle(self.windowTitle().format(model_name.lower()))
-        self.source_layer_label.setText(self.source_layer_label.text().format(model_name.lower()))
+        self.source_layer_label.setText(
+            self.source_layer_label.text().format(model_name.lower())
+        )
         self.tab_widget.setTabText(0, self.tab_widget.tabText(0).format(model_name))
 
     def set_source_layer_filter(self):
@@ -147,7 +178,9 @@ class ImportDialog(QDialog):
         return self.source_layer_cbo.currentLayer()
 
     @property
-    def data_models_tree_views(self) -> Dict[Type, Tuple[QTreeView, QStandardItemModel]]:
+    def data_models_tree_views(
+        self,
+    ) -> Dict[Type, Tuple[QTreeView, QStandardItemModel]]:
         """Get the tree views and models for the data models. To be implemented by subclasses."""
         raise NotImplementedError
 
@@ -175,13 +208,17 @@ class ImportDialog(QDialog):
             self.deactivate_layer_dependent_widgets()
 
         for model_cls in self.models:
-            source_attribute_widgets = self.get_column_widgets(ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX, model_cls)
+            source_attribute_widgets = self.get_column_widgets(
+                ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX, model_cls
+            )
             for combobox in source_attribute_widgets:
                 combobox.clear()
                 combobox.addItems(layer_field_names)
                 combobox.setCurrentText(combobox.data_model_field_name)
 
-            expression_widgets = self.get_column_widgets(ColumnImportIndex.EXPRESSION_COLUMN_IDX, model_cls)
+            expression_widgets = self.get_column_widgets(
+                ColumnImportIndex.EXPRESSION_COLUMN_IDX, model_cls
+            )
             for expression_widget in expression_widgets:
                 expression_widget.setLayer(layer)
 
@@ -237,7 +274,9 @@ class ImportDialog(QDialog):
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
-                config = ImportFieldMappingUtils.collect_config_from_widget(widget, key_name, field_type, column_idx)
+                config = ImportFieldMappingUtils.collect_config_from_widget(
+                    widget, key_name, field_type, column_idx
+                )
                 if config is not None:
                     field_config[key_name] = config
             fields_settings[field_name] = field_config
@@ -259,22 +298,33 @@ class ImportDialog(QDialog):
 
         missing_fields = []
         for model_cls in model_classes:
-            field_labels = self.get_column_widgets(ColumnImportIndex.FIELD_NAME_COLUMN_IDX, model_cls)
-            method_widgets = self.get_column_widgets(ColumnImportIndex.METHOD_COLUMN_IDX, model_cls)
-            source_attribute_widgets = self.get_column_widgets(ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX, model_cls)
-            for field_lbl, method_cbo, source_attribute_cbo in zip(field_labels, method_widgets, source_attribute_widgets):
+            field_labels = self.get_column_widgets(
+                ColumnImportIndex.FIELD_NAME_COLUMN_IDX, model_cls
+            )
+            method_widgets = self.get_column_widgets(
+                ColumnImportIndex.METHOD_COLUMN_IDX, model_cls
+            )
+            source_attribute_widgets = self.get_column_widgets(
+                ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX, model_cls
+            )
+            for field_lbl, method_cbo, source_attribute_cbo in zip(
+                field_labels, method_widgets, source_attribute_widgets
+            ):
                 field_name, method_txt, source_attribute_txt = (
                     field_lbl.text().strip(),
                     method_cbo.currentText(),
                     source_attribute_cbo.currentText(),
                 )
-                if method_txt == str(ColumnImportMethod.ATTRIBUTE) and not source_attribute_txt:
+                if (
+                    method_txt == str(ColumnImportMethod.ATTRIBUTE)
+                    and not source_attribute_txt
+                ):
                     missing_fields.append(field_name)
 
         if missing_fields:
             self.uc.show_warn(
                 f"The following fields are missing a source attribute or expression: {', '.join(missing_fields)}",
-                self
+                self,
             )
             return True
         return False
@@ -300,7 +350,11 @@ class ImportDialog(QDialog):
             return
 
         handlers, layers = self.prepare_import()
-        selected_feat_ids = self.source_layer.selectedFeatureIds() if self.selected_only_cb.isChecked() else None
+        selected_feat_ids = (
+            self.source_layer.selectedFeatureIds()
+            if self.selected_only_cb.isChecked()
+            else None
+        )
         import_settings = self.collect_settings()
 
         try:
@@ -346,14 +400,18 @@ class ImportDialog(QDialog):
     def get_filepath(self, save: bool = False) -> Optional[str]:
         extension_filter = "JSON (*.json)"
         filepath = get_filepath(
-            self, extension_filter, save=save, default_settings_entry=ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY
+            self,
+            extension_filter,
+            save=save,
+            default_settings_entry=ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY,
         )
         if not filepath:
             return None
         settings = QgsSettings()
-        settings.setValue(ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(filepath))
+        settings.setValue(
+            ImportFieldMappingUtils.LAST_CONFIG_DIR_ENTRY, os.path.dirname(filepath)
+        )
         return filepath
-
 
     def update_fields_settings(self, model_cls: Type, fields_setting: Dict[str, Any]):
         tree_view, tree_view_model = self.data_models_tree_views[model_cls]
@@ -368,7 +426,9 @@ class ImportDialog(QDialog):
                 item = tree_view_model.item(row_idx, column_idx)
                 index = item.index()
                 widget = tree_view.indexWidget(index)
-                ImportFieldMappingUtils.update_widget_with_config(widget, key_name, field_type, field_config)
+                ImportFieldMappingUtils.update_widget_with_config(
+                    widget, key_name, field_type, field_config
+                )
             row_idx += 1
 
     def get_column_widgets(self, column_idx: int, data_model: Type) -> List[QWidget]:
@@ -395,10 +455,26 @@ class ImportDialog(QDialog):
             for field_name in model_cls.__annotations__.keys():
                 if self.is_obsolete_field(field_name):
                     continue
-                method_combobox = tree_view.indexWidget(tree_view_model.item(row_idx, ColumnImportIndex.METHOD_COLUMN_IDX).index())
-                source_attribute_combobox = tree_view.indexWidget(tree_view_model.item(row_idx, ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX).index())
-                expression_widget = tree_view.indexWidget(tree_view_model.item(row_idx, ColumnImportIndex.EXPRESSION_COLUMN_IDX).index())
-                value_map_button = tree_view.indexWidget(tree_view_model.item(row_idx, ColumnImportIndex.VALUE_MAP_COLUMN_IDX).index())
+                method_combobox = tree_view.indexWidget(
+                    tree_view_model.item(
+                        row_idx, ColumnImportIndex.METHOD_COLUMN_IDX
+                    ).index()
+                )
+                source_attribute_combobox = tree_view.indexWidget(
+                    tree_view_model.item(
+                        row_idx, ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX
+                    ).index()
+                )
+                expression_widget = tree_view.indexWidget(
+                    tree_view_model.item(
+                        row_idx, ColumnImportIndex.EXPRESSION_COLUMN_IDX
+                    ).index()
+                )
+                value_map_button = tree_view.indexWidget(
+                    tree_view_model.item(
+                        row_idx, ColumnImportIndex.VALUE_MAP_COLUMN_IDX
+                    ).index()
+                )
                 method_combobox.currentTextChanged.connect(
                     partial(
                         ImportFieldMappingUtils.on_method_changed,
@@ -437,12 +513,14 @@ class ImportDialog(QDialog):
         widgets_to_add = create_widgets(*self.models)
         for model_cls in self.models:
             model_widgets = widgets_to_add[model_cls]
-            tree_view, tree_view_model =  self.data_models_tree_views[model_cls]
+            tree_view, tree_view_model = self.data_models_tree_views[model_cls]
             tree_view_model.clear()
             tree_view_model.setHorizontalHeaderLabels(CONFIG_HEADER)
             for (row_idx, column_idx), widget in model_widgets.items():
                 tree_view_model.setItem(row_idx, column_idx, QStandardItem(""))
-                tree_view.setIndexWidget(tree_view_model.index(row_idx, column_idx), widget)
+                tree_view.setIndexWidget(
+                    tree_view_model.index(row_idx, column_idx), widget
+                )
             for i in range(len(CONFIG_HEADER)):
                 tree_view.resizeColumnToContents(i)
 
@@ -457,7 +535,9 @@ class ImportFeaturesDialog(ImportDialog):
         horizontalLayout = QHBoxLayout()
         horizontalLayout.setContentsMargins(0, 0, 0, 0)
 
-        horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        horizontalSpacer = QSpacerItem(
+            40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
         horizontalLayout.addItem(horizontalSpacer)
 
         horizontalLayout.addWidget(self.selected_only_cb)
@@ -493,7 +573,9 @@ class ImportFeaturesDialog(ImportDialog):
             self.source_layer_cbo.setFilters(layer_filter)
 
     @property
-    def data_models_tree_views(self) -> Dict[Type, Tuple[QTreeView, QStandardItemModel]]:
+    def data_models_tree_views(
+        self,
+    ) -> Dict[Type, Tuple[QTreeView, QStandardItemModel]]:
         return {self.import_model_cls: (self.field_map_tv, self.field_map_model)}
 
     @property
@@ -528,7 +610,14 @@ class ImportStructuresDialog(ImportDialog):
 
     HAS_INTEGRATOR = [dm.Culvert, dm.Orifice, dm.Weir]
 
-    def __init__(self, import_model_cls: Type, model_gpkg: str, layer_manager: Any, uc: Any, parent: Optional[QWidget] = None):
+    def __init__(
+        self,
+        import_model_cls: Type,
+        model_gpkg: str,
+        layer_manager: Any,
+        uc: Any,
+        parent: Optional[QWidget] = None,
+    ):
         super().__init__(import_model_cls, model_gpkg, layer_manager, uc, parent)
         self.create_nodes_cb.stateChanged.connect(self.on_create_nodes_change)
         if not self.enable_structures_integration:
@@ -566,6 +655,7 @@ class ImportStructuresDialog(ImportDialog):
         gridLayout_7.addWidget(self.length_source_field_lbl, 1, 0)
 
         from qgis.gui import QgsFieldComboBox
+
         self.length_source_field_cbo = QgsFieldComboBox()
         self.length_source_field_cbo.setFont(self.create_font(10))
         self.length_source_field_cbo.setAllowEmptyFieldName(True)
@@ -576,6 +666,7 @@ class ImportStructuresDialog(ImportDialog):
         gridLayout_7.addWidget(self.length_fallback_value_lbl, 1, 2)
 
         from qgis.PyQt.QtWidgets import QDoubleSpinBox, QSpinBox
+
         self.length_fallback_value_dsb = QDoubleSpinBox()
         self.length_fallback_value_dsb.setFont(self.create_font(10))
         self.length_fallback_value_dsb.setMinimum(0.01)
@@ -626,6 +717,7 @@ class ImportStructuresDialog(ImportDialog):
 
         # Create snap group box
         from qgis.PyQt.QtWidgets import QGroupBox
+
         self.snap_gb = QGroupBox("Snap within:")
         self.snap_gb.setFont(self.create_font(9))
         self.snap_gb.setCheckable(True)
@@ -655,7 +747,9 @@ class ImportStructuresDialog(ImportDialog):
         )
 
     @property
-    def data_models_tree_views(self) -> Dict[Type, Tuple[QTreeView, QStandardItemModel]]:
+    def data_models_tree_views(
+        self,
+    ) -> Dict[Type, Tuple[QTreeView, QStandardItemModel]]:
         return {
             self.import_model_cls: (self.structure_tv, self.structure_model),
             dm.ConnectionNode: (self.connection_node_tv, self.connection_node_model),
@@ -737,12 +831,24 @@ class ImportStructuresDialog(ImportDialog):
         conversion_settings = import_settings["conversion_settings"]
         self.snap_gb.setChecked(conversion_settings.get("use_snapping", True))
         self.snap_dsb.setValue(conversion_settings.get("snapping_distance", 0.1))
-        self.create_nodes_cb.setChecked(conversion_settings.get("create_connection_nodes", True))
-        self.edit_channels_cb.setChecked(conversion_settings.get("edit_channels", False))
-        self.length_source_field_cbo.setField(conversion_settings.get("length_source_field", ""))
-        self.length_fallback_value_dsb.setValue(conversion_settings.get("length_fallback_value", 1.0))
-        self.azimuth_source_field_cbo.setField(conversion_settings.get("azimuth_source_field", ""))
-        self.azimuth_fallback_value_sb.setValue(conversion_settings.get("azimuth_fallback_value", 90))
+        self.create_nodes_cb.setChecked(
+            conversion_settings.get("create_connection_nodes", True)
+        )
+        self.edit_channels_cb.setChecked(
+            conversion_settings.get("edit_channels", False)
+        )
+        self.length_source_field_cbo.setField(
+            conversion_settings.get("length_source_field", "")
+        )
+        self.length_fallback_value_dsb.setValue(
+            conversion_settings.get("length_fallback_value", 1.0)
+        )
+        self.azimuth_source_field_cbo.setField(
+            conversion_settings.get("azimuth_source_field", "")
+        )
+        self.azimuth_fallback_value_sb.setValue(
+            conversion_settings.get("azimuth_fallback_value", 90)
+        )
         try:
             connection_node_fields = import_settings["connection_node_fields"]
             self.update_fields_settings(dm.ConnectionNode, connection_node_fields)
@@ -753,13 +859,22 @@ class ImportStructuresDialog(ImportDialog):
         structures_handler = self.layer_manager.model_handlers[self.import_model_cls]
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         channel_handler = self.layer_manager.model_handlers[dm.Channel]
-        cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
+        cross_section_location_handler = self.layer_manager.model_handlers[
+            dm.CrossSectionLocation
+        ]
         import_settings = self.collect_settings()
         processed_handlers = [structures_handler, node_handler]
-        processed_layers = {"structure_layer": structures_handler.layer, "node_layer": node_handler.layer}
-        edit_channels = import_settings["conversion_settings"].get("edit_channels", False)
+        processed_layers = {
+            "structure_layer": structures_handler.layer,
+            "node_layer": node_handler.layer,
+        }
+        edit_channels = import_settings["conversion_settings"].get(
+            "edit_channels", False
+        )
         if edit_channels:
             processed_handlers += [channel_handler, cross_section_location_handler]
             processed_layers["channel_layer"] = channel_handler.layer
-            processed_layers["cross_section_location_layer"] = cross_section_location_handler.layer
+            processed_layers["cross_section_location_layer"] = (
+                cross_section_location_handler.layer
+            )
         return processed_handlers, processed_layers

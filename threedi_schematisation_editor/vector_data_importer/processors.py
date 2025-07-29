@@ -2,11 +2,16 @@ from abc import ABC
 
 from qgis.core import QgsGeometry, QgsWkbTypes
 
-
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.vector_data_importer.utils import update_attributes, FeatureManager, \
-    get_float_value_from_feature
-from threedi_schematisation_editor.utils import find_connection_node, get_next_feature_id
+from threedi_schematisation_editor.utils import (
+    find_connection_node,
+    get_next_feature_id,
+)
+from threedi_schematisation_editor.vector_data_importer.utils import (
+    FeatureManager,
+    get_float_value_from_feature,
+    update_attributes,
+)
 
 
 class Processor(ABC):
@@ -19,7 +24,9 @@ class Processor(ABC):
         self.locator = None
 
     @classmethod
-    def snap_connection_node(cls, feat, point, snapping_distance, locator, connection_id_name):
+    def snap_connection_node(
+        cls, feat, point, snapping_distance, locator, connection_id_name
+    ):
         node = find_connection_node(point, locator, snapping_distance)
         if node:
             feat.setGeometry(QgsGeometry.fromPointXY(node.geometry().asPoint()))
@@ -29,8 +36,12 @@ class Processor(ABC):
             return False
 
     @classmethod
-    def add_connection_node(cls, feat, geom, node_manager, connection_id_name, node_fields):
-        new_node_feat = node_manager.create_new(QgsGeometry.fromPointXY(geom), node_fields)
+    def add_connection_node(
+        cls, feat, geom, node_manager, connection_id_name, node_fields
+    ):
+        new_node_feat = node_manager.create_new(
+            QgsGeometry.fromPointXY(geom), node_fields
+        )
         feat[connection_id_name] = new_node_feat["id"]
         return new_node_feat
 
@@ -50,17 +61,27 @@ class Processor(ABC):
 
 
 class ConnectionNodeProcessor(Processor):
-
     def process_feature(self, src_feat):
         """Process source point into connection node feature."""
         new_geom = ConnectionNodeProcessor.create_new_point_geometry(src_feat)
         if self.transformation:
             new_geom.transform(self.transformation)
-        return {self.target_name : [self.target_manager.create_new(new_geom, self.target_fields)]}
+        return {
+            self.target_name: [
+                self.target_manager.create_new(new_geom, self.target_fields)
+            ]
+        }
 
 
 class StructureProcessor(Processor, ABC):
-    def __init__(self, target_layer, target_model_cls, node_layer, fields_configurations, conversion_settings):
+    def __init__(
+        self,
+        target_layer,
+        target_model_cls,
+        node_layer,
+        fields_configurations,
+        conversion_settings,
+    ):
         super().__init__(target_layer, target_model_cls)
         self.node_fields = node_layer.fields()
         self.node_name = node_layer.name()
@@ -71,14 +92,20 @@ class StructureProcessor(Processor, ABC):
     def add_node(self, new_feat, point, name):
         snapped = False
         if self.conversion_settings.use_snapping:
-            snapped = StructureProcessor.snap_connection_node(new_feat, point, self.conversion_settings.snapping_distance, self.locator,
-                                           name)
+            snapped = StructureProcessor.snap_connection_node(
+                new_feat,
+                point,
+                self.conversion_settings.snapping_distance,
+                self.locator,
+                name,
+            )
         if not snapped or self.conversion_settings.create_connection_nodes:
-            return StructureProcessor.add_connection_node(new_feat, point, self.node_manager, name, self.node_fields)
+            return StructureProcessor.add_connection_node(
+                new_feat, point, self.node_manager, name, self.node_fields
+            )
 
 
 class PointProcessor(StructureProcessor):
-
     def process_feature(self, src_feat):
         """Process source point structure feature."""
         new_nodes = []
@@ -90,15 +117,22 @@ class PointProcessor(StructureProcessor):
         new_node = self.add_node(new_feat, point, "connection_node_id")
         if new_node:
             new_nodes.append(new_node)
-        update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, src_feat,
-                          *new_nodes)
-        update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, src_feat,
-                          new_feat)
-        return {self.target_name : [new_feat], self.node_name : new_nodes}
+        update_attributes(
+            self.fields_configurations[dm.ConnectionNode],
+            dm.ConnectionNode,
+            src_feat,
+            *new_nodes,
+        )
+        update_attributes(
+            self.fields_configurations[self.target_model_cls],
+            self.target_model_cls,
+            src_feat,
+            new_feat,
+        )
+        return {self.target_name: [new_feat], self.node_name: new_nodes}
 
 
 class LineProcessor(StructureProcessor):
-
     @staticmethod
     def new_geometry(src_feat, conversion_settings, target_model_cls):
         """Create new structure geometry based on the source structure feature."""
@@ -108,16 +142,24 @@ class LineProcessor(StructureProcessor):
         geometry_type = src_geometry.type()
         if geometry_type == QgsWkbTypes.GeometryType.LineGeometry:
             src_polyline = src_geometry.asPolyline()
-            dst_polyline = src_polyline if (target_model_cls == dm.Culvert or target_model_cls == dm.Pipe) else [src_polyline[0], src_polyline[-1]]
+            dst_polyline = (
+                src_polyline
+                if (target_model_cls == dm.Culvert or target_model_cls == dm.Pipe)
+                else [src_polyline[0], src_polyline[-1]]
+            )
             dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
         elif geometry_type == QgsWkbTypes.GeometryType.PointGeometry:
             start_point = src_geometry.asPoint()
-            length = get_float_value_from_feature(src_feat,
-                                                  conversion_settings.length_source_field,
-                                                  conversion_settings.length_fallback_value)
-            azimuth = get_float_value_from_feature(src_feat,
-                                                   conversion_settings.azimuth_source_field,
-                                                   conversion_settings.azimuth_fallback_value)
+            length = get_float_value_from_feature(
+                src_feat,
+                conversion_settings.length_source_field,
+                conversion_settings.length_fallback_value,
+            )
+            azimuth = get_float_value_from_feature(
+                src_feat,
+                conversion_settings.azimuth_source_field,
+                conversion_settings.azimuth_fallback_value,
+            )
             end_point = start_point.project(length, azimuth)
             dst_polyline = [start_point, end_point]
             dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
@@ -128,18 +170,30 @@ class LineProcessor(StructureProcessor):
     def process_feature(self, src_feat):
         """Process source linear structure feature."""
         new_nodes = []
-        new_geom = LineProcessor.new_geometry(src_feat, self.conversion_settings, self.target_model_cls)
+        new_geom = LineProcessor.new_geometry(
+            src_feat, self.conversion_settings, self.target_model_cls
+        )
         if self.transformation:
             new_geom.transform(transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
         polyline = new_feat.geometry().asPolyline()
-        for (idx, name) in [(0, 'connection_node_id_start'), (1, 'connection_node_id_end')]:
+        for idx, name in [
+            (0, "connection_node_id_start"),
+            (1, "connection_node_id_end"),
+        ]:
             new_node = self.add_node(new_feat, polyline[idx], name)
             if new_node:
                 new_nodes.append(new_node)
-        update_attributes(self.fields_configurations[self.target_model_cls], self.target_model_cls, src_feat,
-                          new_feat)
-        update_attributes(self.fields_configurations[dm.ConnectionNode], dm.ConnectionNode, src_feat,
-                          *new_nodes)
-        return {self.target_name : [new_feat], self.node_name : new_nodes}
-
+        update_attributes(
+            self.fields_configurations[self.target_model_cls],
+            self.target_model_cls,
+            src_feat,
+            new_feat,
+        )
+        update_attributes(
+            self.fields_configurations[dm.ConnectionNode],
+            dm.ConnectionNode,
+            src_feat,
+            *new_nodes,
+        )
+        return {self.target_name: [new_feat], self.node_name: new_nodes}

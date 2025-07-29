@@ -6,9 +6,16 @@ from qgis.core import NULL, Qgis, QgsMessageLog, QgsSettings
 from qgis.PyQt.QtWidgets import QComboBox
 
 from threedi_schematisation_editor import warnings as threedi_warnings
+from threedi_schematisation_editor.utils import (
+    NULL_STR,
+    REQUIRED_VALUE_STYLESHEET,
+    enum_entry_name_format,
+    get_type_for_casting,
+)
+from threedi_schematisation_editor.vector_data_importer.dialogs.attribute_value_map import (
+    AttributeValueMapDialog,
+)
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
-from threedi_schematisation_editor.vector_data_importer.dialogs.attribute_value_map import AttributeValueMapDialog
-from threedi_schematisation_editor.utils import REQUIRED_VALUE_STYLESHEET, NULL_STR, enum_entry_name_format, get_type_for_casting
 
 
 class CatchThreediWarnings:
@@ -64,7 +71,9 @@ class CatchThreediWarnings:
             for warning_info in self.caught_warnings:
                 message, category, filename, lineno = warning_info
                 warning_text = f"{category.__name__}: {message}"
-                QgsMessageLog.logMessage(warning_text, self.log_category, level=Qgis.Warning)
+                QgsMessageLog.logMessage(
+                    warning_text, self.log_category, level=Qgis.Warning
+                )
 
         # Reset the warnings filter
         warnings.resetwarnings()
@@ -79,12 +88,16 @@ class ImportFieldMappingUtils:
     LAST_CONFIG_DIR_ENTRY = "threedi/last_import_config_dir"
 
     @staticmethod
-    def on_method_changed(source_attribute_combobox, value_map_widget, expression_widget, current_text):
+    def on_method_changed(
+        source_attribute_combobox, value_map_widget, expression_widget, current_text
+    ):
         if current_text != str(ColumnImportMethod.ATTRIBUTE):
             source_attribute_combobox.setDisabled(True)
             value_map_widget.setDisabled(True)
             source_attribute_combobox.setStyleSheet("")
-            expression_widget.setEnabled(current_text == str(ColumnImportMethod.EXPRESSION))
+            expression_widget.setEnabled(
+                current_text == str(ColumnImportMethod.EXPRESSION)
+            )
         else:
             source_attribute_combobox.setEnabled(True)
             value_map_widget.setEnabled(True)
@@ -95,24 +108,37 @@ class ImportFieldMappingUtils:
                 source_attribute_combobox.setStyleSheet(REQUIRED_VALUE_STYLESHEET)
 
     @staticmethod
-    def on_source_attribute_value_changed(method_combobox, source_attribute_combobox, current_text):
-        if method_combobox.currentText() == str(ColumnImportMethod.ATTRIBUTE) and not current_text:
+    def on_source_attribute_value_changed(
+        method_combobox, source_attribute_combobox, current_text
+    ):
+        if (
+            method_combobox.currentText() == str(ColumnImportMethod.ATTRIBUTE)
+            and not current_text
+        ):
             source_attribute_combobox.setStyleSheet(REQUIRED_VALUE_STYLESHEET)
         else:
             source_attribute_combobox.setStyleSheet("")
 
     @staticmethod
     def on_value_map_clicked(
-        source_layer_cbo, source_attribute_combobox, pressed_button, user_communication, parent=None
+        source_layer_cbo,
+        source_attribute_combobox,
+        pressed_button,
+        user_communication,
+        parent=None,
     ):
         source_layer = source_layer_cbo.currentLayer()
-        value_map_dlg = AttributeValueMapDialog(pressed_button, source_attribute_combobox, source_layer, parent)
+        value_map_dlg = AttributeValueMapDialog(
+            pressed_button, source_attribute_combobox, source_layer, parent
+        )
         accepted = value_map_dlg.exec_()
         if accepted:
             try:
                 value_map_dlg.update_value_map()
             except (SyntaxError, ValueError):
-                user_communication.show_error(f"Invalid value map. Action aborted.", parent)
+                user_communication.show_error(
+                    f"Invalid value map. Action aborted.", parent
+                )
 
     @staticmethod
     def update_widget_with_config(widget, key_name, field_type, field_config):
@@ -126,7 +152,9 @@ class ImportFieldMappingUtils:
                 widget.setCurrentText(key_value)
             else:
                 if key_name == "method":
-                    widget.setCurrentText(enum_entry_name_format(ColumnImportMethod(key_value)))
+                    widget.setCurrentText(
+                        enum_entry_name_format(ColumnImportMethod(key_value))
+                    )
                 elif key_name == "default_value" and field_type != bool:
                     widget.setCurrentText(enum_entry_name_format(field_type(key_value)))
                 else:
@@ -149,7 +177,7 @@ class ImportFieldMappingUtils:
                 else widget.currentData()
             )
         elif column_idx == ColumnImportIndex.VALUE_MAP_COLUMN_IDX:
-            key_value = {str(key) : value for key, value in widget.value_map.items()}
+            key_value = {str(key): value for key, value in widget.value_map.items()}
             if not key_value:
                 return None
         elif column_idx == ColumnImportIndex.EXPRESSION_COLUMN_IDX:
@@ -160,7 +188,10 @@ class ImportFieldMappingUtils:
             key_value = widget.text()
             if not key_value:
                 return None
-            if column_idx == ColumnImportIndex.DEFAULT_VALUE_COLUMN_IDX and key_name != NULL_STR:
+            if (
+                column_idx == ColumnImportIndex.DEFAULT_VALUE_COLUMN_IDX
+                and key_name != NULL_STR
+            ):
                 key_value = field_type(key_value)
         return key_value
 

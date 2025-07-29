@@ -1,9 +1,19 @@
-import pytest
-from unittest.mock import MagicMock, patch, call
-from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes, QgsPointXY, QgsFields, QgsField
-from PyQt5.QtCore import QVariant
+from unittest.mock import MagicMock, call, patch
 
-from threedi_schematisation_editor.vector_data_importer.integrators import LinearIntegrator
+import pytest
+from PyQt5.QtCore import QVariant
+from qgis.core import (
+    QgsFeature,
+    QgsField,
+    QgsFields,
+    QgsGeometry,
+    QgsPointXY,
+    QgsWkbTypes,
+)
+
+from threedi_schematisation_editor.vector_data_importer.integrators import (
+    LinearIntegrator,
+)
 
 
 @pytest.fixture
@@ -25,10 +35,9 @@ def structure_fields():
 def channel_feature(channel_fields):
     """Create a simple channel feature with a straight line geometry."""
     feature = QgsFeature(channel_fields)
-    feature.setGeometry(QgsGeometry.fromPolylineXY([
-        QgsPointXY(0, 0),
-        QgsPointXY(100, 0)
-    ]))
+    feature.setGeometry(
+        QgsGeometry.fromPolylineXY([QgsPointXY(0, 0), QgsPointXY(100, 0)])
+    )
     feature.setAttribute("id", 1)
     return feature
 
@@ -37,10 +46,9 @@ def channel_feature(channel_fields):
 def line_structure_feature_no_intersection(structure_fields):
     """Create a line structure feature perpendicular to the channel."""
     feature = QgsFeature(structure_fields)
-    feature.setGeometry(QgsGeometry.fromPolylineXY([
-        QgsPointXY(50, -10),
-        QgsPointXY(50, 10)
-    ]))
+    feature.setGeometry(
+        QgsGeometry.fromPolylineXY([QgsPointXY(50, -10), QgsPointXY(50, 10)])
+    )
     feature.setAttribute("id", 2)
     return feature
 
@@ -49,10 +57,9 @@ def line_structure_feature_no_intersection(structure_fields):
 def line_structure_feature(structure_fields):
     """Create a line structure feature that intersects the channel at both ends."""
     feature = QgsFeature(structure_fields)
-    feature.setGeometry(QgsGeometry.fromPolylineXY([
-        QgsPointXY(25, 0),
-        QgsPointXY(75, 0)
-    ]))
+    feature.setGeometry(
+        QgsGeometry.fromPolylineXY([QgsPointXY(25, 0), QgsPointXY(75, 0)])
+    )
     feature.setAttribute("id", 3)
     return feature
 
@@ -128,19 +135,27 @@ def cross_section_feature_same_distance(cross_section_fields):
 
 
 @pytest.fixture
-def cross_section_features_map(cross_section_feature_near, cross_section_feature_middle, cross_section_feature_far, cross_section_feature_same_distance):
+def cross_section_features_map(
+    cross_section_feature_near,
+    cross_section_feature_middle,
+    cross_section_feature_far,
+    cross_section_feature_same_distance,
+):
     """Create a map of cross section features."""
     return {
         10: cross_section_feature_near,
         11: cross_section_feature_middle,
         12: cross_section_feature_far,
-        13: cross_section_feature_same_distance
+        13: cross_section_feature_same_distance,
     }
+
 
 class TestChannelStructureIntegration:
     """Tests for channel structure integration methods of the LinearIntegrator class."""
 
-    def test_get_channel_structure_from_line(self, channel_feature, line_structure_feature):
+    def test_get_channel_structure_from_line(
+        self, channel_feature, line_structure_feature
+    ):
         """Test get_channel_structure_from_line with a line that intersects the channel."""
         snapping_distance = 5.0
         result = LinearIntegrator.get_channel_structure_from_line(
@@ -153,10 +168,14 @@ class TestChannelStructureIntegration:
         # Check that the result has the expected attributes
         assert result.channel_id == 1
         assert result.feature["id"] == 3
-        assert result.m == 50.0  # The line is at x=50, so the intersection is at 50% of the channel
+        assert (
+            result.m == 50.0
+        )  # The line is at x=50, so the intersection is at 50% of the channel
         assert result.length == 50.0  # The line is 20 units long
 
-    def test_get_channel_structure_from_line_both_ends_intersect(self, channel_feature, line_structure_feature_no_intersection):
+    def test_get_channel_structure_from_line_both_ends_intersect(
+        self, channel_feature, line_structure_feature_no_intersection
+    ):
         """Test get_channel_structure_from_line with a line that intersects the channel at both ends."""
         snapping_distance = 5.0
         result = LinearIntegrator.get_channel_structure_from_line(
@@ -170,19 +189,27 @@ class TestChannelStructureIntegration:
         "length_source_field, expected_length",
         [
             ("length", 10.0),  # Use length from feature attribute
-            (None, 5.0)        # Use fallback length value
+            (None, 5.0),  # Use fallback length value
         ],
-        ids=["with_length_field", "with_fallback"]
+        ids=["with_length_field", "with_fallback"],
     )
-    def test_get_channel_structure_from_point(self, channel_feature, point_structure_feature, 
-                                             length_source_field, expected_length):
+    def test_get_channel_structure_from_point(
+        self,
+        channel_feature,
+        point_structure_feature,
+        length_source_field,
+        expected_length,
+    ):
         """Test get_channel_structure_from_point with different length source configurations."""
         snapping_distance = 5.0
         length_fallback_value = 5.0
 
         result = LinearIntegrator.get_channel_structure_from_point(
-            point_structure_feature, channel_feature, snapping_distance,
-            length_source_field, length_fallback_value
+            point_structure_feature,
+            channel_feature,
+            snapping_distance,
+            length_source_field,
+            length_fallback_value,
         )
 
         # Check that the result is not None
@@ -191,18 +218,27 @@ class TestChannelStructureIntegration:
         # Check that the result has the expected attributes
         assert result.channel_id == 1
         assert result.feature["id"] == 4
-        assert result.m == 50.0  # The point is at x=50, so the intersection is at 50% of the channel
-        assert result.length == expected_length  # Length based on source field or fallback
+        assert (
+            result.m == 50.0
+        )  # The point is at x=50, so the intersection is at 50% of the channel
+        assert (
+            result.length == expected_length
+        )  # Length based on source field or fallback
 
-    def test_get_channel_structure_from_point_too_far(self, channel_feature, point_structure_feature_far):
+    def test_get_channel_structure_from_point_too_far(
+        self, channel_feature, point_structure_feature_far
+    ):
         """Test get_channel_structure_from_point with a point too far from the channel."""
         snapping_distance = 5.0
         length_source_field = "length"
         length_fallback_value = 5.0
 
         result = LinearIntegrator.get_channel_structure_from_point(
-            point_structure_feature_far, channel_feature, snapping_distance,
-            length_source_field, length_fallback_value
+            point_structure_feature_far,
+            channel_feature,
+            snapping_distance,
+            length_source_field,
+            length_fallback_value,
         )
 
         # The method should return None if the point is too far from the channel
@@ -212,12 +248,18 @@ class TestChannelStructureIntegration:
         "selected_ids, expected_ids_in_processed",
         [
             (None, [4, 2]),  # Test with selected_ids=None
-            ([], [4, 2]),    # Test with selected_ids=[]
-            ([4], [4])      # Test with selected_ids=[4] (only the point structure)
-        ]
+            ([], [4, 2]),  # Test with selected_ids=[]
+            ([4], [4]),  # Test with selected_ids=[4] (only the point structure)
+        ],
     )
-    def test_get_channel_structures_data(self, channel_feature, point_structure_feature, line_structure_feature,
-                                        selected_ids, expected_ids_in_processed):
+    def test_get_channel_structures_data(
+        self,
+        channel_feature,
+        point_structure_feature,
+        line_structure_feature,
+        selected_ids,
+        expected_ids_in_processed,
+    ):
         """Test get_channel_structures_data with different selected_ids parameters."""
         # Create a mock LinearIntegrator instance
         integrator = MagicMock()
@@ -225,11 +267,13 @@ class TestChannelStructureIntegration:
         # Set up the spatial_indexes_map attribute
         structure_features_map = {
             4: point_structure_feature,  # point_structure_feature has id=4
-            2: line_structure_feature,   # line_structure_feature has id=2
+            2: line_structure_feature,  # line_structure_feature has id=2
         }
         structure_index = MagicMock()
         structure_index.intersects.return_value = [4, 2]  # Return both feature IDs
-        integrator.spatial_indexes_map = {'source': (structure_features_map, structure_index)}
+        integrator.spatial_indexes_map = {
+            "source": (structure_features_map, structure_index)
+        }
 
         # Set up the conversion_settings attribute
         integrator.conversion_settings = MagicMock()
@@ -238,7 +282,9 @@ class TestChannelStructureIntegration:
         integrator.conversion_settings.length_fallback_value = 5.0
 
         # Call the method with the specified selected_ids
-        result, processed_ids = LinearIntegrator.get_channel_structures_data(integrator, channel_feature, selected_ids=selected_ids)
+        result, processed_ids = LinearIntegrator.get_channel_structures_data(
+            integrator, channel_feature, selected_ids=selected_ids
+        )
 
         # Check the results
         assert len(result) == len(expected_ids_in_processed)
@@ -249,7 +295,11 @@ class TestChannelStructureIntegration:
             assert id in processed_ids
 
         # Check that the expected IDs are not in processed_ids
-        expected_ids_not_in_processed = [id for id in structure_features_map.keys() if id not in expected_ids_in_processed]
+        expected_ids_not_in_processed = [
+            id
+            for id in structure_features_map.keys()
+            if id not in expected_ids_in_processed
+        ]
         for id in expected_ids_not_in_processed:
             assert id not in processed_ids
 
@@ -257,10 +307,16 @@ class TestChannelStructureIntegration:
 class TestCrossSectionIntegration:
     """Tests for cross section integration methods of the LinearIntegrator class."""
 
-    @pytest.mark.parametrize("cross_section_fids, expected_result",
-                             [([10, 11, 12], [10, 11]),
-                              ([12], [])])
-    def test_get_cross_sections_for_channel(self, cross_section_fids, expected_result, channel_feature, cross_section_features_map):
+    @pytest.mark.parametrize(
+        "cross_section_fids, expected_result", [([10, 11, 12], [10, 11]), ([12], [])]
+    )
+    def test_get_cross_sections_for_channel(
+        self,
+        cross_section_fids,
+        expected_result,
+        channel_feature,
+        cross_section_features_map,
+    ):
         """Test get_cross_sections_for_channel with features that intersect and don't intersect."""
         # The near and middle cross sections should intersect, but the far one shouldn't
         result = LinearIntegrator.get_cross_sections_for_channel(
@@ -273,34 +329,49 @@ class TestCrossSectionIntegration:
         [
             (
                 ["cross_section_feature_near", "cross_section_feature_middle"],
-                11  # Middle feature is closest to the channel
+                11,  # Middle feature is closest to the channel
             ),
             (
                 ["cross_section_feature_near"],
-                10  # Only one feature, so it's the closest
+                10,  # Only one feature, so it's the closest
             ),
             (
-                ["cross_section_feature_near", "cross_section_feature_middle", "cross_section_feature_far"],
-                11  # Middle feature is closest to the channel
+                [
+                    "cross_section_feature_near",
+                    "cross_section_feature_middle",
+                    "cross_section_feature_far",
+                ],
+                11,  # Middle feature is closest to the channel
             ),
             (
                 ["cross_section_feature_middle", "cross_section_feature_same_distance"],
-                11  # Both features have the same distance, but the first one in the list is returned
+                11,  # Both features have the same distance, but the first one in the list is returned
             ),
             (
                 [],
-                None  # No source IDs, should return None
-            )
+                None,  # No source IDs, should return None
+            ),
         ],
-        ids=["multiple_features", "single_feature", "all_features", "same_distance_features", "empty_source_ids"]
+        ids=[
+            "multiple_features",
+            "single_feature",
+            "all_features",
+            "same_distance_features",
+            "empty_source_ids",
+        ],
     )
-    @patch('threedi_schematisation_editor.vector_data_importer.integrators.get_features_by_expression')
-    def test_get_closest_cross_section_location(self, mock_get_features, channel_feature, 
-                                              features, expected_id, request):
+    @patch(
+        "threedi_schematisation_editor.vector_data_importer.integrators.get_features_by_expression"
+    )
+    def test_get_closest_cross_section_location(
+        self, mock_get_features, channel_feature, features, expected_id, request
+    ):
         """Test get_closest_cross_section_location with different scenarios."""
         # Mock the get_features_by_expression function to return our test features
         if features:
-            mock_get_features.return_value = [request.getfixturevalue(fixture_name) for fixture_name in features]
+            mock_get_features.return_value = [
+                request.getfixturevalue(fixture_name) for fixture_name in features
+            ]
         else:
             mock_get_features.return_value = []
         source_ids = [feature.id() for feature in mock_get_features.return_value]
@@ -318,12 +389,14 @@ class TestCrossSectionIntegration:
     @pytest.mark.parametrize(
         "cross_section_feature, expected_result",
         [
-            ("cross_section_feature_near", True),   # Intersects with channel
-            ("cross_section_feature_far", False)    # Doesn't intersect with any channel
+            ("cross_section_feature_near", True),  # Intersects with channel
+            ("cross_section_feature_far", False),  # Doesn't intersect with any channel
         ],
-        ids=["intersects", "no_intersect"]
+        ids=["intersects", "no_intersect"],
     )
-    def test_is_hanging_cross_section(self, channel_feature, cross_section_feature, expected_result, request):
+    def test_is_hanging_cross_section(
+        self, channel_feature, cross_section_feature, expected_result, request
+    ):
         """Test is_hanging_cross_section with different cross-section features."""
         # Get the actual fixture from the parameter name
         cross_section_feature = request.getfixturevalue(cross_section_feature)
@@ -332,7 +405,9 @@ class TestCrossSectionIntegration:
         )
         assert result is expected_result
 
-    @patch('threedi_schematisation_editor.vector_data_importer.integrators.spatial_index')
+    @patch(
+        "threedi_schematisation_editor.vector_data_importer.integrators.spatial_index"
+    )
     def test_get_hanging_cross_sections(self, mock_spatial_index, channel_feature):
         """Test get_hanging_cross_sections collects IDs correctly.
 
@@ -361,7 +436,9 @@ class TestCrossSectionIntegration:
         mock_spatial_index.return_value = (channel_feats, channels_spatial_index)
 
         # Mock is_hanging_cross_section to return True
-        with patch.object(LinearIntegrator, 'is_hanging_cross_section', return_value=True):
+        with patch.object(
+            LinearIntegrator, "is_hanging_cross_section", return_value=True
+        ):
             # Call the method with a list of visited channel IDs
             result = LinearIntegrator.get_hanging_cross_sections(integrator, [1])
 
@@ -375,7 +452,9 @@ def test_substring_feature(channel_feature):
     fields = QgsFields()
     fields.append(QgsField("id", QVariant.Int))
     attributes = {"id": 42}
-    result = LinearIntegrator.substring_feature(curve, 25, 75, fields, False, **attributes)
+    result = LinearIntegrator.substring_feature(
+        curve, 25, 75, fields, False, **attributes
+    )
     assert result["id"] == 42
 
 
@@ -389,7 +468,10 @@ class TestNodeManagement:
         integrator.node_by_location = {}
 
         # Create a real FeatureManager for the node_manager
-        from threedi_schematisation_editor.vector_data_importer.utils import FeatureManager
+        from threedi_schematisation_editor.vector_data_importer.utils import (
+            FeatureManager,
+        )
+
         integrator.node_manager = FeatureManager(42)  # Start with ID 42
 
         # Create a point, node_layer_fields, and node_attributes
@@ -398,7 +480,9 @@ class TestNodeManagement:
         node_attributes = {"length": 4.0}
 
         # Call the add_node method
-        result = LinearIntegrator.add_node(integrator, point, node_layer_fields, node_attributes)
+        result = LinearIntegrator.add_node(
+            integrator, point, node_layer_fields, node_attributes
+        )
 
         # Assert that the result is a QgsFeature
         assert isinstance(result, QgsFeature)
@@ -426,7 +510,9 @@ class TestNodeManagement:
         points = {"start": (QgsPointXY(0, 0), 101), "end": (QgsPointXY(100, 0), 102)}
         start_point = QgsPointXY(0, 0)
         end_point = QgsPointXY(100, 0)
-        integrator.node_by_location = {points[name][0] : points[name][1] for name in initial_nodes}
+        integrator.node_by_location = {
+            points[name][0]: points[name][1] for name in initial_nodes
+        }
 
         # Create node_layer_fields with necessary fields
         node_layer_fields = QgsFields()
@@ -462,7 +548,9 @@ class TestNodeManagement:
         dst_feature.geometry().asPolyline.return_value = [start_point, end_point]
 
         # Call the update_feature_endpoints method
-        result = LinearIntegrator.update_feature_endpoints(integrator, dst_feature, name="Test Node")
+        result = LinearIntegrator.update_feature_endpoints(
+            integrator, dst_feature, name="Test Node"
+        )
         assert result == features_to_add
 
         # Assert that the node_by_location dictionary has the correct values
@@ -470,15 +558,13 @@ class TestNodeManagement:
         assert integrator.node_by_location[end_point] == 102
 
 
-@pytest.mark.parametrize('simplify', [True, False])
+@pytest.mark.parametrize("simplify", [True, False])
 def test_get_substring_geometry_argument_processing(simplify):
     """Test that get_substring_geometry processes the simplify argument correctly."""
     # Create a simple line geometry for testing
-    line_geom = QgsGeometry.fromPolylineXY([
-        QgsPointXY(0, 0),
-        QgsPointXY(50, 0),
-        QgsPointXY(100, 0)
-    ])
+    line_geom = QgsGeometry.fromPolylineXY(
+        [QgsPointXY(0, 0), QgsPointXY(50, 0), QgsPointXY(100, 0)]
+    )
 
     # Get the underlying curve object
     curve = line_geom.constGet()
@@ -488,7 +574,9 @@ def test_get_substring_geometry_argument_processing(simplify):
     end_distance = 75.0
 
     # Call the function with simplify=False
-    result = LinearIntegrator.get_substring_geometry(curve, start_distance, end_distance, simplify=simplify)
+    result = LinearIntegrator.get_substring_geometry(
+        curve, start_distance, end_distance, simplify=simplify
+    )
 
     # Verify that both calls return a QgsGeometry object
     assert isinstance(result, QgsGeometry)

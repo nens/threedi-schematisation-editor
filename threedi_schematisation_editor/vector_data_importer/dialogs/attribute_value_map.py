@@ -4,7 +4,10 @@ from qgis.core import NULL
 from qgis.PyQt.QtWidgets import QInputDialog, QTableWidgetItem
 
 from threedi_schematisation_editor.utils import QUOTED_NULL
-from threedi_schematisation_editor.vector_data_importer.dialogs import vm_basecls, vm_uicls
+from threedi_schematisation_editor.vector_data_importer.dialogs import (
+    vm_basecls,
+    vm_uicls,
+)
 
 
 class AttributeValueMapDialog(vm_basecls, vm_uicls):
@@ -13,7 +16,9 @@ class AttributeValueMapDialog(vm_basecls, vm_uicls):
     SRC_COLUMN_IDX = 0
     DST_COLUMN_IDX = 1
 
-    def __init__(self, pressed_button, source_attribute_combobox, source_layer, parent=None):
+    def __init__(
+        self, pressed_button, source_attribute_combobox, source_layer, parent=None
+    ):
         super().__init__(parent)
         self.setupUi(self)
         self.pressed_button = pressed_button
@@ -42,12 +47,18 @@ class AttributeValueMapDialog(vm_basecls, vm_uicls):
         self.value_map_table.setRowCount(0)
         self.value_map_table.setColumnCount(2)
         self.value_map_table.setHorizontalHeaderLabels(self.header)
-        for row_number, (source_value, target_value) in enumerate(self.pressed_button.value_map.items()):
+        for row_number, (source_value, target_value) in enumerate(
+            self.pressed_button.value_map.items()
+        ):
             source_value = self.format_value_map_data(source_value)
             target_value = self.format_value_map_data(target_value)
             self.value_map_table.insertRow(row_number)
-            self.value_map_table.setItem(row_number, self.SRC_COLUMN_IDX, QTableWidgetItem(source_value))
-            self.value_map_table.setItem(row_number, self.DST_COLUMN_IDX, QTableWidgetItem(target_value))
+            self.value_map_table.setItem(
+                row_number, self.SRC_COLUMN_IDX, QTableWidgetItem(source_value)
+            )
+            self.value_map_table.setItem(
+                row_number, self.DST_COLUMN_IDX, QTableWidgetItem(target_value)
+            )
         self.value_map_table.resizeColumnsToContents()
 
     def add_value_map_row(self):
@@ -79,23 +90,36 @@ class AttributeValueMapDialog(vm_basecls, vm_uicls):
         if accept is True:
             row_count = self.value_map_table.rowCount()
             selected_field_name_idx = fields.lookupField(selected_field_name)
-            selected_rows = {idx.row() for idx in self.value_map_table.selectedIndexes()}
+            selected_rows = {
+                idx.row() for idx in self.value_map_table.selectedIndexes()
+            }
             if selected_rows:
                 last_row_number = max(selected_rows) + 1
             else:
                 last_row_number = row_count
             unique_values = self.source_layer.uniqueValues(selected_field_name_idx)
-            existing_values = {self.value_map_table.item(row, self.SRC_COLUMN_IDX).text() for row in range(row_count)}
+            existing_values = {
+                self.value_map_table.item(row, self.SRC_COLUMN_IDX).text()
+                for row in range(row_count)
+            }
             skipped_rows = 0
-            for i, source_value in enumerate(sorted(unique_values), start=last_row_number):
+            for i, source_value in enumerate(
+                sorted(unique_values), start=last_row_number
+            ):
                 source_value_str = self.format_value_map_data(source_value)
                 if source_value_str in existing_values:
                     skipped_rows += 1
                     continue
                 new_row_number = i - skipped_rows
                 self.value_map_table.insertRow(new_row_number)
-                self.value_map_table.setItem(new_row_number, self.SRC_COLUMN_IDX, QTableWidgetItem(source_value_str))
-                self.value_map_table.setItem(new_row_number, self.DST_COLUMN_IDX, QTableWidgetItem(QUOTED_NULL))
+                self.value_map_table.setItem(
+                    new_row_number,
+                    self.SRC_COLUMN_IDX,
+                    QTableWidgetItem(source_value_str),
+                )
+                self.value_map_table.setItem(
+                    new_row_number, self.DST_COLUMN_IDX, QTableWidgetItem(QUOTED_NULL)
+                )
 
     @staticmethod
     def update_value_map_button(pressed_button, value_map):

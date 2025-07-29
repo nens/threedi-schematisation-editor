@@ -1,7 +1,7 @@
-import os
 import gc
-import pytest
+import os
 
+import pytest
 from qgis.core import QgsApplication, QgsProcessingFeedback
 
 
@@ -18,5 +18,3 @@ def qgis_application() -> QgsApplication:
     qgs.exitQgis()
     gc.collect()
     print("Minimal QGIS cleanup complete.")
-
-

@@ -12,7 +12,10 @@ from qgis.core import (
 from qgis.PyQt.QtCore import QCoreApplication
 
 from threedi_schematisation_editor.enumerators import ExchangeTypeChannel
-from threedi_schematisation_editor.utils import get_features_by_expression, get_next_feature_id
+from threedi_schematisation_editor.utils import (
+    get_features_by_expression,
+    get_next_feature_id,
+)
 
 
 class GenerateExchangeLines(QgsProcessingAlgorithm):
@@ -65,7 +68,9 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
         )
 
         offset_param = QgsProcessingParameterNumber(
-            self.OFFSET_DISTANCE, self.tr("Distance (m)"), type=QgsProcessingParameterNumber.Double
+            self.OFFSET_DISTANCE,
+            self.tr("Distance (m)"),
+            type=QgsProcessingParameterNumber.Double,
         )
         offset_param.setMetadata({"widget_wrapper": {"decimals": 3}})
         self.addParameter(offset_param)
@@ -89,13 +94,19 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
                 invalid_parameters_messages.append(
                     "Channel layer is missing required fields ('id' and/or 'exchange_type')"
                 )
-            offset_distance = self.parameterAsDouble(parameters, self.OFFSET_DISTANCE, context)
+            offset_distance = self.parameterAsDouble(
+                parameters, self.OFFSET_DISTANCE, context
+            )
             if offset_distance == 0:
                 invalid_parameters_messages.append("Offset distance cannot be 0")
-            exchange_lines_lyr = self.parameterAsLayer(parameters, self.EXCHANGE_LINES, context)
+            exchange_lines_lyr = self.parameterAsLayer(
+                parameters, self.EXCHANGE_LINES, context
+            )
             exchange_lines_names = {f.name() for f in exchange_lines_lyr.fields()}
             if "channel_id" not in exchange_lines_names:
-                invalid_parameters_messages.append("Exchange line layer is missing required 'channel_id' field")
+                invalid_parameters_messages.append(
+                    "Exchange line layer is missing required 'channel_id' field"
+                )
             if invalid_parameters_messages:
                 success = False
                 msg = "\n".join(invalid_parameters_messages)
@@ -104,13 +115,23 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
     def processAlgorithm(self, parameters, context, feedback):
         channels = self.parameterAsSource(parameters, self.INPUT_CHANNELS, context)
         if channels is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT_CHANNELS))
-        offset_distance = self.parameterAsDouble(parameters, self.OFFSET_DISTANCE, context)
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.INPUT_CHANNELS)
+            )
+        offset_distance = self.parameterAsDouble(
+            parameters, self.OFFSET_DISTANCE, context
+        )
         if offset_distance is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.OFFSET_DISTANCE))
-        exchange_lines_lyr = self.parameterAsLayer(parameters, self.EXCHANGE_LINES, context)
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.OFFSET_DISTANCE)
+            )
+        exchange_lines_lyr = self.parameterAsLayer(
+            parameters, self.EXCHANGE_LINES, context
+        )
         if exchange_lines_lyr is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.EXCHANGE_LINES))
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.EXCHANGE_LINES)
+            )
         exchange_line_feats = []
         exchange_lines_fields = exchange_lines_lyr.fields()
         current_exchange_line_id = get_next_feature_id(exchange_lines_lyr)
@@ -128,7 +149,9 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
             channel_fid = channel_feat.id()
             channel_id = channel_feat["id"]
             if not channel_id:
-                feedback.reportError(f"Error: invalid channel ID. Processing feature with FID {channel_fid} skipped.")
+                feedback.reportError(
+                    f"Error: invalid channel ID. Processing feature with FID {channel_fid} skipped."
+                )
                 continue
             exchange_type = channel_feat["exchange_type"]
             if exchange_type not in exchange_type_max_exchange_lines:
@@ -138,14 +161,20 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
                 continue
             exchange_type_name = ExchangeTypeChannel(exchange_type).name
             channel_expression_text = f'"channel_id" = {channel_id}'
-            channel_exchange_lines = list(get_features_by_expression(exchange_lines_lyr, channel_expression_text))
+            channel_exchange_lines = list(
+                get_features_by_expression(exchange_lines_lyr, channel_expression_text)
+            )
             calc_type_limit = exchange_type_max_exchange_lines[exchange_type]
             if len(channel_exchange_lines) >= calc_type_limit:
-                error_msg = error_template.format(channel_id, exchange_type, exchange_type_name, calc_type_limit)
+                error_msg = error_template.format(
+                    channel_id, exchange_type, exchange_type_name, calc_type_limit
+                )
                 feedback.reportError(error_msg)
                 continue
             channel_geom = channel_feat.geometry()
-            offset_geom = channel_geom.offsetCurve(offset_distance, 8, Qgis.JoinStyle.Bevel, 0.0)
+            offset_geom = channel_geom.offsetCurve(
+                offset_distance, 8, Qgis.JoinStyle.Bevel, 0.0
+            )
             new_exchange_line = QgsFeature(exchange_lines_fields)
             new_exchange_line["id"] = current_exchange_line_id
             new_exchange_line["channel_id"] = channel_feat["id"]

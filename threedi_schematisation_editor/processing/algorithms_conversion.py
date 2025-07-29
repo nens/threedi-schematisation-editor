@@ -5,8 +5,8 @@ from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,
-    QgsProcessingParameterFile,
     QgsProcessingParameterFeatureSource,
+    QgsProcessingParameterFile,
     QgsProject,
 )
 from qgis.PyQt.QtCore import QCoreApplication
@@ -47,10 +47,12 @@ class BaseImporter(QgsProcessingAlgorithm):
         return self.tr(f"Import {self.get_feature_repr()}s")
 
     def shortHelpString(self):
-        return self.tr(f"""Import {self.get_feature_repr()}s from the external source layer.""")
+        return self.tr(
+            f"""Import {self.get_feature_repr()}s from the external source layer."""
+        )
 
     def get_feature_repr(self):
-        return self.FEATURE_TYPE.replace('_',' ')
+        return self.FEATURE_TYPE.replace("_", " ")
 
     def initAlgorithm(self, config=None):
         source_layer = QgsProcessingParameterFeatureSource(
@@ -90,13 +92,21 @@ class BaseImporter(QgsProcessingAlgorithm):
     def processAlgorithm(self, parameters, context, feedback):
         source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
         if source_layer is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
-        import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.SOURCE_LAYER)
+            )
+        import_config_file = self.parameterAsFile(
+            parameters, self.IMPORT_CONFIG, context
+        )
         if import_config_file is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.IMPORT_CONFIG))
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.IMPORT_CONFIG)
+            )
         target_gpkg = self.parameterAsFile(parameters, self.TARGET_GPKG, context)
         if target_gpkg is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.TARGET_GPKG)
+            )
 
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
@@ -118,6 +128,7 @@ class SimpleImporter(BaseImporter):
 
 class ImportConnectionNodes(SimpleImporter):
     """Import connection nodes."""
+
     IMPORTER_CLASS = ConnectionNodesImporter
     FEATURE_TYPE = "connection_node"  # To be overridden by subclasses
 
@@ -127,12 +138,14 @@ class ImportConnectionNodes(SimpleImporter):
 
 class ImportPipes(SimpleImporter):
     """Import pipes."""
+
     IMPORTER_CLASS = PipesImporter
     FEATURE_TYPE = "pipe"  # To be overridden by subclasses
 
 
 class StructureImporter(BaseImporter):
     """Base class for importing different feature types."""
+
     IMPORTER_CLASS = None  # To be overridden by subclasses
     INTEGRATOR_CLASS = None  # To be overridden by subclasses
 
@@ -148,6 +161,7 @@ class StructureImporter(BaseImporter):
 
 class ImportCulverts(StructureImporter):
     """Import culverts."""
+
     FEATURE_TYPE = "culvert"
     IMPORTER_CLASS = CulvertsImporter
     INTEGRATOR_CLASS = CulvertsImporter
@@ -155,6 +169,7 @@ class ImportCulverts(StructureImporter):
 
 class ImportOrifices(StructureImporter):
     """Import orifices."""
+
     FEATURE_TYPE = "orifice"
     IMPORTER_CLASS = OrificesImporter
     INTEGRATOR_CLASS = OrificesImporter
@@ -162,8 +177,7 @@ class ImportOrifices(StructureImporter):
 
 class ImportWeirs(StructureImporter):
     """Import weirs."""
+
     FEATURE_TYPE = "weir"
     IMPORTER_CLASS = WeirsImporter
     INTEGRATOR_CLASS = WeirsImporter
-
-

@@ -77,7 +77,9 @@ class ModelObject:
     def fields_display_names(cls) -> dict:
         display_names_mapping = {
             field_name: display_name
-            for field_name, display_name in zip(cls.__annotations__.keys(), cls.display_names())
+            for field_name, display_name in zip(
+                cls.__annotations__.keys(), cls.display_names()
+            )
         }
         return display_names_mapping
 
@@ -867,7 +869,9 @@ class NumericalSettings(ModelObject):
     convergence_cg: Optional[HighPrecisionFloat]
     convergence_eps: Optional[HighPrecisionFloat]
     flow_direction_threshold: Optional[HighPrecisionFloat]
-    friction_shallow_water_depth_correction: Optional[FrictionShallowWaterDepthCorrection]
+    friction_shallow_water_depth_correction: Optional[
+        FrictionShallowWaterDepthCorrection
+    ]
     general_numerical_threshold: Optional[HighPrecisionFloat]
     time_integration_method: Optional[TimeIntegrationMethod]
     limiter_waterlevel_gradient_1d: Optional[bool]
@@ -1127,7 +1131,9 @@ ELEMENTS_WITH_TIMESERIES = (
 )
 
 ELEMENTS_WITH_RASTERS = tuple(
-    model_cls for model_cls in chain(SETTINGS_ELEMENTS, HYDROLOGICAL_PROCESSES) if model_cls.RELATED_RASTERS
+    model_cls
+    for model_cls in chain(SETTINGS_ELEMENTS, HYDROLOGICAL_PROCESSES)
+    if model_cls.RELATED_RASTERS
 )
 
 TABLE_MANNING = MappingProxyType(

@@ -2,7 +2,10 @@ from qgis.core import QgsSettings
 from qgis.PyQt.QtCore import QItemSelectionModel, Qt
 from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
 
-from threedi_schematisation_editor.vector_data_importer.dialogs import load_basecls, load_uicls
+from threedi_schematisation_editor.vector_data_importer.dialogs import (
+    load_basecls,
+    load_uicls,
+)
 
 
 class LoadSchematisationDialog(load_basecls, load_uicls):
@@ -28,7 +31,11 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
     def list_working_dir_schematisations(self):
         """Populate 3Di Working Directory schematisations."""
         try:
-            from threedi_mi_utils import WIPRevision, list_local_schematisations, replace_revision_data
+            from threedi_mi_utils import (
+                WIPRevision,
+                list_local_schematisations,
+                replace_revision_data,
+            )
         except ImportError:
             self.missing_lib_label.setHidden(False)
             return
@@ -36,9 +43,15 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
         if not self.working_dir:
             return
         self.schematisation_model.clear()
-        self.schematisation_model.setHorizontalHeaderLabels(self.schematisation_list_header)
-        local_schematisations = list_local_schematisations(self.working_dir, use_config_for_revisions=False)
-        last_used_schematisation_dir = self.settings.value("threedi/last_schematisation_folder", "")
+        self.schematisation_model.setHorizontalHeaderLabels(
+            self.schematisation_list_header
+        )
+        local_schematisations = list_local_schematisations(
+            self.working_dir, use_config_for_revisions=False
+        )
+        last_used_schematisation_dir = self.settings.value(
+            "threedi/last_schematisation_folder", ""
+        )
         last_used_schematisation_row_number = None
         for local_schematisation in local_schematisations.values():
             local_schematisation_name = local_schematisation.name
@@ -52,9 +65,13 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
                 revision_number_str = f"{wip_revision.number} (work in progress)"
                 revision_number_item = QStandardItem(revision_number_str)
                 revision_number_item.setData(wip_revision_db, Qt.UserRole)
-                self.schematisation_model.appendRow([schematisation_name_item, revision_number_item])
+                self.schematisation_model.appendRow(
+                    [schematisation_name_item, revision_number_item]
+                )
                 if wip_revision.schematisation_dir == last_used_schematisation_dir:
-                    last_used_schematisation_row_number = self.schematisation_model.rowCount() - 1
+                    last_used_schematisation_row_number = (
+                        self.schematisation_model.rowCount() - 1
+                    )
             for revision_number, revision in local_schematisation.revisions.items():
                 try:
                     revision_db = revision.schematisation_db_filepath
@@ -65,13 +82,19 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
                 schematisation_name_item = QStandardItem(local_schematisation_name)
                 revision_number_item = QStandardItem(str(revision.number))
                 revision_number_item.setData(revision_db, Qt.UserRole)
-                self.schematisation_model.appendRow([schematisation_name_item, revision_number_item])
+                self.schematisation_model.appendRow(
+                    [schematisation_name_item, revision_number_item]
+                )
                 if revision.schematisation_dir == last_used_schematisation_dir:
-                    last_used_schematisation_row_number = self.schematisation_model.rowCount() - 1
+                    last_used_schematisation_row_number = (
+                        self.schematisation_model.rowCount() - 1
+                    )
         for i in range(len(self.schematisation_list_header)):
             self.schematisation_tv.resizeColumnToContents(i)
         if last_used_schematisation_row_number is not None:
-            last_used_schematisation_row_idx = self.schematisation_model.index(last_used_schematisation_row_number, 0)
+            last_used_schematisation_row_idx = self.schematisation_model.index(
+                last_used_schematisation_row_number, 0
+            )
             self.schematisation_tv.selectionModel().setCurrentIndex(
                 last_used_schematisation_row_idx, QItemSelectionModel.ClearAndSelect
             )
@@ -82,7 +105,10 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
         if self.load_tab.currentIndex() == 0:
             index = self.schematisation_tv.currentIndex()
             if not index.isValid():
-                self.uc.show_warn("Nothing selected. Please select schematisation revision to continue.", parent=self)
+                self.uc.show_warn(
+                    "Nothing selected. Please select schematisation revision to continue.",
+                    parent=self,
+                )
                 return
             current_row = index.row()
             revision_item = self.schematisation_model.item(current_row, 1)
@@ -91,7 +117,10 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
         else:
             selected_filepath = self.file_browse_widget.filePath()
             if not selected_filepath:
-                self.uc.show_warn("No file selected. Please select schematisation file to continue.", parent=self)
+                self.uc.show_warn(
+                    "No file selected. Please select schematisation file to continue.",
+                    parent=self,
+                )
                 return
             self.selected_schematisation_filepath = self.file_browse_widget.filePath()
         self.accept()
