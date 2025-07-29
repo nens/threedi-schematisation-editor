@@ -1,188 +1,127 @@
-import shutil
-import os
-import gc
 import json
 import pytest
-import tempfile
 
-from pathlib import Path
 import shapely
 from shapely.testing import assert_geometries_equal
 
-from qgis.core import QgsApplication, QgsProcessingFeedback, QgsVectorLayer, QgsWkbTypes, NULL
-from qgis.analysis import QgsNativeAlgorithms
-import processing
-from processing.core.Processing import Processing
-from threedi_schematisation_editor.processing import ThreediSchematisationEditorProcessingProvider
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
+from threedi_schematisation_editor.vector_data_importer.importers import (
+    ConnectionNodesImporter,
+    CulvertsImporter,
+    WeirsImporter
+)
+from threedi_schematisation_editor.utils import gpkg_layer
+
+from .utils import *
 
 
-TEMP_DIR = Path(tempfile.gettempdir())
-
-@pytest.fixture(scope="session")
-def ref_data():
-    with open(Path(__file__).parent.absolute().joinpath('data', 'ref_conversion.json')) as file:
-        return json.load(file)
-
-def read_layer(gpkg_path, layername):
-    # Create a vector layer
-    layer_uri = f"{gpkg_path}|layername={layername}"
-    layer = QgsVectorLayer(layer_uri, layername, "ogr")
-
-    if not layer.isValid():
-        print(f"Layer '{layername}' failed to load from {gpkg_path}")
-        return None
-
-    # Read features
-    result_dict = {}
-    for feature in layer.getFeatures():
-        result_dict[str(feature['id'])] = feature.geometry().asWkt()
-
-    return result_dict
+def get_schematisation_layers(target_gpkg, target_object):
+    return {
+        'structure_layer': gpkg_layer(target_gpkg, target_object),
+        'channel_layer': gpkg_layer(target_gpkg, 'channel'),
+        'node_layer': gpkg_layer(target_gpkg, 'connection_node'),
+        'cross_section_location_layer': gpkg_layer(target_gpkg, 'cross_section_location')
+    }
 
 
-def get_schematisation_path(schematisation):
-    return Path(__file__).parent.absolute().joinpath('data', 'originals', schematisation)
-
-
-def get_schematisation_copy(schematisation, test_name):
-    tgt = TEMP_DIR.joinpath(test_name)
-    shutil.copy(get_schematisation_path(schematisation), tgt)
-    return str(tgt.absolute())
-
-
-def get_source_layer_path(source_layer):
-    tgt = TEMP_DIR.joinpath(source_layer)
-    src = Path(__file__).parent.absolute().joinpath('data', source_layer)
-    shutil.copy(src, tgt)
-    return str(tgt)
+def get_source_layer(name, layername):
+    src = SOURCE_PATH.joinpath(name).with_suffix('.gpkg')
+    return gpkg_layer(str(src), layername)
 
 
 def get_import_config_path(import_config_name):
-    return str(Path(__file__).parent.absolute().joinpath('data', import_config_name).with_suffix('.json'))
+    src = CONFIG_PATH.joinpath(import_config_name).with_suffix('.json')
+    with open(src) as import_config_json:
+        return json.loads(import_config_json.read())
 
 
-# Define a session-scoped fixture to set up and tear down QGIS once for all tests
-@pytest.fixture(scope="session")
-def qgis_application():
-    """Initialize QGIS application for the test session"""
-    # Set environment for headless operation
-    os.environ["QT_QPA_PLATFORM"] = "offscreen"
-
-    print("Initializing QGIS for test session...")
-    qgs = QgsApplication([], False)
-    qgs.initQgis()
-
-    # Initialize Processing framework
-    print("Initializing Processing framework...")
-    Processing.initialize()
-    QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
-
-    # Add the ThreediSchematisationEditorProcessingProvider
-    try:
-        provider = ThreediSchematisationEditorProcessingProvider()
-        QgsApplication.processingRegistry().addProvider(provider)
-    except ImportError:
-        print("Warning: ThreediSchematisationEditorProcessingProvider not available")
-
-    yield qgs
-
-    # Cleanup when all tests are done
-    print("Exiting QGIS...")
-    gc.collect()  # Force garbage collection before exit
-    qgs.exitQgis()
-    gc.collect()  # Final cleanup
-    print("QGIS cleanup complete.")
+def compare_layer(layer, ref_layer):
+    new_res = {k: shapely.wkt.loads(v.asWkt()) for k, v in
+               sorted(((feat["id"], feat.geometry()) for feat in layer.getFeatures()))}
+    ref_res = {k: shapely.wkt.loads(v.asWkt()) for k, v in
+               sorted(((feat["id"], feat.geometry()) for feat in ref_layer.getFeatures()))}
+    assert list(new_res.keys()) == list(ref_res.keys())
+    assert_geometries_equal(list(new_res.values()), list(ref_res.values()), 1e-5)
 
 
-def run_processing_operation(algo_name, task):
-    try:
-        processing.run(
-            f"threedi_schematisation_editor:{algo_name}",
-            task,
-            feedback=QgsProcessingFeedback()
-        )
-    except:
-        pytest.fail(f"Failed to run {algo_name} with task {task}")
+def compare_results(ref_name, layers, target_object):
+    ref_gpkg = DATA_PATH.joinpath('ref', ref_name).with_suffix('.gpkg')
+    ref_layers = get_schematisation_layers(ref_gpkg, target_object)
+    # check attributes: id and geom - anything else is hopefully covered by unit tests
+    for name, layer in layers.items():
+        compare_layer(layer, ref_layers[name])
 
 
-def compare_to_ref(ref_data, task_name, target_gpkg):
-    for table, data in ref_data[task_name].items():
-        new_data = read_layer(target_gpkg, table)
-        ref_geom = [shapely.wkt.loads(wkt) for wkt in list(data.values())]
-        new_geom = [shapely.wkt.loads(wkt) for wkt in list(new_data.values())]
-        assert_geometries_equal(ref_geom, new_geom, 1e-5)
-        assert new_data.keys() == data.keys()
-
-
-def test_conversion_connection_nodes(qgis_application, ref_data):
-    task = {
-        'SOURCE_LAYER': get_source_layer_path('connection_nodes.gpkg'),
-        'IMPORT_CONFIG': get_import_config_path('import_connection_nodes'),
-        'TARGET_GPKG': get_schematisation_copy('schematisation_channel.gpkg', 'test_connection_node.gpkg')
-    }
-    # TODO: fails with new data
-    run_processing_operation('threedi_import_connection_nodes', task)
-    compare_to_ref(ref_data, 'test_import_connection_nodes', task['TARGET_GPKG'])
-
-
-class TestConversionWeir:
-    source_layer = get_source_layer_path('weirs.gpkg')
-    schematisation = 'schematisation_channel_with_weir.gpkg'
-
-    def get_task(self, task_name):
-        return {
-            'SOURCE_LAYER': self.source_layer,
-            'IMPORT_CONFIG': get_import_config_path(task_name),
-            'TARGET_GPKG': get_schematisation_copy(self.schematisation, f'test_{task_name}.gpkg')
-        }
-
-    def check_connection_nodes_added(self, task):
-        original_connection_nodes = read_layer(get_schematisation_path(self.schematisation), 'connection_node')
-        target_connection_nodes = read_layer(task['TARGET_GPKG'], 'connection_node')
-        assert len(target_connection_nodes) - len(original_connection_nodes) == 2
-
-    def test_import_weir_snap(self, qgis_application, ref_data):
-        task = self.get_task('import_weirs_snap')
-        run_processing_operation('threedi_import_weirs', task)
-        compare_to_ref(ref_data, 'test_import_weirs_snap', task['TARGET_GPKG'])
-
-    def test_import_weir_nosnap(self, qgis_application, ref_data):
-        task = self.get_task('import_weirs_nosnap')
-        run_processing_operation('threedi_import_weirs', task)
-        compare_to_ref(ref_data, 'test_import_weirs_nosnap', task['TARGET_GPKG'])
-
-    def test_integrate_weir_snap(self, qgis_application, ref_data):
-        task = self.get_task('integrate_weirs_snap')
-        run_processing_operation('threedi_import_weirs', task)
-        compare_to_ref(ref_data, 'test_integrate_weirs_snap', task['TARGET_GPKG'])
-
-    def test_integrate_weir_nosnap(self, qgis_application, ref_data):
-        task = self.get_task('integrate_weirs_nosnap')
-        run_processing_operation('threedi_import_weirs', task)
-        compare_to_ref(ref_data, 'test_integrate_weirs_nosnap', task['TARGET_GPKG'])
+def test_multi_import(qgis_application):
+    # Test importing two layers without commit in between
+    # This uses two instances of the CulvertsImporter, which mimics the procedure in the UI
+    layer_pt = get_source_layer('culvert_2layers', 'culvert_point')
+    layer_line = get_source_layer('culvert_2layers', 'culvert_line')
+    import_config = get_import_config_path('culvert')
+    target_gpkg = get_schematisation_copy('test_2culverts', 'test_multi_import.gpkg')
+    layers = get_schematisation_layers(target_gpkg, 'culvert')
+    importer = CulvertsImporter(layer_pt,
+                                target_gpkg,
+                                import_config,
+                                **layers)
+    importer.import_features()
+    importer = CulvertsImporter(layer_line,
+                                target_gpkg,
+                                import_config,
+                                **layers)
+    importer.import_features()
+    compare_results('multi_import', layers, 'culvert')
 
 
 def test_integrate_weir_too_long(qgis_application):
-    schematisation = get_schematisation_copy('schematisation_channel.gpkg', 'test_weirs_too_long.gpkg')
-    task = {
-        'SOURCE_LAYER': get_source_layer_path('weirs_too_long.gpkg'),
-        'IMPORT_CONFIG': get_import_config_path('integrate_weirs_nosnap_too_long.json'),
-        'TARGET_GPKG': schematisation
-    }
+    # Test integrating multiple weirs on a channel where the total length of the weirs
+    # is larger than the channel
+    import_config = get_import_config_path('integrate_weirs_nosnap_too_long.json')
+    target_gpkg = get_schematisation_copy('schematisation_channel.gpkg', 'test_weirs_too_long.gpkg')
+    src_layer = get_source_layer('weirs_too_long.gpkg', 'dhydro_weir')
+    layers = get_schematisation_layers(target_gpkg, 'weir')
+    importer = WeirsImporter(src_layer,
+                             target_gpkg,
+                             import_config,
+                             **layers)
     with pytest.warns(StructuresIntegratorWarning):
-        run_processing_operation('threedi_import_weirs', task)
-    assert len(read_layer(task['TARGET_GPKG'], 'weir')) == 0
+        importer.import_features()
+    # the total length of the weirs to import is longer than the channel so nothing should be imported
+    assert len([item for item in layers['structure_layer'].getFeatures()]) == 0
 
 
-def test_integrate_isolated_weir(qgis_application, ref_data):
-    schematisation = get_schematisation_copy('schematisation_channel_with_weir.gpkg', 'test_weir_isolated.gpkg')
-    task = {
-        'SOURCE_LAYER': get_source_layer_path('weir_isolated.gpkg'),
-        'IMPORT_CONFIG': get_import_config_path('integrate_weirs_snap.json'),
-        'TARGET_GPKG': schematisation
-    }
-    run_processing_operation('threedi_import_weirs', task)
-    compare_to_ref(ref_data, 'test_isolated_weir', schematisation)
+def test_integrate_isolated_weir(qgis_application):
+    import_config = get_import_config_path('integrate_weirs_snap.json')
+    target_gpkg = get_schematisation_copy('schematisation_channel_with_weir.gpkg', 'test_weir_isolated.gpkg')
+    src_layer = get_source_layer('weir_isolated.gpkg', 'dhydro_weir')
+    layers = get_schematisation_layers(target_gpkg, 'weir')
+    importer = WeirsImporter(src_layer,
+                             target_gpkg,
+                             import_config,
+                             **layers)
+    importer.import_features()
+    compare_results('test_isolated_weir', layers, 'weir')
 
 
+def test_import_connection_nodes(qgis_application):
+    import_config = get_import_config_path('import_connection_nodes.json')
+    target_gpkg = get_schematisation_copy('schematisation_channel.gpkg', 'test_connection_nodes.gpkg')
+    src_layer = get_source_layer('connection_nodes.gpkg', 'connection_nodes')
+    target_layer = gpkg_layer(target_gpkg, 'connection_node')
+    importer = ConnectionNodesImporter(src_layer, target_gpkg, import_config, target_layer=target_layer)
+    importer.import_features()
+    ref_layer = gpkg_layer(DATA_PATH.joinpath('ref', 'test_import_connection_nodes.gpkg'), 'connection_node')
+    compare_layer(target_layer, ref_layer)
+
+
+@pytest.mark.parametrize("integrate,snap", [(True, True), (True, False), (False, True), (False, False)])
+def test_import_weirs(qgis_application, integrate: bool, snap: bool):
+    target_layer_name = 'weir'
+    test_name = f'{"integrate" if integrate else "import"}_weirs_{"no" if snap else ""}snap.json'
+    import_config = get_import_config_path(test_name)
+    src_layer = get_source_layer('weirs.gpkg', 'dhydro_weir')
+    target_gpkg = get_schematisation_copy('schematisation_channel_with_weir.gpkg', f'test_{test_name}.gpkg')
+    layers = get_schematisation_layers(target_gpkg, target_layer_name)
+    importer = WeirsImporter(src_layer, target_gpkg, import_config, **layers)
+    importer.import_features()
+    compare_results(f'test_{test_name}', layers, target_layer_name)
