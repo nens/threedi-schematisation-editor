@@ -28,7 +28,7 @@ def qgis_application_with_processor(qgis_application: QgsApplication) -> QgsAppl
 
 
 def run_processing_operation(algo_name, task):
-    task = {key: str(val) for key, val in task.items()}
+    task = {key: str(get_temp_copy(val)) for key, val in task.items()}
     try:
         processing.run(
             f"threedi_schematisation_editor:{algo_name}",
@@ -43,9 +43,7 @@ def test_threedi_import_connection_nodes(qgis_application_with_processor):
     task = {
         "SOURCE_LAYER": SOURCE_PATH.joinpath("connection_nodes.gpkg"),
         "IMPORT_CONFIG": CONFIG_PATH.joinpath("import_connection_nodes.json"),
-        "TARGET_GPKG": get_schematisation_copy(
-            "schematisation_channel.gpkg", "test_connection_node_processing.gpkg"
-        ),
+        "TARGET_GPKG": SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg"),
     }
     try:
         run_processing_operation("threedi_import_connection_nodes", task)
@@ -57,9 +55,7 @@ def test_threedi_import_structure(qgis_application_with_processor):
     task = {
         "SOURCE_LAYER": SOURCE_PATH.joinpath("weirs.gpkg"),
         "IMPORT_CONFIG": CONFIG_PATH.joinpath("import_weirs_nosnap.json"),
-        "TARGET_GPKG": get_schematisation_copy(
-            "schematisation_channel.gpkg", "test_weir_processing.gpkg"
-        ),
+        "TARGET_GPKG": SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg"),
     }
     try:
         run_processing_operation("threedi_import_weirs", task)
