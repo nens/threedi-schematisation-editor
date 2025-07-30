@@ -1,10 +1,16 @@
 History
 =======
 
-2.4 (unreleased)
-----------------
+2.3.2 (unreleased)
+------------------
 
 - Nothing changed yet.
+
+
+2.3.1 (2025-07-16)
+------------------
+
+- Bump Dependency Loader plugin version to 1.2.1 (nens/nens-dependency-loader#14)
 
 
 2.3 (2025-06-10)
