@@ -108,7 +108,10 @@ def _cross_section_max_height(shape: int, width: float, height: float, table: st
     """
     if shape not in dm.ALL_SHAPES:
         raise ValueError("Invalid value for 'shape'")
-    if shape in [dm.CrossSectionShape.EGG.value, dm.CrossSectionShape.INVERTED_EGG.value]:
+    if shape in [
+        dm.CrossSectionShape.EGG.value,
+        dm.CrossSectionShape.INVERTED_EGG.value,
+    ]:
         return 1.5 * width
     if shape in dm.TABLE_SHAPES:
         height_list, width_list = cross_section_table_values(table, shape)
@@ -118,8 +121,15 @@ def _cross_section_max_height(shape: int, width: float, height: float, table: st
     return height
 
 
-@qgsfunction(args="auto", group="3Di", handlesnull=True, helpText=CROSS_SECTION_MAX_HEIGHT_HELPTEXT)
-def cross_section_max_height(shape: int, width: float, height: float, table: str, feature, parent):
+@qgsfunction(
+    args="auto",
+    group="3Di",
+    handlesnull=True,
+    helpText=CROSS_SECTION_MAX_HEIGHT_HELPTEXT,
+)
+def cross_section_max_height(
+    shape: int, width: float, height: float, table: str, feature, parent
+):
     """
     Get maximum height of the cross-section
     """
@@ -136,7 +146,12 @@ def _cross_section_max_width(shape: int, width: float, table: str):
     return max(width_list)
 
 
-@qgsfunction(args="auto", group="3Di", handlesnull=True, helpText=CROSS_SECTION_MAX_WIDTH_HELPTEXT)
+@qgsfunction(
+    args="auto",
+    group="3Di",
+    handlesnull=True,
+    helpText=CROSS_SECTION_MAX_WIDTH_HELPTEXT,
+)
 def cross_section_max_width(shape: int, width: float, table: str, feature, parent):
     """
     Get maximum width of the cross-section
@@ -144,9 +159,18 @@ def cross_section_max_width(shape: int, width: float, table: str, feature, paren
     return _cross_section_max_width(shape, width, table)
 
 
-@qgsfunction(args="auto", group="3Di", handlesnull=True, helpText=CROSS_SECTION_LABEL_HELPTEXT)
+@qgsfunction(
+    args="auto", group="3Di", handlesnull=True, helpText=CROSS_SECTION_LABEL_HELPTEXT
+)
 def cross_section_label(
-    shape: int, width: float, height: float, table: str, units: str, single_line: bool, feature, parent
+    shape: int,
+    width: float,
+    height: float,
+    table: str,
+    units: str,
+    single_line: bool,
+    feature,
+    parent,
 ) -> str:
     """
     Get a string describing the cross-section, that can be used as a label in QGIS
@@ -186,8 +210,10 @@ def cross_section_label(
             en.CrossSectionShape.CLOSED_RECTANGLE.value: "{shape_value}: {shape_name}\n"
             "w: {width_text} {units}\n"
             "h: {height_text} {units}",
-            en.CrossSectionShape.OPEN_RECTANGLE.value: "{shape_value}: {shape_name}\n" "w: {width_text} {units}",
-            en.CrossSectionShape.CIRCLE.value: "{shape_value}: {shape_name}\n" "Ø: {width_text} {units}",
+            en.CrossSectionShape.OPEN_RECTANGLE.value: "{shape_value}: {shape_name}\n"
+            "w: {width_text} {units}",
+            en.CrossSectionShape.CIRCLE.value: "{shape_value}: {shape_name}\n"
+            "Ø: {width_text} {units}",
             en.CrossSectionShape.EGG.value: "{shape_value}: {shape_name}\n"
             "w: {width_text} {units}\n"
             "h: {height_text} {units}",

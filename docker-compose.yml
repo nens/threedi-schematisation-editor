@@ -1,8 +1,20 @@
 version: '3.0'
 
 services:
-  schema:
+
+  qgis-desktop:
+    # platform: linux/x86_64
     build: .
+
     volumes:
-      - .:/app
-    working_dir: /app
+      - /tmp/.X11-unix:/tmp/.X11-unix  # Allow GUI application to run in docker
+      - .:/root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/threedi_schematisation_editor
+      - qgis-settings:/root/.local/share/QGIS/
+    environment:
+      - DISPLAY=unix${DISPLAY}
+      - COVERALLS_REPO_TOKEN=${COVERALLS_REPO_TOKEN}
+    cap_add:
+      - SYS_PTRACE
+
+volumes:
+  qgis-settings:

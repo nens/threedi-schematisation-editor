@@ -3,13 +3,12 @@ import os
 import shutil
 import sys
 import warnings
-
 from enum import Enum, IntEnum
 from itertools import groupby
 from operator import attrgetter, itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import get_origin, get_args, Union, Optional
+from typing import Optional, Union, get_args, get_origin
 from uuid import uuid4
 from xml.etree import ElementTree
 
@@ -63,7 +62,9 @@ def backup_schematisation_file(filename):
     backup_folder = os.path.join(os.path.dirname(os.path.dirname(filename)), "_backup")
     os.makedirs(backup_folder, exist_ok=True)
     prefix = str(uuid4())[:8]
-    backup_file_path = os.path.join(backup_folder, f"{prefix}_{os.path.basename(filename)}")
+    backup_file_path = os.path.join(
+        backup_folder, f"{prefix}_{os.path.basename(filename)}"
+    )
     shutil.copyfile(filename, backup_file_path)
     return backup_file_path
 
@@ -122,7 +123,9 @@ def optional_type(optional_field_type):
 
 def enum_type(enum_field_type):
     """Getting real type of Enum field type."""
-    field_type = type(next(iter(enum_field_type[i].value for i in enum_field_type.__members__)))
+    field_type = type(
+        next(iter(enum_field_type[i].value for i in enum_field_type.__members__))
+    )
     return field_type
 
 
@@ -131,14 +134,18 @@ def layer_to_gpkg(layer, gpkg_filename, overwrite=False, driver_name="GPKG"):
     transform_context = QgsProject.instance().transformContext()
     options = QgsVectorFileWriter.SaveVectorOptions()
     options.actionOnExistingFile = (
-        QgsVectorFileWriter.CreateOrOverwriteLayer if overwrite is False else QgsVectorFileWriter.CreateOrOverwriteFile
+        QgsVectorFileWriter.CreateOrOverwriteLayer
+        if overwrite is False
+        else QgsVectorFileWriter.CreateOrOverwriteFile
     )
     fields = layer.fields()
     valid_indexes = [fields.lookupField(fname) for fname in fields.names()]
     options.attributes = valid_indexes
     options.driverName = driver_name
     options.layerName = layer.name()
-    writer, error = QgsVectorFileWriter.writeAsVectorFormatV2(layer, gpkg_filename, transform_context, options)
+    writer, error = QgsVectorFileWriter.writeAsVectorFormatV2(
+        layer, gpkg_filename, transform_context, options
+    )
     return writer, error
 
 
@@ -153,7 +160,9 @@ def gpkg_layer(gpkg_path, table_name, layer_name=None):
 def get_qml_style_path(style_name, *subfolders):
     """Getting QML styles path."""
     qml_filename = f"{style_name}.qml"
-    filepath = os.path.join(os.path.dirname(__file__), "styles", *subfolders, qml_filename)
+    filepath = os.path.join(
+        os.path.dirname(__file__), "styles", *subfolders, qml_filename
+    )
     if os.path.isfile(filepath):
         return filepath
     return None
@@ -161,7 +170,9 @@ def get_qml_style_path(style_name, *subfolders):
 
 def get_multiple_qml_style_paths(styles_folder_name, *subfolders):
     """Getting QML styles paths within given styles folder."""
-    styles_folder_path = os.path.join(os.path.dirname(__file__), "styles", *subfolders, styles_folder_name)
+    styles_folder_path = os.path.join(
+        os.path.dirname(__file__), "styles", *subfolders, styles_folder_name
+    )
     if os.path.exists(styles_folder_path):
         qml_paths = [
             os.path.normpath(os.path.join(styles_folder_path, q))
@@ -205,7 +216,9 @@ def merge_qml_styles(qml_files) -> Path:
 def get_form_ui_path(table_name):
     """Getting UI form path for a given table name."""
     ui_filename = f"{table_name}.ui"
-    filepath = os.path.normpath(os.path.join(os.path.dirname(__file__), "forms", "ui", ui_filename))
+    filepath = os.path.normpath(
+        os.path.join(os.path.dirname(__file__), "forms", "ui", ui_filename)
+    )
     if os.path.isfile(filepath):
         return filepath
     return None
@@ -213,7 +226,11 @@ def get_form_ui_path(table_name):
 
 def get_icon_path(icon_filename, root_dir=None):
     """Getting icon path for a given icon file."""
-    icon_filepath = os.path.join(os.path.dirname(__file__) if root_dir is None else root_dir, "icons", icon_filename)
+    icon_filepath = os.path.join(
+        os.path.dirname(__file__) if root_dir is None else root_dir,
+        "icons",
+        icon_filename,
+    )
     return icon_filepath
 
 
@@ -235,7 +252,11 @@ def get_tree_group(name):
 def add_layer_to_group(name, layer, bottom=False, cached_groups=None):
     """Adding layer to the specific group."""
     project = QgsProject.instance()
-    grp = cached_groups.get(name, None) if cached_groups else project.layerTreeRoot().findGroup(name)
+    grp = (
+        cached_groups.get(name, None)
+        if cached_groups
+        else project.layerTreeRoot().findGroup(name)
+    )
     if not grp:
         return
     project.addMapLayer(layer, False)
@@ -270,11 +291,17 @@ def get_filepath(
         extension_filter = "All Files (*.*)"
     if dialog_title is None:
         dialog_title = "Save to file" if save else "Choose file"
-    starting_dir = QgsSettings().value(default_settings_entry, os.path.expanduser("~"), type=str)
+    starting_dir = QgsSettings().value(
+        default_settings_entry, os.path.expanduser("~"), type=str
+    )
     if save is True:
-        file_name, __ = QFileDialog.getSaveFileName(parent, dialog_title, starting_dir, extension_filter)
+        file_name, __ = QFileDialog.getSaveFileName(
+            parent, dialog_title, starting_dir, extension_filter
+        )
     else:
-        file_name, __ = QFileDialog.getOpenFileName(parent, dialog_title, starting_dir, extension_filter)
+        file_name, __ = QFileDialog.getOpenFileName(
+            parent, dialog_title, starting_dir, extension_filter
+        )
     if len(file_name) == 0:
         return None
     if extension:
@@ -283,15 +310,17 @@ def get_filepath(
     return file_name
 
 
-def dataclass_field_to_widget_setup(model_cls_field_type, optional=False, **config_overrides):
+def dataclass_field_to_widget_setup(
+    model_cls_field_type, optional=False, **config_overrides
+):
     """Create QgsEditorWidgetSetup out of the dataclass field type."""
     if model_cls_field_type is bool:
         config_type = "CheckBox"
         config_map = {
-            'AllowNullState': False,
-            'CheckedState': '1',
-            'TextDisplayMethod': 0,
-            'UncheckedState': '0'
+            "AllowNullState": False,
+            "CheckedState": "1",
+            "TextDisplayMethod": 0,
+            "UncheckedState": "0",
         }
     elif model_cls_field_type is int:
         config_type = "TextEdit"
@@ -374,13 +403,19 @@ def set_initial_layer_configuration(layer, model_cls):
             field_idx = fields.lookupField(column_name)
             if issubclass(field_type, Enum):
                 ews = enum_to_editor_widget_setup(
-                    field_type, field_is_optional, enum_name_format_fn=enum_entry_name_format
+                    field_type,
+                    field_is_optional,
+                    enum_name_format_fn=enum_entry_name_format,
                 )
             else:
                 if column_name.startswith("hydraulic_conductivity"):
-                    ews = dataclass_field_to_widget_setup(field_type, optional=field_is_optional, Min=0)
+                    ews = dataclass_field_to_widget_setup(
+                        field_type, optional=field_is_optional, Min=0
+                    )
                 else:
-                    ews = dataclass_field_to_widget_setup(field_type, optional=field_is_optional)
+                    ews = dataclass_field_to_widget_setup(
+                        field_type, optional=field_is_optional
+                    )
             if ews is not None:
                 layer.setEditorWidgetSetup(field_idx, ews)
         except KeyError:
@@ -390,7 +425,9 @@ def set_initial_layer_configuration(layer, model_cls):
     layer.setFlags(QgsMapLayer.Searchable | QgsMapLayer.Identifiable)
 
 
-def set_field_default_value(vector_layer, field_name, expression, apply_on_update=False):
+def set_field_default_value(
+    vector_layer, field_name, expression, apply_on_update=False
+):
     """Set default value expression for field under the given index."""
     field_index = vector_layer.fields().lookupField(field_name)
     default_value_definition = vector_layer.defaultValueDefinition(field_index)
@@ -437,7 +474,9 @@ def disconnect_signal(signal, slot=None):
         pass
 
 
-def find_point_nodes(point, node_layer, tolerance=0.0000001, allow_multiple=False, locator=None):
+def find_point_nodes(
+    point, node_layer, tolerance=0.0000001, allow_multiple=False, locator=None
+):
     """Function that finds features from given layer that are located within tolerance distance from given point."""
     project = QgsProject.instance()
     src_crs = node_layer.sourceCrs()
@@ -462,26 +501,16 @@ def find_point_nodes(point, node_layer, tolerance=0.0000001, allow_multiple=Fals
     return node_feats if allow_multiple else node_feat
 
 
-def find_line_endpoints_nodes(linestring, locator, tolerance=0.1):
-    """
-    Find features from given locator layer which are in the tolerance distance from the linestring endpoints.
-    """
-    node_start_feat, node_end_feat = None, None
-    start_point, end_point = linestring[0], linestring[-1]
-    start_match = locator.nearestVertex(start_point, tolerance)
-    end_match = locator.nearestVertex(end_point, tolerance)
-    start_match_layer = start_match.layer()
-    if start_match_layer:
-        node_start_fid = start_match.featureId()
-        node_start_feat = start_match_layer.getFeature(node_start_fid)
-    end_match_layer = end_match.layer()
-    if end_match_layer:
-        node_end_fid = end_match.featureId()
-        node_end_feat = end_match_layer.getFeature(node_end_fid)
-    return node_start_feat, node_end_feat
+def find_connection_node(point, locator, tolerance=0.0000001):
+    match = locator.nearestVertex(point, tolerance)
+    match_layer = match.layer()
+    if match_layer:
+        return match_layer.getFeature(match.featureId())
 
 
-def find_linestring_nodes(linestring, node_layer, tolerance=0.0000001, allow_multiple=False, locator=None):
+def find_linestring_nodes(
+    linestring, node_layer, tolerance=0.0000001, allow_multiple=False, locator=None
+):
     """
     Function that finds features from given layer that are located within tolerance distance from linestring endpoints.
     """
@@ -656,7 +685,10 @@ def add_settings_entry(gpkg_path, **initial_fields_values):
         settings_layer.commitChanges()
 
 
-def get_qgis(qgis_build_path="C:/OSGeo4W64/apps/qgis-ltr", qgis_proj_path="C:/OSGeo4W64/share/proj"):
+def get_qgis(
+    qgis_build_path="C:/OSGeo4W64/apps/qgis-ltr",
+    qgis_proj_path="C:/OSGeo4W64/share/proj",
+):
     """Initializing QGIS instance for running standalone scripts tha are using QGIS API."""
     qgis_python_path = os.path.join(qgis_build_path, "python")
     qgis_plugins_path = os.path.join(qgis_python_path, "plugins")
@@ -710,23 +742,40 @@ def add_gpkg_connection(gpkg_path, iface=None):
     connection_name = os.path.basename(gpkg_path)
     gpkg_path = gpkg_path.replace("\\", "/")
     settings = QgsSettings()
-    settings.setValue(f"providers/ogr/GPKG/connections/{connection_name}/path", gpkg_path)
+    settings.setValue(
+        f"providers/ogr/GPKG/connections/{connection_name}/path", gpkg_path
+    )
     if iface is not None:
         iface.mainWindow().connectionsChanged.emit()
 
 
-def hillshade_layer(raster_filepath, layer_name="Hillshade", band=1, light_azimuth=315, light_altitude=45, opacity=0.5):
+def hillshade_layer(
+    raster_filepath,
+    layer_name="Hillshade",
+    band=1,
+    light_azimuth=315,
+    light_altitude=45,
+    opacity=0.5,
+):
     """Initialize raster layer with hilshade rendering."""
     hillshade_raster_layer = QgsRasterLayer(raster_filepath, layer_name)
-    renderer = QgsHillshadeRenderer(hillshade_raster_layer.dataProvider(), band, light_azimuth, light_altitude)
+    renderer = QgsHillshadeRenderer(
+        hillshade_raster_layer.dataProvider(), band, light_azimuth, light_altitude
+    )
     renderer.setOpacity(opacity)
     hillshade_raster_layer.setRenderer(renderer)
     hillshade_raster_layer.setBlendMode(QPainter.CompositionMode_Multiply)
-    hillshade_raster_layer.resampleFilter().setZoomedInResampler(QgsBilinearRasterResampler())
+    hillshade_raster_layer.resampleFilter().setZoomedInResampler(
+        QgsBilinearRasterResampler()
+    )
     return hillshade_raster_layer
 
 
-def modify_raster_style(raster_layer, limits=QgsRasterMinMaxOrigin.MinMax, extent=QgsRasterMinMaxOrigin.UpdatedCanvas):
+def modify_raster_style(
+    raster_layer,
+    limits=QgsRasterMinMaxOrigin.MinMax,
+    extent=QgsRasterMinMaxOrigin.UpdatedCanvas,
+):
     """Improve predefined raster styling."""
     renderer = raster_layer.renderer().clone()
     min_max_origin = renderer.minMaxOrigin()
@@ -767,9 +816,7 @@ def migrate_schematisation_schema(schematisation_filepath, progress_callback=Non
             except errors.InvalidSRIDException:
                 srid = None
         if srid is None:
-            migration_feedback_msg = (
-                "Could not fetch valid EPSG code from database or DEM; aborting database migration."
-            )
+            migration_feedback_msg = "Could not fetch valid EPSG code from database or DEM; aborting database migration."
     except ImportError:
         migration_feedback_msg = "Missing threedi-schema library (or its dependencies). Schema migration failed."
     except Exception as e:
@@ -780,10 +827,16 @@ def migrate_schematisation_schema(schematisation_filepath, progress_callback=Non
         try:
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always", UserWarning)
-                schema.upgrade(backup=False, epsg_code_override=srid, progress_func=progress_callback)
+                schema.upgrade(
+                    backup=False,
+                    epsg_code_override=srid,
+                    progress_func=progress_callback,
+                )
             if w:
                 for warning in w:
-                    migration_feedback_msg += f'{warning._category_name}: {warning.message}\n'
+                    migration_feedback_msg += (
+                        f"{warning._category_name}: {warning.message}\n"
+                    )
             shutil.rmtree(os.path.dirname(backup_filepath))
             migration_succeed = True
         except errors.UpgradeFailedError:
@@ -797,11 +850,15 @@ def migrate_schematisation_schema(schematisation_filepath, progress_callback=Non
     return migration_succeed, migration_feedback_msg
 
 
-def progress_bar_callback_factory(communication, minimum=0, maximum=100, clear_msg_bar=True):
+def progress_bar_callback_factory(
+    communication, minimum=0, maximum=100, clear_msg_bar=True
+):
     """Callback function to track schematisation migration progress."""
 
     def progress_bar_callback(progres_value, message):
-        communication.progress_bar(message, minimum, maximum, progres_value, clear_msg_bar=clear_msg_bar)
+        communication.progress_bar(
+            message, minimum, maximum, progres_value, clear_msg_bar=clear_msg_bar
+        )
         QCoreApplication.processEvents()
 
     return progress_bar_callback
@@ -870,18 +927,42 @@ class FormCustomizations:
 
 def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=""):
     """Adjust cross-section characteristic widgets availability based on the selected shape type."""
-    cross_section_width_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_width")
-    cross_section_width_clear_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_width_clear")
-    cross_section_width_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_width_label")
-    cross_section_height_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_height")
-    cross_section_height_clear_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_height_clear")
-    cross_section_height_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_height_label")
-    cross_section_table_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_widget")
-    cross_section_table_widget_add = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_add")
-    cross_section_table_widget_paste = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_paste")
-    cross_section_table_widget_delete = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_delete")
-    cross_section_table_widget_copy = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_copy")
-    cross_section_table_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_table_label")
+    cross_section_width_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_width"
+    )
+    cross_section_width_clear_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_width_clear"
+    )
+    cross_section_width_label_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_width_label"
+    )
+    cross_section_height_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_height"
+    )
+    cross_section_height_clear_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_height_clear"
+    )
+    cross_section_height_label_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_height_label"
+    )
+    cross_section_table_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_table_widget"
+    )
+    cross_section_table_widget_add = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_table_add"
+    )
+    cross_section_table_widget_paste = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_table_paste"
+    )
+    cross_section_table_widget_delete = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_table_delete"
+    )
+    cross_section_table_widget_copy = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_table_copy"
+    )
+    cross_section_table_label_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_table_label"
+    )
     all_related_widgets = [
         cross_section_width_widget,
         cross_section_width_clear_widget,
@@ -935,46 +1016,84 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
             pass
 
 
-def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widget, friction_widget, prefix=""):
+def setup_friction_and_vegetation_widgets(
+    custom_form, cross_section_shape_widget, friction_widget, prefix=""
+):
     """Adjust friction and vegetation characteristic widgets availability based on the selected shape type."""
-    friction_value_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}friction_value_label")
-    friction_value_widget = custom_form.dialog.findChild(QObject, f"{prefix}friction_value")
-    friction_value_clear_widget = custom_form.dialog.findChild(QObject, f"{prefix}friction_value_clear")
-    cross_section_friction_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_label")
-    cross_section_friction_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_widget")
-    cross_section_friction_clear = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_clear")
-    cross_section_friction_copy = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_friction_copy")
+    friction_value_label_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}friction_value_label"
+    )
+    friction_value_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}friction_value"
+    )
+    friction_value_clear_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}friction_value_clear"
+    )
+    cross_section_friction_label_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_friction_label"
+    )
+    cross_section_friction_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_friction_widget"
+    )
+    cross_section_friction_clear = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_friction_clear"
+    )
+    cross_section_friction_copy = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_friction_copy"
+    )
     vegetation_stem_density_label_widget = custom_form.dialog.findChild(
         QObject, f"{prefix}vegetation_stem_density_label"
     )
-    vegetation_stem_density_widget = custom_form.dialog.findChild(QObject, f"{prefix}vegetation_stem_density")
+    vegetation_stem_density_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}vegetation_stem_density"
+    )
     vegetation_stem_density_clear_widget = custom_form.dialog.findChild(
         QObject, f"{prefix}vegetation_stem_density_clear"
     )
     vegetation_stem_diameter_label_widget = custom_form.dialog.findChild(
         QObject, f"{prefix}vegetation_stem_diameter_label"
     )
-    vegetation_stem_diameter_widget = custom_form.dialog.findChild(QObject, f"{prefix}vegetation_stem_diameter")
+    vegetation_stem_diameter_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}vegetation_stem_diameter"
+    )
     vegetation_stem_diameter_clear_widget = custom_form.dialog.findChild(
         QObject, f"{prefix}vegetation_stem_diameter_clear"
     )
-    vegetation_height_label_widget = custom_form.dialog.findChild(QObject, f"{prefix}vegetation_height_label")
-    vegetation_height_widget = custom_form.dialog.findChild(QObject, f"{prefix}vegetation_height")
-    vegetation_height_clear_widget = custom_form.dialog.findChild(QObject, f"{prefix}vegetation_height_clear")
+    vegetation_height_label_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}vegetation_height_label"
+    )
+    vegetation_height_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}vegetation_height"
+    )
+    vegetation_height_clear_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}vegetation_height_clear"
+    )
     vegetation_drag_coefficient_label_widget = custom_form.dialog.findChild(
         QObject, f"{prefix}vegetation_drag_coefficient_label"
     )
-    vegetation_drag_coefficient_widget = custom_form.dialog.findChild(QObject, f"{prefix}vegetation_drag_coefficient")
+    vegetation_drag_coefficient_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}vegetation_drag_coefficient"
+    )
     vegetation_drag_coefficient_clear_widget = custom_form.dialog.findChild(
         QObject, f"{prefix}vegetation_drag_coefficient_clear"
     )
     cross_section_vegetation_label_widget = custom_form.dialog.findChild(
         QObject, f"{prefix}cross_section_vegetation_label"
     )
-    cross_section_vegetation_widget = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_widget")
-    cross_section_vegetation_clear = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_clear")
-    cross_section_vegetation_copy = custom_form.dialog.findChild(QObject, f"{prefix}cross_section_vegetation_copy")
-    single_friction_widgets = [friction_value_label_widget, friction_value_widget, friction_value_clear_widget]
+    cross_section_vegetation_widget = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_vegetation_widget"
+    )
+    cross_section_vegetation_clear = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_vegetation_clear"
+    )
+    cross_section_vegetation_copy = custom_form.dialog.findChild(
+        QObject, f"{prefix}cross_section_vegetation_copy"
+    )
+    single_friction_widgets = [
+        friction_value_label_widget,
+        friction_value_widget,
+        friction_value_clear_widget,
+    ]
     multi_friction_widgets = [
         cross_section_friction_label_widget,
         cross_section_friction_widget,
@@ -1001,7 +1120,12 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
         cross_section_vegetation_clear,
         cross_section_vegetation_copy,
     ]
-    all_related_widgets = single_friction_widgets + multi_friction_widgets + single_vege_widgets + multi_vege_widgets
+    all_related_widgets = (
+        single_friction_widgets
+        + multi_friction_widgets
+        + single_vege_widgets
+        + multi_vege_widgets
+    )
     for related_widget in all_related_widgets:
         related_widget.setDisabled(True)
     cross_section_shape = custom_form.get_widget_value(cross_section_shape_widget)
@@ -1017,7 +1141,10 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
             related_widgets = single_friction_widgets
         elif friction_value == en.FrictionTypeExtended.CHEZY_WITH_CONVEYANCE.value:
             related_widgets = (
-                single_friction_widgets + multi_friction_widgets + single_vege_widgets + multi_vege_widgets
+                single_friction_widgets
+                + multi_friction_widgets
+                + single_vege_widgets
+                + multi_vege_widgets
             )
         elif friction_value == en.FrictionTypeExtended.MANNING_WITH_CONVEYANCE.value:
             related_widgets = single_friction_widgets + multi_friction_widgets
@@ -1043,12 +1170,16 @@ def setup_friction_and_vegetation_widgets(custom_form, cross_section_shape_widge
         related_widget.setEnabled(True)
 
 
-def setup_cross_section_definition_widgets(custom_form, shape_widget, friction_widget, prefix=""):
+def setup_cross_section_definition_widgets(
+    custom_form, shape_widget, friction_widget, prefix=""
+):
     """Setup cross section definition dependent widgets."""
     if shape_widget is not None:
         setup_cross_section_widgets(custom_form, shape_widget, prefix)
     if custom_form.MODEL in [dm.CrossSectionLocation, dm.Channel]:
-        setup_friction_and_vegetation_widgets(custom_form, shape_widget, friction_widget, prefix)
+        setup_friction_and_vegetation_widgets(
+            custom_form, shape_widget, friction_widget, prefix
+        )
 
 
 class NumericItemDelegate(QItemDelegate):
@@ -1075,21 +1206,30 @@ class TypeConversionError(Exception):
 
     def __init__(self, value, target_type):
         target_type_str = str(target_type).split("'")[1]
-        super().__init__(f"Type conversion error: Cannot convert '{value}' to {target_type_str}")
+        super().__init__(
+            f"Type conversion error: Cannot convert '{value}' to {target_type_str}"
+        )
+
+
+def get_type_for_casting(full_type):
+    """Return single type that can be used for casting"""
+    origin = get_origin(full_type)
+    # Handle Optional[T] or Union types
+    if origin is Union:
+        # Get non-None type args to handle Optional types
+        types = [t for t in get_args(full_type) if t is not type(None)]
+        if types:
+            # Take first non-None type as the target type
+            return types[0]
+    else:
+        return full_type
 
 
 def convert_to_type(value, expected_type):
     """Convert a value to the expected type using typing utilities."""
     if value is None or value in [NULL, "NULL", "None", ""]:
         return NULL
-    # Handle Optional[T] or Union types
-    origin = get_origin(expected_type)
-    if origin is Union:
-        # Get non-None type args to handle Optional types
-        types = [t for t in get_args(expected_type) if t is not type(None)]
-        if types:
-            # Take first non-None type as the target type
-            expected_type = types[0]
+    expected_type = get_type_for_casting(expected_type)
     if isinstance(expected_type, type):
         if issubclass(expected_type, IntEnum):
             expected_type = int

@@ -8,8 +8,10 @@ Development
 
 Testing happens within a docker container, build (if necessary) and run your docker as follows::
 
-    $ docker compose build schema
-    $ docker compose run schema make test
+    $ docker compose build qgis-desktop
+    $ docker compose run qgis-desktop make test
+
+[Design details can be found here](DESIGN.md)
 
 
 Deployment
@@ -31,3 +33,4 @@ Installation
 ------------
 
 - In case the plugin manager in QGIS is properly configured, the plugin should also be available via the plugin manager.
+

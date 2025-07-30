@@ -9,9 +9,10 @@ from threedi_schematisation_editor.processing.alghorithms_inflow import (
     LinkDWFWithConnectionNodes,
     LinkSurfacesWithConnectionNodes,
 )
-
 from threedi_schematisation_editor.processing.algorithms_1d import BottomLevelCalculator
-from threedi_schematisation_editor.processing.algorithms_1d2d import GenerateExchangeLines
+from threedi_schematisation_editor.processing.algorithms_1d2d import (
+    GenerateExchangeLines,
+)
 from threedi_schematisation_editor.processing.algorithms_conversion import (
     ImportConnectionNodes,
     ImportCulverts,
@@ -34,7 +35,9 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
         return "3Di Schematisation Editor"
 
     def icon(self):
-        icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "icons", "icon.png")
+        icon_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "icons", "icon.png"
+        )
         return QIcon(icon_path)
 
     def load(self):

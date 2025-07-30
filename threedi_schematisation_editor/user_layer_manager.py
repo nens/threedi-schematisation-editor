@@ -5,26 +5,50 @@ from functools import cached_property
 from pathlib import Path
 from types import MappingProxyType
 
-from qgis.core import (Qgis, QgsEditFormConfig, QgsEditorWidgetSetup,
-                       QgsExpression, QgsFeatureRequest, QgsFieldConstraints,
-                       QgsProject, QgsRasterLayer, QgsSnappingConfig,
-                       QgsTolerance, QgsVectorLayerJoinInfo)
+from qgis.core import (
+    Qgis,
+    QgsEditFormConfig,
+    QgsEditorWidgetSetup,
+    QgsExpression,
+    QgsFeatureRequest,
+    QgsFieldConstraints,
+    QgsProject,
+    QgsRasterLayer,
+    QgsSnappingConfig,
+    QgsTolerance,
+    QgsVectorLayerJoinInfo,
+)
 from qgis.PyQt.QtCore import QCoreApplication
 
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.enumerators as en
 from threedi_schematisation_editor.expressions import (
-    cross_section_label, cross_section_max_height, cross_section_max_width)
+    cross_section_label,
+    cross_section_max_height,
+    cross_section_max_width,
+)
 from threedi_schematisation_editor.styles.style_config import (
-    get_style_configurations, styles_location)
+    get_style_configurations,
+    styles_location,
+)
 from threedi_schematisation_editor.user_layer_forms import LayerEditFormFactory
 from threedi_schematisation_editor.user_layer_handlers import MODEL_HANDLERS
 from threedi_schematisation_editor.utils import (
-    add_layer_to_group, create_tree_group, get_form_ui_path,
-    get_qml_style_path, gpkg_layer, hillshade_layer, merge_qml_styles,
-    modify_raster_style, remove_group_with_children, remove_layer,
-    set_field_default_value, set_initial_layer_configuration,
-    validation_errors_summary, zoom_to_layer)
+    add_layer_to_group,
+    create_tree_group,
+    get_form_ui_path,
+    get_qml_style_path,
+    gpkg_layer,
+    hillshade_layer,
+    merge_qml_styles,
+    modify_raster_style,
+    remove_group_with_children,
+    remove_layer,
+    set_field_default_value,
+    set_initial_layer_configuration,
+    validation_errors_summary,
+    zoom_to_layer,
+)
 
 
 class LayersManager:
@@ -44,8 +68,18 @@ class LayersManager:
     VALUE_RELATIONS = MappingProxyType(
         {
             # parent model: (child model, parent column, child key column, child value column)
-            dm.Surface: (dm.SurfaceParameters, "surface_parameters_id", "id", "description"),
-            dm.DryWeatherFlow: (dm.DryWeatherFlowDistribution, "dry_weather_flow_distribution_id", "id", "description"),
+            dm.Surface: (
+                dm.SurfaceParameters,
+                "surface_parameters_id",
+                "id",
+                "description",
+            ),
+            dm.DryWeatherFlow: (
+                dm.DryWeatherFlowDistribution,
+                "dry_weather_flow_distribution_id",
+                "id",
+                "description",
+            ),
             dm.Culvert: (dm.Material, "material_id", "id", "description"),
             dm.Pipe: (dm.Material, "material_id", "id", "description"),
             dm.Weir: (dm.Material, "material_id", "id", "description"),
@@ -81,7 +115,12 @@ class LayersManager:
                 dm.BoundaryCondition1D,
                 dm.MeasureLocation,
             },
-            dm.Channel: {dm.ConnectionNode, dm.CrossSectionLocation, dm.PotentialBreach, dm.Windshielding1D},
+            dm.Channel: {
+                dm.ConnectionNode,
+                dm.CrossSectionLocation,
+                dm.PotentialBreach,
+                dm.Windshielding1D,
+            },
             dm.CrossSectionLocation: {dm.Channel},
             dm.PotentialBreach: {dm.Channel},
             dm.Windshielding1D: {dm.Channel},
@@ -106,7 +145,9 @@ class LayersManager:
         self.uc.progress_bar(msg, 0, handlers_count, 0, clear_msg_bar=True)
         QCoreApplication.processEvents()
         for i, handler in enumerate(self.model_handlers.values(), start=1):
-            fixed_validation_errors, unsorted_validation_errors = handler.validate_features()
+            fixed_validation_errors, unsorted_validation_errors = (
+                handler.validate_features()
+            )
             fixed_errors += fixed_validation_errors
             unsolved_errors += unsorted_validation_errors
             self.uc.progress_bar(msg, 0, handlers_count, i, clear_msg_bar=True)
@@ -115,8 +156,12 @@ class LayersManager:
         if return_raw_errors:
             return fixed_errors, unsolved_errors
         else:
-            fixed_errors_message = validation_errors_summary(fixed_errors) if fixed_errors else ""
-            unsolved_errors_message = validation_errors_summary(unsolved_errors) if unsolved_errors else ""
+            fixed_errors_message = (
+                validation_errors_summary(fixed_errors) if fixed_errors else ""
+            )
+            unsolved_errors_message = (
+                validation_errors_summary(unsolved_errors) if unsolved_errors else ""
+            )
             return fixed_errors_message, unsolved_errors_message
 
     def on_active_layer_changed(self, layer):
@@ -133,7 +178,10 @@ class LayersManager:
         layer_model = layer_handler.MODEL
         if layer_model not in self.snapping_groups:
             return
-        snapped_layers = [self.model_handlers[linked_model].layer for linked_model in self.snapping_groups[layer_model]]
+        snapped_layers = [
+            self.model_handlers[linked_model].layer
+            for linked_model in self.snapping_groups[layer_model]
+        ]
         use_topological_editing = layer_model == dm.ConnectionNode
         project = QgsProject.instance()
         project.setTopologicalEditing(use_topological_editing)
@@ -210,7 +258,9 @@ class LayersManager:
         try:
             from threedi_mi_utils import LocalSchematisation
 
-            model_files_dir = model_gpkg_path_obj.parents[2]  # 3Di model folder structure candidate
+            model_files_dir = model_gpkg_path_obj.parents[
+                2
+            ]  # 3Di model folder structure candidate
             local_schematisation = LocalSchematisation.initialize_from_location(
                 model_files_dir, use_config_for_revisions=False
             )
@@ -220,7 +270,9 @@ class LayersManager:
             if revision_folder == "work in progress":
                 revision = local_schematisation.wip_revision
             else:
-                revision_number = int(re.findall(r"^revision (\d+)", revision_folder)[0])
+                revision_number = int(
+                    re.findall(r"^revision (\d+)", revision_folder)[0]
+                )
                 revision = local_schematisation.revisions[revision_number]
         except (ImportError, IndexError, ValueError):
             revision = None
@@ -255,7 +307,10 @@ class LayersManager:
     @property
     def group_names(self):
         """Names of User Layer groups."""
-        names = tuple(group_name for group_name, model_elements in self.VECTOR_GROUPS + self.RASTER_GROUPS)
+        names = tuple(
+            group_name
+            for group_name, model_elements in self.VECTOR_GROUPS + self.RASTER_GROUPS
+        )
         return names
 
     @property
@@ -295,7 +350,9 @@ class LayersManager:
 
     def setup_value_relation_widgets(self, model_cls):
         """Setup value relation widgets for the particular model class."""
-        child_model_cls, parent_column, key_column, value_column = self.VALUE_RELATIONS[model_cls]
+        child_model_cls, parent_column, key_column, value_column = self.VALUE_RELATIONS[
+            model_cls
+        ]
         parent_layer = self.model_handlers[model_cls].layer
         parent_column_idx = parent_layer.fields().lookupField(parent_column)
         child_layer = self.model_handlers[child_model_cls].layer
@@ -350,7 +407,9 @@ class LayersManager:
     def initialize_data_model_layer(self, model_cls):
         """Initializing single model layer based on data model class."""
         default_style_name = "default"
-        layer = gpkg_layer(self.model_gpkg_path, model_cls.__tablename__, model_cls.__layername__)
+        layer = gpkg_layer(
+            self.model_gpkg_path, model_cls.__tablename__, model_cls.__layername__
+        )
         layer_fields = layer.fields()
         fields_indexes = list(range(len(layer_fields)))
         form_ui_path = get_form_ui_path(model_cls.__tablename__)
@@ -359,12 +418,17 @@ class LayersManager:
         try:
             layer_style_config = self.vector_style_configs[model_cls.__tablename__]
             style_names = [
-                style_name for style_name in layer_style_config.styles.keys() if style_name != default_style_name
+                style_name
+                for style_name in layer_style_config.styles.keys()
+                if style_name != default_style_name
             ]
             style_names.append(default_style_name)  # make sure default is last
             for style_name in style_names:
                 style_categories = layer_style_config.styles[style_name]
-                style_paths = [qml_main_dir / style_path for style_path in style_categories.values()]
+                style_paths = [
+                    qml_main_dir / style_path
+                    for style_path in style_categories.values()
+                ]
                 merged_qml = merge_qml_styles(style_paths)
                 layer.loadNamedStyle(str(merged_qml))
                 set_initial_layer_configuration(layer, model_cls)
@@ -373,22 +437,34 @@ class LayersManager:
         except KeyError:
             pass
         all_styles = style_manager.styles()
-        default_widgets_setup = [(idx, layer.editorWidgetSetup(idx)) for idx in fields_indexes]
+        default_widgets_setup = [
+            (idx, layer.editorWidgetSetup(idx)) for idx in fields_indexes
+        ]
         default_edit_form_config = layer.editFormConfig()
         if form_ui_path:
             default_edit_form_config.setUiForm(form_ui_path)
             try:
-                default_edit_form_config.setInitCodeSource(Qgis.AttributeFormPythonInitCodeSource.Dialog)
+                default_edit_form_config.setInitCodeSource(
+                    Qgis.AttributeFormPythonInitCodeSource.Dialog
+                )
             except AttributeError:
                 try:
-                    default_edit_form_config.setInitCodeSource(QgsEditFormConfig.PythonInitCodeSource.Dialog)
+                    default_edit_form_config.setInitCodeSource(
+                        QgsEditFormConfig.PythonInitCodeSource.Dialog
+                    )
                 except AttributeError:
-                    default_edit_form_config.setInitCodeSource(QgsEditFormConfig.CodeSourceDialog)
+                    default_edit_form_config.setInitCodeSource(
+                        QgsEditFormConfig.CodeSourceDialog
+                    )
             default_edit_form_config.setInitFunction("open_edit_form")
-            default_edit_form_config.setInitCode("from threedi_schematisation_editor.utils import open_edit_form")
+            default_edit_form_config.setInitCode(
+                "from threedi_schematisation_editor.utils import open_edit_form"
+            )
             set_field_default_value(layer, "id", "")
             if model_cls.__geometrytype__ == en.GeometryType.NoGeometry:
-                set_field_default_value(layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))")
+                set_field_default_value(
+                    layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))"
+                )
             else:
                 set_field_default_value(layer, "id", "")
             for idx in fields_indexes:
@@ -396,7 +472,9 @@ class LayersManager:
                 # It is required to prevent QGIS messing with background validation stylesheet.
                 layer.removeFieldConstraint(idx, QgsFieldConstraints.ConstraintNotNull)
         else:
-            set_field_default_value(layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))")
+            set_field_default_value(
+                layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))"
+            )
         if "area" in layer_fields.names():
             set_field_default_value(layer, "area", "$area", apply_on_update=True)
         for style in all_styles:
@@ -407,7 +485,9 @@ class LayersManager:
         style_manager.setCurrentStyle(default_style_name)
         dm_groups = self.data_model_groups
         group_name = dm_groups[model_cls]
-        add_layer_to_group(group_name, layer, bottom=True, cached_groups=self.spawned_groups)
+        add_layer_to_group(
+            group_name, layer, bottom=True, cached_groups=self.spawned_groups
+        )
         handler_cls = MODEL_HANDLERS[model_cls]
         handler = handler_cls(self, layer)
         handler.connect_handler_signals()
@@ -432,10 +512,14 @@ class LayersManager:
         layers_registered = False
         project = QgsProject.instance()
         present_layers = project.mapLayers()
-        present_layers_sources = {lyr.dataProvider().dataSourceUri(): lyr for lyr in present_layers.values()}
+        present_layers_sources = {
+            lyr.dataProvider().dataSourceUri(): lyr for lyr in present_layers.values()
+        }
         for group_name, group_models in self.VECTOR_GROUPS:
             for model_cls in group_models:
-                layer_uri = f"{self.model_gpkg_path}|layername={model_cls.__tablename__}"
+                layer_uri = (
+                    f"{self.model_gpkg_path}|layername={model_cls.__tablename__}"
+                )
                 layer_uri = layer_uri.replace("\\", "/")
                 try:
                     layer = present_layers_sources[layer_uri]
@@ -452,7 +536,9 @@ class LayersManager:
         gpkg_dir = os.path.dirname(self.model_gpkg_path)
         for group_name, group_models in self.RASTER_GROUPS:
             for model_cls in group_models:
-                settings_layer = gpkg_layer(self.model_gpkg_path, model_cls.__tablename__)
+                settings_layer = gpkg_layer(
+                    self.model_gpkg_path, model_cls.__tablename__
+                )
                 try:
                     feat = next(settings_layer.getFeatures())
                 except StopIteration:
@@ -461,7 +547,9 @@ class LayersManager:
                     relative_path = feat[raster_file_field]
                     if not relative_path:
                         continue
-                    raster_filepath = os.path.normpath(os.path.join(gpkg_dir, "rasters", relative_path))
+                    raster_filepath = os.path.normpath(
+                        os.path.join(gpkg_dir, "rasters", relative_path)
+                    )
                     if not os.path.isfile(raster_filepath):
                         continue
                     rlayer = QgsRasterLayer(raster_filepath, raster_layer_name)
@@ -474,10 +562,21 @@ class LayersManager:
                         # zoom to layer extent to prevent that raster is loaded when zoomed in too much, because that
                         # will break the raster styling
                         zoom_to_layer(layer=rlayer, iface=self.iface)
-                        add_layer_to_group(group_name, rlayer, cached_groups=self.spawned_groups)
-                        add_layer_to_group(group_name, hillshade_raster_layer, cached_groups=self.spawned_groups)
+                        add_layer_to_group(
+                            group_name, rlayer, cached_groups=self.spawned_groups
+                        )
+                        add_layer_to_group(
+                            group_name,
+                            hillshade_raster_layer,
+                            cached_groups=self.spawned_groups,
+                        )
                     else:
-                        add_layer_to_group(group_name, rlayer, bottom=True, cached_groups=self.spawned_groups)
+                        add_layer_to_group(
+                            group_name,
+                            rlayer,
+                            bottom=True,
+                            cached_groups=self.spawned_groups,
+                        )
 
     def load_all_layers(self, from_project=False):
         """Creating/registering groups and loading/registering vector, raster and tabular layers."""
@@ -529,7 +628,9 @@ class LayersManager:
                 child_join.setUsingMemoryCache(True)
                 child_join.setEditable(True)
                 child_join.setPrefix(join_specs["prefix"])
-                child_join.setJoinFieldNamesSubset(join_specs["join_field_names_subset"])
+                child_join.setJoinFieldNamesSubset(
+                    join_specs["join_field_names_subset"]
+                )
                 parent_layer.addJoin(child_join)
 
     def get_layer_features(self, model_cls, filter_exp=None):
@@ -547,7 +648,9 @@ class LayersManager:
 
     def model_modified(self):
         """Checking if any user layers were modified during work session."""
-        modified = any(handler.layer_modified for handler in self.layer_handlers.values())
+        modified = any(
+            handler.layer_modified for handler in self.layer_handlers.values()
+        )
         return modified
 
     def stop_model_editing(self):

@@ -5,21 +5,18 @@ from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,
-    QgsProcessingParameterFile,
     QgsProcessingParameterFeatureSource,
+    QgsProcessingParameterFile,
     QgsProject,
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
-from threedi_schematisation_editor.custom_tools import (
+from threedi_schematisation_editor.vector_data_importer.importers import (
     ConnectionNodesImporter,
     CulvertsImporter,
-    CulvertsIntegrator,
     OrificesImporter,
-    OrificesIntegrator,
     PipesImporter,
     WeirsImporter,
-    WeirsIntegrator,
 )
 
 
@@ -50,10 +47,12 @@ class BaseImporter(QgsProcessingAlgorithm):
         return self.tr(f"Import {self.get_feature_repr()}s")
 
     def shortHelpString(self):
-        return self.tr(f"""Import {self.get_feature_repr()}s from the external source layer.""")
+        return self.tr(
+            f"""Import {self.get_feature_repr()}s from the external source layer."""
+        )
 
     def get_feature_repr(self):
-        return self.FEATURE_TYPE.replace('_',' ')
+        return self.FEATURE_TYPE.replace("_", " ")
 
     def initAlgorithm(self, config=None):
         source_layer = QgsProcessingParameterFeatureSource(
@@ -93,13 +92,21 @@ class BaseImporter(QgsProcessingAlgorithm):
     def processAlgorithm(self, parameters, context, feedback):
         source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
         if source_layer is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.SOURCE_LAYER))
-        import_config_file = self.parameterAsFile(parameters, self.IMPORT_CONFIG, context)
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.SOURCE_LAYER)
+            )
+        import_config_file = self.parameterAsFile(
+            parameters, self.IMPORT_CONFIG, context
+        )
         if import_config_file is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.IMPORT_CONFIG))
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.IMPORT_CONFIG)
+            )
         target_gpkg = self.parameterAsFile(parameters, self.TARGET_GPKG, context)
         if target_gpkg is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.TARGET_GPKG))
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.TARGET_GPKG)
+            )
 
         with open(import_config_file) as import_config_json:
             import_config = json.loads(import_config_json.read())
@@ -107,11 +114,7 @@ class BaseImporter(QgsProcessingAlgorithm):
         importer = self.create_importer(source_layer, target_gpkg, import_config)
 
         # Use the right import method based on the importer type
-        if hasattr(importer, 'import_features'):
-            importer.import_features(context=context)
-        else:
-            importer.import_structures(context=context)
-
+        importer.import_features(context=context)
         importer.commit_pending_changes()
         return {}
 
@@ -125,6 +128,7 @@ class SimpleImporter(BaseImporter):
 
 class ImportConnectionNodes(SimpleImporter):
     """Import connection nodes."""
+
     IMPORTER_CLASS = ConnectionNodesImporter
     FEATURE_TYPE = "connection_node"  # To be overridden by subclasses
 
@@ -134,12 +138,14 @@ class ImportConnectionNodes(SimpleImporter):
 
 class ImportPipes(SimpleImporter):
     """Import pipes."""
+
     IMPORTER_CLASS = PipesImporter
     FEATURE_TYPE = "pipe"  # To be overridden by subclasses
 
 
 class StructureImporter(BaseImporter):
     """Base class for importing different feature types."""
+
     IMPORTER_CLASS = None  # To be overridden by subclasses
     INTEGRATOR_CLASS = None  # To be overridden by subclasses
 
@@ -155,22 +161,23 @@ class StructureImporter(BaseImporter):
 
 class ImportCulverts(StructureImporter):
     """Import culverts."""
+
     FEATURE_TYPE = "culvert"
     IMPORTER_CLASS = CulvertsImporter
-    INTEGRATOR_CLASS = CulvertsIntegrator
+    INTEGRATOR_CLASS = CulvertsImporter
 
 
 class ImportOrifices(StructureImporter):
     """Import orifices."""
+
     FEATURE_TYPE = "orifice"
     IMPORTER_CLASS = OrificesImporter
-    INTEGRATOR_CLASS = OrificesIntegrator
+    INTEGRATOR_CLASS = OrificesImporter
 
 
 class ImportWeirs(StructureImporter):
     """Import weirs."""
+
     FEATURE_TYPE = "weir"
     IMPORTER_CLASS = WeirsImporter
-    INTEGRATOR_CLASS = WeirsIntegrator
-
-
+    INTEGRATOR_CLASS = WeirsImporter

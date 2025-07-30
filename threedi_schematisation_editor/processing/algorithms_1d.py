@@ -106,21 +106,39 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
         )
 
     def processAlgorithm(self, parameters, context, feedback):
-        connection_node_lyr = self.parameterAsLayer(parameters, self.CONNECTION_NODE_LAYER, context)
+        connection_node_lyr = self.parameterAsLayer(
+            parameters, self.CONNECTION_NODE_LAYER, context
+        )
         if connection_node_lyr is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.CONNECTION_NODE_LAYER))
-        selected_manhole_nodes = self.parameterAsBool(parameters, self.SELECTED_CONNECTION_NODES, context)
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.CONNECTION_NODE_LAYER)
+            )
+        selected_manhole_nodes = self.parameterAsBool(
+            parameters, self.SELECTED_CONNECTION_NODES, context
+        )
         pipe_lyr = self.parameterAsLayer(parameters, self.PIPE_LAYER, context)
         if pipe_lyr is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.PIPE_LAYER))
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.PIPE_LAYER)
+            )
         selected_pipes = self.parameterAsBool(parameters, self.SELECTED_PIPES, context)
-        overwrite_levels = self.parameterAsBool(parameters, self.OVERWRITE_LEVELS, context)
-        do_not_raise_levels = self.parameterAsBool(parameters, self.DO_NOT_RAISE_LEVELS, context)
+        overwrite_levels = self.parameterAsBool(
+            parameters, self.OVERWRITE_LEVELS, context
+        )
+        do_not_raise_levels = self.parameterAsBool(
+            parameters, self.DO_NOT_RAISE_LEVELS, context
+        )
         node_adjacent_invert_levels = defaultdict(set)
         feedback.setProgress(0)
-        num_pipes = pipe_lyr.selectedFeatureCount() if selected_pipes else pipe_lyr.featureCount()
+        num_pipes = (
+            pipe_lyr.selectedFeatureCount()
+            if selected_pipes
+            else pipe_lyr.featureCount()
+        )
         processed_pipes = 0
-        for pipe_feat in pipe_lyr.selectedFeatures() if selected_pipes else pipe_lyr.getFeatures():
+        for pipe_feat in (
+            pipe_lyr.selectedFeatures() if selected_pipes else pipe_lyr.getFeatures()
+        ):
             pipe_start_node_id = pipe_feat["connection_node_id_start"]
             pipe_end_node_id = pipe_feat["connection_node_id_end"]
             invert_level_start = pipe_feat["invert_level_start"]
@@ -135,11 +153,15 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
                 return {}
         bottom_level_changes = {}
         num_manhole_nodes = (
-            connection_node_lyr.selectedFeatureCount() if selected_manhole_nodes else connection_node_lyr.featureCount()
+            connection_node_lyr.selectedFeatureCount()
+            if selected_manhole_nodes
+            else connection_node_lyr.featureCount()
         )
         processed_nodes = 0
         for node_feat in (
-            connection_node_lyr.selectedFeatures() if selected_manhole_nodes else connection_node_lyr.getFeatures()
+            connection_node_lyr.selectedFeatures()
+            if selected_manhole_nodes
+            else connection_node_lyr.getFeatures()
         ):
             node_fid = node_feat.id()
             node_id = node_feat["id"]
@@ -157,17 +179,25 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
                     continue
             bottom_level_changes[node_fid] = min_invert_level
             processed_nodes += 1
-            feedback.setProgress(100 / 3 + 100 / 3 * processed_nodes / num_manhole_nodes)
+            feedback.setProgress(
+                100 / 3 + 100 / 3 * processed_nodes / num_manhole_nodes
+            )
             if feedback.isCanceled():
                 return {}
         if bottom_level_changes:
-            bottom_level_field_idx = connection_node_lyr.fields().lookupField("bottom_level")
+            bottom_level_field_idx = connection_node_lyr.fields().lookupField(
+                "bottom_level"
+            )
             connection_node_lyr.startEditing()
             for i, (node_fid, bottom_level) in enumerate(bottom_level_changes.items()):
                 if feedback.isCanceled():
                     return {}
-                connection_node_lyr.changeAttributeValue(node_fid, bottom_level_field_idx, bottom_level)
-                feedback.setProgress(200 / 3 + 100 / 3 * (i + 1) / len(bottom_level_changes))
+                connection_node_lyr.changeAttributeValue(
+                    node_fid, bottom_level_field_idx, bottom_level
+                )
+                feedback.setProgress(
+                    200 / 3 + 100 / 3 * (i + 1) / len(bottom_level_changes)
+                )
                 if feedback.isCanceled():
                     return {}
             success = connection_node_lyr.commitChanges()
