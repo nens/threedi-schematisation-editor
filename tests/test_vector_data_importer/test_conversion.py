@@ -103,7 +103,7 @@ def test_integrate_isolated_weir(qgis_application):
 
 def test_import_connection_nodes(qgis_application):
     import_config = get_import_config_path("import_connection_nodes.json")
-    target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg")
+    target_gpkg = get_temp_copy(SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg"))
 
     src_layer = get_source_layer("connection_nodes.gpkg", "connection_nodes")
     target_layer = gpkg_layer(target_gpkg, "connection_node")
@@ -112,7 +112,7 @@ def test_import_connection_nodes(qgis_application):
     )
     importer.import_features()
     ref_layer = gpkg_layer(
-        DATA_PATH.joinpath("ref", "test_import_connection_nodes.gpkg"),
+        get_temp_copy(DATA_PATH.joinpath("ref", "test_import_connection_nodes.gpkg")),
         "connection_node",
     )
     compare_layer(target_layer, ref_layer)
