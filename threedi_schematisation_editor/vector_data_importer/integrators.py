@@ -1,7 +1,9 @@
 import warnings
 from _operator import attrgetter, itemgetter
-from collections import defaultdict, namedtuple
+from collections import defaultdict
+from dataclasses import dataclass
 
+import numpy as np
 from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes
 
 from threedi_schematisation_editor import data_models as dm
@@ -21,13 +23,16 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 
 
+@dataclass
+class LinearIntegratorStructureData:
+    channel_id: int
+    feature: QgsFeature
+    m: float
+    length: float
+
+
 class LinearIntegrator:
     """Integrate linear structures onto a channel or similar"""
-
-    # shorthand with channel_structure properties
-    integrate_structure_data = namedtuple(
-        "integrate_structure_data", ["channel_id", "feature", "m", "length"]
-    )
 
     def __init__(
         self,
@@ -179,7 +184,7 @@ class LinearIntegrator:
             return
         intersection_m = channel_geometry.lineLocatePoint(structure_geom.centroid())
         structure_length = structure_geom.length()
-        return LinearIntegrator.integrate_structure_data(
+        return LinearIntegratorStructureData(
             channel_feat["id"], structure_feat, intersection_m, structure_length
         )
 
@@ -202,7 +207,7 @@ class LinearIntegrator:
         structure_length = get_float_value_from_feature(
             structure_feat, length_source_field, length_fallback_value
         )
-        return LinearIntegrator.integrate_structure_data(
+        return LinearIntegratorStructureData(
             channel_feat["id"], structure_feat, intersection_m, structure_length
         )
 
@@ -409,6 +414,87 @@ class LinearIntegrator:
             substring_feat[field_name] = field_value
         return substring_feat
 
+    @classmethod
+    def fix_structure_placement(
+        cls, channel_structures, channel_length, minimum_channel_length
+    ):
+        # fix any gaps on the left side of the structures
+        channel_structures = cls.fix_structure_placement_lhs(
+            channel_structures, channel_length, minimum_channel_length
+        )
+        channel_structures = cls.fix_structure_placement_rhs(
+            channel_structures, channel_length, minimum_channel_length
+        )
+        channel_structures = cls.fix_structure_placement_overlap_at_end(
+            channel_structures, channel_length
+        )
+        return channel_structures
+
+    @classmethod
+    def fix_structure_placement_lhs(
+        cls, channel_structures, channel_length, minimum_channel_length
+    ):
+        channel_structures = sorted(channel_structures, key=lambda x: x.m)
+        for i, cs in enumerate(channel_structures):
+            prev_end = (
+                0
+                if i == 0
+                else channel_structures[i - 1].m
+                + 0.5 * channel_structures[i - 1].length
+            )
+            end_left = cs.m - 0.5 * cs.length
+            # move structure if distance is too small
+            # except when the structure extends over the end of the channel
+            if (
+                end_left - prev_end
+            ) < minimum_channel_length and prev_end + cs.length <= channel_length:
+                cs.m = prev_end + 0.5 * cs.length
+        return channel_structures
+
+    @classmethod
+    def fix_structure_placement_rhs(
+        cls, channel_structures, channel_length, minimum_channel_length
+    ):
+        channel_structures = sorted(channel_structures, key=lambda x: x.m)
+        last_struct = channel_structures[-1]
+        end_right = last_struct.m + 0.5 * last_struct.length
+        if channel_length - end_right < minimum_channel_length:
+            prev_right = (
+                channel_structures[-2].m + 0.5 * channel_structures[-2].length
+                if len(channel_structures) > 1
+                else 0
+            )
+            # move if the remaining space is sufficient
+            if (
+                channel_length - last_struct.length
+            ) - prev_right >= minimum_channel_length:
+                last_struct.m = channel_length - 0.5 * last_struct.length
+            # resize if remaining space does not allow move
+            elif (channel_length - prev_right) > 0:
+                last_struct.length = channel_length - prev_right
+                last_struct.m = prev_right + 0.5 * last_struct.length
+        return channel_structures
+
+    @classmethod
+    def fix_structure_placement_overlap_at_end(cls, channel_structures, channel_length):
+        # handle edge case where multiple structures end at the channel end
+        # TODO: consider using numpy for this one time
+        idx_at_right_end = np.where(
+            np.array([cs.m + 0.5 * cs.length for cs in channel_structures])
+            == channel_length
+        )[0]
+        if len(idx_at_right_end) > 1:
+            for i in idx_at_right_end[:-1]:
+                cs_i = channel_structures[i]
+                cs_next = channel_structures[i + 1]
+                if cs_i.m == cs_next.m and cs_i.length == cs_next.length:
+                    continue
+                left_i = cs_i.m - 0.5 * cs_i.length
+                new_right = cs_next.m - 0.5 * cs_next.length
+                cs_i.length = new_right - left_i
+                cs_i.m = new_right - 0.5 * cs_i.length
+        return channel_structures
+
     def integrate_structure_features(self, channel_feat, channel_structures):
         """Integrate structures with a channel network."""
         added_features = defaultdict(list)
@@ -447,17 +533,22 @@ class LinearIntegrator:
         }
         simplify_structure_geometry = self.target_model_cls != dm.Culvert
         previous_structure_end = 0
+        # TODO
+        # modify channel_structure .l and .m before adding them
+        channel_structures = self.fix_structure_placement(
+            channel_structures,
+            channel_geom.length(),
+            self.conversion_settings.minimum_channel_length,
+        )
+
         for i, channel_structure in enumerate(
             sorted(channel_structures, key=lambda x: x.m)
         ):
             new_nodes = []
             channel_structure_m = channel_structure.m
-            half_length = channel_structure.length * 0.5
-            # when structures overlap, move them to the end of the previous structure
-            if channel_structure_m - half_length < previous_structure_end:
-                channel_structure_m = previous_structure_end + half_length
-            start_distance = channel_structure_m - half_length
-            end_distance = channel_structure_m + half_length
+            # channel_structure_m = self.move_object(channel_structure, previous_structure_end, self.conversion_settings.minimum_channel_length)
+            start_distance = channel_structure_m - channel_structure.length * 0.5
+            end_distance = channel_structure_m + channel_structure.length * 0.5
             # Setup structure feature
             substring_geom = LinearIntegrator.get_substring_geometry(
                 channel_geom.constGet(),
@@ -509,6 +600,9 @@ class LinearIntegrator:
                 )
         # Setup last channel leftover feature
         last_substring_end = channel_geom.length()
+        # dist = channel_geom.length() - last_substring_end
+        # if dist < self.conversion_settings.minimum_channel_length:
+        # TODO: move last object
         if last_substring_end - previous_structure_end > 0:
             last_substring_feat = self.substring_feature(
                 channel_geom.constGet(),
