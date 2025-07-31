@@ -29,14 +29,11 @@ def qgis_application_with_processor(qgis_application: QgsApplication) -> QgsAppl
 
 def run_processing_operation(algo_name, task):
     task = {key: str(get_temp_copy(val)) for key, val in task.items()}
-    try:
-        processing.run(
-            f"threedi_schematisation_editor:{algo_name}",
-            task,
-            feedback=QgsProcessingFeedback(),
-        )
-    except:
-        pytest.fail(f"Failed to run {algo_name} with task {task}")
+    processing.run(
+        f"threedi_schematisation_editor:{algo_name}",
+        task,
+        feedback=QgsProcessingFeedback(),
+    )
 
 
 def test_threedi_import_connection_nodes(qgis_application_with_processor):
