@@ -3,7 +3,6 @@ from _operator import attrgetter, itemgetter
 from collections import defaultdict
 from dataclasses import dataclass
 
-import numpy as np
 from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes
 
 from threedi_schematisation_editor import data_models as dm
@@ -478,11 +477,11 @@ class LinearIntegrator:
     @classmethod
     def fix_structure_placement_overlap_at_end(cls, channel_structures, channel_length):
         # handle edge case where multiple structures end at the channel end
-        # TODO: consider using numpy for this one time
-        idx_at_right_end = np.where(
-            np.array([cs.m + 0.5 * cs.length for cs in channel_structures])
-            == channel_length
-        )[0]
+        idx_at_right_end = [
+            i
+            for i, cs in enumerate(channel_structures)
+            if (cs.m + 0.5 * cs.length) == channel_length
+        ]
         if len(idx_at_right_end) > 1:
             for i in idx_at_right_end[:-1]:
                 cs_i = channel_structures[i]
@@ -600,9 +599,6 @@ class LinearIntegrator:
                 )
         # Setup last channel leftover feature
         last_substring_end = channel_geom.length()
-        # dist = channel_geom.length() - last_substring_end
-        # if dist < self.conversion_settings.minimum_channel_length:
-        # TODO: move last object
         if last_substring_end - previous_structure_end > 0:
             last_substring_feat = self.substring_feature(
                 channel_geom.constGet(),
