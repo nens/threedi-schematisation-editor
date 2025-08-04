@@ -92,7 +92,6 @@ class ConversionSettings:
             self.snapping_distance = conversion_config.get("snapping_distance")
         else:
             self.snapping_distance = DEFAULT_INTERSECTION_BUFFER
-        # TODO: reconsider default
         self.minimum_channel_length = conversion_config.get(
             "minimum_channel_length", DEFAULT_MINIMUM_CHANNEL_LENGTH
         )
