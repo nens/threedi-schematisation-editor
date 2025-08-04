@@ -1,4 +1,6 @@
 import json
+
+import numpy as np
 import pytest
 import shapely
 from shapely.testing import assert_geometries_equal
@@ -20,9 +22,7 @@ def get_schematisation_layers(target_gpkg, target_object):
         "structure_layer": gpkg_layer(temp_gpkg, target_object),
         "channel_layer": gpkg_layer(temp_gpkg, "channel"),
         "node_layer": gpkg_layer(temp_gpkg, "connection_node"),
-        "cross_section_location_layer": gpkg_layer(
-            temp_gpkg, "cross_section_location"
-        ),
+        "cross_section_location_layer": gpkg_layer(temp_gpkg, "cross_section_location"),
     }
 
 
@@ -103,7 +103,9 @@ def test_integrate_isolated_weir(qgis_application):
 
 def test_import_connection_nodes(qgis_application):
     import_config = get_import_config_path("import_connection_nodes.json")
-    target_gpkg = get_temp_copy(SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg"))
+    target_gpkg = get_temp_copy(
+        SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg")
+    )
 
     src_layer = get_source_layer("connection_nodes.gpkg", "connection_nodes")
     target_layer = gpkg_layer(target_gpkg, "connection_node")
@@ -131,3 +133,13 @@ def test_import_weirs(qgis_application, integrate: bool, snap: bool):
     importer = WeirsImporter(src_layer, target_gpkg, import_config, **layers)
     importer.import_features()
     compare_results(f"test_{test_name}", layers, target_layer_name)
+
+
+def test_fix_positioning(qgis_application):
+    import_config = get_import_config_path("import_weirs_fix.json")
+    src_layer = get_source_layer("weirs_fix_positions.gpkg", "dhydro_weir")
+    target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg")
+    layers = get_schematisation_layers(target_gpkg, "weir")
+    importer = WeirsImporter(src_layer, target_gpkg, import_config, **layers)
+    importer.import_features()
+    compare_results("test_weirs_fix_positions", layers, "weir")

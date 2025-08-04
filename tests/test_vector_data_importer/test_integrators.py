@@ -15,6 +15,7 @@ from threedi_schematisation_editor.vector_data_importer.integrators import (
     LinearIntegrator,
     LinearIntegratorStructureData,
 )
+from threedi_schematisation_editor.vector_data_importer.utils import FeatureManager
 
 
 @pytest.fixture
@@ -690,3 +691,27 @@ class TestFixPositions:
         )
         assert expected_mids == [cs.m for cs in channel_structures_mod]
         assert expected_lengths == [cs.length for cs in channel_structures_mod]
+
+
+@pytest.mark.parametrize(
+    "mids, lengths, expected_cuts",
+    [
+        ([5], [10], [(10, 50)]),  # structure on the left
+        ([45], [10], [(0, 40)]),  # structure on the right
+        (
+            [10, 30],
+            [10, 10],
+            [(0, 5), (15, 25), (35, 50)],
+        ),  # two strcutures on the channel
+    ],
+)
+def test_get_channel_cuts(mids, lengths, expected_cuts):
+    channel_length = 50
+    channel_structures = [
+        LinearIntegratorStructureData(0, None, mid, length)
+        for (mid, length) in zip(mids, lengths)
+    ]
+    assert (
+        LinearIntegrator.get_channel_cuts(channel_structures, channel_length)
+        == expected_cuts
+    )
