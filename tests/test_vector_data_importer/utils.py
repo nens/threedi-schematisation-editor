@@ -14,4 +14,3 @@ def get_temp_copy(src):
     tgt = TEMP_DIR.joinpath(src.name)
     shutil.copy(src, tgt)
     return tgt.absolute()
-

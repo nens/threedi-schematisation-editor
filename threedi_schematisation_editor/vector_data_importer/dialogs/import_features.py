@@ -743,7 +743,6 @@ class ImportStructuresDialog(ImportDialog):
 
         self.gridLayout.addWidget(self.snap_gb, 8, 4, 1, 2)
 
-
     def setup_models(self):
         self.structure_model = QStandardItemModel()
         self.structure_tv.setModel(self.structure_model)
@@ -846,7 +845,9 @@ class ImportStructuresDialog(ImportDialog):
         conversion_settings = import_settings["conversion_settings"]
         self.snap_gb.setChecked(conversion_settings.get("use_snapping", True))
         self.snap_dsb.setValue(conversion_settings.get("snapping_distance", 0.1))
-        self.min_channel_dsb.setValue(conversion_settings.get("minimum_channel_length", 5))
+        self.min_channel_dsb.setValue(
+            conversion_settings.get("minimum_channel_length", 5)
+        )
         self.create_nodes_cb.setChecked(
             conversion_settings.get("create_connection_nodes", True)
         )
