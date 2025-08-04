@@ -113,9 +113,9 @@ class LinearIntegrator:
             target_gpkg=importer.target_gpkg,
         )
 
-    @classmethod
+    @staticmethod
     def get_substring_geometry(
-        cls, curve, start_distance, end_distance, simplify=False
+        curve, start_distance, end_distance, simplify=False
     ):
         curve_substring = curve.curveSubstring(start_distance, end_distance)
         substring_geometry = QgsGeometry(curve_substring)
