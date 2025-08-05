@@ -98,12 +98,14 @@ class ThreediSchematisationEditorPlugin:
         )
         self.action_remove.triggered.connect(self.remove_model_from_project)
         import_features_icon_path = get_icon_path("icon_import.png")
+        # import_actions_spec = []
         import_actions_spec = [
             ("Connection nodes", self.import_external_connection_nodes, None),
             ("Culverts", self.import_external_culverts, None),
             ("Orifices", self.import_external_orifices, None),
             ("Weirs", self.import_external_weirs, None),
             ("Pipes", self.import_external_pipes, None),
+            ("Channels", self.import_external_channels, None),
         ]
         self.action_import_features = self.add_multi_action_button(
             "Import schematisation objects",
@@ -355,43 +357,35 @@ class ThreediSchematisationEditorPlugin:
         self.toggle_active_project_actions()
         self.iface.mapCanvas().refresh()
 
-    def import_external_connection_nodes(self):
+
+    def import_external(self, model_cls, dialog_cls):
         if not self.model_gpkg:
             return
-        import_nodes_dlg = ImportFeaturesDialog(
-            dm.ConnectionNode, self.model_gpkg, self.layer_manager, self.uc
+        import_dlg = dialog_cls(
+            model_cls, self.model_gpkg, self.layer_manager, self.uc
         )
-        import_nodes_dlg.exec_()
+        import_dlg.exec_()
+
+    def import_external_connection_nodes(self):
+        self.import_external(dm.ConnectionNode, ImportFeaturesDialog)
+
+    def import_external_structures(self, model_cls):
+        self.import_external(model_cls, ImportStructuresDialog)
 
     def import_external_culverts(self):
-        if not self.model_gpkg:
-            return
-        import_culverts_dlg = ImportStructuresDialog(
-            dm.Culvert, self.model_gpkg, self.layer_manager, self.uc
-        )
-        import_culverts_dlg.exec_()
+        self.import_external_structures(dm.Culvert)
 
     def import_external_orifices(self):
-        if not self.model_gpkg:
-            return
-        import_orifices_dlg = ImportStructuresDialog(
-            dm.Orifice, self.model_gpkg, self.layer_manager, self.uc
-        )
-        import_orifices_dlg.exec_()
+        self.import_external_structures(dm.Orifice)
 
     def import_external_weirs(self):
-        if not self.model_gpkg:
-            return
-        import_weirs_dlg = ImportStructuresDialog(
-            dm.Weir, self.model_gpkg, self.layer_manager, self.uc
-        )
-        import_weirs_dlg.exec_()
+        self.import_external_structures(dm.Weir)
 
     def import_external_pipes(self):
-        import_pipes_dlg = ImportStructuresDialog(
-            dm.Pipe, self.model_gpkg, self.layer_manager, self.uc
-        )
-        import_pipes_dlg.exec_()
+        self.import_external_structures(dm.Pipe)
+
+    def import_external_channels(self):
+        self.import_external_structures(dm.Channel)
 
     def on_project_close(self):
         if self.layer_manager is None:
