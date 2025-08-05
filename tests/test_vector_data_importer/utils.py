@@ -10,8 +10,7 @@ CONFIG_PATH = DATA_PATH.joinpath("config")
 SOURCE_PATH = DATA_PATH.joinpath("source")
 
 
-def get_schematisation_copy(schematisation, test_name):
-    tgt = TEMP_DIR.joinpath(test_name)
-    src = SCHEMATISATION_PATH.joinpath(schematisation).with_suffix(".gpkg")
+def get_temp_copy(src):
+    tgt = TEMP_DIR.joinpath(src.name)
     shutil.copy(src, tgt)
     return tgt.absolute()

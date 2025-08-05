@@ -14,6 +14,7 @@ from threedi_schematisation_editor.warnings import FeaturesImporterWarning
 
 DEFAULT_INTERSECTION_BUFFER = 1
 DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
+DEFAULT_MINIMUM_CHANNEL_LENGTH = 5
 
 
 def update_attributes(fields_config, model_cls, source_feat, *new_features):
@@ -91,6 +92,9 @@ class ConversionSettings:
             self.snapping_distance = conversion_config.get("snapping_distance")
         else:
             self.snapping_distance = DEFAULT_INTERSECTION_BUFFER
+        self.minimum_channel_length = conversion_config.get(
+            "minimum_channel_length", DEFAULT_MINIMUM_CHANNEL_LENGTH
+        )
         self.create_connection_nodes = conversion_config.get(
             "create_connection_nodes", False
         )

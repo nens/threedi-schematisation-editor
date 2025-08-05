@@ -13,7 +13,9 @@ from qgis.core import (
 
 from threedi_schematisation_editor.vector_data_importer.integrators import (
     LinearIntegrator,
+    LinearIntegratorStructureData,
 )
+from threedi_schematisation_editor.vector_data_importer.utils import FeatureManager
 
 
 @pytest.fixture
@@ -587,3 +589,129 @@ def test_get_substring_geometry_argument_processing(simplify):
         assert len(result.asPolyline()) >= 2
 
     assert result.length() == end_distance - start_distance
+
+
+class TestFixPositions:
+    @pytest.mark.parametrize(
+        "mids, expected_mids",
+        [
+            ([2], [3]),  # single structure too far to the left
+            ([4], [3]),  # single structure leaving too short channel on the left
+            ([3], [3]),  # single structure exactly at the start
+            ([6], [6]),  # single structure far enough from the start
+            ([12, 19], [12, 18]),  # two structures with channel of length 1 in between
+            ([12, 17], [12, 18]),  # two overlapping structures
+            ([12, 20], [12, 20]),  # two structures with sufficient distance
+            ([12, 18], [12, 18]),  # two structures side by side
+        ],
+    )
+    def test_fix_positions_lhs(self, mids, expected_mids):
+        minimum_channel_length = 2
+        structure_length = 6
+        channel_length = 30
+        channel_structures = [
+            LinearIntegratorStructureData(0, None, mid, structure_length)
+            for mid in mids
+        ]
+        channel_structures_mod = LinearIntegrator.fix_structure_placement_lhs(
+            channel_structures, channel_length, minimum_channel_length
+        )
+        assert expected_mids == [cs.m for cs in channel_structures_mod]
+
+    @pytest.mark.parametrize(
+        "mids, expected_mids, expected_lengths",
+        [
+            ([19], [17], [6]),  # single structure too far to the right
+            ([16], [17], [6]),  # single structure with too short channel on the right
+            ([17], [17], [6]),  # single structure exactly at the end
+            ([10], [10], [6]),  # single structure with enough space at the end
+            (
+                [15, 19],
+                [15, 19],
+                [6, 2],
+            ),  # second structure past channel and no space to more
+            ([15, 17], [15, 19], [6, 2]),  # overlap with no space to move
+            (
+                [10, 16],
+                [10, 16.5],
+                [6, 7],
+            ),  # too small gap between last and one before last
+            ([11, 17], [11, 17], [6, 6]),  # two structures exactly at the end
+        ],
+    )
+    def test_fix_positions_rhs(self, mids, expected_mids, expected_lengths):
+        minimum_channel_length = 2
+        structure_length = 6
+        channel_length = 20
+        channel_structures = [
+            LinearIntegratorStructureData(0, None, mid, structure_length)
+            for mid in mids
+        ]
+        channel_structures_mod = LinearIntegrator.fix_structure_placement_rhs(
+            channel_structures, channel_length, minimum_channel_length
+        )
+        assert expected_mids == [cs.m for cs in channel_structures_mod]
+        assert expected_lengths == [cs.length for cs in channel_structures_mod]
+
+    @pytest.mark.parametrize(
+        "mids, lengths, expected_mids, expected_lengths",
+        [
+            (
+                [15, 17],
+                [10, 6],
+                [12, 17],
+                [4, 6],
+            ),  # two structures that both end at the channel end
+            (
+                [15, 17, 18],
+                [10, 6, 4],
+                [12, 15, 18],
+                [4, 2, 4],
+            ),  # three structures that both end at the channel end
+            (
+                [17, 17],
+                [6, 6],
+                [17, 17],
+                [6, 6],
+            ),  # two identical structures, should not be moved
+        ],
+    )
+    def test_fix_positions_overlap_at_end(
+        self, mids, lengths, expected_mids, expected_lengths
+    ):
+        channel_length = 20
+        channel_structures = [
+            LinearIntegratorStructureData(0, None, mid, length)
+            for (mid, length) in zip(mids, lengths)
+        ]
+        channel_structures_mod = (
+            LinearIntegrator.fix_structure_placement_overlap_at_end(
+                channel_structures, channel_length
+            )
+        )
+        assert expected_mids == [cs.m for cs in channel_structures_mod]
+        assert expected_lengths == [cs.length for cs in channel_structures_mod]
+
+
+@pytest.mark.parametrize(
+    "mids, lengths, expected_cuts",
+    [
+        ([5], [10], [(10, 50)]),  # structure on the left
+        ([45], [10], [(0, 40)]),  # structure on the right
+        (
+            [10, 30],
+            [10, 10],
+            [(0, 5), (15, 25), (35, 50)],
+        ),  # two strcutures on the channel
+    ],
+)
+def test_get_channel_cuts(mids, lengths, expected_cuts):
+    channel_length = 50
+    channel_structures = [
+        LinearIntegratorStructureData(0, None, mid, length)
+        for (mid, length) in zip(mids, lengths)
+    ]
+    assert (
+        LinearIntegrator.get_channel_cuts(channel_structures, channel_length)
+        == expected_cuts
+    )

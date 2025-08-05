@@ -730,6 +730,17 @@ class ImportStructuresDialog(ImportDialog):
         self.snap_dsb.setValue(0.1)
         gridLayout_5.addWidget(self.snap_dsb, 0, 0)
 
+        # Create minimum channel length
+        self.min_channel_dsb = QDoubleSpinBox()
+        self.min_channel_dsb.setFont(self.create_font(10))
+        self.min_channel_dsb.setSuffix(" meters")
+        self.min_channel_dsb.setMaximum(1000000.0)
+        self.min_channel_dsb.setValue(5)
+        self.min_channel_lab = QLabel("Minimum channel length:")
+        self.min_channel_lab.setFont(self.create_font(10))
+        gridLayout_5.addWidget(self.min_channel_dsb, 2, 0)
+        gridLayout_5.addWidget(self.min_channel_lab, 1, 0)
+
         self.gridLayout.addWidget(self.snap_gb, 8, 4, 1, 2)
 
     def setup_models(self):
@@ -790,6 +801,8 @@ class ImportStructuresDialog(ImportDialog):
             self.azimuth_source_field_cbo,
             self.azimuth_fallback_value_lbl,
             self.azimuth_fallback_value_sb,
+            self.min_channel_lab,
+            self.min_channel_dsb,
         ]
 
     def on_create_nodes_change(self, is_checked: bool):
@@ -807,6 +820,7 @@ class ImportStructuresDialog(ImportDialog):
             "conversion_settings": {
                 "use_snapping": self.snap_gb.isChecked(),
                 "snapping_distance": self.snap_dsb.value(),
+                "minimum_channel_length": self.min_channel_dsb.value(),
                 "create_connection_nodes": self.create_nodes_cb.isChecked(),
                 "length_source_field": self.length_source_field_cbo.currentField(),
                 "length_fallback_value": self.length_fallback_value_dsb.value(),
@@ -831,6 +845,9 @@ class ImportStructuresDialog(ImportDialog):
         conversion_settings = import_settings["conversion_settings"]
         self.snap_gb.setChecked(conversion_settings.get("use_snapping", True))
         self.snap_dsb.setValue(conversion_settings.get("snapping_distance", 0.1))
+        self.min_channel_dsb.setValue(
+            conversion_settings.get("minimum_channel_length", 5)
+        )
         self.create_nodes_cb.setChecked(
             conversion_settings.get("create_connection_nodes", True)
         )
