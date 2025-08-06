@@ -12,6 +12,7 @@ from qgis.core import (
 from qgis.PyQt.QtCore import QCoreApplication
 
 from threedi_schematisation_editor.vector_data_importer.importers import (
+    ChannelsImporter,
     ConnectionNodesImporter,
     CulvertsImporter,
     OrificesImporter,
@@ -140,7 +141,15 @@ class ImportPipes(SimpleImporter):
     """Import pipes."""
 
     IMPORTER_CLASS = PipesImporter
-    FEATURE_TYPE = "pipe"  # To be overridden by subclasses
+    FEATURE_TYPE = "pipe"
+
+
+class ImportChannels(SimpleImporter):
+    """Import channels."""
+
+    IMPORTER_CLASS = ChannelsImporter
+    FEATURE_TYPE = "channel"
+
 
 
 class StructureImporter(BaseImporter):
