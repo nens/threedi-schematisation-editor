@@ -174,7 +174,7 @@ class LineProcessor(StructureProcessor):
             src_feat, self.conversion_settings, self.target_model_cls
         )
         if self.transformation:
-            new_geom.transform(transformation)
+            new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
         polyline = new_feat.geometry().asPolyline()
         for idx, name in [
