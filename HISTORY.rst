@@ -5,6 +5,7 @@ History
 ------------------
 
 - Improve handling of structures integrated on channels: prevent structures from sticking out on the start or end of the channel; prevent overlapping structures; prevent too short channels in between structures and at the start or end of the channel.
+- Add importer for channels
 
 
 2.3.1 (2025-07-16)
