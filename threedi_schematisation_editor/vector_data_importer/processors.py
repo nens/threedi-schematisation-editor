@@ -1,6 +1,6 @@
 from abc import ABC
 
-from qgis.core import QgsGeometry, QgsWkbTypes
+from qgis.core import NULL, QgsFeatureRequest, QgsGeometry, QgsSpatialIndex, QgsWkbTypes
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
@@ -21,7 +21,7 @@ class Processor(ABC):
         self.target_manager = FeatureManager(get_next_feature_id(target_layer))
         self.target_model_cls = target_model_cls
         self.transformation = None
-        self.locator = None
+        self.node_locator = None
 
     @classmethod
     def snap_connection_node(
@@ -60,10 +60,124 @@ class Processor(ABC):
         raise NotImplementedError
 
 
+class CrossSectionLocationProcessor(Processor):
+    def __init__(
+        self,
+        target_layer,
+        target_model_cls,
+        channel_layer,
+        conversion_settings,
+        target_fields_config,
+    ):
+        super().__init__(target_layer, target_model_cls)
+        self.channel_layer = channel_layer
+        self.channel_spatial_index = QgsSpatialIndex(channel_layer)
+        self.conversion_settings = conversion_settings
+        self.conversion_settings.snapping_distance = 6
+        self.channel_mapping = {
+            feature[conversion_settings.join_field_tgt]: feature
+            for feature in channel_layer.getFeatures()
+        }
+        self.target_fields_config = target_fields_config
+
+    def get_matching_channel(self, feat, geom):
+        # note that feat.geometry() is not used because geom may be transformed
+        channel_match = None
+        if geom.isEmpty():
+            if feat[self.conversion_settings.join_field_src] is not None:
+                channel_match = self.channel_mapping.get(
+                    feat[self.conversion_settings.join_field_src]
+                )
+        else:
+            geometry_type = geom.type()
+            if geometry_type == QgsWkbTypes.GeometryType.PointGeometry:
+                closest_feature_id = self.channel_spatial_index.nearestNeighbor(
+                    geom.asPoint(), 1, self.conversion_settings.snapping_distance
+                )
+                if len(closest_feature_id) > 0:
+                    channel_match = next(
+                        f
+                        for f in self.channel_layer.getFeatures(
+                            QgsFeatureRequest(closest_feature_id[0])
+                        )
+                    )
+                else:
+                    channel_match = None
+
+            elif geometry_type == QgsWkbTypes.GeometryType.LineGeometry:
+                matching_channels = [
+                    channel
+                    for channel in self.channel_layer.getFeatures()
+                    if channel.geometry().intersects(geom)
+                ]
+                if len(matching_channels) != 1:
+                    return None
+                channel_match = matching_channels[0]
+            else:
+                raise NotImplementedError(
+                    f"Unsupported geometry type: '{geometry_type}'"
+                )
+        if channel_match:
+            return channel_match["id"]
+
+    @staticmethod
+    def get_new_geom(src_geom, ref_channel):
+        channel_geom = ref_channel.geometry() if ref_channel else None
+        geometry_type = src_geom.type()
+        if src_geom.isEmpty():
+            # return center of matching channel
+            if ref_channel is not None:
+                return channel_geom.interpolate(channel_geom.length() / 2)
+        elif geometry_type == QgsWkbTypes.GeometryType.PointGeometry:
+            # return nearest point on matched channel if there is a channel match
+            if ref_channel is not None:
+                return channel_geom.nearestPoint(src_geom)
+            # otherwise return point
+            else:
+                return src_geom
+        elif geometry_type == QgsWkbTypes.GeometryType.LineGeometry:
+            # return intersection between channel and line if there is a channel match
+            if ref_channel:
+                return src_geom.intersection(channel_geom)
+            # otherwise return center of the line
+            else:
+                return src_geom.interpolate(src_geom.length() / 2)
+        else:
+            raise NotImplementedError(f"Unsupported geometry type: '{geometry_type}'")
+
+    def process_feature(self, src_feat):
+        src_geom = QgsGeometry(src_feat.geometry())
+        if self.transformation:
+            src_geom.transform(self.transformation)
+        channel_id = self.get_matching_channel(src_feat, src_geom)
+        ref_channel = next(
+            (
+                channel
+                for channel in self.channel_layer.getFeatures()
+                if channel.id() == channel_id
+            ),
+            None,
+        )
+        new_geom = CrossSectionLocationProcessor.get_new_geom(src_geom, ref_channel)
+        if new_geom is None:
+            return {self.target_name: []}
+        new_feat = self.target_manager.create_new(new_geom, self.target_fields)
+        update_attributes(
+            self.target_fields_config,
+            self.target_model_cls,
+            src_feat,
+            new_feat,
+        )
+        if channel_id is not None:
+            new_feat["channel_id"] = channel_id
+        return {self.target_name: [new_feat]}
+
+
 class ConnectionNodeProcessor(Processor):
     def process_feature(self, src_feat):
         """Process source point into connection node feature."""
         new_geom = ConnectionNodeProcessor.create_new_point_geometry(src_feat)
+        # TODO: check if settings are actually used
         if self.transformation:
             new_geom.transform(self.transformation)
         return {
@@ -96,7 +210,7 @@ class StructureProcessor(Processor, ABC):
                 new_feat,
                 point,
                 self.conversion_settings.snapping_distance,
-                self.locator,
+                self.node_locator,
                 name,
             )
         if not snapped or self.conversion_settings.create_connection_nodes:

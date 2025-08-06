@@ -7,7 +7,11 @@ from qgis.core import (
     QgsField,
     QgsFields,
     QgsGeometry,
+    QgsPoint,
     QgsPointXY,
+    QgsProject,
+    QgsSpatialIndex,
+    QgsVectorLayer,
     QgsWkbTypes,
 )
 
