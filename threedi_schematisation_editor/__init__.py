@@ -98,7 +98,6 @@ class ThreediSchematisationEditorPlugin:
         )
         self.action_remove.triggered.connect(self.remove_model_from_project)
         import_features_icon_path = get_icon_path("icon_import.png")
-        # import_actions_spec = []
         import_actions_spec = [
             ("Connection nodes", self.import_external_connection_nodes, None),
             ("Culverts", self.import_external_culverts, None),
@@ -357,13 +356,10 @@ class ThreediSchematisationEditorPlugin:
         self.toggle_active_project_actions()
         self.iface.mapCanvas().refresh()
 
-
     def import_external(self, model_cls, dialog_cls):
         if not self.model_gpkg:
             return
-        import_dlg = dialog_cls(
-            model_cls, self.model_gpkg, self.layer_manager, self.uc
-        )
+        import_dlg = dialog_cls(model_cls, self.model_gpkg, self.layer_manager, self.uc)
         import_dlg.exec_()
 
     def import_external_connection_nodes(self):
