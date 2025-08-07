@@ -151,7 +151,6 @@ class ImportChannels(SimpleImporter):
     FEATURE_TYPE = "channel"
 
 
-
 class StructureImporter(BaseImporter):
     """Base class for importing different feature types."""
 

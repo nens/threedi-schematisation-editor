@@ -483,7 +483,6 @@ class Channel(ModelObject):
         return display_names_list
 
 
-
 @dataclass
 class BoundaryCondition2D(ModelObject):
     __tablename__ = "boundary_condition_2d"
