@@ -36,6 +36,7 @@ from threedi_schematisation_editor.vector_data_importer.dialogs.utils import (
     ImportFieldMappingUtils,
 )
 from threedi_schematisation_editor.vector_data_importer.importers import (
+    ChannelsImporter,
     ConnectionNodesImporter,
     CulvertsImporter,
     OrificesImporter,
@@ -54,6 +55,7 @@ class ImportDialog(QDialog):
         dm.Orifice: OrificesImporter,
         dm.Weir: WeirsImporter,
         dm.Pipe: PipesImporter,
+        dm.Channel: ChannelsImporter,
     }
 
     def __init__(
