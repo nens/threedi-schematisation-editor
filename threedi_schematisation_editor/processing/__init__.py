@@ -14,6 +14,7 @@ from threedi_schematisation_editor.processing.algorithms_1d2d import (
     GenerateExchangeLines,
 )
 from threedi_schematisation_editor.processing.algorithms_conversion import (
+    ImportChannels,
     ImportConnectionNodes,
     ImportCrossSectionLocation,
     ImportCulverts,
@@ -61,6 +62,7 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
             ImportOrifices(),
             ImportWeirs(),
             ImportPipes(),
+            ImportChannels(),
             BottomLevelCalculator(),
         ]
         for alg in self.algorithms_list:

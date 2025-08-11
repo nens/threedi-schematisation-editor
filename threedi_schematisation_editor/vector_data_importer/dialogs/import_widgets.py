@@ -33,7 +33,6 @@ def get_field_methods_mapping(fields_iterator):
             methods_mapping[model_cls][field_name] = [
                 ColumnImportMethod.AUTO,
                 ColumnImportMethod.ATTRIBUTE,
-                ColumnImportMethod.EXPRESSION,
             ]
         else:
             methods_mapping[model_cls][field_name] = [
