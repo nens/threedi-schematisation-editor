@@ -178,7 +178,7 @@ def test_import_cross_section_location(qgis_application, test_name):
     target_layer = gpkg_layer(temp_gpkg, "cross_section_location")
     importer = CrossSectionLocationImporter(
         src_layer,
-        target_gpkg,
+        temp_gpkg,
         import_config,
         target_layer=target_layer,
     )
