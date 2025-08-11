@@ -465,6 +465,23 @@ class Channel(ModelObject):
     hydraulic_conductivity_out: Optional[float]
     tags: Optional[str]
 
+    @staticmethod
+    def display_names() -> list:
+        display_names_list = [
+            "ID",
+            "Code",
+            "Display name",
+            "exchange type",
+            "Calculation point distance [m]",
+            "Connection node start ID",
+            "Connection node end ID",
+            "Exchange thickness [m]",
+            "Hydraulic conductivity in [m/d]",
+            "Hydraulic conductivity out [m/d]",
+            "Tag",
+        ]
+        return display_names_list
+
 
 @dataclass
 class BoundaryCondition2D(ModelObject):

@@ -241,6 +241,18 @@ class PipesImporter(LinesImporter):
         )
 
 
+class ChannelsImporter(LinesImporter):
+    """Class with methods responsible for the importing channels from the external data source."""
+
+    def __init__(self, *args, structure_layer=None, node_layer=None):
+        super().__init__(
+            *args,
+            target_model_cls=dm.Channel,
+            target_layer=structure_layer,
+            node_layer=node_layer,
+        )
+
+
 class ConnectionNodesImporter(Importer):
     """Connection nodes importer class."""
 
