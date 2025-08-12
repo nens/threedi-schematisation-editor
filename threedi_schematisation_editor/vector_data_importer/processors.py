@@ -74,12 +74,11 @@ class CrossSectionLocationProcessor(Processor):
         self.channel_layer = channel_layer
         self.channel_spatial_index = QgsSpatialIndex(channel_layer)
         self.conversion_settings = conversion_settings
-        self.conversion_settings.snapping_distance = 6
         self.target_fields_config = target_fields_config
 
     @cached_property
     def channel_mapping(self):
-        if self.conversion_settings.join_field_tgt in ['id', 'code']:
+        if self.conversion_settings.join_field_tgt in ["id", "code"]:
             return {
                 feature[self.conversion_settings.join_field_tgt]: feature
                 for feature in self.channel_layer.getFeatures()
@@ -98,7 +97,10 @@ class CrossSectionLocationProcessor(Processor):
         # note that feat.geometry() is not used because geom may be transformed
         channel_match = None
         if geom.isEmpty():
-            if self.conversion_settings.join_field_src is not None and feat[self.conversion_settings.join_field_src] is not None:
+            if (
+                self.conversion_settings.join_field_src is not None
+                and feat[self.conversion_settings.join_field_src] is not None
+            ):
                 channel_match = self.channel_mapping.get(
                     feat[self.conversion_settings.join_field_src]
                 )
@@ -188,17 +190,29 @@ class CrossSectionLocationProcessor(Processor):
 
 
 class ConnectionNodeProcessor(Processor):
+    def __init__(
+        self,
+        target_layer,
+        target_model_cls,
+        fields_configuration,
+    ):
+        super().__init__(target_layer, target_model_cls)
+        self.fields_configuration = fields_configuration
+
     def process_feature(self, src_feat):
         """Process source point into connection node feature."""
         new_geom = ConnectionNodeProcessor.create_new_point_geometry(src_feat)
         # TODO: check if settings are actually used
         if self.transformation:
             new_geom.transform(self.transformation)
-        return {
-            self.target_name: [
-                self.target_manager.create_new(new_geom, self.target_fields)
-            ]
-        }
+        new_feat = self.target_manager.create_new(new_geom, self.target_fields)
+        update_attributes(
+            self.fields_configuration,
+            dm.ConnectionNode,
+            src_feat,
+            new_feat,
+        )
+        return {self.target_name: [new_feat]}
 
 
 class StructureProcessor(Processor, ABC):

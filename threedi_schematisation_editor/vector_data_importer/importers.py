@@ -46,8 +46,11 @@ class Importer(ABC):
         )
         self.fields_configurations = {
             target_model_cls: self.import_settings.get("fields", {}),
-            dm.ConnectionNode: self.import_settings.get("connection_node_fields", {}),
         }
+        if target_model_cls != dm.ConnectionNode:
+            self.fields_configurations[dm.ConnectionNode] = self.import_settings.get(
+                "connection_node_fields", {}
+            )
         self.integrator = None
         self.processor = None
 
@@ -277,5 +280,7 @@ class ConnectionNodesImporter(Importer):
             *args, target_model_cls=dm.ConnectionNode, target_layer=target_layer
         )
         self.processor = ConnectionNodeProcessor(
-            self.target_layer, self.target_model_cls
+            self.target_layer,
+            self.target_model_cls,
+            self.fields_configurations[self.target_model_cls],
         )
