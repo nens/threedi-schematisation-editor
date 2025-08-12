@@ -1,23 +1,33 @@
 import json
 import os
+import traceback
 from functools import cached_property, partial
 from typing import Any, Dict, List, Optional, Tuple, Type
 
-from qgis.core import QgsMapLayer, QgsMapLayerProxyModel, QgsSettings
-from qgis.gui import QgsFieldExpressionWidget, QgsMapLayerComboBox
+from qgis.core import (
+    Qgis,
+    QgsMapLayer,
+    QgsMapLayerProxyModel,
+    QgsMessageLog,
+    QgsSettings,
+)
+from qgis.gui import QgsFieldComboBox, QgsFieldExpressionWidget, QgsMapLayerComboBox
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
 from qgis.PyQt.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
+    QDoubleSpinBox,
     QGridLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
     QSizePolicy,
     QSpacerItem,
+    QSpinBox,
     QTabWidget,
     QTreeView,
     QWidget,
@@ -38,6 +48,7 @@ from threedi_schematisation_editor.vector_data_importer.dialogs.utils import (
 from threedi_schematisation_editor.vector_data_importer.importers import (
     ChannelsImporter,
     ConnectionNodesImporter,
+    CrossSectionLocationImporter,
     CulvertsImporter,
     OrificesImporter,
     PipesImporter,
@@ -56,6 +67,7 @@ class ImportDialog(QDialog):
         dm.Weir: WeirsImporter,
         dm.Pipe: PipesImporter,
         dm.Channel: ChannelsImporter,
+        dm.CrossSectionLocation: CrossSectionLocationImporter,
     }
 
     def __init__(
@@ -378,6 +390,11 @@ class ImportDialog(QDialog):
             self.uc.show_info(success_msg, self)
         except Exception as e:
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
+            QgsMessageLog.logMessage(
+                f"Import failed with traceback:\n{traceback.format_exc()}",
+                "Warning",
+                Qgis.Warning,
+            )
         finally:
             for handler in handlers:
                 handler.connect_handler_signals()
@@ -525,6 +542,19 @@ class ImportDialog(QDialog):
             for i in range(len(CONFIG_HEADER)):
                 tree_view.resizeColumnToContents(i)
 
+    def get_snap_settings(self):
+        snap_gb = QGroupBox("Snap within:")
+        snap_gb.setFont(self.create_font(9))
+        snap_gb.setCheckable(True)
+        layout = QGridLayout(snap_gb)
+        snap_dsb = QDoubleSpinBox()
+        snap_dsb.setFont(self.create_font(10))
+        snap_dsb.setSuffix(" meters")
+        snap_dsb.setMaximum(1000000.0)
+        snap_dsb.setValue(0.1)
+        layout.addWidget(snap_dsb, 0, 0)
+        return snap_gb, snap_dsb, layout
+
 
 class ImportFeaturesDialog(ImportDialog):
     """Dialog for importing features."""
@@ -604,7 +634,107 @@ class ImportFeaturesDialog(ImportDialog):
 
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         handler = self.layer_manager.model_handlers[self.import_model_cls]
-        return [handler], {'target_layer': handler.layer}
+        return [handler], {"target_layer": handler.layer}
+
+
+class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
+    """Dialog for importing cross section location."""
+
+    def set_source_layer_filter(self):
+        self.source_layer_cbo.setFilters(
+            QgsMapLayerProxyModel.LineLayer
+            | QgsMapLayerProxyModel.PointLayer
+            | QgsMapLayerProxyModel.NoGeometry
+        )
+
+    def on_layer_changed(self, layer: Optional[QgsMapLayer]):
+        super().on_layer_changed(layer)
+        self.join_source_field_cbo.setLayer(layer)
+
+    @property
+    def layer_dependent_widgets(self) -> List[QWidget]:
+        return super().layer_dependent_widgets + [self.join_source_field_cbo]
+
+    def collect_settings(self) -> Dict[str, Any]:
+        return {
+            "target_layer": self.import_model_cls.__tablename__,
+            "fields": self.collect_fields_settings(self.import_model_cls),
+            "conversion_settings": {
+                "use_snapping": self.snap_gb.isChecked(),
+                "snapping_distance": self.snap_dsb.value(),
+                "join_field_src": self.join_source_field_cbo.currentField(),
+                "join_field_tgt": self.join_target_field_cbo.currentText(),
+            },
+        }
+
+    def setup_ui(self):
+        super().setup_ui()
+
+        # Extra settings for cross section locations
+        extra_settings_layout = QGridLayout()
+        extra_settings_layout.setContentsMargins(-1, -1, -1, 0)
+        # join source settings
+        join_source_layout = QHBoxLayout()
+        join_source_layout.setContentsMargins(-1, -1, -1, 0)
+        join_source_field_lbl = QLabel("Join channel source field")
+        join_source_field_lbl.setFont(self.create_font(10))
+        join_source_field_lbl.setLayoutDirection(Qt.LeftToRight)
+        join_source_layout.addWidget(join_source_field_lbl)
+        self.join_source_field_cbo = QgsFieldComboBox()
+        self.join_source_field_cbo.setFont(self.create_font(10))
+        self.join_source_field_cbo.setAllowEmptyFieldName(True)
+        join_source_layout.addWidget(self.join_source_field_cbo)
+        # join target settings
+        join_target_layout = QHBoxLayout()
+        join_target_layout.setContentsMargins(-1, -1, -1, 0)
+        self.join_target_field_lbl = QLabel("Join channel reference field")
+        self.join_target_field_lbl.setFont(self.create_font(10))
+        self.join_target_field_lbl.setLayoutDirection(Qt.LeftToRight)
+        join_target_layout.addWidget(self.join_target_field_lbl)
+        self.join_target_field_cbo = QComboBox()
+        self.join_target_field_cbo.setFont(self.create_font(10))
+        self.join_target_field_cbo.insertItems(0, ["", "id", "code"])
+        join_target_layout.addWidget(self.join_target_field_cbo)
+        extra_settings_layout.addLayout(join_target_layout, 1, 0)
+        extra_settings_layout.addLayout(join_source_layout, 1, 1)
+        self.gridLayout.addLayout(extra_settings_layout, 1, 0, 2, 2)
+
+        # Create snap group box
+        self.snap_gb, self.snap_dsb, _ = self.get_snap_settings()
+        self.gridLayout.addWidget(self.snap_gb, 8, 4, 1, 2)
+
+    def update_settings_from_template(self, import_settings: Dict[str, Any]):
+        super().update_settings_from_template(import_settings)
+        self.load_conversion_settings(import_settings)
+
+    def load_conversion_settings(self, import_settings: Dict[str, Any]):
+        conversion_settings = import_settings["conversion_settings"]
+        self.snap_gb.setChecked(conversion_settings.get("use_snapping", True))
+        self.snap_dsb.setValue(conversion_settings.get("snapping_distance", 0.1))
+        self.join_source_field_cbo.setField(
+            conversion_settings.get("join_field_src", "")
+        )
+        self.join_target_field_cbo.setCurrentText(
+            conversion_settings.get("join_field_tgt", "")
+        )
+
+    def source_fields_missing(self) -> bool:
+        missing_fields = super().source_fields_missing()
+        if missing_fields:
+            return True
+        if self.source_layer and not self.source_layer.isSpatial():
+            missing = []
+            if not self.join_source_field_cbo.currentField():
+                missing.append("Join channel source field")
+            if not self.join_target_field_cbo.currentText():
+                missing.append("Join channel reference field")
+            if len(missing) > 0:
+                self.uc.show_warn(
+                    f"The following fields are missing a source attribute or expression: {', '.join(missing)}",
+                    self,
+                )
+                return True
+        return False
 
 
 class ImportStructuresDialog(ImportDialog):
@@ -656,8 +786,6 @@ class ImportStructuresDialog(ImportDialog):
         self.length_source_field_lbl.setLayoutDirection(Qt.LeftToRight)
         gridLayout_7.addWidget(self.length_source_field_lbl, 1, 0)
 
-        from qgis.gui import QgsFieldComboBox
-
         self.length_source_field_cbo = QgsFieldComboBox()
         self.length_source_field_cbo.setFont(self.create_font(10))
         self.length_source_field_cbo.setAllowEmptyFieldName(True)
@@ -666,8 +794,6 @@ class ImportStructuresDialog(ImportDialog):
         self.length_fallback_value_lbl = QLabel("Length fallback value")
         self.length_fallback_value_lbl.setFont(self.create_font(10))
         gridLayout_7.addWidget(self.length_fallback_value_lbl, 1, 2)
-
-        from qgis.PyQt.QtWidgets import QDoubleSpinBox, QSpinBox
 
         self.length_fallback_value_dsb = QDoubleSpinBox()
         self.length_fallback_value_dsb.setFont(self.create_font(10))
@@ -718,19 +844,7 @@ class ImportStructuresDialog(ImportDialog):
         self.gridLayout.addWidget(self.tab_widget, 5, 0, 5, 4)
 
         # Create snap group box
-        from qgis.PyQt.QtWidgets import QGroupBox
-
-        self.snap_gb = QGroupBox("Snap within:")
-        self.snap_gb.setFont(self.create_font(9))
-        self.snap_gb.setCheckable(True)
-        gridLayout_5 = QGridLayout(self.snap_gb)
-
-        self.snap_dsb = QDoubleSpinBox()
-        self.snap_dsb.setFont(self.create_font(10))
-        self.snap_dsb.setSuffix(" meters")
-        self.snap_dsb.setMaximum(1000000.0)
-        self.snap_dsb.setValue(0.1)
-        gridLayout_5.addWidget(self.snap_dsb, 0, 0)
+        self.snap_gb, self.snap_dsb, snap_layout = self.get_snap_settings()
 
         # Create minimum channel length
         self.min_channel_dsb = QDoubleSpinBox()
@@ -740,8 +854,8 @@ class ImportStructuresDialog(ImportDialog):
         self.min_channel_dsb.setValue(5)
         self.min_channel_lab = QLabel("Minimum channel length:")
         self.min_channel_lab.setFont(self.create_font(10))
-        gridLayout_5.addWidget(self.min_channel_dsb, 2, 0)
-        gridLayout_5.addWidget(self.min_channel_lab, 1, 0)
+        snap_layout.addWidget(self.min_channel_dsb, 2, 0)
+        snap_layout.addWidget(self.min_channel_lab, 1, 0)
 
         self.gridLayout.addWidget(self.snap_gb, 8, 4, 1, 2)
 
@@ -837,7 +951,15 @@ class ImportStructuresDialog(ImportDialog):
         data_models = [self.import_model_cls]
         if self.create_nodes_cb.isChecked():
             data_models.append(dm.ConnectionNode)
-        return self.source_fields_missing_for_models(*data_models)
+
+        # Check if the source layer has no geometry
+        missing_fields = self.source_fields_missing_for_models(*data_models)
+        if self.source_layer and not self.source_layer.isSpatial():
+            if not self.length_source_field_cbo.currentField():
+                missing_fields.append("Length source field")
+            if not self.azimuth_source_field_cbo.currentField():
+                missing_fields.append("Azimuth source field")
+        return missing_fields
 
     def update_settings_from_template(self, import_settings: Dict[str, Any]):
         super().update_settings_from_template(import_settings)

@@ -446,6 +446,30 @@ class CrossSectionLocation(ModelObject):
     vegetation_drag_coefficient: Optional[float]
     tags: Optional[str]
 
+    @staticmethod
+    def display_names() -> list:
+        return [
+            "ID",
+            "Code",
+            "Display name",
+            "Reference level",
+            "Friction type",
+            "Friction value",
+            "Bank level",
+            "Channel ID",
+            "Cross-section shape",
+            "Cross-section width [m]",
+            "Cross-section height [m]",
+            "Cross-section table",
+            "Cross-section friction table",
+            "Cross-section vegetation table",
+            "Vegetation stem density",
+            "Vegetation stem diameter",
+            "Vegetation height",
+            "Vegetation drag coefficient",
+            "Tags",
+        ]
+
 
 @dataclass
 class Channel(ModelObject):
