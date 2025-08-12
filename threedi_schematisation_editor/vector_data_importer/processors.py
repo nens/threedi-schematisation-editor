@@ -1,4 +1,5 @@
 from abc import ABC
+from functools import cached_property
 
 from qgis.core import NULL, QgsFeatureRequest, QgsGeometry, QgsSpatialIndex, QgsWkbTypes
 
@@ -74,17 +75,30 @@ class CrossSectionLocationProcessor(Processor):
         self.channel_spatial_index = QgsSpatialIndex(channel_layer)
         self.conversion_settings = conversion_settings
         self.conversion_settings.snapping_distance = 6
-        self.channel_mapping = {
-            feature[conversion_settings.join_field_tgt]: feature
-            for feature in channel_layer.getFeatures()
-        }
         self.target_fields_config = target_fields_config
+
+    @cached_property
+    def channel_mapping(self):
+        if self.conversion_settings.join_field_tgt in ['id', 'code']:
+            return {
+                feature[self.conversion_settings.join_field_tgt]: feature
+                for feature in self.channel_layer.getFeatures()
+            }
+        else:
+            return {}
+
+    @cached_property
+    def join_field_src(self):
+        if self.conversion_settings.join_field_src in self.target_fields.names():
+            return self.conversion_settings.join_field_src
+        else:
+            return None
 
     def get_matching_channel(self, feat, geom):
         # note that feat.geometry() is not used because geom may be transformed
         channel_match = None
         if geom.isEmpty():
-            if feat[self.conversion_settings.join_field_src] is not None:
+            if self.conversion_settings.join_field_src is not None and feat[self.conversion_settings.join_field_src] is not None:
                 channel_match = self.channel_mapping.get(
                     feat[self.conversion_settings.join_field_src]
                 )
