@@ -61,16 +61,28 @@ class Processor(ABC):
 
 
 class ConnectionNodeProcessor(Processor):
+    def __init__(
+        self,
+        target_layer,
+        target_model_cls,
+        fields_configuration,
+    ):
+        super().__init__(target_layer, target_model_cls)
+        self.fields_configuration = fields_configuration
+
     def process_feature(self, src_feat):
         """Process source point into connection node feature."""
         new_geom = ConnectionNodeProcessor.create_new_point_geometry(src_feat)
         if self.transformation:
             new_geom.transform(self.transformation)
-        return {
-            self.target_name: [
-                self.target_manager.create_new(new_geom, self.target_fields)
-            ]
-        }
+        new_feat = self.target_manager.create_new(new_geom, self.target_fields)
+        update_attributes(
+            self.fields_configuration,
+            dm.ConnectionNode,
+            src_feat,
+            new_feat,
+        )
+        return {self.target_name: [new_feat]}
 
 
 class StructureProcessor(Processor, ABC):

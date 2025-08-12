@@ -358,7 +358,6 @@ class ImportDialog(QDialog):
             else None
         )
         import_settings = self.collect_settings()
-
         try:
             for handler in handlers:
                 handler.disconnect_handler_signals()
@@ -604,7 +603,8 @@ class ImportFeaturesDialog(ImportDialog):
         return self.source_fields_missing_for_models(self.import_model_cls)
 
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
-        return [self.layer_manager.model_handlers[self.import_model_cls]], {}
+        handler = self.layer_manager.model_handlers[self.import_model_cls]
+        return [handler], {'target_layer': handler.layer}
 
 
 class ImportStructuresDialog(ImportDialog):

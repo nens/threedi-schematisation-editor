@@ -75,7 +75,7 @@ class TestConnectionNodeProcessor:
         target_layer.name.return_value = "connection_nodes"
 
         # Create a processor
-        processor = ConnectionNodeProcessor(target_layer, dm.ConnectionNode)
+        processor = ConnectionNodeProcessor(target_layer, dm.ConnectionNode, {})
 
         # Process the feature
         result = processor.process_feature(source_feature)
