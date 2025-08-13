@@ -521,6 +521,9 @@ class ImportDialog(QDialog):
                 )
                 row_idx += 1
 
+    def get_widgets(self):
+        raise NotImplementedError
+
     def create_conversion_settings_widget(self):
         """Create conversion settings widgets.
 
@@ -528,7 +531,7 @@ class ImportDialog(QDialog):
             models: List of models
             data_models_tree_views: Dictionary mapping model classes to tree views and models
         """
-        widgets_to_add = create_widgets(*self.models)
+        widgets_to_add = self.get_widgets()
         for model_cls in self.models:
             model_widgets = widgets_to_add[model_cls]
             tree_view, tree_view_model = self.data_models_tree_views[model_cls]
@@ -589,6 +592,9 @@ class ImportFeaturesDialog(ImportDialog):
         """Set up the models for the tree views."""
         self.field_map_model = QStandardItemModel()
         self.field_map_tv.setModel(self.field_map_model)
+
+    def get_widgets(self):
+        return create_widgets(*self.models)
 
     def set_source_layer_filter(self):
         """Set the filter for the source layer combo box based on the model's geometry type."""
@@ -735,6 +741,9 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
                 )
                 return True
         return False
+
+    def get_widgets(self):
+        return create_widgets(*self.models, auto_fields={"id", "channel_id"})
 
 
 class ImportStructuresDialog(ImportDialog):
@@ -1019,3 +1028,13 @@ class ImportStructuresDialog(ImportDialog):
                 cross_section_location_handler.layer
             )
         return processed_handlers, processed_layers
+
+    def get_widgets(self):
+        return create_widgets(
+            *self.models,
+            auto_attribute_fields={
+                "connection_node_id",
+                "connection_node_id_start",
+                "connection_node_id_end",
+            },
+        )
