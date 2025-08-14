@@ -202,7 +202,6 @@ class ConnectionNodeProcessor(Processor):
     def process_feature(self, src_feat):
         """Process source point into connection node feature."""
         new_geom = ConnectionNodeProcessor.create_new_point_geometry(src_feat)
-        # TODO: check if settings are actually used
         if self.transformation:
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
