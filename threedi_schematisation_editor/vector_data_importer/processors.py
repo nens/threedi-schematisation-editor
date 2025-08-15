@@ -1,4 +1,5 @@
 from abc import ABC
+from collections import defaultdict
 
 from qgis.core import QgsGeometry, QgsWkbTypes
 
@@ -16,9 +17,11 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
 
 class Processor(ABC):
     def __init__(self, target_layer, target_model_cls):
-        self.target_fields = target_layer.fields()
-        self.target_name = target_layer.name()
-        self.target_manager = FeatureManager(get_next_feature_id(target_layer))
+        self.target_fields = target_layer.fields() if target_layer else []
+        self.target_name = target_layer.name() if target_layer else None
+        self.target_manager = (
+            FeatureManager(get_next_feature_id(target_layer)) if target_layer else None
+        )
         self.target_model_cls = target_model_cls
         self.transformation = None
         self.locator = None
@@ -58,6 +61,13 @@ class Processor(ABC):
 
     def process_feature(self, src_feat):
         raise NotImplementedError
+
+    def process_features(self, external_features):
+        new_features = defaultdict(list)
+        for external_src_feat in external_features:
+            for name, features in self.process_feature(external_src_feat).items():
+                new_features[name] += features
+        return new_features
 
 
 class ConnectionNodeProcessor(Processor):

@@ -2,7 +2,13 @@ from abc import ABC
 from collections import defaultdict
 from functools import cached_property
 
-from qgis.core import QgsCoordinateTransform, QgsPointLocator, QgsProject
+from qgis.core import (
+    QgsCoordinateTransform,
+    QgsPointLocator,
+    QgsProcessingFeatureSource,
+    QgsProject,
+    QgsVectorLayer,
+)
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import gpkg_layer
@@ -111,29 +117,25 @@ class Importer(ABC):
             layer.startEditing()
         # Integrate features using the integrator (if any)
         # items that are integrated are skipped in further processing
+        input_feature_ids = [feat.id() for feat in self.external_source.getFeatures()]
+        if selected_ids:
+            input_feature_ids = [id for id in input_feature_ids if id in selected_ids]
         if self.integrator:
-            input_feature_ids = [
-                feat.id() for feat in self.external_source.getFeatures()
-            ]
-            if selected_ids:
-                input_feature_ids = [
-                    id for id in input_feature_ids if id in selected_ids
-                ]
             new_features, integrated_ids = self.integrator.integrate_features(
                 input_feature_ids
             )
+            input_feature_ids = [
+                id for id in input_feature_ids if id not in integrated_ids
+            ]
         else:
             new_features = defaultdict(list)
-            integrated_ids = []
         # Process remaining features that are not integrated
-        for external_src_feat in self.external_source.getFeatures():
-            if selected_ids and external_src_feat.id() not in selected_ids:
-                continue
-            if external_src_feat.id() in integrated_ids:
-                continue
-            processed_features = self.processor.process_feature(external_src_feat)
-            for name, features in processed_features.items():
-                new_features[name] += features
+        external_features = [
+            self.external_source.getFeature(feat_id) for feat_id in input_feature_ids
+        ]
+        processed_features = self.processor.process_features(external_features)
+        for name, features in processed_features.items():
+            new_features[name] += features
         # Add newly created features to layers
         for layer in self.modifiable_layers:
             if layer.name() in new_features:

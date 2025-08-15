@@ -8,6 +8,8 @@ from qgis.core import (
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterFile,
     QgsProject,
+    QgsVectorLayer,
+    QgsWkbTypes
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
@@ -91,7 +93,27 @@ class BaseImporter(QgsProcessingAlgorithm):
         raise NotImplementedError("Subclasses must implement create_importer()")
 
     def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        # Try to load input as vector layer
+        source_layer = self.parameterAsVectorLayer(parameters, 'INPUT', context)
+        # If that doesn't work, do some dirty magic to make a vector layer
+        if not source_layer:
+            source = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+            feedback.pushInfo(
+                "Using self.parameterAsSource() method to load the source layer as no source layer was directly available.")
+            source_layer = QgsVectorLayer(
+                f"{QgsWkbTypes.displayString(source.wkbType())}?crs={source.sourceCrs().authid()}",
+                "temp_layer",
+                "memory"
+            )
+            # Set up the fields
+            provider = source_layer.dataProvider()
+            provider.addAttributes(source.fields().toList())
+            source_layer.updateFields()
+
+            # Add features
+            features = list(source.getFeatures())
+            provider.addFeatures(features)
+
         if source_layer is None:
             raise QgsProcessingException(
                 self.invalidSourceError(parameters, self.SOURCE_LAYER)
