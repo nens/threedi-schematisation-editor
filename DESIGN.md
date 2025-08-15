@@ -7,11 +7,13 @@ Vector data import is handled via an Import class which takes care of importing 
 ```mermaid
 classDiagram
     Importer <|-- ConnectionNodesImporter
+    Importer <|-- CrossSectionLocationImporter
     Importer <|-- LinesImporter
     LinesImporter <|-- CulvertsImporter
     LinesImporter <|-- OrificesImporter
     LinesImporter <|-- WeirsImporter
     LinesImporter <|-- PipesImporter
+    LinesImporter <|--ChannelsImporter
 
     class Importer {
         +integrator = None
@@ -45,14 +47,23 @@ classDiagram
     class PipesImporter {
         target_model_cls=dm.Pipe
     }    
+    
+    class ChannelsImporter {
+        target_model_cls=dm.Pipe
+    }        
+    
+    class CrossSectionLocationImporter {
+        target_model_cls=dm.CrossSectionLocation
+    }
 
 ```
 
-Processing is split into processing for connection nodes, and points and lines. The base classes Processor acts as an interface and collects shared logic. Shared logic for processing lines and points in collected in StructureProcessor. Processor also manage the indices of added target objects and nodes via the `target_manager` and `node_manager` which are instances of a `FeatureManager`.  
+Processing is split into processing for connection nodes, cross section locations, and points and lines. The base classes Processor acts as an interface and collects shared logic. Shared logic for processing lines and points in collected in StructureProcessor. Processor also manage the indices of added target objects and nodes via the `target_manager` and `node_manager` which are instances of a `FeatureManager`.  
 
 ```mermaid
 classDiagram
     Processor <|-- ConnectionNodeProcessor
+    Processor <|-- CrossSectionLocationProcessor
     Processor <|-- StructureProcessor
     StructureProcessor <|-- PointProcessor
     StructureProcessor <|-- LineProcessor
@@ -63,6 +74,10 @@ classDiagram
     }
 
     class ConnectionNodeProcessor {
+        +process_feature()
+    }
+    
+    class CrossSectionLocationProcessor {
         +process_feature()
     }
 
