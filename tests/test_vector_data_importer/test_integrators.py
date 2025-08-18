@@ -12,6 +12,7 @@ from qgis.core import (
 )
 
 from threedi_schematisation_editor.vector_data_importer.integrators import (
+    ChannelIntegrator,
     LinearIntegrator,
     LinearIntegratorStructureData,
 )
@@ -321,7 +322,7 @@ class TestCrossSectionIntegration:
     ):
         """Test get_cross_sections_for_channel with features that intersect and don't intersect."""
         # The near and middle cross sections should intersect, but the far one shouldn't
-        result = LinearIntegrator.get_cross_sections_for_channel(
+        result = ChannelIntegrator.get_cross_sections_for_channel(
             channel_feature, cross_section_fids, cross_section_features_map
         )
         assert expected_result == result
@@ -380,7 +381,7 @@ class TestCrossSectionIntegration:
         # Create a mock cross section layer
         mock_cross_section_layer = MagicMock()
         # Call the method with source channel cross section locations
-        result = LinearIntegrator.get_closest_cross_section_location(
+        result = ChannelIntegrator.get_closest_cross_section_location(
             channel_feature, mock_cross_section_layer, source_ids
         )
         if expected_id is None:
@@ -402,7 +403,7 @@ class TestCrossSectionIntegration:
         """Test is_hanging_cross_section with different cross-section features."""
         # Get the actual fixture from the parameter name
         cross_section_feature = request.getfixturevalue(cross_section_feature)
-        result = LinearIntegrator.is_hanging_cross_section(
+        result = ChannelIntegrator.is_hanging_cross_section(
             cross_section_feature, {1: channel_feature}, [1]
         )
         assert result is expected_result
@@ -439,10 +440,10 @@ class TestCrossSectionIntegration:
 
         # Mock is_hanging_cross_section to return True
         with patch.object(
-            LinearIntegrator, "is_hanging_cross_section", return_value=True
+            ChannelIntegrator, "is_hanging_cross_section", return_value=True
         ):
             # Call the method with a list of visited channel IDs
-            result = LinearIntegrator.get_hanging_cross_sections(integrator, [1])
+            result = ChannelIntegrator.get_hanging_cross_sections(integrator, [1])
 
         # The method should return a list containing the ID of the hanging cross-section
         assert result == [10]

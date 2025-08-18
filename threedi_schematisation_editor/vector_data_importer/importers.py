@@ -7,7 +7,7 @@ from qgis.core import QgsCoordinateTransform, QgsPointLocator, QgsProject
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.integrators import (
-    LinearIntegrator,
+    ChannelIntegrator,
 )
 from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
@@ -164,8 +164,8 @@ class LinesImporter(Importer):
             self.conversion_settings,
         )
         if self.conversion_settings.integrate:
-            self.integrator = LinearIntegrator.from_importer(
-                dm.Channel, channel_layer, cross_section_location_layer, self
+            self.integrator = ChannelIntegrator.from_importer(
+                channel_layer, cross_section_location_layer, self
             )
 
 

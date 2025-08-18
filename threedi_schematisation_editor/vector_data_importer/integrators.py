@@ -34,19 +34,19 @@ class LinearIntegrator:
     """Integrate linear structures onto a conduit (channel or pipe)"""
 
     def __init__(
-        self,
-        conduit_model_cls,
-        conduit_layer,
-        target_model_cls,
-        target_layer,
-        target_manager,
-        node_layer,
-        node_manager,
-        fields_configurations,
-        conversion_settings,
-        cross_section_layer,
-        external_source,
-        target_gpkg,
+            self,
+            conduit_layer,
+            target_model_cls,
+            target_layer,
+            target_manager,
+            node_layer,
+            node_manager,
+            fields_configurations,
+            conversion_settings,
+            cross_section_layer,
+            external_source,
+            target_gpkg,
+            conduit_model_cls,
     ):
         self.external_source = external_source
         self.integrate_model_cls = conduit_model_cls
@@ -95,22 +95,21 @@ class LinearIntegrator:
 
     @classmethod
     def from_importer(
-        cls, integrate_model_cls, integrate_layer, cross_section_layer, importer
+            cls, integrate_layer, cross_section_layer, importer
     ):
         """extract data from importer to created matching integrator"""
         return cls(
-            conduit_model_cls=integrate_model_cls,
-            conduit_layer=integrate_layer,
-            target_model_cls=importer.target_model_cls,
-            target_layer=importer.target_layer,
-            target_manager=importer.processor.target_manager,
-            node_layer=importer.node_layer,
-            node_manager=importer.processor.node_manager,
-            fields_configurations=importer.fields_configurations,
-            conversion_settings=importer.conversion_settings,
-            cross_section_layer=cross_section_layer,
-            external_source=importer.external_source,
-            target_gpkg=importer.target_gpkg,
+            integrate_layer,
+            importer.target_model_cls,
+            importer.target_layer,
+            importer.processor.target_manager,
+            importer.node_layer,
+            importer.processor.node_manager,
+            importer.fields_configurations,
+            importer.conversion_settings,
+            cross_section_layer,
+            importer.external_source,
+            importer.target_gpkg,
         )
 
     @staticmethod
@@ -159,7 +158,7 @@ class LinearIntegrator:
 
     @staticmethod
     def get_conduit_structure_from_line(
-        structure_feat, conduit_feat, snapping_distance
+            structure_feat, conduit_feat, snapping_distance
     ):
         conduit_geometry = conduit_feat.geometry()
         structure_geom = structure_feat.geometry()
@@ -173,10 +172,10 @@ class LinearIntegrator:
             snapping_distance, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
         )
         if not all(
-            [
-                start_buffer.intersects(conduit_geometry),
-                end_buffer.intersects(conduit_geometry),
-            ]
+                [
+                    start_buffer.intersects(conduit_geometry),
+                    end_buffer.intersects(conduit_geometry),
+                ]
         ):
             return
         intersection_m = conduit_geometry.lineLocatePoint(structure_geom.centroid())
@@ -187,11 +186,11 @@ class LinearIntegrator:
 
     @staticmethod
     def get_conduit_structure_from_point(
-        structure_feat,
-        conduit_feat,
-        snapping_distance,
-        length_source_field,
-        length_fallback_value,
+            structure_feat,
+            conduit_feat,
+            snapping_distance,
+            length_source_field,
+            length_fallback_value,
     ):
         structure_geom = structure_feat.geometry()
         conduit_geometry = conduit_feat.geometry()
@@ -224,8 +223,8 @@ class LinearIntegrator:
                 continue
             structure_feat = structure_features_map[structure_fid]
             if (
-                structure_feat.geometry().type()
-                == QgsWkbTypes.GeometryType.LineGeometry
+                    structure_feat.geometry().type()
+                    == QgsWkbTypes.GeometryType.LineGeometry
             ):
                 conduit_structure = LinearIntegrator.get_conduit_structure_from_line(
                     structure_feat,
@@ -233,8 +232,8 @@ class LinearIntegrator:
                     self.conversion_settings.snapping_distance,
                 )
             elif (
-                structure_feat.geometry().type()
-                == QgsWkbTypes.GeometryType.PointGeometry
+                    structure_feat.geometry().type()
+                    == QgsWkbTypes.GeometryType.PointGeometry
             ):
                 conduit_structure = LinearIntegrator.get_conduit_structure_from_point(
                     structure_feat,
@@ -277,128 +276,8 @@ class LinearIntegrator:
         return new_nodes
 
     @staticmethod
-    def get_cross_sections_for_channel(
-        channel_feat, cross_section_fids, cross_section_location_features_map
-    ):
-        cross_sections_for_channel = []
-        for cross_section_fid in cross_section_fids:
-            cross_section_feat = cross_section_location_features_map[cross_section_fid]
-            buffer = cross_section_feat.geometry().buffer(
-                DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
-            )
-            if channel_feat.geometry().intersects(buffer):
-                cross_sections_for_channel.append(cross_section_fid)
-        return cross_sections_for_channel
-
-    @staticmethod
-    def get_closest_cross_section_location(
-        channel_feat, cross_section_layer, source_channel_cross_section_locations
-    ):
-        channel_geometry = channel_feat.geometry()
-        src_channel_cross_section_ids = [
-            str(id) for id in source_channel_cross_section_locations
-        ]
-        if src_channel_cross_section_ids:
-            id_str = ",".join(src_channel_cross_section_ids)
-            distance_map = [
-                (
-                    cross_section_feat,
-                    channel_geometry.distance(cross_section_feat.geometry()),
-                )
-                for cross_section_feat in get_features_by_expression(
-                    cross_section_layer, f'"id" in ({id_str})', with_geometry=True
-                )
-            ]
-            distance_map.sort(key=itemgetter(1))
-            closest_cross_section_copy = QgsFeature(distance_map[0][0])
-            return closest_cross_section_copy
-
-    def update_channel_cross_section_references(
-        self, new_channels, original_channel_id
-    ):
-        """Update channel cross-section references."""
-        source_channel_cross_section_locations = [
-            xs["id"]
-            for xs in get_features_by_expression(
-                self.cross_section_layer, f'"channel_id" = {original_channel_id}'
-            )
-        ]
-        cross_section_location_features_map, cross_section_location_index = (
-            self.spatial_indexes_map[self.cross_section_layer.name()]
-        )
-        channel_id_idx = self.layer_fields_mapping[
-            self.cross_section_layer.name()
-        ].lookupField("channel_id")
-        cross_section_location_copies = []
-        for channel_feat in new_channels:
-            channel_geom = channel_feat.geometry()
-            cross_section_fids = cross_section_location_index.intersects(
-                channel_geom.boundingBox()
-            )
-            # Find any nearby cross sections and associate those to this channel
-            cross_sections_for_channel = (
-                LinearIntegrator.get_cross_sections_for_channel(
-                    channel_feat,
-                    cross_section_fids,
-                    cross_section_location_features_map,
-                )
-            )
-            for cross_section_fid in cross_sections_for_channel:
-                self.cross_section_layer.changeAttributeValue(
-                    cross_section_fid, channel_id_idx, channel_feat["id"]
-                )
-            # If no nearby cross sections were found, find the closest cross section create a copy of that one
-            if len(cross_sections_for_channel) == 0:
-                closest_cross_section_copy = self.get_closest_cross_section_location(
-                    channel_feat,
-                    self.cross_section_layer,
-                    source_channel_cross_section_locations,
-                )
-                if closest_cross_section_copy:
-                    self.cross_section_manager.add_feature(
-                        closest_cross_section_copy,
-                        geom=channel_geom.interpolate(channel_geom.length() * 0.5),
-                    )
-                    closest_cross_section_copy["channel_id"] = channel_feat["id"]
-                    cross_section_location_copies.append(closest_cross_section_copy)
-        return cross_section_location_copies
-
-    @staticmethod
-    def is_hanging_cross_section(cross_section_feat, channel_feats, channel_fids):
-        """Get cross-sections that are not aligned with any channel."""
-        xs_buffer = cross_section_feat.geometry().buffer(
-            DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
-        )
-        # only check channels that were visited
-        if len(channel_fids) > 0:
-            for channel_fid in channel_fids:
-                if xs_buffer.intersects(channel_feats[channel_fid].geometry()):
-                    return True
-        return False
-
-    def get_hanging_cross_sections(self, visited_channel_ids):
-        """Remove cross-sections not aligned with the channels."""
-        hanging_cross_section_ids = []
-        channel_feats, channels_spatial_index = spatial_index(self.integrate_layer)
-        for cross_section_feat in self.cross_section_layer.getFeatures():
-            buffer = cross_section_feat.geometry().buffer(
-                DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
-            )
-            channel_fids = channels_spatial_index.intersects(buffer.boundingBox())
-            # only consider channels that were visited
-            channel_fids = list(set(channel_fids).intersection(visited_channel_ids))
-            if len(channel_fids) == 0:
-                continue
-            is_hanging = LinearIntegrator.is_hanging_cross_section(
-                cross_section_feat, channel_feats, channel_fids
-            )
-            if is_hanging:
-                hanging_cross_section_ids.append(cross_section_feat.id())
-        return hanging_cross_section_ids
-
-    @staticmethod
     def substring_feature(
-        curve, start_distance, end_distance, fields, simplify=False, **attributes
+            curve, start_distance, end_distance, fields, simplify=False, **attributes
     ):
         """Extract part of the curve as a new structure feature."""
         substring_feat = QgsFeature(fields)
@@ -413,7 +292,7 @@ class LinearIntegrator:
 
     @staticmethod
     def fix_structure_placement(
-        conduit_structures, conduit_geom, minimum_conduit_length
+            conduit_structures, conduit_geom, minimum_conduit_length
     ):
         # fix any gaps on the left side of the structures
         conduit_structures = LinearIntegrator.fix_structure_placement_lhs(
@@ -428,7 +307,7 @@ class LinearIntegrator:
         return conduit_structures
 
     def place_structures_on_conduit(
-        self, conduit_structures, conduit_feat, simplify_structure_geometry
+            self, conduit_structures, conduit_feat, simplify_structure_geometry
     ):
         conduit_geom = conduit_feat.geometry()
         added_features = []
@@ -453,7 +332,7 @@ class LinearIntegrator:
 
     @staticmethod
     def fix_structure_placement_lhs(
-        conduit_structures, conduit_length, minimum_conduit_length
+            conduit_structures, conduit_length, minimum_conduit_length
     ):
         conduit_structures = sorted(conduit_structures, key=lambda x: x.m)
         for i, cs in enumerate(conduit_structures):
@@ -461,20 +340,20 @@ class LinearIntegrator:
                 0
                 if i == 0
                 else conduit_structures[i - 1].m
-                + 0.5 * conduit_structures[i - 1].length
+                     + 0.5 * conduit_structures[i - 1].length
             )
             end_left = cs.m - 0.5 * cs.length
             # move structure if distance is too small
             # except when the structure extends over the end of the conduit
             if (
-                end_left - prev_end
+                    end_left - prev_end
             ) < minimum_conduit_length and prev_end + cs.length <= conduit_length:
                 cs.m = prev_end + 0.5 * cs.length
         return conduit_structures
 
     @staticmethod
     def fix_structure_placement_rhs(
-        conduit_structures, conduit_length, minimum_conduit_length
+            conduit_structures, conduit_length, minimum_conduit_length
     ):
         conduit_structures = sorted(conduit_structures, key=lambda x: x.m)
         last_struct = conduit_structures[-1]
@@ -487,7 +366,7 @@ class LinearIntegrator:
             )
             # move if the remaining space is sufficient
             if (
-                conduit_length - last_struct.length
+                    conduit_length - last_struct.length
             ) - prev_right >= minimum_conduit_length:
                 last_struct.m = conduit_length - 0.5 * last_struct.length
             # resize if remaining space does not allow move
@@ -605,8 +484,8 @@ class LinearIntegrator:
             for field_name in self.layer_field_names_mapping[self.node_layer.name()]
         }
         for substring_feat in (
-            added_features[self.target_layer.name()]
-            + added_features[self.integrate_layer.name()]
+                added_features[self.target_layer.name()]
+                + added_features[self.integrate_layer.name()]
         ):
             added_features[self.node_layer.name()] += self.update_feature_endpoints(
                 substring_feat, **node_attributes
@@ -644,3 +523,180 @@ class LinearIntegrator:
             self.get_hanging_cross_sections(visited_channel_ids)
         )
         return features_to_add, list(all_processed_structure_ids)
+
+
+class PipeIntegrator(LinearIntegrator):
+
+    def __init__(self, *args):
+        super().__init__(*args, conduit_model_cls=dm.Pipe)
+
+    def integrate_features(self, input_feature_ids):
+        all_processed_structure_ids = set()
+        features_to_add = defaultdict(list)
+        for conduit_feature in self.integrate_layer.getFeatures():
+            conduit_structures, processed_structures_fids = (
+                self.get_conduit_structures_data(conduit_feature, input_feature_ids)
+            )
+            if not conduit_structures:
+                continue
+            added_features = self.integrate_structure_features(
+                conduit_feature, conduit_structures
+            )
+            for key in added_features:
+                features_to_add[key] += added_features[key]
+            all_processed_structure_ids |= processed_structures_fids
+        return features_to_add, list(all_processed_structure_ids)
+
+
+class ChannelIntegrator(LinearIntegrator):
+
+    def __init__(self, *args):
+        super().__init__(*args, conduit_model_cls=dm.Channel)
+
+    def integrate_features(self, input_feature_ids):
+        all_processed_structure_ids = set()
+        features_to_add = defaultdict(list)
+        for conduit_feature in self.integrate_layer.getFeatures():
+            conduit_structures, processed_structures_fids = (
+                self.get_conduit_structures_data(conduit_feature, input_feature_ids)
+            )
+            if not conduit_structures:
+                continue
+            added_features = self.integrate_structure_features(
+                conduit_feature, conduit_structures
+            )
+            added_features[self.cross_section_layer.name()] = (
+                self.update_channel_cross_section_references(
+                    added_features[self.integrate_layer.name()], conduit_feature["id"]
+                )
+            )
+            for key in added_features:
+                features_to_add[key] += added_features[key]
+            all_processed_structure_ids |= processed_structures_fids
+        visited_channel_ids = [
+            channel["id"] for channel in features_to_add[self.integrate_layer.name()]
+        ]
+        self.cross_section_layer.deleteFeatures(
+            self.get_hanging_cross_sections(visited_channel_ids)
+        )
+        return features_to_add, list(all_processed_structure_ids)
+
+    @staticmethod
+    def get_cross_sections_for_channel(
+            channel_feat, cross_section_fids, cross_section_location_features_map
+    ):
+        cross_sections_for_channel = []
+        for cross_section_fid in cross_section_fids:
+            cross_section_feat = cross_section_location_features_map[cross_section_fid]
+            buffer = cross_section_feat.geometry().buffer(
+                DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+            )
+            if channel_feat.geometry().intersects(buffer):
+                cross_sections_for_channel.append(cross_section_fid)
+        return cross_sections_for_channel
+
+    @staticmethod
+    def get_closest_cross_section_location(
+            channel_feat, cross_section_layer, source_channel_cross_section_locations
+    ):
+        channel_geometry = channel_feat.geometry()
+        src_channel_cross_section_ids = [
+            str(id) for id in source_channel_cross_section_locations
+        ]
+        if src_channel_cross_section_ids:
+            id_str = ",".join(src_channel_cross_section_ids)
+            distance_map = [
+                (
+                    cross_section_feat,
+                    channel_geometry.distance(cross_section_feat.geometry()),
+                )
+                for cross_section_feat in get_features_by_expression(
+                    cross_section_layer, f'"id" in ({id_str})', with_geometry=True
+                )
+            ]
+            distance_map.sort(key=itemgetter(1))
+            closest_cross_section_copy = QgsFeature(distance_map[0][0])
+            return closest_cross_section_copy
+
+    def update_channel_cross_section_references(
+            self, new_channels, original_channel_id
+    ):
+        """Update channel cross-section references."""
+        source_channel_cross_section_locations = [
+            xs["id"]
+            for xs in get_features_by_expression(
+                self.cross_section_layer, f'"channel_id" = {original_channel_id}'
+            )
+        ]
+        cross_section_location_features_map, cross_section_location_index = (
+            self.spatial_indexes_map[self.cross_section_layer.name()]
+        )
+        channel_id_idx = self.layer_fields_mapping[
+            self.cross_section_layer.name()
+        ].lookupField("channel_id")
+        cross_section_location_copies = []
+        for channel_feat in new_channels:
+            channel_geom = channel_feat.geometry()
+            cross_section_fids = cross_section_location_index.intersects(
+                channel_geom.boundingBox()
+            )
+            # Find any nearby cross sections and associate those to this channel
+            cross_sections_for_channel = (
+                ChannelIntegrator.get_cross_sections_for_channel(
+                    channel_feat,
+                    cross_section_fids,
+                    cross_section_location_features_map,
+                )
+            )
+            for cross_section_fid in cross_sections_for_channel:
+                self.cross_section_layer.changeAttributeValue(
+                    cross_section_fid, channel_id_idx, channel_feat["id"]
+                )
+            # If no nearby cross sections were found, find the closest cross section create a copy of that one
+            if len(cross_sections_for_channel) == 0:
+                closest_cross_section_copy = self.get_closest_cross_section_location(
+                    channel_feat,
+                    self.cross_section_layer,
+                    source_channel_cross_section_locations,
+                )
+                if closest_cross_section_copy:
+                    self.cross_section_manager.add_feature(
+                        closest_cross_section_copy,
+                        geom=channel_geom.interpolate(channel_geom.length() * 0.5),
+                    )
+                    closest_cross_section_copy["channel_id"] = channel_feat["id"]
+                    cross_section_location_copies.append(closest_cross_section_copy)
+        return cross_section_location_copies
+
+    @staticmethod
+    def is_hanging_cross_section(cross_section_feat, channel_feats, channel_fids):
+        """Get cross-sections that are not aligned with any channel."""
+        xs_buffer = cross_section_feat.geometry().buffer(
+            DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+        )
+        # only check channels that were visited
+        if len(channel_fids) > 0:
+            for channel_fid in channel_fids:
+                if xs_buffer.intersects(channel_feats[channel_fid].geometry()):
+                    return True
+        return False
+
+    def get_hanging_cross_sections(self, visited_channel_ids):
+        """Remove cross-sections not aligned with the channels."""
+        hanging_cross_section_ids = []
+        channel_feats, channels_spatial_index = spatial_index(self.integrate_layer)
+        for cross_section_feat in self.cross_section_layer.getFeatures():
+            buffer = cross_section_feat.geometry().buffer(
+                DEFAULT_INTERSECTION_BUFFER, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
+            )
+            channel_fids = channels_spatial_index.intersects(buffer.boundingBox())
+            # only consider channels that were visited
+            channel_fids = list(set(channel_fids).intersection(visited_channel_ids))
+            if len(channel_fids) == 0:
+                continue
+            is_hanging = ChannelIntegrator.is_hanging_cross_section(
+                cross_section_feat, channel_feats, channel_fids
+            )
+            if is_hanging:
+                hanging_cross_section_ids.append(cross_section_feat.id())
+        return hanging_cross_section_ids
