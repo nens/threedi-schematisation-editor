@@ -160,7 +160,7 @@ class TestChannelStructureIntegration:
     ):
         """Test get_channel_structure_from_line with a line that intersects the channel."""
         snapping_distance = 5.0
-        result = LinearIntegrator.get_channel_structure_from_line(
+        result = LinearIntegrator.get_conduit_structure_from_line(
             line_structure_feature, channel_feature, snapping_distance
         )
 
@@ -168,7 +168,7 @@ class TestChannelStructureIntegration:
         assert result is not None
 
         # Check that the result has the expected attributes
-        assert result.channel_id == 1
+        assert result.conduit_id == 1
         assert result.feature["id"] == 3
         assert (
             result.m == 50.0
@@ -180,7 +180,7 @@ class TestChannelStructureIntegration:
     ):
         """Test get_channel_structure_from_line with a line that intersects the channel at both ends."""
         snapping_distance = 5.0
-        result = LinearIntegrator.get_channel_structure_from_line(
+        result = LinearIntegrator.get_conduit_structure_from_line(
             line_structure_feature_no_intersection, channel_feature, snapping_distance
         )
 
@@ -206,7 +206,7 @@ class TestChannelStructureIntegration:
         snapping_distance = 5.0
         length_fallback_value = 5.0
 
-        result = LinearIntegrator.get_channel_structure_from_point(
+        result = LinearIntegrator.get_conduit_structure_from_point(
             point_structure_feature,
             channel_feature,
             snapping_distance,
@@ -218,7 +218,7 @@ class TestChannelStructureIntegration:
         assert result is not None
 
         # Check that the result has the expected attributes
-        assert result.channel_id == 1
+        assert result.conduit_id == 1
         assert result.feature["id"] == 4
         assert (
             result.m == 50.0
@@ -235,7 +235,7 @@ class TestChannelStructureIntegration:
         length_source_field = "length"
         length_fallback_value = 5.0
 
-        result = LinearIntegrator.get_channel_structure_from_point(
+        result = LinearIntegrator.get_conduit_structure_from_point(
             point_structure_feature_far,
             channel_feature,
             snapping_distance,
@@ -284,7 +284,7 @@ class TestChannelStructureIntegration:
         integrator.conversion_settings.length_fallback_value = 5.0
 
         # Call the method with the specified selected_ids
-        result, processed_ids = LinearIntegrator.get_channel_structures_data(
+        result, processed_ids = LinearIntegrator.get_conduit_structures_data(
             integrator, channel_feature, selected_ids=selected_ids
         )
 
@@ -712,6 +712,6 @@ def test_get_channel_cuts(mids, lengths, expected_cuts):
         for (mid, length) in zip(mids, lengths)
     ]
     assert (
-        LinearIntegrator.get_channel_cuts(channel_structures, channel_length)
+        LinearIntegrator.get_conduit_cuts(channel_structures, channel_length)
         == expected_cuts
     )
