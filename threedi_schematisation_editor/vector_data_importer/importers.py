@@ -1,4 +1,3 @@
-from abc import ABC
 from collections import defaultdict
 from functools import cached_property
 
@@ -17,8 +16,7 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
 from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
 
 
-# TODO: why is this ABC?
-class Importer(ABC):
+class Importer:
     """Base class for the importing features from the external data source."""
 
     def __init__(
