@@ -34,19 +34,19 @@ class LinearIntegrator:
     """Integrate linear structures onto a conduit (channel or pipe)"""
 
     def __init__(
-            self,
-            conduit_layer,
-            target_model_cls,
-            target_layer,
-            target_manager,
-            node_layer,
-            node_manager,
-            fields_configurations,
-            conversion_settings,
-            cross_section_layer,
-            external_source,
-            target_gpkg,
-            conduit_model_cls,
+        self,
+        conduit_layer,
+        target_model_cls,
+        target_layer,
+        target_manager,
+        node_layer,
+        node_manager,
+        fields_configurations,
+        conversion_settings,
+        cross_section_layer,
+        external_source,
+        target_gpkg,
+        conduit_model_cls,
     ):
         self.external_source = external_source
         self.integrate_model_cls = conduit_model_cls
@@ -94,9 +94,7 @@ class LinearIntegrator:
         self.setup_node_by_location()
 
     @classmethod
-    def from_importer(
-            cls, integrate_layer, cross_section_layer, importer
-    ):
+    def from_importer(cls, integrate_layer, cross_section_layer, importer):
         """extract data from importer to created matching integrator"""
         return cls(
             integrate_layer,
@@ -158,7 +156,7 @@ class LinearIntegrator:
 
     @staticmethod
     def get_conduit_structure_from_line(
-            structure_feat, conduit_feat, snapping_distance
+        structure_feat, conduit_feat, snapping_distance
     ):
         conduit_geometry = conduit_feat.geometry()
         structure_geom = structure_feat.geometry()
@@ -172,10 +170,10 @@ class LinearIntegrator:
             snapping_distance, DEFAULT_INTERSECTION_BUFFER_SEGMENTS
         )
         if not all(
-                [
-                    start_buffer.intersects(conduit_geometry),
-                    end_buffer.intersects(conduit_geometry),
-                ]
+            [
+                start_buffer.intersects(conduit_geometry),
+                end_buffer.intersects(conduit_geometry),
+            ]
         ):
             return
         intersection_m = conduit_geometry.lineLocatePoint(structure_geom.centroid())
@@ -186,11 +184,11 @@ class LinearIntegrator:
 
     @staticmethod
     def get_conduit_structure_from_point(
-            structure_feat,
-            conduit_feat,
-            snapping_distance,
-            length_source_field,
-            length_fallback_value,
+        structure_feat,
+        conduit_feat,
+        snapping_distance,
+        length_source_field,
+        length_fallback_value,
     ):
         structure_geom = structure_feat.geometry()
         conduit_geometry = conduit_feat.geometry()
@@ -223,8 +221,8 @@ class LinearIntegrator:
                 continue
             structure_feat = structure_features_map[structure_fid]
             if (
-                    structure_feat.geometry().type()
-                    == QgsWkbTypes.GeometryType.LineGeometry
+                structure_feat.geometry().type()
+                == QgsWkbTypes.GeometryType.LineGeometry
             ):
                 conduit_structure = LinearIntegrator.get_conduit_structure_from_line(
                     structure_feat,
@@ -232,8 +230,8 @@ class LinearIntegrator:
                     self.conversion_settings.snapping_distance,
                 )
             elif (
-                    structure_feat.geometry().type()
-                    == QgsWkbTypes.GeometryType.PointGeometry
+                structure_feat.geometry().type()
+                == QgsWkbTypes.GeometryType.PointGeometry
             ):
                 conduit_structure = LinearIntegrator.get_conduit_structure_from_point(
                     structure_feat,
@@ -277,7 +275,7 @@ class LinearIntegrator:
 
     @staticmethod
     def substring_feature(
-            curve, start_distance, end_distance, fields, simplify=False, **attributes
+        curve, start_distance, end_distance, fields, simplify=False, **attributes
     ):
         """Extract part of the curve as a new structure feature."""
         substring_feat = QgsFeature(fields)
@@ -292,7 +290,7 @@ class LinearIntegrator:
 
     @staticmethod
     def fix_structure_placement(
-            conduit_structures, conduit_geom, minimum_conduit_length
+        conduit_structures, conduit_geom, minimum_conduit_length
     ):
         # fix any gaps on the left side of the structures
         conduit_structures = LinearIntegrator.fix_structure_placement_lhs(
@@ -307,7 +305,7 @@ class LinearIntegrator:
         return conduit_structures
 
     def place_structures_on_conduit(
-            self, conduit_structures, conduit_feat, simplify_structure_geometry
+        self, conduit_structures, conduit_feat, simplify_structure_geometry
     ):
         conduit_geom = conduit_feat.geometry()
         added_features = []
@@ -332,7 +330,7 @@ class LinearIntegrator:
 
     @staticmethod
     def fix_structure_placement_lhs(
-            conduit_structures, conduit_length, minimum_conduit_length
+        conduit_structures, conduit_length, minimum_conduit_length
     ):
         conduit_structures = sorted(conduit_structures, key=lambda x: x.m)
         for i, cs in enumerate(conduit_structures):
@@ -340,20 +338,20 @@ class LinearIntegrator:
                 0
                 if i == 0
                 else conduit_structures[i - 1].m
-                     + 0.5 * conduit_structures[i - 1].length
+                + 0.5 * conduit_structures[i - 1].length
             )
             end_left = cs.m - 0.5 * cs.length
             # move structure if distance is too small
             # except when the structure extends over the end of the conduit
             if (
-                    end_left - prev_end
+                end_left - prev_end
             ) < minimum_conduit_length and prev_end + cs.length <= conduit_length:
                 cs.m = prev_end + 0.5 * cs.length
         return conduit_structures
 
     @staticmethod
     def fix_structure_placement_rhs(
-            conduit_structures, conduit_length, minimum_conduit_length
+        conduit_structures, conduit_length, minimum_conduit_length
     ):
         conduit_structures = sorted(conduit_structures, key=lambda x: x.m)
         last_struct = conduit_structures[-1]
@@ -366,7 +364,7 @@ class LinearIntegrator:
             )
             # move if the remaining space is sufficient
             if (
-                    conduit_length - last_struct.length
+                conduit_length - last_struct.length
             ) - prev_right >= minimum_conduit_length:
                 last_struct.m = conduit_length - 0.5 * last_struct.length
             # resize if remaining space does not allow move
@@ -484,8 +482,8 @@ class LinearIntegrator:
             for field_name in self.layer_field_names_mapping[self.node_layer.name()]
         }
         for substring_feat in (
-                added_features[self.target_layer.name()]
-                + added_features[self.integrate_layer.name()]
+            added_features[self.target_layer.name()]
+            + added_features[self.integrate_layer.name()]
         ):
             added_features[self.node_layer.name()] += self.update_feature_endpoints(
                 substring_feat, **node_attributes
@@ -506,7 +504,6 @@ class LinearIntegrator:
             added_features = self.integrate_structure_features(
                 conduit_feature, conduit_structures
             )
-            # TODO: only for channels!
             added_features[self.cross_section_layer.name()] = (
                 self.update_channel_cross_section_references(
                     added_features[self.integrate_layer.name()], conduit_feature["id"]
@@ -515,7 +512,6 @@ class LinearIntegrator:
             for key in added_features:
                 features_to_add[key] += added_features[key]
             all_processed_structure_ids |= processed_structures_fids
-        # TODO: only for channels
         visited_channel_ids = [
             channel["id"] for channel in features_to_add[self.integrate_layer.name()]
         ]
@@ -526,7 +522,6 @@ class LinearIntegrator:
 
 
 class PipeIntegrator(LinearIntegrator):
-
     def __init__(self, *args):
         super().__init__(*args, conduit_model_cls=dm.Pipe)
 
@@ -549,7 +544,6 @@ class PipeIntegrator(LinearIntegrator):
 
 
 class ChannelIntegrator(LinearIntegrator):
-
     def __init__(self, *args):
         super().__init__(*args, conduit_model_cls=dm.Channel)
 
@@ -583,7 +577,7 @@ class ChannelIntegrator(LinearIntegrator):
 
     @staticmethod
     def get_cross_sections_for_channel(
-            channel_feat, cross_section_fids, cross_section_location_features_map
+        channel_feat, cross_section_fids, cross_section_location_features_map
     ):
         cross_sections_for_channel = []
         for cross_section_fid in cross_section_fids:
@@ -597,7 +591,7 @@ class ChannelIntegrator(LinearIntegrator):
 
     @staticmethod
     def get_closest_cross_section_location(
-            channel_feat, cross_section_layer, source_channel_cross_section_locations
+        channel_feat, cross_section_layer, source_channel_cross_section_locations
     ):
         channel_geometry = channel_feat.geometry()
         src_channel_cross_section_ids = [
@@ -619,7 +613,7 @@ class ChannelIntegrator(LinearIntegrator):
             return closest_cross_section_copy
 
     def update_channel_cross_section_references(
-            self, new_channels, original_channel_id
+        self, new_channels, original_channel_id
     ):
         """Update channel cross-section references."""
         source_channel_cross_section_locations = [

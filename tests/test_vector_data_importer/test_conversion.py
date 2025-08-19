@@ -16,11 +16,11 @@ from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 from .utils import *
 
 
-def get_schematisation_layers(target_gpkg, target_object):
+def get_schematisation_layers(target_gpkg, target_object, channel_layer_name="channel"):
     temp_gpkg = str(get_temp_copy(target_gpkg))
     return {
         "structure_layer": gpkg_layer(temp_gpkg, target_object),
-        "channel_layer": gpkg_layer(temp_gpkg, "channel"),
+        "channel_layer": gpkg_layer(temp_gpkg, channel_layer_name),
         "node_layer": gpkg_layer(temp_gpkg, "connection_node"),
         "cross_section_location_layer": gpkg_layer(temp_gpkg, "cross_section_location"),
     }
@@ -54,9 +54,11 @@ def compare_layer(layer, ref_layer):
     assert_geometries_equal(list(new_res.values()), list(ref_res.values()), 1e-5)
 
 
-def compare_results(ref_name, layers, target_object):
+def compare_results(ref_name, layers, target_object, channel_layer_name="channel"):
     src = DATA_PATH.joinpath("ref", ref_name).with_suffix(".gpkg")
-    ref_layers = get_schematisation_layers(src, target_object)
+    ref_layers = get_schematisation_layers(
+        src, target_object, channel_layer_name=channel_layer_name
+    )
     # check attributes: id and geom - anything else is hopefully covered by unit tests
     for name, layer in layers.items():
         compare_layer(layer, ref_layers[name])
@@ -143,3 +145,15 @@ def test_fix_positioning(qgis_application):
     importer = WeirsImporter(src_layer, target_gpkg, import_config, **layers)
     importer.import_features()
     compare_results("test_weirs_fix_positions", layers, "weir")
+
+
+def test_integrate_pipe(qgis_application):
+    import_config = get_import_config_path("integrate_weirs_nosnap.json")
+    import_config["conversion_settings"]["edit_channels"] = False
+    import_config["conversion_settings"]["edit_pipes"] = True
+    src_layer = get_source_layer("weirs.gpkg", "dhydro_weir")
+    target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_pipe.gpkg")
+    layers = get_schematisation_layers(target_gpkg, "weir", channel_layer_name="pipe")
+    importer = WeirsImporter(src_layer, target_gpkg, import_config, **layers)
+    importer.import_features()
+    compare_results(f"test_integrate_pipe", layers, "weir", channel_layer_name="pipe")
