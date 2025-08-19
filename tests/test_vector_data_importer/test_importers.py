@@ -221,7 +221,7 @@ class TestImporter:
         mock_instance = MagicMock()
         mock_project.instance.return_value = mock_instance
         mock_instance.transformContext.return_value = "transform_context"
-        importer.get_locator()
+        importer.get_locator(None)
         mock_locator.assert_called_once_with(
             node_layer, "EPSG:28992", "transform_context"
         )

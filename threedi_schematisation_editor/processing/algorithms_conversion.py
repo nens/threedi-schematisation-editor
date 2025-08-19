@@ -14,6 +14,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from threedi_schematisation_editor.vector_data_importer.importers import (
     ChannelsImporter,
     ConnectionNodesImporter,
+    CrossSectionLocationImporter,
     CulvertsImporter,
     OrificesImporter,
     PipesImporter,
@@ -189,3 +190,11 @@ class ImportWeirs(StructureImporter):
     FEATURE_TYPE = "weir"
     IMPORTER_CLASS = WeirsImporter
     INTEGRATOR_CLASS = WeirsImporter
+
+
+class ImportCrossSectionLocation(SimpleImporter):
+    IMPORTER_CLASS = CrossSectionLocationImporter
+    FEATURE_TYPE = "cross_section_location"
+
+    def get_source_layer_types(self):
+        return []
