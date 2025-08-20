@@ -107,6 +107,8 @@ class ConversionSettings:
             "azimuth_fallback_value", 90.0
         )
         self.edit_channels = conversion_config.get("edit_channels", False)
+        self.join_field_src = conversion_config.get("join_field_src", None)
+        self.join_field_tgt = conversion_config.get("join_field_tgt", None)
 
 
 class ColumnImportMethod(Enum):

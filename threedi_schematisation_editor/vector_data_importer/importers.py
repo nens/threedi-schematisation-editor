@@ -1,4 +1,3 @@
-from abc import ABC
 from collections import defaultdict
 from functools import cached_property
 
@@ -17,12 +16,13 @@ from threedi_schematisation_editor.vector_data_importer.integrators import (
 )
 from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
+    CrossSectionLocationProcessor,
     LineProcessor,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
 
 
-class Importer(ABC):
+class Importer:
     """Base class for the importing features from the external data source."""
 
     def __init__(
@@ -60,7 +60,7 @@ class Importer(ABC):
 
     @cached_property
     def conversion_settings(self):
-        conversion_config = self.import_settings["conversion_settings"]
+        conversion_config = self.import_settings.get("conversion_settings", {})
         return ConversionSettings(conversion_config)
 
     @cached_property
@@ -110,9 +110,9 @@ class Importer(ABC):
 
     def import_features(self, context=None, selected_ids=None):
         """Method responsible for the importing structures from the external feature source."""
-        self.processor.transformation = self.get_transformation(context)
-        self.processor.locator = self.get_locator(context=context)
         # start editing in all layers to support changes during import
+        self.processor.transformation = self.get_transformation(context)
+        self.processor.node_locator = self.get_locator(context=context)
         for layer in self.modifiable_layers:
             layer.startEditing()
         # Integrate features using the integrator (if any)
@@ -243,6 +243,20 @@ class PipesImporter(LinesImporter):
             target_model_cls=dm.Pipe,
             target_layer=structure_layer,
             node_layer=node_layer,
+        )
+
+
+class CrossSectionLocationImporter(Importer):
+    def __init__(self, *args, target_layer=None):
+        super().__init__(
+            *args, target_model_cls=dm.CrossSectionLocation, target_layer=target_layer
+        )
+        self.processor = CrossSectionLocationProcessor(
+            target_layer=self.target_layer,
+            target_model_cls=dm.CrossSectionLocation,
+            channel_layer=gpkg_layer(self.target_gpkg, dm.Channel.__tablename__),
+            conversion_settings=self.conversion_settings,
+            target_fields_config=self.fields_configurations[dm.CrossSectionLocation],
         )
 
 

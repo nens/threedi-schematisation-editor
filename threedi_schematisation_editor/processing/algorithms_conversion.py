@@ -9,13 +9,14 @@ from qgis.core import (
     QgsProcessingParameterFile,
     QgsProject,
     QgsVectorLayer,
-    QgsWkbTypes
+    QgsWkbTypes,
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
 from threedi_schematisation_editor.vector_data_importer.importers import (
     ChannelsImporter,
     ConnectionNodesImporter,
+    CrossSectionLocationImporter,
     CulvertsImporter,
     OrificesImporter,
     PipesImporter,
@@ -94,16 +95,17 @@ class BaseImporter(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         # Try to load input as vector layer
-        source_layer = self.parameterAsVectorLayer(parameters, 'INPUT', context)
+        source_layer = self.parameterAsVectorLayer(parameters, "INPUT", context)
         # If that doesn't work, do some dirty magic to make a vector layer
         if not source_layer:
             source = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
             feedback.pushInfo(
-                "Using self.parameterAsSource() method to load the source layer as no source layer was directly available.")
+                "Using self.parameterAsSource() method to load the source layer as no source layer was directly available."
+            )
             source_layer = QgsVectorLayer(
                 f"{QgsWkbTypes.displayString(source.wkbType())}?crs={source.sourceCrs().authid()}",
                 "temp_layer",
-                "memory"
+                "memory",
             )
             # Set up the fields
             provider = source_layer.dataProvider()
@@ -211,3 +213,11 @@ class ImportWeirs(StructureImporter):
     FEATURE_TYPE = "weir"
     IMPORTER_CLASS = WeirsImporter
     INTEGRATOR_CLASS = WeirsImporter
+
+
+class ImportCrossSectionLocation(SimpleImporter):
+    IMPORTER_CLASS = CrossSectionLocationImporter
+    FEATURE_TYPE = "cross_section_location"
+
+    def get_source_layer_types(self):
+        return []
