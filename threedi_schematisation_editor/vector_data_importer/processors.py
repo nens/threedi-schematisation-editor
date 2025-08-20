@@ -320,7 +320,7 @@ class LineProcessor(StructureProcessor):
         polyline = new_feat.geometry().asPolyline()
         for idx, name in [
             (0, "connection_node_id_start"),
-            (1, "connection_node_id_end"),
+            (-1, "connection_node_id_end"),
         ]:
             new_node = self.add_node(new_feat, polyline[idx], name)
             if new_node:
