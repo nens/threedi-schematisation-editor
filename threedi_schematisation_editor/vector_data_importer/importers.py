@@ -1,4 +1,3 @@
-from abc import ABC
 from collections import defaultdict
 from functools import cached_property
 
@@ -8,16 +7,17 @@ from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.integrators import (
     ChannelIntegrator,
-    PipeIntegrator
+    PipeIntegrator,
 )
 from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
+    CrossSectionLocationProcessor,
     LineProcessor,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
 
 
-class Importer(ABC):
+class Importer:
     """Base class for the importing features from the external data source."""
 
     def __init__(
@@ -55,7 +55,7 @@ class Importer(ABC):
 
     @cached_property
     def conversion_settings(self):
-        conversion_config = self.import_settings["conversion_settings"]
+        conversion_config = self.import_settings.get("conversion_settings", {})
         return ConversionSettings(conversion_config)
 
     @cached_property
@@ -105,9 +105,9 @@ class Importer(ABC):
 
     def import_features(self, context=None, selected_ids=None):
         """Method responsible for the importing structures from the external feature source."""
-        self.processor.transformation = self.get_transformation(context)
-        self.processor.locator = self.get_locator(context=context)
         # start editing in all layers to support changes during import
+        self.processor.transformation = self.get_transformation(context)
+        self.processor.node_locator = self.get_locator(context=context)
         for layer in self.modifiable_layers:
             layer.startEditing()
         # Integrate features using the integrator (if any)
@@ -142,8 +142,15 @@ class Importer(ABC):
 
 
 class LinesImporter(Importer):
-    def __init__(self, *args, target_model_cls, target_layer=None, node_layer=None, conduit_layer=None,
-                 cross_section_location_layer=None):
+    def __init__(
+        self,
+        *args,
+        target_model_cls,
+        target_layer=None,
+        node_layer=None,
+        conduit_layer=None,
+        cross_section_location_layer=None,
+    ):
         super().__init__(
             *args,
             target_model_cls=target_model_cls,
@@ -161,10 +168,11 @@ class LinesImporter(Importer):
             self.integrator = ChannelIntegrator.from_importer(
                 conduit_layer, cross_section_location_layer, self
             )
-        elif self.conversion_settings.integrate_pipes and self.target_model_cls in [dm.Weir, dm.Orifice]:
-            self.integrator = PipeIntegrator.from_importer(
-                conduit_layer, None, self
-            )
+        elif self.conversion_settings.integrate_pipes and self.target_model_cls in [
+            dm.Weir,
+            dm.Orifice,
+        ]:
+            self.integrator = PipeIntegrator.from_importer(conduit_layer, None, self)
 
 
 class CulvertsImporter(LinesImporter):
@@ -178,8 +186,14 @@ class CulvertsImporter(LinesImporter):
         conduit_layer=None,
         cross_section_location_layer=None,
     ):
-        super().__init__(*args, target_model_cls=dm.Culvert, target_layer=structure_layer, node_layer=node_layer,
-                         conduit_layer=conduit_layer, cross_section_location_layer=cross_section_location_layer)
+        super().__init__(
+            *args,
+            target_model_cls=dm.Culvert,
+            target_layer=structure_layer,
+            node_layer=node_layer,
+            conduit_layer=conduit_layer,
+            cross_section_location_layer=cross_section_location_layer,
+        )
 
 
 class OrificesImporter(LinesImporter):
@@ -193,8 +207,14 @@ class OrificesImporter(LinesImporter):
         conduit_layer=None,
         cross_section_location_layer=None,
     ):
-        super().__init__(*args, target_model_cls=dm.Orifice, target_layer=structure_layer, node_layer=node_layer,
-                         conduit_layer=conduit_layer, cross_section_location_layer=cross_section_location_layer)
+        super().__init__(
+            *args,
+            target_model_cls=dm.Orifice,
+            target_layer=structure_layer,
+            node_layer=node_layer,
+            conduit_layer=conduit_layer,
+            cross_section_location_layer=cross_section_location_layer,
+        )
 
 
 class WeirsImporter(LinesImporter):
@@ -208,22 +228,52 @@ class WeirsImporter(LinesImporter):
         conduit_layer=None,
         cross_section_location_layer=None,
     ):
-        super().__init__(*args, target_model_cls=dm.Weir, target_layer=structure_layer, node_layer=node_layer,
-                         conduit_layer=conduit_layer, cross_section_location_layer=cross_section_location_layer)
+        super().__init__(
+            *args,
+            target_model_cls=dm.Weir,
+            target_layer=structure_layer,
+            node_layer=node_layer,
+            conduit_layer=conduit_layer,
+            cross_section_location_layer=cross_section_location_layer,
+        )
 
 
 class PipesImporter(LinesImporter):
     """Class with methods responsible for the importing pipes from the external data source."""
 
     def __init__(self, *args, structure_layer=None, node_layer=None):
-        super().__init__(*args, target_model_cls=dm.Pipe, target_layer=structure_layer, node_layer=node_layer)
+        super().__init__(
+            *args,
+            target_model_cls=dm.Pipe,
+            target_layer=structure_layer,
+            node_layer=node_layer,
+        )
+
+
+class CrossSectionLocationImporter(Importer):
+    def __init__(self, *args, target_layer=None):
+        super().__init__(
+            *args, target_model_cls=dm.CrossSectionLocation, target_layer=target_layer
+        )
+        self.processor = CrossSectionLocationProcessor(
+            target_layer=self.target_layer,
+            target_model_cls=dm.CrossSectionLocation,
+            channel_layer=gpkg_layer(self.target_gpkg, dm.Channel.__tablename__),
+            conversion_settings=self.conversion_settings,
+            target_fields_config=self.fields_configurations[dm.CrossSectionLocation],
+        )
 
 
 class ChannelsImporter(LinesImporter):
     """Class with methods responsible for the importing channels from the external data source."""
 
     def __init__(self, *args, structure_layer=None, node_layer=None):
-        super().__init__(*args, target_model_cls=dm.Channel, target_layer=structure_layer, node_layer=node_layer)
+        super().__init__(
+            *args,
+            target_model_cls=dm.Channel,
+            target_layer=structure_layer,
+            node_layer=node_layer,
+        )
 
 
 class ConnectionNodesImporter(Importer):

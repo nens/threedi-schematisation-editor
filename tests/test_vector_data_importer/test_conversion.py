@@ -1,6 +1,5 @@
 import json
 
-import numpy as np
 import pytest
 import shapely
 from shapely.testing import assert_geometries_equal
@@ -8,6 +7,7 @@ from shapely.testing import assert_geometries_equal
 from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.importers import (
     ConnectionNodesImporter,
+    CrossSectionLocationImporter,
     CulvertsImporter,
     WeirsImporter,
 )
@@ -37,7 +37,7 @@ def get_import_config_path(import_config_name):
         return json.loads(import_config_json.read())
 
 
-def compare_layer(layer, ref_layer):
+def compare_layer_geom(layer, ref_layer):
     new_res = {
         k: shapely.wkt.loads(v.asWkt())
         for k, v in sorted(
@@ -54,6 +54,23 @@ def compare_layer(layer, ref_layer):
     assert_geometries_equal(list(new_res.values()), list(ref_res.values()), 1e-5)
 
 
+def compare_layer_attributes(layer, ref_layer, attr_name):
+    new_res = {
+        k: v
+        for k, v in sorted(
+            ((feat["id"], feat[attr_name]) for feat in layer.getFeatures())
+        )
+    }
+    ref_res = {
+        k: v
+        for k, v in sorted(
+            ((feat["id"], feat[attr_name]) for feat in ref_layer.getFeatures())
+        )
+    }
+    assert list(new_res.keys()) == list(ref_res.keys())
+    assert list(new_res.values()) == list(ref_res.values())
+
+
 def compare_results(ref_name, layers, target_object, channel_layer_name="channel"):
     src = DATA_PATH.joinpath("ref", ref_name).with_suffix(".gpkg")
     ref_layers = get_schematisation_layers(
@@ -61,7 +78,7 @@ def compare_results(ref_name, layers, target_object, channel_layer_name="channel
     )
     # check attributes: id and geom - anything else is hopefully covered by unit tests
     for name, layer in layers.items():
-        compare_layer(layer, ref_layers[name])
+        compare_layer_geom(layer, ref_layers[name])
 
 
 def test_multi_import(qgis_application):
@@ -119,7 +136,7 @@ def test_import_connection_nodes(qgis_application):
         get_temp_copy(DATA_PATH.joinpath("ref", "test_import_connection_nodes.gpkg")),
         "connection_node",
     )
-    compare_layer(target_layer, ref_layer)
+    compare_layer_geom(target_layer, ref_layer)
 
 
 @pytest.mark.parametrize(
@@ -159,3 +176,32 @@ def test_integrate_pipe(qgis_application):
     importer.import_features()
     # breakpoint()
     compare_results(f"test_integrate_pipe", layers, "weir", channel_layer_name="pipe")
+
+
+@pytest.mark.parametrize("test_name", ["test_points", "test_lines", "test_no_geom"])
+def test_import_cross_section_location(qgis_application, test_name):
+    import_config = {
+        "conversion_settings": {
+            "join_field_src": "channel_id",
+            "join_field_tgt": "id",
+            "snapping_distance": 6,
+            "use_snapping": True,
+        }
+    }
+    src_layer = get_source_layer("cross_section_location.gpkg", test_name)
+    target_gpkg = SCHEMATISATION_PATH.joinpath("channel_wo_csl.gpkg")
+    temp_gpkg = str(get_temp_copy(target_gpkg))
+    target_layer = gpkg_layer(temp_gpkg, "cross_section_location")
+    importer = CrossSectionLocationImporter(
+        src_layer,
+        temp_gpkg,
+        import_config,
+        target_layer=target_layer,
+    )
+    importer.import_features()
+    ref_layer = gpkg_layer(
+        get_temp_copy(DATA_PATH.joinpath("ref", f"csl_import_{test_name}.gpkg")),
+        "cross_section_location",
+    )
+    compare_layer_geom(target_layer, ref_layer)
+    compare_layer_attributes(target_layer, ref_layer, "channel_id")

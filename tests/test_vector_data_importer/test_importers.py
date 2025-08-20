@@ -215,7 +215,7 @@ class TestImporter:
         mock_instance = MagicMock()
         mock_project.instance.return_value = mock_instance
         mock_instance.transformContext.return_value = "transform_context"
-        importer.get_locator()
+        importer.get_locator(None)
         mock_locator.assert_called_once_with(
             node_layer, "EPSG:28992", "transform_context"
         )
@@ -256,30 +256,36 @@ class TestImporter:
             integrator.cross_section_layer,
         ]
 
-    @patch("threedi_schematisation_editor.vector_data_importer.importers.ChannelIntegrator.from_importer")
-    @patch("threedi_schematisation_editor.vector_data_importer.importers.PipeIntegrator.from_importer")
-    @pytest.mark.parametrize("edit_channels, edit_pipes, target_cls, make_channel_integrator, make_pipe_integrator",
-                             [
-                                 (True, True, dm.Weir, True, False),
-                                 (True, False, dm.Weir, True, False),
-                                 (False, True, dm.Weir, False, True),
-                                 (False, False, dm.Weir, False, False),
-                                 (False, True, dm.Culvert, False, False),
-                             ])
+    @patch(
+        "threedi_schematisation_editor.vector_data_importer.importers.ChannelIntegrator.from_importer"
+    )
+    @patch(
+        "threedi_schematisation_editor.vector_data_importer.importers.PipeIntegrator.from_importer"
+    )
+    @pytest.mark.parametrize(
+        "edit_channels, edit_pipes, target_cls, make_channel_integrator, make_pipe_integrator",
+        [
+            (True, True, dm.Weir, True, False),
+            (True, False, dm.Weir, True, False),
+            (False, True, dm.Weir, False, True),
+            (False, False, dm.Weir, False, False),
+            (False, True, dm.Culvert, False, False),
+        ],
+    )
     def test_init_integrator(
-            self,
-            mock_pipe_integrator_from_importer,
-            mock_channel_integrator_from_importer,
-            external_source,
-            target_gpkg,
-            import_settings,
-            target_layer,
-            node_layer,
-            edit_channels,
-            edit_pipes,
-            target_cls,
-            make_channel_integrator,
-            make_pipe_integrator,
+        self,
+        mock_pipe_integrator_from_importer,
+        mock_channel_integrator_from_importer,
+        external_source,
+        target_gpkg,
+        import_settings,
+        target_layer,
+        node_layer,
+        edit_channels,
+        edit_pipes,
+        target_cls,
+        make_channel_integrator,
+        make_pipe_integrator,
     ):
         """Test that the Importer initializes the correct integrator."""
         import_settings["conversion_settings"]["edit_channels"] = edit_channels

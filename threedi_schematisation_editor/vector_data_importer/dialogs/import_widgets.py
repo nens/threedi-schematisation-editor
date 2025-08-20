@@ -16,15 +16,16 @@ from threedi_schematisation_editor.vector_data_importer.dialogs.utils import (
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 
 
-def get_field_methods_mapping(fields_iterator):
+def get_field_methods_mapping(
+    fields_iterator, auto_fields=None, auto_attribute_fields=None
+):
     """Return a mapping of fields to import methods."""
     methods_mapping = defaultdict(dict)
-    auto_fields = {"id"}
-    auto_attribute_fields = {
-        "connection_node_id",
-        "connection_node_id_start",
-        "connection_node_id_end",
-    }
+
+    auto_fields = set(auto_fields) | {"id"} if auto_fields else {"id"}
+    auto_attribute_fields = (
+        set(auto_attribute_fields) if auto_attribute_fields else set()
+    )
 
     for field_name, model_cls in fields_iterator:
         if field_name in auto_fields:
@@ -44,7 +45,9 @@ def get_field_methods_mapping(fields_iterator):
     return methods_mapping
 
 
-def create_widgets(import_model_cls, nodes_model_cls=None):
+def create_widgets(
+    import_model_cls, nodes_model_cls=None, auto_fields=None, auto_attribute_fields=None
+):
     """Create widgets for the data model fields."""
     import_fields = (
         (k, import_model_cls) for k in import_model_cls.__annotations__.keys()
@@ -56,7 +59,9 @@ def create_widgets(import_model_cls, nodes_model_cls=None):
     else:
         node_fields = ()
     fields_iterator = chain(import_fields, node_fields)
-    field_methods_mapping = get_field_methods_mapping(fields_iterator)
+    field_methods_mapping = get_field_methods_mapping(
+        fields_iterator, auto_fields, auto_attribute_fields
+    )
     widgets_to_add = defaultdict(dict)
     for model_cls, fields_mapping in field_methods_mapping.items():
         model_obsolete_fields = model_cls.obsolete_fields()
