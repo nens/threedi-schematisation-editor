@@ -285,7 +285,7 @@ class LineProcessor(StructureProcessor):
             src_polyline = src_geometry.asPolyline()
             dst_polyline = (
                 src_polyline
-                if (target_model_cls == dm.Culvert or target_model_cls == dm.Pipe)
+                if target_model_cls in [dm.Culvert, dm.Pipe, dm.Channel]
                 else [src_polyline[0], src_polyline[-1]]
             )
             dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
