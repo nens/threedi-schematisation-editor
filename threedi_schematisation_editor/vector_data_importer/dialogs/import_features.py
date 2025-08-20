@@ -751,6 +751,7 @@ class ImportStructuresDialog(ImportDialog):
     """Dialog for the importing structures tool."""
 
     HAS_INTEGRATOR = [dm.Culvert, dm.Orifice, dm.Weir]
+    HAS_PIPE_INTEGRATOR = [dm.Weir, dm.Orifice]
 
     def __init__(
         self,
@@ -777,10 +778,17 @@ class ImportStructuresDialog(ImportDialog):
         gridLayout_7.setContentsMargins(-1, -1, -1, 0)
 
         # Create checkboxes
-        self.edit_channels_cb = QCheckBox("Edit channels")
-        self.edit_channels_cb.setFont(self.create_font(10))
-        self.edit_channels_cb.setLayoutDirection(Qt.LeftToRight)
-        gridLayout_7.addWidget(self.edit_channels_cb, 0, 0)
+        self.edit_lbl = QLabel("Edit")
+        self.edit_cb = QComboBox()
+        self.edit_cb.setFont(self.create_font(10))
+        self.edit_cb.addItems(["none", "channels"])
+        if self.import_model_cls in self.HAS_PIPE_INTEGRATOR:
+            self.edit_cb.addItems(["pipes"])
+        edit_layout = QHBoxLayout()
+        edit_layout.setContentsMargins(0, 0, 30, 0)
+        edit_layout.addWidget(self.edit_lbl)
+        edit_layout.addWidget(self.edit_cb)
+        gridLayout_7.addLayout(edit_layout, 0, 0)
 
         self.create_nodes_cb = QCheckBox("Create connection nodes")
         self.create_nodes_cb.setFont(self.create_font(10))
@@ -923,7 +931,8 @@ class ImportStructuresDialog(ImportDialog):
     @property
     def structures_integration_widgets(self) -> List[QWidget]:
         return [
-            self.edit_channels_cb,
+            self.edit_cb,
+            self.edit_lbl,
             self.length_source_field_lbl,
             self.length_source_field_cbo,
             self.length_fallback_value_lbl,
@@ -956,7 +965,8 @@ class ImportStructuresDialog(ImportDialog):
                 "length_fallback_value": self.length_fallback_value_dsb.value(),
                 "azimuth_source_field": self.azimuth_source_field_cbo.currentField(),
                 "azimuth_fallback_value": self.azimuth_fallback_value_sb.value(),
-                "edit_channels": self.edit_channels_cb.isChecked(),
+                "edit_channels": self.edit_cb.currentText() == "channels",
+                "edit_pipes": self.edit_cb.currentText() == "pipes",
             },
             "connection_node_fields": self.collect_fields_settings(dm.ConnectionNode),
         }
@@ -989,9 +999,12 @@ class ImportStructuresDialog(ImportDialog):
         self.create_nodes_cb.setChecked(
             conversion_settings.get("create_connection_nodes", True)
         )
-        self.edit_channels_cb.setChecked(
-            conversion_settings.get("edit_channels", False)
-        )
+        if conversion_settings.get("edit_channels", False):
+            self.edit_cb.setCurrentIndex(1)
+        elif conversion_settings.get("edit_pipes", False):
+            self.edit_cb.setCurrentIndex(2)
+        else:
+            self.edit_cb.setCurrentIndex(0)
         self.length_source_field_cbo.setField(
             conversion_settings.get("length_source_field", "")
         )
@@ -1013,25 +1026,26 @@ class ImportStructuresDialog(ImportDialog):
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         structures_handler = self.layer_manager.model_handlers[self.import_model_cls]
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        channel_handler = self.layer_manager.model_handlers[dm.Channel]
-        cross_section_location_handler = self.layer_manager.model_handlers[
-            dm.CrossSectionLocation
-        ]
         import_settings = self.collect_settings()
         processed_handlers = [structures_handler, node_handler]
         processed_layers = {
             "structure_layer": structures_handler.layer,
             "node_layer": node_handler.layer,
         }
-        edit_channels = import_settings["conversion_settings"].get(
-            "edit_channels", False
-        )
-        if edit_channels:
-            processed_handlers += [channel_handler, cross_section_location_handler]
-            processed_layers["channel_layer"] = channel_handler.layer
+        if import_settings["conversion_settings"].get("edit_channels", False):
+            conduit_handler = self.layer_manager.model_handlers[dm.Channel]
+            cross_section_location_handler = self.layer_manager.model_handlers[
+                dm.CrossSectionLocation
+            ]
+            processed_handlers += [conduit_handler, cross_section_location_handler]
+            processed_layers["conduit_layer"] = conduit_handler.layer
             processed_layers["cross_section_location_layer"] = (
                 cross_section_location_handler.layer
             )
+        if import_settings["conversion_settings"].get("edit_pipes", False):
+            conduit_handler = self.layer_manager.model_handlers[dm.Pipe]
+            processed_handlers += [conduit_handler]
+            processed_layers["conduit_layer"] = conduit_handler.layer
         return processed_handlers, processed_layers
 
     def get_widgets(self):
