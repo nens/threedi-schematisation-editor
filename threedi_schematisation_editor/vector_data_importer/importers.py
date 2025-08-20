@@ -23,8 +23,66 @@ from threedi_schematisation_editor.vector_data_importer.utils import ConversionS
 
 
 class Importer:
-    """Base class for the importing features from the external data source."""
+    def __init__(self, external_source, target_gpkg, import_settings):
+        self.external_source = external_source
+        self.target_gpkg = target_gpkg
+        self.import_settings = import_settings
+        self.processor = None
 
+    @cached_property
+    def conversion_settings(self):
+        conversion_config = self.import_settings["conversion_settings"]
+        return ConversionSettings(conversion_config)
+
+    @cached_property
+    def external_source_name(self):
+        try:
+            layer_name = self.external_source.name()
+        except AttributeError:
+            layer_name = self.external_source.sourceName()
+        return layer_name
+
+    @staticmethod
+    def process_commit_errors(layer):
+        commit_errors = layer.commitErrors()
+        commit_errors_message = "\n".join(commit_errors)
+        return commit_errors_message
+
+    def commit_pending_changes(self):
+        for layer in self.modifiable_layers:
+            if layer.isModified():
+                layer.commitChanges()
+
+    @property
+    def modifiable_layers(self):
+        # TODO: retrieve from processor
+        return []
+
+    def import_features(self, context=None, selected_ids=None):
+        # TODO: reduce duplicate code
+        # start editing in all layers to support changes during import
+        for layer in self.modifiable_layers:
+            layer.startEditing()
+        # Integrate features using the integrator (if any)
+        # items that are integrated are skipped in further processing
+        input_feature_ids = [feat.id() for feat in self.external_source.getFeatures()]
+        if selected_ids:
+            input_feature_ids = [id for id in input_feature_ids if id in selected_ids]
+        new_features = defaultdict(list)
+        # Process remaining features that are not integrated
+        external_features = [
+            self.external_source.getFeature(feat_id) for feat_id in input_feature_ids
+        ]
+        processed_features = self.processor.process_features(external_features)
+        for name, features in processed_features.items():
+            new_features[name] += features
+        # Add newly created features to layers
+        for layer in self.modifiable_layers:
+            if layer.name() in new_features:
+                layer.addFeatures(new_features[layer.name()])
+
+
+class SpatialImporter(Importer):
     def __init__(
         self,
         external_source,
@@ -34,9 +92,7 @@ class Importer:
         target_layer=None,
         node_layer=None,
     ):
-        self.external_source = external_source
-        self.target_gpkg = target_gpkg
-        self.import_settings = import_settings
+        super().__init__(external_source, target_gpkg, import_settings)
         self.target_model_cls = target_model_cls
         self.target_layer = (
             gpkg_layer(self.target_gpkg, target_model_cls.__tablename__)
@@ -86,17 +142,6 @@ class Importer:
             self.node_layer, self.target_layer.crs(), project.transformContext()
         )
 
-    @staticmethod
-    def process_commit_errors(layer):
-        commit_errors = layer.commitErrors()
-        commit_errors_message = "\n".join(commit_errors)
-        return commit_errors_message
-
-    def commit_pending_changes(self):
-        for layer in self.modifiable_layers:
-            if layer.isModified():
-                layer.commitChanges()
-
     @property
     def modifiable_layers(self):
         """Return a list of the layers that can be modified."""
@@ -142,7 +187,7 @@ class Importer:
                 layer.addFeatures(new_features[layer.name()])
 
 
-class LinesImporter(Importer):
+class LinesImporter(SpatialImporter):
     def __init__(
         self,
         *args,
@@ -246,7 +291,7 @@ class PipesImporter(LinesImporter):
         )
 
 
-class CrossSectionLocationImporter(Importer):
+class CrossSectionLocationImporter(SpatialImporter):
     def __init__(self, *args, target_layer=None):
         super().__init__(
             *args, target_model_cls=dm.CrossSectionLocation, target_layer=target_layer
@@ -272,7 +317,7 @@ class ChannelsImporter(LinesImporter):
         )
 
 
-class ConnectionNodesImporter(Importer):
+class ConnectionNodesImporter(SpatialImporter):
     """Connection nodes importer class."""
 
     def __init__(self, *args, target_layer=None):

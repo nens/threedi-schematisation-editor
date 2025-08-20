@@ -12,14 +12,11 @@ from qgis.core import (
 )
 
 from threedi_schematisation_editor import data_models as dm
+
+# TODO: test both Importer and SpatialImporter
 from threedi_schematisation_editor.vector_data_importer.importers import (
-    ConnectionNodesImporter,
-    CulvertsImporter,
     Importer,
-    LinesImporter,
-    OrificesImporter,
-    PipesImporter,
-    WeirsImporter,
+    SpatialImporter,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
 
@@ -115,7 +112,7 @@ def cross_section_location_layer():
 @pytest.fixture
 def importer(external_source, target_gpkg, import_settings, target_layer, node_layer):
     """Create an Importer instance with standard parameters."""
-    return Importer(
+    return SpatialImporter(
         external_source, target_gpkg, import_settings, dm.Pipe, target_layer, node_layer
     )
 
@@ -126,7 +123,7 @@ def importer_different_crs(
 ):
     """Create an Importer instance with different CRS."""
     external_source.sourceCrs.return_value = "EPSG:4326"
-    return Importer(
+    return SpatialImporter(
         external_source, target_gpkg, import_settings, dm.Pipe, target_layer, node_layer
     )
 
@@ -149,7 +146,7 @@ class TestImporter:
         self, external_source, target_gpkg, import_settings, target_layer, node_layer
     ):
         """Test that the Importer initializes correctly."""
-        importer = Importer(
+        importer = SpatialImporter(
             external_source,
             target_gpkg,
             import_settings,
@@ -181,7 +178,7 @@ class TestImporter:
         alt_external_source = MagicMock()
         alt_external_source.name.side_effect = AttributeError("No name method")
         alt_external_source.sourceName.return_value = "alt_source"
-        importer = Importer(
+        importer = SpatialImporter(
             alt_external_source,
             target_gpkg,
             import_settings,
@@ -230,7 +227,7 @@ class TestImporter:
         """Test that process_commit_errors returns the commit errors message."""
         layer = MagicMock()
         layer.commitErrors.return_value = ["Error 1", "Error 2"]
-        assert Importer.process_commit_errors(layer) == "Error 1\nError 2"
+        assert SpatialImporter.process_commit_errors(layer) == "Error 1\nError 2"
 
     def test_commit_pending_changes(self, importer, target_layer, node_layer):
         """Test that commit_pending_changes commits changes for modified layers."""
