@@ -1052,8 +1052,8 @@ MODEL_1D_ELEMENTS = (
     Pump,
     PumpMap,
     CrossSectionLocation,
-    Channel,
     Windshielding1D,
+    Channel,
     Material,
 )
 MODEL_1D2D_ELEMENTS = (
