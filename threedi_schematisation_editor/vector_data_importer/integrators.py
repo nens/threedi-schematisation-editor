@@ -49,7 +49,7 @@ class LinearIntegrator:
         conduit_model_cls,
     ):
         self.external_source = external_source
-        self.integrate_model_cls = conduit_model_cls
+        self.conduit_model_cls = conduit_model_cls
         self.target_model_cls = target_model_cls
         self.fields_configurations = fields_configurations
         self.conversion_settings = conversion_settings
@@ -57,7 +57,7 @@ class LinearIntegrator:
         self.integrate_layer = (
             conduit_layer
             if conduit_layer
-            else gpkg_layer(target_gpkg, self.integrate_model_cls.__tablename__)
+            else gpkg_layer(target_gpkg, self.conduit_model_cls.__tablename__)
         )
         self.target_layer = (
             target_layer
@@ -443,10 +443,9 @@ class LinearIntegrator:
                 str(conduit_structure.feature.id())
                 for conduit_structure in conduit_structures
             )
-            # TODO automatically replace conduit with channel / pipe
             message = (
                 f"Cannot integrate {self.target_model_cls.__tablename__}s with total length {total_length:.2f} "
-                f"into conduit {conduit_feat['id']} with length {conduit_geom.length():.2f}. "
+                f"into {self.conduit_model_cls.__tablename__} {conduit_feat['id']} with length {conduit_geom.length():.2f}. "
                 f"Primary keys {self.target_model_cls.__tablename__}s: {id_str}"
             )
             warnings.warn(f"{message}", StructuresIntegratorWarning)
