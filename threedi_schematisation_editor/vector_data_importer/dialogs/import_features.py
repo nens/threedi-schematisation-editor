@@ -30,6 +30,7 @@ from qgis.PyQt.QtWidgets import (
     QSpinBox,
     QTabWidget,
     QTreeView,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -854,6 +855,7 @@ class ImportStructuresDialog(ImportDialog):
 
         # Create snap group box
         self.snap_gb, self.snap_dsb, snap_layout = self.get_snap_settings()
+        self.gridLayout.addWidget(self.snap_gb, 8, 4, 1, 2)
 
         # Create minimum channel length
         self.min_channel_dsb = QDoubleSpinBox()
@@ -861,12 +863,16 @@ class ImportStructuresDialog(ImportDialog):
         self.min_channel_dsb.setSuffix(" meters")
         self.min_channel_dsb.setMaximum(1000000.0)
         self.min_channel_dsb.setValue(5)
-        self.min_channel_lab = QLabel("Minimum channel length:")
-        self.min_channel_lab.setFont(self.create_font(10))
-        snap_layout.addWidget(self.min_channel_dsb, 2, 0)
-        snap_layout.addWidget(self.min_channel_lab, 1, 0)
+        self.min_channel_gb = QGroupBox("Minimum channel length:")
+        self.min_channel_gb.setFont(self.create_font(9))
+        min_channel_layout = QGridLayout(self.min_channel_gb)
+        min_channel_layout.addWidget(self.min_channel_dsb, 0, 0)
 
-        self.gridLayout.addWidget(self.snap_gb, 8, 4, 1, 2)
+        # Place minimum channel length and snapping in one layout
+        rhs_layout = QVBoxLayout()
+        rhs_layout.addWidget(self.snap_gb)
+        rhs_layout.addWidget(self.min_channel_gb)
+        self.gridLayout.addLayout(rhs_layout, 8, 4, 1, 2)
 
     def setup_models(self):
         self.structure_model = QStandardItemModel()
@@ -926,8 +932,7 @@ class ImportStructuresDialog(ImportDialog):
             self.azimuth_source_field_cbo,
             self.azimuth_fallback_value_lbl,
             self.azimuth_fallback_value_sb,
-            self.min_channel_lab,
-            self.min_channel_dsb,
+            self.min_channel_gb,
         ]
 
     def on_create_nodes_change(self, is_checked: bool):
