@@ -171,10 +171,8 @@ def test_integrate_pipe(qgis_application):
     src_layer = get_source_layer("weirs.gpkg", "dhydro_weir")
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_pipe.gpkg")
     layers = get_schematisation_layers(target_gpkg, "weir", conduit_layer_name="pipe")
-
     importer = WeirsImporter(src_layer, target_gpkg, import_config, **layers)
     importer.import_features()
-    # breakpoint()
     compare_results(f"test_integrate_pipe", layers, "weir", channel_layer_name="pipe")
 
 
