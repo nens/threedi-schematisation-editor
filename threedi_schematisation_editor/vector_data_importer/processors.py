@@ -310,7 +310,6 @@ class LineProcessor(StructureProcessor):
         return dst_geometry
 
     def update_connection_nodes(self, new_feat):
-        # TODO: test!
         new_nodes = []
         polyline = new_feat.geometry().asPolyline()
         for idx, name in [

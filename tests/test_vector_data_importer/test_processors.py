@@ -56,12 +56,14 @@ def source_feature():
     return feature
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def source_line_feature():
     """Create a source feature with line geometry."""
     fields = QgsFields()
     fields.append(QgsField("id", QVariant.Int))
     fields.append(QgsField("length", QVariant.Double))
+    fields.append(QgsField("connection_node_id_start", QVariant.Int))
+    fields.append(QgsField("connection_node_id_end", QVariant.Int))
     feature = QgsFeature(fields)
     feature.setGeometry(
         QgsGeometry.fromPolylineXY([QgsPointXY(10, 20), QgsPointXY(30, 40)])
@@ -199,35 +201,23 @@ class TestStructureProcessor:
 class TestLineProcessor:
     """Tests for the LineProcessor class."""
 
-    def test_process_feature(self, source_line_feature, target_fields, node_fields):
-        """Test that process_feature returns the expected dictionary and calls update_attributes."""
-        # Create mock layers
+    def test_update_connection_nodes(
+        self, source_line_feature, target_fields, node_fields
+    ):
         target_layer = MagicMock()
         target_layer.fields.return_value = target_fields
         target_layer.name.return_value = "pipes"
-
         node_layer = MagicMock()
         node_layer.fields.return_value = node_fields
         node_layer.name.return_value = "connection_nodes"
-
-        # Create mock fields configurations
         fields_configurations = {
             dm.ConnectionNode: {"id": {"method": ColumnImportMethod.AUTO}},
             dm.Pipe: {"id": {"method": ColumnImportMethod.AUTO}},
         }
-
-        # Create a processor
         processor = LineProcessor(
             target_layer, dm.Pipe, node_layer, fields_configurations, {}
         )
-
-        LineProcessor.new_geometry = MagicMock(
-            return_value=QgsGeometry.fromPolylineXY(
-                [QgsPointXY(10, 20), QgsPointXY(30, 40)]
-            )
-        )
-
-        # Mock the add_node method to return new node features
+        # Mock the get_node method to return new node features
         start_node = QgsFeature(node_fields)
         start_node.setAttribute("id", 42)
         start_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(11, 21)))
@@ -235,18 +225,43 @@ class TestLineProcessor:
         end_node.setAttribute("id", 43)
         end_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(30, 40)))
         processor.get_node = MagicMock(
-            side_effect=[(start_node, True), (end_node, True)]
+            side_effect=[(start_node, True), (end_node, False)]
         )
+        # Run update_connection_nodes and check results
+        new_nodes = processor.update_connection_nodes(source_line_feature)
+        assert source_line_feature["connection_node_id_start"] == 42
+        assert source_line_feature["connection_node_id_end"] == 43
+        assert source_line_feature.geometry().asPolyline() == [
+            QgsPointXY(11, 21),
+            QgsPointXY(30, 40),
+        ]
+        assert new_nodes[0] == end_node
 
+    def test_process_feature(self, source_line_feature, target_fields, node_fields):
+        target_layer = MagicMock()
+        target_layer.fields.return_value = target_fields
+        target_layer.name.return_value = "pipes"
+        node_layer = MagicMock()
+        node_layer.fields.return_value = node_fields
+        node_layer.name.return_value = "connection_nodes"
+        fields_configurations = {
+            dm.ConnectionNode: {"id": {"method": ColumnImportMethod.AUTO}},
+            dm.Pipe: {"id": {"method": ColumnImportMethod.AUTO}},
+        }
+        processor = LineProcessor(
+            target_layer, dm.Pipe, node_layer, fields_configurations, {}
+        )
+        # Mock function calls needed for process_feature
+        LineProcessor.new_geometry = MagicMock(
+            return_value=QgsGeometry.fromPolylineXY(
+                [QgsPointXY(10, 20), QgsPointXY(30, 40)]
+            )
+        )
+        processor.update_connection_nodes = MagicMock(return_value=[])
+        # Run process_feature and check results
         result = processor.process_feature(source_line_feature)
-
-        # Check that the result is a dictionary with the expected keys
         assert sorted(result.keys()) == ["pipes"]
         assert len(result["pipes"]) == 1
-        pipe = result["pipes"][0]
-        assert pipe["connection_node_id_start"] == 42
-        assert pipe["connection_node_id_end"] == 43
-        assert pipe.geometry().asPolyline() == [QgsPointXY(11, 21), QgsPointXY(30, 40)]
 
     @pytest.fixture
     def conversion_settings(self):

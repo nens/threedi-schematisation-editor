@@ -6,6 +6,7 @@ from shapely.testing import assert_geometries_equal
 
 from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.importers import (
+    ChannelsImporter,
     ConnectionNodesImporter,
     CrossSectionLocationImporter,
     CulvertsImporter,
@@ -189,3 +190,21 @@ def test_import_cross_section_location(qgis_application, test_name):
     )
     compare_layer_geom(target_layer, ref_layer)
     compare_layer_attributes(target_layer, ref_layer, "channel_id")
+
+
+def test_import_adjacent_channels(qgis_application):
+    import_config = {
+        "conversion_settings": {
+            "use_snapping": True,
+            "create_connection_nodes": True,
+            "snapping_distance": 1,
+        }
+    }
+    src_layer = get_source_layer("channels.gpkg", "test_data")
+    target_gpkg = SCHEMATISATION_PATH.joinpath("empty.gpkg")
+    layers = get_schematisation_layers(target_gpkg, "channel")
+    del layers["channel_layer"]
+    del layers["cross_section_location_layer"]
+    importer = ChannelsImporter(src_layer, target_gpkg, import_config, **layers)
+    importer.import_features()
+    compare_results("test_import_channels", layers, "channel")
