@@ -89,9 +89,9 @@ def channels(scope="session"):
 
     feature4 = QgsFeature(layer.fields())
     feature4.setGeometry(
-        QgsGeometry.fromPolyline([QgsPoint(500, 510), QgsPoint(510, 510)])
+        QgsGeometry.fromPolyline([QgsPoint(500, 410), QgsPoint(510, 410)])
     )
-    feature4.setAttributes([3])
+    feature4.setAttributes([4])
 
     provider.addFeatures([feature1, feature2, feature3, feature4])
     return layer
@@ -122,8 +122,8 @@ def test_get_matching_channel_point(processor, feature, point, expected_channel_
         ([QgsPoint(100, 100), QgsPoint(200, 200)], None),  # inteersects no channel
         (
             [QgsPoint(505, 400), QgsPoint(505, 600)],
-            None,
-        ),  # intersects two channels, return no match
+            3,
+        ),  # intersects two channels, snap to first line within snapping distance
     ],
 )
 def test_get_matching_channel_line(processor, feature, line, expected_channel_id):

@@ -105,8 +105,25 @@ class CrossSectionLocationProcessor(Processor):
                     feat[self.conversion_settings.join_field_src]
                 )
         else:
-            geometry_type = geom.type()
-            if geometry_type == QgsWkbTypes.GeometryType.PointGeometry:
+            if geom.type() not in [
+                QgsWkbTypes.GeometryType.LineGeometry,
+                QgsWkbTypes.GeometryType.PointGeometry,
+            ]:
+                raise NotImplementedError(f"Unsupported geometry type: '{geom.type()}'")
+            if geom.type() == QgsWkbTypes.GeometryType.LineGeometry:
+                matching_channels = [
+                    channel
+                    for channel in self.channel_layer.getFeatures()
+                    if channel.geometry().intersects(geom)
+                ]
+                if len(matching_channels) == 0:
+                    return None
+                elif len(matching_channels) == 1:
+                    channel_match = matching_channels[0]
+                else:
+                    # in case of multiple matches, perform match based on midpoint
+                    geom = geom.interpolate(geom.length() / 2)
+            if geom.type() == QgsWkbTypes.GeometryType.PointGeometry:
                 closest_feature_id = self.channel_spatial_index.nearestNeighbor(
                     geom.asPoint(), 1, self.conversion_settings.snapping_distance
                 )
@@ -119,20 +136,6 @@ class CrossSectionLocationProcessor(Processor):
                     )
                 else:
                     channel_match = None
-
-            elif geometry_type == QgsWkbTypes.GeometryType.LineGeometry:
-                matching_channels = [
-                    channel
-                    for channel in self.channel_layer.getFeatures()
-                    if channel.geometry().intersects(geom)
-                ]
-                if len(matching_channels) != 1:
-                    return None
-                channel_match = matching_channels[0]
-            else:
-                raise NotImplementedError(
-                    f"Unsupported geometry type: '{geometry_type}'"
-                )
         if channel_match:
             return channel_match["id"]
 
