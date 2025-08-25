@@ -779,24 +779,22 @@ class ImportStructuresDialog(ImportDialog):
 
         # Create checkboxes
         self.edit_lbl = QLabel("Edit")
+        self.edit_lbl.setFont(self.create_font(10))
         self.edit_cb = QComboBox()
         self.edit_cb.setFont(self.create_font(10))
-        self.edit_cb.addItems(["none", "channels"])
+        self.edit_cb.addItems(["None", "Channels"])
         if self.import_model_cls in self.HAS_PIPE_INTEGRATOR:
-            self.edit_cb.addItems(["pipes"])
-        edit_layout = QHBoxLayout()
-        edit_layout.setContentsMargins(0, 0, 30, 0)
-        edit_layout.addWidget(self.edit_lbl)
-        edit_layout.addWidget(self.edit_cb)
-        gridLayout_7.addLayout(edit_layout, 0, 0)
+            self.edit_cb.addItems(["Pipes"])
+        gridLayout_7.addWidget(self.edit_lbl, 0, 0)
+        gridLayout_7.addWidget(self.edit_cb, 0, 1)
 
         self.create_nodes_cb = QCheckBox("Create connection nodes")
         self.create_nodes_cb.setFont(self.create_font(10))
         self.create_nodes_cb.setLayoutDirection(Qt.LeftToRight)
         self.create_nodes_cb.setChecked(True)
-        gridLayout_7.addWidget(self.create_nodes_cb, 0, 1)
+        gridLayout_7.addWidget(self.create_nodes_cb, 0, 2)
 
-        gridLayout_7.addWidget(self.selected_only_cb, 0, 2)
+        gridLayout_7.addWidget(self.selected_only_cb, 0, 3)
 
         # Create length source field widgets
         self.length_source_field_lbl = QLabel("Length source field")
@@ -871,7 +869,10 @@ class ImportStructuresDialog(ImportDialog):
         self.min_channel_dsb.setSuffix(" meters")
         self.min_channel_dsb.setMaximum(1000000.0)
         self.min_channel_dsb.setValue(5)
-        self.min_channel_gb = QGroupBox("Minimum channel length:")
+        self.min_channel_gb = QGroupBox("Minimum length:")
+        self.min_channel_gb.setToolTip(
+            "Structures will be integrated in the network such that no channel or pipe feature is created shorter than this value."
+        )
         self.min_channel_gb.setFont(self.create_font(9))
         min_channel_layout = QGridLayout(self.min_channel_gb)
         min_channel_layout.addWidget(self.min_channel_dsb, 0, 0)
@@ -965,8 +966,8 @@ class ImportStructuresDialog(ImportDialog):
                 "length_fallback_value": self.length_fallback_value_dsb.value(),
                 "azimuth_source_field": self.azimuth_source_field_cbo.currentField(),
                 "azimuth_fallback_value": self.azimuth_fallback_value_sb.value(),
-                "edit_channels": self.edit_cb.currentText() == "channels",
-                "edit_pipes": self.edit_cb.currentText() == "pipes",
+                "edit_channels": self.edit_cb.currentText().lower() == "channels",
+                "edit_pipes": self.edit_cb.currentText().lower() == "pipes",
             },
             "connection_node_fields": self.collect_fields_settings(dm.ConnectionNode),
         }
