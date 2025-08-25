@@ -13,7 +13,7 @@ classDiagram
     LinesImporter <|-- OrificesImporter
     LinesImporter <|-- WeirsImporter
     LinesImporter <|-- PipesImporter
-    LinesImporter <|--ChannelsImporter
+    LinesImporter <|-- ChannelsImporter
 
     class Importer {
         +integrator = None
@@ -94,4 +94,4 @@ classDiagram
     }
 ```
 
-When objects are integrated on existing structures an Integrator is used as well. This class takes care of finding the overlapping structure, makes the needed modifications and adds connection nodes if needed. Like the Processor, the Integrator uses a `FeatureManager` to handle the new objects' indices. At the moment there is only a `LinearIntegrator` that integrates new objects on channels. 
+When objects are integrated on existing structures an Integrator is used as well. This class takes care of finding the overlapping structure, makes the needed modifications and adds connection nodes if needed. Like the Processor, the Integrator uses a `FeatureManager` to handle the new objects' indices. At the moment there is only a `LinearIntegrator` that integrates new objects on channels or pipes.

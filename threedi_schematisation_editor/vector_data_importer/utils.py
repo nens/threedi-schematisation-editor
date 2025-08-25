@@ -86,7 +86,8 @@ class FeatureManager:
 
 class ConversionSettings:
     def __init__(self, conversion_config):
-        self.integrate = conversion_config.get("edit_channels", False)
+        self.integrate_pipes = conversion_config.get("edit_pipes", False)
+        self.integrate_channels = conversion_config.get("edit_channels", False)
         self.use_snapping = conversion_config.get("use_snapping", False)
         if self.use_snapping:
             self.snapping_distance = conversion_config.get("snapping_distance")
