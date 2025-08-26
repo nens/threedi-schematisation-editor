@@ -44,6 +44,8 @@ from threedi_schematisation_editor.vector_data_importer.dialogs.utils import (
     CatchThreediWarnings,
     ColumnImportIndex,
     ImportFieldMappingUtils,
+    JoinFieldsRow,
+    create_font,
 )
 from threedi_schematisation_editor.vector_data_importer.importers import (
     ChannelsImporter,
@@ -162,12 +164,7 @@ class ImportDialog(QDialog):
         self.gridLayout.addLayout(layout_run_close, 10, 5)
 
     def create_font(self, point_size: int, bold: bool = False):
-        font = self.font()
-        font.setPointSize(point_size)
-        if bold:
-            font.setBold(True)
-            font.setWeight(75)
-        return font
+        return create_font(self, point_size, bold=bold)
 
     def setup_models(self):
         """Set up the models for the tree views. To be implemented by subclasses."""
@@ -655,11 +652,15 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
 
     def on_layer_changed(self, layer: Optional[QgsMapLayer]):
         super().on_layer_changed(layer)
-        self.join_source_field_cbo.setLayer(layer)
+        self.join_source.input_cbo.setLayer(layer)
 
     @property
     def layer_dependent_widgets(self) -> List[QWidget]:
-        return super().layer_dependent_widgets + [self.join_source_field_cbo]
+        return (
+            super().layer_dependent_widgets
+            + self.join_source.layer_dependent_widgets
+            + self.join_target.layer_dependent_widgets
+        )
 
     def collect_settings(self) -> Dict[str, Any]:
         return {
@@ -668,42 +669,27 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
             "conversion_settings": {
                 "use_snapping": self.snap_gb.isChecked(),
                 "snapping_distance": self.snap_dsb.value(),
-                "join_field_src": self.join_source_field_cbo.currentField(),
-                "join_field_tgt": self.join_target_field_cbo.currentText(),
+                "join_field_src": self.join_source.value,
+                "join_field_tgt": self.join_target.value,
             },
         }
 
     def setup_ui(self):
         super().setup_ui()
 
-        # Extra settings for cross section locations
-        extra_settings_layout = QGridLayout()
-        extra_settings_layout.setContentsMargins(-1, -1, -1, 0)
-        # join source settings
-        join_source_layout = QHBoxLayout()
-        join_source_layout.setContentsMargins(-1, -1, -1, 0)
-        join_source_field_lbl = QLabel("Join channel source field")
-        join_source_field_lbl.setFont(self.create_font(10))
-        join_source_field_lbl.setLayoutDirection(Qt.LeftToRight)
-        join_source_layout.addWidget(join_source_field_lbl)
-        self.join_source_field_cbo = QgsFieldComboBox()
-        self.join_source_field_cbo.setFont(self.create_font(10))
-        self.join_source_field_cbo.setAllowEmptyFieldName(True)
-        join_source_layout.addWidget(self.join_source_field_cbo)
-        # join target settings
-        join_target_layout = QHBoxLayout()
-        join_target_layout.setContentsMargins(-1, -1, -1, 0)
-        self.join_target_field_lbl = QLabel("Join channel reference field")
-        self.join_target_field_lbl.setFont(self.create_font(10))
-        self.join_target_field_lbl.setLayoutDirection(Qt.LeftToRight)
-        join_target_layout.addWidget(self.join_target_field_lbl)
-        self.join_target_field_cbo = QComboBox()
-        self.join_target_field_cbo.setFont(self.create_font(10))
-        self.join_target_field_cbo.insertItems(0, ["", "id", "code"])
-        join_target_layout.addWidget(self.join_target_field_cbo)
-        extra_settings_layout.addLayout(join_target_layout, 1, 0)
-        extra_settings_layout.addLayout(join_source_layout, 1, 1)
-        self.gridLayout.addLayout(extra_settings_layout, 1, 0, 2, 2)
+        # self.join_settings = JoinFieldsDialog()
+        self.join_source = JoinFieldsRow("Join channel source field", layer_src=True)
+        self.join_target = JoinFieldsRow("Join channel reference field")
+        join_layout = QGridLayout()
+        join_layout.setContentsMargins(-1, -1, -1, 0)
+        join_layout.addWidget(self.join_source.lbl, 0, 0)
+        join_layout.addWidget(self.join_source.toggle_widget, 0, 1)
+        join_layout.addWidget(self.join_source.stack, 0, 2)
+        join_layout.addWidget(self.join_target.lbl, 1, 0)
+        join_layout.addWidget(self.join_target.toggle_widget, 1, 1)
+        join_layout.addWidget(self.join_target.stack, 1, 2)
+
+        self.gridLayout.addLayout(join_layout, 1, 0, 2, 2)
 
         # Create snap group box
         self.snap_gb, self.snap_dsb, _ = self.get_snap_settings()
@@ -717,12 +703,8 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
         conversion_settings = import_settings["conversion_settings"]
         self.snap_gb.setChecked(conversion_settings.get("use_snapping", True))
         self.snap_dsb.setValue(conversion_settings.get("snapping_distance", 0.1))
-        self.join_source_field_cbo.setField(
-            conversion_settings.get("join_field_src", "")
-        )
-        self.join_target_field_cbo.setCurrentText(
-            conversion_settings.get("join_field_tgt", "")
-        )
+        self.join_source.value = conversion_settings.get("join_field_src", "")
+        self.join_target.value = conversion_settings.get("join_field_tgt", "")
 
     def source_fields_missing(self) -> bool:
         missing_fields = super().source_fields_missing()
@@ -730,9 +712,9 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
             return True
         if self.source_layer and not self.source_layer.isSpatial():
             missing = []
-            if not self.join_source_field_cbo.currentField():
+            if not self.join_source.value:
                 missing.append("Join channel source field")
-            if not self.join_target_field_cbo.currentText():
+            if not self.join_target.value:
                 missing.append("Join channel reference field")
             if len(missing) > 0:
                 self.uc.show_warn(
@@ -741,9 +723,6 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
                 )
                 return True
         return False
-
-    def get_widgets(self):
-        return create_widgets(*self.models, auto_fields={"id", "channel_id"})
 
 
 class ImportStructuresDialog(ImportDialog):

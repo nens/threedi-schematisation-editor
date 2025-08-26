@@ -3,7 +3,18 @@ import warnings
 from enum import IntEnum
 
 from qgis.core import NULL, Qgis, QgsMessageLog, QgsSettings
-from qgis.PyQt.QtWidgets import QComboBox
+from qgis.gui import QgsFieldComboBox, QgsFieldExpressionWidget
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtWidgets import (
+    QButtonGroup,
+    QComboBox,
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QRadioButton,
+    QStackedWidget,
+    QWidget,
+)
 
 from threedi_schematisation_editor import warnings as threedi_warnings
 from threedi_schematisation_editor.utils import (
@@ -205,3 +216,89 @@ class ColumnImportIndex(IntEnum):
     VALUE_MAP_COLUMN_IDX = 3
     DEFAULT_VALUE_COLUMN_IDX = 4
     EXPRESSION_COLUMN_IDX = 5
+
+
+def create_font(dialog, point_size: int, bold: bool = False):
+    font = dialog.font()
+    font.setPointSize(point_size)
+    if bold:
+        font.setBold(True)
+        font.setWeight(75)
+    return font
+
+
+class JoinFieldsRow(QDialog):
+    def __init__(self, label, layer_src=False, parent=None):
+        super().__init__(parent)
+        self.setup_ui(label, layer_src)
+
+    def setup_ui(self, label, layer_src):
+        # Create labels
+        self.lbl = QLabel(label)
+        font = create_font(self.lbl, 10)
+        self.lbl.setFont(font)
+        self.lbl.setLayoutDirection(Qt.LeftToRight)
+        # Create input fields
+        if layer_src:
+            self.input_cbo = QgsFieldComboBox()
+            self.input_cbo.setAllowEmptyFieldName(True)
+        else:
+            self.input_cbo = QComboBox()
+            self.input_cbo.setFont(font)
+            self.input_cbo.insertItems(0, ["", "id", "code"])
+        self.input_cbo.setFont(font)
+        self.input_cbo.setMinimumWidth(200)
+        self.input_expr = QgsFieldExpressionWidget()
+        self.input_expr.setFont(font)
+        # Create toggle
+        self.attr_radio = QRadioButton("Attribute")
+        self.attr_radio.setFont(font)
+        self.expr_radio = QRadioButton("Expression")
+        self.expr_radio.setFont(font)
+        self.attr_radio.setChecked(True)
+        button_group = QButtonGroup(self)
+        button_group.addButton(self.attr_radio)
+        button_group.addButton(self.expr_radio)
+        self.toggle_widget = QWidget()
+        toggle_layout = QHBoxLayout(self.toggle_widget)
+        toggle_layout.setContentsMargins(0, 0, 0, 0)
+        toggle_layout.addWidget(self.attr_radio)
+        toggle_layout.addWidget(self.expr_radio)
+        self.stack = QStackedWidget()
+        self.stack.addWidget(self.input_cbo)
+        self.stack.addWidget(self.input_expr)
+        self.attr_radio.toggled.connect(self.toggle_input)
+
+    @property
+    def layer_dependent_widgets(self):
+        return [self.attr_radio, self.expr_radio, self.input_cbo, self.input_expr]
+
+    def toggle_input(self):
+        if self.attr_radio.isChecked():
+            self.stack.setCurrentIndex(0)
+        else:
+            self.stack.setCurrentIndex(1)
+
+    @property
+    def value(self):
+        if self.input_cbo.currentText() == "" and self.input_expr.isValidExpression():
+            return {
+                "method": ColumnImportMethod.EXPRESSION.value,
+                ColumnImportMethod.EXPRESSION.value: self.input_expr.expression(),
+            }
+        else:
+            return {
+                "method": ColumnImportMethod.ATTRIBUTE.value,
+                ColumnImportMethod.ATTRIBUTE.value: self.input_cbo.currentText(),
+            }
+
+    @value.setter
+    def value(self, value):
+        if value.get("method") == ColumnImportMethod.EXPRESSION.value:
+            self.expr_radio.setChecked(True)
+            self.input_expr.setExpression(
+                value.get(ColumnImportMethod.EXPRESSION.value)
+            )
+        elif value.get("method") == ColumnImportMethod.ATTRIBUTE.value:
+            self.attr_radio.setChecked(True)
+            self.input_cbo.setCurrentText(value.get(ColumnImportMethod.ATTRIBUTE.value))
