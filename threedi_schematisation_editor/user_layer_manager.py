@@ -398,7 +398,7 @@ class LayersManager:
         else:
             set_field_default_value(layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))")
         if "area" in layer_fields.names():
-            set_field_default_value(layer, "area", "$area", apply_on_update=True)
+            set_field_default_value(layer, "area", "$area", apply_on_update=False)
         for style in all_styles:
             style_manager.setCurrentStyle(style)
             layer.setEditFormConfig(default_edit_form_config)
