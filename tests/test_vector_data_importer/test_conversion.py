@@ -166,8 +166,49 @@ def test_fix_positioning(qgis_application):
 def test_import_cross_section_location(qgis_application, test_name):
     import_config = {
         "conversion_settings": {
-            "join_field_src": "channel_id",
-            "join_field_tgt": "id",
+            "join_field_src": {
+                "method": "source_attribute",
+                "source_attribute": "channel_id",
+            },
+            "join_field_tgt": {
+                "method": "source_attribute",
+                "source_attribute": "id",
+            },
+            "snapping_distance": 6,
+            "use_snapping": True,
+        }
+    }
+    src_layer = get_source_layer("cross_section_location.gpkg", test_name)
+    target_gpkg = SCHEMATISATION_PATH.joinpath("channel_wo_csl.gpkg")
+    temp_gpkg = str(get_temp_copy(target_gpkg))
+    target_layer = gpkg_layer(temp_gpkg, "cross_section_location")
+    importer = CrossSectionLocationImporter(
+        src_layer,
+        temp_gpkg,
+        import_config,
+        target_layer=target_layer,
+    )
+    importer.import_features()
+    ref_layer = gpkg_layer(
+        get_temp_copy(DATA_PATH.joinpath("ref", f"csl_import_{test_name}.gpkg")),
+        "cross_section_location",
+    )
+    compare_layer_geom(target_layer, ref_layer)
+    compare_layer_attributes(target_layer, ref_layer, "channel_id")
+
+
+def test_import_cross_section_location_with_expression(qgis_application):
+    test_name = "test_no_geom"
+    import_config = {
+        "conversion_settings": {
+            "join_field_src": {
+                "method": "expression",
+                "expression": "channel_id",
+            },
+            "join_field_tgt": {
+                "method": "expression",
+                "expression": "id",
+            },
             "snapping_distance": 6,
             "use_snapping": True,
         }

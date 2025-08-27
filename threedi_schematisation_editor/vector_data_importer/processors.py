@@ -1,7 +1,15 @@
 from abc import ABC
 from functools import cached_property
 
-from qgis.core import NULL, QgsFeatureRequest, QgsGeometry, QgsSpatialIndex, QgsWkbTypes
+from qgis.core import (
+    NULL,
+    QgsExpression,
+    QgsExpressionContext,
+    QgsFeatureRequest,
+    QgsGeometry,
+    QgsSpatialIndex,
+    QgsWkbTypes,
+)
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
@@ -9,6 +17,7 @@ from threedi_schematisation_editor.utils import (
     get_next_feature_id,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (
+    ColumnImportMethod,
     FeatureManager,
     get_float_value_from_feature,
     update_attributes,
@@ -78,11 +87,32 @@ class CrossSectionLocationProcessor(Processor):
 
     @cached_property
     def channel_mapping(self):
-        if self.conversion_settings.join_field_tgt in ["id", "code"]:
+        if (
+            self.conversion_settings.join_field_tgt.get("method")
+            == ColumnImportMethod.ATTRIBUTE.value
+        ):
             return {
-                feature[self.conversion_settings.join_field_tgt]: feature
+                feature[
+                    self.conversion_settings.join_field_tgt.get(
+                        ColumnImportMethod.ATTRIBUTE.value
+                    )
+                ]: feature
                 for feature in self.channel_layer.getFeatures()
             }
+        elif (
+            self.conversion_settings.join_field_tgt.get("method")
+            == ColumnImportMethod.EXPRESSION.value
+        ):
+            expression_str = self.conversion_settings.join_field_tgt.get(
+                ColumnImportMethod.EXPRESSION.value
+            )
+            expression = QgsExpression(expression_str)
+            context = QgsExpressionContext()
+            expr_map = {}
+            for feature in self.channel_layer.getFeatures():
+                context.setFeature(feature)
+                expr_map[expression.evaluate(context)] = feature
+            return expr_map
         else:
             return {}
 
@@ -93,17 +123,37 @@ class CrossSectionLocationProcessor(Processor):
         else:
             return None
 
+    def get_join_feat_src_value(self, feat):
+        # todo: test
+        if self.conversion_settings.join_field_src is None:
+            return
+        if (
+            self.conversion_settings.join_field_src.get("method")
+            == ColumnImportMethod.ATTRIBUTE.value
+        ):
+            return feat[
+                self.conversion_settings.join_field_src.get(
+                    ColumnImportMethod.ATTRIBUTE.value
+                )
+            ]
+        elif (
+            self.conversion_settings.join_field_src.get("method")
+            == ColumnImportMethod.EXPRESSION.value
+        ):
+            expression_str = self.conversion_settings.join_field_src.get(
+                ColumnImportMethod.EXPRESSION.value
+            )
+            expression = QgsExpression(expression_str)
+            context = QgsExpressionContext()
+            context.setFeature(feat)
+            return expression.evaluate(context)
+
     def get_matching_channel(self, feat, geom):
         # note that feat.geometry() is not used because geom may be transformed
         channel_match = None
         if geom.isEmpty():
-            if (
-                self.conversion_settings.join_field_src is not None
-                and feat[self.conversion_settings.join_field_src] is not None
-            ):
-                channel_match = self.channel_mapping.get(
-                    feat[self.conversion_settings.join_field_src]
-                )
+            feat_val = self.get_join_feat_src_value(feat)
+            channel_match = self.channel_mapping.get(feat_val)
         else:
             if geom.type() not in [
                 QgsWkbTypes.GeometryType.LineGeometry,

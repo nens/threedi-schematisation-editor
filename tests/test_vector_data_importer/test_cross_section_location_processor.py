@@ -33,8 +33,14 @@ def target_layer():
 def import_config():
     return {
         "conversion_settings": {
-            "join_field_src": "channel_id",
-            "join_field_tgt": "id",
+            "join_field_src": {
+                "method": "source_attribute",
+                "source_attribute": "channel_id",
+            },
+            "join_field_tgt": {
+                "method": "source_attribute",
+                "source_attribute": "id",
+            },
             "snapping_distance": 6,
             "use_snapping": True,
         }
@@ -69,29 +75,30 @@ def channels(scope="session"):
     layer = QgsVectorLayer("LineString?crs=EPSG:4326", "channels", "memory")
     provider = layer.dataProvider()
     provider.addAttributes([QgsField("id", QVariant.Int)])
+    provider.addAttributes([QgsField("code", QVariant.String)])
     layer.updateFields()
 
     # Create two channel features with line geometries
     feature1 = QgsFeature(layer.fields())
     feature1.setGeometry(QgsGeometry.fromPolyline([QgsPoint(10, 20), QgsPoint(20, 30)]))
-    feature1.setAttributes([1])
+    feature1.setAttributes([1, "channel1"])
 
     feature2 = QgsFeature(layer.fields())
     feature2.setGeometry(QgsGeometry.fromPolyline([QgsPoint(50, 50), QgsPoint(60, 60)]))
-    feature2.setAttributes([2])
+    feature2.setAttributes([2, "channel2"])
 
     # these channels are for testing multiple intersection
     feature3 = QgsFeature(layer.fields())
     feature3.setGeometry(
         QgsGeometry.fromPolyline([QgsPoint(500, 500), QgsPoint(510, 500)])
     )
-    feature3.setAttributes([3])
+    feature3.setAttributes([3, "channel3"])
 
     feature4 = QgsFeature(layer.fields())
     feature4.setGeometry(
         QgsGeometry.fromPolyline([QgsPoint(500, 410), QgsPoint(510, 410)])
     )
-    feature4.setAttributes([4])
+    feature4.setAttributes([4, "channel4"])
 
     provider.addFeatures([feature1, feature2, feature3, feature4])
     return layer
@@ -216,3 +223,45 @@ def test_get_new_geom_no_geometry(processor, ref_channel_id, expected_geom):
             shapely.wkt.loads(new_geom.asWkt()),
             shapely.wkt.loads(expected_geom.asWkt()),
         )
+
+
+@pytest.mark.parametrize(
+    "method, column", [("source_attribute", "id"), ("expression", "code")]
+)
+def test_channel_mapping(channels, target_layer, import_config, method, column):
+    conversion_settings = {
+        "join_field_tgt": {"method": method, method: column},
+        "snapping_distance": 6,
+        "use_snapping": True,
+    }
+    processor = CrossSectionLocationProcessor(
+        target_layer=target_layer,
+        target_model_cls=None,
+        channel_layer=channels,
+        conversion_settings=ConversionSettings(conversion_settings),
+        target_fields_config=None,
+    )
+    channel_id_map = {feat[column]: feat for feat in channels.getFeatures()}
+    sorted_channel_mapping = dict(sorted(processor.channel_mapping.items()))
+    sorted_channel_id_map = dict(sorted(channel_id_map.items()))
+    assert sorted_channel_mapping == sorted_channel_id_map
+
+
+@pytest.mark.parametrize(
+    "method, column", [("source_attribute", "id"), ("expression", "code")]
+)
+def test_get_join_feat_src_value(channels, target_layer, import_config, method, column):
+    conversion_settings = {
+        "join_field_src": {"method": method, method: column},
+        "snapping_distance": 6,
+        "use_snapping": True,
+    }
+    processor = CrossSectionLocationProcessor(
+        target_layer=target_layer,
+        target_model_cls=None,
+        channel_layer=channels,
+        conversion_settings=ConversionSettings(conversion_settings),
+        target_fields_config=None,
+    )
+    feat = channels.getFeature(1)
+    assert processor.get_join_feat_src_value(feat) == feat[column]
