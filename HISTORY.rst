@@ -7,6 +7,8 @@ History
 - Improve handling of structures integrated on channels: prevent structures from sticking out on the start or end of the channel; prevent overlapping structures; prevent too short channels in between structures and at the start or end of the channel. (#376)
 - Add importer for channels (#251)
 - Add importer for cross section locations (#252)
+- Fix adding nodes of adjacent channels (#428)
+- Only create connection nodes when `create_connection_nodes` is set to True
 - Add option to integrate weirs and orifices on pipes (#246)
 
 
