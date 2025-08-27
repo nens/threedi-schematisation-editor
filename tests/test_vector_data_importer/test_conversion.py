@@ -217,7 +217,7 @@ def test_import_adjacent_channels(qgis_application):
     src_layer = get_source_layer("channels.gpkg", "test_data")
     target_gpkg = SCHEMATISATION_PATH.joinpath("empty.gpkg")
     layers = get_schematisation_layers(target_gpkg, "channel")
-    del layers["channel_layer"]
+    del layers["conduit_layer"]
     del layers["cross_section_location_layer"]
     importer = ChannelsImporter(src_layer, target_gpkg, import_config, **layers)
     importer.import_features()
