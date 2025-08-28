@@ -131,11 +131,15 @@ class CrossSectionLocationProcessor(Processor):
             self.conversion_settings.join_field_src.get("method")
             == ColumnImportMethod.ATTRIBUTE.value
         ):
-            return feat[
-                self.conversion_settings.join_field_src.get(
-                    ColumnImportMethod.ATTRIBUTE.value
-                )
-            ]
+            field = self.conversion_settings.join_field_src.get(
+                ColumnImportMethod.ATTRIBUTE.value
+            )
+            if field in feat.fields().names():
+                return feat[
+                    self.conversion_settings.join_field_src.get(
+                        ColumnImportMethod.ATTRIBUTE.value
+                    )
+                ]
         elif (
             self.conversion_settings.join_field_src.get("method")
             == ColumnImportMethod.EXPRESSION.value

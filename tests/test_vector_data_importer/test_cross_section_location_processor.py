@@ -265,3 +265,24 @@ def test_get_join_feat_src_value(channels, target_layer, import_config, method, 
     )
     feat = channels.getFeature(1)
     assert processor.get_join_feat_src_value(feat) == feat[column]
+
+
+@pytest.mark.parametrize(
+    "method, column", [("source_attribute", "foo"), ("expression", "bar")]
+)
+def test_get_join_feat_src_value_invalid(
+    channels, target_layer, import_config, method, column
+):
+    conversion_settings = {
+        "join_field_src": {"method": method, method: column},
+        "snapping_distance": 6,
+        "use_snapping": True,
+    }
+    processor = CrossSectionLocationProcessor(
+        target_layer=target_layer,
+        target_model_cls=None,
+        channel_layer=channels,
+        conversion_settings=ConversionSettings(conversion_settings),
+        target_fields_config=None,
+    )
+    assert processor.get_join_feat_src_value(channels.getFeature(1)) is None
