@@ -30,6 +30,7 @@ from qgis.PyQt.QtWidgets import (
     QSpinBox,
     QTabWidget,
     QTreeView,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -676,7 +677,6 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
 
     def setup_ui(self):
         super().setup_ui()
-
         # self.join_settings = JoinFieldsDialog()
         self.join_source = JoinFieldsRow("Join channel source field", layer_src=True)
         self.join_target = JoinFieldsRow("Join channel reference field")
@@ -688,7 +688,6 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
         join_layout.addWidget(self.join_target.lbl, 1, 0)
         join_layout.addWidget(self.join_target.toggle_widget, 1, 1)
         join_layout.addWidget(self.join_target.stack, 1, 2)
-
         self.gridLayout.addLayout(join_layout, 1, 0, 2, 2)
 
         # Create snap group box
@@ -729,6 +728,7 @@ class ImportStructuresDialog(ImportDialog):
     """Dialog for the importing structures tool."""
 
     HAS_INTEGRATOR = [dm.Culvert, dm.Orifice, dm.Weir]
+    HAS_PIPE_INTEGRATOR = [dm.Weir, dm.Orifice]
 
     def __init__(
         self,
@@ -755,18 +755,23 @@ class ImportStructuresDialog(ImportDialog):
         gridLayout_7.setContentsMargins(-1, -1, -1, 0)
 
         # Create checkboxes
-        self.edit_channels_cb = QCheckBox("Edit channels")
-        self.edit_channels_cb.setFont(self.create_font(10))
-        self.edit_channels_cb.setLayoutDirection(Qt.LeftToRight)
-        gridLayout_7.addWidget(self.edit_channels_cb, 0, 0)
+        self.edit_lbl = QLabel("Edit")
+        self.edit_lbl.setFont(self.create_font(10))
+        self.edit_cb = QComboBox()
+        self.edit_cb.setFont(self.create_font(10))
+        self.edit_cb.addItems(["None", "Channels"])
+        if self.import_model_cls in self.HAS_PIPE_INTEGRATOR:
+            self.edit_cb.addItems(["Pipes"])
+        gridLayout_7.addWidget(self.edit_lbl, 0, 0)
+        gridLayout_7.addWidget(self.edit_cb, 0, 1)
 
         self.create_nodes_cb = QCheckBox("Create connection nodes")
         self.create_nodes_cb.setFont(self.create_font(10))
         self.create_nodes_cb.setLayoutDirection(Qt.LeftToRight)
         self.create_nodes_cb.setChecked(True)
-        gridLayout_7.addWidget(self.create_nodes_cb, 0, 1)
+        gridLayout_7.addWidget(self.create_nodes_cb, 0, 2)
 
-        gridLayout_7.addWidget(self.selected_only_cb, 0, 2)
+        gridLayout_7.addWidget(self.selected_only_cb, 0, 3)
 
         # Create length source field widgets
         self.length_source_field_lbl = QLabel("Length source field")
@@ -833,6 +838,7 @@ class ImportStructuresDialog(ImportDialog):
 
         # Create snap group box
         self.snap_gb, self.snap_dsb, snap_layout = self.get_snap_settings()
+        self.gridLayout.addWidget(self.snap_gb, 8, 4, 1, 2)
 
         # Create minimum channel length
         self.min_channel_dsb = QDoubleSpinBox()
@@ -845,7 +851,11 @@ class ImportStructuresDialog(ImportDialog):
         snap_layout.addWidget(self.min_channel_dsb, 2, 0)
         snap_layout.addWidget(self.min_channel_lab, 1, 0)
 
-        self.gridLayout.addWidget(self.snap_gb, 8, 4, 1, 2)
+        # Place minimum channel length and snapping in one layout
+        rhs_layout = QVBoxLayout()
+        rhs_layout.addWidget(self.snap_gb)
+        rhs_layout.addWidget(self.min_channel_gb)
+        self.gridLayout.addLayout(rhs_layout, 8, 4, 1, 2)
 
     def setup_models(self):
         self.structure_model = QStandardItemModel()
@@ -896,7 +906,8 @@ class ImportStructuresDialog(ImportDialog):
     @property
     def structures_integration_widgets(self) -> List[QWidget]:
         return [
-            self.edit_channels_cb,
+            self.edit_cb,
+            self.edit_lbl,
             self.length_source_field_lbl,
             self.length_source_field_cbo,
             self.length_fallback_value_lbl,
@@ -905,8 +916,7 @@ class ImportStructuresDialog(ImportDialog):
             self.azimuth_source_field_cbo,
             self.azimuth_fallback_value_lbl,
             self.azimuth_fallback_value_sb,
-            self.min_channel_lab,
-            self.min_channel_dsb,
+            self.min_channel_gb,
         ]
 
     def on_create_nodes_change(self, is_checked: bool):
@@ -930,7 +940,8 @@ class ImportStructuresDialog(ImportDialog):
                 "length_fallback_value": self.length_fallback_value_dsb.value(),
                 "azimuth_source_field": self.azimuth_source_field_cbo.currentField(),
                 "azimuth_fallback_value": self.azimuth_fallback_value_sb.value(),
-                "edit_channels": self.edit_channels_cb.isChecked(),
+                "edit_channels": self.edit_cb.currentText().lower() == "channels",
+                "edit_pipes": self.edit_cb.currentText().lower() == "pipes",
             },
             "connection_node_fields": self.collect_fields_settings(dm.ConnectionNode),
         }
@@ -963,9 +974,12 @@ class ImportStructuresDialog(ImportDialog):
         self.create_nodes_cb.setChecked(
             conversion_settings.get("create_connection_nodes", True)
         )
-        self.edit_channels_cb.setChecked(
-            conversion_settings.get("edit_channels", False)
-        )
+        if conversion_settings.get("edit_channels", False):
+            self.edit_cb.setCurrentIndex(1)
+        elif conversion_settings.get("edit_pipes", False):
+            self.edit_cb.setCurrentIndex(2)
+        else:
+            self.edit_cb.setCurrentIndex(0)
         self.length_source_field_cbo.setField(
             conversion_settings.get("length_source_field", "")
         )
@@ -987,25 +1001,26 @@ class ImportStructuresDialog(ImportDialog):
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         structures_handler = self.layer_manager.model_handlers[self.import_model_cls]
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        channel_handler = self.layer_manager.model_handlers[dm.Channel]
-        cross_section_location_handler = self.layer_manager.model_handlers[
-            dm.CrossSectionLocation
-        ]
         import_settings = self.collect_settings()
         processed_handlers = [structures_handler, node_handler]
         processed_layers = {
             "structure_layer": structures_handler.layer,
             "node_layer": node_handler.layer,
         }
-        edit_channels = import_settings["conversion_settings"].get(
-            "edit_channels", False
-        )
-        if edit_channels:
-            processed_handlers += [channel_handler, cross_section_location_handler]
-            processed_layers["channel_layer"] = channel_handler.layer
+        if import_settings["conversion_settings"].get("edit_channels", False):
+            conduit_handler = self.layer_manager.model_handlers[dm.Channel]
+            cross_section_location_handler = self.layer_manager.model_handlers[
+                dm.CrossSectionLocation
+            ]
+            processed_handlers += [conduit_handler, cross_section_location_handler]
+            processed_layers["conduit_layer"] = conduit_handler.layer
             processed_layers["cross_section_location_layer"] = (
                 cross_section_location_handler.layer
             )
+        if import_settings["conversion_settings"].get("edit_pipes", False):
+            conduit_handler = self.layer_manager.model_handlers[dm.Pipe]
+            processed_handlers += [conduit_handler]
+            processed_layers["conduit_layer"] = conduit_handler.layer
         return processed_handlers, processed_layers
 
     def get_widgets(self):

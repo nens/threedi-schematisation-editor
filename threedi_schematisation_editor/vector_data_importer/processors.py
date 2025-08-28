@@ -46,16 +46,6 @@ class Processor(ABC):
             return False
 
     @classmethod
-    def add_connection_node(
-        cls, feat, geom, node_manager, connection_id_name, node_fields
-    ):
-        new_node_feat = node_manager.create_new(
-            QgsGeometry.fromPointXY(geom), node_fields
-        )
-        feat[connection_id_name] = new_node_feat["id"]
-        return new_node_feat
-
-    @classmethod
     def create_new_point_geometry(cls, src_feat):
         """Create a new point feature geometry based on the source feature."""
         src_geometry = QgsGeometry(src_feat.geometry())
@@ -183,8 +173,6 @@ class CrossSectionLocationProcessor(Processor):
                             QgsFeatureRequest(closest_feature_id[0])
                         )
                     )
-                else:
-                    channel_match = None
         if channel_match:
             return channel_match["id"]
 
@@ -278,27 +266,41 @@ class StructureProcessor(Processor, ABC):
         super().__init__(target_layer, target_model_cls)
         self.node_fields = node_layer.fields()
         self.node_name = node_layer.name()
+        self.node_layer = node_layer
         self.node_manager = FeatureManager(get_next_feature_id(node_layer))
         self.fields_configurations = fields_configurations
         self.conversion_settings = conversion_settings
 
-    def add_node(self, new_feat, point, name):
+    def get_node(self, point):
         snapped = False
+        node = None
         if self.conversion_settings.use_snapping:
-            snapped = StructureProcessor.snap_connection_node(
-                new_feat,
-                point,
-                self.conversion_settings.snapping_distance,
-                self.node_locator,
-                name,
+            node = find_connection_node(
+                point, self.node_locator, self.conversion_settings.snapping_distance
             )
-        if not snapped or self.conversion_settings.create_connection_nodes:
-            return StructureProcessor.add_connection_node(
-                new_feat, point, self.node_manager, name, self.node_fields
+            snapped = node is not None
+        if self.conversion_settings.create_connection_nodes and (
+            not snapped or not self.conversion_settings.use_snapping
+        ):
+            node = self.node_manager.create_new(
+                QgsGeometry.fromPointXY(point), self.node_fields
             )
+        return node, snapped
 
 
 class PointProcessor(StructureProcessor):
+    def update_connection_nodes(self, new_feat):
+        node, snapped = self.get_node(new_feat.geometry().asPoint())
+        new_nodes = []
+        if node:
+            new_feat["connection_node_id"] = node["id"]
+            if snapped:
+                new_feat.setGeometry(QgsGeometry.fromPointXY(node.geometry().asPoint()))
+            if not snapped:
+                self.node_layer.addFeature(node)
+                new_nodes.append(node)
+        return new_nodes
+
     def process_feature(self, src_feat):
         """Process source point structure feature."""
         new_nodes = []
@@ -306,23 +308,20 @@ class PointProcessor(StructureProcessor):
         if self.transformation:
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
-        point = new_geom.asPoint()
-        new_node = self.add_node(new_feat, point, "connection_node_id")
-        if new_node:
-            new_nodes.append(new_node)
         update_attributes(
             self.fields_configurations[dm.ConnectionNode],
             dm.ConnectionNode,
             src_feat,
             *new_nodes,
         )
+        new_nodes = self.update_connection_nodes(new_feat)
         update_attributes(
             self.fields_configurations[self.target_model_cls],
             self.target_model_cls,
             src_feat,
             new_feat,
         )
-        return {self.target_name: [new_feat], self.node_name: new_nodes}
+        return {self.target_name: [new_feat]}
 
 
 class LineProcessor(StructureProcessor):
@@ -337,7 +336,7 @@ class LineProcessor(StructureProcessor):
             src_polyline = src_geometry.asPolyline()
             dst_polyline = (
                 src_polyline
-                if (target_model_cls == dm.Culvert or target_model_cls == dm.Pipe)
+                if target_model_cls in [dm.Culvert, dm.Pipe, dm.Channel]
                 else [src_polyline[0], src_polyline[-1]]
             )
             dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
@@ -360,33 +359,43 @@ class LineProcessor(StructureProcessor):
             raise NotImplementedError(f"Unsupported geometry type: '{geometry_type}'")
         return dst_geometry
 
+    def update_connection_nodes(self, new_feat):
+        new_nodes = []
+        polyline = new_feat.geometry().asPolyline()
+        for idx, name in [
+            (0, "connection_node_id_start"),
+            (-1, "connection_node_id_end"),
+        ]:
+            node, snapped = self.get_node(polyline[idx])
+            if node:
+                new_feat[name] = node["id"]
+                if snapped:
+                    polyline[idx] = node.geometry().asPoint()
+                    new_feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
+                if not snapped:
+                    self.node_layer.addFeature(node)
+                    new_nodes.append(node)
+        return new_nodes
+
     def process_feature(self, src_feat):
         """Process source linear structure feature."""
-        new_nodes = []
         new_geom = LineProcessor.new_geometry(
             src_feat, self.conversion_settings, self.target_model_cls
         )
         if self.transformation:
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
-        polyline = new_feat.geometry().asPolyline()
-        for idx, name in [
-            (0, "connection_node_id_start"),
-            (1, "connection_node_id_end"),
-        ]:
-            new_node = self.add_node(new_feat, polyline[idx], name)
-            if new_node:
-                new_nodes.append(new_node)
         update_attributes(
             self.fields_configurations[self.target_model_cls],
             self.target_model_cls,
             src_feat,
             new_feat,
         )
+        new_nodes = self.update_connection_nodes(new_feat)
         update_attributes(
             self.fields_configurations[dm.ConnectionNode],
             dm.ConnectionNode,
             src_feat,
             *new_nodes,
         )
-        return {self.target_name: [new_feat], self.node_name: new_nodes}
+        return {self.target_name: [new_feat]}
