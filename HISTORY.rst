@@ -6,6 +6,7 @@ History
 
 - Update references to connection node and channel when moving 1D lateral, 1D boundary condition, or 1D wind shielding feature
 - Allow attributes named "area" to be edited without applying the default
+- Prevent N&S Dependency Loader from getting disabled (nens/nens-dependency-loader#19)
 
 2.3.1 (2025-07-16)
 ------------------
