@@ -1,7 +1,7 @@
 History
 =======
 
-2.3.2 (unreleased)
+2.3.2 (2025-08-28)
 ------------------
 
 - Update references to connection node and channel when moving 1D lateral, 1D boundary condition, or 1D wind shielding feature
