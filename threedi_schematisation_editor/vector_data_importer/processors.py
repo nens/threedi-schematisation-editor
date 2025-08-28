@@ -124,7 +124,6 @@ class CrossSectionLocationProcessor(Processor):
             return None
 
     def get_join_feat_src_value(self, feat):
-        # todo: test
         if self.conversion_settings.join_field_src is None:
             return
         if (
@@ -135,11 +134,7 @@ class CrossSectionLocationProcessor(Processor):
                 ColumnImportMethod.ATTRIBUTE.value
             )
             if field in feat.fields().names():
-                return feat[
-                    self.conversion_settings.join_field_src.get(
-                        ColumnImportMethod.ATTRIBUTE.value
-                    )
-                ]
+                return feat[field]
         elif (
             self.conversion_settings.join_field_src.get("method")
             == ColumnImportMethod.EXPRESSION.value
@@ -154,11 +149,11 @@ class CrossSectionLocationProcessor(Processor):
 
     def get_matching_channel(self, feat, geom):
         # note that feat.geometry() is not used because geom may be transformed
-        channel_match = None
-        if geom.isEmpty():
-            feat_val = self.get_join_feat_src_value(feat)
-            channel_match = self.channel_mapping.get(feat_val)
-        else:
+        # First match based on join settings, if no join settings are present channel_match will be None
+        feat_val = self.get_join_feat_src_value(feat)
+        channel_match = self.channel_mapping.get(feat_val)
+        # If no match on join setings was made, match based on geometry
+        if not channel_match and not geom.isEmpty():
             if geom.type() not in [
                 QgsWkbTypes.GeometryType.LineGeometry,
                 QgsWkbTypes.GeometryType.PointGeometry,

@@ -162,17 +162,19 @@ def test_fix_positioning(qgis_application):
     compare_results("test_weirs_fix_positions", layers, "weir")
 
 
-@pytest.mark.parametrize("test_name", ["test_points", "test_lines", "test_no_geom"])
+@pytest.mark.parametrize(
+    "test_name", ["test_points", "test_lines", "test_no_geom", "test_var_matching"]
+)
 def test_import_cross_section_location(qgis_application, test_name):
     import_config = {
         "conversion_settings": {
             "join_field_src": {
                 "method": "source_attribute",
-                "source_attribute": "channel_id",
+                "source_attribute": "channel_code",
             },
             "join_field_tgt": {
                 "method": "source_attribute",
-                "source_attribute": "id",
+                "source_attribute": "code",
             },
             "snapping_distance": 6,
             "use_snapping": True,

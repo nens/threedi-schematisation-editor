@@ -154,6 +154,19 @@ def test_get_matching_channel_no_geometry(
     )
 
 
+@pytest.mark.parametrize("channel_id, expected_channel_id", [(2, 2), (99, 1)])
+def test_get_matching_channel_join_and_geom(
+    processor, feature, channel_id, expected_channel_id
+):
+    # Add point on channel 1
+    feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(15, 25)))
+    feature.setAttribute("channel_id", channel_id)
+    assert (
+        processor.get_matching_channel(feature, feature.geometry())
+        == expected_channel_id
+    )
+
+
 @pytest.mark.parametrize(
     "point, ref_channel_id, expected_geom",
     [
