@@ -723,6 +723,9 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
                 return True
         return False
 
+    def get_widgets(self):
+        return create_widgets(*self.models, auto_fields={"id", "channel_id"})
+
 
 class ImportStructuresDialog(ImportDialog):
     """Dialog for the importing structures tool."""
