@@ -12,7 +12,8 @@ from qgis.core import (
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.integrators import (
-    LinearIntegrator,
+    ChannelIntegrator,
+    PipeIntegrator,
 )
 from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
@@ -194,7 +195,7 @@ class LinesImporter(SpatialImporter):
         target_model_cls,
         target_layer=None,
         node_layer=None,
-        channel_layer=None,
+        conduit_layer=None,
         cross_section_location_layer=None,
     ):
         super().__init__(
@@ -210,10 +211,15 @@ class LinesImporter(SpatialImporter):
             self.fields_configurations,
             self.conversion_settings,
         )
-        if self.conversion_settings.integrate:
-            self.integrator = LinearIntegrator.from_importer(
-                dm.Channel, channel_layer, cross_section_location_layer, self
+        if self.conversion_settings.integrate_channels:
+            self.integrator = ChannelIntegrator.from_importer(
+                conduit_layer, cross_section_location_layer, self
             )
+        elif self.conversion_settings.integrate_pipes and self.target_model_cls in [
+            dm.Weir,
+            dm.Orifice,
+        ]:
+            self.integrator = PipeIntegrator.from_importer(conduit_layer, None, self)
 
 
 class CulvertsImporter(LinesImporter):
@@ -224,7 +230,7 @@ class CulvertsImporter(LinesImporter):
         *args,
         structure_layer=None,
         node_layer=None,
-        channel_layer=None,
+        conduit_layer=None,
         cross_section_location_layer=None,
     ):
         super().__init__(
@@ -232,7 +238,7 @@ class CulvertsImporter(LinesImporter):
             target_model_cls=dm.Culvert,
             target_layer=structure_layer,
             node_layer=node_layer,
-            channel_layer=channel_layer,
+            conduit_layer=conduit_layer,
             cross_section_location_layer=cross_section_location_layer,
         )
 
@@ -245,7 +251,7 @@ class OrificesImporter(LinesImporter):
         *args,
         structure_layer=None,
         node_layer=None,
-        channel_layer=None,
+        conduit_layer=None,
         cross_section_location_layer=None,
     ):
         super().__init__(
@@ -253,7 +259,7 @@ class OrificesImporter(LinesImporter):
             target_model_cls=dm.Orifice,
             target_layer=structure_layer,
             node_layer=node_layer,
-            cchannel_layer=channel_layer,
+            conduit_layer=conduit_layer,
             cross_section_location_layer=cross_section_location_layer,
         )
 
@@ -266,7 +272,7 @@ class WeirsImporter(LinesImporter):
         *args,
         structure_layer=None,
         node_layer=None,
-        channel_layer=None,
+        conduit_layer=None,
         cross_section_location_layer=None,
     ):
         super().__init__(
@@ -274,7 +280,7 @@ class WeirsImporter(LinesImporter):
             target_model_cls=dm.Weir,
             target_layer=structure_layer,
             node_layer=node_layer,
-            channel_layer=channel_layer,
+            conduit_layer=conduit_layer,
             cross_section_location_layer=cross_section_location_layer,
         )
 

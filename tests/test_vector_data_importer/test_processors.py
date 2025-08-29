@@ -31,6 +31,9 @@ def target_fields():
     """Create fields for target features."""
     fields = QgsFields()
     fields.append(QgsField("id", QVariant.Int))
+    fields.append(QgsField("connection_node_id", QVariant.Int))
+    fields.append(QgsField("connection_node_id_start", QVariant.Int))
+    fields.append(QgsField("connection_node_id_end", QVariant.Int))
     return fields
 
 
@@ -53,12 +56,14 @@ def source_feature():
     return feature
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def source_line_feature():
     """Create a source feature with line geometry."""
     fields = QgsFields()
     fields.append(QgsField("id", QVariant.Int))
     fields.append(QgsField("length", QVariant.Double))
+    fields.append(QgsField("connection_node_id_start", QVariant.Int))
+    fields.append(QgsField("connection_node_id_end", QVariant.Int))
     feature = QgsFeature(fields)
     feature.setGeometry(
         QgsGeometry.fromPolylineXY([QgsPointXY(10, 20), QgsPointXY(30, 40)])
@@ -117,28 +122,31 @@ class TestPointProcessor:
         # Mock the add_node method to return a new node feature
         new_node = QgsFeature(node_fields)
         new_node.setAttribute("id", 42)
-        processor.add_node = MagicMock(return_value=new_node)
+        new_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(11, 21)))
+        processor.get_node = MagicMock(return_value=(new_node, True))
 
         result = processor.process_feature(source_feature)
 
         # Check that the result is a dictionary with the expected keys
-        assert sorted(result.keys()) == ["connection_nodes", "pumps"]
+        assert sorted(result.keys()) == ["pumps"]
         assert len(result["pumps"]) == 1
-        assert len(result["connection_nodes"]) == 1
+        new_pump = result["pumps"][0]
+        assert new_pump["connection_node_id"] == 42
+        assert new_pump.geometry().asPoint() == QgsPointXY(11, 21)
 
 
 class TestStructureProcessor:
     """Tests for the StructureProcessor class."""
 
     @pytest.mark.parametrize(
-        "use_snapping, create_connection_nodes, snap_result, should_add_node",
+        "use_snapping, create_connection_nodes, snap_result, should_return_node",
         [
             (True, True, True, True),
-            (True, False, True, False),
+            (True, False, True, True),
             (True, True, False, True),
-            (True, False, False, True),
+            (True, False, False, False),
             (False, True, False, True),
-            (False, False, False, True),
+            (False, False, False, False),
         ],
         ids=[
             "snapping_success_create_enabled",
@@ -154,7 +162,7 @@ class TestStructureProcessor:
         use_snapping,
         create_connection_nodes,
         snap_result,
-        should_add_node,
+        should_return_node,
         node_fields,
     ):
         """Test add_node with different configurations."""
@@ -183,68 +191,77 @@ class TestStructureProcessor:
 
         # Mock the snap_connection_node function
         with patch(
-            "threedi_schematisation_editor.vector_data_importer.processors.StructureProcessor.snap_connection_node",
-            return_value=snap_result,
-        ):
-            # Mock the add_connection_node function to return new_node or None based on should_add_node
-            with patch(
-                "threedi_schematisation_editor.vector_data_importer.processors.StructureProcessor.add_connection_node",
-                return_value=new_node if should_add_node else None,
-            ) as mock_add_connection_node:
-                # Call the method
-                result = StructureProcessor.add_node(
-                    processor, new_feat, point, "connection_node_id"
-                )
-                if should_add_node:
-                    assert result is new_node
-                else:
-                    assert result is None
+            "threedi_schematisation_editor.vector_data_importer.processors.find_connection_node",
+            return_value=new_node if snap_result else None,
+        ) as mock_find:
+            node, snapped = StructureProcessor.get_node(processor, point)
+            assert (node is None) == (not should_return_node)
 
 
 class TestLineProcessor:
     """Tests for the LineProcessor class."""
 
-    def test_process_feature(self, source_line_feature, target_fields, node_fields):
-        """Test that process_feature returns the expected dictionary and calls update_attributes."""
-        # Create mock layers
+    def test_update_connection_nodes(
+        self, source_line_feature, target_fields, node_fields
+    ):
         target_layer = MagicMock()
         target_layer.fields.return_value = target_fields
         target_layer.name.return_value = "pipes"
-
         node_layer = MagicMock()
         node_layer.fields.return_value = node_fields
         node_layer.name.return_value = "connection_nodes"
-
-        # Create mock fields configurations
         fields_configurations = {
             dm.ConnectionNode: {"id": {"method": ColumnImportMethod.AUTO}},
             dm.Pipe: {"id": {"method": ColumnImportMethod.AUTO}},
         }
-
-        # Create a processor
         processor = LineProcessor(
             target_layer, dm.Pipe, node_layer, fields_configurations, {}
         )
+        # Mock the get_node method to return new node features
+        start_node = QgsFeature(node_fields)
+        start_node.setAttribute("id", 42)
+        start_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(11, 21)))
+        end_node = QgsFeature(node_fields)
+        end_node.setAttribute("id", 43)
+        end_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(30, 40)))
+        processor.get_node = MagicMock(
+            side_effect=[(start_node, True), (end_node, False)]
+        )
+        # Run update_connection_nodes and check results
+        new_nodes = processor.update_connection_nodes(source_line_feature)
+        assert source_line_feature["connection_node_id_start"] == 42
+        assert source_line_feature["connection_node_id_end"] == 43
+        assert source_line_feature.geometry().asPolyline() == [
+            QgsPointXY(11, 21),
+            QgsPointXY(30, 40),
+        ]
+        assert new_nodes[0] == end_node
 
+    def test_process_feature(self, source_line_feature, target_fields, node_fields):
+        target_layer = MagicMock()
+        target_layer.fields.return_value = target_fields
+        target_layer.name.return_value = "pipes"
+        node_layer = MagicMock()
+        node_layer.fields.return_value = node_fields
+        node_layer.name.return_value = "connection_nodes"
+        fields_configurations = {
+            dm.ConnectionNode: {"id": {"method": ColumnImportMethod.AUTO}},
+            dm.Pipe: {"id": {"method": ColumnImportMethod.AUTO}},
+        }
+        processor = LineProcessor(
+            target_layer, dm.Pipe, node_layer, fields_configurations, {}
+        )
+        # Mock function calls needed for process_feature
         LineProcessor.new_geometry = MagicMock(
             return_value=QgsGeometry.fromPolylineXY(
                 [QgsPointXY(10, 20), QgsPointXY(30, 40)]
             )
         )
-
-        # Mock the add_node method to return new node features
-        start_node = QgsFeature(node_fields)
-        start_node.setAttribute("id", 42)
-        end_node = QgsFeature(node_fields)
-        end_node.setAttribute("id", 43)
-        processor.add_node = MagicMock(side_effect=[start_node, end_node])
-
+        processor.update_connection_nodes = MagicMock(return_value=[])
+        # Run process_feature and check results
         result = processor.process_feature(source_line_feature)
-
-        # Check that the result is a dictionary with the expected keys
-        assert sorted(result.keys()) == ["connection_nodes", "pipes"]
+        assert sorted(result.keys()) == ["pipes"]
         assert len(result["pipes"]) == 1
-        assert len(result["connection_nodes"]) == 2
 
     @pytest.fixture
     def conversion_settings(self):
@@ -432,26 +449,3 @@ class TestUtilityFunctions:
 
             # Check that the result is False
             assert result is False
-
-    def test_add_connection_node(self, node_fields):
-        """Test that add_connection_node returns a new node feature."""
-        # Create a feature to add a node to
-        fields = QgsFields()
-        fields.append(QgsField("id", QVariant.Int))
-        fields.append(QgsField("connection_node_id", QVariant.Int))
-        feat = QgsFeature(fields)
-        feat.setAttribute("id", 1)
-
-        # Create a mock node manager
-        node_manager = MagicMock()
-        new_node = QgsFeature(node_fields)
-        new_node.setAttribute("id", 42)
-        node_manager.create_new.return_value = new_node
-
-        # Call the function
-        Processor.add_connection_node(
-            feat, QgsPointXY(10, 20), node_manager, "connection_node_id", node_fields
-        )
-
-        # Check that the feature was updated
-        assert feat["connection_node_id"] == 42

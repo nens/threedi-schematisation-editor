@@ -6,6 +6,7 @@ from shapely.testing import assert_geometries_equal
 
 from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.importers import (
+    ChannelsImporter,
     ConnectionNodesImporter,
     CrossSectionLocationImporter,
     CulvertsImporter,
@@ -16,11 +17,11 @@ from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 from .utils import *
 
 
-def get_schematisation_layers(target_gpkg, target_object):
+def get_schematisation_layers(target_gpkg, target_object, conduit_layer_name="channel"):
     temp_gpkg = str(get_temp_copy(target_gpkg))
     return {
         "structure_layer": gpkg_layer(temp_gpkg, target_object),
-        "channel_layer": gpkg_layer(temp_gpkg, "channel"),
+        "conduit_layer": gpkg_layer(temp_gpkg, conduit_layer_name),
         "node_layer": gpkg_layer(temp_gpkg, "connection_node"),
         "cross_section_location_layer": gpkg_layer(temp_gpkg, "cross_section_location"),
     }
@@ -71,9 +72,11 @@ def compare_layer_attributes(layer, ref_layer, attr_name):
     assert list(new_res.values()) == list(ref_res.values())
 
 
-def compare_results(ref_name, layers, target_object):
+def compare_results(ref_name, layers, target_object, channel_layer_name="channel"):
     src = DATA_PATH.joinpath("ref", ref_name).with_suffix(".gpkg")
-    ref_layers = get_schematisation_layers(src, target_object)
+    ref_layers = get_schematisation_layers(
+        src, target_object, conduit_layer_name=channel_layer_name
+    )
     # check attributes: id and geom - anything else is hopefully covered by unit tests
     for name, layer in layers.items():
         compare_layer_geom(layer, ref_layers[name])
@@ -162,6 +165,18 @@ def test_fix_positioning(qgis_application):
     compare_results("test_weirs_fix_positions", layers, "weir")
 
 
+def test_integrate_pipe(qgis_application):
+    import_config = get_import_config_path("integrate_weirs_nosnap.json")
+    import_config["conversion_settings"]["edit_channels"] = False
+    import_config["conversion_settings"]["edit_pipes"] = True
+    src_layer = get_source_layer("weirs.gpkg", "dhydro_weir")
+    target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_pipe.gpkg")
+    layers = get_schematisation_layers(target_gpkg, "weir", conduit_layer_name="pipe")
+    importer = WeirsImporter(src_layer, target_gpkg, import_config, **layers)
+    importer.import_features()
+    compare_results(f"test_integrate_pipe", layers, "weir", channel_layer_name="pipe")
+
+
 @pytest.mark.parametrize("test_name", ["test_points", "test_lines", "test_no_geom"])
 def test_import_cross_section_location(qgis_application, test_name):
     import_config = {
@@ -189,3 +204,21 @@ def test_import_cross_section_location(qgis_application, test_name):
     )
     compare_layer_geom(target_layer, ref_layer)
     compare_layer_attributes(target_layer, ref_layer, "channel_id")
+
+
+def test_import_adjacent_channels(qgis_application):
+    import_config = {
+        "conversion_settings": {
+            "use_snapping": True,
+            "create_connection_nodes": True,
+            "snapping_distance": 1,
+        }
+    }
+    src_layer = get_source_layer("channels.gpkg", "test_data")
+    target_gpkg = SCHEMATISATION_PATH.joinpath("empty.gpkg")
+    layers = get_schematisation_layers(target_gpkg, "channel")
+    del layers["conduit_layer"]
+    del layers["cross_section_location_layer"]
+    importer = ChannelsImporter(src_layer, target_gpkg, import_config, **layers)
+    importer.import_features()
+    compare_results("test_import_channels", layers, "channel")

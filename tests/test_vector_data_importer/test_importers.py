@@ -15,10 +15,9 @@ from threedi_schematisation_editor import data_models as dm
 
 # TODO: test both Importer and SpatialImporter
 from threedi_schematisation_editor.vector_data_importer.importers import (
-    Importer,
+    LinesImporter,
     SpatialImporter,
 )
-from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
 
 
 @pytest.fixture
@@ -258,3 +257,58 @@ class TestImporter:
             integrator.integrate_layer,
             integrator.cross_section_layer,
         ]
+
+    @patch(
+        "threedi_schematisation_editor.vector_data_importer.importers.ChannelIntegrator.from_importer"
+    )
+    @patch(
+        "threedi_schematisation_editor.vector_data_importer.importers.PipeIntegrator.from_importer"
+    )
+    @pytest.mark.parametrize(
+        "edit_channels, edit_pipes, target_cls, make_channel_integrator, make_pipe_integrator",
+        [
+            (True, True, dm.Weir, True, False),
+            (True, False, dm.Weir, True, False),
+            (False, True, dm.Weir, False, True),
+            (False, False, dm.Weir, False, False),
+            (False, True, dm.Culvert, False, False),
+        ],
+    )
+    def test_init_integrator(
+        self,
+        mock_pipe_integrator_from_importer,
+        mock_channel_integrator_from_importer,
+        external_source,
+        target_gpkg,
+        import_settings,
+        target_layer,
+        node_layer,
+        edit_channels,
+        edit_pipes,
+        target_cls,
+        make_channel_integrator,
+        make_pipe_integrator,
+    ):
+        """Test that the Importer initializes the correct integrator."""
+        import_settings["conversion_settings"]["edit_channels"] = edit_channels
+        import_settings["conversion_settings"]["edit_pipes"] = edit_pipes
+        importer = LinesImporter(
+            external_source,
+            target_gpkg,
+            import_settings,
+            target_model_cls=target_cls,
+            target_layer=target_layer,
+            node_layer=node_layer,
+        )
+        if make_channel_integrator:
+            mock_channel_integrator_from_importer.assert_called_once_with(
+                None, None, importer
+            )
+        else:
+            mock_channel_integrator_from_importer.assert_not_called()
+        if make_pipe_integrator:
+            mock_pipe_integrator_from_importer.assert_called_once_with(
+                None, None, importer
+            )
+        else:
+            mock_pipe_integrator_from_importer.assert_not_called()
