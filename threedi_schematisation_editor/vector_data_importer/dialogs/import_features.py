@@ -846,10 +846,13 @@ class ImportStructuresDialog(ImportDialog):
         self.min_channel_dsb.setSuffix(" meters")
         self.min_channel_dsb.setMaximum(1000000.0)
         self.min_channel_dsb.setValue(5)
-        self.min_channel_lab = QLabel("Minimum channel length:")
-        self.min_channel_lab.setFont(self.create_font(10))
-        snap_layout.addWidget(self.min_channel_dsb, 2, 0)
-        snap_layout.addWidget(self.min_channel_lab, 1, 0)
+        self.min_channel_gb = QGroupBox("Minimum length:")
+        self.min_channel_gb.setToolTip(
+            "Structures will be integrated in the network such that no channel or pipe feature is created shorter than this value."
+        )
+        self.min_channel_gb.setFont(self.create_font(9))
+        min_channel_layout = QGridLayout(self.min_channel_gb)
+        min_channel_layout.addWidget(self.min_channel_dsb, 0, 0)
 
         # Place minimum channel length and snapping in one layout
         rhs_layout = QVBoxLayout()
