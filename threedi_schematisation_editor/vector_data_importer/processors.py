@@ -61,6 +61,21 @@ class Processor(ABC):
         return new_features
 
 
+class CrossSectionDataProcessor(Processor):
+
+    def group_features(self, external_features):
+        return external_features
+
+    def process_feature(self, src_feat):
+        pass
+
+    def process_features(self, external_features):
+        grouped_features = self.group_features(external_features)
+        super().process_features(grouped_features)
+
+
+
+
 class CrossSectionLocationProcessor(Processor):
     def __init__(
         self,

@@ -69,6 +69,7 @@ class LinearIntegrator:
             if node_layer
             else gpkg_layer(target_gpkg, dm.ConnectionNode.__tablename__)
         )
+        # TODO: fix this, cross section layer should not always be loaded
         self.cross_section_layer = (
             cross_section_layer
             if cross_section_layer

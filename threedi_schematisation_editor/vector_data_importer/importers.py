@@ -56,31 +56,41 @@ class Importer:
 
     @property
     def modifiable_layers(self):
-        # TODO: retrieve from processor
-        return []
+        raise NotImplementedError
 
-    def import_features(self, context=None, selected_ids=None):
-        # TODO: reduce duplicate code
+    def start_editing(self):
         # start editing in all layers to support changes during import
         for layer in self.modifiable_layers:
             layer.startEditing()
-        # Integrate features using the integrator (if any)
-        # items that are integrated are skipped in further processing
+
+    def get_input_feature_ids(self, selected_ids):
         input_feature_ids = [feat.id() for feat in self.external_source.getFeatures()]
         if selected_ids:
             input_feature_ids = [id for id in input_feature_ids if id in selected_ids]
-        new_features = defaultdict(list)
-        # Process remaining features that are not integrated
+        return input_feature_ids
+
+    def process_features(self, input_feature_ids, new_features=None):
         external_features = [
             self.external_source.getFeature(feat_id) for feat_id in input_feature_ids
         ]
         processed_features = self.processor.process_features(external_features)
-        for name, features in processed_features.items():
-            new_features[name] += features
-        # Add newly created features to layers
+        if new_features is None or len(new_features) == 0:
+            return processed_features
+        else:
+            for name, features in processed_features.items():
+                new_features[name] += features
+            return new_features
+
+    def add_features_to_layers(self, new_features):
         for layer in self.modifiable_layers:
             if layer.name() in new_features:
                 layer.addFeatures(new_features[layer.name()])
+
+    def import_features(self, context=None, selected_ids=None):
+        self.start_editing()
+        input_feature_ids = self.get_input_feature_ids(selected_ids)
+        new_features = self.process_features(input_feature_ids)
+        self.add_features_to_layers(new_features)
 
 
 class SpatialImporter(Importer):
@@ -154,18 +164,7 @@ class SpatialImporter(Importer):
             ]
         return layers
 
-    def import_features(self, context=None, selected_ids=None):
-        """Method responsible for the importing structures from the external feature source."""
-        # start editing in all layers to support changes during import
-        self.processor.transformation = self.get_transformation(context)
-        self.processor.node_locator = self.get_locator(context=context)
-        for layer in self.modifiable_layers:
-            layer.startEditing()
-        # Integrate features using the integrator (if any)
-        # items that are integrated are skipped in further processing
-        input_feature_ids = [feat.id() for feat in self.external_source.getFeatures()]
-        if selected_ids:
-            input_feature_ids = [id for id in input_feature_ids if id in selected_ids]
+    def integrate_features(self, input_feature_ids):
         if self.integrator:
             new_features, integrated_ids = self.integrator.integrate_features(
                 input_feature_ids
@@ -175,17 +174,23 @@ class SpatialImporter(Importer):
             ]
         else:
             new_features = defaultdict(list)
+        return new_features, input_feature_ids
+
+    def import_features(self, context=None, selected_ids=None):
+        """Method responsible for the importing structures from the external feature source."""
+        # setup processor
+        self.processor.transformation = self.get_transformation(context)
+        self.processor.node_locator = self.get_locator(context=context)
+        # start editing
+        self.start_editing()
+        input_feature_ids = self.get_input_feature_ids(selected_ids)
+        # Integrate features using the integrator (if any)
+        # items that are integrated are skipped in further processing
+        new_features, input_feature_ids = self.integrate_features(input_feature_ids)
         # Process remaining features that are not integrated
-        external_features = [
-            self.external_source.getFeature(feat_id) for feat_id in input_feature_ids
-        ]
-        processed_features = self.processor.process_features(external_features)
-        for name, features in processed_features.items():
-            new_features[name] += features
+        new_features = self.process_features(input_feature_ids, new_features)
         # Add newly created features to layers
-        for layer in self.modifiable_layers:
-            if layer.name() in new_features:
-                layer.addFeatures(new_features[layer.name()])
+        self.add_features_to_layers(new_features)
 
 
 class LinesImporter(SpatialImporter):
