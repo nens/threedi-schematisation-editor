@@ -308,3 +308,10 @@ class JoinFieldsRow(QDialog):
         elif value.get("method") == ColumnImportMethod.ATTRIBUTE.value:
             self.attr_radio.setChecked(True)
             self.input_cbo.setCurrentText(value.get(ColumnImportMethod.ATTRIBUTE.value))
+
+    @property
+    def is_set(self):
+        if self.input_cbo.currentText() == "" and self.input_expr.isValidExpression():
+            return self.input_expr.expression() != ""
+        else:
+            return self.input_cbo.currentText() != ""

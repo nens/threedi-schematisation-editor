@@ -705,11 +705,22 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
         missing_fields = super().source_fields_missing()
         if missing_fields:
             return True
+        from qgis.core import Qgis, QgsMessageLog
+
         if self.source_layer and not self.source_layer.isSpatial():
+            QgsMessageLog.logMessage(
+                "source layer is not spatial", "Warning", Qgis.Warning
+            )
+            QgsMessageLog.logMessage(
+                f"{self.join_source.value=}", "Warning", Qgis.Warning
+            )
+            QgsMessageLog.logMessage(
+                f"{self.join_target.value=}", "Warning", Qgis.Warning
+            )
             missing = []
-            if not self.join_source.value:
+            if not self.join_source.is_set:
                 missing.append("Join channel source field")
-            if not self.join_target.value:
+            if not self.join_target.is_set:
                 missing.append("Join channel reference field")
             if len(missing) > 0:
                 self.uc.show_warn(

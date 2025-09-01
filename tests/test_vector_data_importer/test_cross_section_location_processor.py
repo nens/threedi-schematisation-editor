@@ -261,6 +261,27 @@ def test_channel_mapping(channels, target_layer, import_config, method, column):
 
 
 @pytest.mark.parametrize(
+    "method, column", [("source_attribute", ""), ("expression", "")]
+)
+def test_channel_mapping_empty_join_values(
+    channels, target_layer, import_config, method, column
+):
+    conversion_settings = {
+        "join_field_tgt": {"method": method, method: column},
+        "snapping_distance": 6,
+        "use_snapping": True,
+    }
+    processor = CrossSectionLocationProcessor(
+        target_layer=target_layer,
+        target_model_cls=None,
+        channel_layer=channels,
+        conversion_settings=ConversionSettings(conversion_settings),
+        target_fields_config=None,
+    )
+    assert processor.channel_mapping == {}
+
+
+@pytest.mark.parametrize(
     "method, column", [("source_attribute", "id"), ("expression", "code")]
 )
 def test_get_join_feat_src_value(channels, target_layer, import_config, method, column):
@@ -281,7 +302,13 @@ def test_get_join_feat_src_value(channels, target_layer, import_config, method, 
 
 
 @pytest.mark.parametrize(
-    "method, column", [("source_attribute", "foo"), ("expression", "bar")]
+    "method, column",
+    [
+        ("source_attribute", "foo"),
+        ("expression", "bar"),
+        ("source_attribute", ""),
+        ("expression", ""),
+    ],
 )
 def test_get_join_feat_src_value_invalid(
     channels, target_layer, import_config, method, column

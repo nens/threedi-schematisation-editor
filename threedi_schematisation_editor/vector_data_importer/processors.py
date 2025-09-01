@@ -81,14 +81,14 @@ class CrossSectionLocationProcessor(Processor):
             self.conversion_settings.join_field_tgt.get("method")
             == ColumnImportMethod.ATTRIBUTE.value
         ):
-            return {
-                feature[
-                    self.conversion_settings.join_field_tgt.get(
-                        ColumnImportMethod.ATTRIBUTE.value
-                    )
-                ]: feature
-                for feature in self.channel_layer.getFeatures()
-            }
+            col = self.conversion_settings.join_field_tgt.get(
+                ColumnImportMethod.ATTRIBUTE.value
+            )
+            if col:
+                return {
+                    feature[col]: feature
+                    for feature in self.channel_layer.getFeatures()
+                }
         elif (
             self.conversion_settings.join_field_tgt.get("method")
             == ColumnImportMethod.EXPRESSION.value
@@ -97,14 +97,14 @@ class CrossSectionLocationProcessor(Processor):
                 ColumnImportMethod.EXPRESSION.value
             )
             expression = QgsExpression(expression_str)
-            context = QgsExpressionContext()
-            expr_map = {}
-            for feature in self.channel_layer.getFeatures():
-                context.setFeature(feature)
-                expr_map[expression.evaluate(context)] = feature
-            return expr_map
-        else:
-            return {}
+            if expression.isValid():
+                context = QgsExpressionContext()
+                expr_map = {}
+                for feature in self.channel_layer.getFeatures():
+                    context.setFeature(feature)
+                    expr_map[expression.evaluate(context)] = feature
+                return expr_map
+        return {}
 
     @cached_property
     def join_field_src(self):
