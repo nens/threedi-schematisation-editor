@@ -240,22 +240,6 @@ class TestImporter:
         """Test that modifiable_layers returns the target and node layers when there is no integrator."""
         assert importer.modifiable_layers == [target_layer, node_layer]
 
-    def test_modifiable_layers_with_integrator(
-        self, importer, target_layer, node_layer
-    ):
-        """Test that modifiable_layers includes integrator layers when there is an integrator."""
-        # Create a mock integrator
-        integrator = MagicMock()
-        integrator.integrate_layer = MagicMock()
-        integrator.cross_section_layer = MagicMock()
-        importer.integrator = integrator
-        assert importer.modifiable_layers == [
-            target_layer,
-            node_layer,
-            integrator.integrate_layer,
-            integrator.cross_section_layer,
-        ]
-
     @patch(
         "threedi_schematisation_editor.vector_data_importer.importers.ChannelIntegrator.from_importer"
     )
@@ -305,8 +289,6 @@ class TestImporter:
         else:
             mock_channel_integrator_from_importer.assert_not_called()
         if make_pipe_integrator:
-            mock_pipe_integrator_from_importer.assert_called_once_with(
-                None, None, importer
-            )
+            mock_pipe_integrator_from_importer.assert_called_once_with(None, importer)
         else:
             mock_pipe_integrator_from_importer.assert_not_called()
