@@ -9,6 +9,7 @@ from qgis.PyQt.QtWidgets import (
     QButtonGroup,
     QComboBox,
     QDialog,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QRadioButton,
@@ -228,16 +229,18 @@ def create_font(dialog, point_size: int, bold: bool = False):
 
 
 class JoinFieldsRow(QDialog):
-    def __init__(self, label, layer_src=False, parent=None):
+    def __init__(self, label, layer_src=False, parent=None, layout=None, row=0):
         super().__init__(parent)
+        self.layout = layout if isinstance(layout, QGridLayout) else QGridLayout()
+        self.row_idx = row
         self.setup_ui(label, layer_src)
 
     def setup_ui(self, label, layer_src):
         # Create labels
-        self.lbl = QLabel(label)
-        font = create_font(self.lbl, 10)
-        self.lbl.setFont(font)
-        self.lbl.setLayoutDirection(Qt.LeftToRight)
+        lbl = QLabel(label)
+        font = create_font(lbl, 10)
+        lbl.setFont(font)
+        lbl.setLayoutDirection(Qt.LeftToRight)
         # Create input fields
         if layer_src:
             self.input_cbo = QgsFieldComboBox()
@@ -259,8 +262,8 @@ class JoinFieldsRow(QDialog):
         button_group = QButtonGroup(self)
         button_group.addButton(self.attr_radio)
         button_group.addButton(self.expr_radio)
-        self.toggle_widget = QWidget()
-        toggle_layout = QHBoxLayout(self.toggle_widget)
+        toggle_widget = QWidget()
+        toggle_layout = QHBoxLayout(toggle_widget)
         toggle_layout.setContentsMargins(0, 0, 0, 0)
         toggle_layout.addWidget(self.attr_radio)
         toggle_layout.addWidget(self.expr_radio)
@@ -268,6 +271,9 @@ class JoinFieldsRow(QDialog):
         self.stack.addWidget(self.input_cbo)
         self.stack.addWidget(self.input_expr)
         self.attr_radio.toggled.connect(self.toggle_input)
+        self.layout.addWidget(lbl, self.row_idx, 0)
+        self.layout.addWidget(toggle_widget, self.row_idx, 1)
+        self.layout.addWidget(self.stack, self.row_idx, 2)
 
     @property
     def layer_dependent_widgets(self):

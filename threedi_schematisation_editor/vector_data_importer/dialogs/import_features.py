@@ -677,17 +677,13 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
 
     def setup_ui(self):
         super().setup_ui()
-        # self.join_settings = JoinFieldsDialog()
-        self.join_source = JoinFieldsRow("Join channel source field", layer_src=True)
-        self.join_target = JoinFieldsRow("Join channel reference field")
         join_layout = QGridLayout()
-        join_layout.setContentsMargins(-1, -1, -1, 0)
-        join_layout.addWidget(self.join_source.lbl, 0, 0)
-        join_layout.addWidget(self.join_source.toggle_widget, 0, 1)
-        join_layout.addWidget(self.join_source.stack, 0, 2)
-        join_layout.addWidget(self.join_target.lbl, 1, 0)
-        join_layout.addWidget(self.join_target.toggle_widget, 1, 1)
-        join_layout.addWidget(self.join_target.stack, 1, 2)
+        self.join_source = JoinFieldsRow(
+            "Join channel source field", layer_src=True, layout=join_layout, row=0
+        )
+        self.join_target = JoinFieldsRow(
+            "Join channel reference field", layout=join_layout, row=1
+        )
         self.gridLayout.addLayout(join_layout, 1, 0, 2, 2)
 
         # Create snap group box
