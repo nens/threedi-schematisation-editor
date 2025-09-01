@@ -97,10 +97,7 @@ class Importer:
         """Return a list of the layers that can be modified."""
         layers = [self.target_layer, self.node_layer]
         if self.integrator:
-            layers += [
-                self.integrator.integrate_layer,
-                self.integrator.cross_section_layer,
-            ]
+            layers += self.integrator.modifiable_layers
         return layers
 
     def import_features(self, context=None, selected_ids=None):
@@ -172,7 +169,7 @@ class LinesImporter(Importer):
             dm.Weir,
             dm.Orifice,
         ]:
-            self.integrator = PipeIntegrator.from_importer(conduit_layer, None, self)
+            self.integrator = PipeIntegrator.from_importer(conduit_layer, self)
 
 
 class CulvertsImporter(LinesImporter):

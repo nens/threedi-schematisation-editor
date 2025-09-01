@@ -43,7 +43,6 @@ class LinearIntegrator:
         node_manager,
         fields_configurations,
         conversion_settings,
-        cross_section_layer,
         external_source,
         target_gpkg,
         conduit_model_cls,
@@ -69,11 +68,6 @@ class LinearIntegrator:
             if node_layer
             else gpkg_layer(target_gpkg, dm.ConnectionNode.__tablename__)
         )
-        self.cross_section_layer = (
-            cross_section_layer
-            if cross_section_layer
-            else gpkg_layer(target_gpkg, dm.CrossSectionLocation.__tablename__)
-        )
         # feature managers that handle id's for added features
         # for target features and nodes a manager can be supplied such that they match the associated importer
         self.target_manager = (
@@ -85,30 +79,10 @@ class LinearIntegrator:
         self.integrate_manager = FeatureManager(
             get_next_feature_id(self.integrate_layer)
         )
-        self.cross_section_manager = FeatureManager(
-            get_next_feature_id(self.cross_section_layer)
-        )
         # initialize mappings and indices
         self.setup_fields_map()
         self.setup_spatial_indexes()
         self.setup_node_by_location()
-
-    @classmethod
-    def from_importer(cls, integrate_layer, cross_section_layer, importer):
-        """extract data from importer to created matching integrator"""
-        return cls(
-            integrate_layer,
-            importer.target_model_cls,
-            importer.target_layer,
-            importer.processor.target_manager,
-            importer.node_layer,
-            importer.processor.node_manager,
-            importer.fields_configurations,
-            importer.conversion_settings,
-            cross_section_layer,
-            importer.external_source,
-            importer.target_gpkg,
-        )
 
     @staticmethod
     def get_substring_geometry(curve, start_distance, end_distance, simplify=False):
@@ -121,16 +95,23 @@ class LinearIntegrator:
             )
         return substring_geometry
 
+    @property
+    def map_layers(self):
+        return [self.target_layer, self.node_layer, self.integrate_layer]
+
+    @property
+    def spatial_layers(self):
+        return [self.node_layer]
+
+    @property
+    def modifiable_layers(self):
+        return [self.integrate_layer]
+
     def setup_fields_map(self):
         """Setup input layer fields map."""
         self.layer_fields_mapping = {}
         self.layer_field_names_mapping = {}
-        for layer in [
-            self.target_layer,
-            self.node_layer,
-            self.integrate_layer,
-            self.cross_section_layer,
-        ]:
+        for layer in self.map_layers:
             layer_name = layer.name()
             layer_fields = layer.fields()
             self.layer_fields_mapping[layer_name] = layer_fields
@@ -142,7 +123,7 @@ class LinearIntegrator:
         """Setup input layer spatial indexes."""
         self.spatial_indexes_map = {}
         self.spatial_indexes_map["source"] = spatial_index(self.external_source)
-        for layer in [self.node_layer, self.cross_section_layer]:
+        for layer in self.spatial_layers:
             layer_name = layer.name()
             self.spatial_indexes_map[layer_name] = spatial_index(layer)
 
@@ -524,6 +505,22 @@ class PipeIntegrator(LinearIntegrator):
     def __init__(self, *args):
         super().__init__(*args, conduit_model_cls=dm.Pipe)
 
+    @classmethod
+    def from_importer(cls, integrate_layer, importer):
+        """extract data from importer to created matching integrator"""
+        return cls(
+            integrate_layer,
+            importer.target_model_cls,
+            importer.target_layer,
+            importer.processor.target_manager,
+            importer.node_layer,
+            importer.processor.node_manager,
+            importer.fields_configurations,
+            importer.conversion_settings,
+            importer.external_source,
+            importer.target_gpkg,
+        )
+
     def integrate_features(self, input_feature_ids):
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
@@ -543,8 +540,70 @@ class PipeIntegrator(LinearIntegrator):
 
 
 class ChannelIntegrator(LinearIntegrator):
-    def __init__(self, *args):
-        super().__init__(*args, conduit_model_cls=dm.Channel)
+    def __init__(
+        self,
+        conduit_layer,
+        target_model_cls,
+        target_layer,
+        target_manager,
+        node_layer,
+        node_manager,
+        fields_configurations,
+        conversion_settings,
+        external_source,
+        target_gpkg,
+        cross_section_layer,
+    ):
+        self.cross_section_layer = (
+            cross_section_layer
+            if cross_section_layer
+            else gpkg_layer(target_gpkg, dm.CrossSectionLocation.__tablename__)
+        )
+        self.cross_section_manager = FeatureManager(
+            get_next_feature_id(self.cross_section_layer)
+        )
+        super().__init__(
+            conduit_layer,
+            target_model_cls,
+            target_layer,
+            target_manager,
+            node_layer,
+            node_manager,
+            fields_configurations,
+            conversion_settings,
+            external_source,
+            target_gpkg,
+            conduit_model_cls=dm.Channel,
+        )
+
+    @classmethod
+    def from_importer(cls, integrate_layer, cross_section_layer, importer):
+        """extract data from importer to created matching integrator"""
+        return cls(
+            integrate_layer,
+            importer.target_model_cls,
+            importer.target_layer,
+            importer.processor.target_manager,
+            importer.node_layer,
+            importer.processor.node_manager,
+            importer.fields_configurations,
+            importer.conversion_settings,
+            importer.external_source,
+            importer.target_gpkg,
+            cross_section_layer,
+        )
+
+    @property
+    def modifiable_layers(self):
+        return super().modifiable_layers + [self.cross_section_layer]
+
+    @property
+    def map_layers(self):
+        return super().map_layers + [self.cross_section_layer]
+
+    @property
+    def spatial_layers(self):
+        return super().spatial_layers + [self.cross_section_layer]
 
     def integrate_features(self, input_feature_ids):
         all_processed_structure_ids = set()
