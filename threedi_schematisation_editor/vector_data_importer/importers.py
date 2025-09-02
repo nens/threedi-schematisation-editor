@@ -1,5 +1,6 @@
 from collections import defaultdict
 from functools import cached_property
+from typing import Optional
 
 from qgis.core import (
     QgsCoordinateTransform,
@@ -17,6 +18,7 @@ from threedi_schematisation_editor.vector_data_importer.integrators import (
 )
 from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
+    CrossSectionDataProcessor,
     CrossSectionLocationProcessor,
     LineProcessor,
 )
@@ -91,6 +93,32 @@ class Importer:
         input_feature_ids = self.get_input_feature_ids(selected_ids)
         new_features = self.process_features(input_feature_ids)
         self.add_features_to_layers(new_features)
+
+
+class CrossSectionDataImporter(Importer):
+    def __init__(
+        self,
+        external_source: QgsVectorLayer,
+        target_gpkg,
+        import_settings: dict,
+        target_layers: Optional[list[QgsVectorLayer]] = None,
+    ):
+        super().__init__(external_source, target_gpkg, import_settings)
+        if target_layers is None:
+            target_layers = [
+                gpkg_layer(target_gpkg, model_cls.__layername__)
+                for model_cls in CrossSectionDataProcessor.target_models
+            ]
+        self.target_layers = target_layers
+        self.processor = CrossSectionDataProcessor(
+            self.conversion_settings,
+            self.import_settings.get("fields", {}),
+            target_layers,
+        )
+
+    @property
+    def modifiable_layers(self):
+        return self.target_layers
 
 
 class SpatialImporter(Importer):

@@ -1,8 +1,20 @@
 from abc import ABC
 from collections import defaultdict
 from functools import cached_property
+from typing import Optional
 
-from qgis.core import NULL, QgsFeatureRequest, QgsGeometry, QgsSpatialIndex, QgsWkbTypes
+from PyQt5.QtCore import QVariant
+from qgis.core import (
+    NULL,
+    QgsFeature,
+    QgsFeatureRequest,
+    QgsField,
+    QgsFields,
+    QgsGeometry,
+    QgsSpatialIndex,
+    QgsWkbTypes,
+)
+from threedi_schema.domain.constants import CrossSectionShape
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
@@ -10,7 +22,9 @@ from threedi_schematisation_editor.utils import (
     get_next_feature_id,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (
+    ColumnImportMethod,
     FeatureManager,
+    get_field_config_value,
     get_float_value_from_feature,
     update_attributes,
 )
@@ -61,19 +75,217 @@ class Processor(ABC):
         return new_features
 
 
-class CrossSectionDataProcessor(Processor):
+class CrossSectionDataProcessor:
+    # TODO: consider relation with Processor - split in attribute and layer processer?
+    target_models: list[type] = [
+        dm.Pipe,
+        dm.Culvert,
+        dm.Orifice,
+        dm.Weir,
+        dm.CrossSectionLocation,
+    ]
 
-    def group_features(self, external_features):
-        return external_features
+    def __init__(self, conversion_settings, target_fields_config, target_layers):
+        self.target_fields_config = target_fields_config
+        self.conversion_settings = conversion_settings
+        self.target_layer_map = {
+            target_layer.name(): target_layer for target_layer in target_layers
+        }
+
+    @property
+    def object_type_map(self) -> dict[str, type]:
+        return {
+            **{model_cls.__tablename__: model_cls for model_cls in self.target_models},
+            **{model_cls.__layername__: model_cls for model_cls in self.target_models},
+        }
+
+    @staticmethod
+    def get_cross_section_table(
+        feature_group: list[QgsFeature],
+        cross_section_shape: CrossSectionShape,
+        order_by: str,
+        field_config,
+    ) -> Optional[str]:
+        # Build cross section table for a group of features
+        if not cross_section_shape.is_tabulated:
+            return None
+        # Sort the feature group based on the 'order_by' field
+        feature_group.sort(key=lambda feat: feat[order_by])
+        table = []
+        if cross_section_shape in [
+            CrossSectionShape.TABULATED_RECTANGLE,
+            CrossSectionShape.TABULATED_TRAPEZIUM,
+        ]:
+            # CSV-style table of height, width pairs
+            heights = [
+                get_field_config_value(field_config["cross_section_height"], feat)
+                for feat in feature_group
+            ]
+            widths = [
+                get_field_config_value(field_config["cross_section_width"], feat)
+                for feat in feature_group
+            ]
+            table = list(zip(heights, widths))
+        elif cross_section_shape == CrossSectionShape.TABULATED_YZ:
+            # CSV-style table of y, z pairs
+            y = [
+                get_field_config_value(field_config["cross_section_y"], feat)
+                for feat in feature_group
+            ]
+            z = [
+                get_field_config_value(field_config["cross_section_z"], feat)
+                for feat in feature_group
+            ]
+            table = list(zip(y, z))
+        return "\n".join(f"{pair[0]},{pair[1]}" for pair in table)
+
+    @staticmethod
+    def group_features(
+        external_features: list[QgsFeature], group_by: str, target_fields_config
+    ) -> list[list[QgsFeature]]:
+        # Group features based on group by value.
+        grouped_features = []
+        grouped_ids = []
+        for feature in external_features:
+            if feature.id() in grouped_ids:
+                continue
+            group_by_val = feature[group_by]
+            if not group_by_val:
+                grouped_features.append([feature])
+                continue
+            try:
+                cross_section_shape = CrossSectionShape(
+                    get_field_config_value(
+                        target_fields_config["cross_section_shape"], feature
+                    )
+                )
+            except ValueError:
+                # rows without valid cross section shapes cannot be grouped
+                grouped_features.append([feature])
+                continue
+            if not cross_section_shape.is_tabulated:
+                # rows that doe not represent a tabulated shape cannot be grouped
+                grouped_features.append([feature])
+            else:
+                group = [
+                    feat for feat in external_features if feat[group_by] == group_by_val
+                ]
+                grouped_ids += [feat.id() for feat in group]
+                grouped_features.append(group)
+        return grouped_features
+
+    @staticmethod
+    def get_feat_from_group(
+        group: list[QgsFeature], order_by: str, target_fields_config
+    ) -> Optional[QgsFeature]:
+        # Combine group of feature in a single feature that is used for processing
+        if len(group) == 0:
+            return
+        if len(group) == 1:
+            return group[0]
+        feature = group[0]
+        cross_section_shape = CrossSectionShape(
+            get_field_config_value(target_fields_config["cross_section_shape"], feature)
+        )
+        # copy first feature and ensure cross_section_table field exists
+        new_feat = QgsFeature()
+        new_fields = QgsFields(feature.fields())
+        if "cross_section_table" not in feature.fields().names():
+            new_fields.append(QgsField("cross_section_table", QVariant.String))
+        new_feat.setFields(new_fields)
+        # Copy all existing attributes from the original feature
+        for field_name in feature.fields().names():
+            new_feat[field_name] = feature[field_name]
+        new_feat["cross_section_table"] = (
+            CrossSectionDataProcessor.get_cross_section_table(
+                group, cross_section_shape, order_by, target_fields_config
+            )
+        )
+        return new_feat
+
+    @staticmethod
+    def find_target_object(
+        src_feat, target_layer, target_object_id_field, target_object_code_field
+    ) -> Optional[QgsFeature]:
+        target_feat = None
+        if target_object_id_field:
+            target_id = src_feat[target_object_id_field]
+            if target_id:
+                target_feat = next(
+                    (
+                        feature
+                        for feature in target_layer.getFeatures()
+                        if feature["id"] == target_id
+                    ),
+                    None,
+                )
+        if not target_feat and target_object_code_field:
+            target_code = src_feat[target_object_code_field]
+            if target_code:
+                # TODO: consider multiple matches??
+                target_feat = next(
+                    (
+                        feature
+                        for feature in target_layer.getFeatures()
+                        if feature["code"] == target_code
+                    ),
+                    None,
+                )
+        return target_feat
+
+    def get_target_model_cls(self, src_feat):
+        src_object_type = src_feat[self.conversion_settings.target_object_type_field]
+        if src_object_type:
+            return self.object_type_map.get(src_object_type.lower(), None)
+
+    def get_target_layer(self, target_model_cls):
+        target_layer = self.target_layer_map.get(target_model_cls.__tablename__, None)
+        if target_layer is None:
+            return
+        return target_layer
 
     def process_feature(self, src_feat):
-        pass
+        target_model_cls = self.get_target_model_cls(src_feat)
+        if not target_model_cls:
+            return
+        target_layer = self.get_target_layer(target_model_cls)
+        if not target_layer:
+            return
+        target_feat = self.find_target_object(
+            src_feat,
+            target_layer,
+            self.conversion_settings.target_object_id_field,
+            self.conversion_settings.target_object_code_field,
+        )
+        if not target_feat:
+            return
+        update_attributes(
+            self.target_fields_config,
+            target_model_cls,
+            src_feat,
+            target_feat,
+        )
+        if "cross_section_table" in src_feat.fields().names():
+            target_feat["cross_section_table"] = src_feat["cross_section_table"]
+        target_layer.updateFeature(target_feat)
 
     def process_features(self, external_features):
-        grouped_features = self.group_features(external_features)
-        super().process_features(grouped_features)
-
-
+        grouped_features = self.group_features(
+            external_features,
+            self.conversion_settings.group_by_field,
+            self.target_fields_config,
+        )
+        external_features = [
+            CrossSectionDataProcessor.get_feat_from_group(
+                feat_group,
+                self.conversion_settings.order_by_field,
+                self.target_fields_config,
+            )
+            for feat_group in grouped_features
+        ]
+        for external_src_feat in external_features:
+            self.process_feature(external_src_feat)
+        return {}
 
 
 class CrossSectionLocationProcessor(Processor):

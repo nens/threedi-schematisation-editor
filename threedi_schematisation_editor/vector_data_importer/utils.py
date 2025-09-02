@@ -17,6 +17,30 @@ DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
 DEFAULT_MINIMUM_CHANNEL_LENGTH = 5
 
 
+def get_field_config_value(field_config, source_feat, expression_context=None):
+    # todo: test!
+    method = ColumnImportMethod(field_config["method"])
+    field_value = NULL
+    if method == ColumnImportMethod.ATTRIBUTE:
+        src_field_name = field_config[ColumnImportMethod.ATTRIBUTE.value]
+        src_value = source_feat[src_field_name]
+        value_map = field_config.get("value_map", {})
+        # Prevent type mismatches in keys by casting keys to strings to match those the dict in src_value['value_map'] which is also forced to be strings
+        field_value = value_map.get(str(src_value), src_value)
+        if field_value == NULL:
+            field_value = field_config.get("default_value", NULL)
+    elif method == ColumnImportMethod.EXPRESSION:
+        if expression_context is None:
+            expression_context = QgsExpressionContext()
+            expression_context.setFeature(source_feat)
+        expression_str = field_config["expression"]
+        expression = QgsExpression(expression_str)
+        field_value = expression.evaluate(expression_context)
+    elif method == ColumnImportMethod.DEFAULT:
+        field_value = field_config["default_value"]
+    return field_value
+
+
 def update_attributes(fields_config, model_cls, source_feat, *new_features):
     expression_context = QgsExpressionContext()
     expression_context.setFeature(source_feat)
@@ -27,24 +51,11 @@ def update_attributes(fields_config, model_cls, source_feat, *new_features):
                 field_config = fields_config[field_name]
             except KeyError:
                 continue
-            method = ColumnImportMethod(field_config["method"])
-            if method == ColumnImportMethod.AUTO:
+            if ColumnImportMethod(field_config["method"]) == ColumnImportMethod.AUTO:
                 continue
-            field_value = NULL
-            if method == ColumnImportMethod.ATTRIBUTE:
-                src_field_name = field_config[ColumnImportMethod.ATTRIBUTE.value]
-                src_value = source_feat[src_field_name]
-                value_map = field_config.get("value_map", {})
-                # Prevent type mismatches in keys by casting keys to strings to match those the dict in src_value['value_map'] which is also forced to be strings
-                field_value = value_map.get(str(src_value), src_value)
-                if field_value == NULL:
-                    field_value = field_config.get("default_value", NULL)
-            elif method == ColumnImportMethod.EXPRESSION:
-                expression_str = field_config["expression"]
-                expression = QgsExpression(expression_str)
-                field_value = expression.evaluate(expression_context)
-            elif method == ColumnImportMethod.DEFAULT:
-                field_value = field_config["default_value"]
+            field_value = get_field_config_value(
+                field_config, source_feat, expression_context=expression_context
+            )
             try:
                 new_feat[field_name] = convert_to_type(field_value, field_type)
             except TypeConversionError as e:
@@ -110,6 +121,15 @@ class ConversionSettings:
         self.edit_channels = conversion_config.get("edit_channels", False)
         self.join_field_src = conversion_config.get("join_field_src", None)
         self.join_field_tgt = conversion_config.get("join_field_tgt", None)
+        self.group_by_field = conversion_config.get("group_by", None)
+        self.order_by_field = conversion_config.get("order_by", None)
+        self.target_object_code_field = conversion_config.get(
+            "target_object_code", None
+        )
+        self.target_object_id_field = conversion_config.get("target_object_id", None)
+        self.target_object_type_field = conversion_config.get(
+            "target_object_type", None
+        )
 
 
 class ColumnImportMethod(Enum):
