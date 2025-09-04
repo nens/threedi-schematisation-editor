@@ -95,9 +95,25 @@ class CrossSectionDataProcessor:
     @property
     def object_type_map(self) -> dict[str, type]:
         return {
-            **{model_cls.__tablename__: model_cls for model_cls in self.target_models},
-            **{model_cls.__layername__: model_cls for model_cls in self.target_models},
+            **{
+                CrossSectionDataProcessor.get_unified_object_type_str(
+                    model_cls.__tablename__
+                ): model_cls
+                for model_cls in self.target_models
+            },
+            **{
+                CrossSectionDataProcessor.get_unified_object_type_str(
+                    model_cls.__layername__
+                ): model_cls
+                for model_cls in self.target_models
+            },
         }
+
+    @staticmethod
+    def get_unified_object_type_str(object_type_str: str) -> str:
+        return (
+            object_type_str.lower().replace("-", "").replace("_", "").replace(" ", "")
+        )
 
     @staticmethod
     def get_cross_section_table(
@@ -236,13 +252,13 @@ class CrossSectionDataProcessor:
     def get_target_model_cls(self, src_feat):
         src_object_type = src_feat[self.conversion_settings.target_object_type_field]
         if src_object_type:
-            return self.object_type_map.get(src_object_type.lower(), None)
+            return self.object_type_map.get(
+                CrossSectionDataProcessor.get_unified_object_type_str(src_object_type),
+                None,
+            )
 
     def get_target_layer(self, target_model_cls):
-        target_layer = self.target_layer_map.get(target_model_cls.__tablename__, None)
-        if target_layer is None:
-            return
-        return target_layer
+        return self.target_layer_map.get(target_model_cls.__layername__, None)
 
     def process_feature(self, src_feat):
         target_model_cls = self.get_target_model_cls(src_feat)

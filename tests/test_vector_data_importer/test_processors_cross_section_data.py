@@ -302,11 +302,28 @@ def processor(target_layer, field_config):
 
 
 @pytest.mark.parametrize(
+    "object_type_str,expected_str",
+    [
+        ("foo", "foo"),
+        ("Foo", "foo"),
+        ("fOO", "foo"),
+        ("foo-foo", "foofoo"),
+        ("foo_foo", "foofoo"),
+        ("foo foo", "foofoo"),
+    ],
+)
+def test_get_unified_object_type_int(object_type_str, expected_str):
+    assert (
+        CrossSectionDataProcessor.get_unified_object_type_str(object_type_str)
+        == expected_str
+    )
+
+
+@pytest.mark.parametrize(
     "object_type_str,expected_model_cls",
     [
         ("pipe", dm.Pipe),
-        ("Pipe", dm.Pipe),
-        ("culvert", dm.Culvert),
+        ("cross section location", dm.CrossSectionLocation),
         ("foo", None),
     ],
 )
