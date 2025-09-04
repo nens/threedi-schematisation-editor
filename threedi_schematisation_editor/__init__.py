@@ -102,7 +102,7 @@ class ThreediSchematisationEditorPlugin:
         import_actions_spec = [
             ("Connection nodes", self.import_external_connection_nodes, None),
             (
-                "Cross section locations",
+                "Cross-section locations",
                 self.import_external_cross_section_locations,
                 None,
             ),
