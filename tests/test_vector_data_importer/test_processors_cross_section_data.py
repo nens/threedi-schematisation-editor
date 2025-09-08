@@ -24,6 +24,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
     ConversionSettings,
 )
+from threedi_schematisation_editor.warnings import ProcessorWarning
 
 
 @dataclass
@@ -193,6 +194,26 @@ def test_group_features(source_fields, field_config, profile_ids, expected_group
     assert groups == expected_groups
 
 
+def test_group_features_shape_mismatch(source_fields, field_config):
+    features = []
+    feature_map = {}
+    shapes = [5, 5, 0]
+    for i, shape in enumerate(shapes):
+        feature = QgsFeature(source_fields)
+        feature.setAttribute("profile_id", 1)
+        feature.setAttribute("distance", 0)
+        feature.setAttribute("id", i)
+        feature.setAttribute("cross_section_shape", shape)
+        feature.setId(i)
+        features.append(feature)
+        feature_map[i] = feature
+    with pytest.warns(ProcessorWarning):
+        groups = CrossSectionDataProcessor.group_features(
+            features, "profile_id", field_config
+        )
+    assert [feature["id"] for feature in groups[0]] == list(range(len(shapes)))
+
+
 def test_get_feat_from_group(source_fields, field_config):
     features = []
     for i in range(3):
@@ -287,6 +308,21 @@ def test_find_target_object_missing_target_fields(
         assert target_feat[field] == value
 
 
+@pytest.mark.parametrize(
+    "field_kwargs",
+    [{"target_object_id_field": "object_id", "target_object_code_field": None},
+     {"target_object_id_field": None, "target_object_code_field": "object_code"},
+    ],
+)
+def test_find_target_object_no_match(source_fields, target_layer, field_kwargs):
+    src_feat = QgsFeature(source_fields)
+    src_feat.setAttribute("object_id", 1337)
+    src_feat.setAttribute("object_code", "code_1337")
+    with pytest.warns(ProcessorWarning):
+        target_feat = CrossSectionDataProcessor.find_target_object(src_feat=src_feat, target_layer=target_layer, **field_kwargs)
+    assert target_feat is None
+
+
 @pytest.fixture
 def processor(target_layer, field_config):
     conversion_settings = ConversionSettings(
@@ -324,7 +360,6 @@ def test_get_unified_object_type_int(object_type_str, expected_str):
     [
         ("pipe", dm.Pipe),
         ("cross section location", dm.CrossSectionLocation),
-        ("foo", None),
     ],
 )
 def test_get_target_model_cls(
@@ -335,9 +370,17 @@ def test_get_target_model_cls(
     assert processor.get_target_model_cls(src_feat) == expected_model_cls
 
 
+def test_get_target_model_cls_no_match(processor, source_fields):
+    src_feat = QgsFeature(source_fields)
+    src_feat.setAttribute("object_type", "foo")
+    with pytest.warns(ProcessorWarning):
+        assert processor.get_target_model_cls(src_feat) is None
+
+
 def test_get_target_model_cls_no_object_type(processor, source_fields):
     src_feat = QgsFeature(source_fields)
-    assert processor.get_target_model_cls(src_feat) is None
+    with pytest.warns(ProcessorWarning):
+        assert processor.get_target_model_cls(src_feat) is None
 
 
 @pytest.mark.parametrize(

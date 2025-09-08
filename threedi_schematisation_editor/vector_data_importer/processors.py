@@ -1,3 +1,5 @@
+import warnings
+
 from abc import ABC
 from collections import defaultdict
 from functools import cached_property
@@ -28,6 +30,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     get_float_value_from_feature,
     update_attributes,
 )
+from threedi_schematisation_editor.warnings import ProcessorWarning
 
 
 class Processor(ABC):
@@ -188,6 +191,10 @@ class CrossSectionDataProcessor:
                 ]
                 grouped_ids += [feat.id() for feat in group]
                 grouped_features.append(group)
+                if not all(
+                        [get_field_config_value(target_fields_config["cross_section_shape"], feat) == cross_section_shape.value
+                         for feat in group]):
+                    warnings.warn(f"Not all features with {group_by}={group_by_val} have the same cross section shape", ProcessorWarning)
         return grouped_features
 
     @staticmethod
@@ -238,7 +245,6 @@ class CrossSectionDataProcessor:
         if not target_feat and target_object_code_field:
             target_code = src_feat[target_object_code_field]
             if target_code:
-                # TODO: consider multiple matches??
                 target_feat = next(
                     (
                         feature
@@ -247,15 +253,20 @@ class CrossSectionDataProcessor:
                     ),
                     None,
                 )
+        if not target_feat:
+            warnings.warn(f'Could not find target object for feature "{src_feat["id"]}"', ProcessorWarning)
         return target_feat
 
     def get_target_model_cls(self, src_feat):
         src_object_type = src_feat[self.conversion_settings.target_object_type_field]
-        if src_object_type:
-            return self.object_type_map.get(
-                CrossSectionDataProcessor.get_unified_object_type_str(src_object_type),
-                None,
-            )
+        if not src_object_type:
+            warnings.warn(f"Could not find attribute {self.conversion_settings.target_object_type_field} for feature {src_feat['id']}", ProcessorWarning)
+            return
+        src_object_type_str = CrossSectionDataProcessor.get_unified_object_type_str(src_object_type)
+        target_model_cls = self.object_type_map.get(src_object_type_str, None)
+        if not target_model_cls:
+            warnings.warn(f"Could not find target model for object type {src_object_type} for feature {src_feat['id']}", ProcessorWarning)
+        return target_model_cls
 
     def get_target_layer(self, target_model_cls):
         return self.target_layer_map.get(target_model_cls.__layername__, None)
