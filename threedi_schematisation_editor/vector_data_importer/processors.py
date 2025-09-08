@@ -1,5 +1,4 @@
 import warnings
-
 from abc import ABC
 from collections import defaultdict
 from functools import cached_property
@@ -92,7 +91,10 @@ class CrossSectionDataProcessor:
         self.target_fields_config = target_fields_config
         self.conversion_settings = conversion_settings
         self.target_layer_map = {
-            target_layer.name(): target_layer for target_layer in target_layers
+            CrossSectionDataProcessor.get_unified_object_type_str(
+                target_layer.name()
+            ): target_layer
+            for target_layer in target_layers
         }
 
     @property
@@ -192,9 +194,18 @@ class CrossSectionDataProcessor:
                 grouped_ids += [feat.id() for feat in group]
                 grouped_features.append(group)
                 if not all(
-                        [get_field_config_value(target_fields_config["cross_section_shape"], feat) == cross_section_shape.value
-                         for feat in group]):
-                    warnings.warn(f"Not all features with {group_by}={group_by_val} have the same cross section shape", ProcessorWarning)
+                    [
+                        get_field_config_value(
+                            target_fields_config["cross_section_shape"], feat
+                        )
+                        == cross_section_shape.value
+                        for feat in group
+                    ]
+                ):
+                    warnings.warn(
+                        f"Not all features with {group_by}={group_by_val} have the same cross section shape",
+                        ProcessorWarning,
+                    )
         return grouped_features
 
     @staticmethod
@@ -254,22 +265,38 @@ class CrossSectionDataProcessor:
                     None,
                 )
         if not target_feat:
-            warnings.warn(f'Could not find target object for feature "{src_feat["id"]}"', ProcessorWarning)
+            warnings.warn(
+                f'Could not find target object for feature "{src_feat["id"]}"',
+                ProcessorWarning,
+            )
         return target_feat
 
     def get_target_model_cls(self, src_feat):
         src_object_type = src_feat[self.conversion_settings.target_object_type_field]
         if not src_object_type:
-            warnings.warn(f"Could not find attribute {self.conversion_settings.target_object_type_field} for feature {src_feat['id']}", ProcessorWarning)
+            warnings.warn(
+                f"Could not find attribute {self.conversion_settings.target_object_type_field} for feature {src_feat['id']}",
+                ProcessorWarning,
+            )
             return
-        src_object_type_str = CrossSectionDataProcessor.get_unified_object_type_str(src_object_type)
+        src_object_type_str = CrossSectionDataProcessor.get_unified_object_type_str(
+            src_object_type
+        )
         target_model_cls = self.object_type_map.get(src_object_type_str, None)
         if not target_model_cls:
-            warnings.warn(f"Could not find target model for object type {src_object_type} for feature {src_feat['id']}", ProcessorWarning)
+            warnings.warn(
+                f"Could not find target model for object type {src_object_type} for feature {src_feat['id']}",
+                ProcessorWarning,
+            )
         return target_model_cls
 
     def get_target_layer(self, target_model_cls):
-        return self.target_layer_map.get(target_model_cls.__layername__, None)
+        return self.target_layer_map.get(
+            CrossSectionDataProcessor.get_unified_object_type_str(
+                target_model_cls.__layername__
+            ),
+            None,
+        )
 
     def process_feature(self, src_feat):
         target_model_cls = self.get_target_model_cls(src_feat)
@@ -277,6 +304,7 @@ class CrossSectionDataProcessor:
             return
         target_layer = self.get_target_layer(target_model_cls)
         if not target_layer:
+            breakpoint()
             return
         target_feat = self.find_target_object(
             src_feat,
