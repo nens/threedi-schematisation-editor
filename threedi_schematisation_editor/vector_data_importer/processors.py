@@ -13,6 +13,7 @@ from qgis.core import (
     QgsFields,
     QgsGeometry,
     QgsSpatialIndex,
+    QgsVectorLayer,
     QgsWkbTypes,
 )
 from threedi_schema.domain.constants import CrossSectionShape
@@ -32,7 +33,21 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
 from threedi_schematisation_editor.warnings import ProcessorWarning
 
 
-class Processor(ABC):
+class Processor:
+    def process_feature(self, src_feat: QgsFeature) -> dict[str, list[QgsFeature]]:
+        raise NotImplementedError
+
+    def process_features(
+        self, external_features: list[QgsFeature]
+    ) -> dict[str, list[QgsFeature]]:
+        new_features = defaultdict(list)
+        for external_src_feat in external_features:
+            for name, features in self.process_feature(external_src_feat).items():
+                new_features[name] += features
+        return new_features
+
+
+class SpatialProcessor(Processor):
     def __init__(self, target_layer, target_model_cls):
         self.target_fields = target_layer.fields() if target_layer else []
         self.target_name = target_layer.name() if target_layer else None
@@ -66,19 +81,8 @@ class Processor(ABC):
         dst_geometry = QgsGeometry.fromPointXY(dst_point)
         return dst_geometry
 
-    def process_feature(self, src_feat):
-        raise NotImplementedError
 
-    def process_features(self, external_features):
-        new_features = defaultdict(list)
-        for external_src_feat in external_features:
-            for name, features in self.process_feature(external_src_feat).items():
-                new_features[name] += features
-        return new_features
-
-
-class CrossSectionDataProcessor:
-    # TODO: consider relation with Processor - split in attribute and layer processer?
+class CrossSectionDataProcessor(Processor):
     target_models: list[type] = [
         dm.Pipe,
         dm.Culvert,
@@ -96,6 +100,50 @@ class CrossSectionDataProcessor:
             ): target_layer
             for target_layer in target_layers
         }
+
+    def process_feature(self, src_feat: QgsFeature) -> dict[str, list[QgsFeature]]:
+        target_model_cls = self.get_target_model_cls(src_feat)
+        if not target_model_cls:
+            return {}
+        target_layer = self.get_target_layer(target_model_cls)
+        if not target_layer:
+            return {}
+        target_feat = self.find_target_object(
+            src_feat,
+            target_layer,
+            self.conversion_settings.target_object_id_field,
+            self.conversion_settings.target_object_code_field,
+        )
+        if not target_feat:
+            return {}
+        update_attributes(
+            self.target_fields_config,
+            target_model_cls,
+            src_feat,
+            target_feat,
+        )
+        if "cross_section_table" in src_feat.fields().names():
+            target_feat["cross_section_table"] = src_feat["cross_section_table"]
+        target_layer.updateFeature(target_feat)
+        return {}
+
+    def process_features(
+        self, external_features: QgsFeature
+    ) -> dict[str, list[QgsFeature]]:
+        grouped_features = self.group_features(
+            external_features,
+            self.conversion_settings.group_by_field,
+            self.target_fields_config,
+        )
+        external_features = [
+            CrossSectionDataProcessor.get_feat_from_group(
+                feat_group,
+                self.conversion_settings.order_by_field,
+                self.target_fields_config,
+            )
+            for feat_group in grouped_features
+        ]
+        return super().process_features(external_features)
 
     @property
     def object_type_map(self) -> dict[str, type]:
@@ -239,7 +287,10 @@ class CrossSectionDataProcessor:
 
     @staticmethod
     def find_target_object(
-        src_feat, target_layer, target_object_id_field, target_object_code_field
+        src_feat: QgsFeature,
+        target_layer: QgsVectorLayer,
+        target_object_id_field: str,
+        target_object_code_field: str,
     ) -> Optional[QgsFeature]:
         target_feat = None
         if target_object_id_field:
@@ -271,7 +322,7 @@ class CrossSectionDataProcessor:
             )
         return target_feat
 
-    def get_target_model_cls(self, src_feat):
+    def get_target_model_cls(self, src_feat: QgsFeature) -> Optional[type]:
         src_object_type = src_feat[self.conversion_settings.target_object_type_field]
         if not src_object_type:
             warnings.warn(
@@ -290,7 +341,7 @@ class CrossSectionDataProcessor:
             )
         return target_model_cls
 
-    def get_target_layer(self, target_model_cls):
+    def get_target_layer(self, target_model_cls) -> Optional[QgsVectorLayer]:
         return self.target_layer_map.get(
             CrossSectionDataProcessor.get_unified_object_type_str(
                 target_model_cls.__layername__
@@ -298,52 +349,8 @@ class CrossSectionDataProcessor:
             None,
         )
 
-    def process_feature(self, src_feat):
-        target_model_cls = self.get_target_model_cls(src_feat)
-        if not target_model_cls:
-            return
-        target_layer = self.get_target_layer(target_model_cls)
-        if not target_layer:
-            breakpoint()
-            return
-        target_feat = self.find_target_object(
-            src_feat,
-            target_layer,
-            self.conversion_settings.target_object_id_field,
-            self.conversion_settings.target_object_code_field,
-        )
-        if not target_feat:
-            return
-        update_attributes(
-            self.target_fields_config,
-            target_model_cls,
-            src_feat,
-            target_feat,
-        )
-        if "cross_section_table" in src_feat.fields().names():
-            target_feat["cross_section_table"] = src_feat["cross_section_table"]
-        target_layer.updateFeature(target_feat)
 
-    def process_features(self, external_features):
-        grouped_features = self.group_features(
-            external_features,
-            self.conversion_settings.group_by_field,
-            self.target_fields_config,
-        )
-        external_features = [
-            CrossSectionDataProcessor.get_feat_from_group(
-                feat_group,
-                self.conversion_settings.order_by_field,
-                self.target_fields_config,
-            )
-            for feat_group in grouped_features
-        ]
-        for external_src_feat in external_features:
-            self.process_feature(external_src_feat)
-        return {}
-
-
-class CrossSectionLocationProcessor(Processor):
+class CrossSectionLocationProcessor(SpatialProcessor):
     def __init__(
         self,
         target_layer,
@@ -471,7 +478,7 @@ class CrossSectionLocationProcessor(Processor):
         return {self.target_name: [new_feat]}
 
 
-class ConnectionNodeProcessor(Processor):
+class ConnectionNodeProcessor(SpatialProcessor):
     def __init__(
         self,
         target_layer,
@@ -496,7 +503,7 @@ class ConnectionNodeProcessor(Processor):
         return {self.target_name: [new_feat]}
 
 
-class StructureProcessor(Processor, ABC):
+class StructureProcessor(SpatialProcessor, ABC):
     def __init__(
         self,
         target_layer,
