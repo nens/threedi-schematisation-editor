@@ -7,6 +7,8 @@ from typing import Optional
 from PyQt5.QtCore import QVariant
 from qgis.core import (
     NULL,
+    QgsExpression,
+    QgsExpressionContext,
     QgsFeature,
     QgsFeatureRequest,
     QgsField,
@@ -367,13 +369,34 @@ class CrossSectionLocationProcessor(SpatialProcessor):
 
     @cached_property
     def channel_mapping(self):
-        if self.conversion_settings.join_field_tgt in ["id", "code"]:
-            return {
-                feature[self.conversion_settings.join_field_tgt]: feature
-                for feature in self.channel_layer.getFeatures()
-            }
-        else:
-            return {}
+        if (
+            self.conversion_settings.join_field_tgt.get("method")
+            == ColumnImportMethod.ATTRIBUTE.value
+        ):
+            col = self.conversion_settings.join_field_tgt.get(
+                ColumnImportMethod.ATTRIBUTE.value
+            )
+            if col:
+                return {
+                    feature[col]: feature
+                    for feature in self.channel_layer.getFeatures()
+                }
+        elif (
+            self.conversion_settings.join_field_tgt.get("method")
+            == ColumnImportMethod.EXPRESSION.value
+        ):
+            expression_str = self.conversion_settings.join_field_tgt.get(
+                ColumnImportMethod.EXPRESSION.value
+            )
+            expression = QgsExpression(expression_str)
+            if expression.isValid():
+                context = QgsExpressionContext()
+                expr_map = {}
+                for feature in self.channel_layer.getFeatures():
+                    context.setFeature(feature)
+                    expr_map[expression.evaluate(context)] = feature
+                return expr_map
+        return {}
 
     @cached_property
     def join_field_src(self):
@@ -382,20 +405,56 @@ class CrossSectionLocationProcessor(SpatialProcessor):
         else:
             return None
 
+    def get_join_feat_src_value(self, feat):
+        if self.conversion_settings.join_field_src is None:
+            return
+        if (
+            self.conversion_settings.join_field_src.get("method")
+            == ColumnImportMethod.ATTRIBUTE.value
+        ):
+            field = self.conversion_settings.join_field_src.get(
+                ColumnImportMethod.ATTRIBUTE.value
+            )
+            if field in feat.fields().names():
+                return feat[field]
+        elif (
+            self.conversion_settings.join_field_src.get("method")
+            == ColumnImportMethod.EXPRESSION.value
+        ):
+            expression_str = self.conversion_settings.join_field_src.get(
+                ColumnImportMethod.EXPRESSION.value
+            )
+            expression = QgsExpression(expression_str)
+            context = QgsExpressionContext()
+            context.setFeature(feat)
+            return expression.evaluate(context)
+
     def get_matching_channel(self, feat, geom):
         # note that feat.geometry() is not used because geom may be transformed
-        channel_match = None
-        if geom.isEmpty():
-            if (
-                self.conversion_settings.join_field_src is not None
-                and feat[self.conversion_settings.join_field_src] is not None
-            ):
-                channel_match = self.channel_mapping.get(
-                    feat[self.conversion_settings.join_field_src]
-                )
-        else:
-            geometry_type = geom.type()
-            if geometry_type == QgsWkbTypes.GeometryType.PointGeometry:
+        # First match based on join settings, if no join settings are present channel_match will be None
+        feat_val = self.get_join_feat_src_value(feat)
+        channel_match = self.channel_mapping.get(feat_val)
+        # If no match on join setings was made, match based on geometry
+        if not channel_match and not geom.isEmpty():
+            if geom.type() not in [
+                QgsWkbTypes.GeometryType.LineGeometry,
+                QgsWkbTypes.GeometryType.PointGeometry,
+            ]:
+                raise NotImplementedError(f"Unsupported geometry type: '{geom.type()}'")
+            if geom.type() == QgsWkbTypes.GeometryType.LineGeometry:
+                matching_channels = [
+                    channel
+                    for channel in self.channel_layer.getFeatures()
+                    if channel.geometry().intersects(geom)
+                ]
+                if len(matching_channels) == 0:
+                    return None
+                elif len(matching_channels) == 1:
+                    channel_match = matching_channels[0]
+                else:
+                    # in case of multiple matches, perform match based on midpoint
+                    geom = geom.interpolate(geom.length() / 2)
+            if geom.type() == QgsWkbTypes.GeometryType.PointGeometry:
                 closest_feature_id = self.channel_spatial_index.nearestNeighbor(
                     geom.asPoint(), 1, self.conversion_settings.snapping_distance
                 )
@@ -406,22 +465,6 @@ class CrossSectionLocationProcessor(SpatialProcessor):
                             QgsFeatureRequest(closest_feature_id[0])
                         )
                     )
-                else:
-                    channel_match = None
-
-            elif geometry_type == QgsWkbTypes.GeometryType.LineGeometry:
-                matching_channels = [
-                    channel
-                    for channel in self.channel_layer.getFeatures()
-                    if channel.geometry().intersects(geom)
-                ]
-                if len(matching_channels) != 1:
-                    return None
-                channel_match = matching_channels[0]
-            else:
-                raise NotImplementedError(
-                    f"Unsupported geometry type: '{geometry_type}'"
-                )
         if channel_match:
             return channel_match["id"]
 
