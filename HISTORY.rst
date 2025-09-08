@@ -4,7 +4,7 @@ History
 2.3.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Bumped Dependency Loader.
 
 
 2.3.2 (2025-08-28)
