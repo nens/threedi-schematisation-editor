@@ -554,10 +554,8 @@ class ChannelIntegrator(LinearIntegrator):
         target_gpkg,
         cross_section_layer,
     ):
-        self.cross_section_layer = (
-            cross_section_layer
-            if cross_section_layer
-            else gpkg_layer(target_gpkg, dm.CrossSectionLocation.__tablename__)
+        self.cross_section_layer = cross_section_layer or gpkg_layer(
+            target_gpkg, dm.CrossSectionLocation.__tablename__
         )
         self.cross_section_manager = FeatureManager(
             get_next_feature_id(self.cross_section_layer)
