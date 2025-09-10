@@ -18,12 +18,14 @@ DEFAULT_MINIMUM_CHANNEL_LENGTH = 5
 
 
 def get_field_config_value(field_config, source_feat, expression_context=None):
-    # todo: test!
     method = ColumnImportMethod(field_config["method"])
     field_value = NULL
     if method == ColumnImportMethod.ATTRIBUTE:
         src_field_name = field_config[ColumnImportMethod.ATTRIBUTE.value]
-        src_value = source_feat[src_field_name]
+        try:
+            src_value = source_feat[src_field_name]
+        except KeyError:
+            src_value = NULL
         value_map = field_config.get("value_map", {})
         # Prevent type mismatches in keys by casting keys to strings to match those the dict in src_value['value_map'] which is also forced to be strings
         field_value = value_map.get(str(src_value), src_value)

@@ -86,6 +86,38 @@ def source_fields():
     return source_fields
 
 
+def test_get_cross_section_table_column(
+    source_fields,
+    field_config,
+):
+    features = []
+    for width in [1, 2, 3]:
+        feature = QgsFeature(source_fields)
+        feature.setAttribute("cross_section_width", width)
+        features.append(feature)
+    column = CrossSectionDataProcessor.get_cross_section_table_column(
+        features, "cross_section_width", field_config
+    )
+    assert column == [1, 2, 3]
+
+
+def test_get_cross_section_table_column_no_data(
+    source_fields,
+    field_config,
+):
+    features = []
+    for width in [1, 2]:
+        feature = QgsFeature(source_fields)
+        feature.setAttribute("cross_section_width", width)
+        features.append(feature)
+    feature = QgsFeature(source_fields)
+    features.append(feature)
+    with pytest.warns(ProcessorWarning):
+        CrossSectionDataProcessor.get_cross_section_table_column(
+            features, "cross_section_width", field_config
+        )
+
+
 @pytest.mark.parametrize(
     "cs_shape,cs_widths,cs_heights,distances,expected_table",
     [
@@ -280,7 +312,7 @@ def test_get_feat_from_group(source_fields, field_config):
     # assure that the new_feat has a value for cross_section_table
     # if this would not be the case, the statement below would raise
     # note that value of cross_section_table is tested elsewhere
-    assert new_feat["cross_section_table"] == "NULL,NULL\nNULL,NULL\nNULL,NULL"
+    assert new_feat["cross_section_table"] == ""
     # ensure other attributes are copied
     assert new_feat["distance"] == 0
     assert (

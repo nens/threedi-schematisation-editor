@@ -144,6 +144,17 @@ def test_get_field_config_value(field_config, source_val, expected_val):
     assert get_field_config_value(fields_config["id"], source_feat) == expected_val
 
 
+def test_get_field_config_value_invalid_field_name():
+    fields_config = {
+        "id": {
+            "method": ColumnImportMethod.ATTRIBUTE.value,
+            ColumnImportMethod.ATTRIBUTE.value: "bar",
+        }
+    }
+    source_feat = create_feature_with_fields("id", "foo")
+    assert get_field_config_value(fields_config["id"], source_feat) == NULL
+
+
 def test_update_attributes_missing_field():
     """Test update_attributes with a field missing from the config."""
     # Setup

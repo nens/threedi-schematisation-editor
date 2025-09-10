@@ -178,6 +178,25 @@ class CrossSectionDataProcessor(Processor):
         )
 
     @staticmethod
+    def get_cross_section_table_column(feature_group, column_name, field_config):
+        column = [
+            get_field_config_value(field_config[column_name], feat)
+            for feat in feature_group
+        ]
+        if any(val == NULL for val in column):
+            null_idx = [
+                feat.id()
+                for idx, feat in enumerate(feature_group)
+                if column[idx] == NULL
+            ]
+            warnings.warn(
+                f"Cannot cross-section table because {column_name} is NULL for features: {null_idx}",
+                ProcessorWarning,
+            )
+            return []
+        return column
+
+    @staticmethod
     def get_cross_section_table(
         feature_group: list[QgsFeature],
         cross_section_shape: CrossSectionShape,
@@ -195,27 +214,21 @@ class CrossSectionDataProcessor(Processor):
             CrossSectionShape.TABULATED_TRAPEZIUM,
         ]:
             # CSV-style table of height, width pairs
-            # TODO Warn if not all data exists - do not create table and warn
-            heights = [
-                get_field_config_value(field_config["cross_section_height"], feat)
-                for feat in feature_group
-            ]
-            widths = [
-                get_field_config_value(field_config["cross_section_width"], feat)
-                for feat in feature_group
-            ]
+            heights = CrossSectionDataProcessor.get_cross_section_table_column(
+                feature_group, "cross_section_height", field_config
+            )
+            widths = CrossSectionDataProcessor.get_cross_section_table_column(
+                feature_group, "cross_section_width", field_config
+            )
             table = list(zip(heights, widths))
         elif cross_section_shape == CrossSectionShape.TABULATED_YZ:
             # CSV-style table of y, z pairs
-            # TODO Warn if not all data exists - do not create table and warn
-            y = [
-                get_field_config_value(field_config["cross_section_y"], feat)
-                for feat in feature_group
-            ]
-            z = [
-                get_field_config_value(field_config["cross_section_z"], feat)
-                for feat in feature_group
-            ]
+            y = CrossSectionDataProcessor.get_cross_section_table_column(
+                feature_group, "cross_section_y", field_config
+            )
+            z = CrossSectionDataProcessor.get_cross_section_table_column(
+                feature_group, "cross_section_z", field_config
+            )
             table = list(zip(y, z))
         return "\n".join(f"{pair[0]},{pair[1]}" for pair in table)
 
