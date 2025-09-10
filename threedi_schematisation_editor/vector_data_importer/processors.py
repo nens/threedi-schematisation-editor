@@ -93,7 +93,13 @@ class CrossSectionDataProcessor(Processor):
         dm.CrossSectionLocation,
     ]
 
-    def __init__(self, conversion_settings, target_fields_config, target_match_config, target_layers):
+    def __init__(
+        self,
+        conversion_settings,
+        target_fields_config,
+        target_match_config,
+        target_layers,
+    ):
         self.target_fields_config = target_fields_config
         self.target_match_config = target_match_config
         self.conversion_settings = conversion_settings
@@ -111,8 +117,12 @@ class CrossSectionDataProcessor(Processor):
         target_layer = self.get_target_layer(target_model_cls)
         if not target_layer:
             return {}
-        target_feat = self.find_target_object(src_feat, target_layer, self.target_match_config.get("target_object_id"),
-                                              self.target_match_config.get("target_object_code"))
+        target_feat = self.find_target_object(
+            src_feat,
+            target_layer,
+            self.target_match_config.get("target_object_id"),
+            self.target_match_config.get("target_object_code"),
+        )
         if not target_feat:
             return {}
         update_attributes(
@@ -185,6 +195,7 @@ class CrossSectionDataProcessor(Processor):
             CrossSectionShape.TABULATED_TRAPEZIUM,
         ]:
             # CSV-style table of height, width pairs
+            # TODO Warn if not all data exists - do not create table and warn
             heights = [
                 get_field_config_value(field_config["cross_section_height"], feat)
                 for feat in feature_group
@@ -196,6 +207,7 @@ class CrossSectionDataProcessor(Processor):
             table = list(zip(heights, widths))
         elif cross_section_shape == CrossSectionShape.TABULATED_YZ:
             # CSV-style table of y, z pairs
+            # TODO Warn if not all data exists - do not create table and warn
             y = [
                 get_field_config_value(field_config["cross_section_y"], feat)
                 for feat in feature_group
@@ -206,6 +218,46 @@ class CrossSectionDataProcessor(Processor):
             ]
             table = list(zip(y, z))
         return "\n".join(f"{pair[0]},{pair[1]}" for pair in table)
+
+    @staticmethod
+    def organize_group(
+        group: list[QgsFeature], shape_config_field: dict
+    ) -> Optional[list[QgsFeature]]:
+        cross_section_shape_values = [
+            get_field_config_value(shape_config_field, feat) for feat in group
+        ]
+        # check if all shapes in a group are the same
+        # warn if not, but continue
+        if not all(
+            shape_value == cross_section_shape_values[0]
+            for shape_value in cross_section_shape_values
+        ):
+            warnings.warn(
+                f"Not all features in group have the same cross section shape; grouped ids: {[feat.id() for feat in group]}",
+                ProcessorWarning,
+            )
+        # find the first item with a tabulated shape
+        # if no such item exists, warn and abort grouping
+        tabulated_shapes = [
+            shape.value for shape in CrossSectionShape if shape.is_tabulated
+        ]
+        first_valid_idx = next(
+            (
+                idx
+                for idx, shape_value in enumerate(cross_section_shape_values)
+                if shape_value in tabulated_shapes
+            ),
+            None,
+        )
+        if first_valid_idx is None:
+            warnings.warn(
+                f"No feature in this group has a tabulated cross-section shape; grouped ids: {[feat.id() for feat in group]}",
+                ProcessorWarning,
+            )
+            return
+        # Reorder group so that group[first_valid_idx] is the first item
+        group.insert(0, group.pop(first_valid_idx))
+        return group
 
     @staticmethod
     def group_features(
@@ -221,38 +273,22 @@ class CrossSectionDataProcessor(Processor):
             if not group_by_val:
                 grouped_features.append([feature])
                 continue
-            try:
-                cross_section_shape = CrossSectionShape(
-                    get_field_config_value(
-                        target_fields_config["cross_section_shape"], feature
-                    )
-                )
-            except ValueError:
-                # rows without valid cross section shapes cannot be grouped
-                grouped_features.append([feature])
+            provisional_group = [
+                feat for feat in external_features if feat[group_by] == group_by_val
+            ]
+            group = CrossSectionDataProcessor.organize_group(
+                provisional_group, target_fields_config["cross_section_shape"]
+            )
+            # in case the cross section shape does not support grouping, just add features one by one
+            # and add ids to grouped_ids to prevent revisiting those features
+            if not group:
+                for feat in provisional_group:
+                    grouped_features.append([feat])
+                grouped_ids += [feat.id() for feat in provisional_group]
                 continue
-            if not cross_section_shape.is_tabulated:
-                # rows that doe not represent a tabulated shape cannot be grouped
-                grouped_features.append([feature])
-            else:
-                group = [
-                    feat for feat in external_features if feat[group_by] == group_by_val
-                ]
-                grouped_ids += [feat.id() for feat in group]
-                grouped_features.append(group)
-                if not all(
-                    [
-                        get_field_config_value(
-                            target_fields_config["cross_section_shape"], feat
-                        )
-                        == cross_section_shape.value
-                        for feat in group
-                    ]
-                ):
-                    warnings.warn(
-                        f"Not all features with {group_by}={group_by_val} have the same cross section shape",
-                        ProcessorWarning,
-                    )
+            # add group, with supported shape, as list of features
+            grouped_ids += [feat.id() for feat in group]
+            grouped_features.append(group)
         return grouped_features
 
     @staticmethod
@@ -285,8 +321,12 @@ class CrossSectionDataProcessor(Processor):
         return new_feat
 
     @staticmethod
-    def find_target_object(src_feat: QgsFeature, target_layer: QgsVectorLayer, target_object_id_config: dict,
-                           target_object_code_config: dict) -> Optional[QgsFeature]:
+    def find_target_object(
+        src_feat: QgsFeature,
+        target_layer: QgsVectorLayer,
+        target_object_id_config: dict,
+        target_object_code_config: dict,
+    ) -> Optional[QgsFeature]:
         target_feat = None
         if target_object_id_config:
             target_id = get_field_config_value(target_object_id_config, src_feat)

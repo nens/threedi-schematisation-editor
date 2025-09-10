@@ -56,17 +56,17 @@ def field_config():
         for config_field in config_fields
     }
 
+
 @pytest.fixture
 def target_mapping_config():
     config_fields = {
         "target_object_type": "object_type",
-        "target_object_id" : "object_id",
+        "target_object_id": "object_id",
         "target_object_code": "object_code",
     }
     method = ColumnImportMethod.ATTRIBUTE.value
     return {
-        target: {"method": method, method: ref}
-        for target, ref in config_fields.items()
+        target: {"method": method, method: ref} for target, ref in config_fields.items()
     }
 
 
@@ -207,10 +207,16 @@ def test_group_features(source_fields, field_config, profile_ids, expected_group
     assert groups == expected_groups
 
 
-def test_group_features_shape_mismatch(source_fields, field_config):
-    features = []
-    feature_map = {}
-    shapes = [5, 5, 0]
+@pytest.mark.parametrize(
+    "shapes,expected_ids",
+    [
+        ([5, 5, 5], [0, 1, 2]),
+        ([5, 6, 6], [0, 1, 2]),
+        ([0, 5, 0], [1, 0, 2]),
+    ],
+)
+def test_organize_group(source_fields, field_config, shapes, expected_ids):
+    provisional_group = []
     for i, shape in enumerate(shapes):
         feature = QgsFeature(source_fields)
         feature.setAttribute("profile_id", 1)
@@ -218,13 +224,44 @@ def test_group_features_shape_mismatch(source_fields, field_config):
         feature.setAttribute("id", i)
         feature.setAttribute("cross_section_shape", shape)
         feature.setId(i)
-        features.append(feature)
-        feature_map[i] = feature
+        provisional_group.append(feature)
+    group = CrossSectionDataProcessor.organize_group(
+        provisional_group, field_config["cross_section_shape"]
+    )
+    assert [feature["id"] for feature in group] == expected_ids
+
+
+@pytest.mark.parametrize("cross_section_shape", [0, 10])
+def test_organize_group_shape_mismatch(
+    source_fields, field_config, cross_section_shape
+):
+    feature = QgsFeature(source_fields)
+    feature.setAttribute("profile_id", 1)
+    feature.setAttribute("id", 1)
+    feature.setAttribute("cross_section_shape", cross_section_shape)
+    feature.setId(1)
     with pytest.warns(ProcessorWarning):
-        groups = CrossSectionDataProcessor.group_features(
-            features, "profile_id", field_config
+        group = CrossSectionDataProcessor.organize_group(
+            [feature], field_config["cross_section_shape"]
         )
-    assert [feature["id"] for feature in groups[0]] == list(range(len(shapes)))
+        assert group is None
+
+
+def test_organize_group_not_tabulated(source_fields, field_config):
+    provisional_group = []
+    shapes = [5, 6]
+    for i, shape in enumerate(shapes):
+        feature = QgsFeature(source_fields)
+        feature.setAttribute("profile_id", 1)
+        feature.setAttribute("distance", 0)
+        feature.setAttribute("id", i)
+        feature.setAttribute("cross_section_shape", shape)
+        feature.setId(i)
+        provisional_group.append(feature)
+    with pytest.warns(ProcessorWarning):
+        CrossSectionDataProcessor.organize_group(
+            provisional_group, field_config["cross_section_shape"]
+        )
 
 
 def test_get_feat_from_group(source_fields, field_config):
@@ -280,14 +317,21 @@ def target_layer():
     ],
 )
 def test_find_target_object(
-    source_fields, target_layer, target_feat_attributes, expected_attributes, target_mapping_config
+    source_fields,
+    target_layer,
+    target_feat_attributes,
+    expected_attributes,
+    target_mapping_config,
 ):
     src_feat = QgsFeature(source_fields)
     for field, value in target_feat_attributes.items():
         src_feat.setAttribute(field, value)
-    target_feat = CrossSectionDataProcessor.find_target_object(src_feat=src_feat, target_layer=target_layer,
-                                                               target_object_id_config=target_mapping_config["target_object_id"],
-                                                               target_object_code_config=target_mapping_config["target_object_code"])
+    target_feat = CrossSectionDataProcessor.find_target_object(
+        src_feat=src_feat,
+        target_layer=target_layer,
+        target_object_id_config=target_mapping_config["target_object_id"],
+        target_object_code_config=target_mapping_config["target_object_code"],
+    )
     for field, value in expected_attributes.items():
         assert target_feat[field] == value
 
@@ -296,48 +340,71 @@ def test_find_target_object(
     "target_object_id, target_object_code,expected_attributes",
     [
         (
-            "object_id", None,
+            "object_id",
+            None,
             {"id": 1, "code": "code_1"},
         ),
         (
-            None, "object_code",
+            None,
+            "object_code",
             {"id": 2, "code": "code_2"},
         ),
     ],
 )
 def test_find_target_object_missing_target_fields(
-    source_fields, target_layer, target_object_id, target_object_code, expected_attributes
+    source_fields,
+    target_layer,
+    target_object_id,
+    target_object_code,
+    expected_attributes,
 ):
     method = ColumnImportMethod.ATTRIBUTE.value
-    target_object_id_config = {"method": method, method: target_object_id} if target_object_id else None
-    target_object_code_config = {"method": method, method: target_object_code} if target_object_code else None
+    target_object_id_config = (
+        {"method": method, method: target_object_id} if target_object_id else None
+    )
+    target_object_code_config = (
+        {"method": method, method: target_object_code} if target_object_code else None
+    )
     src_feat = QgsFeature(source_fields)
     src_feat.setAttribute("object_id", 1)
     src_feat.setAttribute("object_code", "code_2")
-    target_feat = CrossSectionDataProcessor.find_target_object(src_feat=src_feat, target_layer=target_layer,
-                                                               target_object_id_config=target_object_id_config,
-                                                               target_object_code_config=target_object_code_config)
+    target_feat = CrossSectionDataProcessor.find_target_object(
+        src_feat=src_feat,
+        target_layer=target_layer,
+        target_object_id_config=target_object_id_config,
+        target_object_code_config=target_object_code_config,
+    )
     for field, value in expected_attributes.items():
         assert target_feat[field] == value
 
 
 @pytest.mark.parametrize(
     "target_object_id, target_object_code",
-    [("object_id", None),
-    (None, "object_code"),
+    [
+        ("object_id", None),
+        (None, "object_code"),
     ],
 )
-def test_find_target_object_no_match(source_fields, target_layer, target_object_id, target_object_code):
+def test_find_target_object_no_match(
+    source_fields, target_layer, target_object_id, target_object_code
+):
     src_feat = QgsFeature(source_fields)
     src_feat.setAttribute("object_id", 1337)
     src_feat.setAttribute("object_code", "code_1337")
     method = ColumnImportMethod.ATTRIBUTE.value
-    target_object_id_config = {"method": method, method: target_object_id} if target_object_id else None
-    target_object_code_config = {"method": method, method: target_object_code} if target_object_code else None
+    target_object_id_config = (
+        {"method": method, method: target_object_id} if target_object_id else None
+    )
+    target_object_code_config = (
+        {"method": method, method: target_object_code} if target_object_code else None
+    )
     with pytest.warns(ProcessorWarning):
-        target_feat = CrossSectionDataProcessor.find_target_object(src_feat=src_feat, target_layer=target_layer,
-                                                                   target_object_id_config=target_object_id_config,
-                                                                   target_object_code_config=target_object_code_config)
+        target_feat = CrossSectionDataProcessor.find_target_object(
+            src_feat=src_feat,
+            target_layer=target_layer,
+            target_object_id_config=target_object_id_config,
+            target_object_code_config=target_object_code_config,
+        )
     assert target_feat is None
 
 
@@ -352,7 +419,9 @@ def processor(target_layer, field_config, target_mapping_config):
             "target_object_code": "object_code",
         }
     )
-    return CrossSectionDataProcessor(conversion_settings, field_config, target_mapping_config,[target_layer])
+    return CrossSectionDataProcessor(
+        conversion_settings, field_config, target_mapping_config, [target_layer]
+    )
 
 
 @pytest.mark.parametrize(
