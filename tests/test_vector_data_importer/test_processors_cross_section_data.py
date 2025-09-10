@@ -56,6 +56,19 @@ def field_config():
         for config_field in config_fields
     }
 
+@pytest.fixture
+def target_mapping_config():
+    config_fields = {
+        "target_object_type": "object_type",
+        "target_object_id" : "object_id",
+        "target_object_code": "object_code",
+    }
+    method = ColumnImportMethod.ATTRIBUTE.value
+    return {
+        target: {"method": method, method: ref}
+        for target, ref in config_fields.items()
+    }
+
 
 @pytest.fixture
 def source_fields():
@@ -267,64 +280,69 @@ def target_layer():
     ],
 )
 def test_find_target_object(
-    source_fields, target_layer, target_feat_attributes, expected_attributes
+    source_fields, target_layer, target_feat_attributes, expected_attributes, target_mapping_config
 ):
     src_feat = QgsFeature(source_fields)
     for field, value in target_feat_attributes.items():
         src_feat.setAttribute(field, value)
-    target_feat = CrossSectionDataProcessor.find_target_object(
-        src_feat=src_feat,
-        target_layer=target_layer,
-        target_object_id_field="object_id",
-        target_object_code_field="object_code",
-    )
+    target_feat = CrossSectionDataProcessor.find_target_object(src_feat=src_feat, target_layer=target_layer,
+                                                               target_object_id_config=target_mapping_config["target_object_id"],
+                                                               target_object_code_config=target_mapping_config["target_object_code"])
     for field, value in expected_attributes.items():
         assert target_feat[field] == value
 
 
 @pytest.mark.parametrize(
-    "field_kwargs,expected_attributes",
+    "target_object_id, target_object_code,expected_attributes",
     [
         (
-            {"target_object_id_field": "object_id", "target_object_code_field": None},
+            "object_id", None,
             {"id": 1, "code": "code_1"},
         ),
         (
-            {"target_object_id_field": None, "target_object_code_field": "object_code"},
+            None, "object_code",
             {"id": 2, "code": "code_2"},
         ),
     ],
 )
 def test_find_target_object_missing_target_fields(
-    source_fields, target_layer, field_kwargs, expected_attributes
+    source_fields, target_layer, target_object_id, target_object_code, expected_attributes
 ):
+    method = ColumnImportMethod.ATTRIBUTE.value
+    target_object_id_config = {"method": method, method: target_object_id} if target_object_id else None
+    target_object_code_config = {"method": method, method: target_object_code} if target_object_code else None
     src_feat = QgsFeature(source_fields)
     src_feat.setAttribute("object_id", 1)
     src_feat.setAttribute("object_code", "code_2")
-    target_feat = CrossSectionDataProcessor.find_target_object(
-        src_feat=src_feat, target_layer=target_layer, **field_kwargs
-    )
+    target_feat = CrossSectionDataProcessor.find_target_object(src_feat=src_feat, target_layer=target_layer,
+                                                               target_object_id_config=target_object_id_config,
+                                                               target_object_code_config=target_object_code_config)
     for field, value in expected_attributes.items():
         assert target_feat[field] == value
 
 
 @pytest.mark.parametrize(
-    "field_kwargs",
-    [{"target_object_id_field": "object_id", "target_object_code_field": None},
-     {"target_object_id_field": None, "target_object_code_field": "object_code"},
+    "target_object_id, target_object_code",
+    [("object_id", None),
+    (None, "object_code"),
     ],
 )
-def test_find_target_object_no_match(source_fields, target_layer, field_kwargs):
+def test_find_target_object_no_match(source_fields, target_layer, target_object_id, target_object_code):
     src_feat = QgsFeature(source_fields)
     src_feat.setAttribute("object_id", 1337)
     src_feat.setAttribute("object_code", "code_1337")
+    method = ColumnImportMethod.ATTRIBUTE.value
+    target_object_id_config = {"method": method, method: target_object_id} if target_object_id else None
+    target_object_code_config = {"method": method, method: target_object_code} if target_object_code else None
     with pytest.warns(ProcessorWarning):
-        target_feat = CrossSectionDataProcessor.find_target_object(src_feat=src_feat, target_layer=target_layer, **field_kwargs)
+        target_feat = CrossSectionDataProcessor.find_target_object(src_feat=src_feat, target_layer=target_layer,
+                                                                   target_object_id_config=target_object_id_config,
+                                                                   target_object_code_config=target_object_code_config)
     assert target_feat is None
 
 
 @pytest.fixture
-def processor(target_layer, field_config):
+def processor(target_layer, field_config, target_mapping_config):
     conversion_settings = ConversionSettings(
         {
             "order_by": "distance",
@@ -334,7 +352,7 @@ def processor(target_layer, field_config):
             "target_object_code": "object_code",
         }
     )
-    return CrossSectionDataProcessor(conversion_settings, field_config, [target_layer])
+    return CrossSectionDataProcessor(conversion_settings, field_config, target_mapping_config,[target_layer])
 
 
 @pytest.mark.parametrize(

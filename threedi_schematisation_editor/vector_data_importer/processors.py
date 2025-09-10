@@ -93,8 +93,9 @@ class CrossSectionDataProcessor(Processor):
         dm.CrossSectionLocation,
     ]
 
-    def __init__(self, conversion_settings, target_fields_config, target_layers):
+    def __init__(self, conversion_settings, target_fields_config, target_match_config, target_layers):
         self.target_fields_config = target_fields_config
+        self.target_match_config = target_match_config
         self.conversion_settings = conversion_settings
         self.target_layer_map = {
             CrossSectionDataProcessor.get_unified_object_type_str(
@@ -110,12 +111,8 @@ class CrossSectionDataProcessor(Processor):
         target_layer = self.get_target_layer(target_model_cls)
         if not target_layer:
             return {}
-        target_feat = self.find_target_object(
-            src_feat,
-            target_layer,
-            self.conversion_settings.target_object_id_field,
-            self.conversion_settings.target_object_code_field,
-        )
+        target_feat = self.find_target_object(src_feat, target_layer, self.target_match_config.get("target_object_id"),
+                                              self.target_match_config.get("target_object_code"))
         if not target_feat:
             return {}
         update_attributes(
@@ -288,15 +285,11 @@ class CrossSectionDataProcessor(Processor):
         return new_feat
 
     @staticmethod
-    def find_target_object(
-        src_feat: QgsFeature,
-        target_layer: QgsVectorLayer,
-        target_object_id_field: str,
-        target_object_code_field: str,
-    ) -> Optional[QgsFeature]:
+    def find_target_object(src_feat: QgsFeature, target_layer: QgsVectorLayer, target_object_id_config: dict,
+                           target_object_code_config: dict) -> Optional[QgsFeature]:
         target_feat = None
-        if target_object_id_field:
-            target_id = src_feat[target_object_id_field]
+        if target_object_id_config:
+            target_id = get_field_config_value(target_object_id_config, src_feat)
             if target_id:
                 target_feat = next(
                     (
@@ -306,8 +299,8 @@ class CrossSectionDataProcessor(Processor):
                     ),
                     None,
                 )
-        if not target_feat and target_object_code_field:
-            target_code = src_feat[target_object_code_field]
+        if not target_feat and target_object_code_config:
+            target_code = get_field_config_value(target_object_code_config, src_feat)
             if target_code:
                 target_feat = next(
                     (
@@ -325,10 +318,14 @@ class CrossSectionDataProcessor(Processor):
         return target_feat
 
     def get_target_model_cls(self, src_feat: QgsFeature) -> Optional[type]:
-        src_object_type = src_feat[self.conversion_settings.target_object_type_field]
+        target_object_config = self.target_match_config.get("target_object_type")
+        if not target_object_config:
+            return
+        src_object_type = get_field_config_value(target_object_config, src_feat)
+        # Make sure src_object_type = NULL warns
         if not src_object_type:
             warnings.warn(
-                f"Could not find attribute {self.conversion_settings.target_object_type_field} for feature {src_feat['id']}",
+                f"Could not find value for target_object_type for feature {src_feat['id']}",
                 ProcessorWarning,
             )
             return

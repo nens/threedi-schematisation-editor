@@ -123,13 +123,6 @@ class ConversionSettings:
         self.join_field_tgt = conversion_config.get("join_field_tgt", None)
         self.group_by_field = conversion_config.get("group_by", None)
         self.order_by_field = conversion_config.get("order_by", None)
-        self.target_object_code_field = conversion_config.get(
-            "target_object_code", None
-        )
-        self.target_object_id_field = conversion_config.get("target_object_id", None)
-        self.target_object_type_field = conversion_config.get(
-            "target_object_type", None
-        )
 
 
 class ColumnImportMethod(Enum):

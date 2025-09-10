@@ -286,7 +286,15 @@ def test_import_cross_section_data(qgis_application):
         config_field: {"method": method, method: config_field}
         for config_field in config_fields
     }
-
+    target_map_fields = {
+        "target_object_type": "object_type",
+        "target_object_id": "object_id",
+        "target_object_code": "object_code",
+    }
+    target_config = {
+        target: {"method": method, method: ref}
+        for target, ref in target_map_fields.items()
+    }
     import_config = {
         "conversion_settings": {
             "order_by": "distance",
@@ -296,6 +304,7 @@ def test_import_cross_section_data(qgis_application):
             "target_object_code": "object_code",
         },
         "fields": field_config,
+        "target_mapping": target_config,
     }
     src_layer = get_source_layer("cross_section_data.gpkg", "cross_section_data")
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_csd_import.gpkg")
