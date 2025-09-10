@@ -1,9 +1,21 @@
 from collections import defaultdict
 from enum import Enum
+from functools import cached_property, partial
 from itertools import chain
+from typing import Any, Dict, List
 
 from qgis.gui import QgsFieldExpressionWidget
-from qgis.PyQt.QtWidgets import QComboBox, QLabel, QLineEdit, QPushButton
+from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
+from qgis.PyQt.QtWidgets import (
+    QComboBox,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QTableView,
+    QTreeView,
+    QVBoxLayout,
+    QWidget,
+)
 
 from threedi_schematisation_editor.utils import (
     enum_entry_name_format,
@@ -12,41 +24,68 @@ from threedi_schematisation_editor.utils import (
 )
 from threedi_schematisation_editor.vector_data_importer.dialogs.utils import (
     ColumnImportIndex,
+    ImportFieldMappingUtils,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 
 
 def get_field_methods_mapping(
-    fields_iterator, auto_fields=None, auto_attribute_fields=None
+    fields_iterator,
+    auto_fields=None,
+    auto_attribute_fields=None,
+    required_fields=None,
+    no_default_fields=None,
 ):
     """Return a mapping of fields to import methods."""
+    # TODO: consider changing this, auto_fields, auto_attribute_fields, required_fields is a bit messy
     methods_mapping = defaultdict(dict)
 
     auto_fields = set(auto_fields) | {"id"} if auto_fields else {"id"}
     auto_attribute_fields = (
         set(auto_attribute_fields) if auto_attribute_fields else set()
     )
+    required_fields = set(required_fields) if required_fields else set()
+    no_default_fields = set(no_default_fields) if no_default_fields else set()
 
     for field_name, model_cls in fields_iterator:
+        fields = []
         if field_name in auto_fields:
-            methods_mapping[model_cls][field_name] = [ColumnImportMethod.AUTO]
+            fields = [ColumnImportMethod.AUTO]
         elif field_name in auto_attribute_fields:
-            methods_mapping[model_cls][field_name] = [
+            fields = [
                 ColumnImportMethod.AUTO,
                 ColumnImportMethod.ATTRIBUTE,
             ]
+        elif field_name in required_fields:
+            fields = [
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.DEFAULT,
+                ColumnImportMethod.EXPRESSION,
+            ]
+        elif field_name in no_default_fields:
+            fields = [
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+                ColumnImportMethod.IGNORE,
+            ]
         else:
-            methods_mapping[model_cls][field_name] = [
+            fields = [
                 ColumnImportMethod.ATTRIBUTE,
                 ColumnImportMethod.DEFAULT,
                 ColumnImportMethod.EXPRESSION,
                 ColumnImportMethod.IGNORE,
             ]
+        methods_mapping[model_cls][field_name] = fields
     return methods_mapping
 
 
 def create_widgets(
-    import_model_cls, nodes_model_cls=None, auto_fields=None, auto_attribute_fields=None
+    import_model_cls,
+    nodes_model_cls=None,
+    auto_fields=None,
+    auto_attribute_fields=None,
+    required_fields=None,
+    no_default_fields=None,
 ):
     """Create widgets for the data model fields."""
     import_fields = (
@@ -60,7 +99,11 @@ def create_widgets(
         node_fields = ()
     fields_iterator = chain(import_fields, node_fields)
     field_methods_mapping = get_field_methods_mapping(
-        fields_iterator, auto_fields, auto_attribute_fields
+        fields_iterator,
+        auto_fields,
+        auto_attribute_fields,
+        required_fields,
+        no_default_fields,
     )
     widgets_to_add = defaultdict(dict)
     for model_cls, fields_mapping in field_methods_mapping.items():
@@ -83,13 +126,19 @@ def create_widgets(
                     widget = create_method_widget(field_methods)
                 elif column_idx == ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX:
                     widget = create_combobox_widget()
+                    if ColumnImportMethod.ATTRIBUTE not in field_methods:
+                        widget.setDisabled(True)
                 elif column_idx == ColumnImportIndex.VALUE_MAP_COLUMN_IDX:
+                    # todo: disable value map in some cases?
                     widget = create_set_value_map_widget()
                 elif column_idx == ColumnImportIndex.EXPRESSION_COLUMN_IDX:
                     widget = create_expression_widget()
+                    if ColumnImportMethod.EXPRESSION not in field_methods:
+                        widget.setDisabled(True)
                 elif column_idx == ColumnImportIndex.DEFAULT_VALUE_COLUMN_IDX:
                     widget = create_default_value_widget(field_type)
-
+                    if ColumnImportMethod.DEFAULT not in field_methods:
+                        widget.setDisabled(True)
                 widgets_to_add[model_cls][row_idx, column_idx] = widget
 
             row_idx += 1
@@ -146,3 +195,180 @@ CONFIG_HEADER = [
     "Expression",
 ]
 CONFIG_KEYS = ["method", "source_attribute", "value_map", "default_value", "expression"]
+
+
+class FieldMapWidget(QWidget):
+    def __init__(self, model_cls, widgets, parent=None):
+        super().__init__(parent)
+        # Create table view and models
+        self.table_view = QTableView(self)
+        self.table_view.verticalHeader().setVisible(False)
+        self.model = QStandardItemModel()
+        self.table_view.setModel(self.model)
+        self.model_cls = model_cls
+        # Create widgets and add them to the table view and model
+        self._create(widgets)
+        # Setup widget layout
+        layout = QVBoxLayout()
+        layout.addWidget(self.table_view)
+        self.setLayout(layout)
+
+    def _create(self, widgets):
+        self.model.clear()
+        self.model.setHorizontalHeaderLabels(CONFIG_HEADER)
+        for (row_idx, column_idx), widget in widgets.items():
+            self.model.setItem(row_idx, column_idx, QStandardItem(""))
+            self.table_view.setIndexWidget(
+                self.model.index(row_idx, column_idx), widget
+            )
+        for i in range(len(CONFIG_HEADER)):
+            self.table_view.resizeColumnToContents(i)
+
+    def connect(self, source_layer_cbo, uc, parent):
+        row_idx = 0
+        for field_name in self.model_cls.__annotations__.keys():
+            if field_name in self.model_cls.obsolete_fields():
+                continue
+            method_combobox = self.get_widget(
+                row_idx, ColumnImportIndex.METHOD_COLUMN_IDX
+            )
+            source_attribute_combobox = self.get_widget(
+                row_idx, ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX
+            )
+            expression_widget = self.get_widget(
+                row_idx, ColumnImportIndex.EXPRESSION_COLUMN_IDX
+            )
+            value_map_button = self.get_widget(
+                row_idx, ColumnImportIndex.VALUE_MAP_COLUMN_IDX
+            )
+            method_combobox.currentTextChanged.connect(
+                partial(
+                    ImportFieldMappingUtils.on_method_changed,
+                    source_attribute_combobox,
+                    value_map_button,
+                    expression_widget,
+                )
+            )
+            method_combobox.currentTextChanged.emit(method_combobox.currentText())
+            source_attribute_combobox.currentTextChanged.connect(
+                partial(
+                    ImportFieldMappingUtils.on_source_attribute_value_changed,
+                    method_combobox,
+                    source_attribute_combobox,
+                )
+            )
+            value_map_button.clicked.connect(
+                partial(
+                    ImportFieldMappingUtils.on_value_map_clicked,
+                    source_layer_cbo,
+                    source_attribute_combobox,
+                    value_map_button,
+                    uc,
+                    parent,
+                )
+            )
+            row_idx += 1
+
+    def get_widget(self, row_idx, col_idx):
+        return self.table_view.indexWidget(self.model.item(row_idx, col_idx).index())
+
+    def collect_fields_settings(self) -> Dict[str, Any]:
+        fields_settings = {}
+        row_idx = 0
+        for field_name, field_type in self.model_cls.__annotations__.items():
+            if field_name in self.model_cls.obsolete_fields():
+                continue
+            field_config = {}
+            for column_idx, key_name in enumerate(CONFIG_KEYS, start=1):
+                widget = self.get_widget(row_idx, column_idx)
+                config = ImportFieldMappingUtils.collect_config_from_widget(
+                    widget, key_name, field_type, column_idx
+                )
+                if config is not None:
+                    field_config[key_name] = config
+            fields_settings[field_name] = field_config
+            row_idx += 1
+        return fields_settings
+
+    def get_column_widgets(self, column_idx: int) -> List[QWidget]:
+        model_widgets = []
+        row_idx = 0
+        for field_name in self.model_cls.__annotations__.keys():
+            if field_name in self.model_cls.obsolete_fields():
+                continue
+            widget = self.get_widget(row_idx, column_idx)
+            widget.data_model_field_name = field_name
+            model_widgets.append(widget)
+            row_idx += 1
+        return model_widgets
+
+    @cached_property
+    def source_attribute_widgets(self):
+        return self.get_column_widgets(ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX)
+
+    @cached_property
+    def field_labels(self):
+        return self.get_column_widgets(ColumnImportIndex.FIELD_NAME_COLUMN_IDX)
+
+    @cached_property
+    def method_widgets(self):
+        return self.get_column_widgets(ColumnImportIndex.METHOD_COLUMN_IDX)
+
+    @cached_property
+    def expression_widgets(self):
+        return self.get_column_widgets(ColumnImportIndex.EXPRESSION_COLUMN_IDX)
+
+    def get_missing_fields(self):
+        missing_fields = []
+        for field_lbl, method_cbo, source_attribute_cbo in zip(
+            self.field_labels, self.method_widgets, self.source_attribute_widgets
+        ):
+            field_name, method_txt, source_attribute_txt = (
+                field_lbl.text().strip(),
+                method_cbo.currentText(),
+                source_attribute_cbo.currentText(),
+            )
+            if (
+                method_txt == str(ColumnImportMethod.ATTRIBUTE)
+                and not source_attribute_txt
+            ):
+                missing_fields.append(field_name)
+        return missing_fields
+
+    def reset(self):
+        for row in range(self.model.rowCount()):
+            for col in range(self.model.columnCount()):
+                widget = self.get_widget(row, col)
+                # Reset widgets based on their type
+                if isinstance(widget, QComboBox):
+                    widget.setCurrentIndex(0)
+                elif isinstance(widget, QLineEdit):
+                    widget.setText("")
+                elif isinstance(widget, QgsFieldExpressionWidget):
+                    widget.setExpression("")
+
+    def set(self, fields_setting: Dict[str, Any]):
+        row_idx = 0
+        for field_name, field_type in self.model_cls.__annotations__.items():
+            if field_name in self.model_cls.obsolete_fields():
+                continue
+            if is_optional(field_type):
+                field_type = optional_type(field_type)
+            field_config = fields_setting.get(field_name, {})
+            for column_idx, key_name in enumerate(CONFIG_KEYS, start=1):
+                widget = self.get_widget(row_idx, column_idx)
+                ImportFieldMappingUtils.update_widget_with_config(
+                    widget, key_name, field_type, field_config
+                )
+            row_idx += 1
+
+    def update_layers(self, layer):
+        layer_field_names = [""]
+        if layer:
+            layer_field_names += [field.name() for field in layer.fields()]
+        for combobox in self.source_attribute_widgets:
+            combobox.clear()
+            combobox.addItems(layer_field_names)
+            combobox.setCurrentText(combobox.data_model_field_name)
+        for expression_widget in self.expression_widgets:
+            expression_widget.setLayer(layer)

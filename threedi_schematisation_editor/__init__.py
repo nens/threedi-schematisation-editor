@@ -35,6 +35,7 @@ from threedi_schematisation_editor.utils import (
     set_wal_for_sqlite_mode,
 )
 from threedi_schematisation_editor.vector_data_importer.dialogs.import_features import (
+    ImportCrossSectionDataDialog,
     ImportCrossSectionLocationDialog,
     ImportFeaturesDialog,
     ImportStructuresDialog,
@@ -101,6 +102,11 @@ class ThreediSchematisationEditorPlugin:
         import_features_icon_path = get_icon_path("icon_import.png")
         import_actions_spec = [
             ("Connection nodes", self.import_external_connection_nodes, None),
+            (
+                "Cross-section data",
+                self.import_external_cross_section_data,
+                None,
+            ),
             (
                 "Cross-section locations",
                 self.import_external_cross_section_locations,
@@ -370,6 +376,9 @@ class ThreediSchematisationEditorPlugin:
 
     def import_external_connection_nodes(self):
         self.import_external(dm.ConnectionNode, ImportFeaturesDialog)
+
+    def import_external_cross_section_data(self):
+        self.import_external(dm.CrossSectionData, ImportCrossSectionDataDialog)
 
     def import_external_cross_section_locations(self):
         self.import_external(dm.CrossSectionLocation, ImportCrossSectionLocationDialog)
