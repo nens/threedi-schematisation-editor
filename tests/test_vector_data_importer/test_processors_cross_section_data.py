@@ -63,6 +63,7 @@ def target_mapping_config():
         "target_object_type": "object_type",
         "target_object_id": "object_id",
         "target_object_code": "object_code",
+        "order_by": "distance",
     }
     method = ColumnImportMethod.ATTRIBUTE.value
     return {
@@ -130,6 +131,7 @@ def test_get_cross_section_table_column_no_data(
 def test_get_cross_section_table_tabulated(
     source_fields,
     field_config,
+    target_mapping_config,
     cs_shape,
     cs_widths,
     cs_heights,
@@ -145,12 +147,12 @@ def test_get_cross_section_table_tabulated(
         feature.setAttribute("distance", distance)
         features.append(feature)
     table = CrossSectionDataProcessor.get_cross_section_table(
-        features, cs_shape, "distance", field_config
+        features, cs_shape, target_mapping_config["order_by"], field_config
     )
     assert table == expected_table
 
 
-def test_get_cross_section_table_yz(source_fields, field_config):
+def test_get_cross_section_table_yz(source_fields, field_config, target_mapping_config):
     features = []
     cs_data = [[1, 10, 0], [2, 20, 1]]
     for y, z, distance in cs_data:
@@ -160,9 +162,34 @@ def test_get_cross_section_table_yz(source_fields, field_config):
         feature.setAttribute("distance", distance)
         features.append(feature)
     table = CrossSectionDataProcessor.get_cross_section_table(
-        features, CrossSectionShape.TABULATED_YZ, "distance", field_config
+        features,
+        CrossSectionShape.TABULATED_YZ,
+        target_mapping_config["order_by"],
+        field_config,
     )
     assert table == "1,10\n2,20"
+
+
+def test_get_cross_section_table_yz_no_sort_by(
+    source_fields,
+    field_config,
+    target_mapping_config,
+):
+    features = []
+    y = [10, 0, 20]
+    z = [1, 2, 3]
+    for y, z in zip(y, z):
+        feature = QgsFeature(source_fields)
+        feature.setAttribute("cross_section_y", y)
+        feature.setAttribute("cross_section_z", z)
+        features.append(feature)
+    table = CrossSectionDataProcessor.get_cross_section_table(
+        features,
+        CrossSectionShape.TABULATED_YZ,
+        target_mapping_config["order_by"],
+        field_config,
+    )
+    assert table == "0,2\n10,1\n20,3"
 
 
 @pytest.mark.parametrize(
@@ -206,37 +233,6 @@ def test_get_cross_section_table_missing_data(source_fields, field_config, cs_sh
         features, cs_shape, "distance", field_config
     )
     assert table is None
-
-
-@pytest.mark.parametrize(
-    "profile_ids,expected_group_ids",
-    [
-        ([1, 1, 2, 2, 3, 3], [[0, 1], [2, 3], [4, 5]]),
-        ([1, 2, 3], [[0], [1], [2]]),
-        ([1, 1, 2], [[0, 1], [2]]),
-    ],
-)
-def test_group_features(source_fields, field_config, profile_ids, expected_group_ids):
-    features = []
-    feature_map = {}
-    for i, profile_id in enumerate(profile_ids):
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("profile_id", profile_id)
-        feature.setAttribute("distance", 0)
-        feature.setAttribute("id", i)
-        feature.setId(i)
-        feature.setAttribute(
-            "cross_section_shape", CrossSectionShape.TABULATED_RECTANGLE.value
-        )
-        features.append(feature)
-        feature_map[i] = feature
-    groups = CrossSectionDataProcessor.group_features(
-        features, "profile_id", field_config
-    )
-    expected_groups = [
-        [feature_map[feat_id] for feat_id in group] for group in expected_group_ids
-    ]
-    assert groups == expected_groups
 
 
 @pytest.mark.parametrize(
@@ -294,30 +290,6 @@ def test_organize_group_not_tabulated(source_fields, field_config):
         CrossSectionDataProcessor.organize_group(
             provisional_group, field_config["cross_section_shape"]
         )
-
-
-def test_get_feat_from_group(source_fields, field_config):
-    features = []
-    for i in range(3):
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("id", i)
-        feature.setAttribute("distance", 0)
-        feature.setAttribute(
-            "cross_section_shape", CrossSectionShape.TABULATED_RECTANGLE.value
-        )
-        features.append(feature)
-    new_feat = CrossSectionDataProcessor.get_feat_from_group(
-        features, "distance", field_config
-    )
-    # assure that the new_feat has a value for cross_section_table
-    # if this would not be the case, the statement below would raise
-    # note that value of cross_section_table is tested elsewhere
-    assert new_feat["cross_section_table"] == ""
-    # ensure other attributes are copied
-    assert new_feat["distance"] == 0
-    assert (
-        new_feat["cross_section_shape"] == CrossSectionShape.TABULATED_RECTANGLE.value
-    )
 
 
 @pytest.fixture
@@ -442,17 +414,8 @@ def test_find_target_object_no_match(
 
 @pytest.fixture
 def processor(target_layer, field_config, target_mapping_config):
-    conversion_settings = ConversionSettings(
-        {
-            "order_by": "distance",
-            "group_by": "profile_id",
-            "target_object_type": "object_type",
-            "target_object_id": "object_id",
-            "target_object_code": "object_code",
-        }
-    )
     return CrossSectionDataProcessor(
-        conversion_settings, field_config, target_mapping_config, [target_layer]
+        field_config, target_mapping_config, [target_layer]
     )
 
 
@@ -516,3 +479,74 @@ def test_get_target_layer(
         assert processor.get_target_layer(model_cls) == target_layer
     else:
         assert processor.get_target_layer(model_cls) is None
+
+
+def test_build_target_map(processor, source_fields, target_layer):
+    features = []
+    object_ids = [0, 1, 1]
+    expected_source_feat_map = {}
+    target_features = [feat for feat in target_layer.getFeatures()]
+    for i, object_id in enumerate(object_ids):
+        feature = QgsFeature(source_fields)
+        feature.setAttribute("object_id", object_id)
+        feature.setAttribute("object_code", f"code_{i}")
+        feature.setAttribute("object_type", "pipe")
+        features.append(feature)
+        expected_source_feat_map[feature] = target_features[object_id]
+    processor.build_target_map(features)
+    assert processor.source_feat_map == expected_source_feat_map
+
+
+@pytest.mark.parametrize(
+    "object_ids,cs_shapes,expected_group_ids",
+    [
+        ([0, 1, 1], [1, 5, 5], [[0], [1, 2]]),  # 2 groups, with valid shapes
+        ([0, 1, 1], [1, 1, 1], [[0], [1], [2]]),  # 2 groups, but no tabulated shapes
+        ([0, 1, 2], [5, 5, 5], [[0], [1], [2]]),  # no groups
+    ],
+)
+def test_group_features(
+    processor, source_fields, object_ids, cs_shapes, expected_group_ids
+):
+    features = []
+    feature_map = {}
+    for i, (object_id, cs_shape) in enumerate(zip(object_ids, cs_shapes)):
+        feature = QgsFeature(source_fields)
+        feature.setAttribute("object_id", object_id)
+        feature.setAttribute("object_code", f"code_{i}")
+        feature.setAttribute("object_type", "pipe")
+        feature.setAttribute("cross_section_shape", cs_shape)
+        feature_map[i] = feature
+        features.append(feature)
+    processor.build_target_map(features)
+    groups = processor.group_features()
+    expected_groups = [
+        [feature_map[feat_id] for feat_id in group] for group in expected_group_ids
+    ]
+    assert groups == expected_groups
+
+
+def test_get_feat_from_group(processor, source_fields, field_config):
+    features = []
+    for i in range(3):
+        feature = QgsFeature(source_fields)
+        feature.setAttribute("id", i)
+        (feature.setAttribute("distance", 0),)
+        feature.setAttribute("object_id", 0)
+        feature.setAttribute("object_type", f"pipe")
+        feature.setAttribute(
+            "cross_section_shape", CrossSectionShape.TABULATED_RECTANGLE.value
+        )
+        features.append(feature)
+    processor.build_target_map(features)
+    new_feat = processor.get_feat_from_group(features)
+    # assure that the new_feat has a value for cross_section_table
+    # if this would not be the case, the statement below would raise
+    # note that value of cross_section_table is tested elsewhere
+    assert new_feat["cross_section_table"] == ""
+    # ensure other attributes are copied
+    assert new_feat["distance"] == 0
+    assert (
+        new_feat["cross_section_shape"] == CrossSectionShape.TABULATED_RECTANGLE.value
+    )
+    assert processor.source_feat_map[new_feat] == processor.source_feat_map[features[0]]

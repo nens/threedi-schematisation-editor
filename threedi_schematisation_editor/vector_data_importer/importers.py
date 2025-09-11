@@ -111,7 +111,6 @@ class CrossSectionDataImporter(Importer):
             ]
         self.target_layers = target_layers
         self.processor = CrossSectionDataProcessor(
-            conversion_settings=self.conversion_settings,
             target_fields_config=self.import_settings.get("fields", {}),
             target_match_config=self.import_settings.get("target_mapping", {}),
             target_layers=target_layers,

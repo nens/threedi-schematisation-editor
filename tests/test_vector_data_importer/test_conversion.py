@@ -290,19 +290,13 @@ def test_import_cross_section_data(qgis_application):
         "target_object_type": "object_type",
         "target_object_id": "object_id",
         "target_object_code": "object_code",
+        "order_by": "distance",
     }
     target_config = {
         target: {"method": method, method: ref}
         for target, ref in target_map_fields.items()
     }
     import_config = {
-        "conversion_settings": {
-            "order_by": "distance",
-            "group_by": "profile_id",
-            "target_object_type": "object_type",
-            "target_object_id": "object_id",
-            "target_object_code": "object_code",
-        },
         "fields": field_config,
         "target_mapping": target_config,
     }

@@ -95,42 +95,33 @@ class CrossSectionDataProcessor(Processor):
 
     def __init__(
         self,
-        conversion_settings,
         target_fields_config,
         target_match_config,
         target_layers,
     ):
         self.target_fields_config = target_fields_config
         self.target_match_config = target_match_config
-        self.conversion_settings = conversion_settings
         self.target_layer_map = {
             CrossSectionDataProcessor.get_unified_object_type_str(
                 target_layer.name()
             ): target_layer
             for target_layer in target_layers
         }
+        self.source_feat_map = {}
 
     def process_feature(self, src_feat: QgsFeature) -> dict[str, list[QgsFeature]]:
+        # retrieve target feature, model class and layer
+        target_feat = self.source_feat_map[src_feat]
         target_model_cls = self.get_target_model_cls(src_feat)
-        if not target_model_cls:
-            return {}
         target_layer = self.get_target_layer(target_model_cls)
-        if not target_layer:
-            return {}
-        target_feat = self.find_target_object(
-            src_feat,
-            target_layer,
-            self.target_match_config.get("target_object_id"),
-            self.target_match_config.get("target_object_code"),
-        )
-        if not target_feat:
-            return {}
+        # updata attributes
         update_attributes(
             self.target_fields_config,
             target_model_cls,
             src_feat,
             target_feat,
         )
+        # add cross section table manually because this is not in self.target_fields_config
         if "cross_section_table" in src_feat.fields().names():
             target_feat["cross_section_table"] = src_feat["cross_section_table"]
         target_layer.updateFeature(target_feat)
@@ -139,20 +130,31 @@ class CrossSectionDataProcessor(Processor):
     def process_features(
         self, external_features: QgsFeature
     ) -> dict[str, list[QgsFeature]]:
-        grouped_features = self.group_features(
-            external_features,
-            self.conversion_settings.group_by_field,
-            self.target_fields_config,
-        )
+        # match imported features to features in the schematisation
+        self.build_target_map(external_features)
+        # group features with the same target and that can be grouped
+        grouped_features = self.group_features()
+        # convert grouped features into a single feature that can be processed
         external_features = [
-            CrossSectionDataProcessor.get_feat_from_group(
-                feat_group,
-                self.conversion_settings.order_by_field,
-                self.target_fields_config,
-            )
-            for feat_group in grouped_features
+            self.get_feat_from_group(feat_group) for feat_group in grouped_features
         ]
         return super().process_features(external_features)
+
+    def build_target_map(self, features):
+        for src_feat in features:
+            target_model_cls = self.get_target_model_cls(src_feat)
+            if not target_model_cls:
+                continue
+            target_layer = self.get_target_layer(target_model_cls)
+            if not target_layer:
+                continue
+            target_feat = self.find_target_object(
+                src_feat,
+                target_layer,
+                self.target_match_config.get("target_object_id"),
+                self.target_match_config.get("target_object_code"),
+            )
+            self.source_feat_map[src_feat] = target_feat
 
     @property
     def object_type_map(self) -> dict[str, type]:
@@ -200,36 +202,47 @@ class CrossSectionDataProcessor(Processor):
     def get_cross_section_table(
         feature_group: list[QgsFeature],
         cross_section_shape: CrossSectionShape,
-        order_by: str,
+        order_by_config: dict,
         field_config,
     ) -> Optional[str]:
         # Build cross section table for a group of features
         if not cross_section_shape.is_tabulated:
             return None
-        # Sort the feature group based on the 'order_by' field
-        feature_group.sort(key=lambda feat: feat[order_by])
-        table = []
+        col_left = []
+        col_right = []
         if cross_section_shape in [
             CrossSectionShape.TABULATED_RECTANGLE,
             CrossSectionShape.TABULATED_TRAPEZIUM,
         ]:
-            # CSV-style table of height, width pairs
-            heights = CrossSectionDataProcessor.get_cross_section_table_column(
+            # collect height, width pairs
+            col_left = CrossSectionDataProcessor.get_cross_section_table_column(
                 feature_group, "cross_section_height", field_config
             )
-            widths = CrossSectionDataProcessor.get_cross_section_table_column(
+            col_right = CrossSectionDataProcessor.get_cross_section_table_column(
                 feature_group, "cross_section_width", field_config
             )
-            table = list(zip(heights, widths))
         elif cross_section_shape == CrossSectionShape.TABULATED_YZ:
-            # CSV-style table of y, z pairs
-            y = CrossSectionDataProcessor.get_cross_section_table_column(
+            #  collect y, z pairs
+            col_left = CrossSectionDataProcessor.get_cross_section_table_column(
                 feature_group, "cross_section_y", field_config
             )
-            z = CrossSectionDataProcessor.get_cross_section_table_column(
+            col_right = CrossSectionDataProcessor.get_cross_section_table_column(
                 feature_group, "cross_section_z", field_config
             )
-            table = list(zip(y, z))
+        if not col_right or not col_left:
+            return ""
+        # Retrieve order values from data
+        order_by_vals = [
+            get_field_config_value(order_by_config, feat) for feat in feature_group
+        ]
+        # Use default when any value in order_by_vals is NULL
+        # this happens when AUTO is selected or when the parsing for another method is unsuccessful
+        if NULL in order_by_vals:
+            order_by_vals = col_left
+        sorted_indices = sorted(
+            range(len(order_by_vals)), key=lambda i: order_by_vals[i]
+        )
+        table = [(col_left[i], col_right[i]) for i in sorted_indices]
         return "\n".join(f"{pair[0]},{pair[1]}" for pair in table)
 
     @staticmethod
@@ -272,42 +285,33 @@ class CrossSectionDataProcessor(Processor):
         group.insert(0, group.pop(first_valid_idx))
         return group
 
-    @staticmethod
-    def group_features(
-        external_features: list[QgsFeature], group_by: str, target_fields_config
-    ) -> list[list[QgsFeature]]:
+    def group_features(self) -> list[list[QgsFeature]]:
         # Group features based on group by value.
         grouped_features = []
-        grouped_ids = []
-        for feature in external_features:
-            if feature.id() in grouped_ids:
+        # map each target feature the its associated source features
+        target_map = defaultdict(list)
+        for src_feat, tgt_feat in self.source_feat_map.items():
+            target_map[tgt_feat].append(src_feat)
+        for tgt_feat, provisional_group in target_map.items():
+            # skip grouping for single features
+            if len(provisional_group) == 1:
+                grouped_features.append(provisional_group)
                 continue
-            group_by_val = feature[group_by]
-            if not group_by_val:
-                grouped_features.append([feature])
-                continue
-            provisional_group = [
-                feat for feat in external_features if feat[group_by] == group_by_val
-            ]
+            # organize features that match to the same object
             group = CrossSectionDataProcessor.organize_group(
-                provisional_group, target_fields_config["cross_section_shape"]
+                provisional_group, self.target_fields_config["cross_section_shape"]
             )
             # in case the cross section shape does not support grouping, just add features one by one
             # and add ids to grouped_ids to prevent revisiting those features
             if not group:
                 for feat in provisional_group:
                     grouped_features.append([feat])
-                grouped_ids += [feat.id() for feat in provisional_group]
                 continue
             # add group, with supported shape, as list of features
-            grouped_ids += [feat.id() for feat in group]
             grouped_features.append(group)
         return grouped_features
 
-    @staticmethod
-    def get_feat_from_group(
-        group: list[QgsFeature], order_by: str, target_fields_config
-    ) -> Optional[QgsFeature]:
+    def get_feat_from_group(self, group: list[QgsFeature]) -> Optional[QgsFeature]:
         # Combine group of feature in a single feature that is used for processing
         if len(group) == 0:
             return
@@ -315,7 +319,9 @@ class CrossSectionDataProcessor(Processor):
             return group[0]
         feature = group[0]
         cross_section_shape = CrossSectionShape(
-            get_field_config_value(target_fields_config["cross_section_shape"], feature)
+            get_field_config_value(
+                self.target_fields_config["cross_section_shape"], feature
+            )
         )
         # copy first feature and ensure cross_section_table field exists
         new_feat = QgsFeature()
@@ -328,9 +334,13 @@ class CrossSectionDataProcessor(Processor):
             new_feat[field_name] = feature[field_name]
         new_feat["cross_section_table"] = (
             CrossSectionDataProcessor.get_cross_section_table(
-                group, cross_section_shape, order_by, target_fields_config
+                group,
+                cross_section_shape,
+                self.target_match_config.get("order_by"),
+                self.target_fields_config,
             )
         )
+        self.source_feat_map[new_feat] = self.source_feat_map[feature]
         return new_feat
 
     @staticmethod
