@@ -219,3 +219,8 @@ def test_get_value_from_feature_with_field(value, expected_value):
 def test_get_value_from_feature_no_field(field):
     feat = {"foo": 1}
     assert get_float_value_from_feature(feat, "", 0) == 0
+
+
+def test_get_value_from_feature_field_not_present():
+    feat = {"bar": 1}
+    assert get_float_value_from_feature(feat, "foo", 0) == 0

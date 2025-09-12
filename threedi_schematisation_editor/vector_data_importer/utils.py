@@ -55,13 +55,17 @@ def update_attributes(fields_config, model_cls, source_feat, *new_features):
 
 
 def get_float_value_from_feature(feature, field_name, fallback_value):
-    value = fallback_value
-    if field_name and feature[field_name] != NULL:
+    if field_name:
         try:
-            value = convert_to_type(feature[field_name], float)
-        except TypeConversionError:
-            pass
-    return value
+            feature[field_name]
+        except KeyError:
+            return fallback_value
+        if feature[field_name] != NULL:
+            try:
+                return convert_to_type(feature[field_name], float)
+            except TypeConversionError:
+                return fallback_value
+    return fallback_value
 
 
 class FeatureManager:
