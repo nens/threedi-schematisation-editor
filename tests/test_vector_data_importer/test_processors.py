@@ -357,8 +357,18 @@ class TestLineProcessor:
 class TestUtilityFunctions:
     """Tests for utility functions in the processors module."""
 
-    def test_create_new_point_geometry(self, source_feature):
+    @pytest.mark.parametrize(
+        "geom",
+        [
+            QgsGeometry.fromPointXY(QgsPointXY(10, 20)),  # single part
+            QgsGeometry.fromMultiPointXY(
+                [QgsPointXY(10, 20), QgsPointXY(100, 200)]
+            ),  # multi part
+        ],
+    )
+    def test_create_new_point_geometry(self, source_feature, geom):
         """Test that create_new_point_geometry returns a point geometry."""
+        source_feature.setGeometry(geom)
         result = Processor.create_new_point_geometry(source_feature)
         assert isinstance(result, QgsGeometry)
         assert result.type() == QgsWkbTypes.PointGeometry
