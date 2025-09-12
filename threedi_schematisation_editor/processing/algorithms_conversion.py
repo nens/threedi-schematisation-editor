@@ -16,6 +16,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from threedi_schematisation_editor.vector_data_importer.importers import (
     ChannelsImporter,
     ConnectionNodesImporter,
+    CrossSectionDataImporter,
     CrossSectionLocationImporter,
     CulvertsImporter,
     OrificesImporter,
@@ -220,4 +221,20 @@ class ImportCrossSectionLocation(SimpleImporter):
     FEATURE_TYPE = "cross_section_location"
 
     def get_source_layer_types(self):
-        return []
+        return [
+            QgsProcessing.TypeVectorPoint,
+            QgsProcessing.TypeVectorLine,
+            QgsProcessing.TypeVector,
+        ]
+
+
+class ImportCrossSectionData(SimpleImporter):
+    IMPORTER_CLASS = CrossSectionDataImporter
+    FEATURE_TYPE = "cross_section_data"
+
+    def get_source_layer_types(self):
+        return [
+            QgsProcessing.TypeVectorPoint,
+            QgsProcessing.TypeVectorLine,
+            QgsProcessing.TypeVector,
+        ]

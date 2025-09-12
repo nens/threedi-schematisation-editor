@@ -16,6 +16,7 @@ from threedi_schematisation_editor.processing.algorithms_1d2d import (
 from threedi_schematisation_editor.processing.algorithms_conversion import (
     ImportChannels,
     ImportConnectionNodes,
+    ImportCrossSectionData,
     ImportCrossSectionLocation,
     ImportCulverts,
     ImportOrifices,
@@ -57,6 +58,7 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
             AddNWRWSurfaceParameters(),
             GenerateExchangeLines(),
             ImportCrossSectionLocation(),
+            ImportCrossSectionData(),
             ImportConnectionNodes(),
             ImportCulverts(),
             ImportOrifices(),

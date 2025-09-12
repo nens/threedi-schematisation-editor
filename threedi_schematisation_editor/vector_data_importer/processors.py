@@ -7,6 +7,7 @@ from typing import Optional
 from PyQt5.QtCore import QVariant
 from qgis.core import (
     NULL,
+    Qgis,
     QgsExpression,
     QgsExpressionContext,
     QgsFeature,
@@ -14,6 +15,7 @@ from qgis.core import (
     QgsField,
     QgsFields,
     QgsGeometry,
+    QgsMessageLog,
     QgsSpatialIndex,
     QgsVectorLayer,
     QgsWkbTypes,
@@ -351,6 +353,7 @@ class CrossSectionDataProcessor(Processor):
         target_object_code_config: dict,
     ) -> Optional[QgsFeature]:
         target_feat = None
+        QgsMessageLog.logMessage(f"{target_layer.name()}", "Warning", Qgis.Warning)
         if target_object_id_config:
             target_id = get_field_config_value(target_object_id_config, src_feat)
             if target_id:
@@ -375,7 +378,7 @@ class CrossSectionDataProcessor(Processor):
                 )
         if not target_feat:
             warnings.warn(
-                f'Could not find target object for feature "{src_feat["id"]}"',
+                f"Could not find target object for feature {src_feat.id()}",
                 ProcessorWarning,
             )
         return target_feat
@@ -388,7 +391,7 @@ class CrossSectionDataProcessor(Processor):
         # Make sure src_object_type = NULL warns
         if not src_object_type:
             warnings.warn(
-                f"Could not find value for target_object_type for feature {src_feat['id']}",
+                f"Could not find value for target_object_type for feature {src_feat.id()}",
                 ProcessorWarning,
             )
             return
@@ -398,7 +401,7 @@ class CrossSectionDataProcessor(Processor):
         target_model_cls = self.object_type_map.get(src_object_type_str, None)
         if not target_model_cls:
             warnings.warn(
-                f"Could not find target model for object type {src_object_type} for feature {src_feat['id']}",
+                f"Could not find target model for object type {src_object_type} for feature {src_feat.id()}",
                 ProcessorWarning,
             )
         return target_model_cls
