@@ -125,3 +125,10 @@ class ColumnImportMethod(Enum):
 
     def __str__(self):
         return self.name.capitalize()
+
+
+def get_single_geometry(feature: QgsFeature) -> QgsGeometry:
+    geom = feature.geometry()
+    if feature.geometry().isMultipart():
+        geom.convertToSingleType()
+    return geom

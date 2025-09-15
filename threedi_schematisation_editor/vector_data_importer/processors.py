@@ -20,6 +20,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
     FeatureManager,
     get_float_value_from_feature,
+    get_single_geometry,
     update_attributes,
 )
 
@@ -48,9 +49,7 @@ class Processor(ABC):
     @classmethod
     def create_new_point_geometry(cls, src_feat):
         """Create a new point feature geometry based on the source feature."""
-        src_geometry = QgsGeometry(src_feat.geometry())
-        if src_geometry.isMultipart():
-            src_geometry.convertToSingleType()
+        src_geometry = get_single_geometry(src_feat)
         src_point = src_geometry.asPoint()
         dst_point = src_point
         dst_geometry = QgsGeometry.fromPointXY(dst_point)
@@ -328,9 +327,7 @@ class LineProcessor(StructureProcessor):
     @staticmethod
     def new_geometry(src_feat, conversion_settings, target_model_cls):
         """Create new structure geometry based on the source structure feature."""
-        src_geometry = QgsGeometry(src_feat.geometry())
-        if src_geometry.isMultipart():
-            src_geometry.convertToSingleType()
+        src_geometry = get_single_geometry(src_feat)
         geometry_type = src_geometry.type()
         if geometry_type == QgsWkbTypes.GeometryType.LineGeometry:
             src_polyline = src_geometry.asPolyline()

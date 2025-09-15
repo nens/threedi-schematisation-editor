@@ -18,6 +18,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
     FeatureManager,
     get_float_value_from_feature,
+    get_single_geometry,
     update_attributes,
 )
 
@@ -224,3 +225,20 @@ def test_get_value_from_feature_no_field(field):
 def test_get_value_from_feature_field_not_present():
     feat = {"bar": 1}
     assert get_float_value_from_feature(feat, "foo", 0) == 0
+
+
+@pytest.mark.parametrize(
+    "geom",
+    [
+        QgsGeometry.fromMultiPointXY([QgsPointXY(10, 20), QgsPointXY(100, 40)]),
+        QgsGeometry.fromPointXY(QgsPointXY(10, 20)),
+    ],
+)
+def test_get_single_geometry(geom):
+    fields = QgsFields()
+    fields.append(QgsField("id", QVariant.Int))
+    feature = QgsFeature(fields)
+    feature.setGeometry(geom)
+    single_geom = get_single_geometry(feature)
+    assert not single_geom.isMultipart()
+    assert single_geom.asPoint() == QgsPointXY(10, 20)
