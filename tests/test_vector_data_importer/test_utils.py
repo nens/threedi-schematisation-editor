@@ -1,24 +1,30 @@
 from dataclasses import dataclass
 
 import pytest
+import shapely
 from PyQt5.QtCore import QVariant
 from qgis.core import (
     NULL,
+    QgsCurvePolygon,
     QgsExpression,
     QgsExpressionContext,
     QgsFeature,
     QgsField,
     QgsFields,
     QgsGeometry,
+    QgsLineString,
+    QgsPoint,
     QgsPointXY,
+    QgsPolygon,
     QgsWkbTypes,
 )
+from shapely.testing import assert_geometries_equal
 
 from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
     FeatureManager,
     get_float_value_from_feature,
-    get_single_geometry,
+    get_src_geometry,
     update_attributes,
 )
 
@@ -227,18 +233,99 @@ def test_get_value_from_feature_field_not_present():
     assert get_float_value_from_feature(feat, "foo", 0) == 0
 
 
-@pytest.mark.parametrize(
-    "geom",
-    [
-        QgsGeometry.fromMultiPointXY([QgsPointXY(10, 20), QgsPointXY(100, 40)]),
-        QgsGeometry.fromPointXY(QgsPointXY(10, 20)),
-    ],
-)
-def test_get_single_geometry(geom):
-    fields = QgsFields()
-    fields.append(QgsField("id", QVariant.Int))
-    feature = QgsFeature(fields)
-    feature.setGeometry(geom)
-    single_geom = get_single_geometry(feature)
-    assert not single_geom.isMultipart()
-    assert single_geom.asPoint() == QgsPointXY(10, 20)
+class TestGetSrcGeometry:
+    @pytest.mark.parametrize(
+        "geom",
+        [
+            QgsGeometry.fromPointXY(QgsPointXY(10, 20)),
+            QgsGeometry.fromPolygonXY(
+                [[QgsPointXY(10, 20), QgsPointXY(100, 40), QgsPointXY(10, 20)]]
+            ),
+            QgsGeometry.fromPolylineXY([QgsPointXY(10, 20), QgsPointXY(100, 40)]),
+        ],
+    )
+    def test_unchanged(self, geom):
+        feature = QgsFeature()
+        feature.setGeometry(geom)
+        feat_geom = get_src_geometry(feature)
+
+        assert_geometries_equal(
+            shapely.wkt.loads(geom.asWkt()), shapely.wkt.loads(feat_geom.asWkt())
+        )
+
+    @pytest.mark.parametrize(
+        "geom",
+        [
+            QgsGeometry.fromMultiPointXY([QgsPointXY(10, 20), QgsPointXY(100, 40)]),
+            QgsGeometry.fromPointXY(QgsPointXY(10, 20)),
+        ],
+    )
+    def test_multipart(self, geom):
+        feature = QgsFeature()
+        feature.setGeometry(geom)
+        feat_geom = get_src_geometry(feature)
+        assert not feat_geom.isMultipart()
+        assert feat_geom.asPoint() == QgsPointXY(10, 20)
+
+    @pytest.mark.parametrize(
+        "geom",
+        [
+            QgsGeometry.fromPointXY(QgsPointXY(0, 0)),
+            QgsGeometry.fromPoint(QgsPoint(0, 0, 10, 10)),
+        ],
+    )
+    def test_not_flat_point(self, geom):
+        feature = QgsFeature()
+        feature.setGeometry(geom)
+        feat_geom = get_src_geometry(feature)
+        assert feat_geom.wkbType() == QgsWkbTypes.Point
+        assert feat_geom.asPoint() == QgsPointXY(0, 0)
+
+    @pytest.mark.parametrize(
+        "geom",
+        [
+            QgsGeometry.fromPolylineXY([QgsPointXY(0, 0), QgsPointXY(10, 10)]),
+            QgsGeometry.fromPolyline([QgsPoint(0, 0, 5, 5), QgsPoint(10, 10, 5, 50)]),
+        ],
+    )
+    def test_not_flat_line(self, geom):
+        feature = QgsFeature()
+        feature.setGeometry(geom)
+        feat_geom = get_src_geometry(feature)
+        assert feat_geom.wkbType() == QgsWkbTypes.LineString
+        assert feat_geom.asPolyline() == [QgsPointXY(0, 0), QgsPointXY(10, 10)]
+
+    @pytest.mark.parametrize(
+        "line_geom",
+        [
+            QgsLineString([QgsPointXY(0, 0), QgsPointXY(10, 10), QgsPointXY(0, 0)]),
+            QgsLineString(
+                [QgsPoint(0, 0, 5, 5), QgsPoint(10, 10, 5, 50), QgsPoint(0, 0, 5, 5)]
+            ),
+        ],
+    )
+    def test_not_flat_polygon(self, line_geom):
+        # create polygon geometry
+        polygon = QgsPolygon()
+        polygon.setExteriorRing(line_geom)
+        feature = QgsFeature()
+        feature.setGeometry(QgsGeometry(polygon))
+        feat_geom = get_src_geometry(feature)
+        assert feat_geom.wkbType() == QgsWkbTypes.Polygon
+        assert feat_geom.asPolygon() == [
+            [QgsPointXY(0, 0), QgsPointXY(10, 10), QgsPointXY(0, 0)]
+        ]
+
+    def test_curved(self):
+        line_geom = QgsLineString(
+            [QgsPointXY(0, 0), QgsPointXY(10, 10), QgsPointXY(0, 0)]
+        )
+        curve = QgsCurvePolygon()
+        curve.setExteriorRing(line_geom)
+        feature = QgsFeature()
+        feature.setGeometry(QgsGeometry(curve))
+        feat_geom = get_src_geometry(feature)
+        assert feat_geom.wkbType() == QgsWkbTypes.Polygon
+        assert feat_geom.asPolygon() == [
+            [QgsPointXY(0, 0), QgsPointXY(10, 10), QgsPointXY(0, 0)]
+        ]

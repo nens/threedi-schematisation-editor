@@ -17,6 +17,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     DEFAULT_INTERSECTION_BUFFER_SEGMENTS,
     FeatureManager,
     get_float_value_from_feature,
+    get_src_geometry,
     update_attributes,
 )
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
@@ -192,7 +193,7 @@ class LinearIntegrator:
         processed_structure_ids = set()
         if selected_ids is None:
             selected_ids = set()
-        conduit_geometry = conduit_feat.geometry()
+        conduit_geometry = get_src_geometry(conduit_feat)
         structure_features_map, structure_index = self.spatial_indexes_map["source"]
         structure_fids = structure_index.intersects(conduit_geometry.boundingBox())
         for structure_fid in structure_fids:
@@ -415,7 +416,7 @@ class LinearIntegrator:
     def integrate_structure_features(self, conduit_feat, conduit_structures):
         """Integrate structures with a channel network."""
         added_features = defaultdict(list)
-        conduit_geom = conduit_feat.geometry()
+        conduit_geom = get_src_geometry(conduit_feat)
         total_length = sum(
             conduit_structure.length for conduit_structure in conduit_structures
         )

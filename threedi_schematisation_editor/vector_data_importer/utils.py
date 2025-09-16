@@ -7,6 +7,8 @@ from qgis.core import (
     QgsExpressionContext,
     QgsFeature,
     QgsGeometry,
+    QgsPointXY,
+    QgsWkbTypes,
 )
 
 from threedi_schematisation_editor.utils import TypeConversionError, convert_to_type
@@ -127,8 +129,26 @@ class ColumnImportMethod(Enum):
         return self.name.capitalize()
 
 
-def get_single_geometry(feature: QgsFeature) -> QgsGeometry:
+def get_src_geometry(feature: QgsFeature) -> QgsGeometry:
+    # extract geometry
     geom = feature.geometry()
-    if feature.geometry().isMultipart():
-        geom.convertToSingleType()
+    # convert to single part (does nothing if already single part)
+    geom.convertToSingleType()
+    # if the geometry is curved, convert it to a line geometry
+    if QgsWkbTypes.isCurvedType(geom.wkbType()):
+        geom = QgsGeometry(geom.constGet().segmentize())
+    if geom.wkbType() != QgsWkbTypes.flatType(geom.wkbType()):
+        # flatten (drop z and/or m coordinates)
+        if geom.type() == QgsWkbTypes.GeometryType.Line:
+            geom = QgsGeometry.fromPolylineXY(
+                [QgsPointXY(pt.x(), pt.y()) for pt in geom.asPolyline()]
+            )
+        if geom.type() == QgsWkbTypes.GeometryType.Point:
+            geom = QgsGeometry.fromPointXY(
+                QgsPointXY(geom.asPoint().x(), geom.asPoint().y())
+            )
+        if geom.type() == QgsWkbTypes.GeometryType.Polygon:
+            geom = QgsGeometry.fromPolygonXY(
+                [[QgsPointXY(pt.x(), pt.y()) for pt in geom.asPolygon()[0]]]
+            )
     return geom
