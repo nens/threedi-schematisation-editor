@@ -130,25 +130,9 @@ class ColumnImportMethod(Enum):
 
 
 def get_src_geometry(feature: QgsFeature) -> QgsGeometry:
-    # extract geometry
     geom = feature.geometry()
-    # convert to single part (does nothing if already single part)
-    geom.convertToSingleType()
-    # if the geometry is curved, convert it to a line geometry
-    if QgsWkbTypes.isCurvedType(geom.wkbType()):
-        geom = QgsGeometry(geom.constGet().segmentize())
-    if geom.wkbType() != QgsWkbTypes.flatType(geom.wkbType()):
-        # flatten (drop z and/or m coordinates)
-        if geom.type() == QgsWkbTypes.GeometryType.Line:
-            geom = QgsGeometry.fromPolylineXY(
-                [QgsPointXY(pt.x(), pt.y()) for pt in geom.asPolyline()]
-            )
-        if geom.type() == QgsWkbTypes.GeometryType.Point:
-            geom = QgsGeometry.fromPointXY(
-                QgsPointXY(geom.asPoint().x(), geom.asPoint().y())
-            )
-        if geom.type() == QgsWkbTypes.GeometryType.Polygon:
-            geom = QgsGeometry.fromPolygonXY(
-                [[QgsPointXY(pt.x(), pt.y()) for pt in geom.asPolygon()[0]]]
-            )
-    return geom
+    # the desired geometry type is linear (not curved), single (not multi-part) and flat (no z- or m-coordinates) and
+    desired_type = QgsWkbTypes.linearType(QgsWkbTypes.singleType(QgsWkbTypes.flatType(geom.wkbType())))
+    # convert the source geometry to the desired type
+    return geom.coerceToType(desired_type)[0]
+
