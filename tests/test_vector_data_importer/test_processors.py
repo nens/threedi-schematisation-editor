@@ -23,7 +23,10 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     Processor,
     StructureProcessor,
 )
-from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+from threedi_schematisation_editor.vector_data_importer.utils import (
+    ColumnImportMethod,
+    get_src_geometry,
+)
 
 
 @pytest.fixture
@@ -282,7 +285,10 @@ class TestLineProcessor:
     ):
         source_feature.setGeometry(QgsGeometry.fromMultiPolylineXY(line))
         result = LineProcessor.new_geometry(
-            source_feature, conversion_settings, dm.Weir
+            source_feature,
+            get_src_geometry(source_feature),
+            conversion_settings,
+            dm.Weir,
         )
         assert not result.isMultipart()
         assert result.asPolyline() == [QgsPointXY(10, 20), QgsPointXY(10, 40)]
@@ -295,7 +301,10 @@ class TestLineProcessor:
     ):
         source_feature.setGeometry(QgsGeometry.fromMultiPointXY(point))
         result = LineProcessor.new_geometry(
-            source_feature, conversion_settings, dm.Weir
+            source_feature,
+            get_src_geometry(source_feature),
+            conversion_settings,
+            dm.Weir,
         )
         assert not result.isMultipart()
         assert result.asPolyline() == [QgsPointXY(10, 20), QgsPointXY(10, 40)]
@@ -305,26 +314,30 @@ class TestLineProcessor:
         self, source_feature, conversion_settings, model_class
     ):
         # Set geometry of source_feature
-        line = [QgsPointXY(0, 0), QgsPointXY(5, 5), QgsPointXY(10, 10)]
-        source_feature.setGeometry(QgsGeometry.fromPolylineXY(line))
+        line = QgsGeometry.fromPolylineXY(
+            [QgsPointXY(0, 0), QgsPointXY(5, 5), QgsPointXY(10, 10)]
+        )
+        source_feature.setGeometry(line)
         # Retrieve geometry
         result = LineProcessor.new_geometry(
-            source_feature, conversion_settings, model_class
+            source_feature, line, conversion_settings, model_class
         )
         # Verify that the full line is returned
-        assert result.asPolyline() == line
+        assert result.asPolyline() == line.asPolyline()
         assert result.type() == QgsWkbTypes.LineGeometry
 
     def test_new_geometry_simplified_line(self, source_feature, conversion_settings):
         # Set geometry of source_feature
-        line = [QgsPointXY(0, 0), QgsPointXY(5, 5), QgsPointXY(10, 10)]
-        source_feature.setGeometry(QgsGeometry.fromPolylineXY(line))
+        line = QgsGeometry.fromPolylineXY(
+            [QgsPointXY(0, 0), QgsPointXY(5, 5), QgsPointXY(10, 10)]
+        )
+        source_feature.setGeometry(line)
         # Retrieve geometry
         result = LineProcessor.new_geometry(
-            source_feature, conversion_settings, dm.Weir
+            source_feature, line, conversion_settings, dm.Weir
         )
         # Verify that only the start and end point are returned
-        assert result.asPolyline() == [line[0], line[-1]]
+        assert result.asPolyline() == [line.asPolyline()[0], line.asPolyline()[-1]]
         assert result.type() == QgsWkbTypes.LineGeometry
 
     @pytest.mark.parametrize(
@@ -345,11 +358,12 @@ class TestLineProcessor:
         for field_name in feature_fields:
             fields.append(QgsField(field_name, QVariant.Double))
         feature = QgsFeature(fields)
-        feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(10, 20)))
+        geom = QgsGeometry.fromPointXY(QgsPointXY(10, 20))
+        feature.setGeometry(geom)
         for field_name, field_value in feature_fields.items():
             feature.setAttribute(field_name, field_value)
         # Retrieve geometry and verify results
-        result = LineProcessor.new_geometry(feature, conversion_settings, dm.Weir)
+        result = LineProcessor.new_geometry(feature, geom, conversion_settings, dm.Weir)
         assert result.type() == QgsWkbTypes.LineGeometry
         assert result.asPolyline() == expected_points
 
@@ -357,19 +371,10 @@ class TestLineProcessor:
 class TestUtilityFunctions:
     """Tests for utility functions in the processors module."""
 
-    @pytest.mark.parametrize(
-        "geom",
-        [
-            QgsGeometry.fromPointXY(QgsPointXY(10, 20)),  # single part
-            QgsGeometry.fromMultiPointXY(
-                [QgsPointXY(10, 20), QgsPointXY(100, 200)]
-            ),  # multi part
-        ],
-    )
-    def test_create_new_point_geometry(self, source_feature, geom):
+    def test_create_new_point_geometry(self):
         """Test that create_new_point_geometry returns a point geometry."""
-        source_feature.setGeometry(geom)
-        result = Processor.create_new_point_geometry(source_feature)
+        geom = QgsGeometry.fromPointXY(QgsPointXY(10, 20))
+        result = Processor.create_new_point_geometry(geom)
         assert isinstance(result, QgsGeometry)
         assert result.type() == QgsWkbTypes.PointGeometry
         assert result.asPoint() == QgsPointXY(10, 20)

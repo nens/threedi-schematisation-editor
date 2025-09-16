@@ -187,13 +187,14 @@ class LinearIntegrator:
             conduit_feat["id"], structure_feat, intersection_m, structure_length
         )
 
-    def get_conduit_structures_data(self, conduit_feat, selected_ids=None):
+    def get_conduit_structures_data(
+        self, conduit_feat, conduit_geometry, selected_ids=None
+    ):
         """Extract and calculate channel structures data."""
         conduit_structures = []
         processed_structure_ids = set()
         if selected_ids is None:
             selected_ids = set()
-        conduit_geometry = get_src_geometry(conduit_feat)
         structure_features_map, structure_index = self.spatial_indexes_map["source"]
         structure_fids = structure_index.intersects(conduit_geometry.boundingBox())
         for structure_fid in structure_fids:
@@ -413,10 +414,11 @@ class LinearIntegrator:
             added_conduits.append(substring_feat)
         return added_conduits
 
-    def integrate_structure_features(self, conduit_feat, conduit_structures):
+    def integrate_structure_features(
+        self, conduit_feat, conduit_geom, conduit_structures
+    ):
         """Integrate structures with a channel network."""
         added_features = defaultdict(list)
-        conduit_geom = get_src_geometry(conduit_feat)
         total_length = sum(
             conduit_structure.length for conduit_structure in conduit_structures
         )
@@ -477,13 +479,18 @@ class LinearIntegrator:
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
         for conduit_feature in self.integrate_layer.getFeatures():
+            conduit_geom = get_src_geometry(conduit_feature)
+            if conduit_geom is None:
+                continue
             conduit_structures, processed_structures_fids = (
-                self.get_conduit_structures_data(conduit_feature, input_feature_ids)
+                self.get_conduit_structures_data(
+                    conduit_feature, conduit_geom, input_feature_ids
+                )
             )
             if not conduit_structures:
                 continue
             added_features = self.integrate_structure_features(
-                conduit_feature, conduit_structures
+                conduit_feature, conduit_geom, conduit_structures
             )
             added_features[self.cross_section_layer.name()] = (
                 self.update_channel_cross_section_references(
@@ -526,13 +533,18 @@ class PipeIntegrator(LinearIntegrator):
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
         for conduit_feature in self.integrate_layer.getFeatures():
+            conduit_geom = get_src_geometry(conduit_feature)
+            if conduit_geom is None:
+                continue
             conduit_structures, processed_structures_fids = (
-                self.get_conduit_structures_data(conduit_feature, input_feature_ids)
+                self.get_conduit_structures_data(
+                    conduit_feature, conduit_geom, input_feature_ids
+                )
             )
             if not conduit_structures:
                 continue
             added_features = self.integrate_structure_features(
-                conduit_feature, conduit_structures
+                conduit_feature, conduit_geom, conduit_structures
             )
             for key in added_features:
                 features_to_add[key] += added_features[key]
@@ -608,13 +620,18 @@ class ChannelIntegrator(LinearIntegrator):
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
         for conduit_feature in self.integrate_layer.getFeatures():
+            conduit_geom = get_src_geometry(conduit_feature)
+            if conduit_geom is None:
+                continue
             conduit_structures, processed_structures_fids = (
-                self.get_conduit_structures_data(conduit_feature, input_feature_ids)
+                self.get_conduit_structures_data(
+                    conduit_feature, conduit_geom, input_feature_ids
+                )
             )
             if not conduit_structures:
                 continue
             added_features = self.integrate_structure_features(
-                conduit_feature, conduit_structures
+                conduit_feature, conduit_geom, conduit_structures
             )
             added_features[self.cross_section_layer.name()] = (
                 self.update_channel_cross_section_references(

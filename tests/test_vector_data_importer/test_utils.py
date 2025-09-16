@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import mock
 import pytest
 import shapely
 from PyQt5.QtCore import QVariant
@@ -27,6 +28,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     get_src_geometry,
     update_attributes,
 )
+from threedi_schematisation_editor.warnings import GeometryImporterWarning
 
 
 @pytest.fixture
@@ -329,3 +331,28 @@ class TestGetSrcGeometry:
         assert feat_geom.asPolygon() == [
             [QgsPointXY(0, 0), QgsPointXY(10, 10), QgsPointXY(0, 0)]
         ]
+
+    def test_warnings_no_geometry(self):
+        feature = QgsFeature()
+        with pytest.warns(GeometryImporterWarning):
+            get_src_geometry(feature)
+
+    def test_warnings_no_geometry_none_ok(self):
+        feature = QgsFeature()
+        with pytest.warns(None) as record:
+            get_src_geometry(feature, none_ok=True)
+
+    def test_warnings_unsupported_type(self):
+        feature = QgsFeature()
+        feature.setGeometry(QgsGeometry())
+        with pytest.warns(GeometryImporterWarning):
+            get_src_geometry(feature, none_ok=True)
+
+    def test_warnings_cannot_convert(self):
+        feature = QgsFeature()
+        feature.setGeometry(QgsGeometry())
+        with mock.patch.object(
+            QgsGeometry, "coerceToType", side_effect=Exception("Mock conversion error")
+        ):
+            with pytest.warns(GeometryImporterWarning):
+                get_src_geometry(feature, none_ok=True)
