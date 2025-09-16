@@ -474,40 +474,6 @@ class LinearIntegrator:
 
         return added_features
 
-    def integrate_features(self, input_feature_ids):
-        """Method responsible for the importing/integrating structures from the external feature source."""
-        all_processed_structure_ids = set()
-        features_to_add = defaultdict(list)
-        for conduit_feature in self.integrate_layer.getFeatures():
-            conduit_geom = get_src_geometry(conduit_feature)
-            if conduit_geom is None:
-                continue
-            conduit_structures, processed_structures_fids = (
-                self.get_conduit_structures_data(
-                    conduit_feature, conduit_geom, input_feature_ids
-                )
-            )
-            if not conduit_structures:
-                continue
-            added_features = self.integrate_structure_features(
-                conduit_feature, conduit_geom, conduit_structures
-            )
-            added_features[self.cross_section_layer.name()] = (
-                self.update_channel_cross_section_references(
-                    added_features[self.integrate_layer.name()], conduit_feature["id"]
-                )
-            )
-            for key in added_features:
-                features_to_add[key] += added_features[key]
-            all_processed_structure_ids |= processed_structures_fids
-        visited_channel_ids = [
-            channel["id"] for channel in features_to_add[self.integrate_layer.name()]
-        ]
-        self.cross_section_layer.deleteFeatures(
-            self.get_hanging_cross_sections(visited_channel_ids)
-        )
-        return features_to_add, list(all_processed_structure_ids)
-
 
 class PipeIntegrator(LinearIntegrator):
     def __init__(self, *args):
