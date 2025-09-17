@@ -7,10 +7,15 @@ from qgis.core import (
     QgsExpressionContext,
     QgsFeature,
     QgsGeometry,
+    QgsPointXY,
+    QgsWkbTypes,
 )
 
 from threedi_schematisation_editor.utils import TypeConversionError, convert_to_type
-from threedi_schematisation_editor.warnings import FeaturesImporterWarning
+from threedi_schematisation_editor.warnings import (
+    FeaturesImporterWarning,
+    GeometryImporterWarning,
+)
 
 DEFAULT_INTERSECTION_BUFFER = 1
 DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
@@ -71,13 +76,17 @@ def update_attributes(fields_config, model_cls, source_feat, *new_features):
 
 
 def get_float_value_from_feature(feature, field_name, fallback_value):
-    value = fallback_value
-    if field_name and feature[field_name] != NULL:
+    if field_name:
         try:
-            value = convert_to_type(feature[field_name], float)
-        except TypeConversionError:
-            pass
-    return value
+            feature[field_name]
+        except KeyError:
+            return fallback_value
+        if feature[field_name] != NULL:
+            try:
+                return convert_to_type(feature[field_name], float)
+            except TypeConversionError:
+                return fallback_value
+    return fallback_value
 
 
 class FeatureManager:
@@ -139,3 +148,36 @@ class ColumnImportMethod(Enum):
 
     def __str__(self):
         return self.name.capitalize()
+
+
+def get_src_geometry(feature: QgsFeature, none_ok=False) -> QgsGeometry:
+    # convert source geometry to type that can be processed
+    # when the geometry cannot be handled None is returned and warnings/errors are raised upstream
+    warning_base = f"Source geometry of feature with id {feature.id()}"
+    geom = feature.geometry()
+    if geom is None:
+        if not none_ok:
+            warnings.warn(f"{warning_base} is None", GeometryImporterWarning)
+        return None
+    if geom.type() not in [
+        QgsWkbTypes.GeometryType.Point,
+        QgsWkbTypes.GeometryType.Line,
+        QgsWkbTypes.GeometryType.Polygon,
+    ]:
+        warnings.warn(
+            f"{warning_base} has unsupported geometry type", GeometryImporterWarning
+        )
+        return None
+    # the desired geometry type is linear (not curved), single (not multi-part) and flat (no z- or m-coordinates) and
+    desired_type = QgsWkbTypes.linearType(
+        QgsWkbTypes.singleType(QgsWkbTypes.flatType(geom.wkbType()))
+    )
+    # convert the source geometry to the desired type
+    try:
+        return geom.coerceToType(desired_type)[0]
+    except Exception:
+        warnings.warn(
+            f"{warning_base} cannot be converted to desired geometry type",
+            GeometryImporterWarning,
+        )
+        return None

@@ -23,7 +23,10 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     SpatialProcessor,
     StructureProcessor,
 )
-from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+from threedi_schematisation_editor.vector_data_importer.utils import (
+    ColumnImportMethod,
+    get_src_geometry,
+)
 
 
 @pytest.fixture
@@ -45,7 +48,7 @@ def node_fields():
     return fields
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def source_feature():
     """Create a source feature with point geometry."""
     fields = QgsFields()
@@ -251,12 +254,6 @@ class TestLineProcessor:
         processor = LineProcessor(
             target_layer, dm.Pipe, node_layer, fields_configurations, {}
         )
-        # Mock function calls needed for process_feature
-        LineProcessor.new_geometry = MagicMock(
-            return_value=QgsGeometry.fromPolylineXY(
-                [QgsPointXY(10, 20), QgsPointXY(30, 40)]
-            )
-        )
         processor.update_connection_nodes = MagicMock(return_value=[])
         # Run process_feature and check results
         result = processor.process_feature(source_line_feature)
@@ -268,126 +265,116 @@ class TestLineProcessor:
         """Create a mock conversion settings object."""
         settings = MagicMock()
         settings.length_source_field = "length"
-        settings.length_fallback_value = 10.0
+        settings.length_fallback_value = 20.0
         settings.azimuth_source_field = "azimuth"
-        settings.azimuth_fallback_value = 90.0
+        settings.azimuth_fallback_value = 0.0
         return settings
 
     @pytest.mark.parametrize(
-        "model_class, expected_points",
+        "line",
         [
-            (dm.Pipe, [QgsPointXY(0, 0), QgsPointXY(5, 5), QgsPointXY(10, 10)]),
-            (dm.Culvert, [QgsPointXY(0, 0), QgsPointXY(5, 5), QgsPointXY(10, 10)]),
-            (dm.Weir, [QgsPointXY(0, 0), QgsPointXY(10, 10)]),
+            [[QgsPointXY(10, 20), QgsPointXY(10, 40)]],
+            [
+                [QgsPointXY(10, 20), QgsPointXY(10, 40)],
+                [QgsPointXY(100, 20), QgsPointXY(100, 40)],
+            ],
         ],
     )
-    def test_new_geometry_line(self, model_class, expected_points):
-        """Test new_geometry with line geometry for different model classes."""
-        # Create a mock feature with line geometry
-        feature = MagicMock()
-        feature.geometry.return_value.type.return_value = QgsWkbTypes.LineGeometry
-        feature.geometry.return_value.asPolyline.return_value = expected_points
-
-        # Create mock conversion settings
-        conversion_settings = MagicMock()
-
-        # Call the actual method (no need to mock it since we're testing its behavior)
-        with patch(
-            "threedi_schematisation_editor.vector_data_importer.processors.LineProcessor.new_geometry",
-            return_value=QgsGeometry.fromPolylineXY(expected_points),
-        ) as mock_new_geometry:
-            result = LineProcessor.new_geometry(
-                feature, conversion_settings, model_class
-            )
-
-            # Verify the mock was called with the correct arguments
-            mock_new_geometry.assert_called_once_with(
-                feature, conversion_settings, model_class
-            )
-
-            # Verify the result
-            assert result.type() == QgsWkbTypes.LineGeometry
-            assert result.asPolyline() == expected_points
-
-    def test_new_geometry_point_with_source_field(self):
-        """Test new_geometry with point geometry."""
-        # Create a mock feature with point geometry
-        feature = MagicMock()
-        feature.geometry.return_value.type.return_value = QgsWkbTypes.PointGeometry
-        feature.geometry.return_value.asPoint.return_value = QgsPointXY(10, 20)
-
-        # Configure feature for source fields if needed
-        field_values = {"length": 20.0, "azimuth": 45.0}
-        feature.__getitem__.side_effect = lambda key: field_values.get(key)
-
-        # Create conversion settings based on test case
-        conversion_settings = MagicMock()
-        conversion_settings.length_source_field = "length"
-        conversion_settings.azimuth_source_field = "azimuth"
-
-        # Expected geometry
-        expected_geometry = QgsGeometry.fromPolylineXY(
-            [QgsPointXY(10, 20), QgsPointXY(25, 35)]
+    def test_new_geometry_multi_geom_line(
+        self, source_feature, conversion_settings, line
+    ):
+        source_feature.setGeometry(QgsGeometry.fromMultiPolylineXY(line))
+        result = LineProcessor.new_geometry(
+            source_feature,
+            get_src_geometry(source_feature),
+            conversion_settings,
+            dm.Weir,
         )
+        assert not result.isMultipart()
+        assert result.asPolyline() == [QgsPointXY(10, 20), QgsPointXY(10, 40)]
 
-        # Call the method
-        with patch(
-            "threedi_schematisation_editor.vector_data_importer.processors.LineProcessor.new_geometry",
-            return_value=expected_geometry,
-        ) as mock_new_geometry:
-            result = LineProcessor.new_geometry(feature, conversion_settings, dm.Pipe)
-
-            # Verify the mock was called with the correct arguments
-            mock_new_geometry.assert_called_once_with(
-                feature, conversion_settings, dm.Pipe
-            )
-
-            # Verify the result
-            assert result.type() == QgsWkbTypes.LineGeometry
-            assert result.asPolyline() == expected_geometry.asPolyline()
-
-    def test_new_geometry_point_with_fallback(self):
-        """Test new_geometry with point geometry."""
-        # Create a mock feature with point geometry
-        feature = MagicMock()
-        feature.geometry.return_value.type.return_value = QgsWkbTypes.PointGeometry
-        feature.geometry.return_value.asPoint.return_value = QgsPointXY(10, 20)
-
-        # Create conversion settings based on test case
-        conversion_settings = MagicMock()
-        conversion_settings.length_source_field = None
-        conversion_settings.length_fallback_value = 10.0
-        conversion_settings.azimuth_source_field = None
-        conversion_settings.azimuth_fallback_value = 90.0
-
-        # Expected geometry
-        expected_geometry = QgsGeometry.fromPolylineXY(
-            [QgsPointXY(10, 20), QgsPointXY(20, 20)]
+    @pytest.mark.parametrize(
+        "point", [[QgsPointXY(10, 20), QgsPointXY(100, 40)], [QgsPointXY(10, 20)]]
+    )
+    def test_new_geometry_multi_geom_point(
+        self, source_feature, conversion_settings, point
+    ):
+        source_feature.setGeometry(QgsGeometry.fromMultiPointXY(point))
+        result = LineProcessor.new_geometry(
+            source_feature,
+            get_src_geometry(source_feature),
+            conversion_settings,
+            dm.Weir,
         )
+        assert not result.isMultipart()
+        assert result.asPolyline() == [QgsPointXY(10, 20), QgsPointXY(10, 40)]
 
-        # Call the method
-        with patch(
-            "threedi_schematisation_editor.vector_data_importer.processors.LineProcessor.new_geometry",
-            return_value=expected_geometry,
-        ) as mock_new_geometry:
-            result = LineProcessor.new_geometry(feature, conversion_settings, dm.Pipe)
+    @pytest.mark.parametrize("model_class", [dm.Pipe, dm.Culvert, dm.Channel])
+    def test_new_geometry_full_line(
+        self, source_feature, conversion_settings, model_class
+    ):
+        # Set geometry of source_feature
+        line = QgsGeometry.fromPolylineXY(
+            [QgsPointXY(0, 0), QgsPointXY(5, 5), QgsPointXY(10, 10)]
+        )
+        source_feature.setGeometry(line)
+        # Retrieve geometry
+        result = LineProcessor.new_geometry(
+            source_feature, line, conversion_settings, model_class
+        )
+        # Verify that the full line is returned
+        assert result.asPolyline() == line.asPolyline()
+        assert result.type() == QgsWkbTypes.LineGeometry
 
-            # Verify the mock was called with the correct arguments
-            mock_new_geometry.assert_called_once_with(
-                feature, conversion_settings, dm.Pipe
-            )
+    def test_new_geometry_simplified_line(self, source_feature, conversion_settings):
+        # Set geometry of source_feature
+        line = QgsGeometry.fromPolylineXY(
+            [QgsPointXY(0, 0), QgsPointXY(5, 5), QgsPointXY(10, 10)]
+        )
+        source_feature.setGeometry(line)
+        # Retrieve geometry
+        result = LineProcessor.new_geometry(
+            source_feature, line, conversion_settings, dm.Weir
+        )
+        # Verify that only the start and end point are returned
+        assert result.asPolyline() == [line.asPolyline()[0], line.asPolyline()[-1]]
+        assert result.type() == QgsWkbTypes.LineGeometry
 
-            # Verify the result
-            assert result.type() == QgsWkbTypes.LineGeometry
-            assert result.asPolyline() == expected_geometry.asPolyline()
+    @pytest.mark.parametrize(
+        "feature_fields, expected_points",
+        [
+            ({}, [QgsPointXY(10, 20), QgsPointXY(10, 40)]),
+            (
+                {"length": 20.0, "azimuth": 90.0},
+                [QgsPointXY(10, 20), QgsPointXY(30, 20)],
+            ),
+        ],
+    )
+    def test_new_geometry_point(
+        self, conversion_settings, feature_fields, expected_points
+    ):
+        # Create feature with point geometry and specified fields
+        fields = QgsFields()
+        for field_name in feature_fields:
+            fields.append(QgsField(field_name, QVariant.Double))
+        feature = QgsFeature(fields)
+        geom = QgsGeometry.fromPointXY(QgsPointXY(10, 20))
+        feature.setGeometry(geom)
+        for field_name, field_value in feature_fields.items():
+            feature.setAttribute(field_name, field_value)
+        # Retrieve geometry and verify results
+        result = LineProcessor.new_geometry(feature, geom, conversion_settings, dm.Weir)
+        assert result.type() == QgsWkbTypes.LineGeometry
+        assert result.asPolyline() == expected_points
 
 
 class TestUtilityFunctions:
     """Tests for utility functions in the processors module."""
 
-    def test_create_new_point_geometry(self, source_feature):
+    def test_create_new_point_geometry(self):
         """Test that create_new_point_geometry returns a point geometry."""
-        result = SpatialProcessor.create_new_point_geometry(source_feature)
+        geom = QgsGeometry.fromPointXY(QgsPointXY(10, 20))
+        result = SpatialProcessor.create_new_point_geometry(geom)
         assert isinstance(result, QgsGeometry)
         assert result.type() == QgsWkbTypes.PointGeometry
         assert result.asPoint() == QgsPointXY(10, 20)

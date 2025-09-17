@@ -286,7 +286,10 @@ class TestChannelStructureIntegration:
 
         # Call the method with the specified selected_ids
         result, processed_ids = LinearIntegrator.get_conduit_structures_data(
-            integrator, channel_feature, selected_ids=selected_ids
+            integrator,
+            channel_feature,
+            channel_feature.geometry(),
+            selected_ids=selected_ids,
         )
 
         # Check the results
