@@ -30,44 +30,16 @@ from threedi_schematisation_editor.vector_data_importer.utils import ColumnImpor
 
 
 def get_field_methods_mapping(
-    fields_iterator,
-    auto_fields=None,
-    auto_attribute_fields=None,
-    required_fields=None,
-    no_default_fields=None,
+    model_cls,
+    field_spec=None,
 ):
     """Return a mapping of fields to import methods."""
-    # TODO: consider changing this, auto_fields, auto_attribute_fields, required_fields is a bit messy
-    methods_mapping = defaultdict(dict)
-
-    auto_fields = set(auto_fields) | {"id"} if auto_fields else {"id"}
-    auto_attribute_fields = (
-        set(auto_attribute_fields) if auto_attribute_fields else set()
-    )
-    required_fields = set(required_fields) if required_fields else set()
-    no_default_fields = set(no_default_fields) if no_default_fields else set()
-
-    for field_name, model_cls in fields_iterator:
-        fields = []
-        if field_name in auto_fields:
+    methods_mapping = {}
+    for field_name in model_cls.__annotations__.keys():
+        if field_spec and field_name in field_spec:
+            fields = field_spec[field_name]
+        elif field_name == "id":
             fields = [ColumnImportMethod.AUTO]
-        elif field_name in auto_attribute_fields:
-            fields = [
-                ColumnImportMethod.AUTO,
-                ColumnImportMethod.ATTRIBUTE,
-            ]
-        elif field_name in required_fields:
-            fields = [
-                ColumnImportMethod.ATTRIBUTE,
-                ColumnImportMethod.DEFAULT,
-                ColumnImportMethod.EXPRESSION,
-            ]
-        elif field_name in no_default_fields:
-            fields = [
-                ColumnImportMethod.ATTRIBUTE,
-                ColumnImportMethod.EXPRESSION,
-                ColumnImportMethod.IGNORE,
-            ]
         else:
             fields = [
                 ColumnImportMethod.ATTRIBUTE,
@@ -75,73 +47,51 @@ def get_field_methods_mapping(
                 ColumnImportMethod.EXPRESSION,
                 ColumnImportMethod.IGNORE,
             ]
-        methods_mapping[model_cls][field_name] = fields
+        methods_mapping[field_name] = fields
     return methods_mapping
 
 
 def create_widgets(
-    import_model_cls,
-    nodes_model_cls=None,
-    auto_fields=None,
-    auto_attribute_fields=None,
-    required_fields=None,
-    no_default_fields=None,
+    model_cls,
+    field_spec=None,
 ):
     """Create widgets for the data model fields."""
-    import_fields = (
-        (k, import_model_cls) for k in import_model_cls.__annotations__.keys()
-    )
-    if nodes_model_cls is not None:
-        node_fields = (
-            (k, nodes_model_cls) for k in nodes_model_cls.__annotations__.keys()
-        )
-    else:
-        node_fields = ()
-    fields_iterator = chain(import_fields, node_fields)
-    field_methods_mapping = get_field_methods_mapping(
-        fields_iterator,
-        auto_fields,
-        auto_attribute_fields,
-        required_fields,
-        no_default_fields,
-    )
-    widgets_to_add = defaultdict(dict)
-    for model_cls, fields_mapping in field_methods_mapping.items():
-        model_obsolete_fields = model_cls.obsolete_fields()
-        model_fields_display_names = model_cls.fields_display_names()
-        row_idx = 0
+    fields_mapping = get_field_methods_mapping(model_cls, field_spec)
+    model_obsolete_fields = model_cls.obsolete_fields()
+    model_fields_display_names = model_cls.fields_display_names()
+    row_idx = 0
+    widgets_to_add = {}
+    for field_name, field_methods in fields_mapping.items():
+        if field_name in model_obsolete_fields:
+            continue
+        if field_name not in model_fields_display_names:
+            continue
+        field_type = model_cls.__annotations__[field_name]
+        if is_optional(field_type):
+            field_type = optional_type(field_type)
 
-        for field_name, field_methods in fields_mapping.items():
-            if field_name in model_obsolete_fields:
-                continue
-
-            field_type = model_cls.__annotations__[field_name]
-            if is_optional(field_type):
-                field_type = optional_type(field_type)
-
-            for column_idx, column_name in enumerate(CONFIG_HEADER):
-                if column_idx == ColumnImportIndex.FIELD_NAME_COLUMN_IDX:
-                    widget = create_label_widget(model_fields_display_names[field_name])
-                elif column_idx == ColumnImportIndex.METHOD_COLUMN_IDX:
-                    widget = create_method_widget(field_methods)
-                elif column_idx == ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX:
-                    widget = create_combobox_widget()
-                    if ColumnImportMethod.ATTRIBUTE not in field_methods:
-                        widget.setDisabled(True)
-                elif column_idx == ColumnImportIndex.VALUE_MAP_COLUMN_IDX:
-                    # todo: disable value map in some cases?
-                    widget = create_set_value_map_widget()
-                elif column_idx == ColumnImportIndex.EXPRESSION_COLUMN_IDX:
-                    widget = create_expression_widget()
-                    if ColumnImportMethod.EXPRESSION not in field_methods:
-                        widget.setDisabled(True)
-                elif column_idx == ColumnImportIndex.DEFAULT_VALUE_COLUMN_IDX:
-                    widget = create_default_value_widget(field_type)
-                    if ColumnImportMethod.DEFAULT not in field_methods:
-                        widget.setDisabled(True)
-                widgets_to_add[model_cls][row_idx, column_idx] = widget
-
-            row_idx += 1
+        for column_idx, column_name in enumerate(CONFIG_HEADER):
+            if column_idx == ColumnImportIndex.FIELD_NAME_COLUMN_IDX:
+                widget = create_label_widget(model_fields_display_names[field_name])
+            elif column_idx == ColumnImportIndex.METHOD_COLUMN_IDX:
+                widget = create_method_widget(field_methods)
+            elif column_idx == ColumnImportIndex.SOURCE_ATTRIBUTE_COLUMN_IDX:
+                widget = create_combobox_widget()
+                if ColumnImportMethod.ATTRIBUTE not in field_methods:
+                    widget.setDisabled(True)
+            elif column_idx == ColumnImportIndex.VALUE_MAP_COLUMN_IDX:
+                # todo: disable value map in some cases?
+                widget = create_set_value_map_widget()
+            elif column_idx == ColumnImportIndex.EXPRESSION_COLUMN_IDX:
+                widget = create_expression_widget()
+                if ColumnImportMethod.EXPRESSION not in field_methods:
+                    widget.setDisabled(True)
+            elif column_idx == ColumnImportIndex.DEFAULT_VALUE_COLUMN_IDX:
+                widget = create_default_value_widget(field_type)
+                if ColumnImportMethod.DEFAULT not in field_methods:
+                    widget.setDisabled(True)
+            widgets_to_add[row_idx, column_idx] = widget
+        row_idx += 1
 
     return widgets_to_add
 

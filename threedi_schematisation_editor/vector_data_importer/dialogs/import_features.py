@@ -607,7 +607,7 @@ class ImportFeaturesDialog(ImportDialog):
         self.field_map_tv.setModel(self.field_map_model)
 
     def get_widgets(self):
-        return create_widgets(*self.models)
+        return {model: create_widgets(model) for model in self.models}
 
     def set_source_layer_filter(self):
         """Set the filter for the source layer combo box based on the model's geometry type."""
@@ -735,7 +735,12 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
         return False
 
     def get_widgets(self):
-        return create_widgets(*self.models, auto_fields={"id", "channel_id"})
+        return {
+            self.import_model_cls: create_widgets(
+                self.import_model_cls,
+                field_spec={"channel_id": [ColumnImportMethod.AUTO]},
+            )
+        }
 
 
 class ImportStructuresDialog(ImportDialog):
@@ -1041,14 +1046,26 @@ class ImportStructuresDialog(ImportDialog):
         return processed_handlers, processed_layers
 
     def get_widgets(self):
-        return create_widgets(
-            *self.models,
-            auto_attribute_fields={
-                "connection_node_id",
-                "connection_node_id_start",
-                "connection_node_id_end",
-            },
-        )
+        return {
+            self.import_model_cls: create_widgets(
+                self.import_model_cls,
+                field_spec={
+                    "connection_node_id": [
+                        ColumnImportMethod.AUTO,
+                        ColumnImportMethod.ATTRIBUTE,
+                    ],
+                    "connection_node_id_start": [
+                        ColumnImportMethod.AUTO,
+                        ColumnImportMethod.ATTRIBUTE,
+                    ],
+                    "connection_node_id_end": [
+                        ColumnImportMethod.AUTO,
+                        ColumnImportMethod.ATTRIBUTE,
+                    ],
+                },
+            ),
+            dm.ConnectionNode: create_widgets(dm.ConnectionNode),
+        }
 
 
 class ImportCrossSectionDataDialog(ImportFeaturesDialog):
@@ -1069,9 +1086,19 @@ class ImportCrossSectionDataDialog(ImportFeaturesDialog):
         super().setup_ui()
         model_widgets = create_widgets(
             dm.CrossSectionDataConversion,
-            required_fields=["target_object_type"],
-            no_default_fields=["order_by"],
-        )[dm.CrossSectionDataConversion]
+            field_spec={
+                "target_id": [
+                    ColumnImportMethod.ATTRIBUTE,
+                    ColumnImportMethod.DEFAULT,
+                    ColumnImportMethod.EXPRESSION,
+                ],
+                "order_by": [
+                    ColumnImportMethod.ATTRIBUTE,
+                    ColumnImportMethod.EXPRESSION,
+                    ColumnImportMethod.AUTO,
+                ],
+            },
+        )
         group = QGroupBox("Target mapping and grouping", parent=self)
         layout = QVBoxLayout()
         self.target_field_map = FieldMapWidget(
@@ -1112,11 +1139,28 @@ class ImportCrossSectionDataDialog(ImportFeaturesDialog):
         )
 
     def get_widgets(self):
-        return create_widgets(
-            self.models[0],
-            required_fields=["cross_section_shape"],
-            no_default_fields=["cross_section_y", "cross_section_z"],
-        )
+        return {
+            self.import_model_cls: create_widgets(
+                self.import_model_cls,
+                field_spec={
+                    "cross_section_shape": [
+                        ColumnImportMethod.ATTRIBUTE,
+                        ColumnImportMethod.DEFAULT,
+                        ColumnImportMethod.EXPRESSION,
+                    ],
+                    "cross_section_y": [
+                        ColumnImportMethod.ATTRIBUTE,
+                        ColumnImportMethod.EXPRESSION,
+                        ColumnImportMethod.IGNORE,
+                    ],
+                    "cross_section_z": [
+                        ColumnImportMethod.ATTRIBUTE,
+                        ColumnImportMethod.EXPRESSION,
+                        ColumnImportMethod.IGNORE,
+                    ],
+                },
+            )
+        }
 
     @property
     def layer_dependent_widgets(self) -> List[QWidget]:
