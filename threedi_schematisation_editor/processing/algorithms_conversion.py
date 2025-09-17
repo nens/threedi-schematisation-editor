@@ -238,3 +238,14 @@ class ImportCrossSectionData(SimpleImporter):
             QgsProcessing.TypeVectorLine,
             QgsProcessing.TypeVector,
         ]
+
+    def name(self):
+        return f"threedi_import_{self.FEATURE_TYPE}"
+
+    def displayName(self):
+        return self.tr(f"Import {self.get_feature_repr()}")
+
+    def shortHelpString(self):
+        return self.tr(
+            f"""Import {self.get_feature_repr()} from the external source layer."""
+        )

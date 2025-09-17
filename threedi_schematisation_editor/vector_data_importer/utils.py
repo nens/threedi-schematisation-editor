@@ -21,8 +21,6 @@ DEFAULT_INTERSECTION_BUFFER = 1
 DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
 DEFAULT_MINIMUM_CHANNEL_LENGTH = 5
 
-from qgis.core import Qgis, QgsMessageLog
-
 
 def get_field_config_value(field_config, source_feat, expression_context=None):
     method = ColumnImportMethod(field_config["method"])
@@ -60,7 +58,6 @@ def update_attributes(fields_config, model_cls, source_feat, *new_features):
                 field_config = fields_config[field_name]
             except KeyError:
                 continue
-            QgsMessageLog.logMessage(f"set field {field_name}", "Warning", Qgis.Warning)
             if ColumnImportMethod(field_config["method"]) == ColumnImportMethod.AUTO:
                 continue
             field_value = get_field_config_value(

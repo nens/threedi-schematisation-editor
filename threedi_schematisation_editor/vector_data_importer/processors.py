@@ -15,7 +15,6 @@ from qgis.core import (
     QgsField,
     QgsFields,
     QgsGeometry,
-    QgsMessageLog,
     QgsSpatialIndex,
     QgsVectorLayer,
     QgsWkbTypes,
@@ -154,7 +153,8 @@ class CrossSectionDataProcessor(Processor):
                 self.target_match_config.get("target_object_id"),
                 self.target_match_config.get("target_object_code"),
             )
-            self.source_feat_map[src_feat] = target_feat
+            if target_feat:
+                self.source_feat_map[src_feat] = target_feat
 
     @property
     def object_type_map(self) -> dict[str, type]:
@@ -351,10 +351,9 @@ class CrossSectionDataProcessor(Processor):
         target_object_code_config: dict,
     ) -> Optional[QgsFeature]:
         target_feat = None
-        QgsMessageLog.logMessage(f"{target_layer.name()}", "Warning", Qgis.Warning)
         if target_object_id_config:
             target_id = get_field_config_value(target_object_id_config, src_feat)
-            if target_id:
+            if target_id is not None:
                 target_feat = next(
                     (
                         feature
@@ -365,7 +364,7 @@ class CrossSectionDataProcessor(Processor):
                 )
         if not target_feat and target_object_code_config:
             target_code = get_field_config_value(target_object_code_config, src_feat)
-            if target_code:
+            if target_code is not None:
                 target_feat = next(
                     (
                         feature

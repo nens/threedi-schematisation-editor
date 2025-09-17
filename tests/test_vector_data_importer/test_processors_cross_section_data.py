@@ -531,7 +531,7 @@ def test_get_feat_from_group(processor, source_fields, field_config):
     for i in range(3):
         feature = QgsFeature(source_fields)
         feature.setAttribute("id", i)
-        (feature.setAttribute("distance", 0),)
+        feature.setAttribute("distance", 0)
         feature.setAttribute("object_id", 0)
         feature.setAttribute("object_type", f"pipe")
         feature.setAttribute(

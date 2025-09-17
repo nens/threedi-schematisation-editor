@@ -268,12 +268,7 @@ class ImportDialog(QDialog):
                 json.dump(self.collect_settings(), template_file, indent=2)
             self.uc.show_info(f"Settings saved to the template.", self)
         except Exception as e:
-            import traceback
-
             self.uc.show_error(f"Import failed due to the following error:\n{e}", self)
-            QgsMessageLog.logMessage(
-                f"{traceback.format_exc()}", "Warning", Qgis.Warning
-            )
 
     def load_import_settings(self):
         """Load import settings from a template file."""
