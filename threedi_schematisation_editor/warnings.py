@@ -14,3 +14,9 @@ class FeaturesImporterWarning(ThreediSchematisationEditorWarning):
     """
     Custom warning to indicate issues related to the Structures Integrator.
     """
+
+
+class GeometryImporterWarning(ThreediSchematisationEditorWarning):
+    """
+    Custom warning to indicate issues related imported geometries
+    """

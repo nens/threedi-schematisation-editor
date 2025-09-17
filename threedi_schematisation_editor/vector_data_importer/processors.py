@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC
 from functools import cached_property
 
@@ -20,6 +21,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
     FeatureManager,
     get_float_value_from_feature,
+    get_src_geometry,
     update_attributes,
 )
 
@@ -46,12 +48,9 @@ class Processor(ABC):
             return False
 
     @classmethod
-    def create_new_point_geometry(cls, src_feat):
+    def create_new_point_geometry(cls, src_geom):
         """Create a new point feature geometry based on the source feature."""
-        src_geometry = QgsGeometry(src_feat.geometry())
-        if src_geometry.isMultipart():
-            src_geometry.convertToSingleType()
-        src_point = src_geometry.asPoint()
+        src_point = src_geom.asPoint()
         dst_point = src_point
         dst_geometry = QgsGeometry.fromPointXY(dst_point)
         return dst_geometry
@@ -202,8 +201,15 @@ class CrossSectionLocationProcessor(Processor):
             raise NotImplementedError(f"Unsupported geometry type: '{geometry_type}'")
 
     def process_feature(self, src_feat):
-        src_geom = QgsGeometry(src_feat.geometry())
-        if self.transformation:
+        src_geom = get_src_geometry(src_feat, none_ok=True)
+        if src_geom is None:
+            # Cross section locations without geometries are valid, so only break when the geometry cannot be processed
+            if src_feat.geometry():
+                return {}
+            # make sure src_geom is a geometry
+            else:
+                src_geom = QgsGeometry()
+        if self.transformation and src_geom:
             src_geom.transform(self.transformation)
         channel_id = self.get_matching_channel(src_feat, src_geom)
         ref_channel = next(
@@ -241,7 +247,10 @@ class ConnectionNodeProcessor(Processor):
 
     def process_feature(self, src_feat):
         """Process source point into connection node feature."""
-        new_geom = ConnectionNodeProcessor.create_new_point_geometry(src_feat)
+        src_geom = get_src_geometry(src_feat)
+        if src_geom is None:
+            return {}
+        new_geom = ConnectionNodeProcessor.create_new_point_geometry(src_geom)
         if self.transformation:
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
@@ -304,7 +313,10 @@ class PointProcessor(StructureProcessor):
     def process_feature(self, src_feat):
         """Process source point structure feature."""
         new_nodes = []
-        new_geom = PointProcessor.create_new_point_geometry(src_feat)
+        src_geom = get_src_geometry(src_feat)
+        if src_geom is None:
+            return {}
+        new_geom = PointProcessor.create_new_point_geometry(src_geom)
         if self.transformation:
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
@@ -326,14 +338,11 @@ class PointProcessor(StructureProcessor):
 
 class LineProcessor(StructureProcessor):
     @staticmethod
-    def new_geometry(src_feat, conversion_settings, target_model_cls):
+    def new_geometry(src_feat, src_geom, conversion_settings, target_model_cls):
         """Create new structure geometry based on the source structure feature."""
-        src_geometry = QgsGeometry(src_feat.geometry())
-        if src_geometry.isMultipart():
-            src_geometry.convertToSingleType()
-        geometry_type = src_geometry.type()
+        geometry_type = src_geom.type()
         if geometry_type == QgsWkbTypes.GeometryType.LineGeometry:
-            src_polyline = src_geometry.asPolyline()
+            src_polyline = src_geom.asPolyline()
             dst_polyline = (
                 src_polyline
                 if target_model_cls in [dm.Culvert, dm.Pipe, dm.Channel]
@@ -341,7 +350,7 @@ class LineProcessor(StructureProcessor):
             )
             dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
         elif geometry_type == QgsWkbTypes.GeometryType.PointGeometry:
-            start_point = src_geometry.asPoint()
+            start_point = src_geom.asPoint()
             length = get_float_value_from_feature(
                 src_feat,
                 conversion_settings.length_source_field,
@@ -379,8 +388,11 @@ class LineProcessor(StructureProcessor):
 
     def process_feature(self, src_feat):
         """Process source linear structure feature."""
+        src_geom = get_src_geometry(src_feat)
+        if src_geom is None:
+            return {}
         new_geom = LineProcessor.new_geometry(
-            src_feat, self.conversion_settings, self.target_model_cls
+            src_feat, src_geom, self.conversion_settings, self.target_model_cls
         )
         if self.transformation:
             new_geom.transform(self.transformation)
