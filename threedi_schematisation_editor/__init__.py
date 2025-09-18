@@ -105,7 +105,7 @@ class ThreediSchematisationEditorPlugin:
         self.project = QgsProject.instance()
         self.project.removeAll.connect(self.on_project_close)
         self.project.readProject.connect(self.on_3di_project_read)
-        self.project.projectSaved.connect(self.on_3di_project_save)
+        self.project.writeProject.connect(self.on_3di_project_save)
         self.iface.currentLayerChanged.connect(self.switch_workspace_context)
 
         # Inject custom news entries in settings
