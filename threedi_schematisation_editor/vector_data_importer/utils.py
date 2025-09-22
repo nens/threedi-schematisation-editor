@@ -134,8 +134,13 @@ class ConversionSettings:
         self.join_field_tgt = conversion_config.get("join_field_tgt", None)
         self.group_by_field = conversion_config.get("group_by", None)
         self.order_by_field = conversion_config.get("order_by", None)
-        self.set_lowest_point_to_zero = conversion_config.get("set_lowest_point_to_zero", False)
-        self.use_lowest_point_as_reference = conversion_config.get("use_lowest_point_as_reference", False)
+        self.set_lowest_point_to_zero = conversion_config.get(
+            "set_lowest_point_to_zero", False
+        )
+        self.use_lowest_point_as_reference = conversion_config.get(
+            "use_lowest_point_as_reference", False
+        )
+
 
 class ColumnImportMethod(Enum):
     AUTO = "auto"

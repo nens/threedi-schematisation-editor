@@ -1078,7 +1078,7 @@ class ImportCrossSectionDataDialog(ImportFeaturesDialog):
             "conversion_settings": {
                 "set_lowest_point_to_zero": self.lowest_to_zero.isChecked(),
                 "use_lowest_point_as_reference": self.ref_to_lowest.isChecked(),
-            }
+            },
         }
 
     def setup_ui(self):
@@ -1125,8 +1125,12 @@ class ImportCrossSectionDataDialog(ImportFeaturesDialog):
     def load_conversion_settings(self, import_settings: Dict[str, Any]):
         conversion_settings = import_settings.get("conversion_settings", None)
         if conversion_settings:
-            self.ref_to_lowest.setChecked(conversion_settings.get("use_lowest_point_as_reference", False))
-            self.lowest_to_zero.setChecked(conversion_settings.get("set_lowest_point_to_zero", False))
+            self.ref_to_lowest.setChecked(
+                conversion_settings.get("use_lowest_point_as_reference", False)
+            )
+            self.lowest_to_zero.setChecked(
+                conversion_settings.get("set_lowest_point_to_zero", False)
+            )
 
     def source_fields_missing(self) -> bool:
         missing_fields = super().source_fields_missing()
@@ -1178,7 +1182,11 @@ class ImportCrossSectionDataDialog(ImportFeaturesDialog):
 
     @property
     def layer_dependent_widgets(self) -> List[QWidget]:
-        return super().layer_dependent_widgets + [self.ref_to_lowest, self.lowest_to_zero, self.target_field_map]
+        return super().layer_dependent_widgets + [
+            self.ref_to_lowest,
+            self.lowest_to_zero,
+            self.target_field_map,
+        ]
 
     def on_layer_changed(self, layer: Optional[QgsMapLayer]):
         super().on_layer_changed(layer)
