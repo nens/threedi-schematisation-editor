@@ -195,26 +195,6 @@ def test_get_cross_section_table_yz_no_sort_by(
 @pytest.mark.parametrize(
     "cs_shape",
     [
-        CrossSectionShape.TABULATED_RECTANGLE,
-        CrossSectionShape.TABULATED_TRAPEZIUM,
-        CrossSectionShape.TABULATED_YZ,
-    ],
-)
-def test_get_cross_section_table_missing_data(source_fields, field_config, cs_shape):
-    features = []
-    for distance in [1, 2]:
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("distance", distance)
-        features.append(feature)
-    table = CrossSectionDataProcessor.get_cross_section_table(
-        features, cs_shape, "distance", field_config
-    )
-    assert table == "NULL,NULL\nNULL,NULL"
-
-
-@pytest.mark.parametrize(
-    "cs_shape",
-    [
         CrossSectionShape.CLOSED_RECTANGLE,
         CrossSectionShape.RECTANGLE,
         CrossSectionShape.CIRCLE,
@@ -222,7 +202,9 @@ def test_get_cross_section_table_missing_data(source_fields, field_config, cs_sh
         CrossSectionShape.INVERTED_EGG,
     ],
 )
-def test_get_cross_section_table_missing_data(source_fields, field_config, cs_shape):
+def test_get_cross_section_table_missing_data(
+    source_fields, field_config, target_mapping_config, cs_shape
+):
     features = []
     for distance in [1, 2]:
         feature = QgsFeature(source_fields)
@@ -230,9 +212,30 @@ def test_get_cross_section_table_missing_data(source_fields, field_config, cs_sh
         feature.setAttribute("distance", distance)
         features.append(feature)
     table = CrossSectionDataProcessor.get_cross_section_table(
-        features, cs_shape, "distance", field_config
+        features, cs_shape, target_mapping_config["order_by"], field_config
     )
     assert table is None
+
+
+@pytest.mark.parametrize("cs_data", [[[1, 10], [2, 20]], [[-1, 10, [1, 20]]]])
+def test_get_cross_section_table_lowest_to_zero(
+    source_fields, field_config, target_mapping_config, cs_data
+):
+    features = []
+    cs_data = [[1, 10], [2, 20]]
+    for y, z in cs_data:
+        feature = QgsFeature(source_fields)
+        feature.setAttribute("cross_section_y", y)
+        feature.setAttribute("cross_section_z", z)
+        features.append(feature)
+    table = CrossSectionDataProcessor.get_cross_section_table(
+        features,
+        CrossSectionShape.TABULATED_YZ,
+        target_mapping_config["order_by"],
+        field_config,
+        set_lowest_point_to_zero=True,
+    )
+    assert table == "1,0\n2,10"
 
 
 @pytest.mark.parametrize(
@@ -292,10 +295,9 @@ def test_organize_group_not_tabulated(source_fields, field_config):
         )
 
 
-@pytest.fixture
-def target_layer():
+def make_layer(name):
     layer = QgsVectorLayer(
-        "Point?crs=EPSG:28992", "Pipe", "memory"
+        "Point?crs=EPSG:28992", name, "memory"
     )  # Create QgsVectorLayer
     layer_data_provider = layer.dataProvider()
     layer_fields = QgsFields()
@@ -309,6 +311,11 @@ def target_layer():
         feature.setAttribute("code", f"code_{i}")
         layer_data_provider.addFeature(feature)  # Add features to QgsVectorLayer
     return layer
+
+
+@pytest.fixture
+def target_layer():
+    return make_layer("Pipe")
 
 
 @pytest.mark.parametrize(
@@ -413,9 +420,19 @@ def test_find_target_object_no_match(
 
 
 @pytest.fixture
-def processor(target_layer, field_config, target_mapping_config):
+def conversion_settings():
+    return ConversionSettings(
+        {
+            "set_lowest_point_to_zero": False,
+            "use_lowest_point_as_reference": True,
+        }
+    )
+
+
+@pytest.fixture
+def processor(target_layer, field_config, target_mapping_config, conversion_settings):
     return CrossSectionDataProcessor(
-        field_config, target_mapping_config, [target_layer]
+        field_config, target_mapping_config, [target_layer], conversion_settings
     )
 
 
@@ -550,3 +567,45 @@ def test_get_feat_from_group(processor, source_fields, field_config):
         new_feat["cross_section_shape"] == CrossSectionShape.TABULATED_RECTANGLE.value
     )
     assert processor.source_feat_map[new_feat] == processor.source_feat_map[features[0]]
+
+
+@pytest.mark.parametrize(
+    "target_model_cls, reference_level, crest_level",
+    [
+        (dm.Pipe, None, None),
+        (dm.CrossSectionLocation, 10, None),
+        (dm.Weir, None, 10),
+        (dm.Orifice, None, 10),
+    ],
+)
+def test_get_feat_from_group_use_lowest_as_ref(
+    target_mapping_config,
+    conversion_settings,
+    source_fields,
+    field_config,
+    target_model_cls,
+    reference_level,
+    crest_level,
+):
+    layer = make_layer(target_model_cls.__tablename__)
+    features = []
+    for i in range(3):
+        feature = QgsFeature(source_fields)
+        feature.setAttribute("id", i)
+        feature.setAttribute("distance", 0)
+        feature.setAttribute("object_id", 0)
+        feature.setAttribute("cross_section_y", 10)
+        feature.setAttribute("cross_section_z", 10)
+        feature.setAttribute("object_type", target_model_cls.__tablename__)
+        feature.setAttribute(
+            "cross_section_shape", CrossSectionShape.TABULATED_YZ.value
+        )
+        features.append(feature)
+    # make cross seciton with correct type of target layers!
+    processor = CrossSectionDataProcessor(
+        field_config, target_mapping_config, [layer], conversion_settings
+    )
+    processor.build_target_map(features)
+    new_feat = processor.get_feat_from_group(features)
+    assert new_feat["reference_level"] == reference_level
+    assert new_feat["crest_level"] == crest_level

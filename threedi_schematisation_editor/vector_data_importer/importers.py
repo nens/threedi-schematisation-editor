@@ -34,7 +34,7 @@ class Importer:
 
     @cached_property
     def conversion_settings(self):
-        conversion_config = self.import_settings["conversion_settings"]
+        conversion_config = self.import_settings.get("conversion_settings", {})
         return ConversionSettings(conversion_config)
 
     @cached_property
@@ -114,6 +114,7 @@ class CrossSectionDataImporter(Importer):
             target_fields_config=self.import_settings.get("fields", {}),
             target_match_config=self.import_settings.get("target_mapping", {}),
             target_layers=target_layers,
+            conversion_settings=self.conversion_settings,
         )
 
     @property
@@ -152,11 +153,6 @@ class SpatialImporter(Importer):
             )
         self.integrator = None
         self.processor = None
-
-    @cached_property
-    def conversion_settings(self):
-        conversion_config = self.import_settings.get("conversion_settings", {})
-        return ConversionSettings(conversion_config)
 
     @cached_property
     def external_source_name(self):

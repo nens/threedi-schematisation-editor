@@ -97,6 +97,7 @@ class CrossSectionDataProcessor(Processor):
         target_fields_config,
         target_match_config,
         target_layers,
+        conversion_settings,
     ):
         self.target_fields_config = target_fields_config
         self.target_match_config = target_match_config
@@ -106,12 +107,14 @@ class CrossSectionDataProcessor(Processor):
             ): target_layer
             for target_layer in target_layers
         }
-        self.source_feat_map = {}
+        self.conversion_settings = conversion_settings
+        self.source_feat_map: dict[QgsFeature, QgsFeature] = {}
+        self.target_model_cls_map: dict[QgsFeature, type] = {}
 
     def process_feature(self, src_feat: QgsFeature) -> dict[str, list[QgsFeature]]:
         # retrieve target feature, model class and layer
         target_feat = self.source_feat_map[src_feat]
-        target_model_cls = self.get_target_model_cls(src_feat)
+        target_model_cls = self.target_model_cls_map[src_feat]
         target_layer = self.get_target_layer(target_model_cls)
         # updata attributes
         update_attributes(
@@ -123,6 +126,16 @@ class CrossSectionDataProcessor(Processor):
         # add cross section table manually because this is not in self.target_fields_config
         if "cross_section_table" in src_feat.fields().names():
             target_feat["cross_section_table"] = src_feat["cross_section_table"]
+        if "crest_level" in src_feat.fields().names() and target_model_cls in [
+            dm.Orifice,
+            dm.Weir,
+        ]:
+            target_feat["crest_level"] = src_feat["crest_level"]
+        if (
+            "reference_level" in src_feat.fields().names()
+            and target_model_cls == dm.CrossSectionLocation
+        ):
+            target_feat["reference_level"] = src_feat["reference_level"]
         target_layer.updateFeature(target_feat)
         return {}
 
@@ -144,6 +157,7 @@ class CrossSectionDataProcessor(Processor):
             target_model_cls = self.get_target_model_cls(src_feat)
             if not target_model_cls:
                 continue
+            self.target_model_cls_map[src_feat] = target_model_cls
             target_layer = self.get_target_layer(target_model_cls)
             if not target_layer:
                 continue
@@ -204,6 +218,7 @@ class CrossSectionDataProcessor(Processor):
         cross_section_shape: CrossSectionShape,
         order_by_config: dict,
         field_config,
+        set_lowest_point_to_zero: bool = False,
     ) -> Optional[str]:
         # Build cross section table for a group of features
         if not cross_section_shape.is_tabulated:
@@ -229,6 +244,8 @@ class CrossSectionDataProcessor(Processor):
             col_right = CrossSectionDataProcessor.get_cross_section_table_column(
                 feature_group, "cross_section_z", field_config
             )
+            if col_right and set_lowest_point_to_zero:
+                col_right = [value - min(col_right) for value in col_right]
         if not col_right or not col_left:
             return ""
         # Retrieve order values from data
@@ -323,11 +340,18 @@ class CrossSectionDataProcessor(Processor):
                 self.target_fields_config["cross_section_shape"], feature
             )
         )
-        # copy first feature and ensure cross_section_table field exists
+        # copy first feature
         new_feat = QgsFeature()
         new_fields = QgsFields(feature.fields())
+        # ensure there is a field for the cross section table
         if "cross_section_table" not in feature.fields().names():
             new_fields.append(QgsField("cross_section_table", QVariant.String))
+        # ensure there are fields for reference and crest level
+        # these are only used for specific cases, but adding them here is safe
+        if "reference_level" not in feature.fields().names():
+            new_fields.append(QgsField("reference_level", QVariant.Double))
+        if "crest_level" not in feature.fields().names():
+            new_fields.append(QgsField("crest_level", QVariant.Double))
         new_feat.setFields(new_fields)
         # Copy all existing attributes from the original feature
         for field_name in feature.fields().names():
@@ -338,9 +362,33 @@ class CrossSectionDataProcessor(Processor):
                 cross_section_shape,
                 self.target_match_config.get("order_by"),
                 self.target_fields_config,
+                self.conversion_settings.set_lowest_point_to_zero,
             )
         )
+        if (
+            self.conversion_settings.use_lowest_point_as_reference
+            and cross_section_shape == CrossSectionShape.TABULATED_YZ
+        ):
+            model_cls = self.target_model_cls_map[feature]
+            z_coords = CrossSectionDataProcessor.get_cross_section_table_column(
+                group, "cross_section_z", self.target_fields_config
+            )
+            new_fields.append(QgsField(f"z_coords = {z_coords}", QVariant.Double))
+            if z_coords:
+                min_z = min(z_coords)
+                new_fields.append(QgsField(f"{min_z=}", QVariant.Double))
+                if model_cls == dm.CrossSectionLocation:
+                    new_feat["reference_level"] = min_z
+                if model_cls in [dm.Weir, dm.Orifice]:
+                    new_feat["crest_level"] = min_z
+                new_fields.append(
+                    QgsField(
+                        f"{new_feat['reference_level']=}; {new_feat['crest_level']=}",
+                        QVariant.Double,
+                    )
+                )
         self.source_feat_map[new_feat] = self.source_feat_map[feature]
+        self.target_model_cls_map[new_feat] = self.target_model_cls_map[feature]
         return new_feat
 
     @staticmethod
