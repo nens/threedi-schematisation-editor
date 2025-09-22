@@ -283,6 +283,7 @@ class ThreediSchematisationEditorPlugin:
             self.toggle_active_project_actions()
             return
         for model_gpkg in project_model_gpkgs:
+            # TODO: what happens if the file doesn't exist?
             lm = LayersManager(self.iface, self.uc, model_gpkg)
             if lm not in self.workspace_context_manager:
                 lm.load_all_layers(from_project=True)

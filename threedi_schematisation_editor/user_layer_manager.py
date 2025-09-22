@@ -26,6 +26,7 @@ from threedi_schematisation_editor.utils import (
     set_field_default_value, set_initial_layer_configuration,
     validation_errors_summary, zoom_to_layer)
 
+from qgis.core import Qgis, QgsMessageLog
 
 class LayersManager:
     """Class with methods and attributes used for managing 3Di User Layers."""
@@ -133,7 +134,6 @@ class LayersManager:
         layer_model = layer_handler.MODEL
         if layer_model not in self.snapping_groups:
             return
-        snapped_layers = [self.model_handlers[linked_model].layer for linked_model in self.snapping_groups[layer_model]]
         use_topological_editing = layer_model == dm.ConnectionNode
         project = QgsProject.instance()
         project.setTopologicalEditing(use_topological_editing)
@@ -160,7 +160,10 @@ class LayersManager:
                 if layer_model in vertex_segment_snapping_models
                 else QgsSnappingConfig.VertexFlag
             )
-        for layer in snapped_layers:
+        for linked_model in self.snapping_groups[layer_model]:
+            layer = self.model_handlers.get(linked_model)
+            if layer is None:
+                continue
             try:
                 iconf = individual_configs[layer]
             except KeyError:
@@ -296,9 +299,13 @@ class LayersManager:
     def setup_value_relation_widgets(self, model_cls):
         """Setup value relation widgets for the particular model class."""
         child_model_cls, parent_column, key_column, value_column = self.VALUE_RELATIONS[model_cls]
-        parent_layer = self.model_handlers[model_cls].layer
+        parent_layer = self.model_handlers.get(model_cls).layer
+        if parent_layer is None:
+            return
         parent_column_idx = parent_layer.fields().lookupField(parent_column)
-        child_layer = self.model_handlers[child_model_cls].layer
+        child_layer = self.model_handlers.get(child_model_cls).layer
+        if child_layer is None:
+            return
         default_ews = parent_layer.editorWidgetSetup(parent_column_idx)
         config = default_ews.config()
         config["Layer"] = child_layer.id()
@@ -429,7 +436,7 @@ class LayersManager:
 
     def register_vector_layers(self):
         """Register all vector layers."""
-        layers_registered = False
+        QgsMessageLog.logMessage(f'register layers for {self.model_gpkg_path}', "Logging", Qgis.Warning)
         project = QgsProject.instance()
         present_layers = project.mapLayers()
         present_layers_sources = {lyr.dataProvider().dataSourceUri(): lyr for lyr in present_layers.values()}
@@ -437,10 +444,12 @@ class LayersManager:
             for model_cls in group_models:
                 layer_uri = f"{self.model_gpkg_path}|layername={model_cls.__tablename__}"
                 layer_uri = layer_uri.replace("\\", "/")
+                QgsMessageLog.logMessage(f'read layer {layer_uri}', "Logging", Qgis.Warning)
                 try:
                     layer = present_layers_sources[layer_uri]
                 except KeyError:
-                    return layers_registered
+                    QgsMessageLog.logMessage(f'Cannot read layer {layer_uri}', "Logging", Qgis.Warning)
+                    continue
                 handler_cls = MODEL_HANDLERS[model_cls]
                 handler = handler_cls(self, layer)
                 handler.connect_handler_signals()
@@ -492,7 +501,7 @@ class LayersManager:
             self.register_groups()
             self.register_vector_layers()
         self.setup_all_value_relation_widgets()
-        self.iface.setActiveLayer(self.model_handlers[dm.ConnectionNode].layer)
+        self.iface.setActiveLayer(self.model_handlers.get(dm.ConnectionNode).layer)
 
     def remove_loaded_layers(self, dry_remove=False):
         """Removing loaded vector layers."""
@@ -511,17 +520,15 @@ class LayersManager:
     def add_joins(self):
         """Setting joins between layers."""
         for parent_model_cls, children_data_models in self.LAYER_JOINS.items():
-            try:
-                parent_handler = self.model_handlers[parent_model_cls]
-                parent_layer = parent_handler.layer
-            except KeyError:
+            parent_handler = self.model_handlers.get(parent_model_cls)
+            if not parent_handler:
                 continue
+            parent_layer = parent_handler.layer
             for child_model_cls, join_specs in children_data_models.items():
-                try:
-                    child_handler = self.model_handlers[child_model_cls]
-                    child_layer = child_handler.layer
-                except KeyError:
+                child_handler = self.model_handlers.get(child_model_cls)
+                if not child_handler:
                     continue
+                child_layer = child_handler.layer
                 child_join = QgsVectorLayerJoinInfo()
                 child_join.setTargetFieldName(join_specs["target_field_name"])
                 child_join.setJoinLayer(child_layer)
@@ -539,7 +546,9 @@ class LayersManager:
         """
         expr = QgsExpression(filter_exp) if filter_exp else None
         req = QgsFeatureRequest(expr) if expr is not None else QgsFeatureRequest()
-        return self.model_handlers[model_cls].layer.getFeatures(req)
+        if model_cls in self.model_handlers:
+            return self.model_handlers[model_cls].layer.getFeatures(req)
+        return []
 
     def populate_edit_form(self, dialog, layer, feature):
         """Add extra logic to custom edit form of the layer."""
