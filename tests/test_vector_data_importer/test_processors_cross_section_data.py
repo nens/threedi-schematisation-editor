@@ -87,15 +87,21 @@ def source_fields():
     return source_fields
 
 
+def make_features(attributes: dict[str, list], source_fields):
+    features = []
+    for i in range(len(list(attributes.values())[0])):
+        feature = QgsFeature(source_fields)
+        for key, vals in attributes.items():
+            feature.setAttribute(key, vals[i])
+        features.append(feature)
+    return features
+
+
 def test_get_cross_section_table_column(
     source_fields,
     field_config,
 ):
-    features = []
-    for width in [1, 2, 3]:
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("cross_section_width", width)
-        features.append(feature)
+    features = make_features({"cross_section_width": [1, 2, 3]}, source_fields)
     column = CrossSectionDataProcessor.get_cross_section_table_column(
         features, "cross_section_width", field_config
     )
@@ -106,11 +112,7 @@ def test_get_cross_section_table_column_no_data(
     source_fields,
     field_config,
 ):
-    features = []
-    for width in [1, 2]:
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("cross_section_width", width)
-        features.append(feature)
+    features = make_features({"cross_section_width": [1, 2]}, source_fields)
     feature = QgsFeature(source_fields)
     features.append(feature)
     with pytest.warns(ProcessorWarning):
@@ -138,14 +140,12 @@ def test_get_cross_section_table_tabulated(
     distances,
     expected_table,
 ):
-    features = []
-    cs_data = zip(cs_widths, cs_heights, distances)
-    for width, height, distance in cs_data:
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("cross_section_width", width)
-        feature.setAttribute("cross_section_height", height)
-        feature.setAttribute("distance", distance)
-        features.append(feature)
+    attributes = {
+        "cross_section_width": cs_widths,
+        "cross_section_height": cs_heights,
+        "distance": distances,
+    }
+    features = make_features(attributes, source_fields)
     table = CrossSectionDataProcessor.get_cross_section_table(
         features, cs_shape, target_mapping_config["order_by"], field_config
     )
@@ -153,14 +153,12 @@ def test_get_cross_section_table_tabulated(
 
 
 def test_get_cross_section_table_yz(source_fields, field_config, target_mapping_config):
-    features = []
-    cs_data = [[1, 10, 0], [2, 20, 1]]
-    for y, z, distance in cs_data:
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("cross_section_y", y)
-        feature.setAttribute("cross_section_z", z)
-        feature.setAttribute("distance", distance)
-        features.append(feature)
+    attributes = {
+        "cross_section_y": [1, 2],
+        "cross_section_z": [10, 20],
+        "distance": [0, 1],
+    }
+    features = make_features(attributes, source_fields)
     table = CrossSectionDataProcessor.get_cross_section_table(
         features,
         CrossSectionShape.TABULATED_YZ,
@@ -175,14 +173,8 @@ def test_get_cross_section_table_yz_no_sort_by(
     field_config,
     target_mapping_config,
 ):
-    features = []
-    y = [10, 0, 20]
-    z = [1, 2, 3]
-    for y, z in zip(y, z):
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("cross_section_y", y)
-        feature.setAttribute("cross_section_z", z)
-        features.append(feature)
+    attributes = {"cross_section_y": [10, 0, 20], "cross_section_z": [1, 2, 3]}
+    features = make_features(attributes, source_fields)
     table = CrossSectionDataProcessor.get_cross_section_table(
         features,
         CrossSectionShape.TABULATED_YZ,
@@ -205,29 +197,19 @@ def test_get_cross_section_table_yz_no_sort_by(
 def test_get_cross_section_table_missing_data(
     source_fields, field_config, target_mapping_config, cs_shape
 ):
-    features = []
-    for distance in [1, 2]:
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("id", 1)
-        feature.setAttribute("distance", distance)
-        features.append(feature)
+    attributes = {"distance": [1, 2], "id": [1, 1]}
+    features = make_features(attributes, source_fields)
     table = CrossSectionDataProcessor.get_cross_section_table(
         features, cs_shape, target_mapping_config["order_by"], field_config
     )
     assert table is None
 
 
-@pytest.mark.parametrize("cs_data", [[[1, 10], [2, 20]], [[-1, 10, [1, 20]]]])
 def test_get_cross_section_table_lowest_to_zero(
-    source_fields, field_config, target_mapping_config, cs_data
+    source_fields, field_config, target_mapping_config
 ):
-    features = []
-    cs_data = [[1, 10], [2, 20]]
-    for y, z in cs_data:
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("cross_section_y", y)
-        feature.setAttribute("cross_section_z", z)
-        features.append(feature)
+    attributes = {"cross_section_y": [1, 2], "cross_section_z": [10, 20]}
+    features = make_features(attributes, source_fields)
     table = CrossSectionDataProcessor.get_cross_section_table(
         features,
         CrossSectionShape.TABULATED_YZ,
@@ -247,15 +229,13 @@ def test_get_cross_section_table_lowest_to_zero(
     ],
 )
 def test_organize_group(source_fields, field_config, shapes, expected_ids):
-    provisional_group = []
-    for i, shape in enumerate(shapes):
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("profile_id", 1)
-        feature.setAttribute("distance", 0)
-        feature.setAttribute("id", i)
-        feature.setAttribute("cross_section_shape", shape)
-        feature.setId(i)
-        provisional_group.append(feature)
+    attributes = {
+        "cross_section_shape": shapes,
+        "distance": [0, 0, 0],
+        "id": [0, 1, 2],
+        "profile_id": [1, 1, 1],
+    }
+    provisional_group = make_features(attributes, source_fields)
     group = CrossSectionDataProcessor.organize_group(
         provisional_group, field_config["cross_section_shape"]
     )
@@ -270,7 +250,6 @@ def test_organize_group_shape_mismatch(
     feature.setAttribute("profile_id", 1)
     feature.setAttribute("id", 1)
     feature.setAttribute("cross_section_shape", cross_section_shape)
-    feature.setId(1)
     with pytest.warns(ProcessorWarning):
         group = CrossSectionDataProcessor.organize_group(
             [feature], field_config["cross_section_shape"]
@@ -279,16 +258,13 @@ def test_organize_group_shape_mismatch(
 
 
 def test_organize_group_not_tabulated(source_fields, field_config):
-    provisional_group = []
-    shapes = [5, 6]
-    for i, shape in enumerate(shapes):
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("profile_id", 1)
-        feature.setAttribute("distance", 0)
-        feature.setAttribute("id", i)
-        feature.setAttribute("cross_section_shape", shape)
-        feature.setId(i)
-        provisional_group.append(feature)
+    attributes = {
+        "cross_section_shape": [5, 6],
+        "distance": [0, 0],
+        "id": [0, 1],
+        "profile_id": [1, 1],
+    }
+    provisional_group = make_features(attributes, source_fields)
     with pytest.warns(ProcessorWarning):
         CrossSectionDataProcessor.organize_group(
             provisional_group, field_config["cross_section_shape"]
@@ -499,17 +475,16 @@ def test_get_target_layer(
 
 
 def test_build_target_map(processor, source_fields, target_layer):
-    features = []
-    object_ids = [0, 1, 1]
-    expected_source_feat_map = {}
+    attributes = {
+        "object_id": [0, 1, 1],
+        "object_code": ["code_0", "code_1", "code_2"],
+        "object_type": 3 * ["pipe"],
+    }
+    features = make_features(attributes, source_fields)
     target_features = [feat for feat in target_layer.getFeatures()]
-    for i, object_id in enumerate(object_ids):
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("object_id", object_id)
-        feature.setAttribute("object_code", f"code_{i}")
-        feature.setAttribute("object_type", "pipe")
-        features.append(feature)
-        expected_source_feat_map[feature] = target_features[object_id]
+    expected_source_feat_map = {
+        feat: target_features[feat["object_id"]] for feat in features
+    }
     processor.build_target_map(features)
     assert processor.source_feat_map == expected_source_feat_map
 
@@ -525,36 +500,30 @@ def test_build_target_map(processor, source_fields, target_layer):
 def test_group_features(
     processor, source_fields, object_ids, cs_shapes, expected_group_ids
 ):
-    features = []
-    feature_map = {}
-    for i, (object_id, cs_shape) in enumerate(zip(object_ids, cs_shapes)):
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("object_id", object_id)
-        feature.setAttribute("object_code", f"code_{i}")
-        feature.setAttribute("object_type", "pipe")
-        feature.setAttribute("cross_section_shape", cs_shape)
-        feature_map[i] = feature
-        features.append(feature)
+    attributes = {
+        "object_id": object_ids,
+        "object_code": ["code_0", "code_1", "code_2"],
+        "object_type": 3 * ["pipe"],
+        "cross_section_shape": cs_shapes,
+    }
+    features = make_features(attributes, source_fields)
     processor.build_target_map(features)
     groups = processor.group_features()
     expected_groups = [
-        [feature_map[feat_id] for feat_id in group] for group in expected_group_ids
+        [features[feat_id] for feat_id in group] for group in expected_group_ids
     ]
     assert groups == expected_groups
 
 
 def test_get_feat_from_group(processor, source_fields, field_config):
-    features = []
-    for i in range(3):
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("id", i)
-        feature.setAttribute("distance", 0)
-        feature.setAttribute("object_id", 0)
-        feature.setAttribute("object_type", f"pipe")
-        feature.setAttribute(
-            "cross_section_shape", CrossSectionShape.TABULATED_RECTANGLE.value
-        )
-        features.append(feature)
+    attributes = {
+        "id": range(3),
+        "distance": 3 * [0],
+        "object_id": 3 * [0],
+        "object_type": 3 * ["pipe"],
+        "cross_section_shape": 3 * [CrossSectionShape.TABULATED_RECTANGLE.value],
+    }
+    features = make_features(attributes, source_fields)
     processor.build_target_map(features)
     new_feat = processor.get_feat_from_group(features)
     # assure that the new_feat has a value for cross_section_table
@@ -588,20 +557,16 @@ def test_get_feat_from_group_use_lowest_as_ref(
     crest_level,
 ):
     layer = make_layer(target_model_cls.__tablename__)
-    features = []
-    for i in range(3):
-        feature = QgsFeature(source_fields)
-        feature.setAttribute("id", i)
-        feature.setAttribute("distance", 0)
-        feature.setAttribute("object_id", 0)
-        feature.setAttribute("cross_section_y", 10)
-        feature.setAttribute("cross_section_z", 10)
-        feature.setAttribute("object_type", target_model_cls.__tablename__)
-        feature.setAttribute(
-            "cross_section_shape", CrossSectionShape.TABULATED_YZ.value
-        )
-        features.append(feature)
-    # make cross seciton with correct type of target layers!
+    attributes = {
+        "id": range(3),
+        "distance": 3 * [0],
+        "object_id": 3 * [0],
+        "cross_section_y": 3 * [10],
+        "cross_section_z": 3 * [10],
+        "object_type": 3 * [target_model_cls.__tablename__],
+        "cross_section_shape": 3 * [CrossSectionShape.TABULATED_YZ.value],
+    }
+    features = make_features(attributes, source_fields)
     processor = CrossSectionDataProcessor(
         field_config, target_mapping_config, [layer], conversion_settings
     )
