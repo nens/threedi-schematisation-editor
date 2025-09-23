@@ -567,24 +567,34 @@ def test_get_feat_from_group(processor, source_fields, field_config):
     assert processor.source_feat_map[new_feat] == processor.source_feat_map[features[0]]
 
 
+@pytest.mark.parametrize("use_lowest_point_as_reference", [True, False])
 @pytest.mark.parametrize(
-    "target_model_cls, reference_level, crest_level",
+    "target_model_cls, results",
     [
-        (dm.Pipe, None, None),
-        (dm.CrossSectionLocation, 10, None),
-        (dm.Weir, None, 10),
-        (dm.Orifice, None, 10),
+        (dm.CrossSectionLocation, [10, None, None, None]),
+        (dm.Weir, [None, 10, None, None]),
+        (dm.Orifice, [None, 10, None, None]),
+        (dm.Culvert, [None, None, 10, 10]),
+        (dm.Pipe, [None, None, 10, 10]),
     ],
 )
 def test_get_feat_from_group_use_lowest_as_ref(
     target_mapping_config,
-    conversion_settings,
     source_fields,
     field_config,
+    use_lowest_point_as_reference,
     target_model_cls,
-    reference_level,
-    crest_level,
+    results,
 ):
+    conversion_settings = ConversionSettings(
+        {"use_lowest_point_as_reference": use_lowest_point_as_reference}
+    )
+    fields = [
+        "reference_level",
+        "crest_level",
+        "invert_level_start",
+        "invert_level_end",
+    ]
     layer = make_layer(target_model_cls.__tablename__)
     attributes = {
         "id": range(3),
@@ -601,5 +611,9 @@ def test_get_feat_from_group_use_lowest_as_ref(
     )
     processor.build_target_map(features)
     new_feat = processor.get_feat_from_group(features)
-    assert new_feat["reference_level"] == reference_level
-    assert new_feat["crest_level"] == crest_level
+    for i, field in enumerate(fields):
+        expected_value = results[i]
+        if expected_value is None or not use_lowest_point_as_reference:
+            assert field not in new_feat.fields().names()
+        else:
+            assert new_feat[field] == expected_value

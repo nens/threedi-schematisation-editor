@@ -126,16 +126,15 @@ class CrossSectionDataProcessor(Processor):
         # add cross section table manually because this is not in self.target_fields_config
         if "cross_section_table" in src_feat.fields().names():
             target_feat["cross_section_table"] = src_feat["cross_section_table"]
-        if "crest_level" in src_feat.fields().names() and target_model_cls in [
-            dm.Orifice,
-            dm.Weir,
-        ]:
-            target_feat["crest_level"] = src_feat["crest_level"]
-        if (
-            "reference_level" in src_feat.fields().names()
-            and target_model_cls == dm.CrossSectionLocation
-        ):
-            target_feat["reference_level"] = src_feat["reference_level"]
+        if self.conversion_settings.use_lowest_point_as_reference:
+            for attr in [
+                "crest_level",
+                "reference_level",
+                "invert_level_start",
+                "invert_level_end",
+            ]:
+                if attr in src_feat.fields().names():
+                    target_feat[attr] = src_feat[attr]
         target_layer.updateFeature(target_feat)
         return {}
 
@@ -352,10 +351,22 @@ class CrossSectionDataProcessor(Processor):
             new_fields.append(QgsField("cross_section_table", QVariant.String))
         # ensure there are fields for reference and crest level
         # these are only used for specific cases, but adding them here is safe
-        if "reference_level" not in feature.fields().names():
-            new_fields.append(QgsField("reference_level", QVariant.Double))
-        if "crest_level" not in feature.fields().names():
-            new_fields.append(QgsField("crest_level", QVariant.Double))
+        if (
+            self.conversion_settings.use_lowest_point_as_reference
+            and cross_section_shape == CrossSectionShape.TABULATED_YZ
+        ):
+            model_cls = self.target_model_cls_map[feature]
+            if model_cls == dm.CrossSectionLocation:
+                if "reference_level" not in feature.fields().names():
+                    new_fields.append(QgsField("reference_level", QVariant.Double))
+            if model_cls in [dm.Weir, dm.Orifice]:
+                if "crest_level" not in feature.fields().names():
+                    new_fields.append(QgsField("crest_level", QVariant.Double))
+            if model_cls in [dm.Culvert, dm.Pipe]:
+                if "invert_level_start" not in feature.fields().names():
+                    new_fields.append(QgsField("invert_level_start", QVariant.Double))
+                if "invert_level_end" not in feature.fields().names():
+                    new_fields.append(QgsField("invert_level_end", QVariant.Double))
         new_feat.setFields(new_fields)
         # Copy all existing attributes from the original feature
         for field_name in feature.fields().names():
@@ -385,12 +396,9 @@ class CrossSectionDataProcessor(Processor):
                     new_feat["reference_level"] = min_z
                 if model_cls in [dm.Weir, dm.Orifice]:
                     new_feat["crest_level"] = min_z
-                new_fields.append(
-                    QgsField(
-                        f"{new_feat['reference_level']=}; {new_feat['crest_level']=}",
-                        QVariant.Double,
-                    )
-                )
+                if model_cls in [dm.Culvert, dm.Pipe]:
+                    new_feat["invert_level_start"] = min_z
+                    new_feat["invert_level_end"] = min_z
         self.source_feat_map[new_feat] = self.source_feat_map[feature]
         self.target_model_cls_map[new_feat] = self.target_model_cls_map[feature]
         return new_feat
