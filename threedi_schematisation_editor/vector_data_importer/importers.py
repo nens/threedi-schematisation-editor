@@ -104,9 +104,9 @@ class CrossSectionDataImporter(Importer):
         target_layers: Optional[list[QgsVectorLayer]] = None,
     ):
         super().__init__(external_source, target_gpkg, import_settings)
-        if target_layers is None:
+        if not target_layers:
             target_layers = [
-                gpkg_layer(target_gpkg, model_cls.__layername__)
+                gpkg_layer(target_gpkg, model_cls.__tablename__)
                 for model_cls in CrossSectionDataProcessor.target_models
             ]
         self.target_layers = target_layers

@@ -12,13 +12,15 @@ from qgis.core import (
 )
 
 from threedi_schematisation_editor import data_models as dm
-
-# TODO: test both Importer and SpatialImporter
 from threedi_schematisation_editor.vector_data_importer.importers import (
+    CrossSectionDataImporter,
+    CrossSectionLocationImporter,
     Importer,
     LinesImporter,
     SpatialImporter,
 )
+
+from .utils import SCHEMATISATION_PATH, get_temp_copy
 
 
 @pytest.fixture
@@ -320,3 +322,35 @@ class TestSpatialImporter:
             mock_pipe_integrator_from_importer.assert_called_once_with(None, importer)
         else:
             mock_pipe_integrator_from_importer.assert_not_called()
+
+
+def test_cross_section_data_importer_auto_layers():
+    gpkg = get_temp_copy(SCHEMATISATION_PATH.joinpath("empty.gpkg"))
+    importer = CrossSectionDataImporter(
+        external_source=None,
+        target_gpkg=str(gpkg),
+        import_settings={},
+        target_layers=None,
+    )
+    for layer in importer.modifiable_layers:
+        assert layer.isValid()
+
+
+def test_spatial_importer_auto_layers():
+    gpkg = get_temp_copy(SCHEMATISATION_PATH.joinpath("empty.gpkg"))
+    importer = SpatialImporter(
+        external_source=None,
+        target_gpkg=str(gpkg),
+        import_settings={},
+        target_model_cls=dm.Pipe,
+        target_layer=None,
+        node_layer=None,
+    )
+    for layer in importer.modifiable_layers:
+        assert layer.isValid()
+
+
+def test_cross_section_location_auto_layers():
+    gpkg = get_temp_copy(SCHEMATISATION_PATH.joinpath("empty.gpkg"))
+    importer = CrossSectionLocationImporter(None, str(gpkg), {}, target_layer=None)
+    assert importer.processor.channel_layer.isValid()
