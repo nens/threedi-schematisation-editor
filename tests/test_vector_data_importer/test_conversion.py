@@ -304,7 +304,7 @@ def test_import_cross_section_data(qgis_application):
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_csd_import.gpkg")
     temp_gpkg = str(get_temp_copy(target_gpkg))
     target_layers = [
-        gpkg_layer(target_gpkg, model_cls.__tablename__)
+        gpkg_layer(temp_gpkg, model_cls.__tablename__)
         for model_cls in CrossSectionDataProcessor.target_models
     ]
     importer = CrossSectionDataImporter(
