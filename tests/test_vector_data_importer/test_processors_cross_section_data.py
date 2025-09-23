@@ -205,19 +205,48 @@ def test_get_cross_section_table_missing_data(
     assert table is None
 
 
+@pytest.mark.parametrize(
+    "attributes, shape, expected_table",
+    [
+        (
+            {"cross_section_y": [1, 2], "cross_section_z": [10, 20]},
+            CrossSectionShape.TABULATED_YZ,
+            "1,0\n2,10",
+        ),
+        (
+            {"cross_section_y": [1, 2], "cross_section_z": [-10, 0]},
+            CrossSectionShape.TABULATED_YZ,
+            "1,0\n2,10",
+        ),
+        (
+            {"cross_section_width": [1, 2], "cross_section_height": [10, 20]},
+            CrossSectionShape.TABULATED_RECTANGLE,
+            "0,1\n10,2",
+        ),
+        (
+            {"cross_section_width": [1, 2], "cross_section_height": [10, 20]},
+            CrossSectionShape.TABULATED_TRAPEZIUM,
+            "0,1\n10,2",
+        ),
+    ],
+)
 def test_get_cross_section_table_lowest_to_zero(
-    source_fields, field_config, target_mapping_config
+    source_fields,
+    field_config,
+    target_mapping_config,
+    attributes,
+    shape,
+    expected_table,
 ):
-    attributes = {"cross_section_y": [1, 2], "cross_section_z": [10, 20]}
     features = make_features(attributes, source_fields)
     table = CrossSectionDataProcessor.get_cross_section_table(
         features,
-        CrossSectionShape.TABULATED_YZ,
+        shape,
         target_mapping_config["order_by"],
         field_config,
         set_lowest_point_to_zero=True,
     )
-    assert table == "1,0\n2,10"
+    assert table == expected_table
 
 
 @pytest.mark.parametrize(

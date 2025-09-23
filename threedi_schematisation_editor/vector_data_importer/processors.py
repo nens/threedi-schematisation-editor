@@ -153,6 +153,8 @@ class CrossSectionDataProcessor(Processor):
         return super().process_features(external_features)
 
     def build_target_map(self, features):
+        self.source_feat_map.clear()
+        self.target_model_cls_map.clear()
         for src_feat in features:
             target_model_cls = self.get_target_model_cls(src_feat)
             if not target_model_cls:
@@ -236,6 +238,8 @@ class CrossSectionDataProcessor(Processor):
             col_right = CrossSectionDataProcessor.get_cross_section_table_column(
                 feature_group, "cross_section_width", field_config
             )
+            if col_left and set_lowest_point_to_zero:
+                col_left = [value - min(col_left) for value in col_left]
         elif cross_section_shape == CrossSectionShape.TABULATED_YZ:
             #  collect y, z pairs
             col_left = CrossSectionDataProcessor.get_cross_section_table_column(
