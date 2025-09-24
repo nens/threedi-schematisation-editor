@@ -349,8 +349,7 @@ class CrossSectionDataProcessor(Processor):
         # ensure there is a field for the cross section table
         if "cross_section_table" not in feature.fields().names():
             new_fields.append(QgsField("cross_section_table", QVariant.String))
-        # ensure there are fields for reference and crest level
-        # these are only used for specific cases, but adding them here is safe
+        # ensure there are fields for reference, crest level, and invert level
         if (
             self.conversion_settings.use_lowest_point_as_reference
             and cross_section_shape == CrossSectionShape.TABULATED_YZ
@@ -380,6 +379,19 @@ class CrossSectionDataProcessor(Processor):
                 self.conversion_settings.set_lowest_point_to_zero,
             )
         )
+        # Ensure cross section width is only set for a non-tabulated shape
+        if (
+            cross_section_shape.is_tabulated
+            and "cross_section_width" in new_feat.fields().names()
+        ):
+            new_feat["cross_section_width"] = NULL
+        # Ensure cross section height is only set for closed rectanble
+        if (
+            not cross_section_shape == CrossSectionShape.CLOSED_RECTANGLE
+            and "cross_section_height" in new_feat.fields().names()
+        ):
+            new_feat["cross_section_height"] = NULL
+        # set reference values if requested
         if (
             self.conversion_settings.use_lowest_point_as_reference
             and cross_section_shape == CrossSectionShape.TABULATED_YZ
@@ -399,6 +411,7 @@ class CrossSectionDataProcessor(Processor):
                 if model_cls in [dm.Culvert, dm.Pipe]:
                     new_feat["invert_level_start"] = min_z
                     new_feat["invert_level_end"] = min_z
+        # update maps
         self.source_feat_map[new_feat] = self.source_feat_map[feature]
         self.target_model_cls_map[new_feat] = self.target_model_cls_map[feature]
         return new_feat

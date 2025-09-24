@@ -3,6 +3,7 @@ from dataclasses import dataclass, field, fields
 import pytest
 from PyQt5.QtCore import QVariant
 from qgis.core import (
+    NULL,
     QgsFeature,
     QgsField,
     QgsFields,
@@ -565,6 +566,46 @@ def test_get_feat_from_group(processor, source_fields, field_config):
         new_feat["cross_section_shape"] == CrossSectionShape.TABULATED_RECTANGLE.value
     )
     assert processor.source_feat_map[new_feat] == processor.source_feat_map[features[0]]
+
+
+@pytest.mark.parametrize(
+    "shape, null_fields",
+    [
+        (CrossSectionShape.CLOSED_RECTANGLE, ["cross_section_table"]),
+        (CrossSectionShape.RECTANGLE, ["cross_section_table", "cross_section_height"]),
+        (CrossSectionShape.CIRCLE, ["cross_section_table", "cross_section_height"]),
+        (CrossSectionShape.EGG, ["cross_section_table", "cross_section_height"]),
+        (
+            CrossSectionShape.INVERTED_EGG,
+            ["cross_section_table", "cross_section_height"],
+        ),
+        (
+            CrossSectionShape.TABULATED_RECTANGLE,
+            ["cross_section_width", "cross_section_height"],
+        ),
+        (
+            CrossSectionShape.TABULATED_TRAPEZIUM,
+            ["cross_section_width", "cross_section_height"],
+        ),
+    ],
+)
+def test_get_feat_from_group_cross_section_properties_null(
+    processor, source_fields, field_config, shape, null_fields
+):
+    attributes = {
+        "id": 2 * [0],
+        "distance": 2 * [0],
+        "object_id": 2 * [0],
+        "object_type": 2 * ["pipe"],
+        "cross_section_shape": 2 * [shape.value],
+        "cross_section_width": 2 * [10],
+        "cross_section_height": 2 * [10],
+    }
+    features = make_features(attributes, source_fields)
+    processor.build_target_map(features)
+    new_feat = processor.get_feat_from_group(features)
+    for field in null_fields:
+        assert new_feat[field] == NULL
 
 
 @pytest.mark.parametrize("use_lowest_point_as_reference", [True, False])
