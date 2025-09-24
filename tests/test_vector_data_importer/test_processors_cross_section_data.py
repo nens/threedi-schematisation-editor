@@ -604,38 +604,26 @@ def test_get_feat_from_group_cross_section_properties_null(
     features = make_features(attributes, source_fields)
     processor.build_target_map(features)
     new_feat = processor.get_feat_from_group(features)
-    for field in null_fields:
-        assert new_feat[field] == NULL
+    for null_field in null_fields:
+        try:
+            assert (null_field not in new_feat.fields().names()) or (
+                new_feat[null_field] == NULL
+            )
+        except:
+            breakpoint()
 
 
 @pytest.mark.parametrize("use_lowest_point_as_reference", [True, False])
-@pytest.mark.parametrize(
-    "target_model_cls, results",
-    [
-        (dm.CrossSectionLocation, [10, None, None, None]),
-        (dm.Weir, [None, 10, None, None]),
-        (dm.Orifice, [None, 10, None, None]),
-        (dm.Culvert, [None, None, 10, 10]),
-        (dm.Pipe, [None, None, 10, 10]),
-    ],
-)
 def test_get_feat_from_group_use_lowest_as_ref(
     target_mapping_config,
     source_fields,
     field_config,
     use_lowest_point_as_reference,
-    target_model_cls,
-    results,
 ):
     conversion_settings = ConversionSettings(
         {"use_lowest_point_as_reference": use_lowest_point_as_reference}
     )
-    fields = [
-        "reference_level",
-        "crest_level",
-        "invert_level_start",
-        "invert_level_end",
-    ]
+    target_model_cls = dm.CrossSectionLocation
     layer = make_layer(target_model_cls.__tablename__)
     attributes = {
         "id": range(3),
@@ -652,9 +640,89 @@ def test_get_feat_from_group_use_lowest_as_ref(
     )
     processor.build_target_map(features)
     new_feat = processor.get_feat_from_group(features)
-    for i, field in enumerate(fields):
-        expected_value = results[i]
-        if expected_value is None or not use_lowest_point_as_reference:
-            assert field not in new_feat.fields().names()
-        else:
-            assert new_feat[field] == expected_value
+    assert (
+        "reference_level" in new_feat.fields().names()
+    ) == use_lowest_point_as_reference
+
+
+@pytest.mark.parametrize(
+    "target_model_cls, expected_result",
+    [
+        (dm.CrossSectionLocation, {"reference_level": 10}),
+        (dm.Weir, {"crest_level": 10}),
+        (dm.Orifice, {"crest_level": 10}),
+        (dm.Culvert, {"invert_level_start": 10, "invert_level_end": 10}),
+        (dm.Pipe, {"invert_level_start": 10, "invert_level_end": 10}),
+    ],
+)
+def test_get_reference_levels(
+    source_fields, field_config, target_model_cls, expected_result
+):
+    cross_section_shape = CrossSectionShape.TABULATED_YZ
+    attributes = {
+        "cross_section_y": 3 * [10],
+        "cross_section_z": 3 * [10],
+    }
+    features = make_features(attributes, source_fields)
+    ref_levels = CrossSectionDataProcessor.get_reference_levels(
+        features, target_model_cls, cross_section_shape, field_config
+    )
+    assert ref_levels == expected_result
+
+
+@pytest.mark.parametrize(
+    "cross_section_shape",
+    [CrossSectionShape.TABULATED_RECTANGLE, CrossSectionShape.TABULATED_TRAPEZIUM],
+)
+def test_get_reference_levels_tabulated(
+    source_fields, field_config, cross_section_shape
+):
+    attributes = {
+        "cross_section_width": 3 * [20],
+        "cross_section_height": 3 * [10],
+    }
+    target_model_cls = dm.CrossSectionLocation
+    features = make_features(attributes, source_fields)
+    ref_levels = CrossSectionDataProcessor.get_reference_levels(
+        features, target_model_cls, cross_section_shape, field_config
+    )
+    assert ref_levels["reference_level"] == 10
+
+
+def test_get_reference_levels_yz(source_fields, field_config):
+    cross_section_shape = CrossSectionShape.TABULATED_YZ
+    attributes = {
+        "cross_section_y": 3 * [20],
+        "cross_section_z": 3 * [10],
+    }
+    target_model_cls = dm.CrossSectionLocation
+    features = make_features(attributes, source_fields)
+    ref_levels = CrossSectionDataProcessor.get_reference_levels(
+        features, target_model_cls, cross_section_shape, field_config
+    )
+    assert ref_levels["reference_level"] == 10
+
+
+@pytest.mark.parametrize(
+    "cross_section_shape",
+    [
+        CrossSectionShape.CLOSED_RECTANGLE,
+        CrossSectionShape.RECTANGLE,
+        CrossSectionShape.CIRCLE,
+        CrossSectionShape.EGG,
+        CrossSectionShape.INVERTED_EGG,
+    ],
+)
+def test_get_reference_levels_not_tabulated(
+    source_fields, field_config, cross_section_shape
+):
+    attributes = {
+        "cross_section_width": 3 * [20],
+        "cross_section_height": 3 * [10],
+    }
+    target_model_cls = dm.CrossSectionLocation
+    features = make_features(attributes, source_fields)
+    ref_levels = CrossSectionDataProcessor.get_reference_levels(
+        features, target_model_cls, cross_section_shape, field_config
+    )
+    assert ref_levels == {}

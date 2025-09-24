@@ -116,25 +116,32 @@ class CrossSectionDataProcessor(Processor):
         target_feat = self.source_feat_map[src_feat]
         target_model_cls = self.target_model_cls_map[src_feat]
         target_layer = self.get_target_layer(target_model_cls)
-        # updata attributes
+
+        custom_fields = [
+            "cross_section_height, cross_section_width",
+            "cross_section_table",
+            "crest_level",
+            "reference_level",
+            "invert_level_start",
+            "invert_level_end",
+        ]
+        update_config = {
+            custom_field: {
+                "method": ColumnImportMethod.ATTRIBUTE.value,
+                ColumnImportMethod.ATTRIBUTE.value: custom_field,
+            }
+            for custom_field in custom_fields
+        }
+        update_config["cross_section_shape"] = self.target_fields_config[
+            "cross_section_shape"
+        ]
+        # update attributes
         update_attributes(
-            self.target_fields_config,
+            update_config,
             target_model_cls,
             src_feat,
             target_feat,
         )
-        # add cross section table manually because this is not in self.target_fields_config
-        if "cross_section_table" in src_feat.fields().names():
-            target_feat["cross_section_table"] = src_feat["cross_section_table"]
-        if self.conversion_settings.use_lowest_point_as_reference:
-            for attr in [
-                "crest_level",
-                "reference_level",
-                "invert_level_start",
-                "invert_level_end",
-            ]:
-                if attr in src_feat.fields().names():
-                    target_feat[attr] = src_feat[attr]
         target_layer.updateFeature(target_feat)
         return {}
 
@@ -331,90 +338,102 @@ class CrossSectionDataProcessor(Processor):
             grouped_features.append(group)
         return grouped_features
 
+    @staticmethod
+    def get_reference_levels(
+        group: list[QgsFeature],
+        model_cls: type,
+        cross_section_shape: CrossSectionShape,
+        target_fields_config: dict,
+    ) -> dict[str, float]:
+        if not cross_section_shape.is_tabulated:
+            return {}
+        ref_field_map = {
+            dm.CrossSectionLocation: ["reference_level"],
+            dm.Weir: ["crest_level"],
+            dm.Orifice: ["crest_level"],
+            dm.Culvert: ["invert_level_start", "invert_level_end"],
+            dm.Pipe: ["invert_level_start", "invert_level_end"],
+        }
+        # find height coordinates
+        if cross_section_shape == CrossSectionShape.TABULATED_YZ:
+            coords = CrossSectionDataProcessor.get_cross_section_table_column(
+                group, "cross_section_z", target_fields_config
+            )
+        else:
+            coords = CrossSectionDataProcessor.get_cross_section_table_column(
+                group, "cross_section_height", target_fields_config
+            )
+        # if there is data, set reference value to lowest
+        if coords:
+            lowest = min(coords)
+            return {field_name: lowest for field_name in ref_field_map[model_cls]}
+        return {}
+
     def get_feat_from_group(self, group: list[QgsFeature]) -> Optional[QgsFeature]:
         # Combine group of feature in a single feature that is used for processing
         if len(group) == 0:
             return
-        if len(group) == 1:
-            return group[0]
         feature = group[0]
         cross_section_shape = CrossSectionShape(
             get_field_config_value(
                 self.target_fields_config["cross_section_shape"], feature
             )
         )
+        # Collect new data
+        new_attributes = {}
+        new_fields = []
+        # Add cross section table
+        new_fields.append(QgsField("cross_section_table", QVariant.String))
+        if cross_section_shape.is_tabulated:
+            new_attributes["cross_section_table"] = (
+                CrossSectionDataProcessor.get_cross_section_table(
+                    group,
+                    cross_section_shape,
+                    self.target_match_config.get("order_by"),
+                    self.target_fields_config,
+                    self.conversion_settings.set_lowest_point_to_zero,
+                )
+            )
+        else:
+            new_attributes["cross_section_table"] = NULL
+        # Set correct width and height; this overwrites any existing values
+        # for any shape, except closed rectangle, height should be NULL
+        if not cross_section_shape == CrossSectionShape.CLOSED_RECTANGLE:
+            new_fields.append(QgsField("cross_section_height", QVariant.Double))
+            new_attributes["cross_section_height"] = NULL
+        # for tabulated shapes, both width and height should be NULL
+        if cross_section_shape.is_tabulated:
+            new_fields.append(QgsField("cross_section_width", QVariant.Double))
+            new_attributes["cross_section_width"] = NULL
+        # set reference levels if needed
+        if (
+            self.conversion_settings.use_lowest_point_as_reference
+            and cross_section_shape.is_tabulated
+        ):
+            model_cls = self.target_model_cls_map[feature]
+            ref_levels = self.get_reference_levels(
+                group, model_cls, cross_section_shape, self.target_fields_config
+            )
+            for field_name in ref_levels:
+                new_fields.append(QgsField(field_name, QVariant.Double))
+            new_attributes.update(ref_levels)
         # copy first feature
         new_feat = QgsFeature()
-        new_fields = QgsFields(feature.fields())
-        # ensure there is a field for the cross section table
-        if "cross_section_table" not in feature.fields().names():
-            new_fields.append(QgsField("cross_section_table", QVariant.String))
-        # ensure there are fields for reference, crest level, and invert level
-        if (
-            self.conversion_settings.use_lowest_point_as_reference
-            and cross_section_shape.is_tabulated
-        ):
-            model_cls = self.target_model_cls_map[feature]
-            if model_cls == dm.CrossSectionLocation:
-                if "reference_level" not in feature.fields().names():
-                    new_fields.append(QgsField("reference_level", QVariant.Double))
-            if model_cls in [dm.Weir, dm.Orifice]:
-                if "crest_level" not in feature.fields().names():
-                    new_fields.append(QgsField("crest_level", QVariant.Double))
-            if model_cls in [dm.Culvert, dm.Pipe]:
-                if "invert_level_start" not in feature.fields().names():
-                    new_fields.append(QgsField("invert_level_start", QVariant.Double))
-                if "invert_level_end" not in feature.fields().names():
-                    new_fields.append(QgsField("invert_level_end", QVariant.Double))
-        new_feat.setFields(new_fields)
-        # Copy all existing attributes from the original feature
+        feat_fields = QgsFields(feature.fields())
+        # add new fields, and overwrite any
+        for field in new_fields:
+            if field.name() in feat_fields.names():
+                feat_fields.remove(feat_fields.indexOf(field.name()))
+            feat_fields.append(field)
+        new_feat.setFields(feat_fields)
+        # Copy all existing attributes from the original feature; but skip those that will be replaced
         for field_name in feature.fields().names():
+            if field_name in new_attributes:
+                continue
             new_feat[field_name] = feature[field_name]
-        new_feat["cross_section_table"] = (
-            CrossSectionDataProcessor.get_cross_section_table(
-                group,
-                cross_section_shape,
-                self.target_match_config.get("order_by"),
-                self.target_fields_config,
-                self.conversion_settings.set_lowest_point_to_zero,
-            )
-        )
-        # Ensure cross section width is only set for a non-tabulated shape
-        if (
-            cross_section_shape.is_tabulated
-            and "cross_section_width" in new_feat.fields().names()
-        ):
-            new_feat["cross_section_width"] = NULL
-        # Ensure cross section height is only set for closed rectanble
-        if (
-            not cross_section_shape == CrossSectionShape.CLOSED_RECTANGLE
-            and "cross_section_height" in new_feat.fields().names()
-        ):
-            new_feat["cross_section_height"] = NULL
-        # set reference values if requested
-        if (
-            self.conversion_settings.use_lowest_point_as_reference
-            and cross_section_shape.is_tabulated
-        ):
-            model_cls = self.target_model_cls_map[feature]
-            if cross_section_shape == CrossSectionShape.TABULATED_YZ:
-                coords = CrossSectionDataProcessor.get_cross_section_table_column(
-                    group, "cross_section_z", self.target_fields_config
-                )
-            else:
-                coords = CrossSectionDataProcessor.get_cross_section_table_column(
-                    group, "cross_section_height", self.target_fields_config
-                )
-            if coords:
-                lowest = min(coords)
-                new_fields.append(QgsField(f"{lowest=}", QVariant.Double))
-                if model_cls == dm.CrossSectionLocation:
-                    new_feat["reference_level"] = lowest
-                if model_cls in [dm.Weir, dm.Orifice]:
-                    new_feat["crest_level"] = lowest
-                if model_cls in [dm.Culvert, dm.Pipe]:
-                    new_feat["invert_level_start"] = lowest
-                    new_feat["invert_level_end"] = lowest
+        # Add new data
+        for key, value in new_attributes.items():
+            new_feat[key] = value
         # update maps
         self.source_feat_map[new_feat] = self.source_feat_map[feature]
         self.target_model_cls_map[new_feat] = self.target_model_cls_map[feature]
