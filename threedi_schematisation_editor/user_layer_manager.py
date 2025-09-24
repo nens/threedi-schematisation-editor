@@ -299,13 +299,13 @@ class LayersManager:
     def setup_value_relation_widgets(self, model_cls):
         """Setup value relation widgets for the particular model class."""
         child_model_cls, parent_column, key_column, value_column = self.VALUE_RELATIONS[model_cls]
-        parent_layer = self.model_handlers.get(model_cls).layer
-        if parent_layer is None:
+        if model_cls not in self.model_handlers:
             return
+        parent_layer = self.model_handlers[model_cls].layer
         parent_column_idx = parent_layer.fields().lookupField(parent_column)
-        child_layer = self.model_handlers.get(child_model_cls).layer
-        if child_layer is None:
+        if child_model_cls not in self.model_handlers:
             return
+        child_layer = self.model_handlers[child_model_cls].layer
         default_ews = parent_layer.editorWidgetSetup(parent_column_idx)
         config = default_ews.config()
         config["Layer"] = child_layer.id()
@@ -501,7 +501,8 @@ class LayersManager:
             self.register_groups()
             self.register_vector_layers()
         self.setup_all_value_relation_widgets()
-        self.iface.setActiveLayer(self.model_handlers.get(dm.ConnectionNode).layer)
+        if dm.ConnectionNode in self.model_handlers:
+            self.iface.setActiveLayer(self.model_handlers[dm.ConnectionNode].layer)
 
     def remove_loaded_layers(self, dry_remove=False):
         """Removing loaded vector layers."""
