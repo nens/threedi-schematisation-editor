@@ -352,7 +352,7 @@ class CrossSectionDataProcessor(Processor):
         # ensure there are fields for reference, crest level, and invert level
         if (
             self.conversion_settings.use_lowest_point_as_reference
-            and cross_section_shape == CrossSectionShape.TABULATED_YZ
+            and cross_section_shape.is_tabulated
         ):
             model_cls = self.target_model_cls_map[feature]
             if model_cls == dm.CrossSectionLocation:
@@ -394,23 +394,27 @@ class CrossSectionDataProcessor(Processor):
         # set reference values if requested
         if (
             self.conversion_settings.use_lowest_point_as_reference
-            and cross_section_shape == CrossSectionShape.TABULATED_YZ
+            and cross_section_shape.is_tabulated
         ):
             model_cls = self.target_model_cls_map[feature]
-            z_coords = CrossSectionDataProcessor.get_cross_section_table_column(
-                group, "cross_section_z", self.target_fields_config
-            )
-            new_fields.append(QgsField(f"z_coords = {z_coords}", QVariant.Double))
-            if z_coords:
-                min_z = min(z_coords)
-                new_fields.append(QgsField(f"{min_z=}", QVariant.Double))
+            if cross_section_shape == CrossSectionShape.TABULATED_YZ:
+                coords = CrossSectionDataProcessor.get_cross_section_table_column(
+                    group, "cross_section_z", self.target_fields_config
+                )
+            else:
+                coords = CrossSectionDataProcessor.get_cross_section_table_column(
+                    group, "cross_section_height", self.target_fields_config
+                )
+            if coords:
+                lowest = min(coords)
+                new_fields.append(QgsField(f"{lowest=}", QVariant.Double))
                 if model_cls == dm.CrossSectionLocation:
-                    new_feat["reference_level"] = min_z
+                    new_feat["reference_level"] = lowest
                 if model_cls in [dm.Weir, dm.Orifice]:
-                    new_feat["crest_level"] = min_z
+                    new_feat["crest_level"] = lowest
                 if model_cls in [dm.Culvert, dm.Pipe]:
-                    new_feat["invert_level_start"] = min_z
-                    new_feat["invert_level_end"] = min_z
+                    new_feat["invert_level_start"] = lowest
+                    new_feat["invert_level_end"] = lowest
         # update maps
         self.source_feat_map[new_feat] = self.source_feat_map[feature]
         self.target_model_cls_map[new_feat] = self.target_model_cls_map[feature]
