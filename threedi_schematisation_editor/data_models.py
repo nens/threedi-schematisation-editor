@@ -479,6 +479,10 @@ class CrossSectionData(ModelObject):
     __layername__ = "Cross section data"
     __geometrytype__ = None
 
+    target_object_type: str
+    target_object_id: int
+    target_object_code: str
+    order_by: float
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float]
     cross_section_height: Optional[float]
@@ -488,34 +492,15 @@ class CrossSectionData(ModelObject):
     @staticmethod
     def display_names() -> list:
         return [
+            "Target object type",
+            "Target object ID",
+            "Target object code",
+            "Order by",
             "Cross-section shape",
             "Cross-section width [m]",
             "Cross-section height [m]",
             "Cross-section Y [m]",
             "Cross-section Z [m]",
-        ]
-
-
-@dataclass
-class CrossSectionDataConversion(ModelObject):
-    """Data class for conversion for cross section data import. This class does NOT match a class in threedi-schema!"""
-
-    # __tablename__ = "Cross section data conversion"
-    # __layername__ = "Cross section data conversion"
-    # __geometrytype__ = None
-
-    target_object_type: str
-    target_object_id: int
-    target_object_code: str
-    order_by: float
-
-    @staticmethod
-    def display_names() -> list:
-        return [
-            "Target object type",
-            "Target object ID",
-            "Target object code",
-            "Order by",
         ]
 
 

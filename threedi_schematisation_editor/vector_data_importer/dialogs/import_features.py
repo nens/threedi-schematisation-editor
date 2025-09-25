@@ -1074,7 +1074,6 @@ class ImportCrossSectionDataDialog(ImportFeaturesDialog):
     def collect_settings(self) -> Dict[str, Any]:
         return {
             "fields": self.collect_fields_settings(self.import_model_cls),
-            "target_mapping": self.target_field_map.collect_fields_settings(),
             "conversion_settings": {
                 "set_lowest_point_to_zero": self.lowest_to_zero.isChecked(),
                 "use_lowest_point_as_reference": self.ref_to_lowest.isChecked(),
@@ -1084,7 +1083,7 @@ class ImportCrossSectionDataDialog(ImportFeaturesDialog):
     def setup_ui(self):
         super().setup_ui()
         model_widgets = create_widgets(
-            dm.CrossSectionDataConversion,
+            dm.CrossSectionData,
             field_spec={
                 "target_id": [
                     ColumnImportMethod.ATTRIBUTE,
@@ -1100,11 +1099,6 @@ class ImportCrossSectionDataDialog(ImportFeaturesDialog):
         )
         group = QGroupBox("Target mapping and grouping", parent=self)
         layout = QVBoxLayout()
-        self.target_field_map = FieldMapWidget(
-            dm.CrossSectionDataConversion, model_widgets, parent=group
-        )
-        self.target_field_map.connect(self.source_layer_cbo, self.uc, self)
-        layout.addWidget(self.target_field_map)
         group.setLayout(layout)
         self.gridLayout.addWidget(group, 2, 0, 2, 2)
         self.lowest_to_zero = QCheckBox("Set lowest point to zero")
@@ -1118,8 +1112,6 @@ class ImportCrossSectionDataDialog(ImportFeaturesDialog):
 
     def update_settings_from_template(self, import_settings: Dict[str, Any]):
         super().update_settings_from_template(import_settings)
-        self.target_field_map.reset()
-        self.target_field_map.set(import_settings["target_mapping"])
         self.load_conversion_settings(import_settings)
 
     def load_conversion_settings(self, import_settings: Dict[str, Any]):
@@ -1135,8 +1127,6 @@ class ImportCrossSectionDataDialog(ImportFeaturesDialog):
     def source_fields_missing(self) -> bool:
         missing_fields = super().source_fields_missing()
         if missing_fields:
-            return True
-        if self.target_field_map.get_missing_fields():
             return True
         return False
 
@@ -1185,9 +1175,7 @@ class ImportCrossSectionDataDialog(ImportFeaturesDialog):
         return super().layer_dependent_widgets + [
             self.ref_to_lowest,
             self.lowest_to_zero,
-            self.target_field_map,
         ]
 
     def on_layer_changed(self, layer: Optional[QgsMapLayer]):
         super().on_layer_changed(layer)
-        self.target_field_map.update_layers(layer)

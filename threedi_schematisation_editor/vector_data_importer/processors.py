@@ -95,12 +95,10 @@ class CrossSectionDataProcessor(Processor):
     def __init__(
         self,
         target_fields_config,
-        target_match_config,
         target_layers,
         conversion_settings,
     ):
         self.target_fields_config = target_fields_config
-        self.target_match_config = target_match_config
         self.target_layer_map = {
             CrossSectionDataProcessor.get_unified_object_type_str(
                 target_layer.name()
@@ -172,8 +170,8 @@ class CrossSectionDataProcessor(Processor):
             target_feat = self.find_target_object(
                 src_feat,
                 target_layer,
-                self.target_match_config.get("target_object_id"),
-                self.target_match_config.get("target_object_code"),
+                self.target_fields_config.get("target_object_id"),
+                self.target_fields_config.get("target_object_code"),
             )
             if target_feat:
                 self.source_feat_map[src_feat] = target_feat
@@ -224,7 +222,6 @@ class CrossSectionDataProcessor(Processor):
     def get_cross_section_table(
         feature_group: list[QgsFeature],
         cross_section_shape: CrossSectionShape,
-        order_by_config: dict,
         field_config,
         set_lowest_point_to_zero: bool = False,
     ) -> Optional[str]:
@@ -238,29 +235,36 @@ class CrossSectionDataProcessor(Processor):
             CrossSectionShape.TABULATED_TRAPEZIUM,
         ]:
             # collect height, width pairs
-            col_left = CrossSectionDataProcessor.get_cross_section_table_column(
+            cs_height = CrossSectionDataProcessor.get_cross_section_table_column(
                 feature_group, "cross_section_height", field_config
             )
-            col_right = CrossSectionDataProcessor.get_cross_section_table_column(
+            cs_width = CrossSectionDataProcessor.get_cross_section_table_column(
                 feature_group, "cross_section_width", field_config
             )
-            if col_left and set_lowest_point_to_zero:
-                col_left = [value - min(col_left) for value in col_left]
+            if cs_height and set_lowest_point_to_zero:
+                cs_height = [value - min(cs_height) for value in cs_height]
+            col_left = cs_height
+            col_right = cs_width
         elif cross_section_shape == CrossSectionShape.TABULATED_YZ:
             #  collect y, z pairs
-            col_left = CrossSectionDataProcessor.get_cross_section_table_column(
+            cs_y = CrossSectionDataProcessor.get_cross_section_table_column(
                 feature_group, "cross_section_y", field_config
             )
-            col_right = CrossSectionDataProcessor.get_cross_section_table_column(
+            cs_z = CrossSectionDataProcessor.get_cross_section_table_column(
                 feature_group, "cross_section_z", field_config
             )
-            if col_right and set_lowest_point_to_zero:
-                col_right = [value - min(col_right) for value in col_right]
+            if cs_z and set_lowest_point_to_zero:
+                cs_z = [value - min(cs_z) for value in cs_z]
+            if cs_y and set_lowest_point_to_zero:
+                cs_y = [value - min(cs_y) for value in cs_y]
+            col_left = cs_y
+            col_right = cs_z
         if not col_right or not col_left:
             return ""
-        # Retrieve order values from data
+        # Sort values
         order_by_vals = [
-            get_field_config_value(order_by_config, feat) for feat in feature_group
+            get_field_config_value(field_config.get("order_by"), feat)
+            for feat in feature_group
         ]
         # Use default when any value in order_by_vals is NULL
         # this happens when AUTO is selected or when the parsing for another method is unsuccessful
@@ -389,7 +393,6 @@ class CrossSectionDataProcessor(Processor):
                 CrossSectionDataProcessor.get_cross_section_table(
                     group,
                     cross_section_shape,
-                    self.target_match_config.get("order_by"),
                     self.target_fields_config,
                     self.conversion_settings.set_lowest_point_to_zero,
                 )
@@ -477,7 +480,7 @@ class CrossSectionDataProcessor(Processor):
         return target_feat
 
     def get_target_model_cls(self, src_feat: QgsFeature) -> Optional[type]:
-        target_object_config = self.target_match_config.get("target_object_type")
+        target_object_config = self.target_fields_config.get("target_object_type")
         if not target_object_config:
             return
         src_object_type = get_field_config_value(target_object_config, src_feat)

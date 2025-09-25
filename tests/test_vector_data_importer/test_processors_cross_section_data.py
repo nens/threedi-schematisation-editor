@@ -44,31 +44,21 @@ class SourceData:
 
 @pytest.fixture
 def field_config():
-    config_fields = [
-        "cross_section_shape",
-        "cross_section_width",
-        "cross_section_height",
-        "cross_section_y",
-        "cross_section_z",
-    ]
-    method = ColumnImportMethod.ATTRIBUTE.value
-    return {
-        config_field: {"method": method, method: config_field}
-        for config_field in config_fields
-    }
-
-
-@pytest.fixture
-def target_mapping_config():
     config_fields = {
         "target_object_type": "object_type",
         "target_object_id": "object_id",
         "target_object_code": "object_code",
         "order_by": "distance",
+        "cross_section_shape": "cross_section_shape",
+        "cross_section_width": "cross_section_width",
+        "cross_section_height": "cross_section_height",
+        "cross_section_y": "cross_section_y",
+        "cross_section_z": "cross_section_z",
     }
     method = ColumnImportMethod.ATTRIBUTE.value
     return {
-        target: {"method": method, method: ref} for target, ref in config_fields.items()
+        src_field: {"method": method, method: target_field}
+        for src_field, target_field in config_fields.items()
     }
 
 
@@ -134,7 +124,6 @@ def test_get_cross_section_table_column_no_data(
 def test_get_cross_section_table_tabulated(
     source_fields,
     field_config,
-    target_mapping_config,
     cs_shape,
     cs_widths,
     cs_heights,
@@ -148,12 +137,12 @@ def test_get_cross_section_table_tabulated(
     }
     features = make_features(attributes, source_fields)
     table = CrossSectionDataProcessor.get_cross_section_table(
-        features, cs_shape, target_mapping_config["order_by"], field_config
+        features, cs_shape, field_config
     )
     assert table == expected_table
 
 
-def test_get_cross_section_table_yz(source_fields, field_config, target_mapping_config):
+def test_get_cross_section_table_yz(source_fields, field_config):
     attributes = {
         "cross_section_y": [1, 2],
         "cross_section_z": [10, 20],
@@ -163,7 +152,6 @@ def test_get_cross_section_table_yz(source_fields, field_config, target_mapping_
     table = CrossSectionDataProcessor.get_cross_section_table(
         features,
         CrossSectionShape.TABULATED_YZ,
-        target_mapping_config["order_by"],
         field_config,
     )
     assert table == "1,10\n2,20"
@@ -172,14 +160,12 @@ def test_get_cross_section_table_yz(source_fields, field_config, target_mapping_
 def test_get_cross_section_table_yz_no_sort_by(
     source_fields,
     field_config,
-    target_mapping_config,
 ):
     attributes = {"cross_section_y": [10, 0, 20], "cross_section_z": [1, 2, 3]}
     features = make_features(attributes, source_fields)
     table = CrossSectionDataProcessor.get_cross_section_table(
         features,
         CrossSectionShape.TABULATED_YZ,
-        target_mapping_config["order_by"],
         field_config,
     )
     assert table == "0,2\n10,1\n20,3"
@@ -195,13 +181,11 @@ def test_get_cross_section_table_yz_no_sort_by(
         CrossSectionShape.INVERTED_EGG,
     ],
 )
-def test_get_cross_section_table_missing_data(
-    source_fields, field_config, target_mapping_config, cs_shape
-):
+def test_get_cross_section_table_missing_data(source_fields, field_config, cs_shape):
     attributes = {"distance": [1, 2], "id": [1, 1]}
     features = make_features(attributes, source_fields)
     table = CrossSectionDataProcessor.get_cross_section_table(
-        features, cs_shape, target_mapping_config["order_by"], field_config
+        features, cs_shape, field_config
     )
     assert table is None
 
@@ -212,12 +196,12 @@ def test_get_cross_section_table_missing_data(
         (
             {"cross_section_y": [1, 2], "cross_section_z": [10, 20]},
             CrossSectionShape.TABULATED_YZ,
-            "1,0\n2,10",
+            "0,0\n1,10",
         ),
         (
             {"cross_section_y": [1, 2], "cross_section_z": [-10, 0]},
             CrossSectionShape.TABULATED_YZ,
-            "1,0\n2,10",
+            "0,0\n1,10",
         ),
         (
             {"cross_section_width": [1, 2], "cross_section_height": [10, 20]},
@@ -234,7 +218,6 @@ def test_get_cross_section_table_missing_data(
 def test_get_cross_section_table_lowest_to_zero(
     source_fields,
     field_config,
-    target_mapping_config,
     attributes,
     shape,
     expected_table,
@@ -243,7 +226,6 @@ def test_get_cross_section_table_lowest_to_zero(
     table = CrossSectionDataProcessor.get_cross_section_table(
         features,
         shape,
-        target_mapping_config["order_by"],
         field_config,
         set_lowest_point_to_zero=True,
     )
@@ -338,7 +320,7 @@ def test_find_target_object(
     target_layer,
     target_feat_attributes,
     expected_attributes,
-    target_mapping_config,
+    field_config,
 ):
     src_feat = QgsFeature(source_fields)
     for field, value in target_feat_attributes.items():
@@ -346,8 +328,8 @@ def test_find_target_object(
     target_feat = CrossSectionDataProcessor.find_target_object(
         src_feat=src_feat,
         target_layer=target_layer,
-        target_object_id_config=target_mapping_config["target_object_id"],
-        target_object_code_config=target_mapping_config["target_object_code"],
+        target_object_id_config=field_config["target_object_id"],
+        target_object_code_config=field_config["target_object_code"],
     )
     for field, value in expected_attributes.items():
         assert target_feat[field] == value
@@ -436,10 +418,8 @@ def conversion_settings():
 
 
 @pytest.fixture
-def processor(target_layer, field_config, target_mapping_config, conversion_settings):
-    return CrossSectionDataProcessor(
-        field_config, target_mapping_config, [target_layer], conversion_settings
-    )
+def processor(target_layer, field_config, conversion_settings):
+    return CrossSectionDataProcessor(field_config, [target_layer], conversion_settings)
 
 
 @pytest.mark.parametrize(
@@ -615,7 +595,6 @@ def test_get_feat_from_group_cross_section_properties_null(
 
 @pytest.mark.parametrize("use_lowest_point_as_reference", [True, False])
 def test_get_feat_from_group_use_lowest_as_ref(
-    target_mapping_config,
     source_fields,
     field_config,
     use_lowest_point_as_reference,
@@ -635,9 +614,7 @@ def test_get_feat_from_group_use_lowest_as_ref(
         "cross_section_shape": 3 * [CrossSectionShape.TABULATED_YZ.value],
     }
     features = make_features(attributes, source_fields)
-    processor = CrossSectionDataProcessor(
-        field_config, target_mapping_config, [layer], conversion_settings
-    )
+    processor = CrossSectionDataProcessor(field_config, [layer], conversion_settings)
     processor.build_target_map(features)
     new_feat = processor.get_feat_from_group(features)
     assert (
