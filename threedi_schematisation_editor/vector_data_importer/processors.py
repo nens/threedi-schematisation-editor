@@ -116,7 +116,8 @@ class CrossSectionDataProcessor(Processor):
         target_layer = self.get_target_layer(target_model_cls)
 
         custom_fields = [
-            "cross_section_height, cross_section_width",
+            "cross_section_height",
+            "cross_section_width",
             "cross_section_table",
             "crest_level",
             "reference_level",
@@ -401,13 +402,21 @@ class CrossSectionDataProcessor(Processor):
             new_attributes["cross_section_table"] = NULL
         # Set correct width and height; this overwrites any existing values
         # for any shape, except closed rectangle, height should be NULL
-        if not cross_section_shape == CrossSectionShape.CLOSED_RECTANGLE:
-            new_fields.append(QgsField("cross_section_height", QVariant.Double))
+        new_fields.append(QgsField("cross_section_height", QVariant.Double))
+        if cross_section_shape == CrossSectionShape.CLOSED_RECTANGLE:
+            new_attributes["cross_section_height"] = get_field_config_value(
+                self.target_fields_config["cross_section_height"], feature
+            )
+        else:
             new_attributes["cross_section_height"] = NULL
         # for tabulated shapes, both width and height should be NULL
+        new_fields.append(QgsField("cross_section_width", QVariant.Double))
         if cross_section_shape.is_tabulated:
-            new_fields.append(QgsField("cross_section_width", QVariant.Double))
             new_attributes["cross_section_width"] = NULL
+        else:
+            new_attributes["cross_section_width"] = get_field_config_value(
+                self.target_fields_config["cross_section_width"], feature
+            )
         # set reference levels if needed
         if (
             self.conversion_settings.use_lowest_point_as_reference

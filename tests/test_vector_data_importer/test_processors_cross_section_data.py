@@ -585,12 +585,9 @@ def test_get_feat_from_group_cross_section_properties_null(
     processor.build_target_map(features)
     new_feat = processor.get_feat_from_group(features)
     for null_field in null_fields:
-        try:
-            assert (null_field not in new_feat.fields().names()) or (
-                new_feat[null_field] == NULL
-            )
-        except:
-            breakpoint()
+        assert (null_field not in new_feat.fields().names()) or (
+            new_feat[null_field] == NULL
+        )
 
 
 @pytest.mark.parametrize("use_lowest_point_as_reference", [True, False])
