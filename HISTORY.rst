@@ -1,7 +1,7 @@
 History
 =======
 
-2.3.4 (unreleased)
+2.3.4 (2025-10-01)
 ------------------
 
 - Bumped Dependency Loader.
