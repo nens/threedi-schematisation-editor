@@ -274,7 +274,9 @@ class CrossSectionDataProcessor(Processor):
         sorted_indices = sorted(
             range(len(order_by_vals)), key=lambda i: order_by_vals[i]
         )
-        table = [(round(col_left[i], 3), round(col_right[i], 3)) for i in sorted_indices]
+        table = [
+            (round(col_left[i], 3), round(col_right[i], 3)) for i in sorted_indices
+        ]
         return "\n".join(f"{pair[0]},{pair[1]}" for pair in table)
 
     @staticmethod

@@ -172,7 +172,6 @@ def test_get_cross_section_table_rounding(source_fields, field_config):
     assert table == "1.0,10.0\n2.0,20.001"
 
 
-
 def test_get_cross_section_table_yz_no_sort_by(
     source_fields,
     field_config,
