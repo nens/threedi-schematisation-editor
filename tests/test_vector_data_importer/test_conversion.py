@@ -8,10 +8,15 @@ from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.importers import (
     ChannelsImporter,
     ConnectionNodesImporter,
+    CrossSectionDataImporter,
     CrossSectionLocationImporter,
     CulvertsImporter,
     WeirsImporter,
 )
+from threedi_schematisation_editor.vector_data_importer.processors import (
+    CrossSectionDataProcessor,
+)
+from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 
 from .utils import *
@@ -171,6 +176,7 @@ def test_integrate_pipe(qgis_application):
     import_config["conversion_settings"]["edit_pipes"] = True
     src_layer = get_source_layer("weirs.gpkg", "dhydro_weir")
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_pipe.gpkg")
+    # TODO: target_gpgk is modified
     layers = get_schematisation_layers(target_gpkg, "weir", conduit_layer_name="pipe")
     importer = WeirsImporter(src_layer, target_gpkg, import_config, **layers)
     importer.import_features()
@@ -265,3 +271,51 @@ def test_import_adjacent_channels(qgis_application):
     importer = ChannelsImporter(src_layer, target_gpkg, import_config, **layers)
     importer.import_features()
     compare_results("test_import_channels", layers, "channel")
+
+
+def test_import_cross_section_data(qgis_application):
+    config_fields = [
+        "cross_section_shape",
+        "cross_section_width",
+        "cross_section_height",
+        "cross_section_y",
+        "cross_section_z",
+    ]
+    method = ColumnImportMethod.ATTRIBUTE.value
+    field_config = {
+        config_field: {"method": method, method: config_field}
+        for config_field in config_fields
+    }
+    target_map_fields = {
+        "target_object_type": "object_type",
+        "target_object_id": "object_id",
+        "target_object_code": "object_code",
+        "order_by": "distance",
+    }
+    for target, ref in target_map_fields.items():
+        field_config[target] = {"method": method, method: ref}
+    import_config = {
+        "fields": field_config,
+    }
+    src_layer = get_source_layer("cross_section_data.gpkg", "cross_section_data")
+    target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_csd_import.gpkg")
+    temp_gpkg = str(get_temp_copy(target_gpkg))
+    target_layers = [
+        gpkg_layer(temp_gpkg, model_cls.__tablename__)
+        for model_cls in CrossSectionDataProcessor.target_models
+    ]
+    importer = CrossSectionDataImporter(
+        src_layer, temp_gpkg, import_config, target_layers
+    )
+    importer.import_features()
+    ref_gpkg = get_temp_copy(DATA_PATH.joinpath("ref", f"csd_import.gpkg"))
+    for target_layer in target_layers:
+        ref_layer = gpkg_layer(ref_gpkg, target_layer.name())
+        for attribute in [
+            "id",
+            "cross_section_shape",
+            "cross_section_width",
+            "cross_section_height",
+            "cross_section_table",
+        ]:
+            compare_layer_attributes(target_layer, ref_layer, attribute)

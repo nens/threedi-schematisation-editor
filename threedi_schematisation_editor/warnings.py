@@ -16,6 +16,12 @@ class FeaturesImporterWarning(ThreediSchematisationEditorWarning):
     """
 
 
+class ProcessorWarning(ThreediSchematisationEditorWarning):
+    """
+    Custom warning to indicate issues related to the Processor.
+    """
+
+
 class GeometryImporterWarning(ThreediSchematisationEditorWarning):
     """
     Custom warning to indicate issues related imported geometries

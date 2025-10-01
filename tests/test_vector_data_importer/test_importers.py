@@ -13,9 +13,14 @@ from qgis.core import (
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.vector_data_importer.importers import (
+    CrossSectionDataImporter,
+    CrossSectionLocationImporter,
     Importer,
     LinesImporter,
+    SpatialImporter,
 )
+
+from .utils import SCHEMATISATION_PATH, get_temp_copy
 
 
 @pytest.fixture
@@ -43,6 +48,12 @@ def external_source():
     source = MagicMock()
     source.name.return_value = "external_source"
     source.sourceCrs.return_value = "EPSG:28992"
+    mock_features = []
+    for i in range(5):  # Create 5 mock features as an example
+        feature = MagicMock(spec=QgsFeature)
+        feature.id.return_value = i
+        mock_features.append(feature)
+    source.getFeatures.return_value = mock_features
     return source
 
 
@@ -107,11 +118,19 @@ def cross_section_location_layer():
 
 
 @pytest.fixture
-def importer(external_source, target_gpkg, import_settings, target_layer, node_layer):
+def spatial_importer(
+    external_source, target_gpkg, import_settings, target_layer, node_layer
+):
     """Create an Importer instance with standard parameters."""
-    return Importer(
+    return SpatialImporter(
         external_source, target_gpkg, import_settings, dm.Pipe, target_layer, node_layer
     )
+
+
+@pytest.fixture
+def importer(external_source, target_gpkg, import_settings, target_layer, node_layer):
+    """Create an Importer instance with standard parameters."""
+    return Importer(external_source, target_gpkg, import_settings)
 
 
 @pytest.fixture
@@ -120,7 +139,7 @@ def importer_different_crs(
 ):
     """Create an Importer instance with different CRS."""
     external_source.sourceCrs.return_value = "EPSG:4326"
-    return Importer(
+    return SpatialImporter(
         external_source, target_gpkg, import_settings, dm.Pipe, target_layer, node_layer
     )
 
@@ -137,29 +156,12 @@ def mock_project():
 
 
 class TestImporter:
-    """Tests for the Importer base class."""
-
-    def test_init(
-        self, external_source, target_gpkg, import_settings, target_layer, node_layer
-    ):
+    def test_init(self, external_source, target_gpkg, import_settings):
         """Test that the Importer initializes correctly."""
-        importer = Importer(
-            external_source,
-            target_gpkg,
-            import_settings,
-            dm.Pipe,
-            target_layer,
-            node_layer,
-        )
-
+        importer = Importer(external_source, target_gpkg, import_settings)
         assert importer.external_source == external_source
         assert importer.target_gpkg == target_gpkg
         assert importer.import_settings == import_settings
-        assert importer.target_model_cls == dm.Pipe
-        assert importer.target_layer == target_layer
-        assert importer.node_layer == node_layer
-        assert importer.integrator is None
-        assert importer.processor is None
 
     def test_conversion_settings(self, importer, import_settings):
         """Test that conversion_settings returns a ConversionSettings object with the correct values."""
@@ -175,20 +177,46 @@ class TestImporter:
         alt_external_source = MagicMock()
         alt_external_source.name.side_effect = AttributeError("No name method")
         alt_external_source.sourceName.return_value = "alt_source"
-        importer = Importer(
-            alt_external_source,
+        alt_importer = Importer(alt_external_source, target_gpkg, import_settings)
+        assert alt_importer.external_source_name == "alt_source"
+
+    @pytest.mark.parametrize(
+        "selected_ids, expected_ids",
+        [
+            (None, [0, 1, 2, 3, 4]),
+            ([], [0, 1, 2, 3, 4]),
+            ([1, 2], [1, 2]),
+        ],
+    )
+    def test_get_input_feature_ids(self, importer, selected_ids, expected_ids):
+        assert importer.get_input_feature_ids(selected_ids) == expected_ids
+
+
+class TestSpatialImporter:
+    """Tests for the Importer base class."""
+
+    def test_init(
+        self, external_source, target_gpkg, import_settings, target_layer, node_layer
+    ):
+        """Test that the Importer initializes correctly."""
+        importer = SpatialImporter(
+            external_source,
             target_gpkg,
             import_settings,
             dm.Pipe,
             target_layer,
             node_layer,
         )
-        assert importer.external_source_name == "alt_source"
+        assert importer.target_model_cls == dm.Pipe
+        assert importer.target_layer == target_layer
+        assert importer.node_layer == node_layer
+        assert importer.integrator is None
+        assert importer.processor is None
 
     # @patch('threedi_schematisation_editor.vector_data_importer.importers.QgsCoordinateTransform')
-    def test_get_transformation_same_crs(self, importer):
+    def test_get_transformation_same_crs(self, spatial_importer):
         """Test that get_transformation returns None when the CRS is the same."""
-        assert importer.get_transformation() is None
+        assert spatial_importer.get_transformation() is None
 
     @patch(
         "threedi_schematisation_editor.vector_data_importer.importers.QgsCoordinateTransform"
@@ -209,36 +237,38 @@ class TestImporter:
     @patch(
         "threedi_schematisation_editor.vector_data_importer.importers.QgsPointLocator"
     )
-    def test_get_locator(self, mock_locator, mock_project, importer, node_layer):
+    def test_get_locator(
+        self, mock_locator, mock_project, spatial_importer, node_layer
+    ):
         """Test that get_locator returns a QgsPointLocator."""
         # Mock the QgsProject instance and transform context
         mock_instance = MagicMock()
         mock_project.instance.return_value = mock_instance
         mock_instance.transformContext.return_value = "transform_context"
-        importer.get_locator(None)
+        spatial_importer.get_locator(None)
         mock_locator.assert_called_once_with(
             node_layer, "EPSG:28992", "transform_context"
         )
 
-    def test_process_commit_errors(self, importer):
+    def test_process_commit_errors(self, spatial_importer):
         """Test that process_commit_errors returns the commit errors message."""
         layer = MagicMock()
         layer.commitErrors.return_value = ["Error 1", "Error 2"]
-        assert Importer.process_commit_errors(layer) == "Error 1\nError 2"
+        assert SpatialImporter.process_commit_errors(layer) == "Error 1\nError 2"
 
-    def test_commit_pending_changes(self, importer, target_layer, node_layer):
+    def test_commit_pending_changes(self, spatial_importer, target_layer, node_layer):
         """Test that commit_pending_changes commits changes for modified layers."""
         target_layer.isModified.return_value = True
         node_layer.isModified.return_value = False
-        importer.commit_pending_changes()
+        spatial_importer.commit_pending_changes()
         target_layer.commitChanges.assert_called_once()
         node_layer.commitChanges.assert_not_called()
 
     def test_modifiable_layers_without_integrator(
-        self, importer, target_layer, node_layer
+        self, spatial_importer, target_layer, node_layer
     ):
         """Test that modifiable_layers returns the target and node layers when there is no integrator."""
-        assert importer.modifiable_layers == [target_layer, node_layer]
+        assert spatial_importer.modifiable_layers == [target_layer, node_layer]
 
     @patch(
         "threedi_schematisation_editor.vector_data_importer.importers.ChannelIntegrator.from_importer"
@@ -292,3 +322,35 @@ class TestImporter:
             mock_pipe_integrator_from_importer.assert_called_once_with(None, importer)
         else:
             mock_pipe_integrator_from_importer.assert_not_called()
+
+
+def test_cross_section_data_importer_auto_layers():
+    gpkg = get_temp_copy(SCHEMATISATION_PATH.joinpath("empty.gpkg"))
+    importer = CrossSectionDataImporter(
+        external_source=None,
+        target_gpkg=str(gpkg),
+        import_settings={},
+        target_layers=None,
+    )
+    for layer in importer.modifiable_layers:
+        assert layer.isValid()
+
+
+def test_spatial_importer_auto_layers():
+    gpkg = get_temp_copy(SCHEMATISATION_PATH.joinpath("empty.gpkg"))
+    importer = SpatialImporter(
+        external_source=None,
+        target_gpkg=str(gpkg),
+        import_settings={},
+        target_model_cls=dm.Pipe,
+        target_layer=None,
+        node_layer=None,
+    )
+    for layer in importer.modifiable_layers:
+        assert layer.isValid()
+
+
+def test_cross_section_location_auto_layers():
+    gpkg = get_temp_copy(SCHEMATISATION_PATH.joinpath("empty.gpkg"))
+    importer = CrossSectionLocationImporter(None, str(gpkg), {}, target_layer=None)
+    assert importer.processor.channel_layer.isValid()

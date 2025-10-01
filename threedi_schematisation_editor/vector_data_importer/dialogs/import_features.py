@@ -39,6 +39,7 @@ from threedi_schematisation_editor.utils import get_filepath, is_optional, optio
 from threedi_schematisation_editor.vector_data_importer.dialogs.import_widgets import (
     CONFIG_HEADER,
     CONFIG_KEYS,
+    FieldMapWidget,
     create_widgets,
 )
 from threedi_schematisation_editor.vector_data_importer.dialogs.utils import (
@@ -51,13 +52,27 @@ from threedi_schematisation_editor.vector_data_importer.dialogs.utils import (
 from threedi_schematisation_editor.vector_data_importer.importers import (
     ChannelsImporter,
     ConnectionNodesImporter,
+    CrossSectionDataImporter,
     CrossSectionLocationImporter,
     CulvertsImporter,
     OrificesImporter,
     PipesImporter,
     WeirsImporter,
 )
+from threedi_schematisation_editor.vector_data_importer.processors import (
+    CrossSectionDataProcessor,
+)
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+
+
+def create_tree_view(tree_view_model, tree_view, model_widgets):
+    tree_view_model.clear()
+    tree_view_model.setHorizontalHeaderLabels(CONFIG_HEADER)
+    for (row_idx, column_idx), widget in model_widgets.items():
+        tree_view_model.setItem(row_idx, column_idx, QStandardItem(""))
+        tree_view.setIndexWidget(tree_view_model.index(row_idx, column_idx), widget)
+    for i in range(len(CONFIG_HEADER)):
+        tree_view.resizeColumnToContents(i)
 
 
 class ImportDialog(QDialog):
@@ -279,7 +294,7 @@ class ImportDialog(QDialog):
         fields_settings = {}
         row_idx = 0
         for field_name, field_type in model_cls.__annotations__.items():
-            if self.is_obsolete_field(field_name):
+            if field_name in model_cls.obsolete_fields():
                 continue
             field_config = {}
             for column_idx, key_name in enumerate(CONFIG_KEYS, start=1):
@@ -295,13 +310,13 @@ class ImportDialog(QDialog):
             row_idx += 1
         return fields_settings
 
-    def get_rows_from_settings_widget(self, model_cls, row_idx, column_indices):
-        widgets = []
-        tree_view, tree_view_model = self.data_models_tree_views[model_cls]
-        for col_idx in column_indices:
-            item_idx = tree_view_model.item(row_idx, col_idx).index()
-            widgets.append(tree_view.indexWidget(item_idx))
-        return widgets
+    # def get_rows_from_settings_widget(self, model_cls, row_idx, column_indices):
+    #     widgets = []
+    #     tree_view, tree_view_model = self.data_models_tree_views[model_cls]
+    #     for col_idx in column_indices:
+    #         item_idx = tree_view_model.item(row_idx, col_idx).index()
+    #         widgets.append(tree_view.indexWidget(item_idx))
+    #     return widgets
 
     def source_fields_missing_for_models(self, *model_classes: Type) -> bool:
         if not self.source_layer:
@@ -356,6 +371,14 @@ class ImportDialog(QDialog):
                     elif isinstance(widget, QgsFieldExpressionWidget):
                         widget.setExpression("")
 
+    def get_importer(self, import_settings: dict, layer_dict):
+        return self.IMPORTERS[self.import_model_cls](
+            self.source_layer,
+            self.model_gpkg,
+            import_settings,
+            **layer_dict,
+        )
+
     def run_import(self):
         """Run the import process."""
         if self.source_fields_missing():
@@ -371,14 +394,9 @@ class ImportDialog(QDialog):
         try:
             for handler in handlers:
                 handler.disconnect_handler_signals()
-            structures_importer = self.IMPORTERS[self.import_model_cls](
-                self.source_layer,
-                self.model_gpkg,
-                import_settings,
-                **layers,
-            )
+            importer = self.get_importer(import_settings, layers)
             with CatchThreediWarnings() as warnings_catcher:
-                structures_importer.import_features(selected_ids=selected_feat_ids)
+                importer.import_features(selected_ids=selected_feat_ids)
             success_msg = (
                 "Import completed successfully.\n\n"
                 "The layers to which the data has been added are still in editing mode, "
@@ -533,15 +551,7 @@ class ImportDialog(QDialog):
         for model_cls in self.models:
             model_widgets = widgets_to_add[model_cls]
             tree_view, tree_view_model = self.data_models_tree_views[model_cls]
-            tree_view_model.clear()
-            tree_view_model.setHorizontalHeaderLabels(CONFIG_HEADER)
-            for (row_idx, column_idx), widget in model_widgets.items():
-                tree_view_model.setItem(row_idx, column_idx, QStandardItem(""))
-                tree_view.setIndexWidget(
-                    tree_view_model.index(row_idx, column_idx), widget
-                )
-            for i in range(len(CONFIG_HEADER)):
-                tree_view.resizeColumnToContents(i)
+            create_tree_view(tree_view_model, tree_view, model_widgets)
 
     def get_snap_settings(self):
         snap_gb = QGroupBox("Snap within:")
@@ -592,7 +602,7 @@ class ImportFeaturesDialog(ImportDialog):
         self.field_map_tv.setModel(self.field_map_model)
 
     def get_widgets(self):
-        return create_widgets(*self.models)
+        return {model: create_widgets(model) for model in self.models}
 
     def set_source_layer_filter(self):
         """Set the filter for the source layer combo box based on the model's geometry type."""
@@ -684,7 +694,7 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
         self.join_target = JoinFieldsRow(
             "Join channel reference field", layout=join_layout, row=1
         )
-        self.gridLayout.addLayout(join_layout, 1, 0, 2, 2)
+        self.gridLayout.addLayout(join_layout, 2, 0, 2, 2)
 
         # Create snap group box
         self.snap_gb, self.snap_dsb, _ = self.get_snap_settings()
@@ -720,7 +730,12 @@ class ImportCrossSectionLocationDialog(ImportFeaturesDialog):
         return False
 
     def get_widgets(self):
-        return create_widgets(*self.models, auto_fields={"id", "channel_id"})
+        return {
+            self.import_model_cls: create_widgets(
+                self.import_model_cls,
+                field_spec={"channel_id": [ColumnImportMethod.AUTO]},
+            )
+        }
 
 
 class ImportStructuresDialog(ImportDialog):
@@ -1026,11 +1041,141 @@ class ImportStructuresDialog(ImportDialog):
         return processed_handlers, processed_layers
 
     def get_widgets(self):
-        return create_widgets(
-            *self.models,
-            auto_attribute_fields={
-                "connection_node_id",
-                "connection_node_id_start",
-                "connection_node_id_end",
+        return {
+            self.import_model_cls: create_widgets(
+                self.import_model_cls,
+                field_spec={
+                    "connection_node_id": [
+                        ColumnImportMethod.AUTO,
+                        ColumnImportMethod.ATTRIBUTE,
+                    ],
+                    "connection_node_id_start": [
+                        ColumnImportMethod.AUTO,
+                        ColumnImportMethod.ATTRIBUTE,
+                    ],
+                    "connection_node_id_end": [
+                        ColumnImportMethod.AUTO,
+                        ColumnImportMethod.ATTRIBUTE,
+                    ],
+                },
+            ),
+            dm.ConnectionNode: create_widgets(dm.ConnectionNode),
+        }
+
+
+class ImportCrossSectionDataDialog(ImportFeaturesDialog):
+    def set_source_layer_filter(self):
+        self.source_layer_cbo.setFilters(
+            QgsMapLayerProxyModel.LineLayer
+            | QgsMapLayerProxyModel.PointLayer
+            | QgsMapLayerProxyModel.NoGeometry
+        )
+
+    def collect_settings(self) -> Dict[str, Any]:
+        return {
+            "fields": self.collect_fields_settings(self.import_model_cls),
+            "conversion_settings": {
+                "set_lowest_point_to_zero": self.lowest_to_zero.isChecked(),
+                "use_lowest_point_as_reference": self.ref_to_lowest.isChecked(),
+            },
+        }
+
+    def setup_ui(self):
+        super().setup_ui()
+        model_widgets = create_widgets(
+            dm.CrossSectionData,
+            field_spec={
+                "target_id": [
+                    ColumnImportMethod.ATTRIBUTE,
+                    ColumnImportMethod.DEFAULT,
+                    ColumnImportMethod.EXPRESSION,
+                ],
+                "order_by": [
+                    ColumnImportMethod.ATTRIBUTE,
+                    ColumnImportMethod.EXPRESSION,
+                    ColumnImportMethod.AUTO,
+                ],
             },
         )
+        group = QGroupBox("Target mapping and grouping", parent=self)
+        layout = QVBoxLayout()
+        group.setLayout(layout)
+        self.gridLayout.addWidget(group, 2, 0, 2, 2)
+        self.lowest_to_zero = QCheckBox("Set lowest point to zero")
+        self.lowest_to_zero.setFont(self.create_font(10))
+        self.lowest_to_zero.setLayoutDirection(Qt.LeftToRight)
+        self.ref_to_lowest = QCheckBox("Use lowest point as reference level")
+        self.ref_to_lowest.setFont(self.create_font(10))
+        self.ref_to_lowest.setLayoutDirection(Qt.LeftToRight)
+        self.gridLayout.addWidget(self.lowest_to_zero, 1, 0)
+        self.gridLayout.addWidget(self.ref_to_lowest, 1, 1)
+
+    def update_settings_from_template(self, import_settings: Dict[str, Any]):
+        super().update_settings_from_template(import_settings)
+        self.load_conversion_settings(import_settings)
+
+    def load_conversion_settings(self, import_settings: Dict[str, Any]):
+        conversion_settings = import_settings.get("conversion_settings", None)
+        if conversion_settings:
+            self.ref_to_lowest.setChecked(
+                conversion_settings.get("use_lowest_point_as_reference", False)
+            )
+            self.lowest_to_zero.setChecked(
+                conversion_settings.get("set_lowest_point_to_zero", False)
+            )
+
+    def source_fields_missing(self) -> bool:
+        missing_fields = super().source_fields_missing()
+        if missing_fields:
+            return True
+        return False
+
+    def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
+        handlers = [
+            self.layer_manager.model_handlers[model_cls]
+            for model_cls in CrossSectionDataProcessor.target_models
+        ]
+        layer_dict = {handler.layer.name(): handler.layer for handler in handlers}
+        return handlers, layer_dict
+
+    def get_importer(self, import_settings, layer_dict):
+        return CrossSectionDataImporter(
+            self.source_layer,
+            self.model_gpkg,
+            import_settings,
+            list(layer_dict.values()),
+        )
+
+    def get_widgets(self):
+        return {
+            self.import_model_cls: create_widgets(
+                self.import_model_cls,
+                field_spec={
+                    "cross_section_shape": [
+                        ColumnImportMethod.ATTRIBUTE,
+                        ColumnImportMethod.DEFAULT,
+                        ColumnImportMethod.EXPRESSION,
+                    ],
+                    "cross_section_y": [
+                        ColumnImportMethod.ATTRIBUTE,
+                        ColumnImportMethod.EXPRESSION,
+                        ColumnImportMethod.IGNORE,
+                    ],
+                    "cross_section_z": [
+                        ColumnImportMethod.ATTRIBUTE,
+                        ColumnImportMethod.EXPRESSION,
+                        ColumnImportMethod.IGNORE,
+                    ],
+                },
+            )
+        }
+
+    @property
+    def layer_dependent_widgets(self) -> List[QWidget]:
+        return super().layer_dependent_widgets + [
+            self.ref_to_lowest,
+            self.lowest_to_zero,
+        ]
+
+    def on_layer_changed(self, layer: Optional[QgsMapLayer]):
+        super().on_layer_changed(layer)

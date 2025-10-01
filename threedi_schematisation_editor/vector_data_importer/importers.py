@@ -1,7 +1,14 @@
 from collections import defaultdict
 from functools import cached_property
+from typing import Optional
 
-from qgis.core import QgsCoordinateTransform, QgsPointLocator, QgsProject
+from qgis.core import (
+    QgsCoordinateTransform,
+    QgsPointLocator,
+    QgsProcessingFeatureSource,
+    QgsProject,
+    QgsVectorLayer,
+)
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import gpkg_layer
@@ -11,6 +18,7 @@ from threedi_schematisation_editor.vector_data_importer.integrators import (
 )
 from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
+    CrossSectionDataProcessor,
     CrossSectionLocationProcessor,
     LineProcessor,
 )
@@ -18,8 +26,102 @@ from threedi_schematisation_editor.vector_data_importer.utils import ConversionS
 
 
 class Importer:
-    """Base class for the importing features from the external data source."""
+    def __init__(self, external_source, target_gpkg, import_settings):
+        self.external_source = external_source
+        self.target_gpkg = target_gpkg
+        self.import_settings = import_settings
+        self.processor = None
 
+    @cached_property
+    def conversion_settings(self):
+        conversion_config = self.import_settings.get("conversion_settings", {})
+        return ConversionSettings(conversion_config)
+
+    @cached_property
+    def external_source_name(self):
+        try:
+            layer_name = self.external_source.name()
+        except AttributeError:
+            layer_name = self.external_source.sourceName()
+        return layer_name
+
+    @staticmethod
+    def process_commit_errors(layer):
+        commit_errors = layer.commitErrors()
+        commit_errors_message = "\n".join(commit_errors)
+        return commit_errors_message
+
+    def commit_pending_changes(self):
+        for layer in self.modifiable_layers:
+            if layer.isModified():
+                layer.commitChanges()
+
+    @property
+    def modifiable_layers(self):
+        raise NotImplementedError
+
+    def start_editing(self):
+        # start editing in all layers to support changes during import
+        for layer in self.modifiable_layers:
+            layer.startEditing()
+
+    def get_input_feature_ids(self, selected_ids):
+        input_feature_ids = [feat.id() for feat in self.external_source.getFeatures()]
+        if selected_ids:
+            input_feature_ids = [id for id in input_feature_ids if id in selected_ids]
+        return input_feature_ids
+
+    def process_features(self, input_feature_ids, new_features=None):
+        external_features = [
+            self.external_source.getFeature(feat_id) for feat_id in input_feature_ids
+        ]
+        processed_features = self.processor.process_features(external_features)
+        if new_features is None or len(new_features) == 0:
+            return processed_features
+        else:
+            for name, features in processed_features.items():
+                new_features[name] += features
+            return new_features
+
+    def add_features_to_layers(self, new_features):
+        for layer in self.modifiable_layers:
+            if layer.name() in new_features:
+                layer.addFeatures(new_features[layer.name()])
+
+    def import_features(self, context=None, selected_ids=None):
+        self.start_editing()
+        input_feature_ids = self.get_input_feature_ids(selected_ids)
+        new_features = self.process_features(input_feature_ids)
+        self.add_features_to_layers(new_features)
+
+
+class CrossSectionDataImporter(Importer):
+    def __init__(
+        self,
+        external_source: QgsVectorLayer,
+        target_gpkg,
+        import_settings: dict,
+        target_layers: Optional[list[QgsVectorLayer]] = None,
+    ):
+        super().__init__(external_source, target_gpkg, import_settings)
+        if not target_layers:
+            target_layers = [
+                gpkg_layer(target_gpkg, model_cls.__tablename__)
+                for model_cls in CrossSectionDataProcessor.target_models
+            ]
+        self.target_layers = target_layers
+        self.processor = CrossSectionDataProcessor(
+            target_fields_config=self.import_settings.get("fields", {}),
+            target_layers=target_layers,
+            conversion_settings=self.conversion_settings,
+        )
+
+    @property
+    def modifiable_layers(self):
+        return self.target_layers
+
+
+class SpatialImporter(Importer):
     def __init__(
         self,
         external_source,
@@ -29,9 +131,7 @@ class Importer:
         target_layer=None,
         node_layer=None,
     ):
-        self.external_source = external_source
-        self.target_gpkg = target_gpkg
-        self.import_settings = import_settings
+        super().__init__(external_source, target_gpkg, import_settings)
         self.target_model_cls = target_model_cls
         self.target_layer = (
             gpkg_layer(self.target_gpkg, target_model_cls.__tablename__)
@@ -52,11 +152,6 @@ class Importer:
             )
         self.integrator = None
         self.processor = None
-
-    @cached_property
-    def conversion_settings(self):
-        conversion_config = self.import_settings.get("conversion_settings", {})
-        return ConversionSettings(conversion_config)
 
     @cached_property
     def external_source_name(self):
@@ -81,17 +176,6 @@ class Importer:
             self.node_layer, self.target_layer.crs(), project.transformContext()
         )
 
-    @staticmethod
-    def process_commit_errors(layer):
-        commit_errors = layer.commitErrors()
-        commit_errors_message = "\n".join(commit_errors)
-        return commit_errors_message
-
-    def commit_pending_changes(self):
-        for layer in self.modifiable_layers:
-            if layer.isModified():
-                layer.commitChanges()
-
     @property
     def modifiable_layers(self):
         """Return a list of the layers that can be modified."""
@@ -100,45 +184,36 @@ class Importer:
             layers += self.integrator.modifiable_layers
         return layers
 
-    def import_features(self, context=None, selected_ids=None):
-        """Method responsible for the importing structures from the external feature source."""
-        # start editing in all layers to support changes during import
-        self.processor.transformation = self.get_transformation(context)
-        self.processor.node_locator = self.get_locator(context=context)
-        for layer in self.modifiable_layers:
-            layer.startEditing()
-        # Integrate features using the integrator (if any)
-        # items that are integrated are skipped in further processing
+    def integrate_features(self, input_feature_ids):
         if self.integrator:
-            input_feature_ids = [
-                feat.id() for feat in self.external_source.getFeatures()
-            ]
-            if selected_ids:
-                input_feature_ids = [
-                    id for id in input_feature_ids if id in selected_ids
-                ]
             new_features, integrated_ids = self.integrator.integrate_features(
                 input_feature_ids
             )
+            input_feature_ids = [
+                id for id in input_feature_ids if id not in integrated_ids
+            ]
         else:
             new_features = defaultdict(list)
-            integrated_ids = []
+        return new_features, input_feature_ids
+
+    def import_features(self, context=None, selected_ids=None):
+        """Method responsible for the importing structures from the external feature source."""
+        # setup processor
+        self.processor.transformation = self.get_transformation(context)
+        self.processor.node_locator = self.get_locator(context=context)
+        # start editing
+        self.start_editing()
+        input_feature_ids = self.get_input_feature_ids(selected_ids)
+        # Integrate features using the integrator (if any)
+        # items that are integrated are skipped in further processing
+        new_features, input_feature_ids = self.integrate_features(input_feature_ids)
         # Process remaining features that are not integrated
-        for external_src_feat in self.external_source.getFeatures():
-            if selected_ids and external_src_feat.id() not in selected_ids:
-                continue
-            if external_src_feat.id() in integrated_ids:
-                continue
-            processed_features = self.processor.process_feature(external_src_feat)
-            for name, features in processed_features.items():
-                new_features[name] += features
+        new_features = self.process_features(input_feature_ids, new_features)
         # Add newly created features to layers
-        for layer in self.modifiable_layers:
-            if layer.name() in new_features:
-                layer.addFeatures(new_features[layer.name()])
+        self.add_features_to_layers(new_features)
 
 
-class LinesImporter(Importer):
+class LinesImporter(SpatialImporter):
     def __init__(
         self,
         *args,
@@ -247,7 +322,7 @@ class PipesImporter(LinesImporter):
         )
 
 
-class CrossSectionLocationImporter(Importer):
+class CrossSectionLocationImporter(SpatialImporter):
     def __init__(self, *args, target_layer=None):
         super().__init__(
             *args, target_model_cls=dm.CrossSectionLocation, target_layer=target_layer
@@ -273,7 +348,7 @@ class ChannelsImporter(LinesImporter):
         )
 
 
-class ConnectionNodesImporter(Importer):
+class ConnectionNodesImporter(SpatialImporter):
     """Connection nodes importer class."""
 
     def __init__(self, *args, target_layer=None):

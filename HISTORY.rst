@@ -10,6 +10,7 @@ History
 - Fix adding nodes of adjacent channels (#428)
 - Only create connection nodes when `create_connection_nodes` is set to True
 - Add option to integrate weirs and orifices on pipes (#246)
+- Add importer for cross section data (#253)
 
 
 2.3.1 (2025-07-16)

@@ -8,12 +8,15 @@ from qgis.core import (
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterFile,
     QgsProject,
+    QgsVectorLayer,
+    QgsWkbTypes,
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
 from threedi_schematisation_editor.vector_data_importer.importers import (
     ChannelsImporter,
     ConnectionNodesImporter,
+    CrossSectionDataImporter,
     CrossSectionLocationImporter,
     CulvertsImporter,
     OrificesImporter,
@@ -92,7 +95,28 @@ class BaseImporter(QgsProcessingAlgorithm):
         raise NotImplementedError("Subclasses must implement create_importer()")
 
     def processAlgorithm(self, parameters, context, feedback):
-        source_layer = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+        # Try to load input as vector layer
+        source_layer = self.parameterAsVectorLayer(parameters, "INPUT", context)
+        # If that doesn't work, do some dirty magic to make a vector layer
+        if not source_layer:
+            source = self.parameterAsSource(parameters, self.SOURCE_LAYER, context)
+            feedback.pushInfo(
+                "Using self.parameterAsSource() method to load the source layer as no source layer was directly available."
+            )
+            source_layer = QgsVectorLayer(
+                f"{QgsWkbTypes.displayString(source.wkbType())}?crs={source.sourceCrs().authid()}",
+                "temp_layer",
+                "memory",
+            )
+            # Set up the fields
+            provider = source_layer.dataProvider()
+            provider.addAttributes(source.fields().toList())
+            source_layer.updateFields()
+
+            # Add features
+            features = list(source.getFeatures())
+            provider.addFeatures(features)
+
         if source_layer is None:
             raise QgsProcessingException(
                 self.invalidSourceError(parameters, self.SOURCE_LAYER)
@@ -197,4 +221,31 @@ class ImportCrossSectionLocation(SimpleImporter):
     FEATURE_TYPE = "cross_section_location"
 
     def get_source_layer_types(self):
-        return []
+        return [
+            QgsProcessing.TypeVectorPoint,
+            QgsProcessing.TypeVectorLine,
+            QgsProcessing.TypeVector,
+        ]
+
+
+class ImportCrossSectionData(SimpleImporter):
+    IMPORTER_CLASS = CrossSectionDataImporter
+    FEATURE_TYPE = "cross_section_data"
+
+    def get_source_layer_types(self):
+        return [
+            QgsProcessing.TypeVectorPoint,
+            QgsProcessing.TypeVectorLine,
+            QgsProcessing.TypeVector,
+        ]
+
+    def name(self):
+        return f"threedi_import_{self.FEATURE_TYPE}"
+
+    def displayName(self):
+        return self.tr(f"Import {self.get_feature_repr()}")
+
+    def shortHelpString(self):
+        return self.tr(
+            f"""Import {self.get_feature_repr()} from the external source layer."""
+        )

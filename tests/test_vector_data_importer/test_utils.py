@@ -23,7 +23,9 @@ from shapely.testing import assert_geometries_equal
 
 from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
+    ConversionSettings,
     FeatureManager,
+    get_field_config_value,
     get_float_value_from_feature,
     get_src_geometry,
     update_attributes,
@@ -96,39 +98,7 @@ def create_feature_with_fields(*field_names):
     "field_config,source_val,new_val,expected_val",
     [
         ({"method": ColumnImportMethod.AUTO.value}, 1, 2, 2),
-        (
-            {"method": ColumnImportMethod.ATTRIBUTE.value, "source_attribute": "id"},
-            1,
-            2,
-            1,
-        ),
-        (
-            {
-                "method": ColumnImportMethod.ATTRIBUTE.value,
-                "source_attribute": "foo",
-                "default_value": 42,
-            },
-            1,
-            2,
-            42,
-        ),
-        (
-            {
-                "method": ColumnImportMethod.ATTRIBUTE.value,
-                "source_attribute": "id",
-                "value_map": {"1": 100, "2": 200},
-            },
-            1,
-            2,
-            100,
-        ),
         ({"method": ColumnImportMethod.DEFAULT.value, "default_value": 42}, 1, 2, 42),
-        (
-            {"method": ColumnImportMethod.EXPRESSION.value, "expression": "10 + 10"},
-            1,
-            2,
-            20,
-        ),
     ],
 )
 def test_update_attributes(field_config, source_val, new_val, expected_val):
@@ -139,6 +109,59 @@ def test_update_attributes(field_config, source_val, new_val, expected_val):
     new_feat.setAttribute("id", new_val)
     update_attributes(fields_config, TestModel, source_feat, new_feat)
     assert new_feat["id"] == expected_val
+
+
+@pytest.mark.parametrize(
+    "field_config,source_val,expected_val",
+    [
+        ({"method": ColumnImportMethod.AUTO.value}, 1, NULL),
+        (
+            {"method": ColumnImportMethod.ATTRIBUTE.value, "source_attribute": "id"},
+            1,
+            1,
+        ),
+        (
+            {
+                "method": ColumnImportMethod.ATTRIBUTE.value,
+                "source_attribute": "foo",
+                "default_value": 42,
+            },
+            1,
+            42,
+        ),
+        (
+            {
+                "method": ColumnImportMethod.ATTRIBUTE.value,
+                "source_attribute": "id",
+                "value_map": {"1": 100, "2": 200},
+            },
+            1,
+            100,
+        ),
+        ({"method": ColumnImportMethod.DEFAULT.value, "default_value": 42}, 1, 42),
+        (
+            {"method": ColumnImportMethod.EXPRESSION.value, "expression": "10 + 10"},
+            1,
+            20,
+        ),
+    ],
+)
+def test_get_field_config_value(field_config, source_val, expected_val):
+    fields_config = {"id": field_config}
+    source_feat = create_feature_with_fields("id", "foo")
+    source_feat.setAttribute("id", source_val)
+    assert get_field_config_value(fields_config["id"], source_feat) == expected_val
+
+
+def test_get_field_config_value_invalid_field_name():
+    fields_config = {
+        "id": {
+            "method": ColumnImportMethod.ATTRIBUTE.value,
+            ColumnImportMethod.ATTRIBUTE.value: "bar",
+        }
+    }
+    source_feat = create_feature_with_fields("id", "foo")
+    assert get_field_config_value(fields_config["id"], source_feat) == NULL
 
 
 def test_update_attributes_missing_field():

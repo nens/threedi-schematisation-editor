@@ -20,7 +20,7 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
     LineProcessor,
     PointProcessor,
-    Processor,
+    SpatialProcessor,
     StructureProcessor,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (
@@ -374,7 +374,7 @@ class TestUtilityFunctions:
     def test_create_new_point_geometry(self):
         """Test that create_new_point_geometry returns a point geometry."""
         geom = QgsGeometry.fromPointXY(QgsPointXY(10, 20))
-        result = Processor.create_new_point_geometry(geom)
+        result = SpatialProcessor.create_new_point_geometry(geom)
         assert isinstance(result, QgsGeometry)
         assert result.type() == QgsWkbTypes.PointGeometry
         assert result.asPoint() == QgsPointXY(10, 20)
@@ -402,7 +402,7 @@ class TestUtilityFunctions:
             return_value=node,
         ):
             # Call the function
-            result = Processor.snap_connection_node(
+            result = SpatialProcessor.snap_connection_node(
                 feat, QgsPointXY(10, 20), 10.0, locator, "connection_node_id"
             )
 
@@ -430,7 +430,7 @@ class TestUtilityFunctions:
             return_value=None,
         ):
             # Call the function
-            result = Processor.snap_connection_node(
+            result = SpatialProcessor.snap_connection_node(
                 feat, QgsPointXY(10, 20), 10.0, locator, "connection_node_id"
             )
 
