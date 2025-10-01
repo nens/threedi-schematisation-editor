@@ -157,6 +157,22 @@ def test_get_cross_section_table_yz(source_fields, field_config):
     assert table == "1,10\n2,20"
 
 
+def test_get_cross_section_table_rounding(source_fields, field_config):
+    attributes = {
+        "cross_section_y": [1.0, 2.0001],
+        "cross_section_z": [9.9999999, 20.00051],
+        "distance": [0, 1],
+    }
+    features = make_features(attributes, source_fields)
+    table = CrossSectionDataProcessor.get_cross_section_table(
+        features,
+        CrossSectionShape.TABULATED_YZ,
+        field_config,
+    )
+    assert table == "1.0,10.0\n2.0,20.001"
+
+
+
 def test_get_cross_section_table_yz_no_sort_by(
     source_fields,
     field_config,
