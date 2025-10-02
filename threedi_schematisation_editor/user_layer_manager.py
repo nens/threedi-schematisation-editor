@@ -436,7 +436,6 @@ class LayersManager:
 
     def register_vector_layers(self):
         """Register all vector layers."""
-        QgsMessageLog.logMessage(f'register layers for {self.model_gpkg_path}', "Logging", Qgis.Warning)
         project = QgsProject.instance()
         present_layers = project.mapLayers()
         present_layers_sources = {lyr.dataProvider().dataSourceUri(): lyr for lyr in present_layers.values()}
@@ -444,11 +443,10 @@ class LayersManager:
             for model_cls in group_models:
                 layer_uri = f"{self.model_gpkg_path}|layername={model_cls.__tablename__}"
                 layer_uri = layer_uri.replace("\\", "/")
-                QgsMessageLog.logMessage(f'read layer {layer_uri}', "Logging", Qgis.Warning)
                 try:
                     layer = present_layers_sources[layer_uri]
                 except KeyError:
-                    QgsMessageLog.logMessage(f'Cannot read layer {layer_uri}', "Logging", Qgis.Warning)
+                    QgsMessageLog.logMessage(f'Cannot read layer {layer_uri}', "Messages", Qgis.Warning)
                     continue
                 handler_cls = MODEL_HANDLERS[model_cls]
                 handler = handler_cls(self, layer)
