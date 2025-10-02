@@ -1,7 +1,7 @@
 History
 =======
 
-2.3.2 (unreleased)
+2.3.5 (unreleased)
 ------------------
 
 - Improve handling of structures integrated on channels: prevent structures from sticking out on the start or end of the channel; prevent overlapping structures; prevent too short channels in between structures and at the start or end of the channel. (#376)
@@ -12,6 +12,25 @@ History
 - Add option to integrate weirs and orifices on pipes (#246)
 - Add importer for cross section data (#253)
 
+
+2.3.4 (2025-10-01)
+------------------
+
+- Bumped Dependency Loader.
+
+
+2.3.3 (2025-09-08)
+------------------
+
+- Bumped Dependency Loader.
+
+
+2.3.2 (2025-08-28)
+------------------
+
+- Update references to connection node and channel when moving 1D lateral, 1D boundary condition, or 1D wind shielding feature
+- Allow attributes named "area" to be edited without applying the default
+- Prevent N&S Dependency Loader from getting disabled (nens/nens-dependency-loader#19)
 
 2.3.1 (2025-07-16)
 ------------------
