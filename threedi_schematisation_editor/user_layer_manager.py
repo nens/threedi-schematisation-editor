@@ -161,9 +161,10 @@ class LayersManager:
                 else QgsSnappingConfig.VertexFlag
             )
         for linked_model in self.snapping_groups[layer_model]:
-            layer = self.model_handlers.get(linked_model)
-            if layer is None:
+            handler = self.model_handlers.get(linked_model)
+            if handler is None:
                 continue
+            layer = handler.layer
             try:
                 iconf = individual_configs[layer]
             except KeyError:
