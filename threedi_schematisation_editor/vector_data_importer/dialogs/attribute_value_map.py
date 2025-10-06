@@ -4,13 +4,9 @@ from qgis.core import NULL
 from qgis.PyQt.QtWidgets import QInputDialog, QTableWidgetItem
 
 from threedi_schematisation_editor.utils import QUOTED_NULL
-from threedi_schematisation_editor.vector_data_importer.dialogs import (
-    vm_basecls,
-    vm_uicls,
-)
 
 
-class AttributeValueMapDialog(vm_basecls, vm_uicls):
+class AttributeValueMapDialog:
     """Dialog for setting attribute value mappings."""
 
     SRC_COLUMN_IDX = 0
