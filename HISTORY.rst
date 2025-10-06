@@ -11,6 +11,7 @@ History
 - Only create connection nodes when `create_connection_nodes` is set to True
 - Add option to integrate weirs and orifices on pipes (#246)
 - Add importer for cross section data (#253)
+- Fix crashes during project load (#437)
 
 
 2.3.4 (2025-10-01)
