@@ -4,7 +4,7 @@ History
 2.3.5 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix crashes during project load (#437)
 
 
 2.3.4 (2025-10-01)
