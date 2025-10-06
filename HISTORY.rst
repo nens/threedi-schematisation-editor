@@ -12,6 +12,7 @@ History
 - Add option to integrate weirs and orifices on pipes (#246)
 - Add importer for cross section data (#253)
 - Fix crashes during project load (#437)
+- Move code for load schematisation to its own folder
 
 
 2.3.4 (2025-10-01)
