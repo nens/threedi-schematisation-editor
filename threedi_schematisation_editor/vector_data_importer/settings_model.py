@@ -41,6 +41,16 @@ class FieldMapConfig(BaseModel):
     expression: Optional[str] = None
     default_value: Optional[Any] = None
 
+    # TODO: consider if we want to keep dict access support
+    def get(self, key, default=None):
+        return self.dict().get(key, default)
+
+    def __getitem__(self, item):
+        return self.dict().get(item)
+
+    def dict(self, **kwargs):
+        return super().dict(**kwargs)
+
     @model_validator(mode="after")
     def validate_required_fields(self) -> "FieldConfig":
         method = self.method
@@ -109,6 +119,11 @@ class FieldsSectionValidator:
             except Exception as e:
                 raise ValueError(f"Invalid configuration for field '{field_name}': {e}")
         return validated_fields
+
+
+def get_field_map_config(field_config: dict, model_cls: Type):
+    validator = FieldsSectionValidator(model_cls)
+    return validator.validate(**field_config)
 
 
 # TODO consider how to use this

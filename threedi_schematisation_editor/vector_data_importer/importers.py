@@ -22,6 +22,9 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionLocationProcessor,
     LineProcessor,
 )
+from threedi_schematisation_editor.vector_data_importer.settings_model import (
+    get_field_map_config,
+)
 from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
 
 
@@ -34,6 +37,7 @@ class Importer:
 
     @cached_property
     def conversion_settings(self):
+        # TODO: refactor
         conversion_config = self.import_settings.get("conversion_settings", {})
         return ConversionSettings(conversion_config)
 
@@ -144,11 +148,14 @@ class SpatialImporter(Importer):
             else node_layer
         )
         self.fields_configurations = {
-            target_model_cls: self.import_settings.get("fields", {}),
+            target_model_cls: get_field_map_config(
+                self.import_settings.get("fields", {}), target_model_cls
+            )
         }
         if target_model_cls != dm.ConnectionNode:
-            self.fields_configurations[dm.ConnectionNode] = self.import_settings.get(
-                "connection_node_fields", {}
+            self.fields_configurations[dm.ConnectionNode] = get_field_map_config(
+                import_settings.get("connection_node_fields", {}),
+                dm.ConnectionNode,
             )
         self.integrator = None
         self.processor = None
