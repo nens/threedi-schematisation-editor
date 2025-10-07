@@ -1,7 +1,5 @@
-import inspect
-import json
 from dataclasses import fields
-from typing import Any, Dict, Optional, Type
+from typing import Any, Optional, Type
 
 from pydantic import BaseModel, model_validator
 
@@ -124,37 +122,3 @@ class FieldsSectionValidator:
 def get_field_map_config(field_config: dict, model_cls: Type):
     validator = FieldsSectionValidator(model_cls)
     return validator.validate(**field_config)
-
-
-# TODO consider how to use this
-class Settings:
-    def __init__(self, settings_file, fields_model, cn_model):
-        with open(settings_file, "r") as f:
-            config_json = json.load(f)
-        if "target_layer" not in config_json:
-            raise ValueError("Missing 'target_layer' in settings file")
-        self.target_layer = config_json["target_layer"]
-        self.conversion_settings = ConversionSettings(
-            **config_json.get("conversion_settings", {})
-        )
-        fields_validator = FieldsSectionValidator(fields_model)
-        self.fields = fields_validator.validate(**config_json["fields"])
-        cn_validator = FieldsSectionValidator(cn_model)
-        self.connection_nodes = cn_validator.validate(
-            **config_json["connection_node_fields"]
-        )
-
-
-def read_settings(settings_file: str, fields_model, cn_model) -> BaseModel:
-    with open(settings_file, "r") as f:
-        config_json = json.load(f)
-    if "target_layer" not in config_json:
-        raise ValueError("Missing 'target_layer' in settings file")
-    target_layer = config_json["target_layer"]
-    conversion_settings = ConversionSettings(
-        **config_json.get("conversion_settings", {})
-    )
-    fields_validator = FieldsSectionValidator(fields_model)
-    fields = fields_validator.validate(**config_json["fields"])
-    cn_validator = FieldsSectionValidator(cn_model)
-    cn = cn_validator.validate(**config_json["connection_node_fields"])
