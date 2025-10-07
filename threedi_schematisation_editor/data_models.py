@@ -1,5 +1,5 @@
 # Copyright (C) 2025 by Lutra Consulting
-from dataclasses import dataclass
+from dataclasses import dataclass, field, fields
 from itertools import chain
 from types import MappingProxyType, SimpleNamespace
 from typing import Optional
@@ -42,6 +42,8 @@ from threedi_schematisation_editor.enumerators import (
     Visualisation,
 )
 
+DISPLAY_NAME_FIELD = "display_name"
+
 
 class HighPrecisionFloat(float):
     """
@@ -52,6 +54,7 @@ class HighPrecisionFloat(float):
     pass
 
 
+@dataclass
 class ModelObject:
     __tablename__ = None
     __layername__ = None
@@ -66,12 +69,10 @@ class ModelObject:
         return namespace
 
     @classmethod
-    def hidden_fields(cls) -> set:
-        return set()
-
-    @staticmethod
-    def display_names() -> list:
-        return list()
+    def display_names(cls) -> list:
+        return [
+            field.metadata.get(DISPLAY_NAME_FIELD, field.name) for field in fields(cls)
+        ]
 
     @classmethod
     def fields_display_names(cls) -> dict:
