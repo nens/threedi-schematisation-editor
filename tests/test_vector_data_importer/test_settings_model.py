@@ -4,35 +4,39 @@ import pytest
 
 from threedi_schematisation_editor.vector_data_importer.settings_model import (
     FieldMapConfig,
+    FieldMapConfigDefaultValueMissingError,
+    FieldMapConfigExpressionMissingError,
+    FieldMapConfigMethodMissingError,
+    FieldMapConfigSourceAttributeMissingError,
     FieldsSectionValidator,
 )
 
 
 @pytest.mark.parametrize(
-    "config_dict,valid",
+    "config_dict,expected_error",
     [
-        ({"method": "auto", "source_attribute": "foo"}, True),
-        ({"method": "ignore"}, True),
-        ({"method": "source_attribute"}, False),
-        ({"method": "source_attribute", "source_attribute": "foo"}, True),
+        ({"method": "auto", "source_attribute": "foo"}, None),
+        ({"method": "ignore"}, None),
+        ({"method": "source_attribute"}, FieldMapConfigSourceAttributeMissingError),
+        ({"method": "source_attribute", "source_attribute": "foo"}, None),
         (
             {
                 "method": "source_attribute",
                 "source_attribute": "foo",
                 "default_value": "bar",
             },
-            True,
+            None,
         ),
-        ({"method": "expression"}, False),
-        ({"method": "expression", "expression": "foo"}, True),
-        ({"method": "expression", "expression": "foo", "default_value": "bar"}, True),
-        ({"method": "default"}, False),
-        ({"method": "default", "default_value": "foo"}, True),
-        ({}, False),
+        ({"method": "expression"}, FieldMapConfigExpressionMissingError),
+        ({"method": "expression", "expression": "foo"}, None),
+        ({"method": "expression", "expression": "foo", "default_value": "bar"}, None),
+        ({"method": "default"}, FieldMapConfigDefaultValueMissingError),
+        ({"method": "default", "default_value": "foo"}, None),
+        ({}, FieldMapConfigMethodMissingError),
     ],
 )
-def test_field_map_config(config_dict, valid):
-    if valid:
+def test_field_map_config(config_dict, expected_error):
+    if not expected_error:
         assert FieldMapConfig(**config_dict)
     else:
         with pytest.raises(ValueError):

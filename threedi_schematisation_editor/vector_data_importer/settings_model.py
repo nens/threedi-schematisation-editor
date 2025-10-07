@@ -1,7 +1,7 @@
 from dataclasses import fields
 from typing import Any, Optional, Type
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 from threedi_schematisation_editor.vector_data_importer.utils import (
     DEFAULT_INTERSECTION_BUFFER,
@@ -33,6 +33,22 @@ class ConversionSettings(BaseModel):
     order_by_field: dict = {}
 
 
+class FieldMapConfigExpressionMissingError(ValueError):
+    pass
+
+
+class FieldMapConfigDefaultValueMissingError(ValueError):
+    pass
+
+
+class FieldMapConfigSourceAttributeMissingError(ValueError):
+    pass
+
+
+class FieldMapConfigMethodMissingError(ValueError):
+    pass
+
+
 class FieldMapConfig(BaseModel):
     method: ColumnImportMethod
     source_attribute: Optional[str] = None
@@ -49,25 +65,31 @@ class FieldMapConfig(BaseModel):
     def dict(self, **kwargs):
         return super().dict(**kwargs)
 
+    @field_validator("method", mode="before")
+    def validate_method_presence(cls, value):
+        if value is None:
+            raise FieldMapConfigMethodMissingError("The 'method' field is required")
+        return value
+
     @model_validator(mode="after")
     def validate_required_fields(self) -> "FieldConfig":
         method = self.method
 
         # For expression method, expression is required
         if method == ColumnImportMethod.EXPRESSION and not self.expression:
-            raise ValueError(
+            raise FieldMapConfigExpressionMissingError(
                 "When method is 'expression', 'expression' field is required"
             )
 
         # For default method, default_value is required
         if method == ColumnImportMethod.DEFAULT and self.default_value is None:
-            raise ValueError(
+            raise FieldMapConfigDefaultValueMissingError(
                 "When method is 'default', 'default_value' field is required"
             )
 
         # For source_attribute method, source_attribute is required
         if method == ColumnImportMethod.ATTRIBUTE and not self.source_attribute:
-            raise ValueError(
+            raise FieldMapConfigSourceAttributeMissingError(
                 "When method is 'source_attribute', 'source_attribute' field is required"
             )
 
