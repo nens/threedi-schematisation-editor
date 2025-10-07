@@ -77,17 +77,15 @@ class FieldMapConfig(BaseModel):
 class FieldsSectionValidator:
     """Validator for a fields section against a dataclass."""
 
-    def __init__(self, dataclass_type: type, allow_empty: bool = False):
+    def __init__(self, dataclass_type: type):
         """
         Initialize validator for a specific dataclass.
 
         Args:
             dataclass_type: The dataclass to validate against
-            allow_empty: If True, allows empty dictionary as valid input
         """
         self.dataclass_type = dataclass_type
         self.expected_fields = {f.name for f in fields(dataclass_type)}
-        self.allow_empty = allow_empty
 
     def validate(self, **fields_data) -> "FieldsSection":
         """
@@ -102,10 +100,6 @@ class FieldsSectionValidator:
         Raises:
             ValueError: If validation fails
         """
-        # Allow empty dictionary if configured
-        if not fields_data and self.allow_empty:
-            return FieldsSection(fields={})
-
         # First, validate each field configuration with Pydantic
         validated_fields = {}
         for field_name, field_config in fields_data.items():
