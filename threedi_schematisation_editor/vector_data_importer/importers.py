@@ -23,9 +23,11 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     LineProcessor,
 )
 from threedi_schematisation_editor.vector_data_importer.settings_model import (
+    ConversionSettings,
     get_field_map_config,
 )
-from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
+
+# from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
 
 
 class Importer:
@@ -37,9 +39,7 @@ class Importer:
 
     @cached_property
     def conversion_settings(self):
-        # TODO: refactor
-        conversion_config = self.import_settings.get("conversion_settings", {})
-        return ConversionSettings(conversion_config)
+        return ConversionSettings(**self.import_settings.get("conversion_settings", {}))
 
     @cached_property
     def external_source_name(self):
@@ -243,11 +243,11 @@ class LinesImporter(SpatialImporter):
             self.fields_configurations,
             self.conversion_settings,
         )
-        if self.conversion_settings.integrate_channels:
+        if self.conversion_settings.edit_channels:
             self.integrator = ChannelIntegrator.from_importer(
                 conduit_layer, cross_section_location_layer, self
             )
-        elif self.conversion_settings.integrate_pipes and self.target_model_cls in [
+        elif self.conversion_settings.edit_pipes and self.target_model_cls in [
             dm.Weir,
             dm.Orifice,
         ]:

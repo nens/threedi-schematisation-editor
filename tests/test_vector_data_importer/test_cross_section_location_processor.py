@@ -15,7 +15,9 @@ from shapely.testing import assert_geometries_equal
 from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionLocationProcessor,
 )
-from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
+from threedi_schematisation_editor.vector_data_importer.settings_model import (
+    ConversionSettings,
+)
 
 
 @pytest.fixture(scope="function")
@@ -53,7 +55,7 @@ def processor(channels, target_layer, import_config):
         target_layer=target_layer,
         target_model_cls=None,
         channel_layer=channels,
-        conversion_settings=ConversionSettings(import_config["conversion_settings"]),
+        conversion_settings=ConversionSettings(**import_config["conversion_settings"]),
         target_fields_config=None,
     )
 
@@ -242,16 +244,17 @@ def test_get_new_geom_no_geometry(processor, ref_channel_id, expected_geom):
     "method, column", [("source_attribute", "id"), ("expression", "code")]
 )
 def test_channel_mapping(channels, target_layer, import_config, method, column):
-    conversion_settings = {
+    conversion_config = {
         "join_field_tgt": {"method": method, method: column},
         "snapping_distance": 6,
         "use_snapping": True,
     }
+    conversion_settings = ConversionSettings(**conversion_config)
     processor = CrossSectionLocationProcessor(
         target_layer=target_layer,
         target_model_cls=None,
         channel_layer=channels,
-        conversion_settings=ConversionSettings(conversion_settings),
+        conversion_settings=conversion_settings,
         target_fields_config=None,
     )
     channel_id_map = {feat[column]: feat for feat in channels.getFeatures()}
@@ -275,7 +278,7 @@ def test_channel_mapping_empty_join_values(
         target_layer=target_layer,
         target_model_cls=None,
         channel_layer=channels,
-        conversion_settings=ConversionSettings(conversion_settings),
+        conversion_settings=ConversionSettings(**conversion_settings),
         target_fields_config=None,
     )
     assert processor.channel_mapping == {}
@@ -294,7 +297,7 @@ def test_get_join_feat_src_value(channels, target_layer, import_config, method, 
         target_layer=target_layer,
         target_model_cls=None,
         channel_layer=channels,
-        conversion_settings=ConversionSettings(conversion_settings),
+        conversion_settings=ConversionSettings(**conversion_settings),
         target_fields_config=None,
     )
     feat = channels.getFeature(1)
@@ -322,7 +325,7 @@ def test_get_join_feat_src_value_invalid(
         target_layer=target_layer,
         target_model_cls=None,
         channel_layer=channels,
-        conversion_settings=ConversionSettings(conversion_settings),
+        conversion_settings=ConversionSettings(**conversion_settings),
         target_fields_config=None,
     )
     assert processor.get_join_feat_src_value(channels.getFeature(1)) is None

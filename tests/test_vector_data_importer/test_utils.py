@@ -23,7 +23,6 @@ from shapely.testing import assert_geometries_equal
 
 from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
-    ConversionSettings,
     FeatureManager,
     get_field_config_value,
     get_float_value_from_feature,

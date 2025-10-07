@@ -21,9 +21,11 @@ import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionDataProcessor,
 )
+from threedi_schematisation_editor.vector_data_importer.settings_model import (
+    ConversionSettings,
+)
 from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
-    ConversionSettings,
 )
 from threedi_schematisation_editor.warnings import ProcessorWarning
 
@@ -425,7 +427,7 @@ def test_find_target_object_no_match(
 @pytest.fixture
 def conversion_settings():
     return ConversionSettings(
-        {
+        **{
             "set_lowest_point_to_zero": False,
             "use_lowest_point_as_reference": True,
         }
@@ -612,7 +614,7 @@ def test_get_feat_from_group_use_lowest_as_ref(
     use_lowest_point_as_reference,
 ):
     conversion_settings = ConversionSettings(
-        {"use_lowest_point_as_reference": use_lowest_point_as_reference}
+        **{"use_lowest_point_as_reference": use_lowest_point_as_reference}
     )
     target_model_cls = dm.CrossSectionLocation
     layer = make_layer(target_model_cls.__tablename__)
