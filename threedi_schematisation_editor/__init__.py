@@ -87,6 +87,13 @@ from threedi_schematisation_editor.vector_data_importer.dialogs.import_features 
     ImportFeaturesDialog,
     ImportStructuresDialog,
 )
+
+
+from threedi_schematisation_editor.vector_data_importer.dialogs.load_schematisation import (
+    LoadSchematisationDialog,
+)
+from threedi_schematisation_editor.vector_data_importer.views.wizard import BaseWizard
+
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
 
@@ -176,6 +183,11 @@ class ThreediSchematisationEditorPlugin:
         self.toggle_active_project_actions()
         self.active_schematisation_changed()
         self.ensure_sqlite_wal_status()
+        # TODO: remove this!
+        self.load_schematisation(
+            "/home/margriet/qgis_workdir/test_253_import_csd/test.gpkg"
+        )
+        self.action_import_features.menu().actions()[1].trigger()
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
@@ -418,6 +430,7 @@ class ThreediSchematisationEditorPlugin:
     def import_external(self, model_cls, dialog_cls):
         if not self.model_gpkg:
             return
+        # import_dlg = BaseWizard()
         import_dlg = dialog_cls(model_cls, self.model_gpkg, self.layer_manager, self.uc)
         import_dlg.exec_()
 
