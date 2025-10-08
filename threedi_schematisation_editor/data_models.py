@@ -71,17 +71,18 @@ class ModelObject:
         return namespace
 
     @staticmethod
-    def default_display_name(str):
+    def default_display_name(display_name):
         REPLACEMENTS = [
             (r"\bcross section\b", "cross-section"),
-            (r"\bid\b", "ID"),
-            (r"\btags\b", "Tag"),
+            (r"\btags\b", "tag"),
         ]
-        display_name = str.replace("_", " ").capitalize()
         for pattern, replacement in REPLACEMENTS:
             display_name = re.sub(
                 pattern, replacement, display_name, flags=re.IGNORECASE
             )
+        display_name = display_name.replace("_", " ").capitalize()
+        # replace ID after capitalization so ID won't become Id
+        display_name = re.sub(r"\bid\b", "ID", display_name, flags=re.IGNORECASE)
         return display_name
 
     @classmethod
@@ -108,6 +109,10 @@ class ModelObject:
 
     @staticmethod
     def obsolete_fields() -> set:
+        return set()
+
+    @classmethod
+    def hidden_fields(cls) -> set:
         return set()
 
 

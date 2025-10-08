@@ -87,6 +87,11 @@ from threedi_schematisation_editor.vector_data_importer.dialogs.import_features 
     ImportFeaturesDialog,
     ImportStructuresDialog,
 )
+from threedi_schematisation_editor.vector_data_importer.wizard.wizard import (
+    ImportCrossSectionData,
+    ImportStructureWizard,
+    VDIWizard,
+)
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
 
@@ -176,6 +181,11 @@ class ThreediSchematisationEditorPlugin:
         self.toggle_active_project_actions()
         self.active_schematisation_changed()
         self.ensure_sqlite_wal_status()
+        # TODO: remove this!
+        self.load_schematisation(
+            "/home/margriet/qgis_workdir/test_253_import_csd/test.gpkg"
+        )
+        self.action_import_features.menu().actions()[3].trigger()
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
@@ -418,20 +428,21 @@ class ThreediSchematisationEditorPlugin:
     def import_external(self, model_cls, dialog_cls):
         if not self.model_gpkg:
             return
-        import_dlg = dialog_cls(model_cls, self.model_gpkg, self.layer_manager, self.uc)
+        # import_dlg = dialog_cls(model_cls)
+        import_dlg = dialog_cls(model_cls, self.model_gpkg, self.layer_manager)
         import_dlg.exec_()
 
     def import_external_connection_nodes(self):
-        self.import_external(dm.ConnectionNode, ImportFeaturesDialog)
+        self.import_external(dm.ConnectionNode, VDIWizard)
 
     def import_external_cross_section_data(self):
-        self.import_external(dm.CrossSectionData, ImportCrossSectionDataDialog)
+        self.import_external(dm.CrossSectionData, ImportCrossSectionData)
 
     def import_external_cross_section_locations(self):
-        self.import_external(dm.CrossSectionLocation, ImportCrossSectionLocationDialog)
+        self.import_external(dm.CrossSectionLocation, VDIWizard)
 
     def import_external_structures(self, model_cls):
-        self.import_external(model_cls, ImportStructuresDialog)
+        self.import_external(model_cls, ImportStructureWizard)
 
     def import_external_culverts(self):
         self.import_external_structures(dm.Culvert)
