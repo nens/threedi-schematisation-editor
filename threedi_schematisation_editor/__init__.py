@@ -1,5 +1,4 @@
 # Copyright (C) 2025 by Lutra Consulting
-import logging
 import os.path
 import platform
 from collections import defaultdict
@@ -60,6 +59,9 @@ from threedi_schema import ThreediDatabase
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
+from threedi_schematisation_editor.load_schematisation.load_schematisation import (
+    LoadSchematisationDialog,
+)
 from threedi_schematisation_editor.processing import (
     ThreediSchematisationEditorProcessingProvider,
 )
@@ -84,9 +86,6 @@ from threedi_schematisation_editor.vector_data_importer.dialogs.import_features 
     ImportCrossSectionLocationDialog,
     ImportFeaturesDialog,
     ImportStructuresDialog,
-)
-from threedi_schematisation_editor.vector_data_importer.dialogs.load_schematisation import (
-    LoadSchematisationDialog,
 )
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
