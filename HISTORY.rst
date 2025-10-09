@@ -13,6 +13,8 @@ History
 - Add importer for cross section data (#253)
 - Fix crashes during project load (#437)
 - Simplify setting display names for data models
+- Add support for validation of configuration files for vector data importing (#441)
+- Move code for load schematisation to its own folder
 
 
 2.3.4 (2025-10-01)

@@ -106,42 +106,6 @@ class FeatureManager:
             self.next_id += 1
 
 
-class ConversionSettings:
-    def __init__(self, conversion_config):
-        self.integrate_pipes = conversion_config.get("edit_pipes", False)
-        self.integrate_channels = conversion_config.get("edit_channels", False)
-        self.use_snapping = conversion_config.get("use_snapping", False)
-        if self.use_snapping:
-            self.snapping_distance = conversion_config.get("snapping_distance")
-        else:
-            self.snapping_distance = DEFAULT_INTERSECTION_BUFFER
-        self.minimum_channel_length = conversion_config.get(
-            "minimum_channel_length", DEFAULT_MINIMUM_CHANNEL_LENGTH
-        )
-        self.create_connection_nodes = conversion_config.get(
-            "create_connection_nodes", False
-        )
-        self.length_source_field = conversion_config.get("length_source_field", None)
-        self.length_fallback_value = conversion_config.get(
-            "length_fallback_value", 10.0
-        )
-        self.azimuth_source_field = conversion_config.get("azimuth_source_field", None)
-        self.azimuth_fallback_value = conversion_config.get(
-            "azimuth_fallback_value", 90.0
-        )
-        self.edit_channels = conversion_config.get("edit_channels", False)
-        self.join_field_src = conversion_config.get("join_field_src", None)
-        self.join_field_tgt = conversion_config.get("join_field_tgt", None)
-        self.group_by_field = conversion_config.get("group_by", None)
-        self.order_by_field = conversion_config.get("order_by", None)
-        self.set_lowest_point_to_zero = conversion_config.get(
-            "set_lowest_point_to_zero", False
-        )
-        self.use_lowest_point_as_reference = conversion_config.get(
-            "use_lowest_point_as_reference", False
-        )
-
-
 class ColumnImportMethod(Enum):
     AUTO = "auto"
     ATTRIBUTE = "source_attribute"

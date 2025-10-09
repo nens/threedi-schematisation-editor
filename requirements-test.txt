@@ -13,3 +13,7 @@ Shapely
 h5netcdf
 threedi-mi-utils
 hydxlib
+pydantic
+pydantic_core
+typing_inspection
+annotated_types
