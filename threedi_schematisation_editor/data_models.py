@@ -43,6 +43,7 @@ from threedi_schematisation_editor.enumerators import (
 )
 
 DISPLAY_NAME_FIELD = "display_name"
+DISPLAY_UNIT_FIELD = "display_unit"
 
 
 class HighPrecisionFloat(float):
@@ -68,11 +69,23 @@ class ModelObject:
         namespace = SimpleNamespace(**field_names_dict)
         return namespace
 
+    @staticmethod
+    def default_display_name(str):
+        return (
+            str.replace("_", " ").capitalize().replace("id", "ID").replace("Id", "ID")
+        )
+
     @classmethod
     def display_names(cls) -> list:
-        return [
-            field.metadata.get(DISPLAY_NAME_FIELD, field.name) for field in fields(cls)
-        ]
+        display_names = []
+        for field in fields(cls):
+            display_name = field.metadata.get(
+                DISPLAY_NAME_FIELD, cls.default_display_name(field.name)
+            )
+            if DISPLAY_UNIT_FIELD in field.metadata:
+                display_name += f" [{field.metadata[DISPLAY_UNIT_FIELD]}]"
+            display_names.append(display_name)
+        return display_names
 
     @classmethod
     def fields_display_names(cls) -> dict:
