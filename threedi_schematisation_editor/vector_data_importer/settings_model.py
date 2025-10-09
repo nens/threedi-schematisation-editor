@@ -1,0 +1,140 @@
+from dataclasses import fields
+from typing import Any, Optional, Type
+
+from pydantic import BaseModel, field_validator, model_validator
+
+from threedi_schematisation_editor.vector_data_importer.utils import (
+    DEFAULT_INTERSECTION_BUFFER,
+    DEFAULT_MINIMUM_CHANNEL_LENGTH,
+    ColumnImportMethod,
+)
+
+
+class ConversionSettings(BaseModel):
+    """Model for the conversion_settings field"""
+
+    use_snapping: bool = False
+    snapping_distance: float = DEFAULT_INTERSECTION_BUFFER
+    minimum_channel_length: float = DEFAULT_MINIMUM_CHANNEL_LENGTH
+    create_connection_nodes: bool = False
+    edit_channels: bool = False
+    edit_pipes: bool = False
+    length_source_field: str = ""
+    length_fallback_value: float = 1.0
+    azimuth_source_field: str = ""
+    azimuth_fallback_value: float = 90.0
+    set_lowest_point_to_zero: bool = False
+    use_lowest_point_as_reference: bool = False
+    # These are odd fields because they actually use a field mapping
+    # In the new UI they will be moved to a field map, so for now we just validate
+    # that they are dicts
+    join_field_src: dict = {}
+    join_field_tgt: dict = {}
+    order_by_field: dict = {}
+
+
+class FieldMapConfigExpressionMissingError(ValueError):
+    pass
+
+
+class FieldMapConfigDefaultValueMissingError(ValueError):
+    pass
+
+
+class FieldMapConfigSourceAttributeMissingError(ValueError):
+    pass
+
+
+class FieldMapConfigMethodMissingError(ValueError):
+    pass
+
+
+class FieldMapConfig(BaseModel):
+    method: ColumnImportMethod
+    source_attribute: Optional[str] = None
+    expression: Optional[str] = None
+    default_value: Optional[Any] = None
+
+    # TODO: consider if we want to keep dict access support
+    def get(self, key, default=None):
+        return self.dict().get(key, default)
+
+    def __getitem__(self, item):
+        return self.dict().get(item)
+
+    def dict(self, **kwargs):
+        return super().dict(**kwargs)
+
+    @field_validator("method", mode="before")
+    def validate_method_presence(cls, value):
+        if value is None:
+            raise FieldMapConfigMethodMissingError("The 'method' field is required")
+        return value
+
+    @model_validator(mode="after")
+    def validate_required_fields(self) -> "FieldConfig":
+        method = self.method
+
+        # For expression method, expression is required
+        if method == ColumnImportMethod.EXPRESSION and not self.expression:
+            raise FieldMapConfigExpressionMissingError(
+                "When method is 'expression', 'expression' field is required"
+            )
+
+        # For default method, default_value is required
+        if method == ColumnImportMethod.DEFAULT and self.default_value is None:
+            raise FieldMapConfigDefaultValueMissingError(
+                "When method is 'default', 'default_value' field is required"
+            )
+
+        # For source_attribute method, source_attribute is required
+        if method == ColumnImportMethod.ATTRIBUTE and not self.source_attribute:
+            raise FieldMapConfigSourceAttributeMissingError(
+                "When method is 'source_attribute', 'source_attribute' field is required"
+            )
+
+        return self
+
+
+class FieldsSectionValidator:
+    """Validator for a fields section against a dataclass."""
+
+    def __init__(self, dataclass_type: type):
+        """
+        Initialize validator for a specific dataclass.
+
+        Args:
+            dataclass_type: The dataclass to validate against
+        """
+        self.dataclass_type = dataclass_type
+        self.expected_fields = {f.name for f in fields(dataclass_type)}
+
+    def validate(self, **fields_data) -> "FieldsSection":
+        """
+        Validate a fields section.
+
+        Args:
+            fields_data: Dictionary mapping field names to field configurations
+
+        Returns:
+            FieldsSection model with validated field configurations
+
+        Raises:
+            ValueError: If validation fails
+        """
+        # First, validate each field configuration with Pydantic
+        validated_fields = {}
+        for field_name, field_config in fields_data.items():
+            if field_name not in self.expected_fields:
+                # ignore
+                continue
+            try:
+                validated_fields[field_name] = FieldMapConfig(**field_config)
+            except Exception as e:
+                raise ValueError(f"Invalid configuration for field '{field_name}': {e}")
+        return validated_fields
+
+
+def get_field_map_config(field_config: dict, model_cls: Type):
+    validator = FieldsSectionValidator(model_cls)
+    return validator.validate(**field_config)

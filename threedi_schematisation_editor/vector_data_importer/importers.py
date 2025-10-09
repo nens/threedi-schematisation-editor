@@ -22,7 +22,12 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionLocationProcessor,
     LineProcessor,
 )
-from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
+from threedi_schematisation_editor.vector_data_importer.settings_model import (
+    ConversionSettings,
+    get_field_map_config,
+)
+
+# from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
 
 
 class Importer:
@@ -34,8 +39,7 @@ class Importer:
 
     @cached_property
     def conversion_settings(self):
-        conversion_config = self.import_settings.get("conversion_settings", {})
-        return ConversionSettings(conversion_config)
+        return ConversionSettings(**self.import_settings.get("conversion_settings", {}))
 
     @cached_property
     def external_source_name(self):
@@ -144,11 +148,14 @@ class SpatialImporter(Importer):
             else node_layer
         )
         self.fields_configurations = {
-            target_model_cls: self.import_settings.get("fields", {}),
+            target_model_cls: get_field_map_config(
+                self.import_settings.get("fields", {}), target_model_cls
+            )
         }
         if target_model_cls != dm.ConnectionNode:
-            self.fields_configurations[dm.ConnectionNode] = self.import_settings.get(
-                "connection_node_fields", {}
+            self.fields_configurations[dm.ConnectionNode] = get_field_map_config(
+                import_settings.get("connection_node_fields", {}),
+                dm.ConnectionNode,
             )
         self.integrator = None
         self.processor = None
@@ -236,11 +243,11 @@ class LinesImporter(SpatialImporter):
             self.fields_configurations,
             self.conversion_settings,
         )
-        if self.conversion_settings.integrate_channels:
+        if self.conversion_settings.edit_channels:
             self.integrator = ChannelIntegrator.from_importer(
                 conduit_layer, cross_section_location_layer, self
             )
-        elif self.conversion_settings.integrate_pipes and self.target_model_cls in [
+        elif self.conversion_settings.edit_pipes and self.target_model_cls in [
             dm.Weir,
             dm.Orifice,
         ]:

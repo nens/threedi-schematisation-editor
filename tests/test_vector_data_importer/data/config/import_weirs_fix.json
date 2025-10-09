@@ -136,8 +136,8 @@
       "source_attribute": ""
     },
     "exchange_level": {
-      "method": "default",
-      "source_attribute": ""
+      "method": "source_attribute",
+      "source_attribute": "bank_level"
     },
     "exchange_type": {
       "method": "default",
