@@ -1,11 +1,12 @@
+from pathlib import Path
+
 from qgis.core import QgsSettings
+from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QItemSelectionModel, Qt
 from qgis.PyQt.QtGui import QStandardItem, QStandardItemModel
 
-from threedi_schematisation_editor.vector_data_importer.dialogs import (
-    load_basecls,
-    load_uicls,
-)
+ui_path = Path(__file__).parent.joinpath("ui")
+load_basecls, load_uicls = uic.loadUiType(ui_path.joinpath("load_schematisation.ui"))
 
 
 class LoadSchematisationDialog(load_basecls, load_uicls):
