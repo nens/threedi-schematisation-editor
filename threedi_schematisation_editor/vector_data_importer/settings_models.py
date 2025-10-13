@@ -20,7 +20,7 @@ class ConnectionNodeSettingsModel(BaseModel):
 
 
 class IntegrationSettingsModel(BaseModel):
-    integrate_mode: Optional[str] = None  # TODO make enum
+    integration_mode: Optional[str] = None  # TODO make enum
     snap_distance: float = 1.0
     min_length: float = 1.0
 

@@ -23,6 +23,7 @@ from qgis.PyQt.QtWidgets import (
 
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     ConnectionNodeSettingsModel,
+    IntegrationSettingsModel,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
     DefaultValueDelegate,
@@ -198,39 +199,38 @@ class PointToLIneConversionSettingsWidget(QWidget):
 class IntegrationSettingsWidget(QWidget):
     def __init__(self):
         super().__init__()
-        # self.model = IntegrationSettingsModel()
+        self.model = IntegrationSettingsModel()
         self.setup_ui()
-        self.integrate_on = None
 
     def update_integrate_on(self, value: Optional[str], checked: bool):
         # set integrate_on to specified value, but only if checked
         if checked:
-            self.integrate_on = value
+            self.model.integration_mode = value
 
     def enable_integration_settings(self):
-        if self.integrate_on:
+        if self.model.integration_mode:
             self.settings_container.setEnabled(True)
         else:
             self.settings_container.setEnabled(False)
 
     def setup_integration_mode_radio_buttons(self, group_box):
         # Create radio buttons
-        use_channels = QRadioButton("Channels")
-        use_pipes = QRadioButton("Pipes")
-        no_integration = QRadioButton("None")
+        self.use_channels = QRadioButton("Channels")
+        self.use_pipes = QRadioButton("Pipes")
+        self.no_integration = QRadioButton("None")
         # Add all buttons to group to simplify handling behavior
         button_group = QButtonGroup(self)
-        button_group.addButton(use_channels)
-        button_group.addButton(use_pipes)
-        button_group.addButton(no_integration)
+        button_group.addButton(self.use_channels)
+        button_group.addButton(self.use_pipes)
+        button_group.addButton(self.no_integration)
         # Explicitly link each radio button to updating the integrate_on settings
-        use_channels.toggled.connect(
+        self.use_channels.toggled.connect(
             lambda checked: self.update_integrate_on("channels", checked)
         )
-        use_pipes.toggled.connect(
+        self.use_pipes.toggled.connect(
             lambda checked: self.update_integrate_on("pipes", checked)
         )
-        no_integration.toggled.connect(
+        self.no_integration.toggled.connect(
             lambda checked: self.update_integrate_on(None, checked)
         )
         # Link all buttons to updating the ingegration settings
@@ -239,7 +239,6 @@ class IntegrationSettingsWidget(QWidget):
         radio_layout = QVBoxLayout()
         for button in button_group.buttons():
             radio_layout.addWidget(button)
-        group_box.setLayout(radio_layout)
 
     def setup_integration_settings(self, settings_container):
         grid_layout = QGridLayout()
@@ -248,10 +247,10 @@ class IntegrationSettingsWidget(QWidget):
         grid_layout.addWidget(
             QLabel("Minimum length of a channel/pipe after edit"), 1, 0
         )
-        snap_distance = QDoubleSpinBox()
-        min_length = QDoubleSpinBox()
-        grid_layout.addWidget(snap_distance, 0, 1)
-        grid_layout.addWidget(min_length, 1, 1)
+        self.snap_distance = QDoubleSpinBox()
+        self.min_length = QDoubleSpinBox()
+        grid_layout.addWidget(self.snap_distance, 0, 1)
+        grid_layout.addWidget(self.min_length, 1, 1)
         settings_container.setLayout(grid_layout)
         settings_container.setEnabled(False)
 
@@ -269,19 +268,18 @@ class IntegrationSettingsWidget(QWidget):
         main_layout.addWidget(integration_mode_widget)
         main_layout.addWidget(self.settings_container)
         self.setLayout(main_layout)
-
-    def save_settings_to_json(self):
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Open Settings", str(Path.home()), "JSON Files (*.json)"
-        )
-        if file_path:
-            with open(file_path, "r") as f:
-                settings = json.load(f)
-            # Get the wizard instance and its pages
-            self.wizard().deserialize(settings)
+        self.deserialize({})
 
     def serialize(self):
-        return {}
+        return self.model.model_dump()
 
     def deserialize(self, data):
-        pass
+        self.model = self.model.model_copy(update=data)
+        if not self.model.integration_mode:
+            self.no_integration.setChecked(True)
+        elif self.model.integration_mode == "channels":
+            self.use_channels.setChecked(True)
+        elif self.model.integration_mode == "pipes":
+            self.use_pipes.setChecked(True)
+        self.snap_distance.setValue(self.model.snap_distance)
+        self.min_length.setValue(self.model.min_length)
