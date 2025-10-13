@@ -1,4 +1,5 @@
 from dataclasses import fields
+from enum import Enum
 from typing import Any, Optional, Type
 
 from pydantic import BaseModel, field_validator, model_validator
@@ -8,6 +9,12 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     DEFAULT_MINIMUM_CHANNEL_LENGTH,
     ColumnImportMethod,
 )
+
+
+class IntegrationMode(Enum):
+    NONE = "None"
+    CHANNELS = "channels"
+    PIPES = "pipes"
 
 
 class ConnectionNodeSettingsModel(BaseModel):
@@ -20,7 +27,7 @@ class ConnectionNodeSettingsModel(BaseModel):
 
 
 class IntegrationSettingsModel(BaseModel):
-    integration_mode: Optional[str] = None  # TODO make enum
+    integration_mode: IntegrationMode = IntegrationMode.NONE
     snap_distance: float = 1.0
     min_length: float = 1.0
 

@@ -23,6 +23,7 @@ from qgis.PyQt.QtWidgets import (
 
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     ConnectionNodeSettingsModel,
+    IntegrationMode,
     IntegrationSettingsModel,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
@@ -202,43 +203,47 @@ class IntegrationSettingsWidget(QWidget):
         self.model = IntegrationSettingsModel()
         self.setup_ui()
 
-    def update_integrate_on(self, value: Optional[str], checked: bool):
+    def update_integrate_on(self, checked: bool):
         # set integrate_on to specified value, but only if checked
-        if checked:
-            self.model.integration_mode = value
+        for integration_mode, radio_button in self.integration_mode_map.items():
+            if radio_button.isChecked():
+                self.model.integration_mode = integration_mode
+                break
 
     def enable_integration_settings(self):
-        if self.model.integration_mode:
-            self.settings_container.setEnabled(True)
-        else:
+        if self.model.integration_mode == IntegrationMode.NONE:
             self.settings_container.setEnabled(False)
+        else:
+            self.settings_container.setEnabled(True)
 
     def setup_integration_mode_radio_buttons(self, group_box):
         # Create radio buttons
-        self.use_channels = QRadioButton("Channels")
-        self.use_pipes = QRadioButton("Pipes")
-        self.no_integration = QRadioButton("None")
+        use_channels = QRadioButton("Channels")
+        use_pipes = QRadioButton("Pipes")
+        no_integration = QRadioButton("None")
         # Add all buttons to group to simplify handling behavior
         button_group = QButtonGroup(self)
-        button_group.addButton(self.use_channels)
-        button_group.addButton(self.use_pipes)
-        button_group.addButton(self.no_integration)
+        button_group.addButton(no_integration)
+        button_group.addButton(use_channels)
+        button_group.addButton(use_pipes)
+        # Map radio buttons to IntegrationMode enum
+        self.integration_mode_map = {
+            IntegrationMode.NONE: no_integration,
+            IntegrationMode.CHANNELS: use_channels,
+            IntegrationMode.PIPES: use_pipes,
+        }
         # Explicitly link each radio button to updating the integrate_on settings
-        self.use_channels.toggled.connect(
-            lambda checked: self.update_integrate_on("channels", checked)
-        )
-        self.use_pipes.toggled.connect(
-            lambda checked: self.update_integrate_on("pipes", checked)
-        )
-        self.no_integration.toggled.connect(
-            lambda checked: self.update_integrate_on(None, checked)
-        )
+        for integration_mode, radio_button in self.integration_mode_map.items():
+            radio_button.toggled.connect(
+                lambda checked: self.update_integrate_on(checked)
+            )
         # Link all buttons to updating the ingegration settings
         button_group.buttonToggled.connect(self.enable_integration_settings)
         # Organize vertically and add to layout
         radio_layout = QVBoxLayout()
         for button in button_group.buttons():
             radio_layout.addWidget(button)
+        group_box.setLayout(radio_layout)
 
     def setup_integration_settings(self, settings_container):
         grid_layout = QGridLayout()
@@ -275,11 +280,6 @@ class IntegrationSettingsWidget(QWidget):
 
     def deserialize(self, data):
         self.model = self.model.model_copy(update=data)
-        if not self.model.integration_mode:
-            self.no_integration.setChecked(True)
-        elif self.model.integration_mode == "channels":
-            self.use_channels.setChecked(True)
-        elif self.model.integration_mode == "pipes":
-            self.use_pipes.setChecked(True)
+        self.integration_mode_map[self.model.integration_mode].setChecked(True)
         self.snap_distance.setValue(self.model.snap_distance)
         self.min_length.setValue(self.model.min_length)

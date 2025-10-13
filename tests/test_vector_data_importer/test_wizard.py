@@ -3,6 +3,7 @@ import pytest
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     ConnectionNodeSettingsModel,
+    IntegrationMode,
     IntegrationSettingsModel,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard import VDIWizard
@@ -18,44 +19,50 @@ def test_wizard(qgis_application):
 
 
 class TestIntegrationSettingsWidget:
+    def check_radio_button_state(self, widget, set_integration_mode):
+        for integration_mode, radio_button in widget.integration_mode_map.items():
+            if integration_mode == set_integration_mode:
+                assert radio_button.isChecked()
+            else:
+                assert not radio_button.isChecked()
+
     def test_defaults(self, qgis_application):
         widget = IntegrationSettingsWidget()
         model = IntegrationSettingsModel()
-        assert widget.no_integration.isChecked()
-        assert not widget.use_pipes.isChecked()
-        assert not widget.use_channels.isChecked()
+        self.check_radio_button_state(widget, IntegrationMode.NONE)
         assert widget.snap_distance.value() == model.snap_distance
         assert widget.min_length.value() == model.min_length
 
     def test_deserialize(self, qgis_application):
         widget = IntegrationSettingsWidget()
         settings = {
-            "integration_mode": "pipes",
+            "integration_mode": IntegrationMode.PIPES,
             "snap_distance": 10.5,
             "min_length": 10.5,
         }
         widget.deserialize(settings)
-        assert widget.use_pipes.isChecked()
-        assert not widget.use_channels.isChecked()
-        assert not widget.no_integration.isChecked()
+        self.check_radio_button_state(widget, settings["integration_mode"])
         assert widget.snap_distance.value() == settings["snap_distance"]
         assert widget.min_length.value() == settings["min_length"]
 
     def test_serialize(self, qgis_application):
         widget = IntegrationSettingsWidget()
         settings = {
-            "integration_mode": "pipes",
+            "integration_mode": IntegrationMode.PIPES,
             "snap_distance": 10.5,
             "min_length": 10.5,
         }
         widget.deserialize(settings)
         assert widget.serialize() == settings
 
-    @pytest.mark.parametrize("integration_mode", [None, "pipes", "channels"])
+    @pytest.mark.parametrize(
+        "integration_mode",
+        [IntegrationMode.NONE, IntegrationMode.PIPES, IntegrationMode.CHANNELS],
+    )
     def test_enable_integration_settings(self, integration_mode, qgis_application):
         widget = IntegrationSettingsWidget()
         widget.deserialize({"integration_mode": integration_mode})
-        expected_enabled = True if integration_mode else False
+        expected_enabled = False if integration_mode == IntegrationMode.NONE else True
         assert widget.min_length.isEnabled() == expected_enabled
         assert widget.snap_distance.isEnabled() == expected_enabled
 
