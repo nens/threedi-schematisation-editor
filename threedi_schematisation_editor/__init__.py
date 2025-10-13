@@ -87,7 +87,7 @@ from threedi_schematisation_editor.vector_data_importer.dialogs.import_features 
     ImportFeaturesDialog,
     ImportStructuresDialog,
 )
-from threedi_schematisation_editor.vector_data_importer.wizard.wizard import (
+from threedi_schematisation_editor.vector_data_importer.wizard import (
     ImportCrossSectionData,
     ImportStructureWizard,
     VDIWizard,

@@ -210,7 +210,7 @@ class FieldMapPage(QWizardPage):
                         editor.setEnabled(False)
 
     def serialize(self):
-        {}
+        return {}
 
     def deserialize(self, data):
         return {}
