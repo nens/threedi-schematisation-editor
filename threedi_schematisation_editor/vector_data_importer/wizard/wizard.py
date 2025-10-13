@@ -1,13 +1,13 @@
+import json
 from functools import cached_property
+from pathlib import Path
 from typing import Any, Optional, Type
 
-from qgis.PyQt.QtWidgets import QWidget, QWizard, QWizardPage
+from qgis.core import Qgis, QgsMessageLog
+from qgis.PyQt.QtWidgets import QFileDialog, QMessageBox, QWidget, QWizard, QWizardPage
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.dialogs.utils import create_font
-from threedi_schematisation_editor.vector_data_importer.importers import (
-    ConnectionNodesImporter,
-)
 from threedi_schematisation_editor.vector_data_importer.wizard.pages import (
     FieldMapPage,
     RunPage,
@@ -57,6 +57,7 @@ class VDIWizard(QWizard):
         self.resize(1000, 750)
 
         # add pages
+        # self.settings_page = SettingsPage()
         self.addPage(self.settings_page)
         if self.field_map_page:
             self.addPage(self.field_map_page)
@@ -68,6 +69,53 @@ class VDIWizard(QWizard):
     def selected_layer(self):
         return self.settings_page.generic_settings.selected_layer
 
+    def load_settings_from_json(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Open Settings", str(Path.home()), "JSON Files (*.json)"
+        )
+        if file_path:
+            with open(file_path, "r") as f:
+                settings = json.load(f)
+            # Get the wizard instance and its pages
+            try:
+                self.deserialize(settings)
+                QMessageBox.information(
+                    self, "Success", "Settings loaded successfully!"
+                )
+            except Exception as e:
+                QMessageBox.critical(
+                    self, "Error", f"Failed to load settings: {str(e)}"
+                )
+
+    def deserialize(self, data):
+        for page_id in self.pageIds():
+            page = self.page(page_id)
+            if hasattr(page, "deserialize"):
+                page.deserialize(data)
+
+    def save_settings_to_json(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Settings", str(Path.home()), "JSON Files (*.json)"
+        )
+        if file_path:
+            try:
+                settings = self.serialize()
+                with open(file_path, "w") as f:
+                    json.dump(settings, f, indent=4)
+                QMessageBox.information(self, "Success", "Settings saved successfully!")
+            except Exception as e:
+                QMessageBox.critical(
+                    self, "Error", f"Failed to save settings: {str(e)}"
+                )
+
+    def serialize(self):
+        data = {}
+        for page_id in self.pageIds():
+            page = self.page(page_id)
+            if hasattr(page, "serialize"):
+                data.update(page.serialize())
+        return data
+
 
 class ImportStructureWizard(VDIWizard):
     @cached_property
@@ -77,9 +125,9 @@ class ImportStructureWizard(VDIWizard):
     @cached_property
     def settings_page(self):
         return SettingsPage(
-            connection_node_settings=True,
-            point_to_line_conversion=True,
-            integration_settings=True,
+            add_connection_node_settings=True,
+            add_point_to_line_settings=True,
+            add_integration_settings=True,
         )
 
     @property

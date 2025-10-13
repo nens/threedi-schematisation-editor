@@ -184,6 +184,12 @@ class PointToLIneConversionSettings(QWidget):
             for col in [1, 2, 3, 4]:
                 self.table_view.openPersistentEditor(self.table_model.index(row, col))
 
+    def serialize(self):
+        return {}
+
+    def deserialize(self, data):
+        pass
+
 
 class IntegrationSettings(QWidget):
     def __init__(self):
@@ -258,3 +264,19 @@ class IntegrationSettings(QWidget):
         main_layout.addWidget(integration_mode_widget)
         main_layout.addWidget(self.settings_container)
         self.setLayout(main_layout)
+
+    def save_settings_to_json(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Open Settings", str(Path.home()), "JSON Files (*.json)"
+        )
+        if file_path:
+            with open(file_path, "r") as f:
+                settings = json.load(f)
+            # Get the wizard instance and its pages
+            self.wizard().deserialize(settings)
+
+    def serialize(self):
+        return {}
+
+    def deserialize(self, data):
+        pass
