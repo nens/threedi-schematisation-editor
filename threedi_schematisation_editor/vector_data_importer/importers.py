@@ -22,7 +22,7 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionLocationProcessor,
     LineProcessor,
 )
-from threedi_schematisation_editor.vector_data_importer.settings_model import (
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
     ConversionSettings,
     get_field_map_config,
 )

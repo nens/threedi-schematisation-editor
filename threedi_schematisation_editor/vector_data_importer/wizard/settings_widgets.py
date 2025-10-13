@@ -21,6 +21,9 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
+    ConnectionNodeSettingsModel,
+)
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
     DefaultValueDelegate,
     FieldMapDelegate,
@@ -28,12 +31,11 @@ from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model i
     Row,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.models import (
-    ConnectionNodeSettingsModel,
     GenericSettingsModel,
 )
 
 
-class GenericSettings(QWidget):
+class GenericSettingsWidget(QWidget):
     layer_changed = pyqtSignal(str)  # Add this signal
 
     def __init__(self):
@@ -72,11 +74,11 @@ class GenericSettings(QWidget):
     def update_use_selected(self, checked):
         self.model.use_selected_features = checked
 
-    def get_settings(self):
+    def serialize(self):
         return self.model
 
 
-class ConnectionNodeSettings(QWidget):
+class ConnectionNodeSettingsWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.model = ConnectionNodeSettingsModel()
@@ -86,15 +88,16 @@ class ConnectionNodeSettings(QWidget):
         # Create widgets
         self.create_nodes = QCheckBox("Create new connection nodes if needed")
         self.snap = QCheckBox("Snap to existing connection nodes within: ")
+        self.snap.setEnabled(False)
         self.snap_distance = QDoubleSpinBox()
         self.snap_distance.setRange(0, 100)
         self.snap_distance.setSuffix(" m")
         self.snap_distance.setDecimals(1)
-        self.snap_distance.setValue(1)
         self.snap_distance.setEnabled(False)
 
         # Connect widgets to model updates
         self.create_nodes.toggled.connect(self.update_create_nodes)
+        self.create_nodes.toggled.connect(self.on_create_nodes_toggled)
         self.snap.toggled.connect(self.update_snap_enabled)
         self.snap.toggled.connect(self.on_snap_toggled)
         self.snap_distance.valueChanged.connect(self.update_snap_distance)
@@ -105,6 +108,11 @@ class ConnectionNodeSettings(QWidget):
         layout.addWidget(self.snap)
         layout.addWidget(self.snap_distance)
         self.setLayout(layout)
+        # set all widgets to default values
+        self.deserialize({})
+
+    def on_create_nodes_toggled(self, checked):
+        self.snap.setEnabled(checked)
 
     def on_snap_toggled(self, checked):
         self.snap_distance.setEnabled(checked)
@@ -113,26 +121,22 @@ class ConnectionNodeSettings(QWidget):
         self.model.create_nodes = checked
 
     def update_snap_enabled(self, checked):
-        self.model.snap_enabled = checked
+        self.model.snap = checked
 
     def update_snap_distance(self, value):
         self.model.snap_distance = value
 
     def serialize(self):
-        return self.model.serialize()
+        return self.model.model_dump()
 
     def deserialize(self, data):
-        """Load settings into the model"""
-        self.model.create_nodes = data.get("create_nodes", False)
-        self.model.snap_enabled = data.get("snap_enabled", False)
-        self.model.snap_distance = data.get("snap_distance", 0.0)
-        # Update UI
+        self.model = self.model.model_copy(update=data)
         self.create_nodes.setChecked(self.model.create_nodes)
-        self.snap.setChecked(self.model.snap_enabled)
+        self.snap.setChecked(self.model.snap)
         self.snap_distance.setValue(self.model.snap_distance)
 
 
-class PointToLIneConversionSettings(QWidget):
+class PointToLIneConversionSettingsWidget(QWidget):
     # TODO: consider duplicate code for fieldmap!
     def __init__(self):
         super().__init__()
@@ -191,7 +195,7 @@ class PointToLIneConversionSettings(QWidget):
         pass
 
 
-class IntegrationSettings(QWidget):
+class IntegrationSettingsWidget(QWidget):
     def __init__(self):
         super().__init__()
         # self.model = IntegrationSettingsModel()
@@ -239,6 +243,7 @@ class IntegrationSettings(QWidget):
 
     def setup_integration_settings(self, settings_container):
         grid_layout = QGridLayout()
+        # TODO: update labels on settings
         grid_layout.addWidget(QLabel("Snap to channel/pipe withing"), 0, 0)
         grid_layout.addWidget(
             QLabel("Minimum length of a channel/pipe after edit"), 1, 0

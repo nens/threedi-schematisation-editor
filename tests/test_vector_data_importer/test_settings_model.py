@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from threedi_schematisation_editor.vector_data_importer.settings_model import (
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
     FieldMapConfig,
     FieldMapConfigDefaultValueMissingError,
     FieldMapConfigExpressionMissingError,

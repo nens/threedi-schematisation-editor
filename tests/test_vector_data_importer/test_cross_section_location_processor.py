@@ -15,7 +15,7 @@ from shapely.testing import assert_geometries_equal
 from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionLocationProcessor,
 )
-from threedi_schematisation_editor.vector_data_importer.settings_model import (
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
     ConversionSettings,
 )
 

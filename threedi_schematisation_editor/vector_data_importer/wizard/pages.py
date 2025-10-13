@@ -23,10 +23,10 @@ from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model i
     Row,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets import (
-    ConnectionNodeSettings,
-    GenericSettings,
-    IntegrationSettings,
-    PointToLIneConversionSettings,
+    ConnectionNodeSettingsWidget,
+    GenericSettingsWidget,
+    IntegrationSettingsWidget,
+    PointToLIneConversionSettingsWidget,
 )
 
 
@@ -60,7 +60,7 @@ class SettingsPage(QWizardPage):
         layout = QVBoxLayout(self)
 
         # Top row
-        self.generic_settings = GenericSettings()
+        self.generic_settings = GenericSettingsWidget()
         self.generic_settings.layer_changed.connect(self.completeChanged)
         load_settings_button = QPushButton("Load settings")
         load_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -72,19 +72,21 @@ class SettingsPage(QWizardPage):
 
         # specific settings widgets
         if add_connection_node_settings:
-            self.connection_node_settings = ConnectionNodeSettings()
+            self.connection_node_settings = ConnectionNodeSettingsWidget()
             group_box = QGroupBox("Connection node settings")
             group_box.setLayout(self.connection_node_settings.layout())
             layout.addWidget(group_box)
 
         if add_point_to_line_conversion_settings:
-            self.point_to_line_conversion_settings = PointToLIneConversionSettings()
+            self.point_to_line_conversion_settings = (
+                PointToLIneConversionSettingsWidget()
+            )
             group_box = QGroupBox("Point to line conversion settings")
             group_box.setLayout(self.point_to_line_conversion_settings.layout())
             layout.addWidget(group_box)
 
         if add_integration_settings:
-            self.integration_settings = IntegrationSettings()
+            self.integration_settings = IntegrationSettingsWidget()
             group_box = QGroupBox("Integration settings")
             group_box.setLayout(self.integration_settings.layout())
             layout.addWidget(group_box)

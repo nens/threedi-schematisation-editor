@@ -21,7 +21,7 @@ import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionDataProcessor,
 )
-from threedi_schematisation_editor.vector_data_importer.settings_model import (
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
     ConversionSettings,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (

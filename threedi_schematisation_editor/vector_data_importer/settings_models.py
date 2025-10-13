@@ -10,6 +10,21 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
 )
 
 
+class ConnectionNodeSettingsModel(BaseModel):
+    create_nodes: bool = False
+    snap: bool = False
+    snap_distance: float = 1.0
+
+    def serialize(self):
+        return asdict(self)
+
+
+class IntegrationSettingsModel(BaseModel):
+    integrate_mode: Optional[str] = None  # TODO make enum
+    snap_distance: float = 1.0
+    min_length: float = 1.0
+
+
 class ConversionSettings(BaseModel):
     """Model for the conversion_settings field"""
 
