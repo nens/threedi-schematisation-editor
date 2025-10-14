@@ -110,6 +110,11 @@ class ModelObject:
     def obsolete_fields() -> set:
         return set()
 
+    @classmethod
+    def hidden_fields(cls) -> set:
+        return set()
+
+
 
 @dataclass
 class ConnectionNode(ModelObject):
