@@ -27,10 +27,8 @@ from threedi_schematisation_editor.vector_data_importer.settings_models import (
     IntegrationSettingsModel,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
-    DefaultValueDelegate,
-    FieldMapDelegate,
-    FieldMapModel,
-    Row,
+    FieldMapRow,
+    FieldMapWidget,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.models import (
     GenericSettingsModel,
@@ -139,62 +137,32 @@ class ConnectionNodeSettingsWidget(QWidget):
 
 
 class PointToLIneConversionSettingsWidget(QWidget):
-    # TODO: consider duplicate code for fieldmap!
     def __init__(self):
         super().__init__()
-        # self.model = ConnectionNodeSettingsModel()
+        # TODO replace row dict with actual model ?
+        self.row_dict = {
+            "structure_length": FieldMapRow(label="Structure length"),
+            "azimuth": FieldMapRow(label="Structure direction (azimuth)"),
+        }
         self.setup_ui()
 
     def setup_ui(self):
-        # # Table view for rows
-        self.row_dict = {
-            "structure_length": Row(label="Structure length"),
-            "azimuth": Row(label="Structure direction (azimuth)"),
-        }
-        self.rows = list(self.row_dict.values())
-        self.row_names = list(self.row_dict.keys())
+        self.field_map_widget = FieldMapWidget(self.row_dict)
+        self.table_view = self.field_map_widget.table_view
+        self.table_model = self.field_map_widget.table_model
+        self.table_delegate = self.field_map_widget.table_delegate
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.field_map_widget)
+        self.field_map_widget.open_persistent_editors()
 
-        self.table_view = QTableView()
-        self.table_model = FieldMapModel(self.row_dict)
-        self.table_view.setModel(self.table_model)
-
-        # Delegate for handling custom widget editing
-        self.table_delegate = FieldMapDelegate()
-        self.table_view.setItemDelegate(self.table_delegate)
-        self.table_view.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.table_view.resizeColumnsToContents()
-        self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table_view.verticalHeader().setVisible(False)
-
-        default_value_delegate = DefaultValueDelegate(self.table_view)
-        self.table_view.setItemDelegateForColumn(5, default_value_delegate)
-        self.open_persistent_editors()
-        layout = QVBoxLayout()
-        layout.addWidget(self.table_view)
-        self.setLayout(layout)
-
-        # Calculate the total height needed
-        header_height = self.table_view.horizontalHeader().height()
-        row_height = self.table_view.verticalHeader().defaultSectionSize()
-        total_rows = len(self.rows)
-        content_height = (row_height * total_rows) + header_height
-
-        # Set fixed height and vertical size policy
-        self.table_view.setMinimumHeight(content_height)
-        self.table_view.setMaximumHeight(content_height)
-        self.table_view.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-
-    def open_persistent_editors(self):
-        """Open persistent editors for columns with always-visible widgets"""
-        for row in range(self.table_model.rowCount()):
-            for col in [1, 2, 3, 4]:
-                self.table_view.openPersistentEditor(self.table_model.index(row, col))
+    def update_layer(self, layer):
+        self.field_map_widget.update_layer(layer)
 
     def serialize(self):
-        return {}
+        return self.field_map_widget.serialize()
 
     def deserialize(self, data):
-        pass
+        self.field_map_widget.deserialize(data)
 
 
 class IntegrationSettingsWidget(QWidget):

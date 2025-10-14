@@ -10,6 +10,8 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
 )
 
+# from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import FieldMapModel
+
 
 class IntegrationMode(Enum):
     NONE = "None"
@@ -72,10 +74,19 @@ class FieldMapConfigMethodMissingError(ValueError):
 
 
 class FieldMapConfig(BaseModel):
-    method: ColumnImportMethod
+    method: Optional[ColumnImportMethod] = None
     source_attribute: Optional[str] = None
+    value_map: dict[str, Any] = {}
     expression: Optional[str] = None
     default_value: Optional[Any] = None
+
+    @property
+    def required_field_map(self):
+        return {
+            ColumnImportMethod.ATTRIBUTE: "source_attribute",
+            ColumnImportMethod.EXPRESSION: "expression",
+            ColumnImportMethod.DEFAULT: "default_value",
+        }
 
     # TODO: consider if we want to keep dict access support
     def get(self, key, default=None):
@@ -85,7 +96,7 @@ class FieldMapConfig(BaseModel):
         return self.dict().get(item)
 
     def dict(self, **kwargs):
-        return super().dict(**kwargs)
+        return super().model_dump(**kwargs)
 
     @field_validator("method", mode="before")
     def validate_method_presence(cls, value):
@@ -96,25 +107,23 @@ class FieldMapConfig(BaseModel):
     @model_validator(mode="after")
     def validate_required_fields(self) -> "FieldConfig":
         method = self.method
-
-        # For expression method, expression is required
-        if method == ColumnImportMethod.EXPRESSION and not self.expression:
-            raise FieldMapConfigExpressionMissingError(
-                "When method is 'expression', 'expression' field is required"
-            )
-
-        # For default method, default_value is required
-        if method == ColumnImportMethod.DEFAULT and self.default_value is None:
-            raise FieldMapConfigDefaultValueMissingError(
-                "When method is 'default', 'default_value' field is required"
-            )
-
-        # For source_attribute method, source_attribute is required
-        if method == ColumnImportMethod.ATTRIBUTE and not self.source_attribute:
-            raise FieldMapConfigSourceAttributeMissingError(
-                "When method is 'source_attribute', 'source_attribute' field is required"
-            )
-
+        if (
+            method in self.required_field_map
+            and getattr(self, self.required_field_map[method]) is None
+        ):
+            # TODO: reconsider specific errors
+            if method == ColumnImportMethod.EXPRESSION:
+                raise FieldMapConfigExpressionMissingError(
+                    "When method is 'expression', 'expression' field is required"
+                )
+            elif method == ColumnImportMethod.DEFAULT:
+                raise FieldMapConfigDefaultValueMissingError(
+                    "When method is 'default', 'default_value' field is required"
+                )
+            elif method == ColumnImportMethod.ATTRIBUTE:
+                raise FieldMapConfigSourceAttributeMissingError(
+                    "When method is 'source_attribute', 'source_attribute' field is required"
+                )
         return self
 
 
@@ -160,3 +169,8 @@ class FieldsSectionValidator:
 def get_field_map_config(field_config: dict, model_cls: Type):
     validator = FieldsSectionValidator(model_cls)
     return validator.validate(**field_config)
+
+
+class PointToLineSettingsModel(BaseModel):
+    length: FieldMapConfig
+    azimuth: FieldMapConfig

@@ -1,87 +1,117 @@
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field
+from enum import Enum
 from functools import cached_property
-from typing import Optional
+from typing import Any, Optional
 
+from qgis.core import QgsVectorLayer
 from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt
 from qgis.PyQt.QtGui import QColor
 from qgis.PyQt.QtWidgets import (
+    QAbstractItemView,
     QComboBox,
     QDialog,
     QDialogButtonBox,
+    QHeaderView,
     QLabel,
     QLineEdit,
     QPushButton,
+    QSizePolicy,
     QStyledItemDelegate,
     QStyleOptionViewItem,
+    QTableView,
     QVBoxLayout,
+    QWidget,
 )
 
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
+    FieldMapConfig,
+)
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 
 BACKGROUND_COLOR = "#ff8888"
 
 
-@dataclass
-class Row:
-    label: str
-    method: Optional[str] = None
-    source_attribute: str = ""
-    value_map: str = ""
-    expression: str = ""
-    default_value: str = ""
+class FieldMapColumn(Enum):
+    LABEL = "Field name"
+    METHOD = "Method"
+    SOURCE_ATTRIBUTE = "Source attribute"
+    VALUE_MAP = "Value map"
+    EXPRESSION = "Expression"
+    DEFAULT_VALUE = "Default value"
 
     @staticmethod
-    def header():
-        return [
-            "Field name",
-            "Method",
-            "Source attribute",
-            "Value map",
-            "Expression",
-            "Default value",
-        ]
+    def from_index(index: int) -> "FieldMapColumn":
+        members = tuple(FieldMapColumn)
+        if 0 <= index < len(members):
+            return members[index]
+
+    @staticmethod
+    def to_index(column: "FieldMapColumn") -> int:
+        return tuple(FieldMapColumn).index(column)
+
+
+@dataclass
+class FieldMapRow:
+    label: str
+    config: FieldMapConfig = FieldMapConfig()
+
+    @staticmethod
+    def header() -> list[str]:
+        return [member.value for member in FieldMapColumn]
 
     @cached_property
-    def field_names(self):
-        return [field.name for field in fields(self)]
+    def field_names(self) -> list[str]:
+        return list(type(self.config).model_fields.keys())
 
     @cached_property
-    def field_col_idx_map(self):
-        return {i: field_name for i, field_name in enumerate(self.field_names)}
+    def field_col_idx_map(self) -> dict[int, str]:
+        return {i: field_name for i, field_name in enumerate(self.field_names, 1)}
 
     @cached_property
-    def field_name_map(self):
-        return {field_name: i for i, field_name in enumerate(self.field_names)}
+    def field_name_map(self) -> dict[str, int]:
+        return {field_name: i for i, field_name in enumerate(self.field_names, 1)}
 
-    def _get_required_column(self):
-        method_map = {
-            ColumnImportMethod.ATTRIBUTE.value: self.field_name_map["source_attribute"],
-            ColumnImportMethod.EXPRESSION.value: self.field_name_map["expression"],
-            ColumnImportMethod.DEFAULT.value: self.field_name_map["default_value"],
-        }
-        return method_map.get(self.method)
-
-    def is_editable(self, index):
+    def is_editable(self, index: int) -> bool:
+        """Determine if the column is editable base on column index."""
         # label is never selectable or editable
-        if self.field_col_idx_map[index] == "label":
+        if FieldMapColumn.from_index(index) == FieldMapColumn.LABEL:
             return False
         # method is always selectable and editable
-        if self.field_col_idx_map[index] == "method":
+        if FieldMapColumn.from_index(index) == FieldMapColumn.METHOD:
             return True
         # in any other case the method determines what is editable
         else:
-            return index == self._get_required_column()
+            # identify required attribute, if any
+            required_attribute = self.config.required_field_map.get(self.config.method)
+            # find column where this attribute is expected
+            required_column_idx = self.field_name_map.get(required_attribute, -1)
+            return index == required_column_idx
 
-    def set_value(self, value, index):
+    def set_value(self, value: Any, index: int):
+        """Set value in the data model based on the column index."""
+        # Do not allow setting of the label
+        if FieldMapColumn.from_index(index) == FieldMapColumn.LABEL:
+            return
+        # Retrieve data from config
         field_name = self.field_col_idx_map.get(index)
         if field_name:
-            setattr(self, field_name, value)
+            setattr(self.config, field_name, value)
 
-    def get_value(self, index):
+    def get_value(self, index: int) -> Any | None:
+        """Retrieve value for a column index."""
+        if FieldMapColumn.from_index(index) == FieldMapColumn.LABEL:
+            return self.label
+        # Retrieve data from config
         field_name = self.field_col_idx_map.get(index)
         if field_name:
-            return getattr(self, field_name)
+            return getattr(self.config, field_name)
+
+    def serialize(self) -> dict[str, Any]:
+        return self.config.model_dump()
+
+    def deserialize(self, data: dict[str, Any]) -> None:
+        self.config = FieldMapConfig(**data)
 
 
 class ValueMapDialog(QDialog):
@@ -120,34 +150,25 @@ class ValueMapDialog(QDialog):
 class FieldMapModel(QAbstractTableModel):
     def __init__(self, row_dict, parent=None):
         super().__init__(parent)
+        self.row_dict = row_dict
         self.rows = list(row_dict.values())
-        self.row_names = list(row_dict.keys())
+        self.attr_to_label_map = {
+            attr_name: row.label for attr_name, row in row_dict.items()
+        }
         self.current_layer_attributes = []
 
     def rowCount(self, parent=QModelIndex()):
         return len(self.rows) if self.rows else 0
 
     def columnCount(self, parent=QModelIndex()):
-        return len(self.rows[0].field_names) if self.rows else 0
+        return len(self.rows[0].field_names) + 1 if self.rows else 0
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
-                return Row.header()[section]
+                return FieldMapRow.header()[section]
             elif orientation == Qt.Vertical:
                 return str(section + 1)
-        return None
-
-    def get_placeholder(self, column, row, value):
-        if value is not None and value != "":
-            return None
-        if column == 1 and not row.method:
-            return "required"
-        if column > 1 and row.method:
-            if row.is_editable(column):
-                return "required"
-            else:
-                return "disabled"
         return None
 
     def data(self, index, role=Qt.DisplayRole):
@@ -174,12 +195,22 @@ class FieldMapModel(QAbstractTableModel):
         else:
             return Qt.ItemIsEnabled
 
-    def set_current_layer(self, layer):
+    def set_current_layer(self, layer: QgsVectorLayer):
+        """Update list of available attributes based on the current layer."""
         if layer:
-            self.current_layer_attributes = layer.attributes
+            self.current_layer_attributes = [field.name() for field in layer.fields()]
         else:
             self.current_layer_attributes = []
         self.layoutChanged.emit()
+
+    def serialize(self) -> dict[str, dict[str, Any]]:
+        return {attr_name: row.serialize() for attr_name, row in self.row_dict.items()}
+
+    def deserialize(self, data: dict[str, dict[str, Any]]):
+        for key, row_data in data.items():
+            label = self.attr_to_label_map.get(key)
+            if label:
+                self.row_dict[label].deserialize(row_data)
 
 
 class QsgExpressionWidgetForTableView(QgsFieldExpressionWidget):
@@ -201,37 +232,31 @@ class FieldMapDelegate(QStyledItemDelegate):
         self._editors = {}  # Track editors to prevent recreation
 
     def createEditor(self, parent, option, index):
-        # Check if we already have an editor for this index
         key = (index.row(), index.column())
         if key in self._editors:
             return self._editors[key]
-
-        if index.column() == 1:  # Method column
+        if FieldMapColumn.from_index(index.column()) == FieldMapColumn.METHOD:
             combo = CustomComboBox(parent)
-            combo.addItems([""] + [m.value for m in ColumnImportMethod])
-            # Store the editor
+            combo.addItem("", None)
+            for m in ColumnImportMethod:
+                combo.addItem(str(m), m)
             self._editors[(index.row(), index.column())] = combo
-            # Connect signal for immediate updates
             combo.currentIndexChanged.connect(
                 lambda idx, editor=combo: self.commitData.emit(editor)
             )
-
-            # Style the dropdown list items too (different from the main box)
-            combo.setItemData(
-                0, QColor(255, 0, 0), Qt.ForegroundRole
-            )  # Red text for dropdown item
-
             return combo
-        elif index.column() == 2:  # Source attribute column
+        elif (
+            FieldMapColumn.from_index(index.column()) == FieldMapColumn.SOURCE_ATTRIBUTE
+        ):
             combo = CustomComboBox(parent)
             combo.addItems([""] + index.model().current_layer_attributes)
-            # Connect to handle changes immediately
             combo.currentTextChanged.connect(
                 lambda text, idx=index: self.commitAndCloseEditor(text, idx)
             )
             self._editors[key] = combo
             return combo
-        elif index.column() == 3:  # Value map column
+        elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.VALUE_MAP:
+            # TODO: use real value map
             button = QPushButton(parent)
             current_value_map = (
                 index.data(Qt.EditRole) if index.data(Qt.EditRole) else ""
@@ -239,25 +264,30 @@ class FieldMapDelegate(QStyledItemDelegate):
             button.setText(
                 current_value_map if current_value_map else "Set Value Map..."
             )
-            # Connect button click to open dialog
             button.clicked.connect(
                 lambda checked, idx=index, btn=button: self.openValueMapDialog(idx, btn)
             )
             self._editors[key] = button
             return button
-        elif index.column() == 4:  # Expression column
-            current_expression = index.model().rows[index.row()].expression
+        elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.EXPRESSION:
+            current_expression = index.model().rows[index.row()].config.expression
             widget = QsgExpressionWidgetForTableView(
                 parent, expression=current_expression
             )
-            # Connect expression changes to commit data
             widget.fieldChanged.connect(
                 lambda field, idx=index: self.commitExpressionData(idx, widget)
             )
             self._editors[key] = widget
             return widget
-        elif index.column() == 5:  # Default value column
-            return QLineEdit(parent)
+        elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.DEFAULT_VALUE:
+            current_value = index.model().rows[index.row()].config.default_value
+            widget = QLineEdit(parent)
+            widget.setText(current_value if current_value else "")
+            widget.editingFinished.connect(
+                lambda field, idx=index: self.commitDefaultValueData(idx, widget)
+            )
+            self._editors[key] = widget
+            return widget
         return super().createEditor(parent, option, index)
 
     def openValueMapDialog(self, index, button):
@@ -269,20 +299,13 @@ class FieldMapDelegate(QStyledItemDelegate):
             button.setText(new_value_map if new_value_map else "Set Value Map...")
             index.model().setData(index, new_value_map, Qt.EditRole)
 
+    def commitDefaultValueData(self, index, widget):
+        """Commit default value widget data"""
+        self.commitData.emit(widget)
+
     def commitExpressionData(self, index, widget):
         """Commit expression widget data"""
         self.commitData.emit(widget)
-
-    def commitAndCloseEditor(self, text, index):
-        """Handle combobox selection changes"""
-        # TODO: don't know how this works
-        editor = self.sender()
-        if editor:
-            self.commitData.emit(editor)
-            # After method changes, we need to update widget states
-            # Get the main  window and trigger widget state update
-            view = editor.parent()
-            view.update_widget_states()
 
     def setEditorData(self, editor, index):
         row = index.model().rows[index.row()]
@@ -291,12 +314,11 @@ class FieldMapDelegate(QStyledItemDelegate):
             is_enabled = has_layer
         else:
             is_enabled = has_layer and row.is_editable(index.column())
-        # this setEnabled wins!
         editor.setEnabled(is_enabled)
         if isinstance(editor, QComboBox):
             value = index.data(Qt.EditRole)
             if value:
-                editor.setCurrentText(value)
+                editor.setCurrentText(str(value))
         elif isinstance(editor, QPushButton):
             value = index.data(Qt.EditRole)
             if value or not is_enabled:
@@ -316,23 +338,32 @@ class FieldMapDelegate(QStyledItemDelegate):
                 editor.setStyleSheet(
                     f"QLineEdit {{ background-color: {BACKGROUND_COLOR};}}"
                 )
+        elif isinstance(editor, QLineEdit):
+            value = index.data(Qt.EditRole)
+            editor.setText(value if value else "")
+            if value or not is_enabled:
+                editor.setStyleSheet("")
+            else:
+                editor.setStyleSheet(
+                    f"QLineEdit {{ background-color: {BACKGROUND_COLOR};}}"
+                )
         else:
             super().setEditorData(editor, index)
 
     def setModelData(self, editor, model, index):
         if isinstance(editor, QComboBox):
-            value = editor.currentText()
+            value = editor.currentData()
             model.setData(index, value, Qt.EditRole)
         elif isinstance(editor, QPushButton):
-            # Button doesn't directly set data - it's handled by the dialog
             pass
         elif isinstance(editor, QgsFieldExpressionWidget):
             model.setData(index, editor.expression(), Qt.EditRole)
+        elif isinstance(editor, QLineEdit):
+            model.setData(index, editor.text(), Qt.EditRole)
         else:
             super().setModelData(editor, model, index)
 
     def destroyEditor(self, editor, index):
-        """Clean up when editor is destroyed"""
         key = (index.row(), index.column())
         if key in self._editors:
             del self._editors[key]
@@ -361,24 +392,82 @@ class CustomComboBox(QComboBox):
             self.setStyleSheet("")  # Clear stylesheet
 
 
-class DefaultValueDelegate(QStyledItemDelegate):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+class FieldMapWidget(QWidget):
+    def __init__(self, row_dict):
+        super().__init__()
+        self.row_dict = row_dict
+        self.table_model = FieldMapModel(self.row_dict)
+        self.rows = self.table_model.rows
+        self.setup_ui()
 
-    def paint(self, painter, option, index):
-        # Copy the style option to modify it
-        opt = QStyleOptionViewItem(option)
-        # Get data from the model
-        row = index.model().rows[index.row()]
-        is_required = row.is_editable(index.column())
-        has_value = bool(
-            index.model().data(index, Qt.DisplayRole)
-        )  # Check if display value is non-empty
-        # Modify background for required fields with no value
-        if is_required and not has_value:
-            painter.save()
-            painter.fillRect(option.rect, QColor(BACKGROUND_COLOR))
-            painter.restore()
+    def setup_ui(self):
+        self.table_view = QTableView()
+        self.table_view.setModel(self.table_model)
 
-        # Call parent class to paint the cell content
-        super().paint(painter, opt, index)
+        # Delegate for handling custom widget editing
+        self.table_delegate = FieldMapDelegate()
+        self.table_view.setItemDelegate(self.table_delegate)
+        self.table_view.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.table_view.resizeColumnsToContents()
+        self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table_view.verticalHeader().setVisible(False)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.table_view)
+        self.setLayout(layout)
+
+        # Calculate the total height needed
+        header_height = self.table_view.horizontalHeader().height()
+        row_height = self.table_view.verticalHeader().defaultSectionSize()
+        content_height = (row_height * self.table_model.rowCount()) + header_height
+
+        # Set fixed height and vertical size policy
+        self.table_view.setMinimumHeight(content_height)
+        self.table_view.setMaximumHeight(content_height)
+        self.table_view.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+
+    def update_layer(self, layer):
+        """Update the layer and update the table view"""
+        self.close_persistent_editors()
+        self.table_model.set_current_layer(layer)
+        for row in self.table_model.rows:
+            current_source_attr = row.config.source_attribute
+            if (
+                not layer
+                or current_source_attr not in self.table_model.current_layer_attributes
+            ):
+                row.config.source_attribute = ""
+        # Notify the model of the changes so the view is updated
+        self.table_model.layoutChanged.emit()
+
+        # Clear delegate's editor cache
+        self.table_delegate.clear_editors()
+
+        # Open persistent editors for columns with always-visible widgets
+        self.open_persistent_editors()
+
+        # Todo updata data
+        self.table_view.resizeColumnsToContents()
+        self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table_view.verticalHeader().setVisible(False)
+
+    def open_persistent_editors(self):
+        """Open persistent editors for columns with always-visible widgets"""
+        for row in range(self.table_model.rowCount()):
+            for col, field_map_column in enumerate(FieldMapColumn):
+                if field_map_column == FieldMapColumn.LABEL:
+                    continue
+                self.table_view.openPersistentEditor(self.table_model.index(row, col))
+
+    def close_persistent_editors(self):
+        """Close all persistent editors in the table"""
+        for row in range(self.table_model.rowCount()):
+            for col, field_map_column in enumerate(FieldMapColumn):
+                if field_map_column == FieldMapColumn.LABEL:
+                    continue
+                self.table_view.closePersistentEditor(self.table_model.index(row, col))
+
+    def serialize(self) -> dict[str, dict[str, Any]]:
+        return self.table_model.serialize()
+
+    def deserialize(self, data: dict[str, dict[str, Any]]):
+        self.table_model.deserialize(data)

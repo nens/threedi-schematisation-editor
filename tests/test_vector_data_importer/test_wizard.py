@@ -1,16 +1,27 @@
 import pytest
+from qgis.core import QgsField, QgsVectorLayer
+from qgis.PyQt.QtCore import QVariant
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     ConnectionNodeSettingsModel,
+    FieldMapConfig,
     IntegrationMode,
     IntegrationSettingsModel,
 )
+from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard import VDIWizard
+from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
+    FieldMapColumn,
+    FieldMapModel,
+    FieldMapRow,
+)
 from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets import (
     ConnectionNodeSettingsWidget,
     IntegrationSettingsWidget,
 )
+
+# TODO reorganize tests
 
 
 def test_wizard(qgis_application):
@@ -100,3 +111,159 @@ class TestConnectNodeSettings:
         widget = ConnectionNodeSettingsWidget()
         widget.deserialize({"snap": snap_enabled})
         assert widget.snap_distance.isEnabled() == snap_enabled
+
+
+class TestFieldMapRow:
+    def test_serialize(self):
+        config = FieldMapConfig(
+            method=ColumnImportMethod.ATTRIBUTE, source_attribute="foo"
+        )
+        row = FieldMapRow(label="foo", config=config)
+        serialized_row = row.serialize()
+        assert "label" not in serialized_row
+        assert serialized_row == config.model_dump()
+
+    def test_deserialize(self):
+        config = {"method": "source_attribute", "source_attribute": "foo"}
+        row = FieldMapRow(
+            label="foo",
+            config=FieldMapConfig(
+                method=ColumnImportMethod.DEFAULT, default_value=1337
+            ),
+        )
+        row.deserialize(config)
+        assert row.label == "foo"
+        assert row.config.method == ColumnImportMethod.ATTRIBUTE
+        assert row.config.source_attribute == "foo"
+        assert row.config.default_value is None
+
+    def test_is_editable_label(self):
+        row = FieldMapRow(label="foo")
+        assert not row.is_editable(FieldMapColumn.to_index(FieldMapColumn.LABEL))
+
+    def test_is_editable_method(self):
+        row = FieldMapRow(label="foo")
+        assert row.is_editable(FieldMapColumn.to_index(FieldMapColumn.METHOD))
+
+    @pytest.mark.parametrize(
+        "index,expected_value",
+        [
+            (FieldMapColumn.to_index(FieldMapColumn.LABEL), "foo"),
+            (
+                FieldMapColumn.to_index(FieldMapColumn.METHOD),
+                ColumnImportMethod.ATTRIBUTE,
+            ),
+            (-1, None),
+        ],
+    )
+    def test_get_value(self, index, expected_value):
+        row = FieldMapRow(
+            label="foo",
+            config=FieldMapConfig(
+                method=ColumnImportMethod.ATTRIBUTE, source_attribute="bar"
+            ),
+        )
+        assert row.get_value(index) == expected_value
+
+    @pytest.mark.parametrize(
+        "index,set_value, new_value",
+        [
+            (FieldMapColumn.to_index(FieldMapColumn.LABEL), "oof", "foo"),
+            (
+                FieldMapColumn.to_index(FieldMapColumn.METHOD),
+                ColumnImportMethod.IGNORE,
+                ColumnImportMethod.IGNORE,
+            ),
+            (-1, None, None),
+        ],
+    )
+    def test_set_value(self, index, set_value, new_value):
+        row = FieldMapRow(
+            label="foo",
+            config=FieldMapConfig(
+                method=ColumnImportMethod.ATTRIBUTE, source_attribute="bar"
+            ),
+        )
+        row.set_value(new_value, index)
+        assert row.get_value(index) == new_value
+
+    @pytest.mark.parametrize(
+        "method,editable_column, kwargs",
+        [
+            (
+                ColumnImportMethod.ATTRIBUTE,
+                FieldMapColumn.SOURCE_ATTRIBUTE,
+                {"source_attribute": "foo"},
+            ),
+            (
+                ColumnImportMethod.EXPRESSION,
+                FieldMapColumn.EXPRESSION,
+                {"expression": "foo"},
+            ),
+            (
+                ColumnImportMethod.DEFAULT,
+                FieldMapColumn.DEFAULT_VALUE,
+                {"default_value": "foo"},
+            ),
+            (ColumnImportMethod.AUTO, None, {}),
+            (ColumnImportMethod.IGNORE, None, {}),
+        ],
+    )
+    def test_is_editable_with_method(self, method, editable_column, kwargs):
+        row = FieldMapRow(label="foo", config=FieldMapConfig(method=method, **kwargs))
+        for column in FieldMapColumn:
+            if column in [FieldMapColumn.LABEL, FieldMapColumn.METHOD]:
+                continue
+            col_idx = FieldMapColumn.to_index(column)
+            if column == editable_column:
+                assert row.is_editable(col_idx)
+            else:
+                assert not row.is_editable(col_idx)
+
+
+class TestFieldMapModel:
+    def test_set_current_layer(self):
+        # Create a memory layer
+        layer = QgsVectorLayer("Point?crs=EPSG:4326", "TestLayer", "memory")
+        provider = layer.dataProvider()
+        provider.addAttributes(
+            [
+                QgsField("id", QVariant.Int),
+                QgsField("name", QVariant.String),
+                QgsField("value", QVariant.Double),
+                QgsField("date", QVariant.String),
+            ]
+        )
+        layer.updateFields()
+        model = FieldMapModel({})
+        model.set_current_layer(layer)
+        assert model.current_layer_attributes == ["id", "name", "value", "date"]
+
+    def test_serialize(self):
+        row_dict = {
+            "foo": FieldMapRow(
+                label="foo",
+                config=FieldMapConfig(
+                    method=ColumnImportMethod.ATTRIBUTE, source_attribute="bar"
+                ),
+            )
+        }
+        model = FieldMapModel(row_dict)
+        serialized_model = model.serialize()
+        assert serialized_model == {"foo": row_dict["foo"].serialize()}
+
+    def test_deserialize(self):
+        row_dict = {"foo": FieldMapRow(label="foo")}
+        model = FieldMapModel(row_dict)
+        data = {
+            "foo": {"method": ColumnImportMethod.ATTRIBUTE, "source_attribute": "bar"},
+            "bar": {},
+        }
+        model.deserialize(data)
+        assert model.row_dict["foo"] == FieldMapRow(
+            label="foo",
+            config=FieldMapConfig(
+                method=ColumnImportMethod.ATTRIBUTE, source_attribute="bar"
+            ),
+        )
+        assert "bar" not in model.row_dict
