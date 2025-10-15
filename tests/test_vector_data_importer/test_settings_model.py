@@ -49,7 +49,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import ColumnImpor
             FieldMapConfigDefaultValueMissingError,
         ),
         ({"method": ColumnImportMethod.DEFAULT, "default_value": "foo"}, None),
-        # ({}, FieldMapConfigMethodMissingError), # TODO: fix this!
+        ({}, FieldMapConfigMethodMissingError),
     ],
 )
 def test_field_map_config(config_dict, expected_error):
@@ -77,7 +77,7 @@ class Test:
             True,
             ["foo", "bar"],
         ),
-        # ({"foo": {"this": "that"}}, False, []), # TODO fix this
+        ({"foo": {"this": "that"}}, False, []),
         ({"fooo": {"this": "that"}}, True, []),
         ({"foo": {"method": "auto"}}, True, ["foo"]),
     ],

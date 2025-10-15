@@ -74,7 +74,7 @@ class FieldMapConfigMethodMissingError(ValueError):
 
 
 class FieldMapConfig(BaseModel):
-    method: Optional[ColumnImportMethod] = None
+    method: ColumnImportMethod
     source_attribute: Optional[str] = None
     value_map: dict[str, Any] = {}
     expression: Optional[str] = None

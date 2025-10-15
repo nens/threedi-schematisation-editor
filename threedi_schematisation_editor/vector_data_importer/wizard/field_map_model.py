@@ -54,7 +54,7 @@ class FieldMapColumn(Enum):
 @dataclass
 class FieldMapRow:
     label: str
-    config: FieldMapConfig = FieldMapConfig()
+    config: FieldMapConfig = FieldMapConfig.model_construct(method=None)
 
     @staticmethod
     def header() -> list[str]:
@@ -108,9 +108,11 @@ class FieldMapRow:
             return getattr(self.config, field_name)
 
     def serialize(self) -> dict[str, Any]:
-        return self.config.model_dump()
+        validated_model =  FieldMapModel.model_validate(self.config.model_dump())
+        return validated_model.model_dump()
 
     def deserialize(self, data: dict[str, Any]) -> None:
+        # validation is done on initalization of FieldMapConfig
         self.config = FieldMapConfig(**data)
 
 
@@ -322,7 +324,7 @@ class FieldMapDelegate(QStyledItemDelegate):
         elif isinstance(editor, QPushButton):
             value = index.data(Qt.EditRole)
             if value or not is_enabled:
-                editor.setText(value)
+                editor.setText(str(value))
                 editor.setStyleSheet("")
             else:
                 editor.setText("Set Value Map...")
