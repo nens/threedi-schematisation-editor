@@ -106,7 +106,7 @@ class FeatureManager:
             self.next_id += 1
 
 
-class ColumnImportMethod(Enum):
+class ColumnImportMethod(str, Enum):
     AUTO = "auto"
     ATTRIBUTE = "source_attribute"
     DEFAULT = "default"

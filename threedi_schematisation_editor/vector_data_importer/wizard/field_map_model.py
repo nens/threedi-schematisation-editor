@@ -3,7 +3,7 @@ from enum import Enum
 from functools import cached_property
 from typing import Any, Optional
 
-from qgis.core import QgsVectorLayer
+from qgis.core import Qgis, QgsMessageLog, QgsVectorLayer
 from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt
 from qgis.PyQt.QtGui import QColor
@@ -54,7 +54,10 @@ class FieldMapColumn(Enum):
 @dataclass
 class FieldMapRow:
     label: str
-    config: FieldMapConfig = FieldMapConfig.model_construct(method=None)
+    # Using a factory ensures that a unique instance is created for each row
+    config: FieldMapConfig = field(
+        default_factory=lambda: FieldMapConfig.model_construct(method=None)
+    )
 
     @staticmethod
     def header() -> list[str]:
@@ -108,7 +111,7 @@ class FieldMapRow:
             return getattr(self.config, field_name)
 
     def serialize(self) -> dict[str, Any]:
-        validated_model =  FieldMapModel.model_validate(self.config.model_dump())
+        validated_model = FieldMapConfig.model_validate(self.config.model_dump())
         return validated_model.model_dump()
 
     def deserialize(self, data: dict[str, Any]) -> None:
@@ -252,8 +255,8 @@ class FieldMapDelegate(QStyledItemDelegate):
         ):
             combo = CustomComboBox(parent)
             combo.addItems([""] + index.model().current_layer_attributes)
-            combo.currentTextChanged.connect(
-                lambda text, idx=index: self.commitAndCloseEditor(text, idx)
+            combo.currentIndexChanged.connect(
+                lambda idx, editor=combo: self.commitData.emit(editor)
             )
             self._editors[key] = combo
             return combo
@@ -285,9 +288,6 @@ class FieldMapDelegate(QStyledItemDelegate):
             current_value = index.model().rows[index.row()].config.default_value
             widget = QLineEdit(parent)
             widget.setText(current_value if current_value else "")
-            widget.editingFinished.connect(
-                lambda field, idx=index: self.commitDefaultValueData(idx, widget)
-            )
             self._editors[key] = widget
             return widget
         return super().createEditor(parent, option, index)
@@ -301,37 +301,45 @@ class FieldMapDelegate(QStyledItemDelegate):
             button.setText(new_value_map if new_value_map else "Set Value Map...")
             index.model().setData(index, new_value_map, Qt.EditRole)
 
-    def commitDefaultValueData(self, index, widget):
-        """Commit default value widget data"""
-        self.commitData.emit(widget)
-
+    # def commitDefaultValueData(self, index, widget):
+    #     """Commit default value widget data"""
+    #     self.commitData.emit(widget)
+    #
     def commitExpressionData(self, index, widget):
         """Commit expression widget data"""
         self.commitData.emit(widget)
 
     def setEditorData(self, editor, index):
+        # TODO: use data model to set styling for missing data!
+        # Retrieve info from the model
         row = index.model().rows[index.row()]
+        value = index.data(Qt.EditRole)
         has_layer = len(index.model().current_layer_attributes) > 0
-        if index.column() == 1:
+        column = FieldMapColumn.from_index(index.column())
+
+        # Update enabled status
+        if column == FieldMapColumn.LABEL:
             is_enabled = has_layer
         else:
             is_enabled = has_layer and row.is_editable(index.column())
         editor.setEnabled(is_enabled)
-        if isinstance(editor, QComboBox):
-            value = index.data(Qt.EditRole)
+
+        # Update data in widgets
+        if column in [FieldMapColumn.METHOD, FieldMapColumn.SOURCE_ATTRIBUTE]:
             if value:
                 editor.setCurrentText(str(value))
-        elif isinstance(editor, QPushButton):
-            value = index.data(Qt.EditRole)
-            if value or not is_enabled:
-                editor.setText(str(value))
+            else:
+                editor.setCurrentIndex(0)
+        elif column == FieldMapColumn.VALUE_MAP:
+            if len(value) > 0 or not is_enabled:
+                editor.setText(str(value) if not is_enabled else "")
                 editor.setStyleSheet("")
             else:
                 editor.setText("Set Value Map...")
                 editor.setStyleSheet(
                     f"QPushButton {{ background-color: {BACKGROUND_COLOR};}}"
                 )
-        elif isinstance(editor, QgsFieldExpressionWidget):
+        elif column == FieldMapColumn.EXPRESSION:
             value = index.data(Qt.EditRole)
             editor.setExpression(value)
             if value or not is_enabled:
@@ -340,7 +348,7 @@ class FieldMapDelegate(QStyledItemDelegate):
                 editor.setStyleSheet(
                     f"QLineEdit {{ background-color: {BACKGROUND_COLOR};}}"
                 )
-        elif isinstance(editor, QLineEdit):
+        elif column == FieldMapColumn.DEFAULT_VALUE:
             value = index.data(Qt.EditRole)
             editor.setText(value if value else "")
             if value or not is_enabled:
@@ -353,17 +361,19 @@ class FieldMapDelegate(QStyledItemDelegate):
             super().setEditorData(editor, index)
 
     def setModelData(self, editor, model, index):
-        if isinstance(editor, QComboBox):
+        column = FieldMapColumn.from_index(index.column())
+        value = None
+        # Note that value_map is skipped because that is handled in the dialog
+        if column == FieldMapColumn.METHOD:
             value = editor.currentData()
+        elif column == FieldMapColumn.SOURCE_ATTRIBUTE:
+            value = editor.currentText()
+        elif column == FieldMapColumn.EXPRESSION:
+            value = editor.expression()
+        elif column == FieldMapColumn.DEFAULT_VALUE:
+            value = editor.text()
+        if value:
             model.setData(index, value, Qt.EditRole)
-        elif isinstance(editor, QPushButton):
-            pass
-        elif isinstance(editor, QgsFieldExpressionWidget):
-            model.setData(index, editor.expression(), Qt.EditRole)
-        elif isinstance(editor, QLineEdit):
-            model.setData(index, editor.text(), Qt.EditRole)
-        else:
-            super().setModelData(editor, model, index)
 
     def destroyEditor(self, editor, index):
         key = (index.row(), index.column())
@@ -447,7 +457,6 @@ class FieldMapWidget(QWidget):
         # Open persistent editors for columns with always-visible widgets
         self.open_persistent_editors()
 
-        # Todo updata data
         self.table_view.resizeColumnsToContents()
         self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table_view.verticalHeader().setVisible(False)

@@ -39,7 +39,7 @@ class VDIWizard(QWizard):
 
     @cached_property
     def field_map_page(self):
-        return FieldMapPage(self.model_cls)
+        return FieldMapPage(model_cls=self.model_cls, name="fields")
 
     @cached_property
     def connection_node_pages(self):
@@ -120,7 +120,9 @@ class VDIWizard(QWizard):
 class ImportStructureWizard(VDIWizard):
     @cached_property
     def connection_node_pages(self):
-        return [FieldMapPage(dm.ConnectionNode)]
+        return [
+            FieldMapPage(model_cls=dm.ConnectionNode, name="connection_node_fields")
+        ]
 
     @cached_property
     def settings_page(self):

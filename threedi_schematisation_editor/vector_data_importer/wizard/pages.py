@@ -136,7 +136,7 @@ class SettingsPage(QWizardPage):
 
 
 class FieldMapPage(QWizardPage):
-    def __init__(self, model_cls):
+    def __init__(self, model_cls, name):
         super().__init__()
         self.row_dict = {
             field_name: FieldMapRow(label=display_name)
@@ -144,6 +144,7 @@ class FieldMapPage(QWizardPage):
         }
         self.setTitle(f"{model_cls.__tablename__}")
         self.setup_ui()
+        self.name = name
 
     def setup_ui(self):
         self.field_map_widget = FieldMapWidget(self.row_dict)
@@ -160,10 +161,10 @@ class FieldMapPage(QWizardPage):
         super().initializePage()
 
     def serialize(self):
-        return {}
+        return {self.name: self.field_map_widget.serialize()}
 
     def deserialize(self, data):
-        return {}
+        return self.field_map_widget.deserialize(data[self.name])
 
 
 class RunPage(QWizardPage):
