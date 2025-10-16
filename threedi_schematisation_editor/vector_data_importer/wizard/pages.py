@@ -84,7 +84,9 @@ class SettingsPage(QWizardPage):
             group_box.setLayout(self.point_to_line_conversion_settings.layout())
             layout.addWidget(group_box)
             # connect data changed to isComplete status of the page
-            self.point_to_line_conversion_settings.dataChanged.connect(self.completeChanged)
+            self.point_to_line_conversion_settings.dataChanged.connect(
+                self.completeChanged
+            )
         if add_integration_settings:
             self.integration_settings = IntegrationSettingsWidget()
             group_box = QGroupBox("Integration settings")
@@ -172,6 +174,7 @@ class FieldMapPage(QWizardPage):
 
     def isComplete(self) -> bool:
         return self.field_map_widget.is_valid
+
 
 class RunPage(QWizardPage):
     def __init__(self):

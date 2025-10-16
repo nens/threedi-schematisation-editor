@@ -27,6 +27,7 @@ from qgis.PyQt.QtWidgets import (
 
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     FieldMapConfig,
+    create_field_map_config,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 
@@ -93,7 +94,9 @@ class FieldMapRow:
         # in any other case the method determines what is editable
         else:
             # identify required attribute, if any
-            required_attribute = self.config.required_field_map.get(self.config.method)
+            required_attribute = self.config._metadata.required_field_map.get(
+                self.config.method
+            )
             # find column where this attribute is expected
             required_column_idx = self.field_name_map.get(required_attribute, -1)
             return index == required_column_idx
@@ -136,6 +139,14 @@ class FieldMapRow:
             return True
         except ValidationError as e:
             return False
+
+
+def create_field_map_row(
+    label: str, allowed_methods: list[ColumnImportMethod], **kwargs
+) -> FieldMapRow:
+    field_map_config = create_field_map_config(allowed_methods)
+    config = field_map_config.model_construct(method=None, **kwargs)
+    return FieldMapRow(label=label, config=config)
 
 
 class ValueMapDialog(QDialog):
@@ -271,7 +282,9 @@ class FieldMapDelegate(QStyledItemDelegate):
         if FieldMapColumn.from_index(index.column()) == FieldMapColumn.METHOD:
             combo = CustomComboBox(parent)
             combo.addItem("", None)
-            for m in ColumnImportMethod:
+            row = index.model().rows[index.row()]
+            for m in row.config._metadata.allowed_methods:
+                # for m in ColumnImportMethod:
                 combo.addItem(str(m), m)
             self._editors[(index.row(), index.column())] = combo
             combo.currentIndexChanged.connect(
@@ -316,7 +329,7 @@ class FieldMapDelegate(QStyledItemDelegate):
         elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.DEFAULT_VALUE:
             current_value = index.model().rows[index.row()].config.default_value
             widget = QLineEdit(parent)
-            widget.setText(current_value if current_value else "")
+            widget.setText(str(current_value) if current_value else "")
             self._editors[key] = widget
             return widget
         return super().createEditor(parent, option, index)
@@ -373,7 +386,7 @@ class FieldMapDelegate(QStyledItemDelegate):
                 )
         elif column == FieldMapColumn.DEFAULT_VALUE:
             value = index.data(Qt.EditRole)
-            editor.setText(value if value else "")
+            editor.setText(str(value) if value else "")
             if value or not is_enabled:
                 editor.setStyleSheet("")
             else:

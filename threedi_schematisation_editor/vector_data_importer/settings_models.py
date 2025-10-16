@@ -1,16 +1,22 @@
-from dataclasses import fields
+from dataclasses import dataclass, fields
 from enum import Enum
-from typing import Any, Optional, Type
+from typing import Any, ClassVar, Optional, Type
 
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    create_model,
+    field_validator,
+    model_validator,
+)
 
+# from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import FieldMapModel
+import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.utils import (
     DEFAULT_INTERSECTION_BUFFER,
     DEFAULT_MINIMUM_CHANNEL_LENGTH,
     ColumnImportMethod,
 )
-
-# from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import FieldMapModel
 
 
 class IntegrationMode(Enum):
@@ -73,20 +79,25 @@ class FieldMapConfigMethodMissingError(ValueError):
     pass
 
 
+@dataclass
+class FieldMapMetadata:
+    allowed_methods: list[ColumnImportMethod]
+    required_field_map: ClassVar[dict[ColumnImportMethod, str]] = {
+        ColumnImportMethod.ATTRIBUTE: "source_attribute",
+        ColumnImportMethod.EXPRESSION: "expression",
+        ColumnImportMethod.DEFAULT: "default_value",
+    }
+
+
 class FieldMapConfig(BaseModel):
+    _metadata: ClassVar[FieldMapMetadata] = FieldMapMetadata(
+        allowed_methods=[method for method in ColumnImportMethod]
+    )
     method: ColumnImportMethod
     source_attribute: Optional[str] = None
     value_map: dict[str, Any] = {}
     expression: Optional[str] = None
     default_value: Optional[Any] = None
-
-    @property
-    def required_field_map(self):
-        return {
-            ColumnImportMethod.ATTRIBUTE: "source_attribute",
-            ColumnImportMethod.EXPRESSION: "expression",
-            ColumnImportMethod.DEFAULT: "default_value",
-        }
 
     # TODO: consider if we want to keep dict access support
     def get(self, key, default=None):
@@ -107,8 +118,8 @@ class FieldMapConfig(BaseModel):
     @model_validator(mode="after")
     def validate_required_fields(self) -> "FieldConfig":
         method = self.method
-        if method in self.required_field_map and getattr(
-            self, self.required_field_map[method]
+        if method in self._metadata.required_field_map and getattr(
+            self, self._metadata.required_field_map[method]
         ) in [None, ""]:
             # TODO: reconsider specific errors
             if method == ColumnImportMethod.EXPRESSION:
@@ -124,6 +135,45 @@ class FieldMapConfig(BaseModel):
                     "When method is 'source_attribute', 'source_attribute' field is required"
                 )
         return self
+
+
+def create_field_map_config(
+    allowed_methods: Optional[list[ColumnImportMethod]],
+) -> BaseModel:
+    """Creates a FieldMapConfig class for a specific field based on its metadata"""
+
+    metadata = FieldMapMetadata(allowed_methods=allowed_methods)
+
+    class CustomFieldMapConfig(FieldMapConfig):
+        _metadata: ClassVar[FieldMapMetadata] = metadata
+
+        @field_validator("method")
+        @classmethod
+        def validate_method(cls, v: ColumnImportMethod) -> ColumnImportMethod:
+            if allowed_methods is not None and v not in allowed_methods:
+                raise ValueError(
+                    f"Method {v} is not allowed. "
+                    f"Allowed methods are: {', '.join(str(m) for m in allowed_methods)}"
+                )
+            return v
+
+    return CustomFieldMapConfig
+
+
+def get_field_map_configs_for_model_class(
+    model_class: dm.ModelObject,
+) -> dict[str, BaseModel]:
+    """Creates FieldMapConfig classes for all fields in a model"""
+    all_methods = [method for method in ColumnImportMethod]
+    return {
+        field.name: create_field_map_config(
+            field.name, field.metadata.get(dm.METHOD_FIELDS, all_methods)
+        )
+        for field in fields(model_class)
+    }
+
+
+# TODO: combine stuff above and below in 1 consistent approach
 
 
 class FieldsSectionValidator:

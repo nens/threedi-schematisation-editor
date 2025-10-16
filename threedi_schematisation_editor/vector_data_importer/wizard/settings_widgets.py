@@ -27,9 +27,11 @@ from threedi_schematisation_editor.vector_data_importer.settings_models import (
     IntegrationMode,
     IntegrationSettingsModel,
 )
+from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
     FieldMapRow,
     FieldMapWidget,
+    create_field_map_row,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.models import (
     GenericSettingsModel,
@@ -143,9 +145,23 @@ class PointToLIneConversionSettingsWidget(QWidget):
     def __init__(self):
         super().__init__()
         # TODO replace row dict with actual model ?
+
+        allowed_methods = [
+            ColumnImportMethod.ATTRIBUTE,
+            ColumnImportMethod.DEFAULT,
+            ColumnImportMethod.EXPRESSION,
+        ]
         self.row_dict = {
-            "structure_length": FieldMapRow(label="Structure length"),
-            "azimuth": FieldMapRow(label="Structure direction (azimuth)"),
+            "structure_length": create_field_map_row(
+                label="Structure length",
+                allowed_methods=allowed_methods,
+                default_value=10,
+            ),
+            "azimuth": create_field_map_row(
+                label="Structure direction (azimuth)",
+                allowed_methods=allowed_methods,
+                default_value=10,
+            ),
         }
         self.setup_ui()
 

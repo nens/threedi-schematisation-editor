@@ -45,6 +45,7 @@ from threedi_schematisation_editor.enumerators import (
 
 DISPLAY_NAME_FIELD = "display_name"
 DISPLAY_UNIT_FIELD = "display_unit"
+METHODS_FIELD = "methods"
 
 
 class HighPrecisionFloat(float):
