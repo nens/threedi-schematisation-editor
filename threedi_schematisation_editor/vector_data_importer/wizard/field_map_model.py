@@ -83,6 +83,9 @@ class FieldMapRow:
         # method is always selectable and editable
         if FieldMapColumn.from_index(index) == FieldMapColumn.METHOD:
             return True
+        if FieldMapColumn.from_index(index) == FieldMapColumn.VALUE_MAP:
+            if self.config.method == ColumnImportMethod.ATTRIBUTE and self.config.source_attribute not in [None, ""]:
+                return True
         # in any other case the method determines what is editable
         else:
             # identify required attribute, if any
@@ -90,6 +93,7 @@ class FieldMapRow:
             # find column where this attribute is expected
             required_column_idx = self.field_name_map.get(required_attribute, -1)
             return index == required_column_idx
+        return False
 
     def set_value(self, value: Any, index: int):
         """Set value in the data model based on the column index."""
@@ -161,6 +165,7 @@ class FieldMapModel(QAbstractTableModel):
             attr_name: row.label for attr_name, row in row_dict.items()
         }
         self.current_layer_attributes = []
+        self.layer: QgsVectorLayer = None
 
     def rowCount(self, parent=QModelIndex()):
         return len(self.rows) if self.rows else 0
@@ -206,6 +211,7 @@ class FieldMapModel(QAbstractTableModel):
             self.current_layer_attributes = [field.name() for field in layer.fields()]
         else:
             self.current_layer_attributes = []
+        self.layer = layer
         self.layoutChanged.emit()
 
     def serialize(self) -> dict[str, dict[str, Any]]:
@@ -267,7 +273,7 @@ class FieldMapDelegate(QStyledItemDelegate):
                 index.data(Qt.EditRole) if index.data(Qt.EditRole) else ""
             )
             button.setText(
-                current_value_map if current_value_map else "Set Value Map..."
+                current_value_map if len(current_value_map) > 0 else "Set Value Map..."
             )
             button.clicked.connect(
                 lambda checked, idx=index, btn=button: self.openValueMapDialog(idx, btn)
@@ -279,6 +285,7 @@ class FieldMapDelegate(QStyledItemDelegate):
             widget = QsgExpressionWidgetForTableView(
                 parent, expression=current_expression
             )
+            widget.setLayer(index.model().layer)
             widget.fieldChanged.connect(
                 lambda field, idx=index: self.commitExpressionData(idx, widget)
             )
@@ -298,7 +305,7 @@ class FieldMapDelegate(QStyledItemDelegate):
         dialog = ValueMapDialog(current_value=current_value_map, parent=button)
         if dialog.exec_() == QDialog.Accepted:
             new_value_map = dialog.get_value_map()
-            button.setText(new_value_map if new_value_map else "Set Value Map...")
+            button.setText(new_value_map if len(new_value_map) > 0 else "Set Value Map...")
             index.model().setData(index, new_value_map, Qt.EditRole)
 
     # def commitDefaultValueData(self, index, widget):
@@ -316,14 +323,12 @@ class FieldMapDelegate(QStyledItemDelegate):
         value = index.data(Qt.EditRole)
         has_layer = len(index.model().current_layer_attributes) > 0
         column = FieldMapColumn.from_index(index.column())
-
         # Update enabled status
         if column == FieldMapColumn.LABEL:
             is_enabled = has_layer
         else:
             is_enabled = has_layer and row.is_editable(index.column())
         editor.setEnabled(is_enabled)
-
         # Update data in widgets
         if column in [FieldMapColumn.METHOD, FieldMapColumn.SOURCE_ATTRIBUTE]:
             if value:
@@ -331,14 +336,8 @@ class FieldMapDelegate(QStyledItemDelegate):
             else:
                 editor.setCurrentIndex(0)
         elif column == FieldMapColumn.VALUE_MAP:
-            if len(value) > 0 or not is_enabled:
-                editor.setText(str(value) if not is_enabled else "")
-                editor.setStyleSheet("")
-            else:
-                editor.setText("Set Value Map...")
-                editor.setStyleSheet(
-                    f"QPushButton {{ background-color: {BACKGROUND_COLOR};}}"
-                )
+            value_map_title = "Set value map..." if len(value) == 0 else str(value)
+            editor.setText(value_map_title)
         elif column == FieldMapColumn.EXPRESSION:
             value = index.data(Qt.EditRole)
             editor.setExpression(value)
@@ -372,7 +371,7 @@ class FieldMapDelegate(QStyledItemDelegate):
             value = editor.expression()
         elif column == FieldMapColumn.DEFAULT_VALUE:
             value = editor.text()
-        if value:
+        if value is not None:
             model.setData(index, value, Qt.EditRole)
 
     def destroyEditor(self, editor, index):
