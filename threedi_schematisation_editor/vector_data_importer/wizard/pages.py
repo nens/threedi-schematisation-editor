@@ -83,7 +83,8 @@ class SettingsPage(QWizardPage):
             group_box = QGroupBox("Point to line conversion settings")
             group_box.setLayout(self.point_to_line_conversion_settings.layout())
             layout.addWidget(group_box)
-
+            # connect data changed to isComplete status of the page
+            self.point_to_line_conversion_settings.dataChanged.connect(self.completeChanged)
         if add_integration_settings:
             self.integration_settings = IntegrationSettingsWidget()
             group_box = QGroupBox("Integration settings")
@@ -131,8 +132,12 @@ class SettingsPage(QWizardPage):
             self.integration_settings.deserialize(data["integration"])
 
     def isComplete(self) -> bool:
-        # Return True only if a layer is selected
-        return bool(self.generic_settings.selected_layer)
+        if not self.generic_settings.selected_layer:
+            return False
+        elif self.point_to_line_conversion_settings:
+            if not self.point_to_line_conversion_settings.is_valid:
+                return False
+        return True
 
 
 class FieldMapPage(QWizardPage):
@@ -148,9 +153,8 @@ class FieldMapPage(QWizardPage):
 
     def setup_ui(self):
         self.field_map_widget = FieldMapWidget(self.row_dict)
-        self.table_view = self.field_map_widget.table_view
-        self.table_model = self.field_map_widget.table_model
-        self.table_delegate = self.field_map_widget.table_delegate
+        # connect data changed to isComplete status of the page
+        self.field_map_widget.dataChanged.connect(self.completeChanged)
         layout = QVBoxLayout(self)
         layout.addWidget(self.field_map_widget)
 
@@ -166,6 +170,8 @@ class FieldMapPage(QWizardPage):
     def deserialize(self, data):
         return self.field_map_widget.deserialize(data[self.name])
 
+    def isComplete(self) -> bool:
+        return self.field_map_widget.is_valid
 
 class RunPage(QWizardPage):
     def __init__(self):

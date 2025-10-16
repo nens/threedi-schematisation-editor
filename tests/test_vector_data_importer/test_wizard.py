@@ -190,29 +190,27 @@ class TestFieldMapRow:
         assert row.get_value(index) == new_value
 
     @pytest.mark.parametrize(
-        "method,editable_column, kwargs",
+        "method,editable_column",
         [
             (
                 ColumnImportMethod.ATTRIBUTE,
                 FieldMapColumn.SOURCE_ATTRIBUTE,
-                {"source_attribute": "foo"},
             ),
             (
                 ColumnImportMethod.EXPRESSION,
                 FieldMapColumn.EXPRESSION,
-                {"expression": "foo"},
             ),
             (
                 ColumnImportMethod.DEFAULT,
                 FieldMapColumn.DEFAULT_VALUE,
-                {"default_value": "foo"},
             ),
-            (ColumnImportMethod.AUTO, None, {}),
-            (ColumnImportMethod.IGNORE, None, {}),
+            (ColumnImportMethod.AUTO, None),
+            (ColumnImportMethod.IGNORE, None),
         ],
     )
-    def test_is_editable_with_method(self, method, editable_column, kwargs):
-        row = FieldMapRow(label="foo", config=FieldMapConfig(method=method, **kwargs))
+    def test_is_editable_with_method(self, method, editable_column):
+        row = FieldMapRow(label="foo")
+        row.config.method = method
         for column in FieldMapColumn:
             if column in [FieldMapColumn.LABEL, FieldMapColumn.METHOD]:
                 continue
@@ -221,6 +219,28 @@ class TestFieldMapRow:
                 assert row.is_editable(col_idx)
             else:
                 assert not row.is_editable(col_idx)
+
+    @pytest.mark.parametrize(
+        "kwargs, is_valid",
+        [
+            ({}, False),
+            ({"method": ColumnImportMethod.AUTO}, True),
+            ({"method": ColumnImportMethod.IGNORE}, True),
+            ({"method": ColumnImportMethod.ATTRIBUTE}, False),
+            ({"method": ColumnImportMethod.ATTRIBUTE, "source_attribute": "foo"}, True),
+            ({"method": ColumnImportMethod.ATTRIBUTE, "source_attribute": ""}, False),
+            ({"method": ColumnImportMethod.ATTRIBUTE, "source_attribute": None}, False),
+            ({"method": ColumnImportMethod.EXPRESSION}, False),
+            ({"method": ColumnImportMethod.EXPRESSION, "expression": "foo"}, True),
+            ({"method": ColumnImportMethod.DEFAULT}, False),
+            ({"method": ColumnImportMethod.DEFAULT, "default_value": "foo"}, True),
+        ],
+    )
+    def test_is_valid(self, kwargs, is_valid):
+        row = FieldMapRow(label="foo")
+        for attr, value in kwargs.items():
+            setattr(row.config, attr, value)
+        assert row.is_valid == is_valid
 
 
 class TestFieldMapModel:

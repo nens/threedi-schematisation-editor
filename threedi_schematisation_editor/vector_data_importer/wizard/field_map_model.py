@@ -3,9 +3,10 @@ from enum import Enum
 from functools import cached_property
 from typing import Any, Optional
 
+from pydantic import ValidationError
 from qgis.core import Qgis, QgsMessageLog, QgsVectorLayer
 from qgis.gui import QgsFieldExpressionWidget
-from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt
+from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
@@ -84,7 +85,10 @@ class FieldMapRow:
         if FieldMapColumn.from_index(index) == FieldMapColumn.METHOD:
             return True
         if FieldMapColumn.from_index(index) == FieldMapColumn.VALUE_MAP:
-            if self.config.method == ColumnImportMethod.ATTRIBUTE and self.config.source_attribute not in [None, ""]:
+            if (
+                self.config.method == ColumnImportMethod.ATTRIBUTE
+                and self.config.source_attribute not in [None, ""]
+            ):
                 return True
         # in any other case the method determines what is editable
         else:
@@ -114,13 +118,24 @@ class FieldMapRow:
         if field_name:
             return getattr(self.config, field_name)
 
+    @property
+    def valid_config(self) -> FieldMapConfig:
+        return FieldMapConfig.model_validate(self.config.model_dump())
+
     def serialize(self) -> dict[str, Any]:
-        validated_model = FieldMapConfig.model_validate(self.config.model_dump())
-        return validated_model.model_dump()
+        return self.valid_config.model_dump()
 
     def deserialize(self, data: dict[str, Any]) -> None:
         # validation is done on initalization of FieldMapConfig
         self.config = FieldMapConfig(**data)
+
+    @property
+    def is_valid(self) -> bool:
+        try:
+            self.valid_config
+            return True
+        except ValidationError as e:
+            return False
 
 
 class ValueMapDialog(QDialog):
@@ -223,6 +238,13 @@ class FieldMapModel(QAbstractTableModel):
             if label:
                 self.row_dict[label].deserialize(row_data)
 
+    @property
+    def is_valid(self) -> bool:
+        for row in self.rows:
+            if not row.is_valid:
+                return False
+        return True
+
 
 class QsgExpressionWidgetForTableView(QgsFieldExpressionWidget):
     def __init__(self, parent=None, expression=None):
@@ -305,7 +327,9 @@ class FieldMapDelegate(QStyledItemDelegate):
         dialog = ValueMapDialog(current_value=current_value_map, parent=button)
         if dialog.exec_() == QDialog.Accepted:
             new_value_map = dialog.get_value_map()
-            button.setText(new_value_map if len(new_value_map) > 0 else "Set Value Map...")
+            button.setText(
+                new_value_map if len(new_value_map) > 0 else "Set Value Map..."
+            )
             index.model().setData(index, new_value_map, Qt.EditRole)
 
     # def commitDefaultValueData(self, index, widget):
@@ -404,6 +428,8 @@ class CustomComboBox(QComboBox):
 
 
 class FieldMapWidget(QWidget):
+    dataChanged = pyqtSignal()
+
     def __init__(self, row_dict):
         super().__init__()
         self.row_dict = row_dict
@@ -414,6 +440,9 @@ class FieldMapWidget(QWidget):
     def setup_ui(self):
         self.table_view = QTableView()
         self.table_view.setModel(self.table_model)
+
+        # emit dataChanged signal when model data changes
+        self.table_model.dataChanged.connect(self.dataChanged.emit)
 
         # Delegate for handling custom widget editing
         self.table_delegate = FieldMapDelegate()
@@ -481,3 +510,7 @@ class FieldMapWidget(QWidget):
 
     def deserialize(self, data: dict[str, dict[str, Any]]):
         self.table_model.deserialize(data)
+
+    @property
+    def is_valid(self) -> bool:
+        return self.table_model.is_valid

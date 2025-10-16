@@ -107,10 +107,9 @@ class FieldMapConfig(BaseModel):
     @model_validator(mode="after")
     def validate_required_fields(self) -> "FieldConfig":
         method = self.method
-        if (
-            method in self.required_field_map
-            and getattr(self, self.required_field_map[method]) is None
-        ):
+        if method in self.required_field_map and getattr(
+            self, self.required_field_map[method]
+        ) in [None, ""]:
             # TODO: reconsider specific errors
             if method == ColumnImportMethod.EXPRESSION:
                 raise FieldMapConfigExpressionMissingError(

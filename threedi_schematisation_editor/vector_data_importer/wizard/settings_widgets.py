@@ -1,5 +1,6 @@
 from typing import Optional
 
+from qgis.core import Qgis, QgsMessageLog
 from qgis.gui import QgsMapLayerComboBox
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtWidgets import (
@@ -137,6 +138,8 @@ class ConnectionNodeSettingsWidget(QWidget):
 
 
 class PointToLIneConversionSettingsWidget(QWidget):
+    dataChanged = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         # TODO replace row dict with actual model ?
@@ -148,12 +151,19 @@ class PointToLIneConversionSettingsWidget(QWidget):
 
     def setup_ui(self):
         self.field_map_widget = FieldMapWidget(self.row_dict)
+        # emit dataChanged signal when field map widget data changes
+        self.field_map_widget.dataChanged.connect(self.dataChanged.emit)
         self.table_view = self.field_map_widget.table_view
         self.table_model = self.field_map_widget.table_model
         self.table_delegate = self.field_map_widget.table_delegate
         layout = QVBoxLayout(self)
         layout.addWidget(self.field_map_widget)
         self.field_map_widget.open_persistent_editors()
+
+    def _on_data_changed(self, top_left, bottom_right, roles):
+        # Here you can ensure data is fully updated
+        # Update any internal state if needed
+        self.dataChanged.emit()
 
     def update_layer(self, layer):
         self.field_map_widget.update_layer(layer)
@@ -163,6 +173,10 @@ class PointToLIneConversionSettingsWidget(QWidget):
 
     def deserialize(self, data):
         self.field_map_widget.deserialize(data)
+
+    @property
+    def is_valid(self):
+        return self.field_map_widget.is_valid
 
 
 class IntegrationSettingsWidget(QWidget):
