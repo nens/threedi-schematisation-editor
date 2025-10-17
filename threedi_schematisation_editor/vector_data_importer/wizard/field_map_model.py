@@ -280,7 +280,7 @@ class FieldMapDelegate(QStyledItemDelegate):
         if key in self._editors:
             return self._editors[key]
         if FieldMapColumn.from_index(index.column()) == FieldMapColumn.METHOD:
-            combo = CustomComboBox(parent)
+            combo = QComboBox(parent)
             combo.addItem("", None)
             row = index.model().rows[index.row()]
             for m in row.config._metadata.allowed_methods:
@@ -294,7 +294,7 @@ class FieldMapDelegate(QStyledItemDelegate):
         elif (
             FieldMapColumn.from_index(index.column()) == FieldMapColumn.SOURCE_ATTRIBUTE
         ):
-            combo = CustomComboBox(parent)
+            combo = QComboBox(parent)
             combo.addItems([""] + index.model().current_layer_attributes)
             combo.currentIndexChanged.connect(
                 lambda idx, editor=combo: self.commitData.emit(editor)
@@ -353,6 +353,15 @@ class FieldMapDelegate(QStyledItemDelegate):
         """Commit expression widget data"""
         self.commitData.emit(widget)
 
+    @staticmethod
+    def get_invalid_style_for_editor(editor):
+        if isinstance(editor, QComboBox):
+            return f"QComboBox {{ background-color: {BACKGROUND_COLOR};}}"
+        elif isinstance(editor, (QLineEdit, QgsFieldExpressionWidget)):
+            return f"QLineEdit {{ background-color: {BACKGROUND_COLOR};}}"
+        else:
+            return ""
+
     def setEditorData(self, editor, index):
         # TODO: use data model to set styling for missing data!
         # Retrieve info from the model
@@ -360,6 +369,7 @@ class FieldMapDelegate(QStyledItemDelegate):
         value = index.data(Qt.EditRole)
         has_layer = len(index.model().current_layer_attributes) > 0
         column = FieldMapColumn.from_index(index.column())
+        valid = row.is_valid
         # Update enabled status
         if column == FieldMapColumn.LABEL:
             is_enabled = has_layer
@@ -378,23 +388,14 @@ class FieldMapDelegate(QStyledItemDelegate):
         elif column == FieldMapColumn.EXPRESSION:
             value = index.data(Qt.EditRole)
             editor.setExpression(value)
-            if value or not is_enabled:
-                editor.setStyleSheet("")
-            else:
-                editor.setStyleSheet(
-                    f"QLineEdit {{ background-color: {BACKGROUND_COLOR};}}"
-                )
         elif column == FieldMapColumn.DEFAULT_VALUE:
             value = index.data(Qt.EditRole)
             editor.setText(str(value) if value else "")
-            if value or not is_enabled:
-                editor.setStyleSheet("")
-            else:
-                editor.setStyleSheet(
-                    f"QLineEdit {{ background-color: {BACKGROUND_COLOR};}}"
-                )
-        else:
-            super().setEditorData(editor, index)
+        # update style
+        style_sheet = (
+            "" if valid or not is_enabled else self.get_invalid_style_for_editor(editor)
+        )
+        editor.setStyleSheet(style_sheet)
 
     def setModelData(self, editor, model, index):
         column = FieldMapColumn.from_index(index.column())
@@ -420,24 +421,6 @@ class FieldMapDelegate(QStyledItemDelegate):
     def clear_editors(self):
         """Clear all tracked editors"""
         self._editors.clear()
-
-
-class CustomComboBox(QComboBox):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.currentIndexChanged.connect(self.updateStyle)
-
-    def setEnabled(self, enabled):
-        """Override setEnabled to update the style when enabled state changes"""
-        super().setEnabled(enabled)
-        # Call updateStyle to update appearance based on the new enabled state
-        self.updateStyle(self.currentIndex())
-
-    def updateStyle(self, index):
-        if index == 0 and self.isEnabled():
-            self.setStyleSheet(f"QComboBox {{ background-color: {BACKGROUND_COLOR};}}")
-        else:
-            self.setStyleSheet("")  # Clear stylesheet
 
 
 class FieldMapWidget(QWidget):
