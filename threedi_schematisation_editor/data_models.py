@@ -42,10 +42,12 @@ from threedi_schematisation_editor.enumerators import (
     UseNestedNewton,
     Visualisation,
 )
+from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 
 DISPLAY_NAME_FIELD = "display_name"
 DISPLAY_UNIT_FIELD = "display_unit"
-METHODS_FIELD = "methods"
+ALLOWED_METHODS_FIELD = "allowed_methods"
+EXLUCDED_METHODS_FIELD = "excluded_methods"
 
 
 class HighPrecisionFloat(float):
@@ -244,10 +246,22 @@ class Weir(ModelObject):
     sewerage: bool
     external: Optional[bool]
     connection_node_id_start: int = field(
-        metadata={DISPLAY_NAME_FIELD: "Connection node start ID"}
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node start ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
     )
     connection_node_id_end: int = field(
-        metadata={DISPLAY_NAME_FIELD: "Connection node end ID"}
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node end ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
     )
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
@@ -277,10 +291,22 @@ class Culvert(ModelObject):
     friction_value: float
     friction_type: FrictionType
     connection_node_id_start: int = field(
-        metadata={DISPLAY_NAME_FIELD: "Connection node start ID"}
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node start ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
     )
     connection_node_id_end: int = field(
-        metadata={DISPLAY_NAME_FIELD: "Connection node end ID"}
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node end ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
     )
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
@@ -307,10 +333,22 @@ class Orifice(ModelObject):
     friction_type: FrictionType
     sewerage: bool
     connection_node_id_start: int = field(
-        metadata={DISPLAY_NAME_FIELD: "Connection node start ID"}
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node start ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
     )
     connection_node_id_end: int = field(
-        metadata={DISPLAY_NAME_FIELD: "Connection node end ID"}
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node end ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
     )
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
@@ -339,10 +377,22 @@ class Pipe(ModelObject):
     friction_type: FrictionType
     sewerage_type: Optional[SewerageType]
     connection_node_id_start: int = field(
-        metadata={DISPLAY_NAME_FIELD: "Connection node start ID"}
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node start ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
     )
     connection_node_id_end: int = field(
-        metadata={DISPLAY_NAME_FIELD: "Connection node end ID"}
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node end ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
     )
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
@@ -371,7 +421,7 @@ class CrossSectionLocation(ModelObject):
     friction_type: FrictionTypeExtended
     friction_value: float
     bank_level: Optional[float]
-    channel_id: int
+    channel_id: int = field(metadata={ALLOWED_METHODS_FIELD: [ColumnImportMethod.AUTO]})
     cross_section_shape: CrossSectionShape
     cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
     cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
@@ -396,10 +446,42 @@ class CrossSectionData(ModelObject):
     target_object_type: str
     target_object_id: int
     target_object_code: str
-    order_by: float
-    cross_section_shape: CrossSectionShape
-    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
-    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
+    order_by: float = field(
+        metadata={
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+            ]
+        }
+    )
+    cross_section_shape: CrossSectionShape = field(
+        metadata={
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.DEFAULT,
+                ColumnImportMethod.EXPRESSION,
+            ]
+        }
+    )
+    cross_section_width: Optional[float] = field(
+        metadata={
+            DISPLAY_UNIT_FIELD: "[m]",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+            ],
+        }
+    )
+    cross_section_height: Optional[float] = field(
+        metadata={
+            DISPLAY_UNIT_FIELD: "[m]",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+            ],
+        }
+    )
     cross_section_y: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
     cross_section_z: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
 
@@ -418,10 +500,22 @@ class Channel(ModelObject):
         metadata={DISPLAY_UNIT_FIELD: "[m]"}
     )
     connection_node_id_start: int = field(
-        metadata={DISPLAY_NAME_FIELD: "Connection node start ID"}
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node start ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
     )
     connection_node_id_end: int = field(
-        metadata={DISPLAY_NAME_FIELD: "Connection node end ID"}
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node end ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
     )
     exchange_thickness: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
     hydraulic_conductivity_in: Optional[float] = field(

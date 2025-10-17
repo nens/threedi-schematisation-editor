@@ -245,9 +245,9 @@ class FieldMapModel(QAbstractTableModel):
 
     def deserialize(self, data: dict[str, dict[str, Any]]):
         for key, row_data in data.items():
-            label = self.attr_to_label_map.get(key)
-            if label:
-                self.row_dict[label].deserialize(row_data)
+            row = self.row_dict.get(key)
+            if row:
+                row.deserialize(row_data)
 
     @property
     def is_valid(self) -> bool:
@@ -489,6 +489,7 @@ class FieldMapWidget(QWidget):
                 or current_source_attr not in self.table_model.current_layer_attributes
             ):
                 row.config.source_attribute = ""
+        # TODO check values of value_map and expression after update
         # Notify the model of the changes so the view is updated
         self.table_model.layoutChanged.emit()
 
@@ -523,6 +524,8 @@ class FieldMapWidget(QWidget):
 
     def deserialize(self, data: dict[str, dict[str, Any]]):
         self.table_model.deserialize(data)
+        # piggyback on update_layer to handle updating data
+        self.update_layer(self.table_model.layer)
 
     @property
     def is_valid(self) -> bool:

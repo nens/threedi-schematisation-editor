@@ -1,11 +1,9 @@
-from dataclasses import dataclass, fields
+from dataclasses import Field, dataclass, fields
 from enum import Enum
-from typing import Any, ClassVar, Optional, Type
+from typing import Any, ClassVar, Optional, Type, Union, get_args, get_origin
 
 from pydantic import (
     BaseModel,
-    ConfigDict,
-    create_model,
     field_validator,
     model_validator,
 )
@@ -19,7 +17,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
 )
 
 
-class IntegrationMode(Enum):
+class IntegrationMode(str, Enum):
     NONE = "None"
     CHANNELS = "channels"
     PIPES = "pipes"
@@ -139,7 +137,7 @@ class FieldMapConfig(BaseModel):
 
 def create_field_map_config(
     allowed_methods: Optional[list[ColumnImportMethod]],
-) -> BaseModel:
+) -> Type[BaseModel]:
     """Creates a FieldMapConfig class for a specific field based on its metadata"""
 
     metadata = FieldMapMetadata(allowed_methods=allowed_methods)
@@ -160,17 +158,46 @@ def create_field_map_config(
     return CustomFieldMapConfig
 
 
-def get_field_map_configs_for_model_class(
-    model_class: dm.ModelObject,
-) -> dict[str, BaseModel]:
-    """Creates FieldMapConfig classes for all fields in a model"""
-    all_methods = [method for method in ColumnImportMethod]
-    return {
-        field.name: create_field_map_config(
-            field.name, field.metadata.get(dm.METHOD_FIELDS, all_methods)
-        )
-        for field in fields(model_class)
-    }
+def get_allowed_methods_for_model_class_field(
+    model_field: Field,
+) -> list[ColumnImportMethod]:
+    # TODO: check if excluded is actually needed
+    # Try to find allowed_methods from metadata
+    allowed_methods = model_field.metadata.get(dm.ALLOWED_METHODS_FIELD)
+    # Use defaults if not defined
+    if not allowed_methods:
+        if model_field.name == "id":
+            allowed_methods = [ColumnImportMethod.AUTO]
+        else:
+            allowed_methods = [
+                method
+                for method in ColumnImportMethod
+                if method != ColumnImportMethod.AUTO
+            ]
+    # Find excluded methods
+    excluded_methods = model_field.metadata.get(dm.EXLUCDED_METHODS_FIELD, [])
+    # check if field type is optional and if so add it to the excluded_methods
+    type_constructor = get_origin(model_field.type)
+    # Optional fields have type Union[T, None]
+    if not type_constructor is Union or type(None) not in get_args(model_field.type):
+        excluded_methods.append(ColumnImportMethod.IGNORE)
+    # Remove excluded methods
+    for method in excluded_methods:
+        if method in allowed_methods:
+            allowed_methods.remove(method)
+    return sorted(
+        allowed_methods, key=lambda method: list(ColumnImportMethod).index(method)
+    )
+
+
+def get_field_map_config_for_model_class_field(
+    field_name: str, model_class: Type
+) -> Type[BaseModel]:
+    """Creates FieldMapConfig class for a specific field"""
+    field = next((f for f in fields(model_class) if f.name == field_name), None)
+    if not field:
+        raise ValueError(f"Field {field_name} not found in {model_class.__name__}")
+    return create_field_map_config(get_allowed_methods_for_model_class_field(field))
 
 
 # TODO: combine stuff above and below in 1 consistent approach

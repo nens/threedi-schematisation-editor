@@ -16,6 +16,9 @@ from PyQt5.QtWidgets import (
 )
 from qgis.core import Qgis, QgsMessageLog
 
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
+    get_field_map_config_for_model_class_field,
+)
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
     FieldMapRow,
     FieldMapWidget,
@@ -122,7 +125,7 @@ class SettingsPage(QWizardPage):
     def deserialize(self, data):
         """Load settings from serialized data"""
         if "connection_nodes" in data and self.connection_node_settings:
-            self.connection_node_settings.deserialize(data["connection"])
+            self.connection_node_settings.deserialize(data["connection_nodes"])
         if (
             "point_to_line_conversion" in data
             and self.point_to_line_conversion_settings
@@ -145,13 +148,21 @@ class SettingsPage(QWizardPage):
 class FieldMapPage(QWizardPage):
     def __init__(self, model_cls, name):
         super().__init__()
-        self.row_dict = {
-            field_name: FieldMapRow(label=display_name)
-            for field_name, display_name in model_cls.fields_display_names().items()
-        }
+        self.row_dict = self.create_rows(model_cls)
         self.setTitle(f"{model_cls.__tablename__}")
         self.setup_ui()
         self.name = name
+
+    def create_rows(self, model_cls):
+        row_dict = {}
+        for field_name, display_name in model_cls.fields_display_names().items():
+            config_class = get_field_map_config_for_model_class_field(
+                field_name, model_cls
+            )
+            row_dict[field_name] = FieldMapRow(
+                label=display_name, config=config_class.model_construct(method=None)
+            )
+        return row_dict
 
     def setup_ui(self):
         self.field_map_widget = FieldMapWidget(self.row_dict)

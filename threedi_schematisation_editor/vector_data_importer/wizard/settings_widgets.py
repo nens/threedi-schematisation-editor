@@ -29,7 +29,6 @@ from threedi_schematisation_editor.vector_data_importer.settings_models import (
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
-    FieldMapRow,
     FieldMapWidget,
     create_field_map_row,
 )
@@ -144,8 +143,6 @@ class PointToLIneConversionSettingsWidget(QWidget):
 
     def __init__(self):
         super().__init__()
-        # TODO replace row dict with actual model ?
-
         allowed_methods = [
             ColumnImportMethod.ATTRIBUTE,
             ColumnImportMethod.DEFAULT,
