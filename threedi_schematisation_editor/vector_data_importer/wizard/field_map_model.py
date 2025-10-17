@@ -30,6 +30,9 @@ from threedi_schematisation_editor.vector_data_importer.settings_models import (
     create_field_map_config,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog import (
+    ValueMapDialog,
+)
 
 BACKGROUND_COLOR = "#ff8888"
 
@@ -147,39 +150,6 @@ def create_field_map_row(
     field_map_config = create_field_map_config(allowed_methods)
     config = field_map_config.model_construct(method=None, **kwargs)
     return FieldMapRow(label=label, config=config)
-
-
-class ValueMapDialog(QDialog):
-    def __init__(self, current_value="", parent=None):
-        super().__init__(parent)
-
-        self.setWindowTitle("Set Value Map")
-        self.setModal(True)
-
-        # Input field
-        self.input_field = QLineEdit(self)
-        self.input_field.setText(current_value)
-
-        # Dialog buttons (OK and Cancel)
-        self.dialog_buttons = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self
-        )
-        self.dialog_buttons.accepted.connect(self.accept)
-        self.dialog_buttons.rejected.connect(self.reject)
-
-        # Layout for dialog
-        layout = QVBoxLayout()
-        layout.addWidget(QLabel("Enter Value Map:"))
-        layout.addWidget(self.input_field)
-        layout.addWidget(self.dialog_buttons)
-
-        self.setLayout(layout)
-
-    def get_value_map(self):
-        """
-        Return the value entered in the QLineEdit.
-        """
-        return self.input_field.text()
 
 
 class FieldMapModel(QAbstractTableModel):
@@ -302,13 +272,14 @@ class FieldMapDelegate(QStyledItemDelegate):
             self._editors[key] = combo
             return combo
         elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.VALUE_MAP:
-            # TODO: use real value map
             button = QPushButton(parent)
             current_value_map = (
                 index.data(Qt.EditRole) if index.data(Qt.EditRole) else ""
             )
             button.setText(
-                current_value_map if len(current_value_map) > 0 else "Set Value Map..."
+                str(current_value_map)
+                if len(current_value_map) > 0
+                else "Set Value Map..."
             )
             button.clicked.connect(
                 lambda checked, idx=index, btn=button: self.openValueMapDialog(idx, btn)
@@ -336,19 +307,18 @@ class FieldMapDelegate(QStyledItemDelegate):
 
     def openValueMapDialog(self, index, button):
         """Open the value map dialog and update the model"""
-        current_value_map = index.data(Qt.EditRole) if index.data(Qt.EditRole) else ""
-        dialog = ValueMapDialog(current_value=current_value_map, parent=button)
+        dialog = ValueMapDialog(
+            row=index.model().rows[index.row()],
+            layer=index.model().layer,
+            parent=button,
+        )
         if dialog.exec_() == QDialog.Accepted:
             new_value_map = dialog.get_value_map()
             button.setText(
-                new_value_map if len(new_value_map) > 0 else "Set Value Map..."
+                str(new_value_map) if len(new_value_map) > 0 else "Set Value Map..."
             )
             index.model().setData(index, new_value_map, Qt.EditRole)
 
-    # def commitDefaultValueData(self, index, widget):
-    #     """Commit default value widget data"""
-    #     self.commitData.emit(widget)
-    #
     def commitExpressionData(self, index, widget):
         """Commit expression widget data"""
         self.commitData.emit(widget)
@@ -363,7 +333,6 @@ class FieldMapDelegate(QStyledItemDelegate):
             return ""
 
     def setEditorData(self, editor, index):
-        # TODO: use data model to set styling for missing data!
         # Retrieve info from the model
         row = index.model().rows[index.row()]
         value = index.data(Qt.EditRole)
