@@ -255,3 +255,8 @@ def get_field_map_config(field_config: dict, model_cls: Type):
 class PointToLineSettingsModel(BaseModel):
     length: FieldMapConfig
     azimuth: FieldMapConfig
+
+
+class CrossSectionLocationMappingModel:
+    join_field_src: FieldMapConfig
+    join_field_tgt: FieldMapConfig

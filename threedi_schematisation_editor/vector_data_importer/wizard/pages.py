@@ -1,3 +1,5 @@
+from typing import Optional
+
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -25,44 +27,26 @@ from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model i
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets import (
     ConnectionNodeSettingsWidget,
-    CrossSectionDataRemapSettingsWidget,
+    FieldMapSettingsWidget,
     GenericSettingsWidget,
-    IntegrationSettingsWidget,
-    PointToLIneConversionSettingsWidget,
 )
 
 
 class SettingsPage(QWizardPage):
-    def __init__(
-        self,
-        add_connection_node_settings: bool = False,
-        add_point_to_line_settings: bool = False,
-        add_integration_settings: bool = False,
-        add_cross_section_data_remap_settings: bool = False,
-    ):
+    def __init__(self, settings_widgets: Optional[list[QWidget]] = None):
         super().__init__()
         self.setTitle("Import settings")
         self.connection_node_settings: Optional[QWidget] = None
         self.point_to_line_conversion_settings: Optional[QWidget] = None
         self.integration_settings: Optional[QWidget] = None
         self.cross_section_data_remap_settings: Optional[QWidget] = None
-        self.setup_ui(
-            add_connection_node_settings,
-            add_point_to_line_settings,
-            add_integration_settings,
-            add_cross_section_data_remap_settings,
-        )
+        self.settings_widgets = settings_widgets if settings_widgets else []
+        self.setup_ui()
 
     def on_load_button_clicked(self):
         self.wizard().load_settings_from_json()
 
-    def setup_ui(
-        self,
-        add_connection_node_settings: bool,
-        add_point_to_line_conversion_settings: bool,
-        add_integration_settings: bool,
-        add_cross_section_data_remap_settings: bool,
-    ):
+    def setup_ui(self):
         layout = QVBoxLayout(self)
 
         # Top row
@@ -76,83 +60,47 @@ class SettingsPage(QWizardPage):
         top_layout.addWidget(self.generic_settings)
         top_layout.addWidget(load_settings_button)
         layout.addLayout(top_layout)
-
-        # specific settings widgets
-        if add_connection_node_settings:
-            self.connection_node_settings = ConnectionNodeSettingsWidget()
-            group_box = QGroupBox("Connection node settings")
-            group_box.setLayout(self.connection_node_settings.layout())
-            layout.addWidget(group_box)
-
-        if add_point_to_line_conversion_settings:
-            self.point_to_line_conversion_settings = (
-                PointToLIneConversionSettingsWidget()
-            )
-            group_box = QGroupBox("Point to line conversion settings")
-            group_box.setLayout(self.point_to_line_conversion_settings.layout())
-            layout.addWidget(group_box)
-            # connect data changed to isComplete status of the page
-            self.point_to_line_conversion_settings.dataChanged.connect(
-                self.completeChanged
-            )
-        if add_integration_settings:
-            self.integration_settings = IntegrationSettingsWidget()
-            group_box = QGroupBox("Integration settings")
-            group_box.setLayout(self.integration_settings.layout())
-            layout.addWidget(group_box)
-        if add_cross_section_data_remap_settings:
-            self.cross_section_data_remap_settings = (
-                CrossSectionDataRemapSettingsWidget()
-            )
-            group_box = QGroupBox("Align cross section table to reference level")
-            group_box.setLayout(self.cross_section_data_remap_settings.layout())
+        # add settings widgets
+        for widget in self.settings_widgets:
+            widget.dataChanged.connect(self.completeChanged)
+            group_box = QGroupBox(widget.group_name)
+            group_box.setLayout(widget.layout())
             layout.addWidget(group_box)
         self.setLayout(layout)
 
     def update_layer(self):
         layer = self.wizard().selected_layer
-        if self.point_to_line_conversion_settings:
-            self.point_to_line_conversion_settings.update_layer(layer)
+        for widget in self.settings_widgets:
+            if isinstance(widget, FieldMapSettingsWidget):
+                widget.update_layer(layer)
 
     @property
     def create_nodes(self):
         # Easy and safe access to the create nodes settings that is used to
         # determine if field map pages for nodes are shown
-        if self.connection_node_settings:
-            return self.connection_node_settings.create_nodes
+        for widget in self.settings_widgets:
+            if isinstance(widget, ConnectionNodeSettingsWidget):
+                return widget.create_nodes
         return False
 
     def serialize(self) -> dict:
         settings = {}
-        if self.connection_node_settings:
-            settings["connection_nodes"] = self.connection_node_settings.serialize()
-        if self.point_to_line_conversion_settings:
-            settings["point_to_line_conversion"] = (
-                self.point_to_line_conversion_settings.serialize()
-            )
-        if self.integration_settings:
-            settings["integration"] = self.integration_settings.serialize()
+        for widget in self.settings_widgets:
+            settings[widget.name] = widget.serialize()
         return settings
 
     def deserialize(self, data):
         """Load settings from serialized data"""
-        if "connection_nodes" in data and self.connection_node_settings:
-            self.connection_node_settings.deserialize(data["connection_nodes"])
-        if (
-            "point_to_line_conversion" in data
-            and self.point_to_line_conversion_settings
-        ):
-            self.point_to_line_conversion_settings.deserialize(
-                data["point_to_line_conversion"]
-            )
-        if "integration" in data and self.integration_settings:
-            self.integration_settings.deserialize(data["integration"])
+        settings_widget_map = {widget.name: widget for widget in self.settings_widgets}
+        for name, settings in data.items():
+            if name in settings_widget_map:
+                settings_widget_map[name].deserialize(settings)
 
     def isComplete(self) -> bool:
         if not self.generic_settings.selected_layer:
             return False
-        elif self.point_to_line_conversion_settings:
-            if not self.point_to_line_conversion_settings.is_valid:
+        for widget in self.settings_widgets:
+            if not widget.is_valid:
                 return False
         return True
 

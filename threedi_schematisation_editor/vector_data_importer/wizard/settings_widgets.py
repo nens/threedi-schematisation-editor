@@ -25,6 +25,7 @@ from qgis.PyQt.QtWidgets import (
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     ConnectionNodeSettingsModel,
     CrossSectionDataRemapModel,
+    CrossSectionLocationMappingModel,
     IntegrationMode,
     IntegrationSettingsModel,
 )
@@ -81,11 +82,35 @@ class GenericSettingsWidget(QWidget):
         return self.model
 
 
-class ConnectionNodeSettingsWidget(QWidget):
+class SettingsWidget(QWidget):
+    dataChanged = pyqtSignal()
+
+    @property
+    def name(self) -> str:
+        raise NotImplementedError
+
+    @property
+    def group_name(self) -> str:
+        raise NotImplementedError
+
+    @property
+    def is_valid(self) -> bool:
+        return True
+
+
+class ConnectionNodeSettingsWidget(SettingsWidget):
     def __init__(self):
         super().__init__()
         self.model = ConnectionNodeSettingsModel()
         self.setup_ui()
+
+    @property
+    def name(self):
+        return "connection_nodes"
+
+    @property
+    def group_name(self):
+        return "Connection node settings"
 
     def setup_ui(self):
         # Create widgets
@@ -139,65 +164,19 @@ class ConnectionNodeSettingsWidget(QWidget):
         self.snap_distance.setValue(self.model.snap_distance)
 
 
-class PointToLIneConversionSettingsWidget(QWidget):
-    dataChanged = pyqtSignal()
-
-    def __init__(self):
-        super().__init__()
-        allowed_methods = [
-            ColumnImportMethod.ATTRIBUTE,
-            ColumnImportMethod.DEFAULT,
-            ColumnImportMethod.EXPRESSION,
-        ]
-        self.row_dict = {
-            "structure_length": create_field_map_row(
-                label="Structure length",
-                allowed_methods=allowed_methods,
-                default_value=10,
-            ),
-            "azimuth": create_field_map_row(
-                label="Structure direction (azimuth)",
-                allowed_methods=allowed_methods,
-                default_value=10,
-            ),
-        }
-        self.setup_ui()
-
-    def setup_ui(self):
-        self.field_map_widget = FieldMapWidget(self.row_dict)
-        # emit dataChanged signal when field map widget data changes
-        self.field_map_widget.dataChanged.connect(self.dataChanged.emit)
-        self.table_view = self.field_map_widget.table_view
-        self.table_model = self.field_map_widget.table_model
-        self.table_delegate = self.field_map_widget.table_delegate
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.field_map_widget)
-        self.field_map_widget.open_persistent_editors()
-
-    def _on_data_changed(self, top_left, bottom_right, roles):
-        # Here you can ensure data is fully updated
-        # Update any internal state if needed
-        self.dataChanged.emit()
-
-    def update_layer(self, layer):
-        self.field_map_widget.update_layer(layer)
-
-    def serialize(self):
-        return self.field_map_widget.serialize()
-
-    def deserialize(self, data):
-        self.field_map_widget.deserialize(data)
-
-    @property
-    def is_valid(self):
-        return self.field_map_widget.is_valid
-
-
-class IntegrationSettingsWidget(QWidget):
+class IntegrationSettingsWidget(SettingsWidget):
     def __init__(self):
         super().__init__()
         self.model = IntegrationSettingsModel()
         self.setup_ui()
+
+    @property
+    def name(self):
+        return "integration"
+
+    @property
+    def group_name(self):
+        return "Integration settings"
 
     def update_integrate_on(self, checked: bool):
         # set integrate_on to specified value, but only if checked
@@ -287,6 +266,14 @@ class CrossSectionDataRemapSettingsWidget(QWidget):
         self.model = CrossSectionDataRemapModel()
         self.setup_ui()
 
+    @property
+    def name(self):
+        return "cross_section_data_remap"
+
+    @property
+    def group_name(self):
+        return "Align cross section table to reference level"
+
     def setup_ui(self):
         # Create widgets
         self.set_lowest_point_to_zero = QCheckBox("Set lowest point to zero")
@@ -326,3 +313,93 @@ class CrossSectionDataRemapSettingsWidget(QWidget):
         self.use_lowest_point_as_reference.setChecked(
             self.model.use_lowest_point_as_reference
         )
+
+
+class FieldMapSettingsWidget(SettingsWidget):
+    def setup_ui(self, row_dict):
+        self.field_map_widget = FieldMapWidget(row_dict)
+        # emit dataChanged signal when field map widget data changes
+        self.field_map_widget.dataChanged.connect(self.dataChanged.emit)
+        self.table_view = self.field_map_widget.table_view
+        self.table_model = self.field_map_widget.table_model
+        self.table_delegate = self.field_map_widget.table_delegate
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.field_map_widget)
+        self.field_map_widget.open_persistent_editors()
+
+    def _on_data_changed(self, top_left, bottom_right, roles):
+        self.dataChanged.emit()
+
+    def update_layer(self, layer):
+        self.field_map_widget.update_layer(layer)
+
+    def serialize(self):
+        return self.field_map_widget.serialize()
+
+    def deserialize(self, data):
+        self.field_map_widget.deserialize(data)
+
+    @property
+    def is_valid(self):
+        return self.field_map_widget.is_valid
+
+
+class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
+    def __init__(self):
+        super().__init__()
+        allowed_methods = [
+            ColumnImportMethod.ATTRIBUTE,
+            ColumnImportMethod.DEFAULT,
+            ColumnImportMethod.EXPRESSION,
+        ]
+        row_dict = {
+            "structure_length": create_field_map_row(
+                label="Structure length",
+                allowed_methods=allowed_methods,
+                default_value=10,
+            ),
+            "azimuth": create_field_map_row(
+                label="Structure direction (azimuth)",
+                allowed_methods=allowed_methods,
+                default_value=10,
+            ),
+        }
+        self.setup_ui(row_dict)
+
+    @property
+    def name(self):
+        return "point_to_line_conversion"
+
+    @property
+    def group_name(self):
+        return "Point to line conversion settings"
+
+
+class CrossSectionLocationMappingSettingsWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        allowed_methods = [
+            ColumnImportMethod.AUTO,
+            ColumnImportMethod.ATTRIBUTE,
+            ColumnImportMethod.EXPRESSION,
+        ]
+        row_dict = {
+            "join_field_src": create_field_map_row(
+                label="Join channel source field",
+                allowed_methods=allowed_methods,
+            ),
+            "join_field_tgt": create_field_map_row(
+                label="Join channel target field",
+                allowed_methods=allowed_methods,
+            ),
+        }
+        self.setup_ui(row_dict)
+
+    @property
+    def name(self):
+        return "cross_section_location_mapping"
+
+    @property
+    def group_name(self):
+        # TODO: better name
+        return "Mapping"

@@ -13,6 +13,12 @@ from threedi_schematisation_editor.vector_data_importer.wizard.pages import (
     RunPage,
     SettingsPage,
 )
+from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets import (
+    ConnectionNodeSettingsWidget,
+    CrossSectionDataRemapSettingsWidget,
+    IntegrationSettingsWidget,
+    PointToLIneConversionSettingsWidget,
+)
 
 
 class VDIWizard(QWizard):
@@ -58,7 +64,6 @@ class VDIWizard(QWizard):
         self.resize(1000, 750)
 
         # add pages
-        # self.settings_page = SettingsPage()
         self.addPage(self.settings_page)
         if self.field_map_page:
             self.addPage(self.field_map_page)
@@ -147,7 +152,7 @@ class ImportConduitWizard(ImportWithCreateConnectionNodesWizard):
     @cached_property
     def settings_page(self):
         return SettingsPage(
-            add_connection_node_settings=True,
+            settings_widgets=[ConnectionNodeSettingsWidget()],
         )
 
 
@@ -155,9 +160,11 @@ class ImportStructureWizard(ImportWithCreateConnectionNodesWizard):
     @cached_property
     def settings_page(self):
         return SettingsPage(
-            add_connection_node_settings=True,
-            add_point_to_line_settings=True,
-            add_integration_settings=True,
+            [
+                ConnectionNodeSettingsWidget(),
+                PointToLIneConversionSettingsWidget(),
+                IntegrationSettingsWidget(),
+            ]
         )
 
 
@@ -168,6 +175,4 @@ class ImportCrossSectionDataWizard(VDIWizard):
 
     @cached_property
     def settings_page(self):
-        return SettingsPage(
-            add_cross_section_data_remap_settings=True,
-        )
+        return SettingsPage([CrossSectionDataRemapSettingsWidget()])
