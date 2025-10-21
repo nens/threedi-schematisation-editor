@@ -6,6 +6,7 @@ from qgis.PyQt.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QInputDialog,
+    QMessageBox,
     QPushButton,
     QSizePolicy,
     QSpacerItem,
@@ -15,6 +16,8 @@ from qgis.PyQt.QtWidgets import (
 
 
 class ValueMapModel(QAbstractTableModel):
+    dataChangeRejected = pyqtSignal(str)  # Add this signal
+
     def __init__(self):
         super().__init__()
         self._sources: List[str] = []
@@ -43,8 +46,13 @@ class ValueMapModel(QAbstractTableModel):
         if role != Qt.EditRole:
             return False
         row = index.row()
+        col = index.column()
         value = str(value)
-        if index.column() == 0:
+        if col == ValueMapDialog.SRC_COLUMN_IDX:
+            if value in self._sources and self._sources.index(value) != row:
+                self.dataChangeRejected.emit(value)
+                return False
+        if index.column() == ValueMapDialog.SRC_COLUMN_IDX:
             self._sources[row] = value
         else:
             self._targets[row] = value
@@ -95,6 +103,16 @@ class ValueMapDialog(QDialog):
         super().__init__(parent)
         self.setup_ui()
         self.model.set_from_dict(value_map)
+        # Add connection to handle data change attempts
+        self.model.dataChangeRejected.connect(self.show_duplicate_value_error)
+
+    def show_duplicate_value_error(self, value):
+        QMessageBox.warning(
+            self,
+            "Invalid Value",
+            f"Source attribute value '{value}' is already used",
+            QMessageBox.Ok,
+        )
 
     def sizeHint(self):
         # Get the width needed for the columns plus some padding
