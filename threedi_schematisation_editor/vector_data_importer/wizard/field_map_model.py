@@ -155,7 +155,7 @@ def create_field_map_row(
 
 
 class FieldMapModel(QAbstractTableModel):
-    def __init__(self, row_dict, parent=None):
+    def __init__(self, row_dict: dict[str, FieldMapRow], parent=None):
         super().__init__(parent)
         self.row_dict = row_dict
         self.rows = list(row_dict.values())
@@ -163,7 +163,26 @@ class FieldMapModel(QAbstractTableModel):
             attr_name: row.label for attr_name, row in row_dict.items()
         }
         self.current_layer_attributes = []
+        self._fixed_source_attributes = {}
         self.layer: QgsVectorLayer = None
+
+    def set_fixed_source_attributes(self, row_key: str, source_attribute: list[str]):
+        # Only add fixed source attributes for existing rows
+        # Not catching any errors because this is the developpers problem
+        if row_key in self.row_dict:
+            self._fixed_source_attributes[row_key] = source_attribute
+
+    def get_valid_source_attributes(self, row_idx: int) -> list[str]:
+        QgsMessageLog.logMessage(
+            f"get valid attributes for row {row_idx}", "DEBUG", Qgis.Info
+        )
+        row_key = list(self.row_dict.keys())[row_idx]
+        if row_key in self._fixed_source_attributes:
+            return self._fixed_source_attributes[row_key]
+        return self.current_layer_attributes
+
+    def set_fixed_source_attributes_for_row(self, row_name, attributes):
+        self._fixed_source_attributes[row_name] = attributes
 
     def rowCount(self, parent=QModelIndex()):
         return len(self.rows) if self.rows else 0
@@ -267,7 +286,9 @@ class FieldMapDelegate(QStyledItemDelegate):
             FieldMapColumn.from_index(index.column()) == FieldMapColumn.SOURCE_ATTRIBUTE
         ):
             combo = QComboBox(parent)
-            combo.addItems([""] + index.model().current_layer_attributes)
+            combo.addItems(
+                [""] + index.model().get_valid_source_attributes(index.row())
+            )
             combo.currentIndexChanged.connect(
                 lambda idx, editor=combo: self.commitData.emit(editor)
             )
@@ -340,7 +361,7 @@ class FieldMapDelegate(QStyledItemDelegate):
         # Retrieve info from the model
         row = index.model().rows[index.row()]
         value = index.data(Qt.EditRole)
-        has_layer = len(index.model().current_layer_attributes) > 0
+        has_layer = len(index.model().get_valid_source_attributes(index.row())) > 0
         column = FieldMapColumn.from_index(index.column())
         valid = row.is_valid or value not in [None, ""]
         # Update enabled status
@@ -438,14 +459,14 @@ class FieldMapWidget(QWidget):
         """Update the layer and update the table view"""
         self.close_persistent_editors()
         self.table_model.set_current_layer(layer)
-        for row in self.table_model.rows:
+        for row_idx, row in enumerate(self.table_model.rows):
             current_source_attr = row.config.source_attribute
             if (
                 not layer
-                or current_source_attr not in self.table_model.current_layer_attributes
+                or current_source_attr
+                not in self.table_model.get_valid_source_attributes(row_idx)
             ):
                 row.config.source_attribute = ""
-        # TODO check values of value_map and expression after update
         # Notify the model of the changes so the view is updated
         self.table_model.layoutChanged.emit()
 

@@ -16,6 +16,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.pages import (
 from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets import (
     ConnectionNodeSettingsWidget,
     CrossSectionDataRemapSettingsWidget,
+    CrossSectionLocationMappingSettingsWidget,
     IntegrationSettingsWidget,
     PointToLIneConversionSettingsWidget,
 )
@@ -176,3 +177,9 @@ class ImportCrossSectionDataWizard(VDIWizard):
     @cached_property
     def settings_page(self):
         return SettingsPage([CrossSectionDataRemapSettingsWidget()])
+
+
+class ImportCrossSectionLocationWizard(VDIWizard):
+    @cached_property
+    def settings_page(self):
+        return SettingsPage([CrossSectionLocationMappingSettingsWidget()])

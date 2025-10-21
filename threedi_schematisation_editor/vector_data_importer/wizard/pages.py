@@ -36,10 +36,6 @@ class SettingsPage(QWizardPage):
     def __init__(self, settings_widgets: Optional[list[QWidget]] = None):
         super().__init__()
         self.setTitle("Import settings")
-        self.connection_node_settings: Optional[QWidget] = None
-        self.point_to_line_conversion_settings: Optional[QWidget] = None
-        self.integration_settings: Optional[QWidget] = None
-        self.cross_section_data_remap_settings: Optional[QWidget] = None
         self.settings_widgets = settings_widgets if settings_widgets else []
         self.setup_ui()
 

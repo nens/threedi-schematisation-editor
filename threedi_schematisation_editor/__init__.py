@@ -90,6 +90,7 @@ from threedi_schematisation_editor.vector_data_importer.dialogs.import_features 
 from threedi_schematisation_editor.vector_data_importer.wizard import (
     ImportConduitWizard,
     ImportCrossSectionDataWizard,
+    ImportCrossSectionLocationWizard,
     ImportStructureWizard,
     VDIWizard,
 )
@@ -186,7 +187,7 @@ class ThreediSchematisationEditorPlugin:
         self.load_schematisation(
             "/home/margriet/qgis_workdir/test_253_import_csd/test.gpkg"
         )
-        self.action_import_features.menu().actions()[4].trigger()
+        self.action_import_features.menu().actions()[2].trigger()
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
@@ -440,7 +441,7 @@ class ThreediSchematisationEditorPlugin:
         self.import_external(dm.CrossSectionData, ImportCrossSectionDataWizard)
 
     def import_external_cross_section_locations(self):
-        self.import_external(dm.CrossSectionLocation, VDIWizard)
+        self.import_external(dm.CrossSectionLocation, ImportCrossSectionLocationWizard)
 
     def import_external_culverts(self):
         self.import_external(dm.Culvert, ImportStructureWizard)

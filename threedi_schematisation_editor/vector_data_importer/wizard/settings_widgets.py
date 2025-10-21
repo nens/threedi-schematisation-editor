@@ -2,7 +2,7 @@ from typing import Optional
 
 from qgis.core import Qgis, QgsMessageLog
 from qgis.gui import QgsMapLayerComboBox
-from qgis.PyQt.QtCore import pyqtSignal
+from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
     QButtonGroup,
@@ -31,6 +31,7 @@ from threedi_schematisation_editor.vector_data_importer.settings_models import (
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
+    FieldMapColumn,
     FieldMapWidget,
     create_field_map_row,
 )
@@ -260,7 +261,7 @@ class IntegrationSettingsWidget(SettingsWidget):
         self.min_length.setValue(self.model.min_length)
 
 
-class CrossSectionDataRemapSettingsWidget(QWidget):
+class CrossSectionDataRemapSettingsWidget(SettingsWidget):
     def __init__(self):
         super().__init__()
         self.model = CrossSectionDataRemapModel()
@@ -375,7 +376,7 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
         return "Point to line conversion settings"
 
 
-class CrossSectionLocationMappingSettingsWidget(QWidget):
+class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
     def __init__(self):
         super().__init__()
         allowed_methods = [
@@ -394,6 +395,17 @@ class CrossSectionLocationMappingSettingsWidget(QWidget):
             ),
         }
         self.setup_ui(row_dict)
+        # Some dirty costumization
+        # only allow attributes 'id' and 'code' for the target
+        self.table_model.set_fixed_source_attributes_for_row(
+            "join_field_tgt", ["id", "code"]
+        )
+        # hide unused default value
+        self.table_view.horizontalHeader().hideSection(
+            self.table_model.columnCount() - 1
+        )
+        # set method to auto for both rows if it's selected for one row
+        self.table_model.dataChanged.connect(self._sync_auto_methods)
 
     @property
     def name(self):
@@ -403,3 +415,25 @@ class CrossSectionLocationMappingSettingsWidget(QWidget):
     def group_name(self):
         # TODO: better name
         return "Mapping"
+
+    def _sync_auto_methods(self, top_left, bottom_right, roles):
+        if not roles or Qt.EditRole in roles:
+            row_idx = top_left.row()
+            other_row_idx = 0 if top_left.row() == 1 else 1
+            method_column = FieldMapColumn.to_index(FieldMapColumn.METHOD)
+            method = self.table_model.data(
+                self.table_model.index(row_idx, method_column), Qt.EditRole
+            )
+            other_method = self.table_model.data(
+                self.table_model.index(other_row_idx, method_column), Qt.EditRole
+            )
+            # check if this call was caused by changing the method to auto and if so set other method to auto
+            if (
+                method == ColumnImportMethod.AUTO
+                and other_method != ColumnImportMethod.AUTO
+            ):
+                self.table_model.setData(
+                    self.table_model.index(other_row_idx, method_column),
+                    ColumnImportMethod.AUTO,
+                    Qt.EditRole,
+                )
