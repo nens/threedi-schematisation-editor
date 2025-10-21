@@ -28,6 +28,8 @@ from threedi_schematisation_editor.vector_data_importer.settings_models import (
     CrossSectionLocationMappingModel,
     IntegrationMode,
     IntegrationSettingsModel,
+    get_field_max,
+    get_field_min,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
@@ -119,10 +121,11 @@ class ConnectionNodeSettingsWidget(SettingsWidget):
         self.snap = QCheckBox("Snap to existing connection nodes within: ")
         self.snap.setEnabled(False)
         self.snap_distance = QDoubleSpinBox()
-        self.snap_distance.setRange(0, 100)
         self.snap_distance.setSuffix(" m")
         self.snap_distance.setDecimals(1)
         self.snap_distance.setEnabled(False)
+        self.snap_distance.setMinimum(get_field_min(self.model, "snap_distance"))
+        self.snap_distance.setMaximum(get_field_max(self.model, "snap_distance"))
 
         # Connect widgets to model updates
         self.create_nodes.toggled.connect(self.update_create_nodes)
@@ -229,7 +232,11 @@ class IntegrationSettingsWidget(SettingsWidget):
             QLabel("Minimum length of a channel/pipe after edit"), 1, 0
         )
         self.snap_distance = QDoubleSpinBox()
+        self.snap_distance.setMinimum(get_field_min(self.model, "snap_distance"))
+        self.snap_distance.setMaximum(get_field_max(self.model, "snap_distance"))
         self.min_length = QDoubleSpinBox()
+        self.min_length.setMinimum(get_field_min(self.model, "min_length"))
+        self.min_length.setMaximum(get_field_max(self.model, "min_length"))
         grid_layout.addWidget(self.snap_distance, 0, 1)
         grid_layout.addWidget(self.min_length, 1, 1)
         settings_container.setLayout(grid_layout)
@@ -357,12 +364,12 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
             "structure_length": create_field_map_row(
                 label="Structure length",
                 allowed_methods=allowed_methods,
-                default_value=10,
+                default_value=1,
             ),
             "azimuth": create_field_map_row(
                 label="Structure direction (azimuth)",
                 allowed_methods=allowed_methods,
-                default_value=10,
+                default_value=90,
             ),
         }
         self.setup_ui(row_dict)

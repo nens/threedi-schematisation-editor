@@ -1,9 +1,10 @@
-from dataclasses import Field, dataclass, fields
+from dataclasses import dataclass, fields
 from enum import Enum
 from typing import Any, ClassVar, Optional, Type, Union, get_args, get_origin
 
 from pydantic import (
     BaseModel,
+    Field,
     field_validator,
     model_validator,
 )
@@ -17,6 +18,20 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
 )
 
 
+def get_field_min(
+    model_class: BaseModel, field_name: str, default: Optional[float] = 0
+) -> float:
+    field_info = model_class.model_fields[field_name]
+    return getattr(field_info, "ge", default)
+
+
+def get_field_max(
+    model_class: BaseModel, field_name: str, default: Optional[float] = 1000000.0
+) -> float:
+    field_info = model_class.model_fields[field_name]
+    return getattr(field_info, "le", default)
+
+
 class IntegrationMode(str, Enum):
     NONE = "None"
     CHANNELS = "channels"
@@ -26,7 +41,7 @@ class IntegrationMode(str, Enum):
 class ConnectionNodeSettingsModel(BaseModel):
     create_nodes: bool = False
     snap: bool = False
-    snap_distance: float = 1.0
+    snap_distance: float = Field(default=1.0, ge=0, le=1000000.0)
 
     def serialize(self):
         return asdict(self)
@@ -34,8 +49,8 @@ class ConnectionNodeSettingsModel(BaseModel):
 
 class IntegrationSettingsModel(BaseModel):
     integration_mode: IntegrationMode = IntegrationMode.NONE
-    snap_distance: float = 1.0
-    min_length: float = 1.0
+    snap_distance: float = Field(default=1.0, ge=0, le=1000000.0)
+    min_length: float = Field(default=5.0, ge=0, le=1000000.0)
 
 
 class CrossSectionDataRemapModel(BaseModel):
@@ -164,7 +179,7 @@ def create_field_map_config(
 
 
 def get_allowed_methods_for_model_class_field(
-    model_field: Field,
+    model_field,
 ) -> list[ColumnImportMethod]:
     # TODO: check if excluded is actually needed
     # Try to find allowed_methods from metadata
@@ -253,6 +268,9 @@ def get_field_map_config(field_config: dict, model_cls: Type):
 
 
 class PointToLineSettingsModel(BaseModel):
+    # TODO: implement range
+    # length: 0.01 - inf (?)
+    # azimuth: 0 - 359
     length: FieldMapConfig
     azimuth: FieldMapConfig
 
