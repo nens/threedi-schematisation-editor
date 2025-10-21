@@ -70,7 +70,7 @@ class AttributeValueMapDialog:
         """Slot for handling deletion of the selected rows."""
         selected_rows = {idx.row() for idx in self.value_map_table.selectedIndexes()}
         for row in sorted(selected_rows, reverse=True):
-            self.value_map_table.removeRow(row)
+            self.value_map_table.remove_row(row)
 
     def load_from_source_layer(self):
         """Slot for handling adding rows based on the source layer unique field values."""

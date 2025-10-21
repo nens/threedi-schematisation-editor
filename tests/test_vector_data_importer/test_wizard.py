@@ -20,6 +20,10 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
     ConnectionNodeSettingsWidget,
     IntegrationSettingsWidget,
 )
+from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog import (
+    ValueMapDialog,
+    ValueMapModel,
+)
 
 # TODO reorganize tests
 
@@ -289,3 +293,28 @@ class TestFieldMapModel:
             ),
         )
         assert "bar" not in model.row_dict
+
+
+class TestValueMapModel:
+    def test_set_from_dict(self):
+        data = {"foo": "bar"}
+        model = ValueMapModel()
+        model.set_from_dict(data)
+        assert model._sources == ["foo"]
+        assert model._targets == ["bar"]
+
+    @pytest.mark.parametrize(
+        "sources, targets, expected_dict",
+        [
+            ([], [], {}),
+            (["foo"], ["bar"], {"foo": "bar"}),
+            (["foo"], [], {}),
+            ([], ["bar"], {}),
+            (["foo", "foo"], ["bar", "barbar"], {"foo": "barbar"}),
+        ],
+    )
+    def test_get_dict(self, sources, targets, expected_dict):
+        model = ValueMapModel()
+        model._sources = sources
+        model._targets = targets
+        assert model.get_dict() == expected_dict

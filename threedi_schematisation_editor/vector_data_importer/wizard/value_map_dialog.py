@@ -61,23 +61,23 @@ class ValueMapModel(QAbstractTableModel):
     def flags(self, index):
         return Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
-    def addRow(self, source="", target=""):
+    def add_row(self, source="", target=""):
         row = len(self._sources)
         self.beginInsertRows(self.index(row, 0).parent(), row, row)
         self._sources.append(source)
         self._targets.append(target)
         self.endInsertRows()
 
-    def removeRow(self, row):
+    def remove_row(self, row):
         self.beginRemoveRows(self.index(row, 0).parent(), row, row)
         self._sources.pop(row)
         self._targets.pop(row)
         self.endRemoveRows()
 
-    def getDict(self) -> dict[str, str]:
+    def get_dict(self) -> dict[str, str]:
         return {src: tgt for src, tgt in zip(self._sources, self._targets) if src}
 
-    def setFromDict(self, data: dict[str, str]):
+    def set_from_dict(self, data: dict[str, str]):
         self.beginResetModel()
         self._sources = list(data.keys())
         self._targets = list(data.values())
@@ -94,7 +94,7 @@ class ValueMapDialog(QDialog):
         self.model = ValueMapModel()
         super().__init__(parent)
         self.setup_ui()
-        self.model.setFromDict(value_map)
+        self.model.set_from_dict(value_map)
 
     def sizeHint(self):
         # Get the width needed for the columns plus some padding
@@ -164,14 +164,14 @@ class ValueMapDialog(QDialog):
         self.setMinimumSize(self.sizeHint())
 
     def add_row(self):
-        self.model.addRow()
+        self.model.add_row()
 
     def delete_selected_rows(self):
         selected_rows = sorted(
             {idx.row() for idx in self.table.selectedIndexes()}, reverse=True
         )
         for row in selected_rows:
-            self.model.removeRow(row)
+            self.model.remove_row(row)
 
     @staticmethod
     def format_value_map_data(data):
@@ -205,7 +205,7 @@ class ValueMapDialog(QDialog):
         for value in self.layer.uniqueValues(selected_field_idx):
             if value in self.model.sources:
                 continue
-            self.model.addRow(source=value)
+            self.model.add_row(source=value)
 
     def get_value_map(self):
-        return self.model.getDict()
+        return self.model.get_dict()
