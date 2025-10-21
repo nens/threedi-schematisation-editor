@@ -28,7 +28,7 @@ class ValueMapModel(QAbstractTableModel):
         return 2
 
     def data(self, index, role=Qt.DisplayRole):
-        if not index.isValid() or role != Qt.DisplayRole:
+        if not index.isValid() or role not in (Qt.DisplayRole, Qt.EditRole):
             return None
         row = index.row()
         if index.column() == 0:
