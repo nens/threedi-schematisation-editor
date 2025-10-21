@@ -88,7 +88,8 @@ from threedi_schematisation_editor.vector_data_importer.dialogs.import_features 
     ImportStructuresDialog,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard import (
-    ImportCrossSectionData,
+    ImportConduitWizard,
+    ImportCrossSectionDataWizard,
     ImportStructureWizard,
     VDIWizard,
 )
@@ -436,28 +437,25 @@ class ThreediSchematisationEditorPlugin:
         self.import_external(dm.ConnectionNode, VDIWizard)
 
     def import_external_cross_section_data(self):
-        self.import_external(dm.CrossSectionData, ImportCrossSectionData)
+        self.import_external(dm.CrossSectionData, ImportCrossSectionDataWizard)
 
     def import_external_cross_section_locations(self):
         self.import_external(dm.CrossSectionLocation, VDIWizard)
 
-    def import_external_structures(self, model_cls):
-        self.import_external(model_cls, ImportStructureWizard)
-
     def import_external_culverts(self):
-        self.import_external_structures(dm.Culvert)
+        self.import_external(dm.Culvert, ImportStructureWizard)
 
     def import_external_orifices(self):
-        self.import_external_structures(dm.Orifice)
+        self.import_external(dm.Orifice, ImportStructureWizard)
 
     def import_external_weirs(self):
-        self.import_external_structures(dm.Weir)
+        self.import_external(dm.Weir, ImportStructureWizard)
 
     def import_external_pipes(self):
-        self.import_external_structures(dm.Pipe)
+        self.import_external(dm.Pipe, ImportConduitWizard)
 
     def import_external_channels(self):
-        self.import_external_structures(dm.Channel)
+        self.import_external(dm.Channel, ImportConduitWizard)
 
     def on_project_close(self):
         if self.layer_manager is None:

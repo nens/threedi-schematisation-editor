@@ -118,20 +118,12 @@ class VDIWizard(QWizard):
         return data
 
 
-class ImportStructureWizard(VDIWizard):
+class ImportWithCreateConnectionNodesWizard(VDIWizard):
     @cached_property
     def connection_node_pages(self):
         return [
             FieldMapPage(model_cls=dm.ConnectionNode, name="connection_node_fields")
         ]
-
-    @cached_property
-    def settings_page(self):
-        return SettingsPage(
-            add_connection_node_settings=True,
-            add_point_to_line_settings=True,
-            add_integration_settings=True,
-        )
 
     @property
     def connect_node_page_ids(self):
@@ -151,7 +143,25 @@ class ImportStructureWizard(VDIWizard):
         return next_id
 
 
-class ImportCrossSectionData(VDIWizard):
+class ImportConduitWizard(ImportWithCreateConnectionNodesWizard):
+    @cached_property
+    def settings_page(self):
+        return SettingsPage(
+            add_connection_node_settings=True,
+        )
+
+
+class ImportStructureWizard(ImportWithCreateConnectionNodesWizard):
+    @cached_property
+    def settings_page(self):
+        return SettingsPage(
+            add_connection_node_settings=True,
+            add_point_to_line_settings=True,
+            add_integration_settings=True,
+        )
+
+
+class ImportCrossSectionDataWizard(VDIWizard):
     @property
     def wizard_title(self):
         return f"Import {self.model_cls.__tablename__.lower()}"
