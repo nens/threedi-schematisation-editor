@@ -1,4 +1,5 @@
 from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, QSize, Qt, pyqtSignal
+from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -6,6 +7,8 @@ from qgis.PyQt.QtWidgets import (
     QHeaderView,
     QInputDialog,
     QPushButton,
+    QSizePolicy,
+    QSpacerItem,
     QTableView,
     QVBoxLayout,
 )
@@ -118,18 +121,26 @@ class ValueMapDialog(QDialog):
 
         # Create buttons for table interaction
         button_layout = QHBoxLayout()
-        self.add_button = QPushButton("Add")
+        self.add_button = QPushButton("Add row")
+        self.add_button.setIcon(QIcon.fromTheme("list-add"))
         self.add_button.setToolTip(
             "Add a new after selected row(s) or at the end of the table"
         )
-        self.delete_button = QPushButton("Delete")
-        self.delete_button.setToolTip("Delete selected rows")
-        self.load_layer_button = QPushButton("Load from source layer")
+        self.add_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
-        # Add buttons to layout
-        button_layout.addWidget(self.add_button)
+        self.delete_button = QPushButton("Delete row")
+        self.delete_button.setIcon(QIcon.fromTheme("list-remove"))
+        self.delete_button.setToolTip("Delete selected rows")
+        self.delete_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        self.load_layer_button = QPushButton("Load from source layer")
+        self.load_layer_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
         button_layout.addWidget(self.delete_button)
+        spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        button_layout.addItem(spacer)
         button_layout.addWidget(self.load_layer_button)
+        button_layout.addWidget(self.add_button)
 
         # Connect signals
         self.add_button.clicked.connect(self.add_row)
@@ -138,12 +149,12 @@ class ValueMapDialog(QDialog):
 
         # Create buttons for accepting / closing
         dialog_buttons = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
+            QDialogButtonBox.Ok,
             Qt.Horizontal,
             self,
         )
+        dialog_buttons.button(QDialogButtonBox.Ok).setText("Save changes")
         dialog_buttons.accepted.connect(self.accept)
-        dialog_buttons.rejected.connect(self.reject)
 
         # Main layout
         main_layout = QVBoxLayout(self)

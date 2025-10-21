@@ -28,6 +28,7 @@ class VDIWizard(QWizard):
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self.setup_ui()
+        self.setOption(QWizard.NoCancelButton, True)
 
     @property
     def wizard_title(self):
