@@ -85,15 +85,13 @@ class ValueMapDialog(QDialog):
     SRC_COLUMN_IDX = 0
     TGT_COLUMN_IDX = 1
 
-    def __init__(self, row, layer, parent=None):
-        self.row = row
+    def __init__(self, value_map, layer, source_attribute, parent=None):
+        self.source_attribute = source_attribute
         self.layer = layer
         self.model = ValueMapModel()
         super().__init__(parent)
-        self.setWindowTitle("Value Map")
         self.setup_ui()
-        self.setMinimumSize(self.sizeHint())
-        self.model.setFromDict(self.row.config.value_map)
+        self.model.setFromDict(value_map)
 
     def sizeHint(self):
         # Get the width needed for the columns plus some padding
@@ -107,6 +105,7 @@ class ValueMapDialog(QDialog):
         return QSize(width, height)
 
     def setup_ui(self):
+        self.setWindowTitle("Value Map")
         # Create and setup table
         self.table = QTableView()
         self.table.setModel(self.model)
@@ -151,13 +150,12 @@ class ValueMapDialog(QDialog):
         main_layout.addWidget(self.table)
         main_layout.addLayout(button_layout)
         main_layout.addWidget(dialog_buttons)
+        self.setMinimumSize(self.sizeHint())
 
     def add_row(self):
-        """Add a new empty row to the table"""
         self.model.addRow()
 
     def delete_selected_rows(self):
-        """Delete selected rows from the table"""
         selected_rows = sorted(
             {idx.row() for idx in self.table.selectedIndexes()}, reverse=True
         )
@@ -180,7 +178,7 @@ class ValueMapDialog(QDialog):
         field_names = [field.name() for field in self.layer.fields()]
         title = "Load source layer values"
         message = "Unique values source field"
-        source_attribute = self.row.config.source_attribute
+        source_attribute = self.source_attribute
         current_idx = (
             field_names.index(source_attribute)
             if source_attribute in field_names

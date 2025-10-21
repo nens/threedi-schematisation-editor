@@ -307,9 +307,11 @@ class FieldMapDelegate(QStyledItemDelegate):
 
     def openValueMapDialog(self, index, button):
         """Open the value map dialog and update the model"""
+        config = index.model().rows[index.row()].config
         dialog = ValueMapDialog(
-            row=index.model().rows[index.row()],
+            value_map=config.value_map,
             layer=index.model().layer,
+            source_attribute=config.source_attribute,
             parent=button,
         )
         if dialog.exec_() == QDialog.Accepted:
@@ -338,7 +340,7 @@ class FieldMapDelegate(QStyledItemDelegate):
         value = index.data(Qt.EditRole)
         has_layer = len(index.model().current_layer_attributes) > 0
         column = FieldMapColumn.from_index(index.column())
-        valid = row.is_valid
+        valid = row.is_valid or value not in [None, ""]
         # Update enabled status
         if column == FieldMapColumn.LABEL:
             is_enabled = has_layer
