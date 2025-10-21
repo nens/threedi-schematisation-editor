@@ -38,6 +38,11 @@ class IntegrationSettingsModel(BaseModel):
     min_length: float = 1.0
 
 
+class CrossSectionDataRemapModel(BaseModel):
+    set_lowest_point_to_zero: bool = False
+    use_lowest_point_as_reference: bool = False
+
+
 class ConversionSettings(BaseModel):
     """Model for the conversion_settings field"""
 

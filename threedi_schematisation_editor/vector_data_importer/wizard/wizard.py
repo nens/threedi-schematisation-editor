@@ -165,3 +165,9 @@ class ImportCrossSectionDataWizard(VDIWizard):
     @property
     def wizard_title(self):
         return f"Import {self.model_cls.__tablename__.lower()}"
+
+    @cached_property
+    def settings_page(self):
+        return SettingsPage(
+            add_cross_section_data_remap_settings=True,
+        )

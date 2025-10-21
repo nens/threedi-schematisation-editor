@@ -24,6 +24,7 @@ from qgis.PyQt.QtWidgets import (
 
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     ConnectionNodeSettingsModel,
+    CrossSectionDataRemapModel,
     IntegrationMode,
     IntegrationSettingsModel,
 )
@@ -278,3 +279,50 @@ class IntegrationSettingsWidget(QWidget):
         self.integration_mode_map[self.model.integration_mode].setChecked(True)
         self.snap_distance.setValue(self.model.snap_distance)
         self.min_length.setValue(self.model.min_length)
+
+
+class CrossSectionDataRemapSettingsWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.model = CrossSectionDataRemapModel()
+        self.setup_ui()
+
+    def setup_ui(self):
+        # Create widgets
+        self.set_lowest_point_to_zero = QCheckBox("Set lowest point to zero")
+        self.use_lowest_point_as_reference = QCheckBox(
+            "Use lowest point as reference level"
+        )
+
+        # Connect widgets to model updates
+        self.set_lowest_point_to_zero.toggled.connect(
+            self.update_set_lowest_point_to_zero
+        )
+        self.use_lowest_point_as_reference.toggled.connect(
+            self.update_use_lowest_point_as_reference
+        )
+
+        # Add widgets to layout
+        layout = QVBoxLayout()
+        layout.addWidget(self.set_lowest_point_to_zero)
+        layout.addWidget(self.use_lowest_point_as_reference)
+        self.setLayout(layout)
+
+        # set all widgets to default values
+        self.deserialize({})
+
+    def update_set_lowest_point_to_zero(self, checked):
+        self.model.set_lowest_point_to_zero = checked
+
+    def update_use_lowest_point_as_reference(self, checked):
+        self.model.use_lowest_point_as_reference = checked
+
+    def serialize(self):
+        return self.model.model_dump()
+
+    def deserialize(self, data):
+        self.model = self.model.model_copy(update=data)
+        self.set_lowest_point_to_zero.setChecked(self.model.set_lowest_point_to_zero)
+        self.use_lowest_point_as_reference.setChecked(
+            self.model.use_lowest_point_as_reference
+        )

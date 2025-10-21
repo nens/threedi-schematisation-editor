@@ -25,6 +25,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model i
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets import (
     ConnectionNodeSettingsWidget,
+    CrossSectionDataRemapSettingsWidget,
     GenericSettingsWidget,
     IntegrationSettingsWidget,
     PointToLIneConversionSettingsWidget,
@@ -37,16 +38,19 @@ class SettingsPage(QWizardPage):
         add_connection_node_settings: bool = False,
         add_point_to_line_settings: bool = False,
         add_integration_settings: bool = False,
+        add_cross_section_data_remap_settings: bool = False,
     ):
         super().__init__()
         self.setTitle("Import settings")
         self.connection_node_settings: Optional[QWidget] = None
         self.point_to_line_conversion_settings: Optional[QWidget] = None
         self.integration_settings: Optional[QWidget] = None
+        self.cross_section_data_remap_settings: Optional[QWidget] = None
         self.setup_ui(
             add_connection_node_settings,
             add_point_to_line_settings,
             add_integration_settings,
+            add_cross_section_data_remap_settings,
         )
 
     def on_load_button_clicked(self):
@@ -57,6 +61,7 @@ class SettingsPage(QWizardPage):
         add_connection_node_settings: bool,
         add_point_to_line_conversion_settings: bool,
         add_integration_settings: bool,
+        add_cross_section_data_remap_settings: bool,
     ):
         layout = QVBoxLayout(self)
 
@@ -94,6 +99,13 @@ class SettingsPage(QWizardPage):
             self.integration_settings = IntegrationSettingsWidget()
             group_box = QGroupBox("Integration settings")
             group_box.setLayout(self.integration_settings.layout())
+            layout.addWidget(group_box)
+        if add_cross_section_data_remap_settings:
+            self.cross_section_data_remap_settings = (
+                CrossSectionDataRemapSettingsWidget()
+            )
+            group_box = QGroupBox("Align cross section table to reference level")
+            group_box.setLayout(self.cross_section_data_remap_settings.layout())
             layout.addWidget(group_box)
         self.setLayout(layout)
 

@@ -186,7 +186,7 @@ class ThreediSchematisationEditorPlugin:
         self.load_schematisation(
             "/home/margriet/qgis_workdir/test_253_import_csd/test.gpkg"
         )
-        self.action_import_features.menu().actions()[3].trigger()
+        self.action_import_features.menu().actions()[1].trigger()
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
