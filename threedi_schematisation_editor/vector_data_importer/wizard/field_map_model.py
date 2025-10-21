@@ -132,8 +132,10 @@ class FieldMapRow:
         return self.valid_config.model_dump()
 
     def deserialize(self, data: dict[str, Any]) -> None:
-        # validation is done on initalization of FieldMapConfig
-        self.config = FieldMapConfig(**data)
+        # Get the custom config class that has the validation, including allowed methods
+        config_class = self.config.__class__
+        # Use the custom class (CustomFieldMapConfig) for deserialization
+        self.config = config_class(**data)
 
     @property
     def is_valid(self) -> bool:
