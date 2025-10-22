@@ -1,7 +1,7 @@
 History
 =======
 
-2.3.5 (unreleased)
+2.3.5 (2025-10-22)
 ------------------
 
 - Fix crashes during project load (#437)
