@@ -17,6 +17,7 @@ from qgis.PyQt.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
+    QScrollArea,
     QSizePolicy,
     QStyledItemDelegate,
     QStyleOptionViewItem,
@@ -417,8 +418,8 @@ class FieldMapDelegate(QStyledItemDelegate):
 class FieldMapWidget(QWidget):
     dataChanged = pyqtSignal()
 
-    def __init__(self, row_dict):
-        super().__init__()
+    def __init__(self, row_dict, parent=None):
+        super().__init__(parent)
         self.row_dict = row_dict
         self.table_model = FieldMapModel(self.row_dict)
         self.rows = self.table_model.rows
@@ -435,22 +436,49 @@ class FieldMapWidget(QWidget):
         self.table_delegate = FieldMapDelegate()
         self.table_view.setItemDelegate(self.table_delegate)
         self.table_view.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.table_view.resizeColumnsToContents()
-        self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table_view.verticalHeader().setVisible(False)
+
+        # Put table in scroll area
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(self.table_view)
+
         layout = QVBoxLayout(self)
-        layout.addWidget(self.table_view)
+        layout.addWidget(scroll_area)
         self.setLayout(layout)
 
-        # Calculate the total height needed
+        # Ensure table never covers more horizontal space than needed
+        self.table_view.setMinimumHeight(self.table_height)
+        self.table_view.setMaximumHeight(self.table_height)
+        self.table_view.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+
+        # Set column widths such that label and method always fit, and stretch the rest
+        self.table_view.resizeColumnsToContents()
+        header = self.table_view.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        for col in range(2, self.table_model.columnCount()):
+            header.setSectionResizeMode(col, QHeaderView.Stretch)
+
+    @property
+    def table_height(self) -> int:
         header_height = self.table_view.horizontalHeader().height()
         row_height = self.table_view.verticalHeader().defaultSectionSize()
-        content_height = (row_height * self.table_model.rowCount()) + header_height
+        frame_width = self.table_view.frameWidth() * 2
+        # Get the device pixel ratio for proper scaling
+        pixel_ratio = self.table_view.devicePixelRatioF()
+        buffer_height = round(2 * pixel_ratio)  # Scale-aware small buffer
+        content_height = (
+            (row_height * self.table_model.rowCount())
+            + header_height
+            + frame_width
+            + buffer_height
+        )
+        return content_height
 
-        # Set fixed height and vertical size policy
-        self.table_view.setMinimumHeight(content_height)
-        self.table_view.setMaximumHeight(content_height)
-        self.table_view.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+    def set_maximum_table_height(self, height: int):
+        """Set the maximum height of the table view"""
+        self.table_view.setMaximumHeight(height)
 
     def update_layer(self, layer):
         """Update the layer and update the table view"""
@@ -472,9 +500,6 @@ class FieldMapWidget(QWidget):
 
         # Open persistent editors for columns with always-visible widgets
         self.open_persistent_editors()
-
-        self.table_view.resizeColumnsToContents()
-        self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table_view.verticalHeader().setVisible(False)
 
     def open_persistent_editors(self):

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Type
 
 from PyQt5.QtWidgets import (
     QAbstractItemView,
@@ -33,10 +33,14 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
 
 
 class SettingsPage(QWizardPage):
-    def __init__(self, settings_widgets: Optional[list[QWidget]] = None):
+    def __init__(self, settings_widgets_classes: Optional[list[Type[QWidget]]] = None):
         super().__init__()
         self.setTitle("Import settings")
-        self.settings_widgets = settings_widgets if settings_widgets else []
+        self.settings_widgets = []
+        if settings_widgets_classes:
+            self.settings_widgets = [
+                widget_class(parent=self) for widget_class in settings_widgets_classes
+            ]
         self.setup_ui()
 
     def on_load_button_clicked(self):
@@ -121,7 +125,7 @@ class FieldMapPage(QWizardPage):
         return row_dict
 
     def setup_ui(self):
-        self.field_map_widget = FieldMapWidget(self.row_dict)
+        self.field_map_widget = FieldMapWidget(self.row_dict, parent=self)
         # connect data changed to isComplete status of the page
         self.field_map_widget.dataChanged.connect(self.completeChanged)
         layout = QVBoxLayout(self)

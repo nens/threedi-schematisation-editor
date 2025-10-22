@@ -62,6 +62,7 @@ class VDIWizard(QWizard):
         font = create_font(self, 10)
         self.setFont(font)
         self.setWindowTitle(self.wizard_title)
+        # TODO is this the right size?
         self.resize(1000, 750)
 
         # add pages
@@ -153,7 +154,7 @@ class ImportConduitWizard(ImportWithCreateConnectionNodesWizard):
     @cached_property
     def settings_page(self):
         return SettingsPage(
-            settings_widgets=[ConnectionNodeSettingsWidget()],
+            settings_widgets=[ConnectionNodeSettingsWidget],
         )
 
 
@@ -162,9 +163,9 @@ class ImportStructureWizard(ImportWithCreateConnectionNodesWizard):
     def settings_page(self):
         return SettingsPage(
             [
-                ConnectionNodeSettingsWidget(),
-                PointToLIneConversionSettingsWidget(),
-                IntegrationSettingsWidget(),
+                ConnectionNodeSettingsWidget,
+                PointToLIneConversionSettingsWidget,
+                IntegrationSettingsWidget,
             ]
         )
 
@@ -176,10 +177,10 @@ class ImportCrossSectionDataWizard(VDIWizard):
 
     @cached_property
     def settings_page(self):
-        return SettingsPage([CrossSectionDataRemapSettingsWidget()])
+        return SettingsPage([CrossSectionDataRemapSettingsWidget])
 
 
 class ImportCrossSectionLocationWizard(VDIWizard):
     @cached_property
     def settings_page(self):
-        return SettingsPage([CrossSectionLocationMappingSettingsWidget()])
+        return SettingsPage([CrossSectionLocationMappingSettingsWidget])
