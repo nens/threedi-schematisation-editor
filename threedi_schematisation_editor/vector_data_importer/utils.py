@@ -116,6 +116,10 @@ class ColumnImportMethod(str, Enum):
     def __str__(self):
         return self.name.capitalize()
 
+    @staticmethod
+    def all() -> list["ColumnImportMethod"]:
+        return [item for item in ColumnImportMethod]
+
 
 def get_src_geometry(feature: QgsFeature, none_ok=False) -> QgsGeometry:
     # convert source geometry to type that can be processed

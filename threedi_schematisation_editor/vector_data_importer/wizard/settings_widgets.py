@@ -1,4 +1,4 @@
-from typing import Optional
+from dataclasses import fields
 
 from qgis.core import Qgis, QgsMessageLog
 from qgis.gui import QgsMapLayerComboBox
@@ -22,20 +22,12 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
-from threedi_schematisation_editor.vector_data_importer.settings_models import (
-    ConnectionNodeSettingsModel,
-    CrossSectionDataRemapModel,
-    CrossSectionLocationMappingModel,
-    IntegrationMode,
-    IntegrationSettingsModel,
-    get_field_max,
-    get_field_min,
-)
+import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
     FieldMapColumn,
+    FieldMapRow,
     FieldMapWidget,
-    create_field_map_row,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.models import (
     GenericSettingsModel,
@@ -104,7 +96,7 @@ class SettingsWidget(QWidget):
 class ConnectionNodeSettingsWidget(SettingsWidget):
     def __init__(self):
         super().__init__()
-        self.model = ConnectionNodeSettingsModel()
+        self.model = sm.ConnectionNodeSettingsModel()
         self.setup_ui()
 
     @property
@@ -124,8 +116,8 @@ class ConnectionNodeSettingsWidget(SettingsWidget):
         self.snap_distance.setSuffix(" m")
         self.snap_distance.setDecimals(1)
         self.snap_distance.setEnabled(False)
-        self.snap_distance.setMinimum(get_field_min(self.model, "snap_distance"))
-        self.snap_distance.setMaximum(get_field_max(self.model, "snap_distance"))
+        self.snap_distance.setMinimum(sm.get_field_min(self.model, "snap_distance"))
+        self.snap_distance.setMaximum(sm.get_field_max(self.model, "snap_distance"))
 
         # Connect widgets to model updates
         self.create_nodes.toggled.connect(self.update_create_nodes)
@@ -171,7 +163,7 @@ class ConnectionNodeSettingsWidget(SettingsWidget):
 class IntegrationSettingsWidget(SettingsWidget):
     def __init__(self):
         super().__init__()
-        self.model = IntegrationSettingsModel()
+        self.model = sm.IntegrationSettingsModel()
         self.setup_ui()
 
     @property
@@ -190,7 +182,7 @@ class IntegrationSettingsWidget(SettingsWidget):
                 break
 
     def enable_integration_settings(self):
-        if self.model.integration_mode == IntegrationMode.NONE:
+        if self.model.integration_mode == sm.IntegrationMode.NONE:
             self.settings_container.setEnabled(False)
         else:
             self.settings_container.setEnabled(True)
@@ -207,9 +199,9 @@ class IntegrationSettingsWidget(SettingsWidget):
         button_group.addButton(use_pipes)
         # Map radio buttons to IntegrationMode enum
         self.integration_mode_map = {
-            IntegrationMode.NONE: no_integration,
-            IntegrationMode.CHANNELS: use_channels,
-            IntegrationMode.PIPES: use_pipes,
+            sm.IntegrationMode.NONE: no_integration,
+            sm.IntegrationMode.CHANNELS: use_channels,
+            sm.IntegrationMode.PIPES: use_pipes,
         }
         # Explicitly link each radio button to updating the integrate_on settings
         for integration_mode, radio_button in self.integration_mode_map.items():
@@ -232,11 +224,11 @@ class IntegrationSettingsWidget(SettingsWidget):
             QLabel("Minimum length of a channel/pipe after edit"), 1, 0
         )
         self.snap_distance = QDoubleSpinBox()
-        self.snap_distance.setMinimum(get_field_min(self.model, "snap_distance"))
-        self.snap_distance.setMaximum(get_field_max(self.model, "snap_distance"))
+        self.snap_distance.setMinimum(sm.get_field_min(self.model, "snap_distance"))
+        self.snap_distance.setMaximum(sm.get_field_max(self.model, "snap_distance"))
         self.min_length = QDoubleSpinBox()
-        self.min_length.setMinimum(get_field_min(self.model, "min_length"))
-        self.min_length.setMaximum(get_field_max(self.model, "min_length"))
+        self.min_length.setMinimum(sm.get_field_min(self.model, "min_length"))
+        self.min_length.setMaximum(sm.get_field_max(self.model, "min_length"))
         grid_layout.addWidget(self.snap_distance, 0, 1)
         grid_layout.addWidget(self.min_length, 1, 1)
         settings_container.setLayout(grid_layout)
@@ -271,7 +263,7 @@ class IntegrationSettingsWidget(SettingsWidget):
 class CrossSectionDataRemapSettingsWidget(SettingsWidget):
     def __init__(self):
         super().__init__()
-        self.model = CrossSectionDataRemapModel()
+        self.model = sm.CrossSectionDataRemapModel()
         self.setup_ui()
 
     @property
@@ -324,6 +316,27 @@ class CrossSectionDataRemapSettingsWidget(SettingsWidget):
 
 
 class FieldMapSettingsWidget(SettingsWidget):
+    model = None
+
+    def create_row_dict(self) -> dict[str, FieldMapRow]:
+        if not self.model:
+            return {}
+        row_dict = {}
+        # iterate over fields of model (dataclass)
+        for field in fields(self.model):
+            # create a FieldMapConfig using metadata from self.model
+            config_class = sm.get_field_map_config_for_model_class_field(
+                field.name, self.model
+            )
+            # create FieldMapRow to use in the FieldMapTable
+            row_dict[field.name] = FieldMapRow(
+                label=field.name,
+                config=config_class.model_construct(
+                    method=None, default_value=field.default
+                ),
+            )
+        return row_dict
+
     def setup_ui(self, row_dict):
         self.field_map_widget = FieldMapWidget(row_dict)
         # emit dataChanged signal when field map widget data changes
@@ -355,23 +368,10 @@ class FieldMapSettingsWidget(SettingsWidget):
 class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
     def __init__(self):
         super().__init__()
-        allowed_methods = [
-            ColumnImportMethod.ATTRIBUTE,
-            ColumnImportMethod.DEFAULT,
-            ColumnImportMethod.EXPRESSION,
-        ]
-        row_dict = {
-            "structure_length": create_field_map_row(
-                label="Structure length",
-                allowed_methods=allowed_methods,
-                default_value=1,
-            ),
-            "azimuth": create_field_map_row(
-                label="Structure direction (azimuth)",
-                allowed_methods=allowed_methods,
-                default_value=90,
-            ),
-        }
+        self.model = sm.PointToLineSettingsModel
+        row_dict = self.create_row_dict()
+        row_dict["length"].label = "Structure length"
+        row_dict["azimuth"].label = "Sturcture direction (azimuth)"
         self.setup_ui(row_dict)
 
     @property
@@ -386,33 +386,11 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
 class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
     def __init__(self):
         super().__init__()
-        allowed_methods = [
-            ColumnImportMethod.AUTO,
-            ColumnImportMethod.ATTRIBUTE,
-            ColumnImportMethod.EXPRESSION,
-        ]
-        row_dict = {
-            "join_field_src": create_field_map_row(
-                label="Join channel source field",
-                allowed_methods=allowed_methods,
-            ),
-            "join_field_tgt": create_field_map_row(
-                label="Join channel target field",
-                allowed_methods=allowed_methods,
-            ),
-        }
+        self.model = sm.CrossSectionLocationMappingModel
+        row_dict = self.create_row_dict()
+        row_dict["join_field_src"].label = "Join channel source field"
+        row_dict["join_field_tgt"].label = "Join channel target field"
         self.setup_ui(row_dict)
-        # Some dirty costumization
-        # only allow attributes 'id' and 'code' for the target
-        self.table_model.set_fixed_source_attributes_for_row(
-            "join_field_tgt", ["id", "code"]
-        )
-        # hide unused default value
-        self.table_view.horizontalHeader().hideSection(
-            self.table_model.columnCount() - 1
-        )
-        # set method to auto for both rows if it's selected for one row
-        self.table_model.dataChanged.connect(self._sync_auto_methods)
 
     @property
     def name(self):

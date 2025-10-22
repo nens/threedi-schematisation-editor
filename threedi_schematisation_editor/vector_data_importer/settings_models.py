@@ -1,4 +1,4 @@
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from enum import Enum
 from typing import Any, ClassVar, Optional, Type, Union, get_args, get_origin
 
@@ -9,7 +9,6 @@ from pydantic import (
     model_validator,
 )
 
-# from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import FieldMapModel
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.utils import (
     DEFAULT_INTERSECTION_BUFFER,
@@ -99,7 +98,9 @@ class FieldMapConfigMethodMissingError(ValueError):
 
 @dataclass
 class FieldMapMetadata:
-    allowed_methods: list[ColumnImportMethod]
+    allowed_methods: list[ColumnImportMethod] = field(
+        default_factory=lambda: ColumnImportMethod.all()
+    )
     required_field_map: ClassVar[dict[ColumnImportMethod, str]] = {
         ColumnImportMethod.ATTRIBUTE: "source_attribute",
         ColumnImportMethod.EXPRESSION: "expression",
@@ -108,14 +109,17 @@ class FieldMapMetadata:
 
 
 class FieldMapConfig(BaseModel):
-    _metadata: ClassVar[FieldMapMetadata] = FieldMapMetadata(
-        allowed_methods=[method for method in ColumnImportMethod]
-    )
+    _metadata: ClassVar[FieldMapMetadata] = FieldMapMetadata()
     method: ColumnImportMethod
     source_attribute: Optional[str] = None
     value_map: dict[str, Any] = {}
     expression: Optional[str] = None
     default_value: Optional[Any] = None
+
+    @classmethod
+    def with_metadata(cls, metadata: FieldMapMetadata) -> Type["FieldMapConfig"]:
+        """Returns a subclass with specific metadata"""
+        return type("CustomFieldMapConfig", (cls,), {"_metadata": metadata})
 
     # TODO: consider if we want to keep dict access support
     def get(self, key, default=None):
@@ -129,12 +133,14 @@ class FieldMapConfig(BaseModel):
 
     @field_validator("method", mode="before")
     def validate_method_presence(cls, value):
+        # TODO: consider if custom check is necessary just to raise
         if value is None:
             raise FieldMapConfigMethodMissingError("The 'method' field is required")
         return value
 
     @model_validator(mode="after")
     def validate_required_fields(self) -> "FieldConfig":
+        """Validate if correct fields are set based on the selected method"""
         method = self.method
         if method in self._metadata.required_field_map and getattr(
             self, self._metadata.required_field_map[method]
@@ -154,28 +160,41 @@ class FieldMapConfig(BaseModel):
                 )
         return self
 
+    @field_validator("method")
+    @classmethod
+    def validate_method(cls, v: ColumnImportMethod) -> ColumnImportMethod:
+        """Validate if selected method is in allowe methods"""
+        # Get the allowed_methods from _metadata
+        allowed_methods = None
+        if cls._metadata is not None:
+            allowed_methods = cls._metadata.allowed_methods
+
+        if allowed_methods is not None and v not in allowed_methods:
+            raise ValueError(
+                f"Method {v} is not allowed. "
+                f"Allowed methods are: {', '.join(str(m) for m in allowed_methods)}"
+            )
+        return v
+
 
 def create_field_map_config(
     allowed_methods: Optional[list[ColumnImportMethod]],
 ) -> Type[BaseModel]:
     """Creates a FieldMapConfig class for a specific field based on its metadata"""
-
     metadata = FieldMapMetadata(allowed_methods=allowed_methods)
+    return FieldMapConfig.with_metadata(metadata)
 
-    class CustomFieldMapConfig(FieldMapConfig):
-        _metadata: ClassVar[FieldMapMetadata] = metadata
 
-        @field_validator("method")
-        @classmethod
-        def validate_method(cls, v: ColumnImportMethod) -> ColumnImportMethod:
-            if allowed_methods is not None and v not in allowed_methods:
-                raise ValueError(
-                    f"Method {v} is not allowed. "
-                    f"Allowed methods are: {', '.join(str(m) for m in allowed_methods)}"
-                )
-            return v
-
-    return CustomFieldMapConfig
+def get_field_map_config_for_model_class_field(
+    field_name: str, model_class: Type
+) -> Type[BaseModel]:
+    """Creates FieldMapConfig class for a specific field of a data model"""
+    class_field = next((f for f in fields(model_class) if f.name == field_name), None)
+    if not class_field:
+        raise ValueError(f"Field {field_name} not found in {model_class.__name__}")
+    return create_field_map_config(
+        get_allowed_methods_for_model_class_field(class_field)
+    )
 
 
 def get_allowed_methods_for_model_class_field(
@@ -210,14 +229,52 @@ def get_allowed_methods_for_model_class_field(
     )
 
 
-def get_field_map_config_for_model_class_field(
-    field_name: str, model_class: Type
-) -> Type[BaseModel]:
-    """Creates FieldMapConfig class for a specific field"""
-    field = next((f for f in fields(model_class) if f.name == field_name), None)
-    if not field:
-        raise ValueError(f"Field {field_name} not found in {model_class.__name__}")
-    return create_field_map_config(get_allowed_methods_for_model_class_field(field))
+@dataclass
+class PointToLineSettingsModel:
+    length: float = field(
+        default=1.0,
+        metadata={
+            dm.ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.DEFAULT,
+                ColumnImportMethod.EXPRESSION,
+            ],
+        },
+    )
+    azimuth: float = field(
+        default=90.0,
+        metadata={
+            dm.ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.DEFAULT,
+                ColumnImportMethod.EXPRESSION,
+            ],
+        },
+    )
+
+
+@dataclass
+class CrossSectionLocationMappingModel:
+    join_field_src: str = field(
+        default="",
+        metadata={
+            dm.ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+            ],
+        },
+    )
+    join_field_tgt: float = field(
+        default="",
+        metadata={
+            dm.ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+            ],
+        },
+    )
 
 
 # TODO: combine stuff above and below in 1 consistent approach
@@ -265,16 +322,3 @@ class FieldsSectionValidator:
 def get_field_map_config(field_config: dict, model_cls: Type):
     validator = FieldsSectionValidator(model_cls)
     return validator.validate(**field_config)
-
-
-class PointToLineSettingsModel(BaseModel):
-    # TODO: implement range
-    # length: 0.01 - inf (?)
-    # azimuth: 0 - 359
-    length: FieldMapConfig
-    azimuth: FieldMapConfig
-
-
-class CrossSectionLocationMappingModel:
-    join_field_src: FieldMapConfig
-    join_field_tgt: FieldMapConfig

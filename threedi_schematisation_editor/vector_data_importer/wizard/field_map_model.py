@@ -173,9 +173,6 @@ class FieldMapModel(QAbstractTableModel):
             self._fixed_source_attributes[row_key] = source_attribute
 
     def get_valid_source_attributes(self, row_idx: int) -> list[str]:
-        QgsMessageLog.logMessage(
-            f"get valid attributes for row {row_idx}", "DEBUG", Qgis.Info
-        )
         row_key = list(self.row_dict.keys())[row_idx]
         if row_key in self._fixed_source_attributes:
             return self._fixed_source_attributes[row_key]
