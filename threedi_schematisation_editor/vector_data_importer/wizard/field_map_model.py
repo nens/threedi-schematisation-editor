@@ -238,6 +238,10 @@ class FieldMapModel(QAbstractTableModel):
             row = self.row_dict.get(key)
             if row:
                 row.deserialize(row_data)
+        # emit after deserialization
+        top_left = self.createIndex(0, 0)
+        bottom_right = self.createIndex(self.rowCount() - 1, self.columnCount() - 1)
+        self.dataChanged.emit(top_left, bottom_right)
 
     @property
     def is_valid(self) -> bool:
