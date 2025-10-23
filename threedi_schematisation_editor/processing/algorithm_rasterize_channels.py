@@ -48,7 +48,7 @@ from qgis.core import (
 import processing
 from shapely import __version__ as shapely_version, geos_version
 
-from .rasterize_channel import (
+from threedi_schematisation_editor.processing.deps.rasterize_channel import (
     Channel,
     CrossSectionLocation,
     EmptyOffsetError,
@@ -57,7 +57,7 @@ from .rasterize_channel import (
     NoCrossSectionLocationsError,
     fill_wedges, IntersectingSidesError,
 )
-from .rasterize_channel_utils import merge_rasters
+from threedi_schematisation_editor.processing.deps.merge import merge_rasters
 
 
 DEBUG_MODE = False
