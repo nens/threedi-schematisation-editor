@@ -40,7 +40,7 @@ class VDIWizard(QWizard):
 
     @property
     def wizard_title(self):
-        return f"Import {self.model_cls.__tablename__.lower()}s"
+        return f"Import {self.model_cls.__layername__.lower()}s"
 
     @cached_property
     def settings_page(self):
@@ -182,7 +182,7 @@ class ImportStructureWizard(ImportWithCreateConnectionNodesWizard):
 class ImportCrossSectionDataWizard(VDIWizard):
     @property
     def wizard_title(self):
-        return f"Import {self.model_cls.__tablename__.lower()}"
+        return f"Import {self.model_cls.__layername__}"
 
     @cached_property
     def settings_page(self):

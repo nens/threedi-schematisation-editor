@@ -112,7 +112,7 @@ class FieldMapPage(QWizardPage):
     def __init__(self, model_cls, name):
         super().__init__()
         self.row_dict = self.create_rows(model_cls)
-        self.setTitle(f"{model_cls.__tablename__}")
+        self.layer_name = model_cls.__layername__.lower()
         self.setup_ui()
         self.name = name
 
@@ -138,6 +138,9 @@ class FieldMapPage(QWizardPage):
         layer = self.wizard().selected_layer
         if layer:
             self.field_map_widget.update_layer(layer)
+        self.setTitle(
+            f"Map fields from {self.wizard().selected_layer.name()} to {self.layer_name}s"
+        )
         super().initializePage()
 
     def serialize(self):

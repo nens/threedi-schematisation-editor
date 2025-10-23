@@ -45,6 +45,10 @@ class GenericSettingsWidget(QWidget):
         self.setup_ui()
         self.selected_layer = None
 
+    # @property
+    # def selected_layer(self):
+    #     return self.model.selected_layer
+
     def setup_ui(self):
         # create widgets
         label = QLabel("Select layer to import:")
