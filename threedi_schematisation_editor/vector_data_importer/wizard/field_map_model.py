@@ -238,7 +238,9 @@ class FieldMapModel(QAbstractTableModel):
             row = self.row_dict.get(key)
             if row:
                 row.deserialize(row_data)
-        # emit after deserialization
+        self.emit_all_changed()
+
+    def emit_all_changed(self):
         top_left = self.createIndex(0, 0)
         bottom_right = self.createIndex(self.rowCount() - 1, self.columnCount() - 1)
         self.dataChanged.emit(top_left, bottom_right)
@@ -274,62 +276,57 @@ class FieldMapDelegate(QStyledItemDelegate):
         if key in self._editors:
             return self._editors[key]
         if FieldMapColumn.from_index(index.column()) == FieldMapColumn.METHOD:
-            combo = QComboBox(parent)
-            combo.addItem("", None)
+            editor = QComboBox(parent)
             row = index.model().rows[index.row()]
             for m in row.config._metadata.allowed_methods:
-                # for m in ColumnImportMethod:
-                combo.addItem(str(m), m)
-            self._editors[(index.row(), index.column())] = combo
-            combo.currentIndexChanged.connect(
-                lambda idx, editor=combo: self.commitData.emit(editor)
+                editor.addItem(str(m), m)
+            editor.currentIndexChanged.connect(
+                lambda idx, editor=editor: self.commitData.emit(editor)
             )
-            return combo
+            if row.config.method:
+                editor.setCurrentIndex(editor.findData(row.config.method))
+            # Ensure editor states are updated after setting method
+            self.setModelData(editor, index.model(), index)
         elif (
             FieldMapColumn.from_index(index.column()) == FieldMapColumn.SOURCE_ATTRIBUTE
         ):
-            combo = QComboBox(parent)
-            combo.addItems(
+            editor = QComboBox(parent)
+            editor.addItems(
                 [""] + index.model().get_valid_source_attributes(index.row())
             )
-            combo.currentIndexChanged.connect(
-                lambda idx, editor=combo: self.commitData.emit(editor)
+            editor.currentIndexChanged.connect(
+                lambda idx, editor=editor: self.commitData.emit(editor)
             )
-            self._editors[key] = combo
-            return combo
         elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.VALUE_MAP:
-            button = QPushButton(parent)
+            editor = QPushButton(parent)
             current_value_map = (
                 index.data(Qt.EditRole) if index.data(Qt.EditRole) else ""
             )
-            button.setText(
+            editor.setText(
                 str(current_value_map)
                 if len(current_value_map) > 0
                 else "Set Value Map..."
             )
-            button.clicked.connect(
-                lambda checked, idx=index, btn=button: self.openValueMapDialog(idx, btn)
+            editor.clicked.connect(
+                lambda checked, idx=index, btn=editor: self.openValueMapDialog(idx, btn)
             )
-            self._editors[key] = button
-            return button
         elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.EXPRESSION:
             current_expression = index.model().rows[index.row()].config.expression
-            widget = QsgExpressionWidgetForTableView(
+            editor = QsgExpressionWidgetForTableView(
                 parent, expression=current_expression
             )
-            widget.setLayer(index.model().layer)
-            widget.fieldChanged.connect(
-                lambda field, idx=index: self.commitExpressionData(idx, widget)
+            editor.setLayer(index.model().layer)
+            editor.fieldChanged.connect(
+                lambda field, idx=index: self.commitExpressionData(idx, editor)
             )
-            self._editors[key] = widget
-            return widget
         elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.DEFAULT_VALUE:
             current_value = index.model().rows[index.row()].config.default_value
-            widget = QLineEdit(parent)
-            widget.setText(str(current_value) if current_value else "")
-            self._editors[key] = widget
-            return widget
-        return super().createEditor(parent, option, index)
+            editor = QLineEdit(parent)
+            editor.setText(str(current_value) if current_value else "")
+        else:
+            return super().createEditor(parent, option, index)
+        self._editors[(index.row(), index.column())] = editor
+        return editor
 
     def openValueMapDialog(self, index, button):
         """Open the value map dialog and update the model"""
@@ -489,14 +486,25 @@ class FieldMapWidget(QWidget):
         """Update the layer and update the table view"""
         self.close_persistent_editors()
         self.table_model.set_current_layer(layer)
-        for row_idx, row in enumerate(self.table_model.rows):
-            current_source_attr = row.config.source_attribute
-            if (
-                not layer
-                or current_source_attr
-                not in self.table_model.get_valid_source_attributes(row_idx)
-            ):
-                row.config.source_attribute = ""
+        if layer:
+            # ensure selected source attributes are still valid
+            # if not, try to find a matching attribute in the selected layer
+            for row_idx, (attr_name, row) in enumerate(self.row_dict.items()):
+                # only modify for rows where attribute is an allowed method
+                if (
+                    ColumnImportMethod.ATTRIBUTE
+                    not in row.config._metadata.allowed_methods
+                ):
+                    continue
+                valid_attr_names = self.table_model.get_valid_source_attributes(row_idx)
+                # do nothing if current method is valid
+                if row.config.source_attribute in valid_attr_names:
+                    continue
+                # change value to attr_name if that is valid, otherwise clear
+                if attr_name in valid_attr_names:
+                    row.config.source_attribute = attr_name
+                else:
+                    row.config.source_attribute = ""
         # Notify the model of the changes so the view is updated
         self.table_model.layoutChanged.emit()
 
@@ -505,7 +513,6 @@ class FieldMapWidget(QWidget):
 
         # Open persistent editors for columns with always-visible widgets
         self.open_persistent_editors()
-        self.table_view.verticalHeader().setVisible(False)
 
     def open_persistent_editors(self):
         """Open persistent editors for columns with always-visible widgets"""
