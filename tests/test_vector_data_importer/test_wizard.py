@@ -1,6 +1,7 @@
 import json
 
 import pytest
+from pydantic import BaseModel
 from qgis.core import QgsField, QgsVectorLayer
 from qgis.PyQt.QtCore import QVariant
 
@@ -35,20 +36,22 @@ from .utils import *
 # TODO reorganize tests
 
 
-def test_wizard_usage(qgis_application):
+def test_wizard_settings(qgis_application):
     # TODO: this is not a real test
     model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
     # wizard = VDIWizard(dm.ConnectionNode, None, None)
     wizard = ImportStructureWizard(dm.Culvert, model_gpkg, None)
 
     with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
-        settings = json.load(f)
-    wizard.deserialize(settings)
+        json_settings = json.load(f)
+    wizard.deserialize(json_settings)
     serialized_settings = wizard.serialize()
-    settings = wizard.get_settings()
-    # breakpoint()
-    # this will fail because rows are initalized without method
-    # wizard.serialize()
+    for key, setting in wizard.get_settings().items():
+        if isinstance(setting, BaseModel):
+            assert serialized_settings[key] == setting.model_dump()
+        else:
+            for row_key, row in setting.items():
+                assert serialized_settings[key][row_key] == row.model_dump()
 
 
 # TODO: test full flow

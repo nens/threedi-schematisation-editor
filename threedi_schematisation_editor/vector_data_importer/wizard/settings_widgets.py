@@ -328,7 +328,7 @@ class CrossSectionDataRemapSettingsWidget(SettingsWidget):
 
 
 class FieldMapSettingsWidget(SettingsWidget):
-    model_cls: Optional[Type] = None
+    model_cls: Optional[sm.FieldConfigDataModel] = None
 
     def create_row_dict(self) -> dict[str, FieldMapRow]:
         row_dict = {}
@@ -377,15 +377,16 @@ class FieldMapSettingsWidget(SettingsWidget):
         return self.field_map_widget.is_valid
 
     def get_settings(self) -> BaseModel:
-        return sm.get_field_map_config(
-            self.field_map_widget.get_settings(), self.model_cls
-        )
+        if self.model_cls is not None:
+            return self.model_cls.get_settings_model(
+                self.field_map_widget.get_settings()
+            )
 
 
 class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.model_cls = sm.PointToLineSettingsModel
+        self.model_cls = sm.PointToLineDataModel
         row_dict = self.create_row_dict()
         row_dict["length"].label = "Structure length"
         row_dict["azimuth"].label = "Sturcture direction (azimuth)"
@@ -417,6 +418,10 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
     def group_name(self):
         # TODO: better name
         return "Mapping"
+
+    def get_settings(self) -> BaseModel:
+        return
+        # sm.get_cross_section_settings_model(self.field_map_widget.get_settings())
 
     def _sync_auto_methods(self, top_left, bottom_right, roles):
         if not roles or Qt.EditRole in roles:

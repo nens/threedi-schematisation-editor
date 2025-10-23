@@ -2,12 +2,7 @@ from dataclasses import dataclass, field, fields
 from enum import Enum
 from typing import Any, ClassVar, Optional, Type, Union, get_args, get_origin
 
-from pydantic import (
-    BaseModel,
-    Field,
-    field_validator,
-    model_validator,
-)
+from pydantic import BaseModel, Field, create_model, field_validator, model_validator
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.utils import (
@@ -229,8 +224,23 @@ def get_allowed_methods_for_model_class_field(
     )
 
 
+class FieldConfigDataModel:
+    @classmethod
+    def get_settings_model(cls, field_config: dict):
+        field_map_config = get_field_map_config(field_config, cls)
+        # Create field definitions dynamically from the class
+        cls_fields = {
+            field_name: (FieldMapConfig, ...) for field_name in field_map_config.keys()
+        }
+        # Create the model class dynamically
+        FieldConfigModel = create_model(
+            "FieldConfigModel", __base__=BaseModel, **cls_fields
+        )
+        return FieldConfigModel(**field_map_config)
+
+
 @dataclass
-class PointToLineSettingsModel:
+class PointToLineDataModel(FieldConfigDataModel):
     length: float = field(
         default=1.0,
         metadata={
@@ -254,7 +264,7 @@ class PointToLineSettingsModel:
 
 
 @dataclass
-class CrossSectionLocationMappingModel:
+class CrossSectionLocationMappingModel(FieldConfigDataModel):
     join_field_src: str = field(
         default="",
         metadata={
