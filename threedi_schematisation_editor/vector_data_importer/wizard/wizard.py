@@ -3,6 +3,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Optional, Type
 
+from pydantic import BaseModel
 from qgis.core import Qgis, QgsMessageLog
 from qgis.PyQt.QtWidgets import QFileDialog, QMessageBox, QWidget, QWizard, QWizardPage
 
@@ -122,6 +123,14 @@ class VDIWizard(QWizard):
             page = self.page(page_id)
             if hasattr(page, "serialize"):
                 data.update(page.serialize())
+        return data
+
+    def get_settings(self) -> dict[str, Any]:
+        data = {}
+        for page_id in self.pageIds():
+            page = self.page(page_id)
+            if callable(getattr(page, "get_settings", None)):
+                data.update(page.get_settings())
         return data
 
 

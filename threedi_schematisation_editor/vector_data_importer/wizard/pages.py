@@ -1,5 +1,6 @@
 from typing import Optional, Type
 
+from pydantic import BaseModel
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -83,11 +84,12 @@ class SettingsPage(QWizardPage):
                 return widget.create_nodes
         return False
 
-    def serialize(self) -> dict:
-        settings = {}
-        for widget in self.settings_widgets:
-            settings[widget.name] = widget.serialize()
-        return settings
+    def serialize(self):
+        return {widget.name: widget.serialize() for widget in self.settings_widgets}
+
+    def get_settings(self) -> dict[str, BaseModel]:
+        # return non-serialized settings
+        return {widget.name: widget.get_settings() for widget in self.settings_widgets}
 
     def deserialize(self, data):
         """Load settings from serialized data"""
@@ -97,6 +99,7 @@ class SettingsPage(QWizardPage):
                 settings_widget_map[name].deserialize(settings)
 
     def isComplete(self) -> bool:
+        # TODO fix state after loading json
         if not self.generic_settings.selected_layer:
             return False
         for widget in self.settings_widgets:
@@ -146,6 +149,10 @@ class FieldMapPage(QWizardPage):
     def isComplete(self) -> bool:
         return self.field_map_widget.is_valid
 
+    def get_settings(self) -> dict[str, dict[str, BaseModel]]:
+        # return non-serialized settings
+        return {self.name: self.field_map_widget.get_settings()}
+
 
 class RunPage(QWizardPage):
     def __init__(self):
@@ -163,15 +170,19 @@ class RunPage(QWizardPage):
         save_settings_button = QPushButton("Save template")
         save_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         save_settings_button.clicked.connect(self.on_save_button_clicked)
-        text = QTextBrowser()
-        text.setReadOnly(True)
-        text.currentFont().setPointSize(10)
-        text.setText("foo bar")
+        self.text = QTextBrowser()
+        self.text.setReadOnly(True)
+        self.text.currentFont().setPointSize(10)
+        self.text.setText("foo bar")
         layout = QHBoxLayout()
         layout.addWidget(run_button)
         layout.addWidget(progress_bar)
         layout.addWidget(save_settings_button)
         main_layout = QVBoxLayout()
         main_layout.addLayout(layout)
-        main_layout.addWidget(text)
+        main_layout.addWidget(self.text)
         self.setLayout(main_layout)
+
+    def initializePage(self):
+        settings = self.wizard().get_settings()
+        self.text.setText(f"Settings:\n{settings}")

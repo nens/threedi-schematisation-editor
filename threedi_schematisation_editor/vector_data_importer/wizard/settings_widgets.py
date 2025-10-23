@@ -1,5 +1,7 @@
 from dataclasses import fields
+from typing import Optional, Type
 
+from pydantic import BaseModel
 from qgis.core import Qgis, QgsMessageLog
 from qgis.gui import QgsMapLayerComboBox
 from qgis.PyQt.QtCore import Qt, pyqtSignal
@@ -79,6 +81,7 @@ class GenericSettingsWidget(QWidget):
 
 class SettingsWidget(QWidget):
     dataChanged = pyqtSignal()
+    model = None
 
     @property
     def name(self) -> str:
@@ -92,15 +95,20 @@ class SettingsWidget(QWidget):
     def is_valid(self) -> bool:
         return True
 
+    def get_settings(self) -> BaseModel:
+        # loudly fail when model is missing
+        assert self.model is not None
+        return self.model
+
 
 class ConnectionNodeSettingsWidget(SettingsWidget):
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self.model = sm.ConnectionNodeSettingsModel()
         self.setup_ui()
 
     @property
-    def name(self):
+    def name(self) -> str:
         return "connection_nodes"
 
     @property
@@ -162,7 +170,7 @@ class ConnectionNodeSettingsWidget(SettingsWidget):
 
 class IntegrationSettingsWidget(SettingsWidget):
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self.model = sm.IntegrationSettingsModel()
         self.setup_ui()
 
@@ -262,7 +270,7 @@ class IntegrationSettingsWidget(SettingsWidget):
 
 class CrossSectionDataRemapSettingsWidget(SettingsWidget):
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self.model = sm.CrossSectionDataRemapModel()
         self.setup_ui()
 
@@ -316,17 +324,17 @@ class CrossSectionDataRemapSettingsWidget(SettingsWidget):
 
 
 class FieldMapSettingsWidget(SettingsWidget):
-    model = None
+    model_cls: Optional[Type] = None
 
     def create_row_dict(self) -> dict[str, FieldMapRow]:
-        if not self.model:
-            return {}
         row_dict = {}
+        if not self.model_cls:
+            return row_dict
         # iterate over fields of model (dataclass)
-        for field in fields(self.model):
-            # create a FieldMapConfig using metadata from self.model
+        for field in fields(self.model_cls):
+            # create a FieldMapConfig using metadata from model_cls
             config_class = sm.get_field_map_config_for_model_class_field(
-                field.name, self.model
+                field.name, self.model_cls
             )
             # create FieldMapRow to use in the FieldMapTable
             row_dict[field.name] = FieldMapRow(
@@ -364,11 +372,16 @@ class FieldMapSettingsWidget(SettingsWidget):
     def is_valid(self):
         return self.field_map_widget.is_valid
 
+    def get_settings(self) -> BaseModel:
+        return sm.get_field_map_config(
+            self.field_map_widget.get_settings(), self.model_cls
+        )
+
 
 class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self.model = sm.PointToLineSettingsModel
+        super().__init__(parent=parent)
+        self.model_cls = sm.PointToLineSettingsModel
         row_dict = self.create_row_dict()
         row_dict["length"].label = "Structure length"
         row_dict["azimuth"].label = "Sturcture direction (azimuth)"
@@ -385,8 +398,8 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
 
 class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self.model = sm.CrossSectionLocationMappingModel
+        super().__init__(parent=parent)
+        self.model_cls = sm.CrossSectionLocationMappingModel
         row_dict = self.create_row_dict()
         row_dict["join_field_src"].label = "Join channel source field"
         row_dict["join_field_tgt"].label = "Join channel target field"

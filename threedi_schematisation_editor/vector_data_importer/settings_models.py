@@ -179,7 +179,7 @@ class FieldMapConfig(BaseModel):
 
 def create_field_map_config(
     allowed_methods: Optional[list[ColumnImportMethod]],
-) -> Type[BaseModel]:
+) -> Type[FieldMapConfig]:
     """Creates a FieldMapConfig class for a specific field based on its metadata"""
     metadata = FieldMapMetadata(allowed_methods=allowed_methods)
     return FieldMapConfig.with_metadata(metadata)
@@ -187,7 +187,7 @@ def create_field_map_config(
 
 def get_field_map_config_for_model_class_field(
     field_name: str, model_class: Type
-) -> Type[BaseModel]:
+) -> Type[FieldMapConfig]:
     """Creates FieldMapConfig class for a specific field of a data model"""
     class_field = next((f for f in fields(model_class) if f.name == field_name), None)
     if not class_field:
@@ -293,7 +293,7 @@ class FieldsSectionValidator:
         self.dataclass_type = dataclass_type
         self.expected_fields = {f.name for f in fields(dataclass_type)}
 
-    def validate(self, **fields_data) -> "FieldsSection":
+    def validate(self, **fields_data) -> dict[str, FieldMapConfig]:
         """
         Validate a fields section.
 
@@ -313,12 +313,18 @@ class FieldsSectionValidator:
                 # ignore
                 continue
             try:
-                validated_fields[field_name] = FieldMapConfig(**field_config)
+                if isinstance(field_config, FieldMapConfig):
+                    # TODO enforce validation?
+                    validated_fields[field_name] = field_config
+                else:
+                    validated_fields[field_name] = FieldMapConfig(**field_config)
             except Exception as e:
                 raise ValueError(f"Invalid configuration for field '{field_name}': {e}")
         return validated_fields
 
 
-def get_field_map_config(field_config: dict, model_cls: Type):
+def get_field_map_config(
+    field_config: dict, model_cls: Type
+) -> dict[str, FieldMapConfig]:
     validator = FieldsSectionValidator(model_cls)
     return validator.validate(**field_config)

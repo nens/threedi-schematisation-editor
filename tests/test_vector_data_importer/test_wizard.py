@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from qgis.core import QgsField, QgsVectorLayer
 from qgis.PyQt.QtCore import QVariant
@@ -10,7 +12,10 @@ from threedi_schematisation_editor.vector_data_importer.settings_models import (
     IntegrationSettingsModel,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
-from threedi_schematisation_editor.vector_data_importer.wizard import VDIWizard
+from threedi_schematisation_editor.vector_data_importer.wizard import (
+    ImportStructureWizard,
+    VDIWizard,
+)
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
     FieldMapColumn,
     FieldMapModel,
@@ -25,14 +30,29 @@ from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog 
     ValueMapModel,
 )
 
+from .utils import *
+
 # TODO reorganize tests
 
 
-def test_wizard(qgis_application):
+def test_wizard_usage(qgis_application):
     # TODO: this is not a real test
-    wizard = VDIWizard(dm.ConnectionNode, None, None)
+    model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
+    # wizard = VDIWizard(dm.ConnectionNode, None, None)
+    wizard = ImportStructureWizard(dm.Culvert, model_gpkg, None)
+
+    with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
+        settings = json.load(f)
+    wizard.deserialize(settings)
+    serialized_settings = wizard.serialize()
+    settings = wizard.get_settings()
+    # breakpoint()
     # this will fail because rows are initalized without method
     # wizard.serialize()
+
+
+# TODO: test full flow
+# - ...
 
 
 class TestIntegrationSettingsWidget:

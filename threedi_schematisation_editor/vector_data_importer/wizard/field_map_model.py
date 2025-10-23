@@ -3,7 +3,7 @@ from enum import Enum
 from functools import cached_property
 from typing import Any, Optional
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 from qgis.core import Qgis, QgsMessageLog, QgsVectorLayer
 from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSignal
@@ -29,6 +29,7 @@ from qgis.PyQt.QtWidgets import (
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     FieldMapConfig,
     create_field_map_config,
+    get_field_map_config,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog import (
@@ -157,7 +158,7 @@ def create_field_map_row(
 
 class FieldMapModel(QAbstractTableModel):
     def __init__(self, row_dict: dict[str, FieldMapRow], parent=None):
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self.row_dict = row_dict
         self.rows = list(row_dict.values())
         self.attr_to_label_map = {
@@ -248,7 +249,7 @@ class FieldMapModel(QAbstractTableModel):
 
 class QsgExpressionWidgetForTableView(QgsFieldExpressionWidget):
     def __init__(self, parent=None, expression=None):
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self._expression = expression
 
     def showEvent(self, event):
@@ -261,7 +262,7 @@ class QsgExpressionWidgetForTableView(QgsFieldExpressionWidget):
 
 class FieldMapDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self._editors = {}  # Track editors to prevent recreation
 
     def createEditor(self, parent, option, index):
@@ -419,7 +420,7 @@ class FieldMapWidget(QWidget):
     dataChanged = pyqtSignal()
 
     def __init__(self, row_dict, parent=None):
-        super().__init__(parent)
+        super().__init__(parent=parent)
         self.row_dict = row_dict
         self.table_model = FieldMapModel(self.row_dict)
         self.rows = self.table_model.rows
@@ -520,6 +521,11 @@ class FieldMapWidget(QWidget):
 
     def serialize(self) -> dict[str, dict[str, Any]]:
         return self.table_model.serialize()
+
+    def get_settings(self) -> dict[str, FieldMapConfig]:
+        # retrieve non-serialized settings
+        settings_dict = {key: row.valid_config for key, row in self.row_dict.items()}
+        return settings_dict
 
     def deserialize(self, data: dict[str, dict[str, Any]]):
         self.table_model.deserialize(data)
