@@ -84,8 +84,8 @@ class SettingsPage(QWizardPage):
                 return widget.create_nodes
         return False
 
-    def serialize(self):
-        return {widget.name: widget.serialize() for widget in self.settings_widgets}
+    # def serialize(self):
+    #     return {widget.name: widget.serialize() for widget in self.settings_widgets}
 
     def get_settings(self) -> dict[str, BaseModel]:
         # return non-serialized settings
@@ -150,8 +150,8 @@ class FieldMapPage(QWizardPage):
         )
         super().initializePage()
 
-    def serialize(self):
-        return {self.name: self.field_map_widget.serialize()}
+    # def serialize(self):
+    #     return {self.name: self.field_map_widget.serialize()}
 
     def deserialize(self, data):
         return self.field_map_widget.deserialize(data[self.name])

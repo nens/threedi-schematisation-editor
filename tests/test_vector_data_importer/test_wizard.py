@@ -41,17 +41,11 @@ def test_wizard_settings(qgis_application):
     model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
     # wizard = VDIWizard(dm.ConnectionNode, None, None)
     wizard = ImportStructureWizard(dm.Culvert, model_gpkg, None)
-
     with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
         json_settings = json.load(f)
     wizard.deserialize(json_settings)
     serialized_settings = wizard.serialize()
-    for key, setting in wizard.get_settings().items():
-        if isinstance(setting, BaseModel):
-            assert serialized_settings[key] == setting.model_dump()
-        else:
-            for row_key, row in setting.items():
-                assert serialized_settings[key][row_key] == row.model_dump()
+    assert wizard.get_settings().model_dump() == serialized_settings
 
 
 # TODO: test full flow
@@ -93,7 +87,7 @@ class TestIntegrationSettingsWidget:
             "min_length": 10.5,
         }
         widget.deserialize(settings)
-        assert widget.serialize() == settings
+        assert widget.get_settings().model_dump() == settings
 
     @pytest.mark.parametrize(
         "integration_mode",
@@ -127,7 +121,7 @@ class TestConnectNodeSettings:
         widget = ConnectionNodeSettingsWidget()
         settings = {"create_nodes": True, "snap": False, "snap_distance": 10.5}
         widget.deserialize(settings)
-        assert widget.serialize() == settings
+        assert widget.get_settings().model_dump() == settings
 
     @pytest.mark.parametrize("create_nodes", [True, False])
     def test_toggle_snap(self, create_nodes, qgis_application):
@@ -143,15 +137,6 @@ class TestConnectNodeSettings:
 
 
 class TestFieldMapRow:
-    def test_serialize(self):
-        config = FieldMapConfig(
-            method=ColumnImportMethod.ATTRIBUTE, source_attribute="foo"
-        )
-        row = FieldMapRow(label="foo", config=config)
-        serialized_row = row.serialize()
-        assert "label" not in serialized_row
-        assert serialized_row == config.model_dump()
-
     def test_deserialize(self):
         config = {"method": "source_attribute", "source_attribute": "foo"}
         row = FieldMapRow(
@@ -287,19 +272,6 @@ class TestFieldMapModel:
         model = FieldMapModel({})
         model.set_current_layer(layer)
         assert model.current_layer_attributes == ["id", "name", "value", "date"]
-
-    def test_serialize(self):
-        row_dict = {
-            "foo": FieldMapRow(
-                label="foo",
-                config=FieldMapConfig(
-                    method=ColumnImportMethod.ATTRIBUTE, source_attribute="bar"
-                ),
-            )
-        }
-        model = FieldMapModel(row_dict)
-        serialized_model = model.serialize()
-        assert serialized_model == {"foo": row_dict["foo"].serialize()}
 
     def test_deserialize(self):
         row_dict = {"foo": FieldMapRow(label="foo")}

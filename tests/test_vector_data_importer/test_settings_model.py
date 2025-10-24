@@ -4,16 +4,7 @@ from typing import Optional
 import pytest
 
 import threedi_schematisation_editor.data_models as dm
-from threedi_schematisation_editor.vector_data_importer.settings_models import (
-    FieldMapConfig,
-    FieldMapConfigDefaultValueMissingError,
-    FieldMapConfigExpressionMissingError,
-    FieldMapConfigMethodMissingError,
-    FieldMapConfigSourceAttributeMissingError,
-    FieldsSectionValidator,
-    create_field_map_config,
-    get_allowed_methods_for_model_class_field,
-)
+import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 
 
@@ -24,7 +15,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import ColumnImpor
         ({"method": ColumnImportMethod.IGNORE}, None),
         (
             {"method": ColumnImportMethod.ATTRIBUTE},
-            FieldMapConfigSourceAttributeMissingError,
+            sm.FieldMapConfigSourceAttributeMissingError,
         ),
         ({"method": ColumnImportMethod.ATTRIBUTE, "source_attribute": "foo"}, None),
         (
@@ -37,7 +28,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import ColumnImpor
         ),
         (
             {"method": ColumnImportMethod.EXPRESSION},
-            FieldMapConfigExpressionMissingError,
+            sm.FieldMapConfigExpressionMissingError,
         ),
         ({"method": ColumnImportMethod.EXPRESSION, "expression": "foo"}, None),
         (
@@ -50,18 +41,18 @@ from threedi_schematisation_editor.vector_data_importer.utils import ColumnImpor
         ),
         (
             {"method": ColumnImportMethod.DEFAULT},
-            FieldMapConfigDefaultValueMissingError,
+            sm.FieldMapConfigDefaultValueMissingError,
         ),
         ({"method": ColumnImportMethod.DEFAULT, "default_value": "foo"}, None),
-        ({}, FieldMapConfigMethodMissingError),
+        ({}, sm.FieldMapConfigMethodMissingError),
     ],
 )
 def test_field_map_config(config_dict, expected_error):
     if not expected_error:
-        assert FieldMapConfig(**config_dict)
+        assert sm.FieldMapConfig(**config_dict)
     else:
         with pytest.raises(ValueError):
-            FieldMapConfig(**config_dict)
+            sm.FieldMapConfig(**config_dict)
 
 
 @dataclass
@@ -87,12 +78,12 @@ class Test:
     ],
 )
 def test_field_map_config_validator(config_dict, valid, expected_keys):
-    validator = FieldsSectionValidator(Test)
+    validator = sm.FieldsSectionValidator(Test)
     if valid:
         valid_config = validator.validate(**config_dict)
         assert sorted(valid_config.keys()) == sorted(expected_keys)
         for value in valid_config.values():
-            assert isinstance(value, FieldMapConfig)
+            assert isinstance(value, sm.FieldMapConfig)
     else:
         with pytest.raises(ValueError):
             validator.validate(**config_dict)
@@ -100,13 +91,13 @@ def test_field_map_config_validator(config_dict, valid, expected_keys):
 
 def test_create_field_map_config():
     allowed_methods = [ColumnImportMethod.AUTO]
-    config = create_field_map_config(allowed_methods)
+    config = sm.create_field_map_config(allowed_methods)
     assert config._metadata.allowed_methods == allowed_methods
     # check if validator works as expected
     with pytest.raises(ValueError):
         config(method=ColumnImportMethod.IGNORE)
     valid_config = config(method=ColumnImportMethod.AUTO)
-    assert isinstance(valid_config, FieldMapConfig)
+    assert isinstance(valid_config, sm.FieldMapConfig)
 
 
 class TestGetAllowedMethodsForModelClassField:
@@ -130,7 +121,7 @@ class TestGetAllowedMethodsForModelClassField:
                 metadata=self.get_metadata(allowed_methods, None)
             )
 
-        allowed_methods = get_allowed_methods_for_model_class_field(fields(Test)[0])
+        allowed_methods = sm.get_allowed_methods_for_model_class_field(fields(Test)[0])
         assert (ColumnImportMethod.IGNORE in allowed_methods) == is_optional
 
     @pytest.mark.parametrize(
@@ -147,7 +138,7 @@ class TestGetAllowedMethodsForModelClassField:
             id: str = field(metadata=self.get_metadata(allowed_methods, None))
 
         assert (
-            get_allowed_methods_for_model_class_field(fields(Test)[0])
+            sm.get_allowed_methods_for_model_class_field(fields(Test)[0])
             == expected_methods
         )
 
@@ -162,7 +153,7 @@ class TestGetAllowedMethodsForModelClassField:
         class Test:
             foo: Optional[str] = field(metadata=metadata)
 
-        allowed_methods = get_allowed_methods_for_model_class_field(fields(Test)[0])
+        allowed_methods = sm.get_allowed_methods_for_model_class_field(fields(Test)[0])
         for method in excluded_methods:
             assert method not in allowed_methods
 
@@ -175,7 +166,7 @@ class TestGetAllowedMethodsForModelClassField:
             method for method in ColumnImportMethod if method != ColumnImportMethod.AUTO
         ]
         assert (
-            get_allowed_methods_for_model_class_field(fields(Test)[0])
+            sm.get_allowed_methods_for_model_class_field(fields(Test)[0])
             == default_allowed
         )
 
@@ -191,7 +182,7 @@ class TestGetAllowedMethodsForModelClassField:
             foo: Optional[str] = field(metadata=metadata)
 
         assert (
-            get_allowed_methods_for_model_class_field(fields(Test)[0])
+            sm.get_allowed_methods_for_model_class_field(fields(Test)[0])
             == allowed_methods
         )
 
@@ -218,6 +209,50 @@ class TestGetAllowedMethodsForModelClassField:
             )
 
         assert (
-            get_allowed_methods_for_model_class_field(fields(Test)[0])
+            sm.get_allowed_methods_for_model_class_field(fields(Test)[0])
             == expected_methods
         )
+
+
+def test_get_field_config_data_model():
+    settings = {
+        "length": {"method": ColumnImportMethod.DEFAULT, "default_value": 1000.0},
+        "azimuth": {"method": ColumnImportMethod.DEFAULT, "default_value": 180.0},
+    }
+    field_map_config = sm.PointToLineDataModel.get_settings_model(settings)
+    assert field_map_config.length == sm.FieldMapConfig(**settings["length"])
+    assert field_map_config.azimuth == sm.FieldMapConfig(**settings["azimuth"])
+
+
+def test_get_settings_model():
+    models = [
+        sm.ConnectionNodeSettingsModel,
+        sm.IntegrationSettingsModel,
+        sm.CrossSectionDataRemapModel,
+    ]
+    settings_dict = {model.name: model() for model in models}
+    point_to_line_settings = {
+        "length": {"method": ColumnImportMethod.DEFAULT, "default_value": 1000.0},
+        "azimuth": {"method": ColumnImportMethod.DEFAULT, "default_value": 180.0},
+    }
+    settings_dict[sm.PointToLineDataModel.name] = (
+        sm.PointToLineDataModel.get_settings_model(point_to_line_settings)
+    )
+    cross_section_location_mapping_settings = {
+        "join_field_src": {"method": ColumnImportMethod.AUTO},
+        "join_field_tgt": {"method": ColumnImportMethod.AUTO},
+    }
+    settings_dict[sm.CrossSectionLocationMappingModel.name] = (
+        sm.CrossSectionLocationMappingModel.get_settings_model(
+            cross_section_location_mapping_settings
+        )
+    )
+    settings_model = sm.get_settings_model(settings_dict)
+    for model_name in settings_dict:
+        assert hasattr(settings_model, model_name)
+        assert getattr(settings_model, model_name) == settings_dict[model_name]
+
+
+def test_get_settings_model_empty():
+    settings_model = sm.get_settings_model({}, required_models=[])
+    assert settings_model.model_fields == {}

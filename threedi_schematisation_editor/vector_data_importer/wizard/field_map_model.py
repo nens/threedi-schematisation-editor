@@ -130,9 +130,6 @@ class FieldMapRow:
     def valid_config(self) -> FieldMapConfig:
         return FieldMapConfig.model_validate(self.config.model_dump())
 
-    def serialize(self) -> dict[str, Any]:
-        return self.valid_config.model_dump()
-
     def deserialize(self, data: dict[str, Any]) -> None:
         # Get the custom config class that has the validation, including allowed methods
         config_class = self.config.__class__
@@ -229,9 +226,6 @@ class FieldMapModel(QAbstractTableModel):
             self.current_layer_attributes = []
         self.layer = layer
         self.layoutChanged.emit()
-
-    def serialize(self) -> dict[str, dict[str, Any]]:
-        return {attr_name: row.serialize() for attr_name, row in self.row_dict.items()}
 
     def deserialize(self, data: dict[str, dict[str, Any]]):
         for key, row_data in data.items():
@@ -529,9 +523,6 @@ class FieldMapWidget(QWidget):
                 if field_map_column == FieldMapColumn.LABEL:
                     continue
                 self.table_view.closePersistentEditor(self.table_model.index(row, col))
-
-    def serialize(self) -> dict[str, dict[str, Any]]:
-        return self.table_model.serialize()
 
     def get_settings(self) -> dict[str, FieldMapConfig]:
         # retrieve non-serialized settings

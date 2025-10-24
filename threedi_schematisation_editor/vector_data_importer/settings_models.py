@@ -2,7 +2,14 @@ from dataclasses import dataclass, field, fields
 from enum import Enum
 from typing import Any, ClassVar, Optional, Type, Union, get_args, get_origin
 
-from pydantic import BaseModel, Field, create_model, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+    create_model,
+    field_validator,
+    model_validator,
+)
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.utils import (
@@ -59,6 +66,38 @@ class CrossSectionDataRemapModel(BaseModel):
 
     set_lowest_point_to_zero: bool = False
     use_lowest_point_as_reference: bool = False
+
+
+def get_settings_model(
+    settings: dict[str, BaseModel], required_models=None
+) -> BaseModel:
+    """Create pydantic model for the settings. When required models are supplied,
+    only fields for those models are included."""
+    # Create field definitions dynamically from the class for these models:
+    raise_on_missing = True
+    if required_models is None:
+        required_models = [
+            ConnectionNodeSettingsModel,
+            IntegrationSettingsModel,
+            CrossSectionDataRemapModel,
+            PointToLineDataModel,
+            CrossSectionLocationMappingModel,
+        ]
+        raise_on_missing = False
+    # Use the class of the supplied data if present. If not use the present BaseModels or create a dummpy class
+    cls_fields = {}
+    for model_cls in required_models:
+        if model_cls.name not in settings:
+            if raise_on_missing:
+                raise ValidationError(f"Missing required model {model_cls.name}")
+            continue
+        cls_fields[model_cls.name] = (type(settings[model_cls.name]), ...)
+
+    # Create the model class dynamically
+    VDISettingsModel = create_model(
+        "VDISettingsModel", __base__=BaseModel, **cls_fields
+    )
+    return VDISettingsModel(**settings)
 
 
 class ConversionSettings(BaseModel):
@@ -238,18 +277,20 @@ class FieldConfigDataModel:
     def get_settings_model(cls, field_config: dict):
         field_map_config = get_field_map_config(field_config, cls)
         # Create field definitions dynamically from the class
-        cls_fields = {
-            field_name: (FieldMapConfig, ...) for field_name in field_map_config.keys()
-        }
+        cls_fields = {field.name: (FieldMapConfig, ...) for field in fields(cls)}
         # Create the model class dynamically
         FieldConfigModel = create_model(
             "FieldConfigModel", __base__=BaseModel, **cls_fields
         )
+        if hasattr(cls, "name"):
+            FieldConfigModel.name = cls.name
         return FieldConfigModel(**field_map_config)
 
 
 @dataclass
 class PointToLineDataModel(FieldConfigDataModel):
+    name: ClassVar[str] = "point_to_line_conversion"
+
     length: float = field(
         default=1.0,
         metadata={
@@ -274,6 +315,8 @@ class PointToLineDataModel(FieldConfigDataModel):
 
 @dataclass
 class CrossSectionLocationMappingModel(FieldConfigDataModel):
+    name: ClassVar[str] = "cross_section_data_remap"
+
     join_field_src: str = field(
         default="",
         metadata={

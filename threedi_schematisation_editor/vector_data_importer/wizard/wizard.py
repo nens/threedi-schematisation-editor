@@ -16,12 +16,10 @@ from qgis.PyQt.QtWidgets import (
 
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.vector_data_importer.importers as vdi_importers
+import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from threedi_schematisation_editor.vector_data_importer.dialogs.utils import (
     CatchThreediWarnings,
     create_font,
-)
-from threedi_schematisation_editor.vector_data_importer.settings_models import (
-    IntegrationMode,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.pages import (
     FieldMapPage,
@@ -157,7 +155,7 @@ class VDIWizard(QWizard):
         )
         if file_path:
             try:
-                settings = self.serialize()
+                settings = self.get_settings().model_dump()
                 with open(file_path, "w") as f:
                     json.dump(settings, f, indent=4)
                 QMessageBox.information(self, "Success", "Settings saved successfully!")
@@ -167,20 +165,16 @@ class VDIWizard(QWizard):
                 )
 
     def serialize(self):
-        data = {}
-        for page_id in self.pageIds():
-            page = self.page(page_id)
-            if hasattr(page, "serialize"):
-                data.update(page.serialize())
-        return data
+        return self.get_settings().model_dump()
 
-    def get_settings(self) -> dict[str, Any]:
+    def get_settings(self) -> BaseModel:
         data = {}
         for page_id in self.pageIds():
             page = self.page(page_id)
             if callable(getattr(page, "get_settings", None)):
                 data.update(page.get_settings())
-        return data
+
+        return sm.get_settings_model(data)
 
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         """Collect layer handlers and map associated layers to dict needed for the importer"""
@@ -300,7 +294,7 @@ class ImportStructureWizard(ImportWithCreateConnectionNodesWizard):
         settings = self.get_settings().get("integration")
         if not settings:
             return processed_handlers, processed_layers
-        if settings.integration_mode == IntegrationMode.CHANNELS:
+        if settings.integration_mode == sm.IntegrationMode.CHANNELS:
             conduit_handler = self.layer_manager.model_handlers[dm.Channel]
             cross_section_location_handler = self.layer_manager.model_handlers[
                 dm.CrossSectionLocation
@@ -310,7 +304,7 @@ class ImportStructureWizard(ImportWithCreateConnectionNodesWizard):
             processed_layers["cross_section_location_layer"] = (
                 cross_section_location_handler.layer
             )
-        elif settings.integration_mode == IntegrationMode.PIPES:
+        elif settings.integration_mode == sm.IntegrationMode.PIPES:
             conduit_handler = self.layer_manager.model_handlers[dm.Pipe]
             processed_handlers += [conduit_handler]
             processed_layers["conduit_layer"] = conduit_handler.layer

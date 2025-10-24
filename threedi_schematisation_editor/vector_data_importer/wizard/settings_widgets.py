@@ -85,9 +85,6 @@ class GenericSettingsWidget(QWidget):
             **layer_dict,
         )
 
-    def serialize(self):
-        return self.model
-
 
 class SettingsWidget(QWidget):
     dataChanged = pyqtSignal()
@@ -168,9 +165,6 @@ class ConnectionNodeSettingsWidget(SettingsWidget):
 
     def update_snap_distance(self, value):
         self.model.snap_distance = value
-
-    def serialize(self):
-        return self.model.model_dump()
 
     def deserialize(self, data):
         self.model = self.model.model_copy(update=data)
@@ -269,9 +263,6 @@ class IntegrationSettingsWidget(SettingsWidget):
         self.setLayout(main_layout)
         self.deserialize({})
 
-    def serialize(self):
-        return self.model.model_dump()
-
     def deserialize(self, data):
         self.model = self.model.model_copy(update=data)
         self.integration_mode_map[self.model.integration_mode].setChecked(True)
@@ -319,9 +310,6 @@ class CrossSectionDataRemapSettingsWidget(SettingsWidget):
     def update_use_lowest_point_as_reference(self, checked):
         self.model.use_lowest_point_as_reference = checked
 
-    def serialize(self):
-        return self.model.model_dump()
-
     def deserialize(self, data):
         self.model = self.model.model_copy(update=data)
         self.set_lowest_point_to_zero.setChecked(self.model.set_lowest_point_to_zero)
@@ -332,6 +320,10 @@ class CrossSectionDataRemapSettingsWidget(SettingsWidget):
 
 class FieldMapSettingsWidget(SettingsWidget):
     model_cls: Optional[sm.FieldConfigDataModel] = None
+
+    @property
+    def name(self) -> str:
+        return self.model_cls.name
 
     def create_row_dict(self) -> dict[str, FieldMapRow]:
         row_dict = {}
@@ -368,9 +360,6 @@ class FieldMapSettingsWidget(SettingsWidget):
 
     def update_layer(self, layer):
         self.field_map_widget.update_layer(layer)
-
-    def serialize(self):
-        return self.field_map_widget.serialize()
 
     def deserialize(self, data):
         self.field_map_widget.deserialize(data)
@@ -413,10 +402,6 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
     def group_name(self):
         # TODO: better name
         return "Mapping"
-
-    def get_settings(self) -> BaseModel:
-        return
-        # sm.get_cross_section_settings_model(self.field_map_widget.get_settings())
 
     def _sync_auto_methods(self, top_left, bottom_right, roles):
         if not roles or Qt.EditRole in roles:
