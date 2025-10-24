@@ -33,6 +33,9 @@ class IntegrationMode(str, Enum):
 
 
 class ConnectionNodeSettingsModel(BaseModel):
+    # class variables used to identify model
+    name: ClassVar[str] = "connection_nodes"
+
     create_nodes: bool = False
     snap: bool = False
     snap_distance: float = Field(default=1.0, ge=0, le=1000000.0)
@@ -42,12 +45,18 @@ class ConnectionNodeSettingsModel(BaseModel):
 
 
 class IntegrationSettingsModel(BaseModel):
+    # class variables used to identify model
+    name: ClassVar[str] = "integration"
+
     integration_mode: IntegrationMode = IntegrationMode.NONE
     snap_distance: float = Field(default=1.0, ge=0, le=1000000.0)
     min_length: float = Field(default=5.0, ge=0, le=1000000.0)
 
 
 class CrossSectionDataRemapModel(BaseModel):
+    # class variables used to identify model
+    name: ClassVar[str] = "cross_section_data_remap"
+
     set_lowest_point_to_zero: bool = False
     use_lowest_point_as_reference: bool = False
 

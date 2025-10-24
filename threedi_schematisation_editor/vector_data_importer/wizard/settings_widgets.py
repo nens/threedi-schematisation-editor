@@ -95,7 +95,8 @@ class SettingsWidget(QWidget):
 
     @property
     def name(self) -> str:
-        raise NotImplementedError
+        assert self.model is not None
+        return self.model.name
 
     @property
     def group_name(self) -> str:
@@ -285,10 +286,6 @@ class CrossSectionDataRemapSettingsWidget(SettingsWidget):
         self.setup_ui()
 
     @property
-    def name(self):
-        return "cross_section_data_remap"
-
-    @property
     def group_name(self):
         return "Align cross section table to reference level"
 
@@ -399,10 +396,6 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
         self.setup_ui(row_dict)
 
     @property
-    def name(self):
-        return "point_to_line_conversion"
-
-    @property
     def group_name(self):
         return "Point to line conversion settings"
 
@@ -415,10 +408,6 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
         row_dict["join_field_src"].label = "Join channel source field"
         row_dict["join_field_tgt"].label = "Join channel target field"
         self.setup_ui(row_dict)
-
-    @property
-    def name(self):
-        return "cross_section_location_mapping"
 
     @property
     def group_name(self):
