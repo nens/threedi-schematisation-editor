@@ -1,14 +1,28 @@
 import json
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Optional, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from pydantic import BaseModel
 from qgis.core import Qgis, QgsMessageLog
-from qgis.PyQt.QtWidgets import QFileDialog, QMessageBox, QWidget, QWizard, QWizardPage
+from qgis.PyQt.QtWidgets import (
+    QFileDialog,
+    QLabel,
+    QMessageBox,
+    QWidget,
+    QWizard,
+    QWizardPage,
+)
 
 import threedi_schematisation_editor.data_models as dm
-from threedi_schematisation_editor.vector_data_importer.dialogs.utils import create_font
+import threedi_schematisation_editor.vector_data_importer.importers as vdi_importers
+from threedi_schematisation_editor.vector_data_importer.dialogs.utils import (
+    CatchThreediWarnings,
+    create_font,
+)
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
+    IntegrationMode,
+)
 from threedi_schematisation_editor.vector_data_importer.wizard.pages import (
     FieldMapPage,
     RunPage,
@@ -24,6 +38,16 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
 
 
 class VDIWizard(QWizard):
+    IMPORTERS = {
+        dm.ConnectionNode: vdi_importers.ConnectionNodesImporter,
+        dm.Culvert: vdi_importers.CulvertsImporter,
+        dm.Orifice: vdi_importers.OrificesImporter,
+        dm.Weir: vdi_importers.WeirsImporter,
+        dm.Pipe: vdi_importers.PipesImporter,
+        dm.Channel: vdi_importers.ChannelsImporter,
+        dm.CrossSectionLocation: vdi_importers.CrossSectionLocationImporter,
+    }
+
     def __init__(
         self,
         model_cls: Type,
@@ -32,6 +56,7 @@ class VDIWizard(QWizard):
         parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
+        self.import_finished = False
         self.model_cls = model_cls
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
@@ -73,10 +98,34 @@ class VDIWizard(QWizard):
         for page in self.connection_node_pages:
             self.addPage(page)
         self.addPage(self.run_page)
+        self.currentIdChanged.connect(self.handle_page_change)
+        self.map_finish_button()
+
+    def map_finish_button(self):
+        if self.import_finished:
+            self.setButtonText(self.FinishButton, "Finish")
+            finish_button = self.button(self.FinishButton)
+            finish_button.clicked.disconnect()
+            finish_button.clicked.connect(self.accept)  # accept() will close the dialog
+        else:
+            self.setButtonText(self.FinishButton, "Run")
+            finish_button = self.button(self.FinishButton)
+            finish_button.clicked.disconnect()
+            finish_button.clicked.connect(self.run_import)
+
+    def handle_page_change(self, _):
+        # Reset import_finished if we navigate to any page
+        if self.import_finished:
+            self.import_finished = False
+            self.map_finish_button()
 
     @property
     def selected_layer(self):
         return self.settings_page.generic_settings.selected_layer
+
+    @property
+    def use_selected_features(self) -> bool:
+        return self.settings_page.generic_settings.model.selected_layer
 
     def load_settings_from_json(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -133,6 +182,74 @@ class VDIWizard(QWizard):
                 data.update(page.get_settings())
         return data
 
+    def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
+        """Collect layer handlers and map associated layers to dict needed for the importer"""
+        handler = self.layer_manager.model_handlers[self.model_cls]
+        return [handler], {"target_layer": handler.layer}
+
+    def get_importer(self, import_settings: dict, layer_dict):
+        return self.IMPORTERS[self.model_cls](
+            self.selected_layer,
+            self.model_gpkg,
+            import_settings,
+            **layer_dict,
+        )
+
+    def run_import(self):
+        text_output = self.run_page.text
+        text_output.insertPlainText("Process settings")
+        settings = self.get_settings()
+        selected_feat_ids = (
+            self.selected_layer.selectedFeatureIds()
+            if self.use_selected_features
+            else None
+        )
+
+        # depends on model iirc
+        handlers, layers = self.prepare_import()
+        text_output.appendPlainText(f"Load source and target layers")
+        # needs settings and selected layer
+
+        try:
+            text_output.appendPlainText("Disconnect layer handler signals:")
+            for handler in handlers:
+                text_output.appendPlainText(f"\t- {handler.layer.name()}")
+                handler.disconnect_handler_signals()
+            # depends on model
+            text_output.appendPlainText(f"Initialize importer")
+            importer = self.get_importer(settings, layers)
+            # put warnings in text box
+            with CatchThreediWarnings() as warnings_catcher:
+                importer.import_features(selected_ids=selected_feat_ids)
+            result_msg = (
+                "Import completed successfully.\n"
+                "The layers to which the data has been added are still in editing mode, "
+                "so you can review the changes before saving them to the layers."
+                f"{warnings_catcher.warnings_msg}"
+            )
+            # QMessageBox.information(self, "Success", success_msg)
+            self.import_finished = True
+        except Exception as e:
+            self.import_finished = False
+            result_msg = f"Import failed with traceback:\n{traceback.format_exc()}"
+            # QMessageBox.information(self, "Failure", f"Import failed due to the following error:\n{e}",)
+            QgsMessageLog.logMessage(
+                f"Import failed with traceback:\n{traceback.format_exc()}",
+                "Warning",
+                Qgis.Warning,
+            )
+        finally:
+            text_output.appendPlainText("Reconnect layer handler signals:")
+            for handler in handlers:
+                text_output.appendPlainText(f"\t- {handler.layer.name()}")
+                handler.connect_handler_signals()
+        text_output.appendPlainText("Repaint layers:")
+        for handler in handlers:
+            text_output.appendPlainText(f"\t- {handler.layer.name()}")
+            handler.layer.triggerRepaint()
+        text_output.appendPlainText(f"{result_msg}")
+        self.map_finish_button()
+
 
 class ImportWithCreateConnectionNodesWizard(VDIWizard):
     @cached_property
@@ -158,6 +275,16 @@ class ImportWithCreateConnectionNodesWizard(VDIWizard):
                 next_id += 1
         return next_id
 
+    def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
+        structures_handler = self.layer_manager.model_handlers[self.model_cls]
+        node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        processed_handlers = [structures_handler, node_handler]
+        processed_layers = {
+            "structure_layer": structures_handler.layer,
+            "node_layer": node_handler.layer,
+        }
+        return processed_handlers, processed_layers
+
 
 class ImportConduitWizard(ImportWithCreateConnectionNodesWizard):
     @cached_property
@@ -168,6 +295,27 @@ class ImportConduitWizard(ImportWithCreateConnectionNodesWizard):
 
 
 class ImportStructureWizard(ImportWithCreateConnectionNodesWizard):
+    def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
+        processed_handlers, processed_layers = super().prepare_import()
+        settings = self.get_settings().get("integration")
+        if not settings:
+            return processed_handlers, processed_layers
+        if settings.integration_mode == IntegrationMode.CHANNELS:
+            conduit_handler = self.layer_manager.model_handlers[dm.Channel]
+            cross_section_location_handler = self.layer_manager.model_handlers[
+                dm.CrossSectionLocation
+            ]
+            processed_handlers += [conduit_handler, cross_section_location_handler]
+            processed_layers["conduit_layer"] = conduit_handler.layer
+            processed_layers["cross_section_location_layer"] = (
+                cross_section_location_handler.layer
+            )
+        elif settings.integration_mode == IntegrationMode.PIPES:
+            conduit_handler = self.layer_manager.model_handlers[dm.Pipe]
+            processed_handlers += [conduit_handler]
+            processed_layers["conduit_layer"] = conduit_handler.layer
+        return processed_handlers, processed_layers
+
     @cached_property
     def settings_page(self):
         return SettingsPage(
@@ -187,6 +335,22 @@ class ImportCrossSectionDataWizard(VDIWizard):
     @cached_property
     def settings_page(self):
         return SettingsPage([CrossSectionDataRemapSettingsWidget])
+
+    def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
+        handlers = [
+            self.layer_manager.model_handlers[model_cls]
+            for model_cls in vdi_importers.CrossSectionDataProcessor.target_models
+        ]
+        layer_dict = {handler.layer.name(): handler.layer for handler in handlers}
+        return handlers, layer_dict
+
+    def get_importer(self, import_settings, layer_dict):
+        return vdi_importers.CrossSectionDataImporter(
+            self.selected_layer,
+            self.model_gpkg,
+            import_settings,
+            list(layer_dict.values()),
+        )
 
 
 class ImportCrossSectionLocationWizard(VDIWizard):

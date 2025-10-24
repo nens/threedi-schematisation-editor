@@ -8,11 +8,11 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QMessageBox,
+    QPlainTextEdit,
     QProgressBar,
     QPushButton,
     QSizePolicy,
     QTableView,
-    QTextBrowser,
     QVBoxLayout,
     QWidget,
     QWizardPage,
@@ -98,6 +98,13 @@ class SettingsPage(QWizardPage):
             if name in settings_widget_map:
                 settings_widget_map[name].deserialize(settings)
 
+    def initializePage(self):
+        # TODO: remove (just for testing)
+        self.generic_settings.layer_selector.setCurrentText("Culvert")
+        self.generic_settings.update_layer(
+            self.generic_settings.layer_selector.currentLayer()
+        )
+
     def isComplete(self) -> bool:
         # TODO fix state after loading json
         if not self.generic_settings.selected_layer:
@@ -168,15 +175,15 @@ class RunPage(QWizardPage):
 
     def setup_ui(self):
         run_button = QPushButton("Run")
+        run_button.clicked.connect(self.on_run_import)
         run_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         progress_bar = QProgressBar()
         save_settings_button = QPushButton("Save template")
         save_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         save_settings_button.clicked.connect(self.on_save_button_clicked)
-        self.text = QTextBrowser()
+        self.text = QPlainTextEdit()
+        self.text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.text.setReadOnly(True)
-        self.text.currentFont().setPointSize(10)
-        self.text.setText("foo bar")
         layout = QHBoxLayout()
         layout.addWidget(run_button)
         layout.addWidget(progress_bar)
@@ -186,6 +193,8 @@ class RunPage(QWizardPage):
         main_layout.addWidget(self.text)
         self.setLayout(main_layout)
 
+    def on_run_import(self):
+        self.wizard().run_import(self.text)
+
     def initializePage(self):
         settings = self.wizard().get_settings()
-        self.text.setText(f"Settings:\n{settings}")

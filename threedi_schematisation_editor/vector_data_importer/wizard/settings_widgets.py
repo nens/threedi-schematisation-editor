@@ -45,10 +45,6 @@ class GenericSettingsWidget(QWidget):
         self.setup_ui()
         self.selected_layer = None
 
-    # @property
-    # def selected_layer(self):
-    #     return self.model.selected_layer
-
     def setup_ui(self):
         # create widgets
         label = QLabel("Select layer to import:")
@@ -57,6 +53,8 @@ class GenericSettingsWidget(QWidget):
         layer_selector.layerChanged.connect(self.update_layer)
         layer_selector.setCurrentIndex(0)
         layer_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        # TODO: remove this, was added for debugging
+        self.layer_selector = layer_selector
         use_selected = QCheckBox("Only use selected features")
         # set up layout
         layout = QHBoxLayout(self)
@@ -78,6 +76,14 @@ class GenericSettingsWidget(QWidget):
 
     def update_use_selected(self, checked):
         self.model.use_selected_features = checked
+
+    def get_importer(self, import_settings: dict, layer_dict):
+        return self.IMPORTERS[self.import_model_cls](
+            self.source_layer,
+            self.model_gpkg,
+            import_settings,
+            **layer_dict,
+        )
 
     def serialize(self):
         return self.model
