@@ -2,7 +2,7 @@
 #  cross-section locations (in .split() or .make_valid()) do not have id.
 
 from enum import Enum
-from typing import Iterator, List, Union, Set, Sequence, Tuple
+from typing import Iterator, List, Union, Set, Sequence, Tuple, Optional
 
 import numpy as np
 from shapely import wkt, set_precision, MultiPoint
@@ -23,6 +23,7 @@ VERTEX_LIMIT = 50000
 
 
 class SupportedShape(Enum):
+    OPEN_RECTANGLE = 1
     TABULATED_RECTANGLE = 5
     TABULATED_TRAPEZIUM = 6
     YZ = 7
@@ -396,18 +397,22 @@ class Triangle:
         else:
             raise ValueError("Unexpected situation encountered, I do not know if the triangle is between the lines")
 
+
 class CrossSectionLocation:
     def __init__(
         self,
         id: int,
         reference_level: float,
         bank_level: float,
-        y_ordinates: np.array,
-        z_ordinates: np.array,
         geometry: Point,
+        width: Optional[float] = None,
+        y_ordinates: Optional[np.ndarray] = None,
+        z_ordinates: Optional[np.ndarray] = None,
         parent=None,
     ):
         """
+        If width is used if provided; otherwise, y_ordinates and z_ordinates are used.
+
         Note: adds reference level to z_ordinates
 
         :param reference_level:
@@ -417,6 +422,10 @@ class CrossSectionLocation:
         :param geometry:
         :param parent:
         """
+        if width is not None:
+            # convert width to YZ coordinates
+            y_ordinates = np.array([0.0, width])
+            z_ordinates = np.array([0.0, 0.0])
         if not np.min(y_ordinates) == 0:
             raise MinYNotZeroError
         if not is_monotonically_increasing(y_ordinates):
@@ -441,19 +450,30 @@ class CrossSectionLocation:
         shapely_geometry = wkt.loads(wkt_geometry)
         id = feature.attribute("id")
         cross_section_shape = feature.attribute("cross_section_shape")
-        table = feature.attribute("cross_section_table")
-        y, z = parse_cross_section_table(
-            table=table,
-            cross_section_shape=cross_section_shape,
-            wall_displacement=wall_displacement
-        )
-        y, z = simplify(y, z, tolerance=simplify_tolerance)
+        if cross_section_shape in (
+                SupportedShape.TABULATED_RECTANGLE.value,
+                SupportedShape.TABULATED_TRAPEZIUM.value,
+                SupportedShape.YZ.value,
+        ):
+            table = feature.attribute("cross_section_table")
+            y, z = parse_cross_section_table(
+                table=table,
+                cross_section_shape=cross_section_shape,
+                wall_displacement=wall_displacement
+            )
+            y, z = simplify(y, z, tolerance=simplify_tolerance)
+        elif cross_section_shape == SupportedShape.OPEN_RECTANGLE.value:
+            y = None
+            z = None
+        else:
+            raise ValueError(f"Unsupported cross-section shape ({cross_section_shape})")
 
         return cls(
             id=id,
             geometry=shapely_geometry,
             reference_level=feature.attribute("reference_level"),
             bank_level=feature.attribute("bank_level"),
+            width=feature.attribute("cross_section_width"),
             y_ordinates=y,
             z_ordinates=z,
         )

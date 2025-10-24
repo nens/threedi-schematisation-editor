@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-# TODO: auto-select input layers
-# TODO: check if open rectangle shapes are supported
 """
 ***************************************************************************
 *                                                                         *
@@ -374,7 +372,10 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterFeatureSource(
-                self.INPUT_CHANNELS, self.tr("Channels"), [QgsProcessing.TypeVectorLine]
+                self.INPUT_CHANNELS,
+                self.tr("Channels"),
+                [QgsProcessing.TypeVectorLine],
+                defaultValue="Channel",
             )
         )
 
@@ -383,12 +384,15 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
                 self.INPUT_CROSS_SECTION_LOCATIONS,
                 self.tr("Cross-section locations"),
                 [QgsProcessing.TypeVectorPoint],
+                defaultValue="Cross section location",
             )
         )
 
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.INPUT_DEM, self.tr("Digital Elevation Model"), optional=True
+                self.INPUT_DEM,
+                self.tr("Digital Elevation Model"),
+                optional=True
             )
         )
 
@@ -648,8 +652,8 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
         return (
             "<p><b>⚠ Run the <i>Schematisation checker</i> and resolve any issues relating to channels or "
             "cross-section locations before running this algorithm ⚠</b></p>"
-            "<p>Tabulated trapezium, Tabulated rectangle, and YZ cross-sections are supported, as long as they always "
-            "become wider when going up. Vertical segments are allowed.</p>"
+            "<p>Open rectangle, Tabulated trapezium, Tabulated rectangle, and YZ cross-sections are supported. "
+            "Cross-sections need to become wider when going up. Vertical segments are allowed.</p>"
             "<p>Other cross-section shapes are not supported.</p>"
             "<h3>Parameters</h3>"
             "<h4>Channels</h4>"
