@@ -223,7 +223,9 @@ class SpatialImporter(Importer):
 class LinesImporter(SpatialImporter):
     def __init__(
         self,
-        *args,
+        external_source,
+        target_gpkg,
+        import_settings,
         target_model_cls,
         target_layer=None,
         node_layer=None,
@@ -231,7 +233,9 @@ class LinesImporter(SpatialImporter):
         cross_section_location_layer=None,
     ):
         super().__init__(
-            *args,
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
             target_model_cls=target_model_cls,
             target_layer=target_layer,
             node_layer=node_layer,
@@ -259,14 +263,18 @@ class CulvertsImporter(LinesImporter):
 
     def __init__(
         self,
-        *args,
+        external_source,
+        target_gpkg,
+        import_settings,
         structure_layer=None,
         node_layer=None,
         conduit_layer=None,
         cross_section_location_layer=None,
     ):
         super().__init__(
-            *args,
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
             target_model_cls=dm.Culvert,
             target_layer=structure_layer,
             node_layer=node_layer,
@@ -280,14 +288,18 @@ class OrificesImporter(LinesImporter):
 
     def __init__(
         self,
-        *args,
+        external_source,
+        target_gpkg,
+        import_settings,
         structure_layer=None,
         node_layer=None,
         conduit_layer=None,
         cross_section_location_layer=None,
     ):
         super().__init__(
-            *args,
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
             target_model_cls=dm.Orifice,
             target_layer=structure_layer,
             node_layer=node_layer,
@@ -301,14 +313,18 @@ class WeirsImporter(LinesImporter):
 
     def __init__(
         self,
-        *args,
+        external_source,
+        target_gpkg,
+        import_settings,
         structure_layer=None,
         node_layer=None,
         conduit_layer=None,
         cross_section_location_layer=None,
     ):
         super().__init__(
-            *args,
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
             target_model_cls=dm.Weir,
             target_layer=structure_layer,
             node_layer=node_layer,
@@ -320,19 +336,55 @@ class WeirsImporter(LinesImporter):
 class PipesImporter(LinesImporter):
     """Class with methods responsible for the importing pipes from the external data source."""
 
-    def __init__(self, *args, structure_layer=None, node_layer=None):
+    def __init__(
+        self,
+        external_source,
+        target_gpkg,
+        import_settings,
+        structure_layer=None,
+        node_layer=None,
+    ):
         super().__init__(
-            *args,
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
             target_model_cls=dm.Pipe,
             target_layer=structure_layer,
             node_layer=node_layer,
         )
 
 
-class CrossSectionLocationImporter(SpatialImporter):
-    def __init__(self, *args, target_layer=None):
+class ChannelsImporter(LinesImporter):
+    """Class with methods responsible for the importing channels from the external data source."""
+
+    def __init__(
+        self,
+        external_source,
+        target_gpkg,
+        import_settings,
+        structure_layer=None,
+        node_layer=None,
+    ):
         super().__init__(
-            *args, target_model_cls=dm.CrossSectionLocation, target_layer=target_layer
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
+            target_model_cls=dm.Channel,
+            target_layer=structure_layer,
+            node_layer=node_layer,
+        )
+
+
+class CrossSectionLocationImporter(SpatialImporter):
+    def __init__(
+        self, external_source, target_gpkg, import_settings, target_layer=None
+    ):
+        super().__init__(
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
+            target_model_cls=dm.CrossSectionLocation,
+            target_layer=target_layer,
         )
         self.processor = CrossSectionLocationProcessor(
             target_layer=self.target_layer,
@@ -343,24 +395,18 @@ class CrossSectionLocationImporter(SpatialImporter):
         )
 
 
-class ChannelsImporter(LinesImporter):
-    """Class with methods responsible for the importing channels from the external data source."""
-
-    def __init__(self, *args, structure_layer=None, node_layer=None):
-        super().__init__(
-            *args,
-            target_model_cls=dm.Channel,
-            target_layer=structure_layer,
-            node_layer=node_layer,
-        )
-
-
 class ConnectionNodesImporter(SpatialImporter):
     """Connection nodes importer class."""
 
-    def __init__(self, *args, target_layer=None):
+    def __init__(
+        self, external_source, target_gpkg, import_settings, target_layer=None
+    ):
         super().__init__(
-            *args, target_model_cls=dm.ConnectionNode, target_layer=target_layer
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
+            target_model_cls=dm.ConnectionNode,
+            target_layer=target_layer,
         )
         self.processor = ConnectionNodeProcessor(
             self.target_layer,
