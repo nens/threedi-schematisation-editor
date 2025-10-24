@@ -74,25 +74,25 @@ def get_settings_model(
     """Create pydantic model for the settings. When required models are supplied,
     only fields for those models are included."""
     # Create field definitions dynamically from the class for these models:
-    raise_on_missing = True
-    if required_models is None:
-        required_models = [
-            ConnectionNodeSettingsModel,
-            IntegrationSettingsModel,
-            CrossSectionDataRemapModel,
-            PointToLineDataModel,
-            CrossSectionLocationMappingModel,
-        ]
-        raise_on_missing = False
-    # Use the class of the supplied data if present. If not use the present BaseModels or create a dummpy class
-    cls_fields = {}
-    for model_cls in required_models:
-        if model_cls.name not in settings:
-            if raise_on_missing:
-                raise ValidationError(f"Missing required model {model_cls.name}")
-            continue
-        cls_fields[model_cls.name] = (type(settings[model_cls.name]), ...)
-
+    # raise_on_missing = True
+    # if required_models is None:
+    #     required_models = [
+    #         ConnectionNodeSettingsModel,
+    #         IntegrationSettingsModel,
+    #         CrossSectionDataRemapModel,
+    #         PointToLineDataModel,
+    #         CrossSectionLocationMappingModel,
+    #     ]
+    #     raise_on_missing = False
+    # # Use the class of the supplied data if present. If not use the present BaseModels or create a dummpy class
+    # cls_fields = {}
+    # for model_cls in required_models:
+    #     if model_cls.name not in settings:
+    #         if raise_on_missing:
+    #             raise ValidationError(f"Missing required model {model_cls.name}")
+    #         continue
+    #     cls_fields[model_cls.name] = (type(settings[model_cls.name]), ...)
+    cls_fields = {name : (type(field), ...) for name, field in settings.items()}
     # Create the model class dynamically
     VDISettingsModel = create_model(
         "VDISettingsModel", __base__=BaseModel, **cls_fields
