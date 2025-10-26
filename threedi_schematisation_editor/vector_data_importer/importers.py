@@ -388,8 +388,7 @@ class CrossSectionLocationImporter(SpatialImporter):
             target_layer=self.target_layer,
             target_model_cls=dm.CrossSectionLocation,
             channel_layer=gpkg_layer(self.target_gpkg, dm.Channel.__tablename__),
-            conversion_settings=self.conversion_settings,
-            target_fields_config=self.fields_configurations[dm.CrossSectionLocation],
+            import_settings=self.import_settings,
         )
 
 

@@ -523,34 +523,32 @@ class CrossSectionLocationProcessor(SpatialProcessor):
         target_layer,
         target_model_cls,
         channel_layer,
-        conversion_settings,
-        target_fields_config,
+        import_settings,
     ):
         super().__init__(target_layer, target_model_cls)
         self.channel_layer = channel_layer
         self.channel_spatial_index = QgsSpatialIndex(channel_layer)
-        self.conversion_settings = conversion_settings
-        self.target_fields_config = target_fields_config
+        self.join_field_tgt = (
+            import_settings.cross_section_location_mapping.join_field_tgt
+        )
+        self.join_field_src = (
+            import_settings.cross_section_location_mapping.join_field_src
+        )
+        # TODO reconsider origin!!!
+        self.snapping_distance = import_settings.connection_nodes.snap_distance
+        self.target_fields_config = import_settings.fields
 
     @cached_property
     def channel_mapping(self):
-        if (
-            self.conversion_settings.join_field_tgt.get("method")
-            == ColumnImportMethod.ATTRIBUTE.value
-        ):
-            col = self.conversion_settings.join_field_tgt.get(
-                ColumnImportMethod.ATTRIBUTE.value
-            )
+        if self.join_field_tgt.get("method") == ColumnImportMethod.ATTRIBUTE.value:
+            col = self.join_field_tgt.get(ColumnImportMethod.ATTRIBUTE.value)
             if col:
                 return {
                     feature[col]: feature
                     for feature in self.channel_layer.getFeatures()
                 }
-        elif (
-            self.conversion_settings.join_field_tgt.get("method")
-            == ColumnImportMethod.EXPRESSION.value
-        ):
-            expression_str = self.conversion_settings.join_field_tgt.get(
+        elif self.join_field_tgt.get("method") == ColumnImportMethod.EXPRESSION.value:
+            expression_str = self.join_field_tgt.get(
                 ColumnImportMethod.EXPRESSION.value
             )
             expression = QgsExpression(expression_str)
@@ -565,28 +563,20 @@ class CrossSectionLocationProcessor(SpatialProcessor):
 
     @cached_property
     def join_field_src(self):
-        if self.conversion_settings.join_field_src in self.target_fields.names():
-            return self.conversion_settings.join_field_src
+        if self.join_field_src in self.target_fields.names():
+            return self.join_field_src
         else:
             return None
 
     def get_join_feat_src_value(self, feat):
-        if self.conversion_settings.join_field_src is None:
+        if self.join_field_src is None:
             return
-        if (
-            self.conversion_settings.join_field_src.get("method")
-            == ColumnImportMethod.ATTRIBUTE.value
-        ):
-            field = self.conversion_settings.join_field_src.get(
-                ColumnImportMethod.ATTRIBUTE.value
-            )
+        if self.join_field_src.get("method") == ColumnImportMethod.ATTRIBUTE.value:
+            field = self.join_field_src.get(ColumnImportMethod.ATTRIBUTE.value)
             if field in feat.fields().names():
                 return feat[field]
-        elif (
-            self.conversion_settings.join_field_src.get("method")
-            == ColumnImportMethod.EXPRESSION.value
-        ):
-            expression_str = self.conversion_settings.join_field_src.get(
+        elif self.join_field_src.get("method") == ColumnImportMethod.EXPRESSION.value:
+            expression_str = self.join_field_src.get(
                 ColumnImportMethod.EXPRESSION.value
             )
             expression = QgsExpression(expression_str)
@@ -620,8 +610,9 @@ class CrossSectionLocationProcessor(SpatialProcessor):
                     # in case of multiple matches, perform match based on midpoint
                     geom = geom.interpolate(geom.length() / 2)
             if geom.type() == QgsWkbTypes.GeometryType.PointGeometry:
+                #
                 closest_feature_id = self.channel_spatial_index.nearestNeighbor(
-                    geom.asPoint(), 1, self.conversion_settings.snapping_distance
+                    geom.asPoint(), 1, self.snapping_distance
                 )
                 if len(closest_feature_id) > 0:
                     channel_match = next(
