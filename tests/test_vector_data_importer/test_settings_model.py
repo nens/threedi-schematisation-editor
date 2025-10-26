@@ -214,39 +214,15 @@ class TestGetAllowedMethodsForModelClassField:
         )
 
 
-def test_get_field_config_data_model():
-    settings = {
-        "length": {"method": ColumnImportMethod.DEFAULT, "default_value": 1000.0},
-        "azimuth": {"method": ColumnImportMethod.DEFAULT, "default_value": 180.0},
-    }
-    field_map_config = sm.PointToLineDataModel.get_settings_model(settings)
-    assert field_map_config.length == sm.FieldMapConfig(**settings["length"])
-    assert field_map_config.azimuth == sm.FieldMapConfig(**settings["azimuth"])
-
-
 def test_get_settings_model():
     models = [
         sm.ConnectionNodeSettingsModel,
         sm.IntegrationSettingsModel,
         sm.CrossSectionDataRemapModel,
+        sm.CrossSectionLocationSettingsModel,
+        sm.PointToLineSettingsModel,
     ]
     settings_dict = {model.name: model() for model in models}
-    point_to_line_settings = {
-        "length": {"method": ColumnImportMethod.DEFAULT, "default_value": 1000.0},
-        "azimuth": {"method": ColumnImportMethod.DEFAULT, "default_value": 180.0},
-    }
-    settings_dict[sm.PointToLineDataModel.name] = (
-        sm.PointToLineDataModel.get_settings_model(point_to_line_settings)
-    )
-    cross_section_location_mapping_settings = {
-        "join_field_src": {"method": ColumnImportMethod.AUTO},
-        "join_field_tgt": {"method": ColumnImportMethod.AUTO},
-    }
-    settings_dict[sm.CrossSectionLocationMappingModel.name] = (
-        sm.CrossSectionLocationMappingModel.get_settings_model(
-            cross_section_location_mapping_settings
-        )
-    )
     settings_model = sm.ConversionSettingsModel(**settings_dict)
     for model_name in settings_dict:
         assert hasattr(settings_model, model_name)

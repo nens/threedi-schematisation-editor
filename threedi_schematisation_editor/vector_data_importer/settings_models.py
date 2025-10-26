@@ -255,55 +255,37 @@ class FieldConfigDataModel:
         return FieldConfigModel(**field_map_config)
 
 
-@dataclass
-class PointToLineDataModel(FieldConfigDataModel):
+class PointToLineSettingsModel(BaseModel):
+    metadata: ClassVar[FieldMapMetadata] = FieldMapMetadata(
+        allowed_methods=[
+            ColumnImportMethod.ATTRIBUTE,
+            ColumnImportMethod.DEFAULT,
+            ColumnImportMethod.EXPRESSION,
+        ]
+    )
     name: ClassVar[str] = "point_to_line_conversion"
-
-    length: float = field(
-        default=1.0,
-        metadata={
-            dm.ALLOWED_METHODS_FIELD: [
-                ColumnImportMethod.ATTRIBUTE,
-                ColumnImportMethod.DEFAULT,
-                ColumnImportMethod.EXPRESSION,
-            ],
-        },
+    length: FieldMapConfig = FieldMapConfig.with_metadata(metadata)(
+        method=ColumnImportMethod.DEFAULT, default_value=1.0
     )
-    azimuth: float = field(
-        default=90.0,
-        metadata={
-            dm.ALLOWED_METHODS_FIELD: [
-                ColumnImportMethod.ATTRIBUTE,
-                ColumnImportMethod.DEFAULT,
-                ColumnImportMethod.EXPRESSION,
-            ],
-        },
+    azimuth: FieldMapConfig = FieldMapConfig.with_metadata(metadata)(
+        method=ColumnImportMethod.DEFAULT, default_value=90
     )
 
 
-@dataclass
-class CrossSectionLocationMappingModel(FieldConfigDataModel):
+class CrossSectionLocationSettingsModel(BaseModel):
+    metadata: ClassVar[FieldMapMetadata] = FieldMapMetadata(
+        allowed_methods=[
+            ColumnImportMethod.AUTO,
+            ColumnImportMethod.ATTRIBUTE,
+            ColumnImportMethod.EXPRESSION,
+        ]
+    )
     name: ClassVar[str] = "cross_section_location_mapping"
-
-    join_field_src: str = field(
-        default="",
-        metadata={
-            dm.ALLOWED_METHODS_FIELD: [
-                ColumnImportMethod.AUTO,
-                ColumnImportMethod.ATTRIBUTE,
-                ColumnImportMethod.EXPRESSION,
-            ],
-        },
+    join_field_src: FieldMapConfig = FieldMapConfig.with_metadata(metadata)(
+        method=ColumnImportMethod.AUTO, default_value=""
     )
-    join_field_tgt: float = field(
-        default="",
-        metadata={
-            dm.ALLOWED_METHODS_FIELD: [
-                ColumnImportMethod.AUTO,
-                ColumnImportMethod.ATTRIBUTE,
-                ColumnImportMethod.EXPRESSION,
-            ],
-        },
+    join_field_tgt: FieldMapConfig = FieldMapConfig.with_metadata(metadata)(
+        method=ColumnImportMethod.AUTO, default_value=""
     )
 
 
@@ -364,7 +346,9 @@ class ConversionSettingsModel(BaseModel):
     connection_nodes: ConnectionNodeSettingsModel = ConnectionNodeSettingsModel()
     integration: IntegrationSettingsModel = IntegrationSettingsModel()
     cross_section_data_remap: CrossSectionDataRemapModel = CrossSectionDataRemapModel()
-    point_to_line_conversion: Optional[BaseModel] = None
-    cross_section_location_mapping: Optional[BaseModel] = None
+    point_to_line_conversion: PointToLineSettingsModel = PointToLineSettingsModel()
+    cross_section_location_mapping: CrossSectionLocationSettingsModel = (
+        CrossSectionLocationSettingsModel()
+    )
     fields: dict[str, FieldMapConfig] = {}
     connection_node_fields: dict[str, FieldMapConfig] = {}

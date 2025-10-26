@@ -319,31 +319,6 @@ class CrossSectionDataRemapSettingsWidget(SettingsWidget):
 
 
 class FieldMapSettingsWidget(SettingsWidget):
-    model_cls: Optional[sm.FieldConfigDataModel] = None
-
-    @property
-    def name(self) -> str:
-        return self.model_cls.name
-
-    def create_row_dict(self) -> dict[str, FieldMapRow]:
-        row_dict = {}
-        if not self.model_cls:
-            return row_dict
-        # iterate over fields of model (dataclass)
-        for field in fields(self.model_cls):
-            # create a FieldMapConfig using metadata from model_cls
-            config_class = sm.get_field_map_config_for_model_class_field(
-                field.name, self.model_cls
-            )
-            # create FieldMapRow to use in the FieldMapTable
-            row_dict[field.name] = FieldMapRow(
-                label=field.name,
-                config=config_class.model_construct(
-                    method=None, default_value=field.default
-                ),
-            )
-        return row_dict
-
     def setup_ui(self, row_dict):
         self.field_map_widget = FieldMapWidget(row_dict)
         # emit dataChanged signal when field map widget data changes
@@ -369,19 +344,19 @@ class FieldMapSettingsWidget(SettingsWidget):
         return self.field_map_widget.is_valid
 
     def get_settings(self) -> BaseModel:
-        if self.model_cls is not None:
-            return self.model_cls.get_settings_model(
-                self.field_map_widget.get_settings()
-            )
+        return self.model
 
 
 class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.model_cls = sm.PointToLineDataModel
-        row_dict = self.create_row_dict()
-        row_dict["length"].label = "Structure length"
-        row_dict["azimuth"].label = "Sturcture direction (azimuth)"
+        self.model = sm.PointToLineSettingsModel()
+        row_dict = {
+            "length": FieldMapRow(label="Structure length", config=self.model.length),
+            "azimuth": FieldMapRow(
+                label="Sturcture direction (azimuth)", config=self.model.azimuth
+            ),
+        }
         self.setup_ui(row_dict)
 
     @property
@@ -392,10 +367,15 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
 class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.model_cls = sm.CrossSectionLocationMappingModel
-        row_dict = self.create_row_dict()
-        row_dict["join_field_src"].label = "Join channel source field"
-        row_dict["join_field_tgt"].label = "Join channel target field"
+        self.model = sm.CrossSectionLocationSettingsModel()
+        row_dict = {
+            "join_field_src": FieldMapRow(
+                label="Join channel source field", config=self.model.join_field_src
+            ),
+            "join_field_tgt": FieldMapRow(
+                label="Join channel target field", config=self.model.join_field_tgt
+            ),
+        }
         self.setup_ui(row_dict)
 
     @property
