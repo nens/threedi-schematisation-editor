@@ -15,6 +15,7 @@ from qgis.core import (
     QgsWkbTypes,
 )
 
+import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
@@ -87,7 +88,11 @@ class TestConnectionNodeProcessor:
         target_layer.name.return_value = "connection_nodes"
 
         # Create a processor
-        processor = ConnectionNodeProcessor(target_layer, dm.ConnectionNode, {})
+        processor = ConnectionNodeProcessor(
+            target_layer,
+            dm.ConnectionNode,
+            import_settings=sm.ConversionSettingsModel(),
+        )
 
         # Process the feature
         result = processor.process_feature(source_feature)

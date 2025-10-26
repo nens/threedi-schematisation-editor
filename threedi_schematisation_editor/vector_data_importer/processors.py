@@ -689,10 +689,10 @@ class ConnectionNodeProcessor(SpatialProcessor):
         self,
         target_layer,
         target_model_cls,
-        fields_configuration,
+        import_settings,
     ):
         super().__init__(target_layer, target_model_cls)
-        self.fields_configuration = fields_configuration
+        self.fields_configuration = import_settings.fields
 
     def process_feature(self, src_feat):
         """Process source point into connection node feature."""

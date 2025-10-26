@@ -408,5 +408,5 @@ class ConnectionNodesImporter(SpatialImporter):
         self.processor = ConnectionNodeProcessor(
             self.target_layer,
             self.target_model_cls,
-            self.fields_configurations[self.target_model_cls],
+            self.import_settings,
         )
