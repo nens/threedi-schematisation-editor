@@ -18,6 +18,7 @@ from qgis.core import (
 from threedi_schema.domain.constants import CrossSectionShape
 
 import threedi_schematisation_editor.data_models as dm
+import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionDataProcessor,
 )
@@ -59,7 +60,7 @@ def field_config():
     }
     method = ColumnImportMethod.ATTRIBUTE.value
     return {
-        src_field: {"method": method, method: target_field}
+        src_field: sm.FieldMapConfig(**{"method": method, method: target_field})
         for src_field, target_field in config_fields.items()
     }
 
@@ -425,18 +426,21 @@ def test_find_target_object_no_match(
 
 
 @pytest.fixture
-def conversion_settings():
-    return ConversionSettings(
-        **{
-            "set_lowest_point_to_zero": False,
-            "use_lowest_point_as_reference": True,
-        }
+def import_settings(field_config):
+    return sm.ConversionSettingsModel(
+        cross_section_data_remap=sm.CrossSectionDataRemapModel(
+            **{
+                "set_lowest_point_to_zero": False,
+                "use_lowest_point_as_reference": True,
+            }
+        ),
+        fields=field_config,
     )
 
 
 @pytest.fixture
-def processor(target_layer, field_config, conversion_settings):
-    return CrossSectionDataProcessor(field_config, [target_layer], conversion_settings)
+def processor(target_layer, field_config, import_settings):
+    return CrossSectionDataProcessor([target_layer], import_settings)
 
 
 @pytest.mark.parametrize(
@@ -609,12 +613,10 @@ def test_get_feat_from_group_cross_section_properties_null(
 
 @pytest.mark.parametrize("use_lowest_point_as_reference", [True, False])
 def test_get_feat_from_group_use_lowest_as_ref(
-    source_fields,
-    field_config,
-    use_lowest_point_as_reference,
+    source_fields, use_lowest_point_as_reference, import_settings
 ):
-    conversion_settings = ConversionSettings(
-        **{"use_lowest_point_as_reference": use_lowest_point_as_reference}
+    import_settings.cross_section_data_remap.use_lowest_point_as_reference = (
+        use_lowest_point_as_reference
     )
     target_model_cls = dm.CrossSectionLocation
     layer = make_layer(target_model_cls.__tablename__)
@@ -628,7 +630,7 @@ def test_get_feat_from_group_use_lowest_as_ref(
         "cross_section_shape": 3 * [CrossSectionShape.TABULATED_YZ.value],
     }
     features = make_features(attributes, source_fields)
-    processor = CrossSectionDataProcessor(field_config, [layer], conversion_settings)
+    processor = CrossSectionDataProcessor([layer], import_settings)
     processor.build_target_map(features)
     new_feat = processor.get_feat_from_group(features)
     assert (

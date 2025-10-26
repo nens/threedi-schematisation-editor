@@ -42,8 +42,7 @@ class LinearIntegrator:
         target_manager,
         node_layer,
         node_manager,
-        fields_configurations,
-        conversion_settings,
+        import_settings,
         external_source,
         target_gpkg,
         conduit_model_cls,
@@ -51,8 +50,10 @@ class LinearIntegrator:
         self.external_source = external_source
         self.conduit_model_cls = conduit_model_cls
         self.target_model_cls = target_model_cls
-        self.fields_configurations = fields_configurations
-        self.conversion_settings = conversion_settings
+        self.fields_configurations = import_settings.fields
+        self.point_to_line_settings = import_settings.point_to_line_conversion
+        self.snapping_distance = import_settings.integration.snapping_distance
+        self.minimum_conduit_length = import_settings.integration.min_length
         # set schematisation layer to add - if any are missing retrieve them from the gpkg
         self.integrate_layer = (
             conduit_layer
@@ -210,7 +211,7 @@ class LinearIntegrator:
                 conduit_structure = LinearIntegrator.get_conduit_structure_from_line(
                     structure_feat,
                     conduit_feat,
-                    self.conversion_settings.snapping_distance,
+                    self.snapping_distance,
                 )
             elif (
                 structure_feat.geometry().type()
@@ -219,9 +220,9 @@ class LinearIntegrator:
                 conduit_structure = LinearIntegrator.get_conduit_structure_from_point(
                     structure_feat,
                     conduit_feat,
-                    self.conversion_settings.snapping_distance,
-                    self.conversion_settings.length_source_field,
-                    self.conversion_settings.length_fallback_value,
+                    self.snapping_distance,
+                    self.point_to_line_settings.length_source_field,
+                    self.point_to_line_settings.length_fallback_value,
                 )
             else:
                 continue
@@ -303,7 +304,7 @@ class LinearIntegrator:
                 substring_geom, self.layer_fields_mapping[self.target_layer.name()]
             )
             update_attributes(
-                self.fields_configurations[self.target_model_cls],
+                self.fields_configurations,
                 self.target_model_cls,
                 cs.feature,
                 substring_feat,
@@ -441,7 +442,7 @@ class LinearIntegrator:
         conduit_structures = LinearIntegrator.fix_structure_placement(
             conduit_structures,
             conduit_geom,
-            self.conversion_settings.minimum_channel_length,
+            self.integration.minimum_channel_length,
         )
         added_features[self.target_layer.name()] = self.place_structures_on_conduit(
             conduit_structures, conduit_feat, simplify_structure_geometry
@@ -489,8 +490,8 @@ class PipeIntegrator(LinearIntegrator):
             importer.processor.target_manager,
             importer.node_layer,
             importer.processor.node_manager,
-            importer.fields_configurations,
-            importer.conversion_settings,
+            importer.import_settings,
+            importer.import_settings,
             importer.external_source,
             importer.target_gpkg,
         )
@@ -519,43 +520,19 @@ class PipeIntegrator(LinearIntegrator):
 
 
 class ChannelIntegrator(LinearIntegrator):
-    def __init__(
-        self,
-        conduit_layer,
-        target_model_cls,
-        target_layer,
-        target_manager,
-        node_layer,
-        node_manager,
-        fields_configurations,
-        conversion_settings,
-        external_source,
-        target_gpkg,
-        cross_section_layer,
-    ):
+    def __init__(self, *args):
         self.cross_section_layer = cross_section_layer or gpkg_layer(
             target_gpkg, dm.CrossSectionLocation.__tablename__
         )
         self.cross_section_manager = FeatureManager(
             get_next_feature_id(self.cross_section_layer)
         )
-        super().__init__(
-            conduit_layer,
-            target_model_cls,
-            target_layer,
-            target_manager,
-            node_layer,
-            node_manager,
-            fields_configurations,
-            conversion_settings,
-            external_source,
-            target_gpkg,
-            conduit_model_cls=dm.Channel,
-        )
+        super().__init__(*args, conduit_model_cls=dm.Channel)
 
     @classmethod
     def from_importer(cls, integrate_layer, cross_section_layer, importer):
         """extract data from importer to created matching integrator"""
+        # TODO: move to base class and use integration settings (replace code in importer)
         return cls(
             integrate_layer,
             importer.target_model_cls,
@@ -563,8 +540,6 @@ class ChannelIntegrator(LinearIntegrator):
             importer.processor.target_manager,
             importer.node_layer,
             importer.processor.node_manager,
-            importer.fields_configurations,
-            importer.conversion_settings,
             importer.external_source,
             importer.target_gpkg,
             cross_section_layer,

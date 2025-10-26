@@ -92,20 +92,15 @@ class CrossSectionDataProcessor(Processor):
         dm.CrossSectionLocation,
     ]
 
-    def __init__(
-        self,
-        target_fields_config,
-        target_layers,
-        conversion_settings,
-    ):
-        self.target_fields_config = target_fields_config
+    def __init__(self, target_layers, import_settings):
+        self.target_fields_config = import_settings.fields
         self.target_layer_map = {
             CrossSectionDataProcessor.get_unified_object_type_str(
                 target_layer.name()
             ): target_layer
             for target_layer in target_layers
         }
-        self.conversion_settings = conversion_settings
+        self.cross_section_data_remap = import_settings.cross_section_data_remap
         self.source_feat_map: dict[QgsFeature, QgsFeature] = {}
         self.target_model_cls_map: dict[QgsFeature, type] = {}
 
@@ -397,7 +392,7 @@ class CrossSectionDataProcessor(Processor):
                     group,
                     cross_section_shape,
                     self.target_fields_config,
-                    self.conversion_settings.set_lowest_point_to_zero,
+                    self.cross_section_data_remap.set_lowest_point_to_zero,
                 )
             )
         else:
@@ -421,7 +416,7 @@ class CrossSectionDataProcessor(Processor):
             )
         # set reference levels if needed
         if (
-            self.conversion_settings.use_lowest_point_as_reference
+            self.cross_section_data_remap.use_lowest_point_as_reference
             and cross_section_shape.is_tabulated
         ):
             model_cls = self.target_model_cls_map[feature]

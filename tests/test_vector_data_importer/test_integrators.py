@@ -266,6 +266,7 @@ class TestChannelStructureIntegration:
         """Test get_channel_structures_data with different selected_ids parameters."""
         # Create a mock LinearIntegrator instance
         integrator = MagicMock()
+        integrator.snapping_distance = 5.0
 
         # Set up the spatial_indexes_map attribute
         structure_features_map = {
@@ -278,11 +279,10 @@ class TestChannelStructureIntegration:
             "source": (structure_features_map, structure_index)
         }
 
-        # Set up the conversion_settings attribute
-        integrator.conversion_settings = MagicMock()
-        integrator.conversion_settings.snapping_distance = 5.0
-        integrator.conversion_settings.length_source_field = "length"
-        integrator.conversion_settings.length_fallback_value = 5.0
+        # Set up the point to line settings attribute
+        integrator.point_to_line_settings = MagicMock()
+        integrator.point_to_line_settings.length_source_field = "length"
+        integrator.point_to_line_settings.length_fallback_value = 5.0
 
         # Call the method with the specified selected_ids
         result, processed_ids = LinearIntegrator.get_conduit_structures_data(
