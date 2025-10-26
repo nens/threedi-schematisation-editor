@@ -174,7 +174,7 @@ class VDIWizard(QWizard):
             if callable(getattr(page, "get_settings", None)):
                 data.update(page.get_settings())
 
-        return sm.get_settings_model(data)
+        return sm.ConversionSettingsModel(**data)
 
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         """Collect layer handlers and map associated layers to dict needed for the importer"""

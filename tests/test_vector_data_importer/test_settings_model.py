@@ -247,12 +247,7 @@ def test_get_settings_model():
             cross_section_location_mapping_settings
         )
     )
-    settings_model = sm.get_settings_model(settings_dict)
+    settings_model = sm.ConversionSettingsModel(**settings_dict)
     for model_name in settings_dict:
         assert hasattr(settings_model, model_name)
         assert getattr(settings_model, model_name) == settings_dict[model_name]
-
-
-def test_get_settings_model_empty():
-    settings_model = sm.get_settings_model({}, required_models=[])
-    assert settings_model.model_fields == {}
