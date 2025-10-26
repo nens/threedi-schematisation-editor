@@ -30,7 +30,6 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
     FeatureManager,
     get_field_config_value,
-    get_float_value_from_feature,
     get_src_geometry,
     update_attributes,
 )
@@ -718,27 +717,30 @@ class StructureProcessor(SpatialProcessor, ABC):
         target_layer,
         target_model_cls,
         node_layer,
-        fields_configurations,
-        conversion_settings,
+        import_settings,
     ):
         super().__init__(target_layer, target_model_cls)
         self.node_fields = node_layer.fields()
         self.node_name = node_layer.name()
         self.node_layer = node_layer
         self.node_manager = FeatureManager(get_next_feature_id(node_layer))
-        self.fields_configurations = fields_configurations
-        self.conversion_settings = conversion_settings
+        self.fields_configurations = import_settings.fields
+        self.cn_fields_configurations = import_settings.connection_node_fields
+        self.connection_nodes_settings = import_settings.connection_nodes
+        self.point_to_line_conversion_settings = (
+            import_settings.point_to_line_conversion
+        )
 
     def get_node(self, point):
         snapped = False
         node = None
-        if self.conversion_settings.use_snapping:
+        if self.connection_nodes_settings.snap:
             node = find_connection_node(
-                point, self.node_locator, self.conversion_settings.snapping_distance
+                point, self.node_locator, self.create_nodes.snap_distance
             )
             snapped = node is not None
-        if self.conversion_settings.create_connection_nodes and (
-            not snapped or not self.conversion_settings.use_snapping
+        if self.connection_nodes_settings.create_nodes and (
+            not snapped or not self.connection_nodes_settings.snap
         ):
             node = self.node_manager.create_new(
                 QgsGeometry.fromPointXY(point), self.node_fields
@@ -770,14 +772,14 @@ class PointProcessor(StructureProcessor):
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
         update_attributes(
-            self.fields_configurations[dm.ConnectionNode],
+            self.cn_fields_configurations,
             dm.ConnectionNode,
             src_feat,
             *new_nodes,
         )
         new_nodes = self.update_connection_nodes(new_feat)
         update_attributes(
-            self.fields_configurations[self.target_model_cls],
+            self.fields_configurations,
             self.target_model_cls,
             src_feat,
             new_feat,
@@ -787,7 +789,9 @@ class PointProcessor(StructureProcessor):
 
 class LineProcessor(StructureProcessor):
     @staticmethod
-    def new_geometry(src_feat, src_geom, conversion_settings, target_model_cls):
+    def new_geometry(
+        src_feat, src_geom, point_to_line_conversion_settings, target_model_cls
+    ):
         """Create new structure geometry based on the source structure feature."""
         geometry_type = src_geom.type()
         if geometry_type == QgsWkbTypes.GeometryType.LineGeometry:
@@ -800,15 +804,11 @@ class LineProcessor(StructureProcessor):
             dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
         elif geometry_type == QgsWkbTypes.GeometryType.PointGeometry:
             start_point = src_geom.asPoint()
-            length = get_float_value_from_feature(
-                src_feat,
-                conversion_settings.length_source_field,
-                conversion_settings.length_fallback_value,
+            length = get_field_config_value(
+                point_to_line_conversion_settings.length, src_feat
             )
-            azimuth = get_float_value_from_feature(
-                src_feat,
-                conversion_settings.azimuth_source_field,
-                conversion_settings.azimuth_fallback_value,
+            azimuth = get_field_config_value(
+                point_to_line_conversion_settings.azimuth, src_feat
             )
             end_point = start_point.project(length, azimuth)
             dst_polyline = [start_point, end_point]
@@ -841,20 +841,23 @@ class LineProcessor(StructureProcessor):
         if src_geom is None:
             return {}
         new_geom = LineProcessor.new_geometry(
-            src_feat, src_geom, self.conversion_settings, self.target_model_cls
+            src_feat,
+            src_geom,
+            self.point_to_line_conversion_settings,
+            self.target_model_cls,
         )
         if self.transformation:
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
         update_attributes(
-            self.fields_configurations[self.target_model_cls],
+            self.fields_configurations,
             self.target_model_cls,
             src_feat,
             new_feat,
         )
         new_nodes = self.update_connection_nodes(new_feat)
         update_attributes(
-            self.fields_configurations[dm.ConnectionNode],
+            self.cn_fields_configurations,
             dm.ConnectionNode,
             src_feat,
             *new_nodes,

@@ -178,11 +178,12 @@ class TestStructureProcessor:
         processor = MagicMock()
         processor.node_manager = MagicMock()
         processor.locator = MagicMock()
-        processor.conversion_settings = MagicMock()
-        processor.conversion_settings.use_snapping = use_snapping
-        processor.conversion_settings.create_connection_nodes = create_connection_nodes
-        processor.conversion_settings.snapping_distance = 10.0
-
+        processor.connection_nodes_settings = MagicMock()
+        processor.connection_nodes_settings = sm.ConnectionNodeSettingsModel(
+            snap=use_snapping,
+            create_nodes=create_connection_nodes,
+            snap_distance=10.0,
+        )
         # Create a feature to add a node to
         fields = QgsFields()
         fields.append(QgsField("id", QVariant.Int))
@@ -209,8 +210,17 @@ class TestStructureProcessor:
 class TestLineProcessor:
     """Tests for the LineProcessor class."""
 
+    @pytest.fixture
+    def import_settings(self):
+        return sm.ConversionSettingsModel(
+            fields={"id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)},
+            connection_node_fields={
+                "id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)
+            },
+        )
+
     def test_update_connection_nodes(
-        self, source_line_feature, target_fields, node_fields
+        self, source_line_feature, target_fields, node_fields, import_settings
     ):
         target_layer = MagicMock()
         target_layer.fields.return_value = target_fields
@@ -218,13 +228,7 @@ class TestLineProcessor:
         node_layer = MagicMock()
         node_layer.fields.return_value = node_fields
         node_layer.name.return_value = "connection_nodes"
-        fields_configurations = {
-            dm.ConnectionNode: {"id": {"method": ColumnImportMethod.AUTO}},
-            dm.Pipe: {"id": {"method": ColumnImportMethod.AUTO}},
-        }
-        processor = LineProcessor(
-            target_layer, dm.Pipe, node_layer, fields_configurations, {}
-        )
+        processor = LineProcessor(target_layer, dm.Pipe, node_layer, import_settings)
         # Mock the get_node method to return new node features
         start_node = QgsFeature(node_fields)
         start_node.setAttribute("id", 42)
@@ -245,20 +249,16 @@ class TestLineProcessor:
         ]
         assert new_nodes[0] == end_node
 
-    def test_process_feature(self, source_line_feature, target_fields, node_fields):
+    def test_process_feature(
+        self, source_line_feature, target_fields, node_fields, import_settings
+    ):
         target_layer = MagicMock()
         target_layer.fields.return_value = target_fields
         target_layer.name.return_value = "pipes"
         node_layer = MagicMock()
         node_layer.fields.return_value = node_fields
         node_layer.name.return_value = "connection_nodes"
-        fields_configurations = {
-            dm.ConnectionNode: {"id": {"method": ColumnImportMethod.AUTO}},
-            dm.Pipe: {"id": {"method": ColumnImportMethod.AUTO}},
-        }
-        processor = LineProcessor(
-            target_layer, dm.Pipe, node_layer, fields_configurations, {}
-        )
+        processor = LineProcessor(target_layer, dm.Pipe, node_layer, import_settings)
         processor.update_connection_nodes = MagicMock(return_value=[])
         # Run process_feature and check results
         result = processor.process_feature(source_line_feature)
@@ -266,14 +266,19 @@ class TestLineProcessor:
         assert len(result["pipes"]) == 1
 
     @pytest.fixture
-    def conversion_settings(self):
-        """Create a mock conversion settings object."""
-        settings = MagicMock()
-        settings.length_source_field = "length"
-        settings.length_fallback_value = 20.0
-        settings.azimuth_source_field = "azimuth"
-        settings.azimuth_fallback_value = 0.0
-        return settings
+    def point_to_line_conversion_settings(self):
+        return sm.PointToLineSettingsModel(
+            length=sm.FieldMapConfig(
+                method=ColumnImportMethod.ATTRIBUTE,
+                source_attribute="length",
+                default_value=20,
+            ),
+            azimuth=sm.FieldMapConfig(
+                method=ColumnImportMethod.ATTRIBUTE,
+                source_attribute="azimuth",
+                default_value=0,
+            ),
+        )
 
     @pytest.mark.parametrize(
         "line",
@@ -286,13 +291,13 @@ class TestLineProcessor:
         ],
     )
     def test_new_geometry_multi_geom_line(
-        self, source_feature, conversion_settings, line
+        self, source_feature, line, point_to_line_conversion_settings
     ):
         source_feature.setGeometry(QgsGeometry.fromMultiPolylineXY(line))
         result = LineProcessor.new_geometry(
             source_feature,
             get_src_geometry(source_feature),
-            conversion_settings,
+            point_to_line_conversion_settings,
             dm.Weir,
         )
         assert not result.isMultipart()
@@ -302,13 +307,13 @@ class TestLineProcessor:
         "point", [[QgsPointXY(10, 20), QgsPointXY(100, 40)], [QgsPointXY(10, 20)]]
     )
     def test_new_geometry_multi_geom_point(
-        self, source_feature, conversion_settings, point
+        self, source_feature, point_to_line_conversion_settings, point
     ):
         source_feature.setGeometry(QgsGeometry.fromMultiPointXY(point))
         result = LineProcessor.new_geometry(
             source_feature,
             get_src_geometry(source_feature),
-            conversion_settings,
+            point_to_line_conversion_settings,
             dm.Weir,
         )
         assert not result.isMultipart()
@@ -316,7 +321,7 @@ class TestLineProcessor:
 
     @pytest.mark.parametrize("model_class", [dm.Pipe, dm.Culvert, dm.Channel])
     def test_new_geometry_full_line(
-        self, source_feature, conversion_settings, model_class
+        self, source_feature, point_to_line_conversion_settings, model_class
     ):
         # Set geometry of source_feature
         line = QgsGeometry.fromPolylineXY(
@@ -325,13 +330,15 @@ class TestLineProcessor:
         source_feature.setGeometry(line)
         # Retrieve geometry
         result = LineProcessor.new_geometry(
-            source_feature, line, conversion_settings, model_class
+            source_feature, line, point_to_line_conversion_settings, model_class
         )
         # Verify that the full line is returned
         assert result.asPolyline() == line.asPolyline()
         assert result.type() == QgsWkbTypes.LineGeometry
 
-    def test_new_geometry_simplified_line(self, source_feature, conversion_settings):
+    def test_new_geometry_simplified_line(
+        self, source_feature, point_to_line_conversion_settings
+    ):
         # Set geometry of source_feature
         line = QgsGeometry.fromPolylineXY(
             [QgsPointXY(0, 0), QgsPointXY(5, 5), QgsPointXY(10, 10)]
@@ -339,7 +346,7 @@ class TestLineProcessor:
         source_feature.setGeometry(line)
         # Retrieve geometry
         result = LineProcessor.new_geometry(
-            source_feature, line, conversion_settings, dm.Weir
+            source_feature, line, point_to_line_conversion_settings, dm.Weir
         )
         # Verify that only the start and end point are returned
         assert result.asPolyline() == [line.asPolyline()[0], line.asPolyline()[-1]]
@@ -356,7 +363,7 @@ class TestLineProcessor:
         ],
     )
     def test_new_geometry_point(
-        self, conversion_settings, feature_fields, expected_points
+        self, point_to_line_conversion_settings, feature_fields, expected_points
     ):
         # Create feature with point geometry and specified fields
         fields = QgsFields()
@@ -368,7 +375,9 @@ class TestLineProcessor:
         for field_name, field_value in feature_fields.items():
             feature.setAttribute(field_name, field_value)
         # Retrieve geometry and verify results
-        result = LineProcessor.new_geometry(feature, geom, conversion_settings, dm.Weir)
+        result = LineProcessor.new_geometry(
+            feature, geom, point_to_line_conversion_settings, dm.Weir
+        )
         assert result.type() == QgsWkbTypes.LineGeometry
         assert result.asPolyline() == expected_points
 
