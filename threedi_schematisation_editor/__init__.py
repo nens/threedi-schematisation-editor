@@ -89,10 +89,10 @@ from threedi_schematisation_editor.vector_data_importer.dialogs.import_features 
 )
 from threedi_schematisation_editor.vector_data_importer.wizard import (
     ImportConduitWizard,
+    ImportConnectionNodesWizard,
     ImportCrossSectionDataWizard,
     ImportCrossSectionLocationWizard,
     ImportStructureWizard,
-    VDIWizard,
 )
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
@@ -435,7 +435,7 @@ class ThreediSchematisationEditorPlugin:
         import_dlg.exec_()
 
     def import_external_connection_nodes(self):
-        self.import_external(dm.ConnectionNode, VDIWizard)
+        self.import_external(dm.ConnectionNode, ImportConnectionNodesWizard)
 
     def import_external_cross_section_data(self):
         self.import_external(dm.CrossSectionData, ImportCrossSectionDataWizard)

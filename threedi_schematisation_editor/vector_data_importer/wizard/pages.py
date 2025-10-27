@@ -34,7 +34,11 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
 
 
 class SettingsPage(QWizardPage):
-    def __init__(self, settings_widgets_classes: Optional[list[Type[QWidget]]] = None):
+    def __init__(
+        self,
+        settings_widgets_classes: Optional[list[Type[QWidget]]] = None,
+        layer_filter=None,
+    ):
         super().__init__()
         self.setTitle("Import settings")
         self.settings_widgets = []
@@ -42,16 +46,16 @@ class SettingsPage(QWizardPage):
             self.settings_widgets = [
                 widget_class(parent=self) for widget_class in settings_widgets_classes
             ]
-        self.setup_ui()
+        self.setup_ui(layer_filter)
 
     def on_load_button_clicked(self):
         self.wizard().load_settings_from_json()
 
-    def setup_ui(self):
+    def setup_ui(self, layer_filter):
         layout = QVBoxLayout(self)
 
         # Top row
-        self.generic_settings = GenericSettingsWidget()
+        self.generic_settings = GenericSettingsWidget(layer_filter)
         self.generic_settings.layer_changed.connect(self.update_layer)
         self.generic_settings.layer_changed.connect(self.completeChanged)
         load_settings_button = QPushButton("Load settings")

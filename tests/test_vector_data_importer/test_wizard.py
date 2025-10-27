@@ -1,7 +1,6 @@
 import json
 
 import pytest
-from pydantic import BaseModel
 from qgis.core import QgsField, QgsVectorLayer
 from qgis.PyQt.QtCore import QVariant
 
@@ -15,7 +14,6 @@ from threedi_schematisation_editor.vector_data_importer.settings_models import (
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard import (
     ImportStructureWizard,
-    VDIWizard,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
     FieldMapColumn,

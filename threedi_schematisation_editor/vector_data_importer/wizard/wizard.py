@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from pydantic import BaseModel
-from qgis.core import Qgis, QgsMessageLog
+from qgis.core import Qgis, QgsMapLayerProxyModel, QgsMessageLog
 from qgis.PyQt.QtWidgets import (
     QFileDialog,
     QLabel,
@@ -32,6 +32,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
     CrossSectionLocationMappingSettingsWidget,
     IntegrationSettingsWidget,
     PointToLIneConversionSettingsWidget,
+    SettingsWidget,
 )
 
 
@@ -45,6 +46,7 @@ class VDIWizard(QWizard):
         dm.Channel: vdi_importers.ChannelsImporter,
         dm.CrossSectionLocation: vdi_importers.CrossSectionLocationImporter,
     }
+    settings_widgets_classes: list[SettingsWidget] = []
 
     def __init__(
         self,
@@ -65,9 +67,16 @@ class VDIWizard(QWizard):
     def wizard_title(self):
         return f"Import {self.model_cls.__layername__.lower()}s"
 
+    @property
+    def layer_filter(self) -> Optional[QgsMapLayerProxyModel]:
+        return None
+
     @cached_property
     def settings_page(self):
-        return SettingsPage()
+        return SettingsPage(
+            settings_widgets_classes=self.settings_widgets_classes,
+            layer_filter=self.layer_filter,
+        )
 
     @cached_property
     def field_map_page(self):
@@ -283,15 +292,32 @@ class ImportWithCreateConnectionNodesWizard(VDIWizard):
         return processed_handlers, processed_layers
 
 
+class ImportConnectionNodesWizard(VDIWizard):
+    @property
+    def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
+        return QgsMapLayerProxyModel.PointLayer
+
+
 class ImportConduitWizard(ImportWithCreateConnectionNodesWizard):
-    @cached_property
-    def settings_page(self):
-        return SettingsPage(
-            settings_widgets=[ConnectionNodeSettingsWidget],
+    settings_widgets_classes = [ConnectionNodeSettingsWidget]
+
+    @property
+    def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
+        """Set the filter for the source layer combo box based on the model's geometry type."""
+        return (
+            QgsMapLayerProxyModel.PointLayer
+            if self.model_cls.__geometrytype__ == dm.GeometryType.Point
+            else QgsMapLayerProxyModel.LineLayer | QgsMapLayerProxyModel.PointLayer
         )
 
 
 class ImportStructureWizard(ImportWithCreateConnectionNodesWizard):
+    settings_widgets_classes = [
+        ConnectionNodeSettingsWidget,
+        PointToLIneConversionSettingsWidget,
+        IntegrationSettingsWidget,
+    ]
+
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         processed_handlers, processed_layers = super().prepare_import()
         integration_settings = self.get_settings().integration
@@ -311,25 +337,22 @@ class ImportStructureWizard(ImportWithCreateConnectionNodesWizard):
             processed_layers["conduit_layer"] = conduit_handler.layer
         return processed_handlers, processed_layers
 
-    @cached_property
-    def settings_page(self):
-        return SettingsPage(
-            [
-                ConnectionNodeSettingsWidget,
-                PointToLIneConversionSettingsWidget,
-                IntegrationSettingsWidget,
-            ]
+    @property
+    def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
+        """Set the filter for the source layer combo box based on the model's geometry type."""
+        return (
+            QgsMapLayerProxyModel.PointLayer
+            if self.model_cls.__geometrytype__ == dm.GeometryType.Point
+            else QgsMapLayerProxyModel.LineLayer | QgsMapLayerProxyModel.PointLayer
         )
 
 
 class ImportCrossSectionDataWizard(VDIWizard):
+    settings_widgets_classes = [CrossSectionDataRemapSettingsWidget]
+
     @property
     def wizard_title(self):
         return f"Import {self.model_cls.__layername__}"
-
-    @cached_property
-    def settings_page(self):
-        return SettingsPage([CrossSectionDataRemapSettingsWidget])
 
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         handlers = [
@@ -347,8 +370,22 @@ class ImportCrossSectionDataWizard(VDIWizard):
             list(layer_dict.values()),
         )
 
+    @property
+    def layer_filter(self) -> Optional[QgsMapLayerProxyModel]:
+        return (
+            QgsMapLayerProxyModel.LineLayer
+            | QgsMapLayerProxyModel.PointLayer
+            | QgsMapLayerProxyModel.NoGeometry
+        )
+
 
 class ImportCrossSectionLocationWizard(VDIWizard):
-    @cached_property
-    def settings_page(self):
-        return SettingsPage([CrossSectionLocationMappingSettingsWidget])
+    settings_widgets_classes = [CrossSectionLocationMappingSettingsWidget]
+
+    @property
+    def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
+        return (
+            QgsMapLayerProxyModel.LineLayer
+            | QgsMapLayerProxyModel.PointLayer
+            | QgsMapLayerProxyModel.NoGeometry
+        )

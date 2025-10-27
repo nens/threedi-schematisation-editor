@@ -39,17 +39,21 @@ from threedi_schematisation_editor.vector_data_importer.wizard.models import (
 class GenericSettingsWidget(QWidget):
     layer_changed = pyqtSignal(str)  # Add this signal
 
-    def __init__(self):
+    def __init__(
+        self, layer_filter: Optional[Qgis.LayerFilters | Qgis.LayerFilter] = None
+    ):
         super().__init__()
         self.model = GenericSettingsModel()
-        self.setup_ui()
+        self.setup_ui(layer_filter)
         self.selected_layer = None
 
-    def setup_ui(self):
+    def setup_ui(self, layer_filter):
         # create widgets
         label = QLabel("Select layer to import:")
         layer_selector = QgsMapLayerComboBox()
         layer_selector.setAllowEmptyLayer(True)
+        if layer_filter:
+            layer_selector.setFilters(layer_filter)
         layer_selector.layerChanged.connect(self.update_layer)
         layer_selector.setCurrentIndex(0)
         layer_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)

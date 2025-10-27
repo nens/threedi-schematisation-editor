@@ -1,15 +1,15 @@
 from .wizard import (
     ImportConduitWizard,
+    ImportConnectionNodesWizard,
     ImportCrossSectionDataWizard,
     ImportCrossSectionLocationWizard,
     ImportStructureWizard,
-    VDIWizard,
 )
 
 __all__ = [
-    "VDIWizard",
     "ImportStructureWizard",
     "ImportCrossSectionDataWizard",
     "ImportCrossSectionLocationWizard",
     "ImportConduitWizard",
+    "ImportConnectionNodesWizard",
 ]
