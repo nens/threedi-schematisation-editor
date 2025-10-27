@@ -283,15 +283,14 @@ class TestSpatialImporter:
         assert spatial_importer.modifiable_layers == [target_layer, node_layer]
 
     @patch(
-        "threedi_schematisation_editor.vector_data_importer.importers.ChannelIntegrator.from_importer"
+        "threedi_schematisation_editor.vector_data_importer.integrators.ChannelIntegrator.from_importer"
     )
     @patch(
-        "threedi_schematisation_editor.vector_data_importer.importers.PipeIntegrator.from_importer"
+        "threedi_schematisation_editor.vector_data_importer.integrators.PipeIntegrator.from_importer"
     )
     @pytest.mark.parametrize(
         "integration_mode, target_cls, make_channel_integrator, make_pipe_integrator",
         [
-            (sm.IntegrationMode.CHANNELS, dm.Weir, True, False),
             (sm.IntegrationMode.CHANNELS, dm.Weir, True, False),
             (sm.IntegrationMode.PIPES, dm.Weir, False, True),
             (sm.IntegrationMode.NONE, dm.Weir, False, False),
@@ -314,9 +313,6 @@ class TestSpatialImporter:
     ):
         """Test that the Importer initializes the correct integrator."""
         import_settings.integration.integration_mode = integration_mode
-
-        # import_settings["conversion_settings"]["edit_channels"] = edit_channels
-        # import_settings["conversion_settings"]["edit_pipes"] = edit_pipes
         importer = LinesImporter(
             external_source,
             target_gpkg,

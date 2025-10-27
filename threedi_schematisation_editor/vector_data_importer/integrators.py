@@ -20,6 +20,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     DEFAULT_INTERSECTION_BUFFER,
     DEFAULT_INTERSECTION_BUFFER_SEGMENTS,
     FeatureManager,
+    get_field_config_value,
     get_float_value_from_feature,
     get_src_geometry,
     update_attributes,
@@ -56,7 +57,7 @@ class LinearIntegrator:
         self.target_model_cls = target_model_cls
         self.fields_configurations = import_settings.fields
         self.point_to_line_settings = import_settings.point_to_line_conversion
-        self.snapping_distance = import_settings.integration.snapping_distance
+        self.snapping_distance = import_settings.integration.snap_distance
         self.minimum_conduit_length = import_settings.integration.min_length
         # set schematisation layer to add - if any are missing retrieve them from the gpkg
         self.integrate_layer = (
@@ -193,8 +194,9 @@ class LinearIntegrator:
         structure_feat,
         conduit_feat,
         snapping_distance,
-        length_source_field,
-        length_fallback_value,
+        length_config,
+        # length_source_field,
+        # length_fallback_value,
     ):
         structure_geom = structure_feat.geometry()
         conduit_geometry = conduit_feat.geometry()
@@ -204,9 +206,10 @@ class LinearIntegrator:
         if not structure_buffer.intersects(conduit_geometry):
             return
         intersection_m = conduit_geometry.lineLocatePoint(structure_geom)
-        structure_length = get_float_value_from_feature(
-            structure_feat, length_source_field, length_fallback_value
-        )
+        structure_length = get_field_config_value(length_config, structure_feat)
+        # structure_length = get_float_value_from_feature(
+        #     structure_feat, length_source_field, length_fallback_value
+        # )
         return LinearIntegratorStructureData(
             conduit_feat["id"], structure_feat, intersection_m, structure_length
         )
@@ -244,8 +247,7 @@ class LinearIntegrator:
                     structure_feat,
                     conduit_feat,
                     self.snapping_distance,
-                    self.point_to_line_settings.length_source_field,
-                    self.point_to_line_settings.length_fallback_value,
+                    self.point_to_line_settings.length,
                 )
             else:
                 continue
@@ -465,7 +467,7 @@ class LinearIntegrator:
         conduit_structures = LinearIntegrator.fix_structure_placement(
             conduit_structures,
             conduit_geom,
-            self.integration.minimum_channel_length,
+            self.minimum_conduit_length,
         )
         added_features[self.target_layer.name()] = self.place_structures_on_conduit(
             conduit_structures, conduit_feat, simplify_structure_geometry
@@ -542,14 +544,37 @@ class PipeIntegrator(LinearIntegrator):
 
 
 class ChannelIntegrator(LinearIntegrator):
-    def __init__(self, *args):
+    def __init__(
+        self,
+        conduit_layer,
+        target_model_cls,
+        target_layer,
+        target_manager,
+        node_layer,
+        node_manager,
+        import_settings,
+        external_source,
+        target_gpkg,
+        cross_section_layer,
+    ):
         self.cross_section_layer = cross_section_layer or gpkg_layer(
             target_gpkg, dm.CrossSectionLocation.__tablename__
         )
         self.cross_section_manager = FeatureManager(
             get_next_feature_id(self.cross_section_layer)
         )
-        super().__init__(*args, conduit_model_cls=dm.Channel)
+        super().__init__(
+            conduit_layer,
+            target_model_cls,
+            target_layer,
+            target_manager,
+            node_layer,
+            node_manager,
+            import_settings,
+            external_source,
+            target_gpkg,
+            conduit_model_cls=dm.Channel,
+        )
 
     @classmethod
     def from_importer(cls, integrate_layer, cross_section_layer, importer):
@@ -561,6 +586,7 @@ class ChannelIntegrator(LinearIntegrator):
             importer.processor.target_manager,
             importer.node_layer,
             importer.processor.node_manager,
+            importer.import_settings,
             importer.external_source,
             importer.target_gpkg,
             cross_section_layer,

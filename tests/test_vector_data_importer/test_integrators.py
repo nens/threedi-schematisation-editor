@@ -11,6 +11,7 @@ from qgis.core import (
     QgsWkbTypes,
 )
 
+from threedi_schematisation_editor.vector_data_importer import settings_models as sm
 from threedi_schematisation_editor.vector_data_importer.integrators import (
     ChannelIntegrator,
     LinearIntegrator,
@@ -205,14 +206,22 @@ class TestChannelStructureIntegration:
     ):
         """Test get_channel_structure_from_point with different length source configurations."""
         snapping_distance = 5.0
-        length_fallback_value = 5.0
+        if length_source_field:
+            length_config = sm.FieldMapConfig(
+                method=sm.ColumnImportMethod.ATTRIBUTE,
+                source_attribute="length",
+                default_value=5.0,
+            )
+        else:
+            length_config = sm.FieldMapConfig(
+                method=sm.ColumnImportMethod.DEFAULT, default_value=5.0
+            )
 
         result = LinearIntegrator.get_conduit_structure_from_point(
             point_structure_feature,
             channel_feature,
             snapping_distance,
-            length_source_field,
-            length_fallback_value,
+            length_config,
         )
 
         # Check that the result is not None
@@ -233,15 +242,17 @@ class TestChannelStructureIntegration:
     ):
         """Test get_channel_structure_from_point with a point too far from the channel."""
         snapping_distance = 5.0
-        length_source_field = "length"
-        length_fallback_value = 5.0
+        length_config = sm.FieldMapConfig(
+            method=sm.ColumnImportMethod.AUTO,
+            source_attribute="length",
+            default_value=5.0,
+        )
 
         result = LinearIntegrator.get_conduit_structure_from_point(
             point_structure_feature_far,
             channel_feature,
             snapping_distance,
-            length_source_field,
-            length_fallback_value,
+            length_config,
         )
 
         # The method should return None if the point is too far from the channel
@@ -280,9 +291,14 @@ class TestChannelStructureIntegration:
         }
 
         # Set up the point to line settings attribute
-        integrator.point_to_line_settings = MagicMock()
-        integrator.point_to_line_settings.length_source_field = "length"
-        integrator.point_to_line_settings.length_fallback_value = 5.0
+        integrator.point_to_line_settings = sm.PointToLineSettingsModel(
+            length={
+                "method": "source_attribute",
+                "source_attribute": "length",
+                "default_value": 5.0,
+            },
+            azimuth={"method": "default", "default_value": 0.0},
+        )
 
         # Call the method with the specified selected_ids
         result, processed_ids = LinearIntegrator.get_conduit_structures_data(

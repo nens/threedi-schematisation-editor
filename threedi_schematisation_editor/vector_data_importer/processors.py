@@ -736,7 +736,7 @@ class StructureProcessor(SpatialProcessor, ABC):
         node = None
         if self.connection_nodes_settings.snap:
             node = find_connection_node(
-                point, self.node_locator, self.create_nodes.snap_distance
+                point, self.node_locator, self.connection_nodes_settings.snap_distance
             )
             snapped = node is not None
         if self.connection_nodes_settings.create_nodes and (
