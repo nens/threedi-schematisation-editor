@@ -48,7 +48,7 @@ class VDIWizard(QWizard):
 
     def __init__(
         self,
-        model_cls: Type,
+        model_cls: Type[dm.ModelObject],
         model_gpkg: str,
         layer_manager: Any,
         parent: Optional[QWidget] = None,
@@ -171,6 +171,9 @@ class VDIWizard(QWizard):
         data = {}
         for page_id in self.pageIds():
             page = self.page(page_id)
+            if isinstance(page, FieldMapPage) and page.name == "connection_node_fields":
+                if not self.settings_page.create_nodes:
+                    continue
             if callable(getattr(page, "get_settings", None)):
                 data.update(page.get_settings())
 
@@ -181,7 +184,7 @@ class VDIWizard(QWizard):
         handler = self.layer_manager.model_handlers[self.model_cls]
         return [handler], {"target_layer": handler.layer}
 
-    def get_importer(self, import_settings: dict, layer_dict):
+    def get_importer(self, import_settings: sm.ConversionSettingsModel, layer_dict):
         return self.IMPORTERS[self.model_cls](
             self.selected_layer,
             self.model_gpkg,
@@ -291,10 +294,8 @@ class ImportConduitWizard(ImportWithCreateConnectionNodesWizard):
 class ImportStructureWizard(ImportWithCreateConnectionNodesWizard):
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         processed_handlers, processed_layers = super().prepare_import()
-        settings = self.get_settings().get("integration")
-        if not settings:
-            return processed_handlers, processed_layers
-        if settings.integration_mode == sm.IntegrationMode.CHANNELS:
+        integration_settings = self.get_settings().integration
+        if integration_settings.integration_mode == sm.IntegrationMode.CHANNELS:
             conduit_handler = self.layer_manager.model_handlers[dm.Channel]
             cross_section_location_handler = self.layer_manager.model_handlers[
                 dm.CrossSectionLocation
@@ -304,7 +305,7 @@ class ImportStructureWizard(ImportWithCreateConnectionNodesWizard):
             processed_layers["cross_section_location_layer"] = (
                 cross_section_location_handler.layer
             )
-        elif settings.integration_mode == sm.IntegrationMode.PIPES:
+        elif integration_settings.integration_mode == sm.IntegrationMode.PIPES:
             conduit_handler = self.layer_manager.model_handlers[dm.Pipe]
             processed_handlers += [conduit_handler]
             processed_layers["conduit_layer"] = conduit_handler.layer

@@ -81,11 +81,8 @@ class SettingsPage(QWizardPage):
         # determine if field map pages for nodes are shown
         for widget in self.settings_widgets:
             if isinstance(widget, ConnectionNodeSettingsWidget):
-                return widget.create_nodes
+                return widget.model.create_nodes
         return False
-
-    # def serialize(self):
-    #     return {widget.name: widget.serialize() for widget in self.settings_widgets}
 
     def get_settings(self) -> dict[str, BaseModel]:
         # return non-serialized settings
@@ -194,7 +191,7 @@ class RunPage(QWizardPage):
         self.setLayout(main_layout)
 
     def on_run_import(self):
-        self.wizard().run_import(self.text)
+        self.wizard().run_import()
 
     def initializePage(self):
         settings = self.wizard().get_settings()
