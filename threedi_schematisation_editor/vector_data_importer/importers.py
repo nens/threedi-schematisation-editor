@@ -23,11 +23,8 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     LineProcessor,
 )
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
-    ConversionSettings,
-    get_field_map_config,
+    IntegrationMode,
 )
-
-# from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
 
 
 class Importer:
@@ -36,10 +33,6 @@ class Importer:
         self.target_gpkg = target_gpkg
         self.import_settings = import_settings
         self.processor = None
-
-    @cached_property
-    def conversion_settings(self):
-        return ConversionSettings(**self.import_settings.get("conversion_settings", {}))
 
     @cached_property
     def external_source_name(self):
@@ -145,16 +138,6 @@ class SpatialImporter(Importer):
             if node_layer is None
             else node_layer
         )
-        self.fields_configurations = {
-            target_model_cls: get_field_map_config(
-                self.import_settings.get("fields", {}), target_model_cls
-            )
-        }
-        if target_model_cls != dm.ConnectionNode:
-            self.fields_configurations[dm.ConnectionNode] = get_field_map_config(
-                import_settings.get("connection_node_fields", {}),
-                dm.ConnectionNode,
-            )
         self.integrator = None
         self.processor = None
 
@@ -242,17 +225,20 @@ class LinesImporter(SpatialImporter):
             self.target_layer,
             self.target_model_cls,
             self.node_layer,
-            self.fields_configurations,
-            self.conversion_settings,
+            import_settings,
         )
-        if self.conversion_settings.edit_channels:
+        if import_settings.integration.integration_mode == IntegrationMode.CHANNELS:
             self.integrator = ChannelIntegrator.from_importer(
                 conduit_layer, cross_section_location_layer, self
             )
-        elif self.conversion_settings.edit_pipes and self.target_model_cls in [
-            dm.Weir,
-            dm.Orifice,
-        ]:
+        elif (
+            import_settings.integration.integration_mode == IntegrationMode.PIPES
+            and self.target_model_cls
+            in [
+                dm.Weir,
+                dm.Orifice,
+            ]
+        ):
             self.integrator = PipeIntegrator.from_importer(conduit_layer, self)
 
 

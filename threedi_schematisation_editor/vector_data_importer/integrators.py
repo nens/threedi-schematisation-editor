@@ -491,7 +491,6 @@ class PipeIntegrator(LinearIntegrator):
             importer.node_layer,
             importer.processor.node_manager,
             importer.import_settings,
-            importer.import_settings,
             importer.external_source,
             importer.target_gpkg,
         )
@@ -532,7 +531,6 @@ class ChannelIntegrator(LinearIntegrator):
     @classmethod
     def from_importer(cls, integrate_layer, cross_section_layer, importer):
         """extract data from importer to created matching integrator"""
-        # TODO: move to base class and use integration settings (replace code in importer)
         return cls(
             integrate_layer,
             importer.target_model_cls,

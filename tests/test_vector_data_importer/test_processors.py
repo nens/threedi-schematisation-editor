@@ -117,15 +117,15 @@ class TestPointProcessor:
         node_layer.name.return_value = "connection_nodes"
 
         # Create mock fields configurations
-        fields_configurations = {
-            dm.ConnectionNode: {"id": {"method": ColumnImportMethod.AUTO}},
-            dm.Pump: {"id": {"method": ColumnImportMethod.AUTO}},
-        }
+        import_settings = sm.ConversionSettingsModel(
+            fields={"id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)},
+            connection_node_fields={
+                "id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)
+            },
+        )
 
         # Create a processor
-        processor = PointProcessor(
-            target_layer, dm.Pump, node_layer, fields_configurations, {}
-        )
+        processor = PointProcessor(target_layer, dm.Pump, node_layer, import_settings)
 
         # Mock the add_node method to return a new node feature
         new_node = QgsFeature(node_fields)
