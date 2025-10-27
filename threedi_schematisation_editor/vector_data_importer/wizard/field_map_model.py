@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import cached_property
-from typing import Any, Optional
+from typing import Any, Optional, get_type_hints
 
 from pydantic import BaseModel, ValidationError
 from qgis.core import Qgis, QgsMessageLog, QgsVectorLayer
@@ -26,6 +26,7 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
+from threedi_schematisation_editor.utils import enum_entry_name_format
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     FieldMapConfig,
     create_field_map_config,
@@ -314,9 +315,26 @@ class FieldMapDelegate(QStyledItemDelegate):
                 lambda field, idx=index: self.commitExpressionData(idx, editor)
             )
         elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.DEFAULT_VALUE:
-            current_value = index.model().rows[index.row()].config.default_value
-            editor = QLineEdit(parent)
-            editor.setText(str(current_value) if current_value else "")
+            config = index.model().rows[index.row()].config
+            current_value = config.default_value
+            value_type = config.model_fields["default_value"].annotation.__args__[0]
+            # Dirty magic to use a combobox for bools and enums
+            if value_type == bool or (
+                isinstance(value_type, type) and issubclass(value_type, Enum)
+            ):
+                editor = QComboBox(parent)
+                if value_type is bool:
+                    items = [["False", False], ["True", True]]
+                else:
+                    items = [["", ""]] + [
+                        [enum_entry_name_format(item), item] for item in value_type
+                    ]
+                for display_text, data in items:
+                    editor.addItem(display_text, data)
+                editor.setCurrentIndex(editor.findData(current_value))
+            else:
+                editor = QLineEdit(parent)
+                editor.setText(str(current_value) if current_value else "")
         else:
             return super().createEditor(parent, option, index)
         self._editors[(index.row(), index.column())] = editor
@@ -374,11 +392,13 @@ class FieldMapDelegate(QStyledItemDelegate):
             value_map_title = "Set value map..." if len(value) == 0 else str(value)
             editor.setText(value_map_title)
         elif column == FieldMapColumn.EXPRESSION:
-            value = index.data(Qt.EditRole)
             editor.setExpression(value)
         elif column == FieldMapColumn.DEFAULT_VALUE:
-            value = index.data(Qt.EditRole)
-            editor.setText(str(value) if value else "")
+            current_value = index.model().rows[index.row()].config.default_value
+            if isinstance(editor, QComboBox):
+                editor.setCurrentIndex(editor.findData(current_value))
+            else:
+                editor.setText(str(current_value) if current_value is not None else "")
         # update style
         style_sheet = (
             "" if valid or not is_enabled else self.get_invalid_style_for_editor(editor)
@@ -396,7 +416,10 @@ class FieldMapDelegate(QStyledItemDelegate):
         elif column == FieldMapColumn.EXPRESSION:
             value = editor.expression()
         elif column == FieldMapColumn.DEFAULT_VALUE:
-            value = editor.text()
+            if isinstance(editor, QComboBox):
+                value = editor.currentData()
+            else:
+                value = editor.text()
         if value is not None:
             model.setData(index, value, Qt.EditRole)
 

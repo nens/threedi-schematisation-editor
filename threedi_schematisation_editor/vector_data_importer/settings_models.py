@@ -1,6 +1,16 @@
 from dataclasses import dataclass, field, fields
 from enum import Enum
-from typing import Any, ClassVar, Optional, Type, Union, get_args, get_origin
+from typing import (
+    Any,
+    ClassVar,
+    Generic,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from pydantic import (
     BaseModel,
@@ -119,13 +129,16 @@ class FieldMapMetadata:
     }
 
 
-class FieldMapConfig(BaseModel):
+DefaultValueType = TypeVar("DefaultValueType")
+
+
+class FieldMapConfig(BaseModel, Generic[DefaultValueType]):
     _metadata: ClassVar[FieldMapMetadata] = FieldMapMetadata()
     method: ColumnImportMethod
     source_attribute: Optional[str] = None
     value_map: dict[str, Any] = {}
     expression: Optional[str] = None
-    default_value: Optional[Any] = None
+    default_value: Optional[DefaultValueType] = None
 
     @classmethod
     def with_metadata(cls, metadata: FieldMapMetadata) -> Type["FieldMapConfig"]:
@@ -190,10 +203,11 @@ class FieldMapConfig(BaseModel):
 
 def create_field_map_config(
     allowed_methods: Optional[list[ColumnImportMethod]],
+    field_type: Type[DefaultValueType] = Any,
 ) -> Type[FieldMapConfig]:
     """Creates a FieldMapConfig class for a specific field based on its metadata"""
     metadata = FieldMapMetadata(allowed_methods=allowed_methods)
-    return FieldMapConfig.with_metadata(metadata)
+    return FieldMapConfig[field_type].with_metadata(metadata)
 
 
 def get_field_map_config_for_model_class_field(
@@ -204,7 +218,8 @@ def get_field_map_config_for_model_class_field(
     if not class_field:
         raise ValueError(f"Field {field_name} not found in {model_class.__name__}")
     return create_field_map_config(
-        get_allowed_methods_for_model_class_field(class_field)
+        get_allowed_methods_for_model_class_field(class_field),
+        field_type=class_field.type,
     )
 
 
