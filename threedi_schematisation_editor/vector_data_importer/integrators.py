@@ -2,6 +2,7 @@ import warnings
 from _operator import attrgetter, itemgetter
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import Optional, Type
 
 from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes
 
@@ -11,6 +12,9 @@ from threedi_schematisation_editor.utils import (
     get_next_feature_id,
     gpkg_layer,
     spatial_index,
+)
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
+    IntegrationMode,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (
     DEFAULT_INTERSECTION_BUFFER,
@@ -85,6 +89,25 @@ class LinearIntegrator:
         self.setup_fields_map()
         self.setup_spatial_indexes()
         self.setup_node_by_location()
+
+    @staticmethod
+    def get_integrator(
+        integrate_layer, cross_section_layer, importer
+    ) -> Optional["LinearIntegrator"]:
+        integration_mode = importer.import_settings.integration.integration_mode
+        if integration_mode == IntegrationMode.CHANNELS:
+            return ChannelIntegrator.from_importer(
+                integrate_layer, cross_section_layer, importer
+            )
+        elif (
+            integration_mode == IntegrationMode.PIPES
+            and importer.target_model_cls
+            in [
+                dm.Weir,
+                dm.Orifice,
+            ]
+        ):
+            return PipeIntegrator.from_importer(integrate_layer, importer)
 
     @staticmethod
     def get_substring_geometry(curve, start_distance, end_distance, simplify=False):

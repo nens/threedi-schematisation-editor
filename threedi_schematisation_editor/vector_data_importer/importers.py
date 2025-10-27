@@ -13,17 +13,13 @@ from qgis.core import (
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.integrators import (
-    ChannelIntegrator,
-    PipeIntegrator,
+    LinearIntegrator,
 )
 from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
     CrossSectionDataProcessor,
     CrossSectionLocationProcessor,
     LineProcessor,
-)
-from threedi_schematisation_editor.vector_data_importer.settings_models import (
-    IntegrationMode,
 )
 
 
@@ -227,19 +223,9 @@ class LinesImporter(SpatialImporter):
             self.node_layer,
             import_settings,
         )
-        if import_settings.integration.integration_mode == IntegrationMode.CHANNELS:
-            self.integrator = ChannelIntegrator.from_importer(
-                conduit_layer, cross_section_location_layer, self
-            )
-        elif (
-            import_settings.integration.integration_mode == IntegrationMode.PIPES
-            and self.target_model_cls
-            in [
-                dm.Weir,
-                dm.Orifice,
-            ]
-        ):
-            self.integrator = PipeIntegrator.from_importer(conduit_layer, self)
+        self.integrator = LinearIntegrator.get_integrator(
+            conduit_layer, cross_section_location_layer, self
+        )
 
 
 class CulvertsImporter(LinesImporter):
