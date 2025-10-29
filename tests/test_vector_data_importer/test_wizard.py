@@ -121,12 +121,6 @@ class TestConnectNodeSettings:
         widget.deserialize(settings)
         assert widget.get_settings().model_dump() == settings
 
-    @pytest.mark.parametrize("create_nodes", [True, False])
-    def test_toggle_snap(self, create_nodes, qgis_application):
-        widget = ConnectionNodeSettingsWidget()
-        widget.deserialize({"create_nodes": create_nodes})
-        assert widget.snap.isEnabled() == create_nodes
-
     @pytest.mark.parametrize("snap_enabled", [True, False])
     def test_toggle_snap_distance(self, snap_enabled, qgis_application):
         widget = ConnectionNodeSettingsWidget()

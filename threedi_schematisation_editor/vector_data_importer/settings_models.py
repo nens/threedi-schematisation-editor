@@ -302,6 +302,7 @@ class CrossSectionLocationSettingsModel(BaseModel):
     join_field_tgt: FieldMapConfig = FieldMapConfig.with_metadata(metadata)(
         method=ColumnImportMethod.AUTO, default_value=""
     )
+    snap_distance: float = Field(default=1.0, ge=0, le=1000000.0)
 
 
 # TODO: combine stuff above and below in 1 consistent approach

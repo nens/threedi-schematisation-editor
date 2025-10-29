@@ -533,8 +533,9 @@ class CrossSectionLocationProcessor(SpatialProcessor):
         self.join_field_src = (
             import_settings.cross_section_location_mapping.join_field_src
         )
-        # TODO reconsider origin!!!
-        self.snapping_distance = import_settings.connection_nodes.snap_distance
+        self.snapping_distance = (
+            import_settings.cross_section_location_mapping.snap_distance
+        )
         self.target_fields_config = import_settings.fields
 
     @cached_property

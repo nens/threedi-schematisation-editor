@@ -41,6 +41,7 @@ def cross_section_location_settings():
                 "method": "source_attribute",
                 "source_attribute": "id",
             },
+            "snap_distance": 6,
         }
     )
 
@@ -50,7 +51,6 @@ def import_settings(cross_section_location_settings):
     settings = sm.ConversionSettingsModel(
         cross_section_location_mapping=cross_section_location_settings
     )
-    settings.connection_nodes.snap_distance = 6
     return settings
 
 

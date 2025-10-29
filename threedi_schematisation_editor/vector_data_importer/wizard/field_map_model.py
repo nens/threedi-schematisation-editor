@@ -461,15 +461,15 @@ class FieldMapWidget(QWidget):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.table_view)
+        # Set size policy for the scroll area itself
+        scroll_area.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        # Set maximum height for scroll area
+        scroll_area.setMaximumHeight(self.table_height)
+        scroll_area.setMinimumHeight(self.table_height)
 
         layout = QVBoxLayout(self)
         layout.addWidget(scroll_area)
         self.setLayout(layout)
-
-        # Ensure table never covers more horizontal space than needed
-        self.table_view.setMinimumHeight(self.table_height)
-        self.table_view.setMaximumHeight(self.table_height)
-        self.table_view.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         # Set column widths such that label and method always fit, and stretch the rest
         self.table_view.resizeColumnsToContents()

@@ -7,6 +7,7 @@ from qgis.gui import QgsMapLayerComboBox
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
+    QBoxLayout,
     QButtonGroup,
     QCheckBox,
     QComboBox,
@@ -306,6 +307,7 @@ class CrossSectionDataRemapSettingsWidget(SettingsWidget):
 
         # set all widgets to default values
         self.deserialize({})
+        self.widget_layout = layout
 
     def update_set_lowest_point_to_zero(self, checked):
         self.model.set_lowest_point_to_zero = checked
@@ -322,16 +324,20 @@ class CrossSectionDataRemapSettingsWidget(SettingsWidget):
 
 
 class FieldMapSettingsWidget(SettingsWidget):
-    def setup_ui(self, row_dict):
+    def setup_ui(self, row_dict, extra_layout=None):
         self.field_map_widget = FieldMapWidget(row_dict)
         # emit dataChanged signal when field map widget data changes
         self.field_map_widget.dataChanged.connect(self.dataChanged.emit)
         self.table_view = self.field_map_widget.table_view
         self.table_model = self.field_map_widget.table_model
         self.table_delegate = self.field_map_widget.table_delegate
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.field_map_widget)
         self.field_map_widget.open_persistent_editors()
+        layout = QVBoxLayout(self)
+        layout.setSpacing(0)
+        layout.addWidget(self.field_map_widget)
+        if extra_layout and isinstance(extra_layout, QBoxLayout):
+            layout.addLayout(extra_layout)
+        layout.addStretch()
 
     def _on_data_changed(self, top_left, bottom_right, roles):
         self.dataChanged.emit()
@@ -379,7 +385,26 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
                 label="Join channel target field", config=self.model.join_field_tgt
             ),
         }
-        self.setup_ui(row_dict)
+        extra_layout = self.get_extra_layout()
+        self.setup_ui(row_dict, extra_layout)
+
+    def get_extra_layout(self) -> list[QBoxLayout]:
+        snap_distance_label = QLabel("Snap to geometry object within:")
+        snap_distance = QDoubleSpinBox()
+        snap_distance.setSuffix(" m")
+        snap_distance.setDecimals(1)
+        snap_distance.setMinimum(sm.get_field_min(self.model, "snap_distance"))
+        snap_distance.setMaximum(sm.get_field_max(self.model, "snap_distance"))
+        snap_distance.setMaximumWidth(100)  # Set maximum width
+        snap_distance.valueChanged.connect(self.update_snap_distance)
+        snap_layout = QHBoxLayout()
+        snap_layout.addWidget(snap_distance_label)
+        snap_layout.addWidget(snap_distance)
+        snap_layout.addStretch()
+        return snap_layout
+
+    def update_snap_distance(self, value):
+        self.model.snap_distance = value
 
     @property
     def group_name(self):
