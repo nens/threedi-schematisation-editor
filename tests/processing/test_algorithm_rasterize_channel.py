@@ -1,3 +1,4 @@
+import tempfile
 from pathlib import Path
 from typing import Dict
 
@@ -15,6 +16,8 @@ from threedi_schematisation_editor.processing.algorithm_rasterize_channels impor
 
 
 DATA_DIR = Path(__file__).parent.joinpath('data')
+TMP_DIR = tempfile.TemporaryDirectory()
+
 
 rasterize_channel_inputs = {
     'INPUT_CHANNELS': QgsProcessingFeatureSourceDefinition(
@@ -25,7 +28,7 @@ rasterize_channel_inputs = {
     ),
     'INPUT_DEM': None,
     'PIXEL_SIZE': 0.1,
-    'OUTPUT': 'TEMPORARY_OUTPUT',
+    'OUTPUT': str(Path(TMP_DIR.name) / "rasterized_channels.tif"),
 }
 
 
