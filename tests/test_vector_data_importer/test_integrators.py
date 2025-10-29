@@ -291,7 +291,7 @@ class TestChannelStructureIntegration:
         }
 
         # Set up the point to line settings attribute
-        integrator.point_to_line_settings = sm.PointToLineSettingsModel(
+        integrator.point_to_line_settings = sm.PointToLineSettings(
             length={
                 "method": "source_attribute",
                 "source_attribute": "length",

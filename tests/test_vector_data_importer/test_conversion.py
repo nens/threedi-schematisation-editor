@@ -17,7 +17,7 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionDataProcessor,
 )
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
-    ConversionSettingsModel,
+    ImportSettings,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
@@ -44,7 +44,7 @@ def get_import_config(import_config_name):
     src = CONFIG_PATH.joinpath(import_config_name).with_suffix(".json")
     with open(src) as import_config_json:
         import_settings_dict = json.loads(import_config_json.read())
-    return ConversionSettingsModel(**import_settings_dict)
+    return ImportSettings(**import_settings_dict)
 
 
 def compare_layer_geom(layer, ref_layer):
@@ -190,7 +190,7 @@ def test_integrate_pipe(qgis_application):
     "test_name", ["test_points", "test_lines", "test_no_geom", "test_var_matching"]
 )
 def test_import_cross_section_location(qgis_application, test_name):
-    import_config = ConversionSettingsModel(
+    import_config = ImportSettings(
         **{
             "cross_section_location_mapping": {
                 "join_field_src": {
@@ -226,7 +226,7 @@ def test_import_cross_section_location(qgis_application, test_name):
 
 def test_import_cross_section_location_with_expression(qgis_application):
     test_name = "test_no_geom"
-    import_config = ConversionSettingsModel(
+    import_config = ImportSettings(
         **{
             "cross_section_location_mapping": {
                 "join_field_src": {"method": "expression", "expression": "channel_id"},
@@ -255,7 +255,7 @@ def test_import_cross_section_location_with_expression(qgis_application):
 
 
 def test_import_adjacent_channels(qgis_application):
-    import_config = ConversionSettingsModel(
+    import_config = ImportSettings(
         **{
             "connection_nodes": {
                 "snap": True,
@@ -295,7 +295,7 @@ def test_import_cross_section_data(qgis_application):
     }
     for target, ref in target_map_fields.items():
         field_config[target] = {"method": method, method: ref}
-    import_config = ConversionSettingsModel(fields=field_config)
+    import_config = ImportSettings(fields=field_config)
     src_layer = get_source_layer("cross_section_data.gpkg", "cross_section_data")
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_csd_import.gpkg")
     temp_gpkg = str(get_temp_copy(target_gpkg))

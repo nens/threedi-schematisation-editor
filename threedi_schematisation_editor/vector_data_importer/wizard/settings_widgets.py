@@ -117,7 +117,7 @@ class SettingsWidget(QWidget):
 class ConnectionNodeSettingsWidget(SettingsWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.model = sm.ConnectionNodeSettingsModel()
+        self.model = sm.ConnectionNodeSettings()
         self.setup_ui()
 
     @property
@@ -180,7 +180,7 @@ class ConnectionNodeSettingsWidget(SettingsWidget):
 class IntegrationSettingsWidget(SettingsWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.model = sm.IntegrationSettingsModel()
+        self.model = sm.IntegrationSettings()
         self.setup_ui()
 
     @property
@@ -277,7 +277,7 @@ class IntegrationSettingsWidget(SettingsWidget):
 class CrossSectionDataRemapSettingsWidget(SettingsWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.model = sm.CrossSectionDataRemapModel()
+        self.model = sm.CrossSectionDataRemap()
         self.setup_ui()
 
     @property
@@ -359,7 +359,7 @@ class FieldMapSettingsWidget(SettingsWidget):
 class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.model = sm.PointToLineSettingsModel()
+        self.model = sm.PointToLineSettings()
         row_dict = {
             "length": FieldMapRow(label="Structure length", config=self.model.length),
             "azimuth": FieldMapRow(
@@ -376,7 +376,7 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
 class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.model = sm.CrossSectionLocationSettingsModel()
+        self.model = sm.CrossSectionLocationSettings()
         row_dict = {
             "join_field_src": FieldMapRow(
                 label="Join channel source field", config=self.model.join_field_src

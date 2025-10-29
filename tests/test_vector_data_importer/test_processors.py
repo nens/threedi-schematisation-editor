@@ -91,7 +91,7 @@ class TestConnectionNodeProcessor:
         processor = ConnectionNodeProcessor(
             target_layer,
             dm.ConnectionNode,
-            import_settings=sm.ConversionSettingsModel(),
+            import_settings=sm.ImportSettings(),
         )
 
         # Process the feature
@@ -117,7 +117,7 @@ class TestPointProcessor:
         node_layer.name.return_value = "connection_nodes"
 
         # Create mock fields configurations
-        import_settings = sm.ConversionSettingsModel(
+        import_settings = sm.ImportSettings(
             fields={"id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)},
             connection_node_fields={
                 "id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)
@@ -179,7 +179,7 @@ class TestStructureProcessor:
         processor.node_manager = MagicMock()
         processor.locator = MagicMock()
         processor.connection_nodes_settings = MagicMock()
-        processor.connection_nodes_settings = sm.ConnectionNodeSettingsModel(
+        processor.connection_nodes_settings = sm.ConnectionNodeSettings(
             snap=use_snapping,
             create_nodes=create_connection_nodes,
             snap_distance=10.0,
@@ -212,7 +212,7 @@ class TestLineProcessor:
 
     @pytest.fixture
     def import_settings(self):
-        return sm.ConversionSettingsModel(
+        return sm.ImportSettings(
             fields={"id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)},
             connection_node_fields={
                 "id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)
@@ -267,7 +267,7 @@ class TestLineProcessor:
 
     @pytest.fixture
     def point_to_line_conversion_settings(self):
-        return sm.PointToLineSettingsModel(
+        return sm.PointToLineSettings(
             length=sm.FieldMapConfig(
                 method=ColumnImportMethod.ATTRIBUTE,
                 source_attribute="length",

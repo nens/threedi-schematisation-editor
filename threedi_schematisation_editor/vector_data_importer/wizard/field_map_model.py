@@ -30,7 +30,6 @@ from threedi_schematisation_editor.utils import enum_entry_name_format
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     FieldMapConfig,
     create_field_map_config,
-    get_field_map_config,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog import (

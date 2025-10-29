@@ -6,10 +6,10 @@ from qgis.PyQt.QtCore import QVariant
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
-    ConnectionNodeSettingsModel,
+    ConnectionNodeSettings,
     FieldMapConfig,
     IntegrationMode,
-    IntegrationSettingsModel,
+    IntegrationSettings,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard import (
@@ -60,7 +60,7 @@ class TestIntegrationSettingsWidget:
 
     def test_defaults(self, qgis_application):
         widget = IntegrationSettingsWidget()
-        model = IntegrationSettingsModel()
+        model = IntegrationSettings()
         self.check_radio_button_state(widget, IntegrationMode.NONE)
         assert widget.snap_distance.value() == model.snap_distance
         assert widget.min_length.value() == model.min_length
@@ -102,7 +102,7 @@ class TestIntegrationSettingsWidget:
 class TestConnectNodeSettings:
     def test_defaults(self, qgis_application):
         widget = ConnectionNodeSettingsWidget()
-        model = ConnectionNodeSettingsModel()
+        model = ConnectionNodeSettings()
         assert widget.create_nodes.isChecked() == model.create_nodes
         assert widget.snap.isChecked() == model.snap
         assert widget.snap_distance.value() == model.snap_distance

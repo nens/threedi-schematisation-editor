@@ -24,7 +24,7 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
     WeirsImporter,
 )
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
-    ConversionSettingsModel,
+    ImportSettings,
     IntegrationMode,
 )
 
@@ -140,7 +140,7 @@ class BaseImporter(QgsProcessingAlgorithm):
 
         with open(import_config_file) as import_config_json:
             import_settings_dict = json.loads(import_config_json.read())
-        import_config = ConversionSettingsModel(**import_settings_dict)
+        import_config = ImportSettings(**import_settings_dict)
 
         importer = self.create_importer(source_layer, target_gpkg, import_config)
 

@@ -424,8 +424,8 @@ def test_find_target_object_no_match(
 
 @pytest.fixture
 def import_settings(field_config):
-    return sm.ConversionSettingsModel(
-        cross_section_data_remap=sm.CrossSectionDataRemapModel(
+    return sm.ImportSettings(
+        cross_section_data_remap=sm.CrossSectionDataRemap(
             **{
                 "set_lowest_point_to_zero": False,
                 "use_lowest_point_as_reference": True,

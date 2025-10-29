@@ -28,7 +28,7 @@ from .utils import SCHEMATISATION_PATH, get_temp_copy
 def import_settings():
     """Create a basic import settings dictionary."""
 
-    return sm.ConversionSettingsModel(
+    return sm.ImportSettings(
         **{
             "connection_nodes": {
                 "snap": True,

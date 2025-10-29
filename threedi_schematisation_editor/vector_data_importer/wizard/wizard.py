@@ -156,7 +156,7 @@ class VDIWizard(QWizard):
                     return
             # Get the wizard instance and its pages
             try:
-                settings = sm.ConversionSettingsModel(**json_settings)
+                settings = sm.ImportSettings(**json_settings)
                 self.deserialize(settings.model_dump())
                 QMessageBox.information(
                     self, "Success", "Settings loaded successfully!"
@@ -210,14 +210,14 @@ class VDIWizard(QWizard):
             if callable(getattr(page, "get_settings", None)):
                 data.update(page.get_settings())
 
-        return sm.ConversionSettingsModel(**data)
+        return sm.ImportSettings(**data)
 
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         """Collect layer handlers and map associated layers to dict needed for the importer"""
         handler = self.layer_manager.model_handlers[self.model_cls]
         return [handler], {"target_layer": handler.layer}
 
-    def get_importer(self, import_settings: sm.ConversionSettingsModel, layer_dict):
+    def get_importer(self, import_settings: sm.ImportSettings, layer_dict):
         return self.IMPORTERS[self.model_cls](
             self.selected_layer,
             self.model_gpkg,

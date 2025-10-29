@@ -31,7 +31,7 @@ def target_layer():
 
 @pytest.fixture(scope="session")
 def cross_section_location_settings():
-    return sm.CrossSectionLocationSettingsModel(
+    return sm.CrossSectionLocationSettings(
         **{
             "join_field_src": {
                 "method": "source_attribute",
@@ -48,7 +48,7 @@ def cross_section_location_settings():
 
 @pytest.fixture
 def import_settings(cross_section_location_settings):
-    settings = sm.ConversionSettingsModel(
+    settings = sm.ImportSettings(
         cross_section_location_mapping=cross_section_location_settings
     )
     return settings

@@ -47,7 +47,6 @@ from threedi_schematisation_editor.vector_data_importer.utils import ColumnImpor
 DISPLAY_NAME_FIELD = "display_name"
 DISPLAY_UNIT_FIELD = "display_unit"
 ALLOWED_METHODS_FIELD = "allowed_methods"
-EXLUCDED_METHODS_FIELD = "excluded_methods"
 
 
 class HighPrecisionFloat(float):
