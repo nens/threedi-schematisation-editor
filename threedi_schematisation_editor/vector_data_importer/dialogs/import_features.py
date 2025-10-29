@@ -43,7 +43,6 @@ from threedi_schematisation_editor.vector_data_importer.dialogs.import_widgets i
     create_widgets,
 )
 from threedi_schematisation_editor.vector_data_importer.dialogs.utils import (
-    CatchThreediWarnings,
     ColumnImportIndex,
     ImportFieldMappingUtils,
     JoinFieldsRow,
@@ -63,6 +62,9 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionDataProcessor,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
+    CatchThreediWarnings,
+)
 
 
 def create_tree_view(tree_view_model, tree_view, model_widgets):

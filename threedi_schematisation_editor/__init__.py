@@ -81,12 +81,6 @@ from threedi_schematisation_editor.utils import (
     progress_bar_callback_factory,
     set_wal_for_sqlite_mode,
 )
-from threedi_schematisation_editor.vector_data_importer.dialogs.import_features import (
-    ImportCrossSectionDataDialog,
-    ImportCrossSectionLocationDialog,
-    ImportFeaturesDialog,
-    ImportStructuresDialog,
-)
 from threedi_schematisation_editor.vector_data_importer.wizard import (
     ImportConduitWizard,
     ImportConnectionNodesWizard,

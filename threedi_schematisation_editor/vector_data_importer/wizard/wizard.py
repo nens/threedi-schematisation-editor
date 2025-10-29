@@ -18,7 +18,6 @@ import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.vector_data_importer.importers as vdi_importers
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from threedi_schematisation_editor.vector_data_importer.dialogs.utils import (
-    CatchThreediWarnings,
     create_font,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.pages import (
@@ -33,6 +32,9 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
     IntegrationSettingsWidget,
     PointToLIneConversionSettingsWidget,
     SettingsWidget,
+)
+from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
+    CatchThreediWarnings,
 )
 
 
