@@ -66,3 +66,12 @@ class CatchThreediWarnings:
 
         # Don't suppress any exceptions
         return False
+
+
+def create_font(dialog, point_size: int, bold: bool = False):
+    font = dialog.font()
+    font.setPointSize(point_size)
+    if bold:
+        font.setBold(True)
+        font.setWeight(75)
+    return font
