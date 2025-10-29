@@ -94,7 +94,9 @@ class SettingsPage(QWizardPage):
 
     def deserialize(self, data):
         """Load settings from serialized data"""
-        settings_widget_map = {widget.name: widget for widget in self.settings_widgets}
+        settings_widget_map = {
+            widget.model.name: widget for widget in self.settings_widgets
+        }
         for name, settings in data.items():
             if name in settings_widget_map:
                 settings_widget_map[name].deserialize(settings)

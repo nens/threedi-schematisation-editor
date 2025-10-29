@@ -3,7 +3,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from qgis.core import Qgis, QgsMapLayerProxyModel, QgsMessageLog
 from qgis.PyQt.QtWidgets import (
     QFileDialog,
@@ -135,22 +135,46 @@ class VDIWizard(QWizard):
         return self.settings_page.generic_settings.model.selected_layer
 
     def load_settings_from_json(self):
+        # TODO: take this outside of the wizard so that the processing
+        # algorithms can also use the validation
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Open Settings", str(Path.home()), "JSON Files (*.json)"
         )
         if file_path:
             with open(file_path, "r") as f:
-                settings = json.load(f)
+                try:
+                    json_settings = json.load(f)
+                except json.JSONDecodeError as e:
+                    QMessageBox.critical(
+                        self, "Error", f"File {file_path} is not a valid JSON file"
+                    )
+                    QgsMessageLog.logMessage(
+                        f"Cannot read file {file_path}: {e}",
+                        "Warning",
+                        Qgis.Warning,
+                    )
+                    return
             # Get the wizard instance and its pages
             try:
-                self.deserialize(settings)
+                settings = sm.ConversionSettingsModel(**json_settings)
+                self.deserialize(settings.model_dump())
                 QMessageBox.information(
                     self, "Success", "Settings loaded successfully!"
                 )
+            except ValidationError as e:
+                msg = "The following errors occurred while loading the settings:"
+                for error in e.errors():
+                    field_info = ".".join(error["loc"])
+                    if error["type"] != "missing":
+                        field_info += f" = {error['input']}"
+                    msg += f"\n{error['msg']}: {field_info}"
+                    QgsMessageLog.logMessage(f"{e}", "Warning", Qgis.Warning)
+                QMessageBox.critical(self, "Error", msg)
             except Exception as e:
                 QMessageBox.critical(
-                    self, "Error", f"Failed to load settings: {str(e)}"
+                    self, "Error", f"Could not load settings from {file_path}"
                 )
+                QgsMessageLog.logMessage(f"{e}", "Warning", Qgis.Warning)
 
     def deserialize(self, data):
         for page_id in self.pageIds():
