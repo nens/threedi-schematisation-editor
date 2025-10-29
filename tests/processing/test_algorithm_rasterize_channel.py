@@ -14,7 +14,7 @@ from threedi_schematisation_editor.processing.algorithm_rasterize_channels impor
 )
 
 
-DATA_DIR = Path(__file__).parent.parent
+DATA_DIR = Path(__file__).parent.joinpath('data')
 
 rasterize_channel_inputs = {
     'INPUT_CHANNELS': QgsProcessingFeatureSourceDefinition(
@@ -38,8 +38,8 @@ def test_water_depth_algorithm(alg_class: QgsProcessingAlgorithm, parameters: Di
     # Create the QGIS processing context & feedback
     context = QgsProcessingContext()
     feedback = QgsProcessingFeedback()
-
     output_file = Path(parameters["OUTPUT"])
+
     try:
         result = alg.run(parameters, context, feedback)
         assert result is not None
