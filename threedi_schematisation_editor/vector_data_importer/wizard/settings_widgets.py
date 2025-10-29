@@ -131,17 +131,20 @@ class ConnectionNodeSettingsWidget(SettingsWidget):
         # Create widgets
         self.create_nodes = QCheckBox("Create new connection nodes if needed")
         self.snap = QCheckBox("Snap to existing connection nodes within: ")
-        self.snap.setEnabled(False)
         self.snap_distance = QDoubleSpinBox()
         self.snap_distance.setSuffix(" m")
         self.snap_distance.setDecimals(1)
         self.snap_distance.setEnabled(False)
         self.snap_distance.setMinimum(sm.get_field_min(self.model, "snap_distance"))
         self.snap_distance.setMaximum(sm.get_field_max(self.model, "snap_distance"))
+        self.snap_distance.setMaximumWidth(100)  # Set maximum width
+        snap_layout = QHBoxLayout()
+        snap_layout.addWidget(self.snap)
+        snap_layout.addWidget(self.snap_distance)
+        snap_layout.addStretch()  # This pushes everything to the left
 
         # Connect widgets to model updates
         self.create_nodes.toggled.connect(self.update_create_nodes)
-        self.create_nodes.toggled.connect(self.on_create_nodes_toggled)
         self.snap.toggled.connect(self.update_snap_enabled)
         self.snap.toggled.connect(self.on_snap_toggled)
         self.snap_distance.valueChanged.connect(self.update_snap_distance)
@@ -149,14 +152,10 @@ class ConnectionNodeSettingsWidget(SettingsWidget):
         # Add widgets to layout
         layout = QVBoxLayout()
         layout.addWidget(self.create_nodes)
-        layout.addWidget(self.snap)
-        layout.addWidget(self.snap_distance)
+        layout.addLayout(snap_layout)
         self.setLayout(layout)
         # set all widgets to default values
         self.deserialize({})
-
-    def on_create_nodes_toggled(self, checked):
-        self.snap.setEnabled(checked)
 
     def on_snap_toggled(self, checked):
         self.snap_distance.setEnabled(checked)
