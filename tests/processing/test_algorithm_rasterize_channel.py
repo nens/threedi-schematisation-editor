@@ -15,7 +15,7 @@ from threedi_schematisation_editor.processing.algorithm_rasterize_channels impor
 )
 
 
-DATA_DIR = Path(__file__).parent.joinpath('data')
+DATA_DIR = (Path(__file__).parent / 'data').resolve()
 TMP_DIR = tempfile.TemporaryDirectory()
 
 
