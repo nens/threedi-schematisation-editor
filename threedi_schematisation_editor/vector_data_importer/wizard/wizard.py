@@ -261,7 +261,7 @@ class VDIWizard(QWizard):
                 handler.connect_handler_signals()
         for handler in handlers:
             handler.layer.triggerRepaint()
-        self.run_page.text.text_output.insertPlainText(f"{result_msg}")
+        self.run_page.text.insertPlainText(f"{result_msg}")
 
 
 class ImportWithCreateConnectionNodesWizard(VDIWizard):
