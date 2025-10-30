@@ -1,4 +1,5 @@
 import json
+import traceback
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
@@ -31,7 +32,8 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
     SettingsWidget,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
-    CatchThreediWarnings, create_font,
+    CatchThreediWarnings,
+    create_font,
 )
 
 
@@ -96,7 +98,6 @@ class VDIWizard(QWizard):
         self.setWindowTitle(self.wizard_title)
         # TODO is this the right size?
         self.resize(1000, 750)
-
         # add pages
         self.addPage(self.settings_page)
         if self.field_map_page:
@@ -104,26 +105,10 @@ class VDIWizard(QWizard):
         for page in self.connection_node_pages:
             self.addPage(page)
         self.addPage(self.run_page)
-        # self.currentIdChanged.connect(self.handle_page_change)
-        # self.map_finish_button()
-
-    def map_finish_button(self):
-        if self.import_finished:
-            self.setButtonText(self.FinishButton, "Finish")
-            finish_button = self.button(self.FinishButton)
-            finish_button.clicked.disconnect()
-            finish_button.clicked.connect(self.accept)  # accept() will close the dialog
-        else:
-            self.setButtonText(self.FinishButton, "Run")
-            finish_button = self.button(self.FinishButton)
-            finish_button.clicked.disconnect()
-            finish_button.clicked.connect(self.run_import)
-
-    def handle_page_change(self, _):
-        # Reset import_finished if we navigate to any page
-        if self.import_finished:
-            self.import_finished = False
-            self.map_finish_button()
+        self.setButtonText(self.FinishButton, "Run")
+        finish_button = self.button(self.FinishButton)
+        finish_button.clicked.disconnect()
+        finish_button.clicked.connect(self.run_import)
 
     @property
     def selected_layer(self):
@@ -227,7 +212,16 @@ class VDIWizard(QWizard):
     def run_import(self):
         text_output = self.run_page.text
         progress_bar = self.run_page.progress_bar
-        text_output.insertPlainText("Process settings")
+
+        def handle_progress(value=None, add=None, maximum=None):
+            if maximum is not None:
+                progress_bar.setMaximum(maximum)
+            if value:
+                progress_bar.setValue(value)
+            elif add:
+                progress_bar.setValue(progress_bar.value() + add)
+
+        handle_progress(value=0)
         settings = self.get_settings()
         selected_feat_ids = (
             self.selected_layer.selectedFeatureIds()
@@ -237,48 +231,38 @@ class VDIWizard(QWizard):
 
         # depends on model iirc
         handlers, layers = self.prepare_import()
-        text_output.appendPlainText(f"Load source and target layers")
         # needs settings and selected layer
-
         try:
-            text_output.appendPlainText("Disconnect layer handler signals:")
             for handler in handlers:
-                text_output.appendPlainText(f"\t- {handler.layer.name()}")
                 handler.disconnect_handler_signals()
             # depends on model
-            text_output.appendPlainText(f"Initialize importer")
             importer = self.get_importer(settings, layers)
+
             # put warnings in text box
             with CatchThreediWarnings() as warnings_catcher:
-                importer.import_features(selected_ids=selected_feat_ids)
+                importer.import_features(
+                    selected_ids=selected_feat_ids, progress_callback=handle_progress
+                )
             result_msg = (
                 "Import completed successfully.\n"
                 "The layers to which the data has been added are still in editing mode, "
                 "so you can review the changes before saving them to the layers."
                 f"{warnings_catcher.warnings_msg}"
             )
-            # QMessageBox.information(self, "Success", success_msg)
             self.import_finished = True
         except Exception as e:
-            self.import_finished = False
             result_msg = f"Import failed with traceback:\n{traceback.format_exc()}"
-            # QMessageBox.information(self, "Failure", f"Import failed due to the following error:\n{e}",)
             QgsMessageLog.logMessage(
                 f"Import failed with traceback:\n{traceback.format_exc()}",
                 "Warning",
                 Qgis.Warning,
             )
         finally:
-            text_output.appendPlainText("Reconnect layer handler signals:")
             for handler in handlers:
-                text_output.appendPlainText(f"\t- {handler.layer.name()}")
                 handler.connect_handler_signals()
-        text_output.appendPlainText("Repaint layers:")
         for handler in handlers:
-            text_output.appendPlainText(f"\t- {handler.layer.name()}")
             handler.layer.triggerRepaint()
-        text_output.appendPlainText(f"{result_msg}")
-        # self.map_finish_button()
+        self.run_page.text.text_output.insertPlainText(f"{result_msg}")
 
 
 class ImportWithCreateConnectionNodesWizard(VDIWizard):

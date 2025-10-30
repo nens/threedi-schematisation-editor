@@ -41,10 +41,12 @@ class Processor:
         raise NotImplementedError
 
     def process_features(
-        self, external_features: list[QgsFeature]
+        self, external_features: list[QgsFeature], progress_callback: callable = None
     ) -> dict[str, list[QgsFeature]]:
         new_features = defaultdict(list)
         for external_src_feat in external_features:
+            if progress_callback:
+                progress_callback(add=1)
             for name, features in self.process_feature(external_src_feat).items():
                 new_features[name] += features
         return new_features
@@ -139,7 +141,7 @@ class CrossSectionDataProcessor(Processor):
         return {}
 
     def process_features(
-        self, external_features: QgsFeature
+        self, external_features: QgsFeature, progress_callback: callable = None
     ) -> dict[str, list[QgsFeature]]:
         # match imported features to features in the schematisation
         self.build_target_map(external_features)
@@ -149,7 +151,7 @@ class CrossSectionDataProcessor(Processor):
         external_features = [
             self.get_feat_from_group(feat_group) for feat_group in grouped_features
         ]
-        return super().process_features(external_features)
+        return super().process_features(external_features, progress_callback)
 
     def build_target_map(self, features):
         self.source_feat_map.clear()

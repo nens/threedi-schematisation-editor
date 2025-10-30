@@ -520,10 +520,12 @@ class PipeIntegrator(LinearIntegrator):
             importer.target_gpkg,
         )
 
-    def integrate_features(self, input_feature_ids):
+    def integrate_features(self, input_feature_ids, progress_callback: callable = None):
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
         for conduit_feature in self.integrate_layer.getFeatures():
+            if progress_callback:
+                progress_callback(add=1)
             conduit_geom = get_src_geometry(conduit_feature)
             if conduit_geom is None:
                 continue
@@ -604,10 +606,12 @@ class ChannelIntegrator(LinearIntegrator):
     def spatial_layers(self):
         return super().spatial_layers + [self.cross_section_layer]
 
-    def integrate_features(self, input_feature_ids):
+    def integrate_features(self, input_feature_ids, progress_callback: callable = None):
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
         for conduit_feature in self.integrate_layer.getFeatures():
+            if progress_callback:
+                progress_callback(add=1)
             conduit_geom = get_src_geometry(conduit_feature)
             if conduit_geom is None:
                 continue

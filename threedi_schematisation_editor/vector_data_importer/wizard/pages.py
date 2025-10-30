@@ -183,6 +183,9 @@ class RunPage(QWizardPage):
         run_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         progress_bar = QProgressBar()
         self.progress_bar = progress_bar
+        progress_bar.setMinimum(0)
+        progress_bar.setTextVisible(True)
+        progress_bar.setFormat("import feature %v of %m")
         save_settings_button = QPushButton("Save template")
         save_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         save_settings_button.clicked.connect(self.on_save_button_clicked)
