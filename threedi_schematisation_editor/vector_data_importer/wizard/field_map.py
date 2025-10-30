@@ -36,7 +36,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog 
     ValueMapDialog,
 )
 
-BACKGROUND_COLOR = "#ff8888"
+ERROR_BACKGROUND_COLOR = "#ffffff"
 
 
 class FieldMapColumn(Enum):
@@ -362,9 +362,9 @@ class FieldMapDelegate(QStyledItemDelegate):
     @staticmethod
     def get_invalid_style_for_editor(editor):
         if isinstance(editor, QComboBox):
-            return f"QComboBox {{ background-color: {BACKGROUND_COLOR};}}"
+            return f"QComboBox {{ background-color: {ERROR_BACKGROUND_COLOR};}}"
         elif isinstance(editor, (QLineEdit, QgsFieldExpressionWidget)):
-            return f"QLineEdit {{ background-color: {BACKGROUND_COLOR};}}"
+            return f"QLineEdit {{ background-color: {ERROR_BACKGROUND_COLOR};}}"
         else:
             return ""
 

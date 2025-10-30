@@ -27,7 +27,7 @@ from qgis.PyQt.QtWidgets import (
 
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
-from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
+from threedi_schematisation_editor.vector_data_importer.wizard.field_map import (
     FieldMapColumn,
     FieldMapRow,
     FieldMapWidget,

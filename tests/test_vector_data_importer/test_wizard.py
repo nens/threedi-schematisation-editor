@@ -15,7 +15,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import ColumnImpor
 from threedi_schematisation_editor.vector_data_importer.wizard import (
     ImportStructureWizard,
 )
-from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
+from threedi_schematisation_editor.vector_data_importer.wizard.field_map import (
     FieldMapColumn,
     FieldMapModel,
     FieldMapRow,

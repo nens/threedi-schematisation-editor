@@ -22,7 +22,7 @@ from qgis.core import Qgis, QgsMessageLog
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     get_field_map_config_for_model_class_field,
 )
-from threedi_schematisation_editor.vector_data_importer.wizard.field_map_model import (
+from threedi_schematisation_editor.vector_data_importer.wizard.field_map import (
     FieldMapRow,
     FieldMapWidget,
 )
@@ -103,10 +103,11 @@ class SettingsPage(QWizardPage):
 
     def initializePage(self):
         # TODO: remove (just for testing)
-        self.generic_settings.layer_selector.setCurrentText("Culvert")
-        self.generic_settings.update_layer(
-            self.generic_settings.layer_selector.currentLayer()
-        )
+        # self.generic_settings.layer_selector.setCurrentText("Culvert")
+        # self.generic_settings.update_layer(
+        #     self.generic_settings.layer_selector.currentLayer()
+        # )
+        pass
 
     def isComplete(self) -> bool:
         # TODO fix state after loading json
@@ -181,6 +182,7 @@ class RunPage(QWizardPage):
         run_button.clicked.connect(self.on_run_import)
         run_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         progress_bar = QProgressBar()
+        self.progress_bar = progress_bar
         save_settings_button = QPushButton("Save template")
         save_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         save_settings_button.clicked.connect(self.on_save_button_clicked)
@@ -188,7 +190,7 @@ class RunPage(QWizardPage):
         self.text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.text.setReadOnly(True)
         layout = QHBoxLayout()
-        layout.addWidget(run_button)
+        # layout.addWidget(run_button)
         layout.addWidget(progress_bar)
         layout.addWidget(save_settings_button)
         main_layout = QVBoxLayout()

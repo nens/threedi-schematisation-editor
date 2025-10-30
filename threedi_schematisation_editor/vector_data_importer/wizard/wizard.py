@@ -104,8 +104,8 @@ class VDIWizard(QWizard):
         for page in self.connection_node_pages:
             self.addPage(page)
         self.addPage(self.run_page)
-        self.currentIdChanged.connect(self.handle_page_change)
-        self.map_finish_button()
+        # self.currentIdChanged.connect(self.handle_page_change)
+        # self.map_finish_button()
 
     def map_finish_button(self):
         if self.import_finished:
@@ -226,6 +226,7 @@ class VDIWizard(QWizard):
 
     def run_import(self):
         text_output = self.run_page.text
+        progress_bar = self.run_page.progress_bar
         text_output.insertPlainText("Process settings")
         settings = self.get_settings()
         selected_feat_ids = (
@@ -277,7 +278,7 @@ class VDIWizard(QWizard):
             text_output.appendPlainText(f"\t- {handler.layer.name()}")
             handler.layer.triggerRepaint()
         text_output.appendPlainText(f"{result_msg}")
-        self.map_finish_button()
+        # self.map_finish_button()
 
 
 class ImportWithCreateConnectionNodesWizard(VDIWizard):
