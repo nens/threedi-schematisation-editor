@@ -210,7 +210,6 @@ class VDIWizard(QWizard):
         )
 
     def run_import(self):
-        text_output = self.run_page.text
         progress_bar = self.run_page.progress_bar
 
         def handle_progress(value=None, add=None, maximum=None):

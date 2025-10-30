@@ -328,9 +328,6 @@ class FieldMapSettingsWidget(SettingsWidget):
         self.field_map_widget = FieldMapWidget(row_dict)
         # emit dataChanged signal when field map widget data changes
         self.field_map_widget.dataChanged.connect(self.dataChanged.emit)
-        self.table_view = self.field_map_widget.table_view
-        self.table_model = self.field_map_widget.table_model
-        self.table_delegate = self.field_map_widget.table_delegate
         self.field_map_widget.open_persistent_editors()
         layout = QVBoxLayout(self)
         layout.setSpacing(0)
@@ -390,21 +387,28 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
 
     def get_extra_layout(self) -> list[QBoxLayout]:
         snap_distance_label = QLabel("Snap to geometry object within:")
-        snap_distance = QDoubleSpinBox()
-        snap_distance.setSuffix(" m")
-        snap_distance.setDecimals(1)
-        snap_distance.setMinimum(sm.get_field_min(self.model, "snap_distance"))
-        snap_distance.setMaximum(sm.get_field_max(self.model, "snap_distance"))
-        snap_distance.setMaximumWidth(100)  # Set maximum width
-        snap_distance.valueChanged.connect(self.update_snap_distance)
+        self.snap_distance = QDoubleSpinBox()
+        self.snap_distance.setSuffix(" m")
+        self.snap_distance.setDecimals(1)
+        self.snap_distance.setMinimum(sm.get_field_min(self.model, "snap_distance"))
+        self.snap_distance.setMaximum(sm.get_field_max(self.model, "snap_distance"))
+        self.snap_distance.setMaximumWidth(100)  # Set maximum width
+        self.snap_distance.valueChanged.connect(self.update_snap_distance)
         snap_layout = QHBoxLayout()
         snap_layout.addWidget(snap_distance_label)
-        snap_layout.addWidget(snap_distance)
+        snap_layout.addWidget(self.snap_distance)
         snap_layout.addStretch()
         return snap_layout
 
     def update_snap_distance(self, value):
         self.model.snap_distance = value
+
+    def deserialize(self, data):
+        super().deserialize(data)
+        # load snap distance
+        updated_model = self.model.__class__(**data)
+        self.update_snap_distance(updated_model.snap_distance)
+        self.snap_distance.setValue(updated_model.snap_distance)
 
     @property
     def group_name(self):
@@ -412,23 +416,24 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
         return "Mapping"
 
     def _sync_auto_methods(self, top_left, bottom_right, roles):
+        table_model = self.field_map_widget.table_model
         if not roles or Qt.EditRole in roles:
             row_idx = top_left.row()
             other_row_idx = 0 if top_left.row() == 1 else 1
             method_column = FieldMapColumn.to_index(FieldMapColumn.METHOD)
-            method = self.table_model.data(
-                self.table_model.index(row_idx, method_column), Qt.EditRole
+            method = table_model.data(
+                table_model.index(row_idx, method_column), Qt.EditRole
             )
-            other_method = self.table_model.data(
-                self.table_model.index(other_row_idx, method_column), Qt.EditRole
+            other_method = table_model.data(
+                table_model.index(other_row_idx, method_column), Qt.EditRole
             )
             # check if this call was caused by changing the method to auto and if so set other method to auto
             if (
                 method == ColumnImportMethod.AUTO
                 and other_method != ColumnImportMethod.AUTO
             ):
-                self.table_model.setData(
-                    self.table_model.index(other_row_idx, method_column),
+                table_model.setData(
+                    table_model.index(other_row_idx, method_column),
                     ColumnImportMethod.AUTO,
                     Qt.EditRole,
                 )
