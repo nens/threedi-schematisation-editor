@@ -1,6 +1,8 @@
 from typing import Optional, Type
 
 from pydantic import BaseModel
+
+# todo: fix this import
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -18,6 +20,7 @@ from PyQt5.QtWidgets import (
     QWizardPage,
 )
 from qgis.core import Qgis, QgsMessageLog
+from qgis.PyQt.QtCore import Qt, pyqtSignal
 
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     get_field_map_config_for_model_class_field,
@@ -103,11 +106,11 @@ class SettingsPage(QWizardPage):
 
     def initializePage(self):
         # TODO: remove (just for testing)
-        # self.generic_settings.layer_selector.setCurrentText("Culvert")
-        # self.generic_settings.update_layer(
-        #     self.generic_settings.layer_selector.currentLayer()
-        # )
-        pass
+        self.generic_settings.layer_selector.setCurrentText("Culvert")
+        self.generic_settings.update_layer(
+            self.generic_settings.layer_selector.currentLayer()
+        )
+        # pass
 
     def isComplete(self) -> bool:
         # TODO fix state after loading json
@@ -169,6 +172,8 @@ class FieldMapPage(QWizardPage):
 
 
 class RunPage(QWizardPage):
+    cancel_requested = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.setTitle("Run")
@@ -178,31 +183,38 @@ class RunPage(QWizardPage):
         self.wizard().save_settings_to_json()
 
     def setup_ui(self):
-        run_button = QPushButton("Run")
-        run_button.clicked.connect(self.on_run_import)
-        run_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        progress_bar = QProgressBar()
-        self.progress_bar = progress_bar
-        progress_bar.setMinimum(0)
-        progress_bar.setTextVisible(True)
-        progress_bar.setFormat("import feature %v of %m")
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setFormat("import feature %v of %m")
         save_settings_button = QPushButton("Save template")
         save_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         save_settings_button.clicked.connect(self.on_save_button_clicked)
         self.text = QPlainTextEdit()
         self.text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.text.setReadOnly(True)
+        self.cancel_button = QPushButton("Cancel import")
+        self.cancel_button.setEnabled(False)
+        self.cancel_button.clicked.connect(self.on_cancel)
         layout = QHBoxLayout()
         # layout.addWidget(run_button)
-        layout.addWidget(progress_bar)
+        layout.addWidget(self.progress_bar)
         layout.addWidget(save_settings_button)
+        layout.addWidget(self.cancel_button)
         main_layout = QVBoxLayout()
         main_layout.addLayout(layout)
         main_layout.addWidget(self.text)
         self.setLayout(main_layout)
 
+    def on_cancel(self):
+        QgsMessageLog.logMessage("Cancel requested", "DEBUG", Qgis.Info)
+        self.cancel_requested.emit()
+        self.cancel_button.setEnabled(False)
+
     def on_run_import(self):
+        self.cancel_button.setEnabled(True)
         self.wizard().run_import()
+        self.cancel_button.setEnabled(False)
 
     def initializePage(self):
         settings = self.wizard().get_settings()

@@ -27,6 +27,7 @@ from threedi_schematisation_editor.utils import (
     get_next_feature_id,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (
+    CancellationToken,
     ColumnImportMethod,
     FeatureManager,
     get_field_config_value,
@@ -37,6 +38,8 @@ from threedi_schematisation_editor.warnings import ProcessorWarning
 
 
 class Processor:
+    _cancellation_token = CancellationToken()
+
     def process_feature(self, src_feat: QgsFeature) -> dict[str, list[QgsFeature]]:
         raise NotImplementedError
 
@@ -45,6 +48,9 @@ class Processor:
     ) -> dict[str, list[QgsFeature]]:
         new_features = defaultdict(list)
         for external_src_feat in external_features:
+            if self._cancellation_token.is_cancelled:  # Direct check of the token
+                self._cancellation_token.interrupt()
+                break
             if progress_callback:
                 progress_callback(add=1)
             for name, features in self.process_feature(external_src_feat).items():

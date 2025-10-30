@@ -71,7 +71,7 @@ class Importer:
             self.external_source.getFeature(feat_id) for feat_id in input_feature_ids
         ]
         if progress_callback:
-            progress_callback(maximum=len(external_features))
+            progress_callback(value=1, maximum=len(external_features))
         processed_features = self.processor.process_features(
             external_features, progress_callback
         )

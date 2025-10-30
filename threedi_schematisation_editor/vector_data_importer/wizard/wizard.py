@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 
 from pydantic import BaseModel, ValidationError
 from qgis.core import Qgis, QgsMapLayerProxyModel, QgsMessageLog
+from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
 from qgis.PyQt.QtWidgets import (
     QFileDialog,
     QLabel,
@@ -18,6 +19,7 @@ from qgis.PyQt.QtWidgets import (
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.vector_data_importer.importers as vdi_importers
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
+from threedi_schematisation_editor.vector_data_importer.utils import CancellationToken
 from threedi_schematisation_editor.vector_data_importer.wizard.pages import (
     FieldMapPage,
     RunPage,
@@ -35,6 +37,46 @@ from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
     CatchThreediWarnings,
     create_font,
 )
+
+
+class ImportWorker(QObject):
+    progress = pyqtSignal(dict)
+    finished = pyqtSignal(str, bool)  # message, success
+
+    def __init__(self, callable_func, cancellation_token):
+        super().__init__()
+        self.callable_func = callable_func
+        self.cancellation_token = cancellation_token
+
+    def handle_progress(self, value=None, add=None, maximum=None):
+        self.progress.emit({"value": value, "add": add, "maximum": maximum})
+
+    def run(self):
+        try:
+            # Import features with warning catching
+            with CatchThreediWarnings() as warnings_catcher:
+                self.callable_func(progress_callback=self.handle_progress)
+            if self.cancellation_token.was_interrupted:
+                result_msg = "Import was cancelled.\n"
+            else:
+                result_msg = "Import completed successfully.\n"
+
+            result_msg += (
+                "The layers to which the data has been added are still in editing mode, "
+                "so you can review the changes before saving them to the layers."
+                f"{warnings_catcher.warnings_msg}"
+            )
+            success = True
+
+        except Exception as e:
+            result_msg = f"Import failed with traceback:\n{traceback.format_exc()}"
+            QgsMessageLog.logMessage(
+                f"Import failed with traceback:\n{traceback.format_exc()}",
+                "Warning",
+                Qgis.Warning,
+            )
+            success = False
+        self.finished.emit(result_msg, success)
 
 
 class VDIWizard(QWizard):
@@ -105,10 +147,10 @@ class VDIWizard(QWizard):
         for page in self.connection_node_pages:
             self.addPage(page)
         self.addPage(self.run_page)
-        self.setButtonText(self.FinishButton, "Run")
-        finish_button = self.button(self.FinishButton)
-        finish_button.clicked.disconnect()
-        finish_button.clicked.connect(self.run_import)
+        self.setButtonText(self.FinishButton, "Run import")
+        self.finish_button = self.button(self.FinishButton)
+        self.finish_button.clicked.disconnect()
+        self.finish_button.clicked.connect(self.run_import)
 
     @property
     def selected_layer(self):
@@ -210,58 +252,70 @@ class VDIWizard(QWizard):
         )
 
     def run_import(self):
+        self.finish_button.setEnabled(False)
+        self.run_page.cancel_button.setEnabled(True)
         progress_bar = self.run_page.progress_bar
 
-        def handle_progress(value=None, add=None, maximum=None):
-            if maximum is not None:
-                progress_bar.setMaximum(maximum)
-            if value:
-                progress_bar.setValue(value)
-            elif add:
-                progress_bar.setValue(progress_bar.value() + add)
-
-        handle_progress(value=0)
+        # handle_progress(value=0)
         settings = self.get_settings()
         selected_feat_ids = (
             self.selected_layer.selectedFeatureIds()
             if self.use_selected_features
             else None
         )
-
-        # depends on model iirc
         handlers, layers = self.prepare_import()
-        # needs settings and selected layer
-        try:
-            for handler in handlers:
-                handler.disconnect_handler_signals()
-            # depends on model
-            importer = self.get_importer(settings, layers)
+        for handler in handlers:
+            handler.disconnect_handler_signals()
 
-            # put warnings in text box
-            with CatchThreediWarnings() as warnings_catcher:
-                importer.import_features(
-                    selected_ids=selected_feat_ids, progress_callback=handle_progress
-                )
-            result_msg = (
-                "Import completed successfully.\n"
-                "The layers to which the data has been added are still in editing mode, "
-                "so you can review the changes before saving them to the layers."
-                f"{warnings_catcher.warnings_msg}"
-            )
-            self.import_finished = True
-        except Exception as e:
-            result_msg = f"Import failed with traceback:\n{traceback.format_exc()}"
-            QgsMessageLog.logMessage(
-                f"Import failed with traceback:\n{traceback.format_exc()}",
-                "Warning",
-                Qgis.Warning,
-            )
-        finally:
+        importer = self.get_importer(settings, layers)
+
+        # Connect cancel button
+        cancellation_token = CancellationToken()
+        self.run_page.cancel_requested.connect(cancellation_token.cancel)
+        importer.processor._cancellation_token = cancellation_token
+        if importer.integrator:
+            importer.integrator._cancellation_token = cancellation_token
+
+        # Setup worker and thread
+        import_callable = lambda progress_callback: importer.import_features(
+            selected_ids=selected_feat_ids, progress_callback=progress_callback
+        )
+        self.thread = QThread()
+        self.worker = ImportWorker(import_callable, cancellation_token)
+        self.worker.moveToThread(self.thread)
+
+        # Connect signals
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        # Connect progress updates
+        def update_progress(progress_dict):
+            QgsMessageLog.logMessage(f"{progress_dict}", "DEBUG", Qgis.Info)
+            if progress_dict["maximum"] is not None:
+                progress_bar.setMaximum(progress_dict["maximum"])
+            if progress_dict["value"]:
+                progress_bar.setValue(progress_dict["value"])
+            elif progress_dict["add"]:
+                progress_bar.setValue(progress_bar.value() + progress_dict["add"])
+
+        self.worker.progress.connect(update_progress)
+
+        # Connect finish handling
+        def handle_finished(result_msg, success):
+            self.run_page.text.insertPlainText(result_msg)
+            self.run_page.cancel_button.setEnabled(False)
             for handler in handlers:
                 handler.connect_handler_signals()
-        for handler in handlers:
-            handler.layer.triggerRepaint()
-        self.run_page.text.insertPlainText(f"{result_msg}")
+                handler.layer.triggerRepaint()
+            self.run_page.cancel_button.setEnabled(False)
+            self.finish_button.setEnabled(True)
+
+        self.worker.finished.connect(handle_finished)
+
+        # Start thread
+        self.thread.start()
 
 
 class ImportWithCreateConnectionNodesWizard(VDIWizard):

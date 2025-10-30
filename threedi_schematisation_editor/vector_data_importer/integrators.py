@@ -19,9 +19,9 @@ from threedi_schematisation_editor.vector_data_importer.settings_models import (
 from threedi_schematisation_editor.vector_data_importer.utils import (
     DEFAULT_INTERSECTION_BUFFER,
     DEFAULT_INTERSECTION_BUFFER_SEGMENTS,
+    CancellationToken,
     FeatureManager,
     get_field_config_value,
-    get_float_value_from_feature,
     get_src_geometry,
     update_attributes,
 )
@@ -38,6 +38,8 @@ class LinearIntegratorStructureData:
 
 class LinearIntegrator:
     """Integrate linear structures onto a conduit (channel or pipe)"""
+
+    _cancellation_token = CancellationToken()
 
     def __init__(
         self,
@@ -524,6 +526,9 @@ class PipeIntegrator(LinearIntegrator):
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
         for conduit_feature in self.integrate_layer.getFeatures():
+            if self._cancellation_token.is_cancelled:  # Direct check of the token
+                self._cancellation_token.interrupt()
+                break
             if progress_callback:
                 progress_callback(add=1)
             conduit_geom = get_src_geometry(conduit_feature)
@@ -610,6 +615,9 @@ class ChannelIntegrator(LinearIntegrator):
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
         for conduit_feature in self.integrate_layer.getFeatures():
+            if self._cancellation_token.is_cancelled:  # Direct check of the token
+                self._cancellation_token.interrupt()
+                break
             if progress_callback:
                 progress_callback(add=1)
             conduit_geom = get_src_geometry(conduit_feature)
