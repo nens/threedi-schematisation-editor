@@ -12,10 +12,8 @@ from qgis.core import (
 from threedi_schematisation_editor.processing.algorithm_rasterize_channels import (
     RasterizeChannelsAlgorithm,
 )
-from threedi_schematisation_editor.utils import gpkg_layer
 
 DATA_DIR = Path(__file__).parent / 'data'
-TMP_DIR = tempfile.TemporaryDirectory()
 
 gpkg_path = (DATA_DIR / 'rasterize_channels_test_inputs.gpkg').resolve()
 assert gpkg_path.is_file()
@@ -28,7 +26,7 @@ rasterize_channel_inputs = {
     'INPUT_CROSS_SECTION_LOCATIONS': cross_section_location_features,
     'INPUT_DEM': None,
     'PIXEL_SIZE': 0.1,
-    'OUTPUT': str(Path(TMP_DIR.name) / "rasterized_channels.tif"),
+    'OUTPUT': str(DATA_DIR / "rasterized_channels.tif"),
 }
 
 
