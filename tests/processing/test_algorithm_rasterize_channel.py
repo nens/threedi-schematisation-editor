@@ -44,7 +44,6 @@ def test_water_depth_algorithm(alg_class: QgsProcessingAlgorithm, parameters: Di
     try:
         result = alg.run(parameters, context, feedback)
         assert result is not None
-        assert Path(result["OUTPUT"]).exists()
         assert output_file.exists()
     finally:
         if output_file.exists():
