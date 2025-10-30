@@ -8,7 +8,6 @@ from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingContext,
     QgsProcessingFeedback,
-    QgsProcessingFeatureSourceDefinition
 )
 from threedi_schematisation_editor.processing.algorithm_rasterize_channels import (
     RasterizeChannelsAlgorithm,
@@ -20,10 +19,8 @@ TMP_DIR = tempfile.TemporaryDirectory()
 
 gpkg_path = (DATA_DIR / 'rasterize_channels_test_inputs.gpkg').resolve()
 assert gpkg_path.is_file()
-channel_features = QgsProcessingFeatureSourceDefinition(str(gpkg_path) + '|layername=channel')
-cross_section_location_features = QgsProcessingFeatureSourceDefinition(
-    str(gpkg_path) + '|layername=cross_section_location'
-)
+channel_features = str(gpkg_path) + '|layername=channel'
+cross_section_location_features = str(gpkg_path) + '|layername=cross_section_location'
 
 
 rasterize_channel_inputs = {

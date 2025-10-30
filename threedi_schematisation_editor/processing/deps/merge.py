@@ -158,86 +158,87 @@ def merge_rasters(
 
     tile_size in pixels
     """
-    temp_dir = TemporaryDirectory()
-    temp_dir_path = Path(temp_dir.name)
+    with TemporaryDirectory() as temp_dir:
 
-    # resample rasters if their pixel size is different from output_pixel_size (tiny difference is allowed)
-    resampled_rasters = []
-    for i, raster in enumerate(rasters):
-        # GeoTransform: (ulx, xres, xskew, uly, yskew, yres)
-        _, xres, _, _, _, yres = raster.GetGeoTransform()
-        if abs(abs(xres) - abs(output_pixel_size)) > 1/(1000*tile_size) or \
-                abs(abs(yres) - abs(output_pixel_size)) > 1/(1000*tile_size):
-            print("Resampling...")
-            resampled_raster_file_name = str(temp_dir_path / f"resampled_raster_{i}.tif")
-            options = gdal.WarpOptions(xRes=output_pixel_size, yRes=output_pixel_size, resampleAlg="near")
-            resampled_raster = gdal.Warp(resampled_raster_file_name, raster, options=options)
-            resampled_rasters.append(resampled_raster)
-        else:
-            resampled_rasters.append(raster)
-    bboxes = [bounding_box(raster) for raster in resampled_rasters]
-    minx, miny, maxx, maxy = MultiPolygon(bboxes).bounds
-    ncols = int(np.ceil(((maxx - minx) / abs(output_pixel_size)) / tile_size))
-    nrows = int(np.ceil(((maxy - miny) / abs(output_pixel_size)) / tile_size))
-    ntiles = ncols * nrows
-    geo_tile_size_x = tile_size * abs(output_pixel_size)
-    geo_tile_size_y = tile_size * abs(output_pixel_size)
+        temp_dir_path = Path(temp_dir)
 
-    # GeoTransform: (ulx, xres, xskew, uly, yskew, yres/)
-    _, _, xskew, _, yskew, _ = resampled_rasters[0].GetGeoTransform()
-    srs = resampled_rasters[0].GetProjection()
-    tiles = []
-    rows = []
-    for tile_row in range(nrows):
-        # print(f"tile_row: {tile_row}")
-        tile_maxy = maxy - tile_row * geo_tile_size_y
-        for tile_col in range(ncols):
-            # print(f"    tile_col: {tile_col}")
-            tile_minx = minx + tile_col * geo_tile_size_x
-            tile_polygon = box(
-                tile_minx,
-                tile_maxy - geo_tile_size_y,
-                tile_minx + geo_tile_size_x,
-                tile_maxy,
-            )
-            # print(f"    tile_polygon.bounds: {tile_polygon.bounds}")
-            intersecting_rasters = [
-                raster
-                for i, raster in enumerate(resampled_rasters)
-                if tile_polygon.intersects(bboxes[i])
-            ]
-            if len(intersecting_rasters) == 0:
-                continue
+        # resample rasters if their pixel size is different from output_pixel_size (tiny difference is allowed)
+        resampled_rasters = []
+        for i, raster in enumerate(rasters):
+            # GeoTransform: (ulx, xres, xskew, uly, yskew, yres)
+            _, xres, _, _, _, yres = raster.GetGeoTransform()
+            if abs(abs(xres) - abs(output_pixel_size)) > 1/(1000*tile_size) or \
+                    abs(abs(yres) - abs(output_pixel_size)) > 1/(1000*tile_size):
+                print("Resampling...")
+                resampled_raster_file_name = str(temp_dir_path / f"resampled_raster_{i}.tif")
+                options = gdal.WarpOptions(xRes=output_pixel_size, yRes=output_pixel_size, resampleAlg="near")
+                resampled_raster = gdal.Warp(resampled_raster_file_name, raster, options=options)
+                resampled_rasters.append(resampled_raster)
             else:
-                tile = tile_aggregate(
-                    rasters=intersecting_rasters,
-                    bbox=tile_polygon.bounds,
-                    aggregation_method=aggregation_method,
-                    output_nodatavalue=output_nodatavalue,
+                resampled_rasters.append(raster)
+        bboxes = [bounding_box(raster) for raster in resampled_rasters]
+        minx, miny, maxx, maxy = MultiPolygon(bboxes).bounds
+        ncols = int(np.ceil(((maxx - minx) / abs(output_pixel_size)) / tile_size))
+        nrows = int(np.ceil(((maxy - miny) / abs(output_pixel_size)) / tile_size))
+        ntiles = ncols * nrows
+        geo_tile_size_x = tile_size * abs(output_pixel_size)
+        geo_tile_size_y = tile_size * abs(output_pixel_size)
+
+        # GeoTransform: (ulx, xres, xskew, uly, yskew, yres/)
+        _, _, xskew, _, yskew, _ = resampled_rasters[0].GetGeoTransform()
+        srs = resampled_rasters[0].GetProjection()
+        tiles = []
+        rows = []
+        for tile_row in range(nrows):
+            # print(f"tile_row: {tile_row}")
+            tile_maxy = maxy - tile_row * geo_tile_size_y
+            for tile_col in range(ncols):
+                # print(f"    tile_col: {tile_col}")
+                tile_minx = minx + tile_col * geo_tile_size_x
+                tile_polygon = box(
+                    tile_minx,
+                    tile_maxy - geo_tile_size_y,
+                    tile_minx + geo_tile_size_x,
+                    tile_maxy,
                 )
-            tile_path = temp_dir_path / f"tile_row_{tile_row}_col_{tile_col}.tif"
-            geotransform = (tile_minx, output_pixel_size, xskew, tile_maxy, yskew, -1 * output_pixel_size)
-            write_raster(
-                output_filename=tile_path,
-                geotransform=geotransform,
-                srs=srs,
-                data=tile,
-            )
-            tiles.append(str(tile_path))
-            if feedback:
-                feedback.setProgress((tile_row * ncols + tile_col + 1) / ntiles * 100)
-    if feedback:
-        feedback.setProgressText("Step 4/4: Writing output raster to disk...")
-    vrt_path = temp_dir_path / "result.vrt"
-    vrt_options = {}
-    build_vrt(output_filepath=str(vrt_path), raster_filepaths=tiles, **vrt_options)
-    vrt = gdal.Open(vrt_path)
-    callback = progress_gdal_to_qgis if feedback else None
-    callback_data = feedback if feedback else None
-    gdal.Translate(
-        destName=output_filename,
-        srcDS=vrt,
-        creationOptions=["COMPRESS=DEFLATE", "PREDICTOR=2", "ZLEVEL=9"],
-        callback=callback,
-        callback_data=callback_data
-    )
+                # print(f"    tile_polygon.bounds: {tile_polygon.bounds}")
+                intersecting_rasters = [
+                    raster
+                    for i, raster in enumerate(resampled_rasters)
+                    if tile_polygon.intersects(bboxes[i])
+                ]
+                if len(intersecting_rasters) == 0:
+                    continue
+                else:
+                    tile = tile_aggregate(
+                        rasters=intersecting_rasters,
+                        bbox=tile_polygon.bounds,
+                        aggregation_method=aggregation_method,
+                        output_nodatavalue=output_nodatavalue,
+                    )
+                tile_path = temp_dir_path / f"tile_row_{tile_row}_col_{tile_col}.tif"
+                geotransform = (tile_minx, output_pixel_size, xskew, tile_maxy, yskew, -1 * output_pixel_size)
+                write_raster(
+                    output_filename=tile_path,
+                    geotransform=geotransform,
+                    srs=srs,
+                    data=tile,
+                )
+                tiles.append(str(tile_path))
+                if feedback:
+                    feedback.setProgress((tile_row * ncols + tile_col + 1) / ntiles * 100)
+        if feedback:
+            feedback.setProgressText("Step 4/4: Writing output raster to disk...")
+        vrt_path = temp_dir_path / "result.vrt"
+        vrt_options = {}
+        build_vrt(output_filepath=str(vrt_path), raster_filepaths=tiles, **vrt_options)
+        vrt = gdal.Open(vrt_path)
+        callback = progress_gdal_to_qgis if feedback else None
+        callback_data = feedback if feedback else None
+        gdal.Translate(
+            destName=output_filename,
+            srcDS=vrt,
+            creationOptions=["COMPRESS=DEFLATE", "PREDICTOR=2", "ZLEVEL=9"],
+            callback=callback,
+            callback_data=callback_data
+        )
