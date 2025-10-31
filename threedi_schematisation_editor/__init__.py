@@ -177,7 +177,6 @@ class ThreediSchematisationEditorPlugin:
         self.toggle_active_project_actions()
         self.active_schematisation_changed()
         self.ensure_sqlite_wal_status()
-        self.action_import_features.menu().actions()[4].trigger()
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
