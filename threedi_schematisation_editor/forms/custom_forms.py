@@ -862,7 +862,7 @@ class AbstractFormWithTable(AbstractBaseForm):
         """Slot for handling deletion of the selected rows."""
         selected_rows = {idx.row() for idx in self.table.selectedIndexes()}
         for row_number in sorted(selected_rows, reverse=True):
-            self.table.removeRow(row_number)
+            self.table.remove_row(row_number)
         self.save_table_edits()
 
     def paste_table_rows(self):
@@ -1355,11 +1355,11 @@ class AbstractFormWithXSTable(AbstractBaseForm):
             idx.row() for idx in self.cross_section_table.selectedIndexes()
         }
         for row_number in sorted(selected_rows, reverse=True):
-            self.cross_section_table.removeRow(row_number)
+            self.cross_section_table.remove_row(row_number)
             if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
                 frict_vege_last_row_number = row_number - 1
-                self.cross_section_friction.removeRow(frict_vege_last_row_number)
-                self.cross_section_vegetation.removeRow(frict_vege_last_row_number)
+                self.cross_section_friction.remove_row(frict_vege_last_row_number)
+                self.cross_section_vegetation.remove_row(frict_vege_last_row_number)
         self.save_cross_section_table_edits()
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
             self.save_cross_section_table_edits("cross_section_friction_values")

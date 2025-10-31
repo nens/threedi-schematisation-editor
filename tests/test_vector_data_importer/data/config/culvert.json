@@ -81,15 +81,24 @@
       "source_attribute": "tags"
     }
   },
-  "conversion_settings": {
-    "use_snapping": true,
-    "snapping_distance": 0.1,
-    "create_connection_nodes": true,
-    "length_source_field": "length",
-    "length_fallback_value": 12.0,
-    "azimuth_source_field": "",
-    "azimuth_fallback_value": 90,
-    "edit_channels": true
+  "connection_nodes": {
+    "snap": true,
+    "snap_distance": 0.1,
+    "create_nodes": true
+  },
+  "point_to_line_conversion": {
+    "length": {
+      "method": "source_attribute",
+      "source_attribute": "length",
+      "default_value": 12
+    },
+    "azimuth": {
+      "method": "default",
+      "default_value": 90
+    }
+  },
+  "integration": {
+    "integration_mode": "channels"
   },
   "connection_node_fields": {
     "id": {

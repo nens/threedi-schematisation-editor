@@ -2,6 +2,7 @@ import warnings
 from _operator import attrgetter, itemgetter
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import Optional, Type
 
 from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes
 
@@ -12,11 +13,15 @@ from threedi_schematisation_editor.utils import (
     gpkg_layer,
     spatial_index,
 )
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
+    IntegrationMode,
+)
 from threedi_schematisation_editor.vector_data_importer.utils import (
     DEFAULT_INTERSECTION_BUFFER,
     DEFAULT_INTERSECTION_BUFFER_SEGMENTS,
+    CancellationToken,
     FeatureManager,
-    get_float_value_from_feature,
+    get_field_config_value,
     get_src_geometry,
     update_attributes,
 )
@@ -34,6 +39,8 @@ class LinearIntegratorStructureData:
 class LinearIntegrator:
     """Integrate linear structures onto a conduit (channel or pipe)"""
 
+    _cancellation_token = CancellationToken()
+
     def __init__(
         self,
         conduit_layer,
@@ -42,8 +49,7 @@ class LinearIntegrator:
         target_manager,
         node_layer,
         node_manager,
-        fields_configurations,
-        conversion_settings,
+        import_settings,
         external_source,
         target_gpkg,
         conduit_model_cls,
@@ -51,8 +57,10 @@ class LinearIntegrator:
         self.external_source = external_source
         self.conduit_model_cls = conduit_model_cls
         self.target_model_cls = target_model_cls
-        self.fields_configurations = fields_configurations
-        self.conversion_settings = conversion_settings
+        self.fields_configurations = import_settings.fields
+        self.point_to_line_settings = import_settings.point_to_line_conversion
+        self.snapping_distance = import_settings.integration.snap_distance
+        self.minimum_conduit_length = import_settings.integration.min_length
         # set schematisation layer to add - if any are missing retrieve them from the gpkg
         self.integrate_layer = (
             conduit_layer
@@ -84,6 +92,25 @@ class LinearIntegrator:
         self.setup_fields_map()
         self.setup_spatial_indexes()
         self.setup_node_by_location()
+
+    @staticmethod
+    def get_integrator(
+        integrate_layer, cross_section_layer, importer
+    ) -> Optional["LinearIntegrator"]:
+        integration_mode = importer.import_settings.integration.integration_mode
+        if integration_mode == IntegrationMode.CHANNELS:
+            return ChannelIntegrator.from_importer(
+                integrate_layer, cross_section_layer, importer
+            )
+        elif (
+            integration_mode == IntegrationMode.PIPES
+            and importer.target_model_cls
+            in [
+                dm.Weir,
+                dm.Orifice,
+            ]
+        ):
+            return PipeIntegrator.from_importer(integrate_layer, importer)
 
     @staticmethod
     def get_substring_geometry(curve, start_distance, end_distance, simplify=False):
@@ -169,8 +196,9 @@ class LinearIntegrator:
         structure_feat,
         conduit_feat,
         snapping_distance,
-        length_source_field,
-        length_fallback_value,
+        length_config,
+        # length_source_field,
+        # length_fallback_value,
     ):
         structure_geom = structure_feat.geometry()
         conduit_geometry = conduit_feat.geometry()
@@ -180,9 +208,10 @@ class LinearIntegrator:
         if not structure_buffer.intersects(conduit_geometry):
             return
         intersection_m = conduit_geometry.lineLocatePoint(structure_geom)
-        structure_length = get_float_value_from_feature(
-            structure_feat, length_source_field, length_fallback_value
-        )
+        structure_length = get_field_config_value(length_config, structure_feat)
+        # structure_length = get_float_value_from_feature(
+        #     structure_feat, length_source_field, length_fallback_value
+        # )
         return LinearIntegratorStructureData(
             conduit_feat["id"], structure_feat, intersection_m, structure_length
         )
@@ -210,7 +239,7 @@ class LinearIntegrator:
                 conduit_structure = LinearIntegrator.get_conduit_structure_from_line(
                     structure_feat,
                     conduit_feat,
-                    self.conversion_settings.snapping_distance,
+                    self.snapping_distance,
                 )
             elif (
                 structure_feat.geometry().type()
@@ -219,9 +248,8 @@ class LinearIntegrator:
                 conduit_structure = LinearIntegrator.get_conduit_structure_from_point(
                     structure_feat,
                     conduit_feat,
-                    self.conversion_settings.snapping_distance,
-                    self.conversion_settings.length_source_field,
-                    self.conversion_settings.length_fallback_value,
+                    self.snapping_distance,
+                    self.point_to_line_settings.length,
                 )
             else:
                 continue
@@ -303,7 +331,7 @@ class LinearIntegrator:
                 substring_geom, self.layer_fields_mapping[self.target_layer.name()]
             )
             update_attributes(
-                self.fields_configurations[self.target_model_cls],
+                self.fields_configurations,
                 self.target_model_cls,
                 cs.feature,
                 substring_feat,
@@ -441,7 +469,7 @@ class LinearIntegrator:
         conduit_structures = LinearIntegrator.fix_structure_placement(
             conduit_structures,
             conduit_geom,
-            self.conversion_settings.minimum_channel_length,
+            self.minimum_conduit_length,
         )
         added_features[self.target_layer.name()] = self.place_structures_on_conduit(
             conduit_structures, conduit_feat, simplify_structure_geometry
@@ -489,16 +517,20 @@ class PipeIntegrator(LinearIntegrator):
             importer.processor.target_manager,
             importer.node_layer,
             importer.processor.node_manager,
-            importer.fields_configurations,
-            importer.conversion_settings,
+            importer.import_settings,
             importer.external_source,
             importer.target_gpkg,
         )
 
-    def integrate_features(self, input_feature_ids):
+    def integrate_features(self, input_feature_ids, progress_callback: callable = None):
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
         for conduit_feature in self.integrate_layer.getFeatures():
+            if self._cancellation_token.is_cancelled:  # Direct check of the token
+                self._cancellation_token.interrupt()
+                break
+            if progress_callback:
+                progress_callback(add=1)
             conduit_geom = get_src_geometry(conduit_feature)
             if conduit_geom is None:
                 continue
@@ -527,8 +559,7 @@ class ChannelIntegrator(LinearIntegrator):
         target_manager,
         node_layer,
         node_manager,
-        fields_configurations,
-        conversion_settings,
+        import_settings,
         external_source,
         target_gpkg,
         cross_section_layer,
@@ -546,8 +577,7 @@ class ChannelIntegrator(LinearIntegrator):
             target_manager,
             node_layer,
             node_manager,
-            fields_configurations,
-            conversion_settings,
+            import_settings,
             external_source,
             target_gpkg,
             conduit_model_cls=dm.Channel,
@@ -563,8 +593,7 @@ class ChannelIntegrator(LinearIntegrator):
             importer.processor.target_manager,
             importer.node_layer,
             importer.processor.node_manager,
-            importer.fields_configurations,
-            importer.conversion_settings,
+            importer.import_settings,
             importer.external_source,
             importer.target_gpkg,
             cross_section_layer,
@@ -582,10 +611,15 @@ class ChannelIntegrator(LinearIntegrator):
     def spatial_layers(self):
         return super().spatial_layers + [self.cross_section_layer]
 
-    def integrate_features(self, input_feature_ids):
+    def integrate_features(self, input_feature_ids, progress_callback: callable = None):
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
         for conduit_feature in self.integrate_layer.getFeatures():
+            if self._cancellation_token.is_cancelled:  # Direct check of the token
+                self._cancellation_token.interrupt()
+                break
+            if progress_callback:
+                progress_callback(add=1)
             conduit_geom = get_src_geometry(conduit_feature)
             if conduit_geom is None:
                 continue
