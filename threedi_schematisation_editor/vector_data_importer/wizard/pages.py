@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QHeaderView,
+    QLabel,
     QMessageBox,
     QPlainTextEdit,
     QProgressBar,
@@ -32,15 +33,54 @@ from threedi_schematisation_editor.vector_data_importer.wizard.field_map import 
 from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets import (
     ConnectionNodeSettingsWidget,
     FieldMapSettingsWidget,
-    GenericSettingsWidget,
+    LayerSettingsWidget,
 )
+
+
+class StartPage(QWizardPage):
+    def __init__(
+        self,
+        layer_filter=None,
+    ):
+        super().__init__()
+        self.setTitle("Source layer")
+        self.setup_ui(layer_filter)
+
+    def setup_ui(self, layer_filter):
+        self.layer_settings_widget = LayerSettingsWidget(layer_filter)
+        self.layer_settings_widget.layer_changed.connect(self.completeChanged)
+        layer_box = QGroupBox("Select layer to import")
+        layer_box.setLayout(self.layer_settings_widget.layout())
+        load_box = QGroupBox("Load import configuration from template (optional)")
+        load_settings_button = QPushButton("Load settings")
+        load_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        load_settings_button.clicked.connect(self.on_load_button_clicked)
+        self.loaded_status = QLabel("No import configuration loaded")
+        layout = QVBoxLayout()
+        layout.addWidget(load_settings_button)
+        layout.addWidget(self.loaded_status)
+        load_box.setLayout(layout)
+        layout = QVBoxLayout(self)
+        layout.addWidget(layer_box)
+        layout.addWidget(load_box)
+
+    def on_load_button_clicked(self):
+        file_path = self.wizard().load_settings_from_json()
+        if file_path:
+            self.loaded_status.setText(f"Import configuration loaded from {file_path}")
+
+    def isComplete(self) -> bool:
+        return self.layer_settings_widget.selected_layer not in [None, ""]
+
+    @property
+    def selected_layer(self):
+        return self.layer_settings_widget.selected_layer
 
 
 class SettingsPage(QWizardPage):
     def __init__(
         self,
         settings_widgets_classes: Optional[list[Type[QWidget]]] = None,
-        layer_filter=None,
     ):
         super().__init__()
         self.setTitle("Import settings")
@@ -49,25 +89,13 @@ class SettingsPage(QWizardPage):
             self.settings_widgets = [
                 widget_class(parent=self) for widget_class in settings_widgets_classes
             ]
-        self.setup_ui(layer_filter)
+        self.setup_ui()
 
     def on_load_button_clicked(self):
         self.wizard().load_settings_from_json()
 
-    def setup_ui(self, layer_filter):
+    def setup_ui(self):
         layout = QVBoxLayout(self)
-
-        # Top row
-        self.generic_settings = GenericSettingsWidget(layer_filter)
-        self.generic_settings.layer_changed.connect(self.update_layer)
-        self.generic_settings.layer_changed.connect(self.completeChanged)
-        load_settings_button = QPushButton("Load settings")
-        load_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        load_settings_button.clicked.connect(self.on_load_button_clicked)
-        top_layout = QHBoxLayout()
-        top_layout.addWidget(self.generic_settings)
-        top_layout.addWidget(load_settings_button)
-        layout.addLayout(top_layout)
         # add settings widgets
         for widget in self.settings_widgets:
             widget.dataChanged.connect(self.completeChanged)
@@ -76,7 +104,8 @@ class SettingsPage(QWizardPage):
             layout.addWidget(group_box)
         self.setLayout(layout)
 
-    def update_layer(self):
+    def initializePage(self):
+        # update layers just before showing
         layer = self.wizard().selected_layer
         for widget in self.settings_widgets:
             if isinstance(widget, FieldMapSettingsWidget):
@@ -105,9 +134,6 @@ class SettingsPage(QWizardPage):
                 settings_widget_map[name].deserialize(settings)
 
     def isComplete(self) -> bool:
-        # TODO fix state after loading json
-        if not self.generic_settings.selected_layer:
-            return False
         for widget in self.settings_widgets:
             if not widget.is_valid:
                 return False

@@ -37,7 +37,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.models import (
 )
 
 
-class GenericSettingsWidget(QWidget):
+class LayerSettingsWidget(QWidget):
     layer_changed = pyqtSignal(str)  # Add this signal
 
     def __init__(
@@ -58,7 +58,7 @@ class GenericSettingsWidget(QWidget):
         layer_selector.layerChanged.connect(self.update_layer)
         layer_selector.setCurrentIndex(0)
         layer_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        use_selected = QCheckBox("Only use selected features")
+        use_selected = QCheckBox("Selected features only")
         # set up layout
         layout = QHBoxLayout(self)
         layout.addWidget(label)
@@ -79,14 +79,6 @@ class GenericSettingsWidget(QWidget):
 
     def update_use_selected(self, checked):
         self.model.use_selected_features = checked
-
-    def get_importer(self, import_settings: dict, layer_dict):
-        return self.IMPORTERS[self.import_model_cls](
-            self.source_layer,
-            self.model_gpkg,
-            import_settings,
-            **layer_dict,
-        )
 
 
 class SettingsWidget(QWidget):

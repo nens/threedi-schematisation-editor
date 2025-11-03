@@ -25,6 +25,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.pages import (
     FieldMapPage,
     RunPage,
     SettingsPage,
+    StartPage,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets import (
     ConnectionNodeSettingsWidget,
@@ -119,7 +120,6 @@ class VDIWizard(QWizard):
     def settings_page(self):
         return SettingsPage(
             settings_widgets_classes=self.settings_widgets_classes,
-            layer_filter=self.layer_filter,
         )
 
     @cached_property
@@ -134,6 +134,10 @@ class VDIWizard(QWizard):
     def run_page(self):
         return RunPage()
 
+    @cached_property
+    def start_page(self):
+        return StartPage(layer_filter=self.layer_filter)
+
     def setup_ui(self):
         # set appearance
         font = create_font(self, 10)
@@ -142,6 +146,7 @@ class VDIWizard(QWizard):
         # TODO is this the right size?
         self.resize(1000, 750)
         # add pages
+        self.addPage(self.start_page)
         self.addPage(self.settings_page)
         if self.field_map_page:
             self.addPage(self.field_map_page)
@@ -164,13 +169,13 @@ class VDIWizard(QWizard):
 
     @property
     def selected_layer(self):
-        return self.settings_page.generic_settings.selected_layer
+        return self.start_page.layer_settings_widget.selected_layer
 
     @property
     def use_selected_features(self) -> bool:
         return self.settings_page.generic_settings.model.selected_layer
 
-    def load_settings_from_json(self):
+    def load_settings_from_json(self) -> Optional[str]:
         # TODO: take this outside of the wizard so that the processing
         # algorithms can also use the validation
         file_path, _ = QFileDialog.getOpenFileName(
@@ -197,6 +202,7 @@ class VDIWizard(QWizard):
                 QMessageBox.information(
                     self, "Success", "Settings loaded successfully!"
                 )
+                return file_path
             except ValidationError as e:
                 msg = "The following errors occurred while loading the settings:"
                 for error in e.errors():
