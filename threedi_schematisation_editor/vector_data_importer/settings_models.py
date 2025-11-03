@@ -47,8 +47,8 @@ class ConnectionNodeSettings(BaseModel):
     # class variables used to identify model
     name: ClassVar[str] = "connection_nodes"
 
-    create_nodes: bool = False
-    snap: bool = False
+    create_nodes: bool = True
+    snap: bool = True
     snap_distance: float = Field(default=1.0, ge=0, le=1000000.0)
 
     def serialize(self):
