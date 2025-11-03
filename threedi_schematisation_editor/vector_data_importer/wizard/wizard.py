@@ -159,6 +159,8 @@ class VDIWizard(QWizard):
         )  # This matches other widgets' gray background
         palette.setColor(QPalette.Base, base_color)
         self.setPalette(palette)
+        # Explicitly set wizard style
+        self.setWizardStyle(QWizard.ClassicStyle)
 
     @property
     def selected_layer(self):

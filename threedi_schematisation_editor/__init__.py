@@ -177,6 +177,11 @@ class ThreediSchematisationEditorPlugin:
         self.toggle_active_project_actions()
         self.active_schematisation_changed()
         self.ensure_sqlite_wal_status()
+        # TODO: remove!!
+        try:
+            self.load_schematisation("/home/margriet/qgis_workdir/test_253_import_csd/test.gpkg")
+        except:
+            pass
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
