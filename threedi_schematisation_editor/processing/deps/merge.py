@@ -1,10 +1,14 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Union, List, Tuple, Literal
+from typing import Union, List, Tuple
 
 from osgeo import gdal, osr
 import numpy as np
 from shapely.geometry import MultiPolygon, Polygon, box
+
+
+gdal.UseExceptions()
+osr.UseExceptions()
 
 
 def read_as_array(
@@ -147,7 +151,7 @@ def merge_rasters(
     rasters: List[gdal.Dataset],
     tile_size: int,
     aggregation_method: str,
-    output_filename: Path,
+    output_filename: str | Path,
     output_pixel_size: float,
     output_nodatavalue: float,
     feedback=None,
@@ -188,7 +192,6 @@ def merge_rasters(
         _, _, xskew, _, yskew, _ = resampled_rasters[0].GetGeoTransform()
         srs = resampled_rasters[0].GetProjection()
         tiles = []
-        rows = []
         for tile_row in range(nrows):
             # print(f"tile_row: {tile_row}")
             tile_maxy = maxy - tile_row * geo_tile_size_y
@@ -227,6 +230,12 @@ def merge_rasters(
                 tiles.append(str(tile_path))
                 if feedback:
                     feedback.setProgress((tile_row * ncols + tile_col + 1) / ntiles * 100)
+
+        # clean up
+        for i in range(len(resampled_rasters)):
+            resampled_rasters[i] = None
+
+        # merge tiles
         if feedback:
             feedback.setProgressText("Step 4/4: Writing output raster to disk...")
         vrt_path = temp_dir_path / "result.vrt"
@@ -236,9 +245,23 @@ def merge_rasters(
         callback = progress_gdal_to_qgis if feedback else None
         callback_data = feedback if feedback else None
         gdal.Translate(
-            destName=output_filename,
+            destName=str(output_filename),
             srcDS=vrt,
             creationOptions=["COMPRESS=DEFLATE", "PREDICTOR=2", "ZLEVEL=9"],
             callback=callback,
             callback_data=callback_data
         )
+
+        # clean up
+        vrt = None
+
+
+if __name__ == "__main__":
+    rasters = [gdal.Open(
+        f"C:/Users/leendert.vanwolfswin/Documents/GitHub/threedi-schematisation-editor/tests/processing/data/raster{i}.tif")
+               for i in [1, 2, 3]]
+    merge_rasters(rasters, tile_size=10, aggregation_method="min",
+                  output_filename=r"C:\Users\leendert.vanwolfswin\Downloads\merged.tif",
+                  output_pixel_size=0.5,
+                  output_nodatavalue=-9999
+    )
