@@ -241,7 +241,7 @@ def merge_rasters(
         vrt_path = temp_dir_path / "result.vrt"
         vrt_options = {}
         build_vrt(output_filepath=str(vrt_path), raster_filepaths=tiles, **vrt_options)
-        vrt = gdal.Open(vrt_path)
+        vrt = gdal.Open(str(vrt_path))
         callback = progress_gdal_to_qgis if feedback else None
         callback_data = feedback if feedback else None
         gdal.Translate(
@@ -255,13 +255,3 @@ def merge_rasters(
         # clean up
         vrt = None
 
-
-if __name__ == "__main__":
-    rasters = [gdal.Open(
-        f"C:/Users/leendert.vanwolfswin/Documents/GitHub/threedi-schematisation-editor/tests/processing/data/raster{i}.tif")
-               for i in [1, 2, 3]]
-    merge_rasters(rasters, tile_size=10, aggregation_method="min",
-                  output_filename=r"C:\Users\leendert.vanwolfswin\Downloads\merged.tif",
-                  output_pixel_size=0.5,
-                  output_nodatavalue=-9999
-    )
