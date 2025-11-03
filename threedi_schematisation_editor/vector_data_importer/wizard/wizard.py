@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 from pydantic import BaseModel, ValidationError
 from qgis.core import Qgis, QgsMapLayerProxyModel, QgsMessageLog
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
+from qgis.PyQt.QtGui import QPalette
 from qgis.PyQt.QtWidgets import (
     QFileDialog,
     QLabel,
@@ -151,6 +152,13 @@ class VDIWizard(QWizard):
         self.finish_button = self.button(self.FinishButton)
         self.finish_button.clicked.disconnect()
         self.finish_button.clicked.connect(self.run_import)
+        # Use the same background as standard widgets
+        palette = self.palette()
+        base_color = palette.color(
+            QPalette.Window
+        )  # This matches other widgets' gray background
+        palette.setColor(QPalette.Base, base_color)
+        self.setPalette(palette)
 
     @property
     def selected_layer(self):
