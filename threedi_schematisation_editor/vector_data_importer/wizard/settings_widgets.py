@@ -58,8 +58,6 @@ class GenericSettingsWidget(QWidget):
         layer_selector.layerChanged.connect(self.update_layer)
         layer_selector.setCurrentIndex(0)
         layer_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        # TODO: remove this, was added for debugging
-        self.layer_selector = layer_selector
         use_selected = QCheckBox("Only use selected features")
         # set up layout
         layout = QHBoxLayout(self)
@@ -376,10 +374,11 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
         self.model = sm.CrossSectionLocationSettings()
         row_dict = {
             "join_field_src": FieldMapRow(
-                label="Join channel source field", config=self.model.join_field_src
+                label="Reference field in channel layer",
+                config=self.model.join_field_src,
             ),
             "join_field_tgt": FieldMapRow(
-                label="Join channel target field", config=self.model.join_field_tgt
+                label="Join field in source", config=self.model.join_field_tgt
             ),
         }
         extra_layout = self.get_extra_layout()
@@ -412,8 +411,7 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
 
     @property
     def group_name(self):
-        # TODO: better name
-        return "Mapping"
+        return "Join to channel by attribute"
 
     def _sync_auto_methods(self, top_left, bottom_right, roles):
         table_model = self.field_map_widget.table_model

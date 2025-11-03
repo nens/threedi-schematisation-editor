@@ -104,14 +104,6 @@ class SettingsPage(QWizardPage):
             if name in settings_widget_map:
                 settings_widget_map[name].deserialize(settings)
 
-    def initializePage(self):
-        # TODO: remove (just for testing)
-        self.generic_settings.layer_selector.setCurrentText("Culvert")
-        self.generic_settings.update_layer(
-            self.generic_settings.layer_selector.currentLayer()
-        )
-        # pass
-
     def isComplete(self) -> bool:
         # TODO fix state after loading json
         if not self.generic_settings.selected_layer:
