@@ -5,6 +5,7 @@ from qgis.core import QgsApplication
 _singletons = {}
 
 
+
 def ensure_qgis_app_is_initialized():
     """Make sure qgis is initialized for testing."""
     # Note: if you just need the QT app to be there, you can use the qtbot fixture
