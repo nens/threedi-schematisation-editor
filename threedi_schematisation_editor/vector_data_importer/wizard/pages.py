@@ -171,7 +171,7 @@ class FieldMapPage(QWizardPage):
         if layer:
             self.field_map_widget.update_layer(layer)
         self.setTitle(
-            f"Map fields from {self.wizard().selected_layer.name()} to {self.layer_name}s"
+            f"Map {self.wizard().selected_layer.name()} fields to {self.layer_name}s"
         )
         super().initializePage()
 

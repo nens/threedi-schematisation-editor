@@ -179,7 +179,10 @@ class ThreediSchematisationEditorPlugin:
         self.ensure_sqlite_wal_status()
         # TODO: remove!!
         try:
-            self.load_schematisation("/home/margriet/qgis_workdir/test_253_import_csd/test.gpkg")
+            self.load_schematisation(
+                "/home/margriet/qgis_workdir/test_253_import_csd/test.gpkg"
+            )
+            self.action_import_features.menu().actions()[4].trigger()
         except:
             pass
 
