@@ -263,8 +263,8 @@ class Weir(ModelObject):
         }
     )
     cross_section_shape: CrossSectionShape
-    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
-    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
+    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
     tags: Optional[str]
 
@@ -280,7 +280,7 @@ class Culvert(ModelObject):
     display_name: Optional[str]
     exchange_type: Optional[ExchangeTypeCulvert]
     calculation_point_distance: Optional[float] = field(
-        metadata={DISPLAY_UNIT_FIELD: "[m]"}
+        metadata={DISPLAY_UNIT_FIELD: "m"}
     )
     invert_level_start: float
     invert_level_end: float
@@ -308,8 +308,8 @@ class Culvert(ModelObject):
         }
     )
     cross_section_shape: CrossSectionShape
-    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
-    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
+    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
     tags: Optional[str]
 
@@ -350,8 +350,8 @@ class Orifice(ModelObject):
         }
     )
     cross_section_shape: CrossSectionShape
-    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
-    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
+    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
     tags: Optional[str]
 
@@ -367,7 +367,7 @@ class Pipe(ModelObject):
     display_name: Optional[str]
     exchange_type: ExchangeTypePipe
     calculation_point_distance: Optional[float] = field(
-        metadata={DISPLAY_UNIT_FIELD: "[m]"}
+        metadata={DISPLAY_UNIT_FIELD: "m"}
     )
     invert_level_start: float
     invert_level_end: float
@@ -394,15 +394,15 @@ class Pipe(ModelObject):
         }
     )
     cross_section_shape: CrossSectionShape
-    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
-    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
+    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
-    exchange_thickness: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
+    exchange_thickness: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     hydraulic_conductivity_in: Optional[float] = field(
-        metadata={DISPLAY_UNIT_FIELD: "[m/d]"}
+        metadata={DISPLAY_UNIT_FIELD: "m/d"}
     )
     hydraulic_conductivity_out: Optional[float] = field(
-        metadata={DISPLAY_UNIT_FIELD: "[m/d]"}
+        metadata={DISPLAY_UNIT_FIELD: "m/d"}
     )
     tags: Optional[str]
 
@@ -422,8 +422,8 @@ class CrossSectionLocation(ModelObject):
     bank_level: Optional[float]
     channel_id: int = field(metadata={ALLOWED_METHODS_FIELD: [ColumnImportMethod.AUTO]})
     cross_section_shape: CrossSectionShape
-    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
-    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
+    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
     cross_section_friction_values: Optional[str]
     cross_section_vegetation_table: Optional[str]
@@ -465,7 +465,7 @@ class CrossSectionData(ModelObject):
     )
     cross_section_width: Optional[float] = field(
         metadata={
-            DISPLAY_UNIT_FIELD: "[m]",
+            DISPLAY_UNIT_FIELD: "m",
             ALLOWED_METHODS_FIELD: [
                 ColumnImportMethod.ATTRIBUTE,
                 ColumnImportMethod.EXPRESSION,
@@ -474,15 +474,15 @@ class CrossSectionData(ModelObject):
     )
     cross_section_height: Optional[float] = field(
         metadata={
-            DISPLAY_UNIT_FIELD: "[m]",
+            DISPLAY_UNIT_FIELD: "m",
             ALLOWED_METHODS_FIELD: [
                 ColumnImportMethod.ATTRIBUTE,
                 ColumnImportMethod.EXPRESSION,
             ],
         }
     )
-    cross_section_y: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
-    cross_section_z: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
+    cross_section_y: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    cross_section_z: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
 
 
 @dataclass
@@ -496,7 +496,7 @@ class Channel(ModelObject):
     display_name: Optional[str]
     exchange_type: ExchangeTypeChannel
     calculation_point_distance: Optional[float] = field(
-        metadata={DISPLAY_UNIT_FIELD: "[m]"}
+        metadata={DISPLAY_UNIT_FIELD: "m"}
     )
     connection_node_id_start: int = field(
         metadata={
@@ -516,12 +516,12 @@ class Channel(ModelObject):
             ],
         }
     )
-    exchange_thickness: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "[m]"})
+    exchange_thickness: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     hydraulic_conductivity_in: Optional[float] = field(
-        metadata={DISPLAY_UNIT_FIELD: "[m/d]"}
+        metadata={DISPLAY_UNIT_FIELD: "m/d"}
     )
     hydraulic_conductivity_out: Optional[float] = field(
-        metadata={DISPLAY_UNIT_FIELD: "[m/d]"}
+        metadata={DISPLAY_UNIT_FIELD: "m/d"}
     )
     tags: Optional[str]
 
@@ -819,7 +819,7 @@ class InterceptionSettings(ModelObject):
     __layername__ = "Interception"
     __geometrytype__ = GeometryType.NoGeometry
 
-    RELATED_RASTERS = (("interception_file", "Interception [m]"),)
+    RELATED_RASTERS = (("interception_file", "Interception m"),)
 
     id: int
     interception: Optional[float]
@@ -846,7 +846,7 @@ class SimpleInfiltrationSettings(ModelObject):
 
     RELATED_RASTERS = (
         ("infiltration_rate_file", "Infiltration rate [mm/d]"),
-        ("max_infiltration_volume_file", "Max infiltration volume [m]"),
+        ("max_infiltration_volume_file", "Max infiltration volume m"),
     )
 
     id: int
@@ -1089,9 +1089,9 @@ class VegetationDrag2D(ModelObject):
     __geometrytype__ = GeometryType.NoGeometry
 
     RELATED_RASTERS = (
-        ("vegetation_height_file", "Vegetation height [m]"),
+        ("vegetation_height_file", "Vegetation height m"),
         ("vegetation_stem_count_file", "Vegetation stem count [-]"),
-        ("vegetation_stem_diameter_file", "Vegetation stem diameter [m]"),
+        ("vegetation_stem_diameter_file", "Vegetation stem diameter m"),
         ("vegetation_drag_coefficient_file", "Vegetation drag coefficient [-]"),
     )
 
