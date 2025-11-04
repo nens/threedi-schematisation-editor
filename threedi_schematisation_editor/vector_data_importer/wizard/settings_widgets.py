@@ -324,7 +324,6 @@ class FieldMapSettingsWidget(SettingsWidget):
         layout.addWidget(self.field_map_widget)
         if extra_layout and isinstance(extra_layout, QBoxLayout):
             layout.addLayout(extra_layout)
-        layout.addStretch()
 
     def _on_data_changed(self, top_left, bottom_right, roles):
         self.dataChanged.emit()
