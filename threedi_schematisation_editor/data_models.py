@@ -365,7 +365,7 @@ class Pipe(ModelObject):
     id: int
     code: Optional[str]
     display_name: Optional[str]
-    exchange_type: ExchangeTypePipe
+    exchange_type: Optional[ExchangeTypePipe]
     calculation_point_distance: Optional[float] = field(
         metadata={DISPLAY_UNIT_FIELD: "m"}
     )
@@ -494,7 +494,7 @@ class Channel(ModelObject):
     id: int
     code: Optional[str]
     display_name: Optional[str]
-    exchange_type: ExchangeTypeChannel
+    exchange_type: Optional[ExchangeTypeChannel]
     calculation_point_distance: Optional[float] = field(
         metadata={DISPLAY_UNIT_FIELD: "m"}
     )
