@@ -60,7 +60,7 @@ class LayerSettingsWidget(QWidget):
         layer_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         use_selected = QCheckBox("Selected features only")
         # set up layout
-        layout = QHBoxLayout(self)
+        layout = QVBoxLayout(self)
         layout.addWidget(label)
         layout.addWidget(layer_selector)
         layout.addWidget(use_selected)

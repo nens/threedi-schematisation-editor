@@ -52,7 +52,7 @@ class StartPage(QWizardPage):
         layer_box = QGroupBox("Select layer to import")
         layer_box.setLayout(self.layer_settings_widget.layout())
         load_box = QGroupBox("Load import configuration from template (optional)")
-        load_settings_button = QPushButton("Load settings")
+        load_settings_button = QPushButton("Choose file...")
         load_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         load_settings_button.clicked.connect(self.on_load_button_clicked)
         self.loaded_status = QLabel("No import configuration loaded")
