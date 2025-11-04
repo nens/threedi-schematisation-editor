@@ -485,7 +485,7 @@ class FieldMapWidget(QWidget):
         frame_width = self.table_view.frameWidth() * 2
         # Get the device pixel ratio for proper scaling
         pixel_ratio = self.table_view.devicePixelRatioF()
-        buffer_height = round(2 * pixel_ratio)  # Scale-aware small buffer
+        buffer_height = round(4 * pixel_ratio)  # Scale-aware small buffer
         content_height = (
             (row_height * self.table_model.rowCount())
             + header_height
