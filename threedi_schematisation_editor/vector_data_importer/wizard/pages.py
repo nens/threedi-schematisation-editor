@@ -1,9 +1,12 @@
 from typing import Optional, Type
 
 from pydantic import BaseModel
+from qgis.core import Qgis, QgsMessageLog
+from qgis.PyQt.QtCore import Qt, pyqtSignal
+from qgis.PyQt.QtGui import QColor, QIcon, QPalette
 
 # todo: fix this import
-from PyQt5.QtWidgets import (
+from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QGroupBox,
@@ -16,12 +19,11 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QSizePolicy,
     QTableView,
+    QToolButton,
     QVBoxLayout,
     QWidget,
     QWizardPage,
 )
-from qgis.core import Qgis, QgsMessageLog
-from qgis.PyQt.QtCore import Qt, pyqtSignal
 
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     get_field_map_config_for_model_class_field,
@@ -220,6 +222,7 @@ class RunPage(QWizardPage):
         self.text = QPlainTextEdit()
         self.text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.text.setReadOnly(True)
+        self.log = LogPanel()
 
         # Save to template
         save_settings_button = QPushButton("Choose file...")
@@ -234,9 +237,12 @@ class RunPage(QWizardPage):
 
         main_layout = QVBoxLayout()
         main_layout.addLayout(run_layout)
-        main_layout.addWidget(self.text)
+        main_layout.addWidget(self.log)
         main_layout.addWidget(save_box)
         self.setLayout(main_layout)
+
+    def update_log(self, msg: str):
+        self.log.text.insertPlainText(msg)
 
     def on_cancel(self):
         QgsMessageLog.logMessage("Cancel requested", "DEBUG", Qgis.Info)
@@ -250,3 +256,61 @@ class RunPage(QWizardPage):
 
     def initializePage(self):
         settings = self.wizard().get_settings()
+
+
+class LogPanel(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setup_ui()
+
+    def setup_ui(self):
+        # --- Text area ---
+        self.text = QPlainTextEdit()
+        self.text.setReadOnly(True)
+
+        palette = self.palette()
+        palette.setColor(QPalette.Base, QColor("white"))
+        palette.setColor(QPalette.Text, QColor("black"))
+        self.setPalette(palette)
+
+        # --- Buttons ---
+        copy_button = QToolButton()
+        copy_button.setIcon(QIcon.fromTheme("edit-copy"))
+        copy_button.setToolTip("Copy log to clipboard")
+        copy_button.clicked.connect(self.copy_log)
+
+        save_button = QToolButton()
+        save_button.setIcon(QIcon.fromTheme("document-save"))
+        save_button.setToolTip("Save log to file")
+        save_button.clicked.connect(self.save_log)
+
+        clear_button = QToolButton()
+        clear_button.setIcon(QIcon.fromTheme("edit-clear"))
+        clear_button.setToolTip("Clear log")
+        clear_button.clicked.connect(self.text.clear)
+
+        # --- Layout ---
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(copy_button)
+        button_layout.addWidget(save_button)
+        button_layout.addWidget(clear_button)
+        button_layout.addStretch()
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.text)
+        layout.addLayout(button_layout)
+        self.setLayout(layout)
+
+    # --- Slots ---
+    def copy_log(self) -> None:
+        self.text.selectAll()
+        self.text.copy()
+
+    def save_log(self) -> None:
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Save Log", "log.txt", "Text Files (*.txt)"
+        )
+        if not path:
+            return
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(self.text.toPlainText())

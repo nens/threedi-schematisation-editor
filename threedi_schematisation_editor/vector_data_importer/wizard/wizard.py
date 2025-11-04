@@ -324,7 +324,7 @@ class VDIWizard(QWizard):
 
         # Connect finish handling
         def handle_finished(result_msg, success):
-            self.run_page.text.insertPlainText(result_msg)
+            self.run_page.update_log(result_msg)
             self.run_page.cancel_button.setEnabled(False)
             for handler in handlers:
                 handler.connect_handler_signals()
