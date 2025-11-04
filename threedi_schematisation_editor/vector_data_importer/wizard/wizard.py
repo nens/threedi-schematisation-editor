@@ -1,7 +1,6 @@
 import json
 import traceback
 from functools import cached_property
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from pydantic import BaseModel, ValidationError
@@ -38,6 +37,8 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
 from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
     CatchThreediWarnings,
     create_font,
+    get_last_config_dir,
+    update_last_config_dir,
 )
 
 
@@ -179,7 +180,7 @@ class VDIWizard(QWizard):
         # TODO: take this outside of the wizard so that the processing
         # algorithms can also use the validation
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Open Settings", str(Path.home()), "JSON Files (*.json)"
+            self, "Open Settings", get_last_config_dir(), "JSON Files (*.json)"
         )
         if file_path:
             with open(file_path, "r") as f:
@@ -195,6 +196,7 @@ class VDIWizard(QWizard):
                         Qgis.Warning,
                     )
                     return
+            update_last_config_dir(file_path)
             # Get the wizard instance and its pages
             try:
                 settings = sm.ImportSettings(**json_settings)
@@ -224,16 +226,18 @@ class VDIWizard(QWizard):
             if hasattr(page, "deserialize"):
                 page.deserialize(data)
 
-    def save_settings_to_json(self):
+    def save_settings_to_json(self) -> Optional[str]:
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save Settings", str(Path.home()), "JSON Files (*.json)"
+            self, "Save Settings", get_last_config_dir(), "JSON Files (*.json)"
         )
         if file_path:
+            update_last_config_dir(file_path)
             try:
                 settings = self.get_settings().model_dump()
                 with open(file_path, "w") as f:
                     json.dump(settings, f, indent=4)
                 QMessageBox.information(self, "Success", "Settings saved successfully!")
+                return file_path
             except Exception as e:
                 QMessageBox.critical(
                     self, "Error", f"Failed to save settings: {str(e)}"

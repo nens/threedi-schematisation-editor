@@ -1,9 +1,10 @@
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from qgis.core import QgsField, QgsVectorLayer
-from qgis.PyQt.QtCore import QVariant
+from qgis.PyQt.QtCore import QSettings, QVariant
 
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
@@ -14,6 +15,11 @@ from threedi_schematisation_editor.vector_data_importer.utils import ColumnImpor
 from threedi_schematisation_editor.vector_data_importer.wizard import (
     ImportConnectionNodesWizard,
     ImportStructureWizard,
+)
+from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
+    LAST_CONFIG_DIR_ENTRY,
+    get_last_config_dir,
+    update_last_config_dir,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog import (
     ValueMapModel,
@@ -397,3 +403,25 @@ class TestValueMapModel:
         model._sources = sources
         model._targets = targets
         assert model.get_dict() == expected_dict
+
+
+def test_config_dir_functions():
+    settings = QSettings()
+    # retrieve last config dir and store it
+    last_config_dir_str = str(settings.value(LAST_CONFIG_DIR_ENTRY))
+    last_config_dir = (
+        last_config_dir_str if Path(last_config_dir_str).exists() else str(Path.home())
+    )
+    assert get_last_config_dir() == last_config_dir
+    # no change on a fake path
+    update_last_config_dir("/foo/bar")
+    assert get_last_config_dir() == last_config_dir
+    # set path to current file, should set it to the parent
+    update_last_config_dir(__file__)
+    assert get_last_config_dir() == str(Path(__file__).parent)
+    # set path
+    other_path = str(Path(__file__).parent.parent)
+    update_last_config_dir(other_path)
+    assert get_last_config_dir() == other_path
+    # reset last config dir
+    settings.setValue(LAST_CONFIG_DIR_ENTRY, last_config_dir_str)

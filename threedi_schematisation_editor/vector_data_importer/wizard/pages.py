@@ -67,7 +67,7 @@ class StartPage(QWizardPage):
     def on_load_button_clicked(self):
         file_path = self.wizard().load_settings_from_json()
         if file_path:
-            self.loaded_status.setText(f"Import configuration loaded from {file_path}")
+            self.loaded_status.setText(f"Loaded import configuration from {file_path}")
 
     def isComplete(self) -> bool:
         return self.layer_settings_widget.selected_layer not in [None, ""]
@@ -179,9 +179,6 @@ class FieldMapPage(QWizardPage):
         )
         super().initializePage()
 
-    # def serialize(self):
-    #     return {self.name: self.field_map_widget.serialize()}
-
     def deserialize(self, data):
         return self.field_map_widget.deserialize(data[self.name])
 
@@ -202,30 +199,43 @@ class RunPage(QWizardPage):
         self.setup_ui()
 
     def on_save_button_clicked(self):
-        self.wizard().save_settings_to_json()
+        file_path = self.wizard().save_settings_to_json()
+        if file_path:
+            self.saved_status.setText(f"Saved import configuration to {file_path}")
 
     def setup_ui(self):
+        # Progress bar and cancel button
         self.progress_bar = QProgressBar()
         self.progress_bar.setMinimum(0)
         self.progress_bar.setTextVisible(True)
         self.progress_bar.setFormat("import feature %v of %m")
-        save_settings_button = QPushButton("Save template")
-        save_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        save_settings_button.clicked.connect(self.on_save_button_clicked)
-        self.text = QPlainTextEdit()
-        self.text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.text.setReadOnly(True)
         self.cancel_button = QPushButton("Cancel import")
         self.cancel_button.setEnabled(False)
         self.cancel_button.clicked.connect(self.on_cancel)
-        layout = QHBoxLayout()
-        # layout.addWidget(run_button)
-        layout.addWidget(self.progress_bar)
+        run_layout = QHBoxLayout()
+        run_layout.addWidget(self.progress_bar)
+        run_layout.addWidget(self.cancel_button)
+
+        # Logging
+        self.text = QPlainTextEdit()
+        self.text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.text.setReadOnly(True)
+
+        # Save to template
+        save_settings_button = QPushButton("Choose file...")
+        save_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        save_settings_button.clicked.connect(self.on_save_button_clicked)
+        self.saved_status = QLabel("Import configuration not saved")
+        save_box = QGroupBox("Save import configuration to template (optional)")
+        layout = QVBoxLayout()
         layout.addWidget(save_settings_button)
-        layout.addWidget(self.cancel_button)
+        layout.addWidget(self.saved_status)
+        save_box.setLayout(layout)
+
         main_layout = QVBoxLayout()
-        main_layout.addLayout(layout)
+        main_layout.addLayout(run_layout)
         main_layout.addWidget(self.text)
+        main_layout.addWidget(save_box)
         self.setLayout(main_layout)
 
     def on_cancel(self):

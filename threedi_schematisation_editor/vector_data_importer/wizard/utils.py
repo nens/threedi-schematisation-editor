@@ -1,5 +1,8 @@
 import inspect
 import warnings
+from pathlib import Path
+
+from qgis.PyQt.QtCore import QSettings
 
 from threedi_schematisation_editor import warnings as threedi_warnings
 
@@ -74,3 +77,19 @@ def create_font(dialog, point_size: int, bold: bool = False):
         font.setBold(True)
         font.setWeight(75)
     return font
+
+
+LAST_CONFIG_DIR_ENTRY = "threedi/last_vdi_config_dir"
+
+
+def get_last_config_dir() -> str:
+    settings = QSettings()
+    return settings.value(LAST_CONFIG_DIR_ENTRY, str(Path.home()))
+
+
+def update_last_config_dir(config_dir: str):
+    settings = QSettings()
+    if Path(config_dir).is_dir():
+        settings.setValue(LAST_CONFIG_DIR_ENTRY, config_dir)
+    elif Path(config_dir).is_file():
+        settings.setValue(LAST_CONFIG_DIR_ENTRY, str(Path(config_dir).parent))
