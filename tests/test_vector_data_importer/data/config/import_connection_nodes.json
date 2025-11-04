@@ -23,8 +23,7 @@
     },
     "visualisation": {
       "method": "source_attribute",
-      "source_attribute": "veld",
-      "default_value": "NULL"
+      "source_attribute": "veld"
     },
     "manhole_surface_level": {
       "method": "ignore",
@@ -40,8 +39,7 @@
     },
     "exchange_type": {
       "method": "ignore",
-      "source_attribute": "",
-      "default_value": "NULL"
+      "source_attribute": ""
     },
     "exchange_thickness": {
       "method": "ignore",

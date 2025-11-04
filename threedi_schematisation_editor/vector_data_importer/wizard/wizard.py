@@ -173,7 +173,7 @@ class VDIWizard(QWizard):
 
     @property
     def use_selected_features(self) -> bool:
-        return self.settings_page.generic_settings.model.selected_layer
+        return self.start_page.use_selected_features
 
     def load_settings_from_json(self) -> Optional[str]:
         # TODO: take this outside of the wizard so that the processing
@@ -275,8 +275,8 @@ class VDIWizard(QWizard):
         # handle_progress(value=0)
         settings = self.get_settings()
         selected_feat_ids = (
-            self.selected_layer.selectedFeatureIds()
-            if self.use_selected_features
+            self.use_selected_features
+            if self.start_page.use_selected_features
             else None
         )
         handlers, layers = self.prepare_import()

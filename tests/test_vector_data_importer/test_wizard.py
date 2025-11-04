@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 
 import pytest
 from qgis.core import QgsField, QgsVectorLayer
@@ -8,8 +9,10 @@ import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 import threedi_schematisation_editor.vector_data_importer.wizard.field_map as field_map
 import threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets as settings_widgets
+from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard import (
+    ImportConnectionNodesWizard,
     ImportStructureWizard,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog import (
@@ -27,6 +30,29 @@ def test_wizard_settings(qgis_application):
     wizard.deserialize(json_settings)
     serialized_settings = wizard.serialize()
     assert wizard.get_settings().model_dump() == serialized_settings
+
+
+def test_wizard_run(qgis_application):
+    import_config_file = CONFIG_PATH.joinpath("import_connection_nodes.json")
+    source_gpkg = str(get_temp_copy(SOURCE_PATH.joinpath("connection_nodes.gpkg")))
+    src_layer = gpkg_layer(source_gpkg, "connection_nodes")
+    target_gpkg = get_temp_copy(
+        SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg")
+    )
+    tgt_layer = gpkg_layer(target_gpkg, "connection_nodes")
+    wizard = ImportConnectionNodesWizard(dm.ConnectionNode, target_gpkg, None)
+    # Load template
+    with open(DATA_PATH.joinpath(import_config_file), "r") as f:
+        json_settings = json.load(f)
+    wizard.deserialize(json_settings)
+    # set selected layer
+    wizard.start_page.layer_settings_widget.selected_layer = src_layer
+    # patch prepare import to return the correct target layer and don't bother with handlers
+    with patch.object(ImportConnectionNodesWizard, "prepare_import") as mock_prepare:
+        mock_prepare.return_value = ([], {"target_layer": tgt_layer})
+        wizard.run_import()
+    # note that there is no nice assert here because the functionality of the reporter is already tested
+    # if run_import is broken, this test will crash
 
 
 class TestIntegrationSettingsWidget:

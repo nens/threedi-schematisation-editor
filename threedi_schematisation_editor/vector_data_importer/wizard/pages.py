@@ -76,6 +76,10 @@ class StartPage(QWizardPage):
     def selected_layer(self):
         return self.layer_settings_widget.selected_layer
 
+    @property
+    def use_selected_features(self):
+        return self.layer_settings_widget.model.use_selected_features
+
 
 class SettingsPage(QWizardPage):
     def __init__(
