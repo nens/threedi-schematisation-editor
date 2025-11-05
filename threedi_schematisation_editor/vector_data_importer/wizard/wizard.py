@@ -166,7 +166,7 @@ class VDIWizard(QWizard):
         return self.start_page.use_selected_features
 
     def load_settings_from_json(self) -> Optional[str]:
-        # TODO: take this outside of the wizard so that the processing
+        # Future: take this outside of the wizard so that the processing
         # algorithms can also use the validation
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Open Settings", get_last_config_dir(), "JSON Files (*.json)"

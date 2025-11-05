@@ -5,7 +5,6 @@ from qgis.core import Qgis, QgsMessageLog
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor, QIcon, QPalette, QTextBlockFormat, QTextCharFormat
 
-# todo: fix this import
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
     QApplication,
