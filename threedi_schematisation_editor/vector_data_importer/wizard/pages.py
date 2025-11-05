@@ -3,7 +3,7 @@ from typing import Optional, Type
 from pydantic import BaseModel
 from qgis.core import Qgis, QgsMessageLog
 from qgis.PyQt.QtCore import Qt, pyqtSignal
-from qgis.PyQt.QtGui import QColor, QIcon, QPalette
+from qgis.PyQt.QtGui import QColor, QIcon, QPalette, QTextBlockFormat, QTextCharFormat
 
 # todo: fix this import
 from qgis.PyQt.QtWidgets import (
@@ -219,9 +219,6 @@ class RunPage(QWizardPage):
         run_layout.addWidget(self.cancel_button)
 
         # Logging
-        self.text = QPlainTextEdit()
-        self.text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.text.setReadOnly(True)
         self.log = LogPanel()
 
         # Save to template
@@ -241,8 +238,15 @@ class RunPage(QWizardPage):
         main_layout.addWidget(save_box)
         self.setLayout(main_layout)
 
-    def update_log(self, msg: str):
-        self.log.text.insertPlainText(msg)
+    def update_log(self, msg: str, fg_color: Optional[str] = None):
+        if msg in [None, ""]:
+            return
+        format = QTextCharFormat()
+        cursor = self.log.text.textCursor()
+        if fg_color:
+            format.setForeground(QColor(fg_color))
+        cursor.insertText(msg + "\n", format)
+        self.log.text.ensureCursorVisible()
 
     def on_cancel(self):
         QgsMessageLog.logMessage("Cancel requested", "DEBUG", Qgis.Info)

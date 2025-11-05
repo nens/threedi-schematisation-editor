@@ -44,7 +44,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
 
 class ImportWorker(QObject):
     progress = pyqtSignal(dict)
-    finished = pyqtSignal(str, bool)  # message, success
+    finished = pyqtSignal(str, str, str)  # message, success
 
     def __init__(self, callable_func, cancellation_token):
         super().__init__()
@@ -55,31 +55,20 @@ class ImportWorker(QObject):
         self.progress.emit({"value": value, "add": add, "maximum": maximum})
 
     def run(self):
+        error_msg = ""
         try:
-            # Import features with warning catching
             with CatchThreediWarnings() as warnings_catcher:
+                # Import features with warning catching
                 self.callable_func(progress_callback=self.handle_progress)
             if self.cancellation_token.was_interrupted:
-                result_msg = "Import was cancelled.\n"
+                status_msg = "Import was cancelled.\n"
             else:
-                result_msg = "Import completed successfully.\n"
-
-            result_msg += (
-                "The layers to which the data has been added are still in editing mode, "
-                "so you can review the changes before saving them to the layers."
-                f"{warnings_catcher.warnings_msg}"
-            )
-            success = True
-
+                status_msg = "Import completed successfully.\n"
         except Exception as e:
-            result_msg = f"Import failed with traceback:\n{traceback.format_exc()}"
-            QgsMessageLog.logMessage(
-                f"Import failed with traceback:\n{traceback.format_exc()}",
-                "Warning",
-                Qgis.Warning,
-            )
-            success = False
-        self.finished.emit(result_msg, success)
+            status_msg = "Import failed with traceback:"
+            error_msg = f"{traceback.format_exc()}"
+        warning_msg = warnings_catcher.warnings_msg
+        self.finished.emit(status_msg, warning_msg, error_msg)
 
 
 class VDIWizard(QWizard):
@@ -276,7 +265,6 @@ class VDIWizard(QWizard):
         self.run_page.cancel_button.setEnabled(True)
         progress_bar = self.run_page.progress_bar
 
-        # handle_progress(value=0)
         settings = self.get_settings()
         selected_feat_ids = (
             self.use_selected_features
@@ -312,7 +300,6 @@ class VDIWizard(QWizard):
 
         # Connect progress updates
         def update_progress(progress_dict):
-            QgsMessageLog.logMessage(f"{progress_dict}", "DEBUG", Qgis.Info)
             if progress_dict["maximum"] is not None:
                 progress_bar.setMaximum(progress_dict["maximum"])
             if progress_dict["value"]:
@@ -323,8 +310,20 @@ class VDIWizard(QWizard):
         self.worker.progress.connect(update_progress)
 
         # Connect finish handling
-        def handle_finished(result_msg, success):
-            self.run_page.update_log(result_msg)
+        def handle_finished(status_msg, warning_msg, error_msg):
+            error_color = "#FF0000"
+            warning_color = "#FFA500"
+            self.run_page.update_log(
+                status_msg, fg_color=error_color if error_msg else None
+            )
+            self.run_page.update_log(error_msg)
+            self.run_page.update_log(warning_msg, fg_color=warning_color)
+            final_msg = (
+                "\nThe layers to which data has been added are still in editing mode, "
+                "so you can review the changes before saving them to the layers."
+            )
+            self.run_page.update_log(final_msg)
+
             self.run_page.cancel_button.setEnabled(False)
             for handler in handlers:
                 handler.connect_handler_signals()

@@ -51,17 +51,12 @@ class CatchThreediWarnings:
 
         # Generate the warning message if any warnings were caught
         if self.caught_warnings:
-            self.warnings_msg = (
-                "\n\nNote: Some warnings were raised during the process:"
-            )
+            self.warnings_msg = "Note: Some warnings were raised during the process:"
 
             # Log each warning to QGIS
             for warning_info in self.caught_warnings:
                 message, category, filename, lineno = warning_info
-                self.warnings_msg += f"\n{category.__name__}: {message}"
-                # QgsMessageLog.logMessage(
-                #     warning_text, self.log_category, level=Qgis.Warning
-                # )
+                self.warnings_msg += f"\n⚠ {category.__name__}: {message}"
 
         # Reset the warnings filter
         warnings.resetwarnings()
