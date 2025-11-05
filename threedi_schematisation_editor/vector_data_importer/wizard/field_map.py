@@ -145,14 +145,6 @@ class FieldMapRow:
             return False
 
 
-def create_field_map_row(
-    label: str, allowed_methods: list[ColumnImportMethod], **kwargs
-) -> FieldMapRow:
-    field_map_config = create_field_map_config(allowed_methods)
-    config = field_map_config.model_construct(method=None, **kwargs)
-    return FieldMapRow(label=label, config=config)
-
-
 class FieldMapModel(QAbstractTableModel):
     def __init__(self, row_dict: dict[str, FieldMapRow], parent=None):
         super().__init__(parent=parent)

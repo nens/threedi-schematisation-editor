@@ -225,7 +225,6 @@ class IntegrationSettingsWidget(SettingsWidget):
 
     def setup_integration_settings(self, settings_container):
         grid_layout = QGridLayout()
-        # TODO: update labels on settings
         grid_layout.addWidget(QLabel("Snap to channel/pipe withing"), 0, 0)
         grid_layout.addWidget(
             QLabel("Minimum length of a channel/pipe after edit"), 1, 0

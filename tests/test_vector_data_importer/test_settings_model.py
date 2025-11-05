@@ -2,6 +2,7 @@ from dataclasses import MISSING, Field, dataclass, field, fields
 from typing import Optional
 
 import pytest
+from pydantic import ValidationError
 
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
@@ -9,50 +10,31 @@ from threedi_schematisation_editor.vector_data_importer.utils import ColumnImpor
 
 
 @pytest.mark.parametrize(
-    "config_dict,expected_error",
+    "config_dict",
     [
-        ({"method": ColumnImportMethod.AUTO, "source_attribute": "foo"}, None),
-        ({"method": ColumnImportMethod.IGNORE}, None),
-        (
-            {"method": ColumnImportMethod.ATTRIBUTE},
-            sm.FieldMapConfigSourceAttributeMissingError,
-        ),
-        ({"method": ColumnImportMethod.ATTRIBUTE, "source_attribute": "foo"}, None),
-        (
-            {
-                "method": "source_attribute",
-                "source_attribute": "foo",
-                "default_value": "bar",
-            },
-            None,
-        ),
-        (
-            {"method": ColumnImportMethod.EXPRESSION},
-            sm.FieldMapConfigExpressionMissingError,
-        ),
-        ({"method": ColumnImportMethod.EXPRESSION, "expression": "foo"}, None),
-        (
-            {
-                "method": ColumnImportMethod.EXPRESSION,
-                "expression": "foo",
-                "default_value": "bar",
-            },
-            None,
-        ),
-        (
-            {"method": ColumnImportMethod.DEFAULT},
-            sm.FieldMapConfigDefaultValueMissingError,
-        ),
-        ({"method": ColumnImportMethod.DEFAULT, "default_value": "foo"}, None),
-        ({}, sm.FieldMapConfigMethodMissingError),
+        {"method": ColumnImportMethod.AUTO, "source_attribute": "foo"},
+        {"method": ColumnImportMethod.IGNORE},
+        {"method": ColumnImportMethod.ATTRIBUTE, "source_attribute": "foo"},
+        {"method": ColumnImportMethod.EXPRESSION, "expression": "foo"},
+        {"method": ColumnImportMethod.DEFAULT, "default_value": "foo"},
     ],
 )
-def test_field_map_config(config_dict, expected_error):
-    if not expected_error:
-        assert sm.FieldMapConfig(**config_dict)
-    else:
-        with pytest.raises(ValueError):
-            sm.FieldMapConfig(**config_dict)
+def test_field_map_config_valid(config_dict):
+    assert sm.FieldMapConfig(**config_dict)
+
+
+@pytest.mark.parametrize(
+    "config_dict",
+    [
+        {"method": ColumnImportMethod.ATTRIBUTE},
+        {"method": ColumnImportMethod.EXPRESSION},
+        {"method": ColumnImportMethod.DEFAULT},
+    ],
+)
+def test_field_map_config_invalid(config_dict):
+    with pytest.raises(ValidationError) as exc_info:
+        sm.FieldMapConfig(**config_dict)
+    assert exc_info.value.errors()[0]["type"] == "value_error.missing"
 
 
 @dataclass
@@ -153,3 +135,23 @@ def test_get_settings_model():
     for model_name in settings_dict:
         assert hasattr(settings_model, model_name)
         assert getattr(settings_model, model_name) == settings_dict[model_name]
+
+
+def test_field_map_config_method_validation():
+    # Test valid method with allowed methods
+    metadata = sm.FieldMapMetadata(allowed_methods=[ColumnImportMethod.EXPRESSION])
+
+    config_cls = sm.FieldMapConfig.with_metadata(metadata)
+    config = config_cls(
+        method=ColumnImportMethod.EXPRESSION,
+        expression="foo",
+    )
+    assert config.method == ColumnImportMethod.EXPRESSION
+
+    with pytest.raises(ValidationError) as exc_info:
+        config_cls(
+            method=ColumnImportMethod.DEFAULT,
+            default_value="foo",
+        )
+
+    assert exc_info.value.errors()[0]["type"] == "value_error.invalid"

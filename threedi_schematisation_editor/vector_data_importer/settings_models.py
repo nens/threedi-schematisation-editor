@@ -15,9 +15,11 @@ from typing import (
 from pydantic import (
     BaseModel,
     Field,
+    ValidationError,
     field_validator,
     model_validator,
 )
+from pydantic_core import PydanticCustomError
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
@@ -72,22 +74,6 @@ class CrossSectionDataRemap(BaseModel):
     use_lowest_point_as_reference: bool = False
 
 
-class FieldMapConfigExpressionMissingError(ValueError):
-    pass
-
-
-class FieldMapConfigDefaultValueMissingError(ValueError):
-    pass
-
-
-class FieldMapConfigSourceAttributeMissingError(ValueError):
-    pass
-
-
-class FieldMapConfigMethodMissingError(ValueError):
-    pass
-
-
 @dataclass
 class FieldMapMetadata:
     allowed_methods: list[ColumnImportMethod] = field(
@@ -116,7 +102,6 @@ class FieldMapConfig(BaseModel, Generic[DefaultValueType]):
         """Returns a subclass with specific metadata"""
         return type("CustomFieldMapConfig", (cls,), {"_metadata": metadata})
 
-    # TODO: consider if we want to keep dict access support
     def get(self, key, default=None):
         return self.dict().get(key, default)
 
@@ -126,13 +111,6 @@ class FieldMapConfig(BaseModel, Generic[DefaultValueType]):
     def dict(self, **kwargs):
         return super().model_dump(**kwargs)
 
-    @field_validator("method", mode="before")
-    def validate_method_presence(cls, value):
-        # TODO: consider if custom check is necessary just to raise
-        if value is None:
-            raise FieldMapConfigMethodMissingError("The 'method' field is required")
-        return value
-
     @model_validator(mode="after")
     def validate_required_fields(self) -> "FieldConfig":
         """Validate if correct fields are set based on the selected method"""
@@ -140,35 +118,23 @@ class FieldMapConfig(BaseModel, Generic[DefaultValueType]):
         if method in self._metadata.required_field_map and getattr(
             self, self._metadata.required_field_map[method]
         ) in [None, ""]:
-            # TODO: reconsider specific errors
-            if method == ColumnImportMethod.EXPRESSION:
-                raise FieldMapConfigExpressionMissingError(
-                    "When method is 'expression', 'expression' field is required"
-                )
-            elif method == ColumnImportMethod.DEFAULT:
-                raise FieldMapConfigDefaultValueMissingError(
-                    "When method is 'default', 'default_value' field is required"
-                )
-            elif method == ColumnImportMethod.ATTRIBUTE:
-                raise FieldMapConfigSourceAttributeMissingError(
-                    "When method is 'source_attribute', 'source_attribute' field is required"
-                )
+            loc = self._metadata.required_field_map[method]
+            msg = f"When method is '{str(method)}', a value for {loc} is required"
+            raise PydanticCustomError("value_error.missing", msg)
+
         return self
 
     @field_validator("method")
     @classmethod
     def validate_method(cls, v: ColumnImportMethod) -> ColumnImportMethod:
-        """Validate if selected method is in allowe methods"""
+        """Validate if selected method is in allowed methods"""
         # Get the allowed_methods from _metadata
         allowed_methods = None
         if cls._metadata is not None:
             allowed_methods = cls._metadata.allowed_methods
-
         if allowed_methods is not None and v not in allowed_methods:
-            raise ValueError(
-                f"Method {v} is not allowed. "
-                f"Allowed methods are: {', '.join(str(m) for m in allowed_methods)}"
-            )
+            msg = f"Method {v} is not allowed; allowed methods are: {', '.join(str(m) for m in allowed_methods)}"
+            raise PydanticCustomError("value_error.invalid", msg)
         return v
 
 
