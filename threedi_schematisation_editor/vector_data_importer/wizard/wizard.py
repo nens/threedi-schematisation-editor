@@ -44,7 +44,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
 
 class ImportWorker(QObject):
     progress = pyqtSignal(dict)
-    finished = pyqtSignal(str, str, str)  # message, success
+    finished = pyqtSignal(bool, str, str, str)  # message, success
 
     def __init__(self, callable_func, cancellation_token):
         super().__init__()
@@ -64,11 +64,13 @@ class ImportWorker(QObject):
                 status_msg = "Import was cancelled.\n"
             else:
                 status_msg = "Import completed successfully.\n"
+            success = True
         except Exception as e:
             status_msg = "Import failed with traceback:"
             error_msg = f"{traceback.format_exc()}"
+            success = False
         warning_msg = warnings_catcher.warnings_msg
-        self.finished.emit(status_msg, warning_msg, error_msg)
+        self.finished.emit(success, status_msg, warning_msg, error_msg)
 
 
 class VDIWizard(QWizard):
@@ -280,7 +282,7 @@ class VDIWizard(QWizard):
         cancellation_token = CancellationToken()
         self.run_page.cancel_requested.connect(cancellation_token.cancel)
         importer.processor._cancellation_token = cancellation_token
-        if importer.integrator:
+        if isinstance(importer, vdi_importers.SpatialImporter) and importer.integrator:
             importer.integrator._cancellation_token = cancellation_token
 
         # Setup worker and thread
@@ -309,11 +311,11 @@ class VDIWizard(QWizard):
         self.worker.progress.connect(update_progress)
 
         # Connect finish handling
-        def handle_finished(status_msg, warning_msg, error_msg):
+        def handle_finished(success, status_msg, warning_msg, error_msg):
             error_color = "#FF0000"
             warning_color = "#FFA500"
             self.run_page.update_log(
-                status_msg, fg_color=error_color if error_msg else None
+                status_msg, fg_color=error_color if not success else None
             )
             self.run_page.update_log(error_msg)
             self.run_page.update_log(warning_msg, fg_color=warning_color)
@@ -322,7 +324,8 @@ class VDIWizard(QWizard):
                 "so you can review the changes before saving them to the layers."
             )
             self.run_page.update_log(final_msg)
-
+            if success:
+                progress_bar.setValue(0)
             self.run_page.cancel_button.setEnabled(False)
             for handler in handlers:
                 handler.connect_handler_signals()

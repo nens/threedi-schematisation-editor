@@ -73,7 +73,7 @@ class Importer:
         if progress_callback:
             progress_callback(value=1, maximum=len(external_features))
         processed_features = self.processor.process_features(
-            external_features, progress_callback
+            external_features, progress_callback=progress_callback
         )
         if new_features is None or len(new_features) == 0:
             return processed_features
@@ -90,7 +90,9 @@ class Importer:
     def import_features(self, context=None, selected_ids=None, progress_callback=None):
         self.start_editing()
         input_feature_ids = self.get_input_feature_ids(selected_ids)
-        new_features = self.process_features(input_feature_ids, progress_callback)
+        new_features = self.process_features(
+            input_feature_ids, progress_callback=progress_callback
+        )
         self.add_features_to_layers(new_features)
 
 
@@ -177,7 +179,7 @@ class SpatialImporter(Importer):
     def integrate_features(self, input_feature_ids, progress_callback=None):
         if self.integrator:
             new_features, integrated_ids = self.integrator.integrate_features(
-                input_feature_ids, progress_callback
+                input_feature_ids, progress_callback=progress_callback
             )
             input_feature_ids = [
                 id for id in input_feature_ids if id not in integrated_ids
@@ -199,7 +201,7 @@ class SpatialImporter(Importer):
         if progress_callback:
             progress_callback(value=1, maximum=len(input_feature_ids))
         new_features, input_feature_ids = self.integrate_features(
-            input_feature_ids, progress_callback
+            input_feature_ids, progress_callback=progress_callback
         )
         # Process remaining features that are not integrated
         new_features = self.process_features(
