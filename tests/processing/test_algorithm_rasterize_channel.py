@@ -14,7 +14,7 @@ from threedi_schematisation_editor.processing.algorithm_rasterize_channels impor
 from tests.utils import DATA_DIR
 
 from qgis import processing
-from qgis.core import QgsVectorLayer, QgsProcessingFeedback
+from qgis.core import QgsApplication, QgsVectorLayer, QgsProcessingFeedback
 
 
 def test_buffer():
@@ -42,6 +42,16 @@ def test_buffer():
     assert result["OUTPUT"].isValid()
 
 
+def test_buffer_available():
+    alg = QgsApplication.processingRegistry().algorithmById("native:buffer")
+    assert alg is not None
+
+
+def test_meshrasterize_available():
+    alg = QgsApplication.processingRegistry().algorithmById("native:meshrasterize")
+    assert alg is not None
+
+
 gpkg_path = (DATA_DIR / 'rasterize_channels_test_inputs.gpkg').resolve()
 channel_features = str(gpkg_path) + '|layername=channel'
 cross_section_location_features = str(gpkg_path) + '|layername=cross_section_location'
@@ -57,7 +67,7 @@ rasterize_channel_inputs = {
 @pytest.mark.parametrize("alg_class, parameters", [
     (RasterizeChannelsAlgorithm, rasterize_channel_inputs),
 ])
-def test_water_depth_algorithm(alg_class: QgsProcessingAlgorithm, parameters: Dict):
+def test_rasterize_channels_algorithm(alg_class: QgsProcessingAlgorithm, parameters: Dict):
     alg = alg_class()
 
     # Create the QGIS processing context & feedback
