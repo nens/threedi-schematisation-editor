@@ -1,8 +1,7 @@
 FROM qgis/qgis:final-3_34_4
 RUN apt-get update && \
     apt-get install -y \
-        libqgis-3d \
-        qgis-plugin-3d \
+        qgis-3d \
         python3-pyqt5.qtwebsockets \
         wget \
         python3-scipy \
