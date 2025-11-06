@@ -1,6 +1,7 @@
 import pytest
 
 from qgis.core import QgsApplication
+from qgis.analysis import QgsNativeAlgorithms
 
 _singletons = {}
 
@@ -13,6 +14,7 @@ def ensure_qgis_app_is_initialized():
     if "app" not in _singletons:
         app = QgsApplication([], False)
         app.initQgis()
+        QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
         _singletons["app"] = app
 
 
