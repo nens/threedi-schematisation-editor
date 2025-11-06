@@ -36,7 +36,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog 
     ValueMapDialog,
 )
 
-ERROR_BACKGROUND_COLOR = "#ff0000"
+ERROR_BACKGROUND_COLOR = "#F4E4B5"
 
 
 class FieldMapColumn(Enum):
@@ -353,20 +353,12 @@ class FieldMapDelegate(QStyledItemDelegate):
 
     @staticmethod
     def get_invalid_style_for_editor(editor):
-        # TODO: decide on preferred solution
         if isinstance(editor, QComboBox):
-            return "QComboBox { background: palette(highlight); color: palette(highlighted-text); }"
+            return f"QComboBox {{ background-color: {ERROR_BACKGROUND_COLOR};}}"
         elif isinstance(editor, (QLineEdit, QgsFieldExpressionWidget)):
-            return "QLineEdit { background: palette(highlight); color: palette(highlighted-text); }"
+            return f"QLineEdit {{ background-color: {ERROR_BACKGROUND_COLOR};}}"
         else:
             return ""
-
-    #     if isinstance(editor, QComboBox):
-    #         return f"QComboBox {{ background-color: {ERROR_BACKGROUND_COLOR};}}"
-    #     elif isinstance(editor, (QLineEdit, QgsFieldExpressionWidget)):
-    #         return f"QLineEdit {{ background-color: {ERROR_BACKGROUND_COLOR};}}"
-    #     else:
-    #         return ""
 
     def setEditorData(self, editor, index):
         # Retrieve info from the model
