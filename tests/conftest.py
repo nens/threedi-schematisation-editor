@@ -2,9 +2,9 @@ import pytest
 
 from qgis.core import QgsApplication
 from qgis.analysis import QgsNativeAlgorithms
+from qgis._3d import Qgs3DAlgorithms
 
 _singletons = {}
-
 
 
 def ensure_qgis_app_is_initialized():
@@ -15,6 +15,7 @@ def ensure_qgis_app_is_initialized():
         app = QgsApplication([], False)
         app.initQgis()
         QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
+        QgsApplication.processingRegistry().addProvider(Qgs3DAlgorithms())
         _singletons["app"] = app
 
 
