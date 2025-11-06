@@ -13,11 +13,38 @@ from threedi_schematisation_editor.processing.algorithm_rasterize_channels impor
 )
 from tests.utils import DATA_DIR
 
+from qgis import processing
+from qgis.core import QgsVectorLayer, QgsProcessingFeedback
+
+
+def test_buffer():
+
+    layer = QgsVectorLayer("Point?crs=EPSG:4326", "points", "memory")
+    assert layer.isValid()
+
+    feedback = QgsProcessingFeedback()
+    result = processing.run(
+        "native:buffer",
+        {
+            "INPUT": layer,
+            "DISTANCE": 10,
+            "SEGMENTS": 5,
+            "END_CAP_STYLE": 0,
+            "JOIN_STYLE": 0,
+            "MITER_LIMIT": 2,
+            "DISSOLVE": False,
+            "OUTPUT": "memory:"
+        },
+        feedback=feedback
+    )
+
+    assert "OUTPUT" in result
+    assert result["OUTPUT"].isValid()
+
 
 gpkg_path = (DATA_DIR / 'rasterize_channels_test_inputs.gpkg').resolve()
 channel_features = str(gpkg_path) + '|layername=channel'
 cross_section_location_features = str(gpkg_path) + '|layername=cross_section_location'
-
 
 rasterize_channel_inputs = {
     'INPUT_CHANNELS': channel_features,
@@ -26,7 +53,6 @@ rasterize_channel_inputs = {
     'PIXEL_SIZE': 0.1,
     'OUTPUT': str(DATA_DIR / "rasterized_channels.tif"),
 }
-
 
 @pytest.mark.parametrize("alg_class, parameters", [
     (RasterizeChannelsAlgorithm, rasterize_channel_inputs),
