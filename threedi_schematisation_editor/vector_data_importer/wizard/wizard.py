@@ -133,7 +133,6 @@ class VDIWizard(QWizard):
         font = create_font(self, 10)
         self.setFont(font)
         self.setWindowTitle(self.wizard_title)
-        # TODO is this the right size?
         self.resize(1000, 750)
         # add pages
         self.addPage(self.start_page)
