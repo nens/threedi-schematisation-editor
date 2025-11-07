@@ -178,9 +178,11 @@ def get_allowed_methods_for_model_class_field(
     # check if field type is optional and if so add it to the excluded_methods
     type_constructor = get_origin(model_field.type)
     # Optional fields have type Union[T, None]
-    if not type_constructor is Union or type(None) not in get_args(model_field.type):
-        if ColumnImportMethod.IGNORE in allowed_methods:
-            allowed_methods.remove(ColumnImportMethod.IGNORE)
+    is_optional = type_constructor is Union and type(None) in get_args(model_field.type)
+    if is_optional and ColumnImportMethod.IGNORE not in allowed_methods:
+        allowed_methods.append(ColumnImportMethod.IGNORE)
+    if not is_optional and ColumnImportMethod.IGNORE in allowed_methods:
+        allowed_methods.remove(ColumnImportMethod.IGNORE)
     return sorted(
         allowed_methods, key=lambda method: list(ColumnImportMethod).index(method)
     )

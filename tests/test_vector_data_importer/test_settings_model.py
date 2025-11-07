@@ -63,7 +63,10 @@ class TestGetAllowedMethodsForModelClassField:
         return metadata
 
     @pytest.mark.parametrize("is_optional", [False, True])
-    @pytest.mark.parametrize("allowed_methods", [None, [ColumnImportMethod.IGNORE]])
+    @pytest.mark.parametrize(
+        "allowed_methods",
+        [None, [ColumnImportMethod.IGNORE], [ColumnImportMethod.DEFAULT]],
+    )
     def test_optional(self, is_optional, allowed_methods):
         # By not including metadata in this test we test for the case where all methods are allowed
         # If allowed or excluded fields are specified, IGNORE may not be allowed even for an optional type
