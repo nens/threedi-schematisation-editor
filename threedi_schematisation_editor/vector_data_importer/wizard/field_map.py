@@ -1,9 +1,9 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from enum import Enum
 from functools import cached_property
-from typing import Any, Optional, get_type_hints
+from typing import Any
 
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 from qgis.core import Qgis, QgsMessageLog, QgsVectorLayer
 from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSignal
@@ -26,10 +26,10 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
+from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import enum_entry_name_format
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     FieldMapConfig,
-    create_field_map_config,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog import (
@@ -159,18 +159,20 @@ class FieldMapModel(QAbstractTableModel):
 
     def set_fixed_source_attributes(self, row_key: str, source_attribute: list[str]):
         # Only add fixed source attributes for existing rows
-        # Not catching any errors because this is the developpers problem
         if row_key in self.row_dict:
             self._fixed_source_attributes[row_key] = source_attribute
+
+    def set_fixed_source_attributes_from_data_model(
+        self, row_key: str, model_cls: dm.ModelObject
+    ):
+        attributes = [model_field.name for model_field in fields(model_cls)]
+        self.set_fixed_source_attributes(row_key, attributes)
 
     def get_valid_source_attributes(self, row_idx: int) -> list[str]:
         row_key = list(self.row_dict.keys())[row_idx]
         if row_key in self._fixed_source_attributes:
             return self._fixed_source_attributes[row_key]
         return self.current_layer_attributes
-
-    def set_fixed_source_attributes_for_row(self, row_name, attributes):
-        self._fixed_source_attributes[row_name] = attributes
 
     def rowCount(self, parent=QModelIndex()):
         return len(self.rows) if self.rows else 0

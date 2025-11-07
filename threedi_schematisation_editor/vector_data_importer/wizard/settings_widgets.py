@@ -23,9 +23,11 @@ from qgis.PyQt.QtWidgets import (
     QTableView,
     QVBoxLayout,
     QWidget,
+    QWizardPage,
 )
 
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
+from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map import (
     FieldMapColumn,
@@ -35,6 +37,14 @@ from threedi_schematisation_editor.vector_data_importer.wizard.field_map import 
 from threedi_schematisation_editor.vector_data_importer.wizard.models import (
     GenericSettingsModel,
 )
+
+
+def get_wizard(widget) -> Optional["QWizard"]:
+    """Helper function to get the parent VDIWizard instance"""
+    parent = widget.parent()
+    if isinstance(widget.parent(), QWizardPage):
+        return parent.wizard()
+    return None
 
 
 class LayerSettingsWidget(QWidget):
@@ -368,11 +378,15 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
                 config=self.model.join_field_src,
             ),
             "join_field_tgt": FieldMapRow(
-                label="Join field in source", config=self.model.join_field_tgt
+                label="Join field in source layer", config=self.model.join_field_tgt
             ),
         }
         extra_layout = self.get_extra_layout()
         self.setup_ui(row_dict, extra_layout)
+        # Use channel layer for join_field_src attributes
+        self.field_map_widget.table_model.set_fixed_source_attributes_from_data_model(
+            "join_field_src", dm.Channel
+        )
 
     def get_extra_layout(self) -> list[QBoxLayout]:
         snap_distance_label = QLabel("Snap to geometry object within:")
