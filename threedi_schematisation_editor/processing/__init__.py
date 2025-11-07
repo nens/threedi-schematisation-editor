@@ -13,7 +13,7 @@ from threedi_schematisation_editor.processing.algorithms_1d import BottomLevelCa
 from threedi_schematisation_editor.processing.algorithms_1d2d import (
     GenerateExchangeLines,
 )
-from threedi_schematisation_editor.processing.algorithms_conversion import (
+from threedi_schematisation_editor.processing.algorithms_vector_data_importer import (
     ImportChannels,
     ImportConnectionNodes,
     ImportCrossSectionData,

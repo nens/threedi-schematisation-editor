@@ -44,10 +44,10 @@ class BaseImporter(QgsProcessingAlgorithm):
         return QCoreApplication.translate("Processing", string)
 
     def group(self):
-        return self.tr("Conversion")
+        return self.tr("Import")
 
     def groupId(self):
-        return "conversion"
+        return "import"
 
     def name(self):
         return f"threedi_import_{self.FEATURE_TYPE}s"
