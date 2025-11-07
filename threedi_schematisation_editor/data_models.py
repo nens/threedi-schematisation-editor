@@ -240,9 +240,9 @@ class Weir(ModelObject):
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
     material_id: Optional[int]
-    friction_value: float
-    friction_type: FrictionType
-    sewerage: bool
+    friction_value: Optional[float]
+    friction_type: Optional[FrictionType]
+    sewerage: Optional[bool]
     external: Optional[bool]
     connection_node_id_start: int = field(
         metadata={
@@ -262,7 +262,7 @@ class Weir(ModelObject):
             ],
         }
     )
-    cross_section_shape: CrossSectionShape
+    cross_section_shape: Optional[CrossSectionShape]
     cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
@@ -282,13 +282,13 @@ class Culvert(ModelObject):
     calculation_point_distance: Optional[float] = field(
         metadata={DISPLAY_UNIT_FIELD: "m"}
     )
-    invert_level_start: float
-    invert_level_end: float
+    invert_level_start: Optional[float]
+    invert_level_end: Optional[float]
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
     material_id: Optional[int]
-    friction_value: float
-    friction_type: FrictionType
+    friction_value: Optional[float]
+    friction_type: Optional[FrictionType]
     connection_node_id_start: int = field(
         metadata={
             DISPLAY_NAME_FIELD: "Connection node start ID",
@@ -307,7 +307,7 @@ class Culvert(ModelObject):
             ],
         }
     )
-    cross_section_shape: CrossSectionShape
+    cross_section_shape: Optional[CrossSectionShape]
     cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
@@ -328,9 +328,9 @@ class Orifice(ModelObject):
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
     material_id: Optional[int]
-    friction_value: float
-    friction_type: FrictionType
-    sewerage: bool
+    friction_value: Optional[float]
+    friction_type: Optional[FrictionType]
+    sewerage: Optional[bool]
     connection_node_id_start: int = field(
         metadata={
             DISPLAY_NAME_FIELD: "Connection node start ID",
@@ -349,7 +349,7 @@ class Orifice(ModelObject):
             ],
         }
     )
-    cross_section_shape: CrossSectionShape
+    cross_section_shape: Optional[CrossSectionShape]
     cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
@@ -369,11 +369,11 @@ class Pipe(ModelObject):
     calculation_point_distance: Optional[float] = field(
         metadata={DISPLAY_UNIT_FIELD: "m"}
     )
-    invert_level_start: float
-    invert_level_end: float
+    invert_level_start: Optional[float]
+    invert_level_end: Optional[float]
     material_id: Optional[int]
-    friction_value: float
-    friction_type: FrictionType
+    friction_value: Optional[float]
+    friction_type: Optional[FrictionType]
     sewerage_type: Optional[SewerageType]
     connection_node_id_start: int = field(
         metadata={
@@ -393,7 +393,7 @@ class Pipe(ModelObject):
             ],
         }
     )
-    cross_section_shape: CrossSectionShape
+    cross_section_shape: Optional[CrossSectionShape]
     cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
@@ -416,12 +416,12 @@ class CrossSectionLocation(ModelObject):
     id: int
     code: Optional[str]
     display_name: Optional[str]
-    reference_level: float
-    friction_type: FrictionTypeExtended
+    friction_value: Optional[float]
+    friction_type: Optional[FrictionType]
     friction_value: float
     bank_level: Optional[float]
     channel_id: int = field(metadata={ALLOWED_METHODS_FIELD: [ColumnImportMethod.AUTO]})
-    cross_section_shape: CrossSectionShape
+    cross_section_shape: Optional[CrossSectionShape]
     cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
@@ -454,7 +454,7 @@ class CrossSectionData(ModelObject):
             ]
         }
     )
-    cross_section_shape: CrossSectionShape = field(
+    cross_section_shape: Optional[CrossSectionShape] = field(
         metadata={
             ALLOWED_METHODS_FIELD: [
                 ColumnImportMethod.ATTRIBUTE,
