@@ -197,10 +197,10 @@ class PointToLineSettings(BaseModel):
         ]
     )
     name: ClassVar[str] = "point_to_line_conversion"
-    length: FieldMapConfig = FieldMapConfig.with_metadata(metadata)(
+    length: FieldMapConfig = FieldMapConfig[float].with_metadata(metadata)(
         method=ColumnImportMethod.DEFAULT, default_value=1.0
     )
-    azimuth: FieldMapConfig = FieldMapConfig.with_metadata(metadata)(
+    azimuth: FieldMapConfig = FieldMapConfig[float].with_metadata(metadata)(
         method=ColumnImportMethod.DEFAULT, default_value=90
     )
 

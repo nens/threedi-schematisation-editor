@@ -235,16 +235,18 @@ class IntegrationSettingsWidget(SettingsWidget):
 
     def setup_integration_settings(self, settings_container):
         grid_layout = QGridLayout()
-        grid_layout.addWidget(QLabel("Snap to channel/pipe withing"), 0, 0)
+        grid_layout.addWidget(QLabel("Snap to channel/pipe within"), 0, 0)
         grid_layout.addWidget(
             QLabel("Minimum length of a channel/pipe after edit"), 1, 0
         )
         self.snap_distance = QDoubleSpinBox()
         self.snap_distance.setMinimum(sm.get_field_min(self.model, "snap_distance"))
         self.snap_distance.setMaximum(sm.get_field_max(self.model, "snap_distance"))
+        self.snap_distance.setSuffix(" m")
         self.min_length = QDoubleSpinBox()
         self.min_length.setMinimum(sm.get_field_min(self.model, "min_length"))
         self.min_length.setMaximum(sm.get_field_max(self.model, "min_length"))
+        self.min_length.setSuffix(" m")
         grid_layout.addWidget(self.snap_distance, 0, 1)
         grid_layout.addWidget(self.min_length, 1, 1)
         settings_container.setLayout(grid_layout)
@@ -362,6 +364,8 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
             ),
         }
         self.setup_ui(row_dict)
+        self.field_map_widget.table_model.set_default_value_units("length", " m")
+        self.field_map_widget.table_model.set_default_value_units("azimuth", " m")
 
     @property
     def group_name(self):

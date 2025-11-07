@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field, fields
 from enum import Enum
 from functools import cached_property
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import ValidationError
 from qgis.core import Qgis, QgsMessageLog, QgsVectorLayer
@@ -13,6 +13,7 @@ from qgis.PyQt.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
+    QDoubleSpinBox,
     QHeaderView,
     QLabel,
     QLineEdit,
@@ -155,6 +156,7 @@ class FieldMapModel(QAbstractTableModel):
         }
         self.current_layer_attributes = []
         self._fixed_source_attributes = {}
+        self._default_value_units = {}
         self.layer: QgsVectorLayer = None
 
     def set_fixed_source_attributes(self, row_key: str, source_attribute: list[str]):
@@ -168,11 +170,17 @@ class FieldMapModel(QAbstractTableModel):
         attributes = [model_field.name for model_field in fields(model_cls)]
         self.set_fixed_source_attributes(row_key, attributes)
 
-    def get_valid_source_attributes(self, row_idx: int) -> list[str]:
+    def get_default_value_units(self, row_idx: int) -> Optional[str]:
         row_key = list(self.row_dict.keys())[row_idx]
-        if row_key in self._fixed_source_attributes:
-            return self._fixed_source_attributes[row_key]
-        return self.current_layer_attributes
+        return self._default_value_units.get(row_key)
+
+    def set_default_value_units(self, row_key: str, units: str):
+        if row_key in self.row_dict:
+            self._default_value_units[row_key] = units
+
+    def get_valid_source_attributes(self, row_idx: int) -> Optional[list[str]]:
+        row_key = list(self.row_dict.keys())[row_idx]
+        return self._fixed_source_attributes.get(row_key, self.current_layer_attributes)
 
     def rowCount(self, parent=QModelIndex()):
         return len(self.rows) if self.rows else 0
@@ -325,6 +333,13 @@ class FieldMapDelegate(QStyledItemDelegate):
                 for display_text, data in items:
                     editor.addItem(display_text, data)
                 editor.setCurrentIndex(editor.findData(current_value))
+            elif value_type in [int, float]:
+                editor = QDoubleSpinBox(parent)
+                unit = index.model().get_default_value_units(index.row())
+                if unit:
+                    editor.setSuffix(f" {unit}")
+                if current_value:
+                    editor.setValue(float(current_value))
             else:
                 editor = QLineEdit(parent)
                 editor.setText(str(current_value) if current_value else "")
@@ -390,6 +405,9 @@ class FieldMapDelegate(QStyledItemDelegate):
             current_value = index.model().rows[index.row()].config.default_value
             if isinstance(editor, QComboBox):
                 editor.setCurrentIndex(editor.findData(current_value))
+            elif isinstance(editor, QDoubleSpinBox):
+                if current_value:
+                    editor.setValue(float(current_value))
             else:
                 editor.setText(str(current_value) if current_value is not None else "")
         # update style
@@ -411,6 +429,8 @@ class FieldMapDelegate(QStyledItemDelegate):
         elif column == FieldMapColumn.DEFAULT_VALUE:
             if isinstance(editor, QComboBox):
                 value = editor.currentData()
+            elif isinstance(editor, QDoubleSpinBox):
+                value = editor.value()
             else:
                 value = editor.text()
         if value is not None:
