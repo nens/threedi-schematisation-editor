@@ -12,6 +12,7 @@ from threedi_schematisation_editor.enumerators import (
     BoundaryType2D,
     ControlType,
     CrestType,
+    CrossSectionDataTargetType,
     CrossSectionShape,
     ExchangeTypeChannel,
     ExchangeTypeCulvert,
@@ -20,7 +21,6 @@ from threedi_schematisation_editor.enumerators import (
     FlowVariable,
     FrictionShallowWaterDepthCorrection,
     FrictionType,
-    FrictionTypeExtended,
     GeometryType,
     InfiltrationSurfaceOption,
     InitializationType,
@@ -442,9 +442,9 @@ class CrossSectionData(ModelObject):
     __layername__ = "Cross section data"
     __geometrytype__ = None
 
-    target_object_type: str
-    target_object_id: int
-    target_object_code: str
+    target_object_type: CrossSectionDataTargetType
+    target_object_id: Optional[int]
+    target_object_code: Optional[str]
     order_by: float = field(
         metadata={
             ALLOWED_METHODS_FIELD: [
