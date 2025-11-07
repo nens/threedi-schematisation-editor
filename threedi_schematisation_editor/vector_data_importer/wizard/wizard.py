@@ -303,7 +303,7 @@ class VDIWizard(QWizard):
         def update_progress(progress_dict):
             if progress_dict["maximum"] is not None:
                 progress_bar.setMaximum(progress_dict["maximum"])
-            if progress_dict["value"]:
+            if progress_dict["value"] is not None:
                 progress_bar.setValue(progress_dict["value"])
             elif progress_dict["add"]:
                 progress_bar.setValue(progress_bar.value() + progress_dict["add"])
@@ -324,8 +324,6 @@ class VDIWizard(QWizard):
                 "so you can review the changes before saving them to the layers."
             )
             self.run_page.update_log(final_msg)
-            if success:
-                progress_bar.setValue(0)
             self.run_page.cancel_button.setEnabled(False)
             for handler in handlers:
                 handler.connect_handler_signals()
