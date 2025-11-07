@@ -4,7 +4,6 @@ from pydantic import BaseModel
 from qgis.core import Qgis, QgsMessageLog
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor, QIcon, QPalette, QTextBlockFormat, QTextCharFormat
-
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -251,14 +250,6 @@ class RunPage(QWizardPage):
         QgsMessageLog.logMessage("Cancel requested", "DEBUG", Qgis.Info)
         self.cancel_requested.emit()
         self.cancel_button.setEnabled(False)
-
-    def on_run_import(self):
-        self.cancel_button.setEnabled(True)
-        self.wizard().run_import()
-        self.cancel_button.setEnabled(False)
-
-    def initializePage(self):
-        settings = self.wizard().get_settings()
 
 
 class LogPanel(QWidget):
