@@ -1,7 +1,7 @@
 from typing import Optional, Type
 
 from pydantic import BaseModel
-from qgis.core import Qgis, QgsMessageLog
+from qgis.core import Qgis, QgsApplication, QgsMessageLog
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor, QIcon, QPalette, QTextBlockFormat, QTextCharFormat
 from qgis.PyQt.QtWidgets import (
@@ -16,6 +16,7 @@ from qgis.PyQt.QtWidgets import (
     QProgressBar,
     QPushButton,
     QSizePolicy,
+    QStyle,
     QTableView,
     QToolButton,
     QVBoxLayout,
@@ -267,44 +268,32 @@ class LogPanel(QWidget):
         palette.setColor(QPalette.Text, QColor("black"))
         self.setPalette(palette)
 
-        # --- Buttons ---
-        copy_button = QToolButton()
-        copy_button.setIcon(QIcon.fromTheme("edit-copy"))
+        # --- Copy Button ---
+        copy_button = QToolButton(self.text)
+        copy_button.setIcon(QgsApplication.getThemeIcon("mActionEditCopy.svg"))
         copy_button.setToolTip("Copy log to clipboard")
         copy_button.clicked.connect(self.copy_log)
 
-        save_button = QToolButton()
-        save_button.setIcon(QIcon.fromTheme("document-save"))
-        save_button.setToolTip("Save log to file")
-        save_button.clicked.connect(self.save_log)
-
-        clear_button = QToolButton()
-        clear_button.setIcon(QIcon.fromTheme("edit-clear"))
-        clear_button.setToolTip("Clear log")
-        clear_button.clicked.connect(self.text.clear)
+        # Make button background transparent
+        copy_button.setStyleSheet(
+            "QToolButton { background: transparent; border: none; }"
+        )
 
         # --- Layout ---
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(copy_button)
-        button_layout.addWidget(save_button)
-        button_layout.addWidget(clear_button)
-        button_layout.addStretch()
-
         layout = QVBoxLayout()
         layout.addWidget(self.text)
-        layout.addLayout(button_layout)
         self.setLayout(layout)
+
+        # Position the copy button in the top-right corner of the text area
+        def updateButtonPosition():
+            margin = 5  # pixels from the edge
+            copy_button.move(self.text.width() - copy_button.width() - margin, margin)
+
+        # Update button position when text area is resized
+        self.text.resizeEvent = lambda e: updateButtonPosition()
+        updateButtonPosition()
 
     # --- Slots ---
     def copy_log(self) -> None:
         self.text.selectAll()
         self.text.copy()
-
-    def save_log(self) -> None:
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Save Log", "log.txt", "Text Files (*.txt)"
-        )
-        if not path:
-            return
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(self.text.toPlainText())
