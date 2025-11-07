@@ -17,6 +17,7 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionDataProcessor,
 )
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
+    CrossSectionDataRemap,
     ImportSettings,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
@@ -295,7 +296,12 @@ def test_import_cross_section_data(qgis_application):
     }
     for target, ref in target_map_fields.items():
         field_config[target] = {"method": method, method: ref}
-    import_config = ImportSettings(fields=field_config)
+    cross_section_data_remap = CrossSectionDataRemap(
+        set_lowest_point_to_zero=False, use_lowest_point_as_reference=False
+    )
+    import_config = ImportSettings(
+        fields=field_config, cross_section_data_remap=cross_section_data_remap
+    )
     src_layer = get_source_layer("cross_section_data.gpkg", "cross_section_data")
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_csd_import.gpkg")
     temp_gpkg = str(get_temp_copy(target_gpkg))
