@@ -264,7 +264,8 @@ class VDIWizard(QWizard):
         self.finish_button.setEnabled(False)
         self.run_page.cancel_button.setEnabled(True)
         progress_bar = self.run_page.progress_bar
-
+        progress_bar.reset()
+        self.run_page.clear_log()
         settings = self.get_settings()
         selected_feat_ids = (
             self.use_selected_features

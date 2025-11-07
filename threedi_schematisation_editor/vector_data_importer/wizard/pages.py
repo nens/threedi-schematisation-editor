@@ -247,6 +247,9 @@ class RunPage(QWizardPage):
         cursor.insertText(msg + "\n", format)
         self.log.text.ensureCursorVisible()
 
+    def clear_log(self):
+        self.log.text.clear()
+
     def on_cancel(self):
         QgsMessageLog.logMessage("Cancel requested", "DEBUG", Qgis.Info)
         self.cancel_requested.emit()
