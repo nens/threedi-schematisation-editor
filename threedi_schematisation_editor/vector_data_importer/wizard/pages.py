@@ -146,10 +146,12 @@ class SettingsPage(QWizardPage):
 
 
 class FieldMapPage(QWizardPage):
-    def __init__(self, model_cls, name):
+    def __init__(self, model_cls, name, title_suffix=None):
         super().__init__()
         self.row_dict = self.create_rows(model_cls)
-        self.layer_name = model_cls.__layername__.lower()
+        self.title_suffix = (
+            title_suffix if title_suffix else f"{model_cls.__layername__.lower()}s"
+        )
         self.setup_ui()
         self.name = name
 
@@ -176,7 +178,7 @@ class FieldMapPage(QWizardPage):
         if layer:
             self.field_map_widget.update_layer(layer)
         self.setTitle(
-            f"Map {self.wizard().selected_layer.name()} fields to {self.layer_name} fields"
+            f"Map {self.wizard().selected_layer.name()} fields to {self.title_suffix}"
         )
         super().initializePage()
 

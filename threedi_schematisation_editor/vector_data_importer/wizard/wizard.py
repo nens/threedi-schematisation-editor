@@ -436,6 +436,14 @@ class ImportCrossSectionDataWizard(VDIWizard):
     def wizard_title(self):
         return f"Import {self.model_cls.__layername__}"
 
+    @cached_property
+    def field_map_page(self):
+        return FieldMapPage(
+            model_cls=self.model_cls,
+            name="fields",
+            title_suffix="schematisation objects",
+        )
+
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         handlers = [
             self.layer_manager.model_handlers[model_cls]
