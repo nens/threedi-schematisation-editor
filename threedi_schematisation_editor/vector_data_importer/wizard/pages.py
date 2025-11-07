@@ -223,7 +223,7 @@ class RunPage(QWizardPage):
         self.log = LogPanel()
 
         # Save to template
-        save_settings_button = QPushButton("Choose file...")
+        save_settings_button = QPushButton("Save as...")
         save_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         save_settings_button.clicked.connect(self.on_save_button_clicked)
         self.saved_status = QLabel("Import configuration not saved")
