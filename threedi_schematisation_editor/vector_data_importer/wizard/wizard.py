@@ -84,6 +84,8 @@ class VDIWizard(QWizard):
         dm.CrossSectionLocation: vdi_importers.CrossSectionLocationImporter,
     }
     settings_widgets_classes: list[SettingsWidget] = []
+    import_started = pyqtSignal()
+    import_finished = pyqtSignal()
 
     def __init__(
         self,
@@ -93,7 +95,6 @@ class VDIWizard(QWizard):
         parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
-        self.import_finished = False
         self.model_cls = model_cls
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
@@ -143,6 +144,12 @@ class VDIWizard(QWizard):
         for page in self.connection_node_pages:
             self.addPage(page)
         self.addPage(self.run_page)
+        # Connect import start and finish signals
+        self.import_started.connect(self.run_page.on_run_start)
+        self.import_started.connect(lambda: self.set_enabled_nav(False))
+        self.import_finished.connect(self.run_page.on_run_finish)
+        self.import_finished.connect(lambda: self.set_enabled_nav(True))
+        # set up button to run import
         self.setButtonText(self.FinishButton, "Run import")
         self.finish_button = self.button(self.FinishButton)
         self.finish_button.clicked.disconnect()
@@ -260,12 +267,19 @@ class VDIWizard(QWizard):
             **layer_dict,
         )
 
+    def set_enabled_nav(self, enabled):
+        buttons = [
+            self.NextButton,
+            self.BackButton,
+            self.CancelButton,
+            self.FinishButton,
+        ]
+        for button in buttons:
+            self.button(button).setEnabled(enabled)
+
     def run_import(self):
-        self.finish_button.setEnabled(False)
-        self.run_page.cancel_button.setEnabled(True)
+        self.import_started.emit()
         progress_bar = self.run_page.progress_bar
-        progress_bar.reset()
-        self.run_page.clear_log()
         settings = self.get_settings()
         selected_feat_ids = (
             self.use_selected_features
@@ -328,8 +342,7 @@ class VDIWizard(QWizard):
             for handler in handlers:
                 handler.connect_handler_signals()
                 handler.layer.triggerRepaint()
-            self.run_page.cancel_button.setEnabled(False)
-            self.finish_button.setEnabled(True)
+            self.import_finished.emit()
 
         self.worker.finished.connect(handle_finished)
 

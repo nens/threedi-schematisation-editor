@@ -223,13 +223,13 @@ class RunPage(QWizardPage):
         self.log = LogPanel()
 
         # Save to template
-        save_settings_button = QPushButton("Save as...")
-        save_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        save_settings_button.clicked.connect(self.on_save_button_clicked)
+        self.save_settings_button = QPushButton("Save as...")
+        self.save_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.save_settings_button.clicked.connect(self.on_save_button_clicked)
         self.saved_status = QLabel("Import configuration not saved")
         save_box = QGroupBox("Save import configuration to template (optional)")
         layout = QVBoxLayout()
-        layout.addWidget(save_settings_button)
+        layout.addWidget(self.save_settings_button)
         layout.addWidget(self.saved_status)
         save_box.setLayout(layout)
 
@@ -238,6 +238,16 @@ class RunPage(QWizardPage):
         main_layout.addWidget(self.log)
         main_layout.addWidget(save_box)
         self.setLayout(main_layout)
+
+    def on_run_start(self):
+        self.cancel_button.setEnabled(True)
+        self.progress_bar.reset()
+        self.save_settings_button.setEnabled(False)
+        self.clear_log()
+
+    def on_run_finish(self):
+        self.cancel_button.setEnabled(False)
+        self.save_settings_button.setEnabled(True)
 
     def update_log(self, msg: str, fg_color: Optional[str] = None):
         if msg in [None, ""]:
