@@ -2,54 +2,15 @@ from pathlib import Path
 from typing import Dict
 
 import pytest
-
 from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingContext,
     QgsProcessingFeedback,
 )
-from threedi_schematisation_editor.processing.algorithm_rasterize_channels import (
-    RasterizeChannelsAlgorithm,
-)
+from qgis.core import QgsVectorLayer, QgsProcessingFeedback
+
+from threedi_schematisation_editor.processing.algorithm_rasterize_channels import RasterizeChannelsAlgorithm
 from tests.utils import DATA_DIR
-
-from qgis import processing
-from qgis.core import QgsApplication, QgsVectorLayer, QgsProcessingFeedback
-
-
-def test_buffer():
-
-    layer = QgsVectorLayer("Point?crs=EPSG:4326", "points", "memory")
-    assert layer.isValid()
-
-    feedback = QgsProcessingFeedback()
-    result = processing.run(
-        "native:buffer",
-        {
-            "INPUT": layer,
-            "DISTANCE": 10,
-            "SEGMENTS": 5,
-            "END_CAP_STYLE": 0,
-            "JOIN_STYLE": 0,
-            "MITER_LIMIT": 2,
-            "DISSOLVE": False,
-            "OUTPUT": "memory:"
-        },
-        feedback=feedback
-    )
-
-    assert "OUTPUT" in result
-    assert result["OUTPUT"].isValid()
-
-
-def test_buffer_available():
-    alg = QgsApplication.processingRegistry().algorithmById("native:buffer")
-    assert alg is not None
-
-
-def test_meshrasterize_available():
-    alg = QgsApplication.processingRegistry().algorithmById("native:meshrasterize")
-    assert alg is not None
 
 
 gpkg_path = (DATA_DIR / 'rasterize_channels_test_inputs.gpkg').resolve()
