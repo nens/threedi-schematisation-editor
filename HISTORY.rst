@@ -4,7 +4,7 @@ History
 2.3.6 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Add Rasterize channel processing algorithm (#448)
 
 
 2.3.5 (2025-10-22)
