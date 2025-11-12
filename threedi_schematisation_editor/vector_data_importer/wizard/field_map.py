@@ -565,6 +565,14 @@ class FieldMapWidget(QWidget):
                 if field_map_column == FieldMapColumn.LABEL:
                     continue
                 self.table_view.openPersistentEditor(self.table_model.index(row, col))
+                # The text in some editors is selected after creating the editor
+                # This removes the selection
+                editor = self.table_view.indexWidget(self.table_model.index(row, col))
+                if editor:
+                    if isinstance(editor, QAbstractSpinBox):
+                        editor.lineEdit().deselect()
+                    elif isinstance(editor, QLineEdit):
+                        editor.deselect()
 
     def close_persistent_editors(self):
         """Close all persistent editors in the table"""
