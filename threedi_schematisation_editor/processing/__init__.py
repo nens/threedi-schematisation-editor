@@ -19,6 +19,7 @@ from threedi_schematisation_editor.processing.algorithms_conversion import (
     ImportPipes,
     ImportWeirs,
 )
+from threedi_schematisation_editor.processing.algorithm_rasterize_channels import RasterizeChannelsAlgorithm
 
 
 class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
@@ -57,6 +58,7 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
             ImportWeirs(),
             ImportPipes(),
             BottomLevelCalculator(),
+            RasterizeChannelsAlgorithm(),
         ]
         for alg in self.algorithms_list:
             self.addAlgorithm(alg)

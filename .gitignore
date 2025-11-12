@@ -8,3 +8,4 @@ threedi_schematisation_editor/__pycache__
 
 /.idea
 *.zip
+*.aux.xml

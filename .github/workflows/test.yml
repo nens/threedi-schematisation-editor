@@ -19,8 +19,12 @@ jobs:
 
       - name: build
         run: |
-          docker compose build schema
-          docker compose run schema make zip
+          docker compose build qgis-desktop
+
+      - name: test
+        run: |
+          docker compose run qgis-desktop make test
+          docker compose run qgis-desktop make zip
 
       - name: Publish package
         if: startsWith(github.event.ref, 'refs/tags')
