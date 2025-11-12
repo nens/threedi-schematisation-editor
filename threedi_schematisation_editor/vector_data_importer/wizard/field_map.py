@@ -21,6 +21,7 @@ from qgis.PyQt.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSizePolicy,
+    QSpinBox,
     QStyledItemDelegate,
     QStyleOptionViewItem,
     QTableView,
@@ -334,7 +335,9 @@ class FieldMapDelegate(QStyledItemDelegate):
                     lambda idx, editor=editor: self.commitData.emit(editor)
                 )
             elif value_type in [int, float]:
-                editor = QDoubleSpinBox(parent)
+                editor = (
+                    QDoubleSpinBox(parent) if value_type == float else QSpinBox(parent)
+                )
                 unit = index.model().get_default_value_units(index.row())
                 if unit:
                     editor.setSuffix(f" {unit}")
@@ -419,9 +422,12 @@ class FieldMapDelegate(QStyledItemDelegate):
             current_value = index.model().rows[index.row()].config.default_value
             if isinstance(editor, QComboBox):
                 editor.setCurrentIndex(editor.findData(current_value))
-            elif isinstance(editor, QDoubleSpinBox):
+            elif isinstance(editor, QAbstractSpinBox):
                 if current_value:
-                    editor.setValue(float(current_value))
+                    if isinstance(editor, QDoubleSpinBox):
+                        editor.setValue(float(current_value))
+                    elif isinstance(editor, QSpinBox):
+                        editor.setValue(int(current_value))
             else:
                 editor.setText(str(current_value) if current_value is not None else "")
         # update style
@@ -443,7 +449,7 @@ class FieldMapDelegate(QStyledItemDelegate):
         elif column == FieldMapColumn.DEFAULT_VALUE:
             if isinstance(editor, QComboBox):
                 value = editor.currentData()
-            elif isinstance(editor, QDoubleSpinBox):
+            elif isinstance(editor, QAbstractSpinBox):
                 value = editor.value()
             else:
                 value = editor.text()
