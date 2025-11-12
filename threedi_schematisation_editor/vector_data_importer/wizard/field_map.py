@@ -10,6 +10,7 @@ from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
+    QAbstractSpinBox,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -276,9 +277,7 @@ class FieldMapDelegate(QStyledItemDelegate):
             row = index.model().rows[index.row()]
             for m in row.config._metadata.allowed_methods:
                 editor.addItem(str(m), m)
-            editor.currentIndexChanged.connect(
-                lambda idx, editor=editor: self.commitData.emit(editor)
-            )
+            # For some reason setting enabled status only works properly if this is handled here
             if row.config.method:
                 editor.setCurrentIndex(editor.findData(row.config.method))
             # Ensure editor states are updated after setting method
@@ -317,7 +316,6 @@ class FieldMapDelegate(QStyledItemDelegate):
             )
         elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.DEFAULT_VALUE:
             config = index.model().rows[index.row()].config
-            current_value = config.default_value
             value_type = config.model_fields["default_value"].annotation.__args__[0]
             # Dirty magic to use a combobox for bools and enums
             if value_type == bool or (
@@ -332,19 +330,35 @@ class FieldMapDelegate(QStyledItemDelegate):
                     ]
                 for display_text, data in items:
                     editor.addItem(display_text, data)
-                editor.setCurrentIndex(editor.findData(current_value))
+                editor.currentIndexChanged.connect(
+                    lambda idx, editor=editor: self.commitData.emit(editor)
+                )
             elif value_type in [int, float]:
                 editor = QDoubleSpinBox(parent)
                 unit = index.model().get_default_value_units(index.row())
                 if unit:
                     editor.setSuffix(f" {unit}")
-                if current_value:
-                    editor.setValue(float(current_value))
             else:
                 editor = QLineEdit(parent)
-                editor.setText(str(current_value) if current_value else "")
         else:
             return super().createEditor(parent, option, index)
+        # Update editor data on change; needed to update valid status
+        if isinstance(editor, QgsFieldExpressionWidget):
+            editor.fieldChanged.connect(
+                lambda field, idx=index: self.commitExpressionData(idx, editor)
+            )
+        elif isinstance(editor, QComboBox):
+            editor.currentIndexChanged.connect(
+                lambda idx, editor=editor: self.commitData.emit(editor)
+            )
+        elif isinstance(editor, QLineEdit):
+            editor.textChanged.connect(
+                lambda text, editor=editor: self.commitData.emit(editor)
+            )
+        elif isinstance(editor, QAbstractSpinBox):
+            editor.valueChanged.connect(
+                lambda value, editor=editor: self.commitData.emit(editor)
+            )
         self._editors[(index.row(), index.column())] = editor
         return editor
 
