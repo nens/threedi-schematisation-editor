@@ -149,8 +149,10 @@ class VDIWizard(QWizard):
         self.import_started.connect(lambda: self.set_enabled_nav(False))
         self.import_finished.connect(self.run_page.on_run_finish)
         self.import_finished.connect(lambda: self.set_enabled_nav(True))
-        # set up button to run import
+        # Rename buttons
+        self.setButtonText(self.CancelButton, "Close")
         self.setButtonText(self.FinishButton, "Run import")
+        # set up button to run import
         self.finish_button = self.button(self.FinishButton)
         self.finish_button.clicked.disconnect()
         self.finish_button.clicked.connect(self.run_import)
