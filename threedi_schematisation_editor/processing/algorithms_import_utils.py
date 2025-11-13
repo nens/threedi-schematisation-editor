@@ -5,9 +5,9 @@ from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingException,
     QgsProcessingOutputFile,
+    QgsProcessingOutputVectorLayer,
     QgsProcessingParameterFile,
     QgsProcessingParameterString,
-    QgsProcessingOutputVectorLayer,
     QgsVectorLayer,
 )
 
@@ -16,33 +16,29 @@ class ExtractLayerByNameAlgorithm(QgsProcessingAlgorithm):
     """
     Extract a layer by name from a GeoPackage
     """
-    INPUT_GPKG = 'INPUT_GPKG'
-    LAYER_NAME = 'LAYER_NAME'
-    OUTPUT = 'OUTPUT'
+    INPUT_GPKG = "INPUT_GPKG"
+    LAYER_NAME = "LAYER_NAME"
+    OUTPUT = "OUTPUT"
 
     def initAlgorithm(self, config=None):
         # GeoPackage input (file)
         self.addParameter(
             QgsProcessingParameterFile(
-                self.INPUT_GPKG,
-                description="Source GeoPackage",
-                extension="gpkg"
+                self.INPUT_GPKG, description="Source geopackage", extension="gpkg"
             )
         )
 
         # Layer name input (string)
         self.addParameter(
             QgsProcessingParameterString(
-                self.LAYER_NAME,
-                description="Layer name"
+                self.LAYER_NAME, description="Layer name"
             )
         )
 
         # Define output layer
         self.addOutput(
             QgsProcessingOutputVectorLayer(
-                self.OUTPUT,
-                description="Extracted layer"
+                self.OUTPUT, description="Extracted layer"
             )
         )
 
@@ -54,9 +50,7 @@ class ExtractLayerByNameAlgorithm(QgsProcessingAlgorithm):
         layer = QgsVectorLayer(uri, layer_name, "ogr")
 
         if not layer.isValid():
-            raise QgsProcessingException(
-                f"Layer '{layer_name}' not found in {gpkg}"
-            )
+            raise QgsProcessingException(f"Layer '{layer_name}' not found in {gpkg}")
 
         # return as output
         return {self.OUTPUT: layer.source()}
@@ -68,12 +62,10 @@ class ExtractLayerByNameAlgorithm(QgsProcessingAlgorithm):
         return "Extract layer by name"
 
     def shortHelpString(self):
-        return (
-            """
+        return """
             Utility algorithm to select a layer from an input geopackage file. 
             Useful when automating importer workflows in the Processing Model Builder.
             """
-        )
 
     def group(self):
         return "Import utilities"
@@ -87,9 +79,9 @@ class ExtractLayerByNameAlgorithm(QgsProcessingAlgorithm):
 
 class GetConfigFileAlgorithm(QgsProcessingAlgorithm):
 
-    CONFIG_DIR = 'CONFIG_DIR'
-    BASE_NAME = 'BASE_NAME'
-    OUTPUT_JSON = 'OUTPUT_JSON'
+    CONFIG_DIR = "CONFIG_DIR"
+    BASE_NAME = "BASE_NAME"
+    OUTPUT_JSON = "OUTPUT_JSON"
 
     def initAlgorithm(self, config=None):
         # Directory containing config JSONs
@@ -97,7 +89,7 @@ class GetConfigFileAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterFile(
                 self.CONFIG_DIR,
                 description="Directory containing config JSON files",
-                behavior=QgsProcessingParameterFile.Folder
+                behavior=QgsProcessingParameterFile.Folder,
             )
         )
 
@@ -105,16 +97,13 @@ class GetConfigFileAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterString(
                 self.BASE_NAME,
-                description="Config file base name (without .json, e.g. 'channels')"
+                description="Config file base name (without .json, e.g. 'channels')",
             )
         )
 
         # Output JSON file path
         self.addOutput(
-            QgsProcessingOutputFile(
-                self.OUTPUT_JSON,
-                description="Config JSON file"
-            )
+            QgsProcessingOutputFile(self.OUTPUT_JSON, description="Config JSON file")
         )
 
     def processAlgorithm(self, parameters, context, feedback):
@@ -125,9 +114,7 @@ class GetConfigFileAlgorithm(QgsProcessingAlgorithm):
         json_file = config_dir / f"{base_name}.json"
 
         if not json_file.exists():
-            raise QgsProcessingException(
-                f"Config file not found: {json_file}"
-            )
+            raise QgsProcessingException(f"Config file not found: {json_file}")
 
         return {self.OUTPUT_JSON: str(json_file)}
 
@@ -138,12 +125,10 @@ class GetConfigFileAlgorithm(QgsProcessingAlgorithm):
         return "Get config file from directory"
 
     def shortHelpString(self):
-        return (
-            """
+        return """
             Utility algorithm to select a vector data importer configuration file (.json) from a directory. 
             Useful when automating importer workflows in the Processing Model Builder.
             """
-        )
 
     def group(self):
         return "Import utilities"
