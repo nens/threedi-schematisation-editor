@@ -2,6 +2,21 @@
 from enum import Enum, IntEnum
 
 
+# define own StrEnum for easy serialization and deserialization
+# this is include in python from 3.11 onwards
+class StrEnum(str, Enum):
+    """Enum where members are also (and must be) strings"""
+
+    def __str__(self) -> str:
+        return self.value
+
+    def _generate_next_value_(name, start, count, last_values):
+        return name
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}.{self._name_}"
+
+
 class GeometryType(Enum):
     NoGeometry = "NoGeometry"
     Point = "Point"
@@ -290,3 +305,11 @@ class UseAdvection1D(IntEnum):
     MOMENTUM_CONSERVATIVE_SCHEME = 1
     ENERGY_CONSERVATIVE_SCHEME = 2
     COMBINED_MOMENTUM_AND_ENERGY_CONSERVATIVE_SCHEME = 3
+
+
+class CrossSectionDataTargetType(StrEnum):
+    CULVERT = "culvert"
+    CROSS_SECTION_LOCATION = "cross-section location"
+    ORIFICE = "orifice"
+    PIPE = "pipe"
+    WEIR = "weir"

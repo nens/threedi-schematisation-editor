@@ -1,0 +1,263 @@
+{
+    "connection_nodes": {
+        "create_nodes": true,
+        "snap": true,
+        "snap_distance": 1.0
+    },
+    "point_to_line_conversion": {
+        "length": {
+            "method": "default",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": 1.0
+        },
+        "azimuth": {
+            "method": "default",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": 10
+        }
+    },
+    "integration": {
+        "integration_mode": "channels",
+        "snap_distance": 1.0,
+        "min_length": 1.0
+    },
+    "fields": {
+        "id": {
+            "method": "auto",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "code": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "display_name": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "exchange_type": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "calculation_point_distance": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "invert_level_start": {
+            "method": "default",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": "1"
+        },
+        "invert_level_end": {
+            "method": "default",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": "11"
+        },
+        "discharge_coefficient_positive": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "discharge_coefficient_negative": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "material_id": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "friction_value": {
+            "method": "default",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": "1"
+        },
+        "friction_type": {
+            "method": "default",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": "1"
+        },
+        "connection_node_id_start": {
+            "method": "auto",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "connection_node_id_end": {
+            "method": "auto",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "cross_section_shape": {
+            "method": "default",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": "1"
+        },
+        "cross_section_width": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "cross_section_height": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "cross_section_table": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "tags": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        }
+    },
+    "connection_node_fields": {
+        "id": {
+            "method": "auto",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "code": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "display_name": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "storage_area": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "initial_water_level": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "visualisation": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "manhole_surface_level": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "bottom_level": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "exchange_level": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "exchange_type": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "exchange_thickness": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "hydraulic_conductivity_in": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "hydraulic_conductivity_out": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "tags": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        }
+    }
+}

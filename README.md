@@ -11,7 +11,7 @@ Testing happens within a docker container, build (if necessary) and run your doc
     $ docker compose build qgis-desktop
     $ docker compose run qgis-desktop make test
 
-[Design details can be found here](DESIGN.md)
+[Design details can be found here](threedi_schematisation_editor/vector_data_importer/DESIGN.md)
 
 
 Deployment

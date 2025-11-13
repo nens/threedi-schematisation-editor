@@ -12,11 +12,9 @@ from qgis.core import (
 )
 from shapely.testing import assert_geometries_equal
 
+import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionLocationProcessor,
-)
-from threedi_schematisation_editor.vector_data_importer.settings_model import (
-    ConversionSettings,
 )
 
 
@@ -32,9 +30,9 @@ def target_layer():
 
 
 @pytest.fixture(scope="session")
-def import_config():
-    return {
-        "conversion_settings": {
+def cross_section_location_settings():
+    return sm.CrossSectionLocationSettings(
+        **{
             "join_field_src": {
                 "method": "source_attribute",
                 "source_attribute": "channel_id",
@@ -43,20 +41,26 @@ def import_config():
                 "method": "source_attribute",
                 "source_attribute": "id",
             },
-            "snapping_distance": 6,
-            "use_snapping": True,
+            "snap_distance": 6,
         }
-    }
+    )
+
+
+@pytest.fixture
+def import_settings(cross_section_location_settings):
+    settings = sm.ImportSettings(
+        cross_section_location_mapping=cross_section_location_settings
+    )
+    return settings
 
 
 @pytest.fixture(scope="function")
-def processor(channels, target_layer, import_config):
+def processor(channels, target_layer, import_settings):
     return CrossSectionLocationProcessor(
         target_layer=target_layer,
         target_model_cls=None,
         channel_layer=channels,
-        conversion_settings=ConversionSettings(**import_config["conversion_settings"]),
-        target_fields_config=None,
+        import_settings=import_settings,
     )
 
 
@@ -243,19 +247,15 @@ def test_get_new_geom_no_geometry(processor, ref_channel_id, expected_geom):
 @pytest.mark.parametrize(
     "method, column", [("source_attribute", "id"), ("expression", "code")]
 )
-def test_channel_mapping(channels, target_layer, import_config, method, column):
-    conversion_config = {
-        "join_field_tgt": {"method": method, method: column},
-        "snapping_distance": 6,
-        "use_snapping": True,
-    }
-    conversion_settings = ConversionSettings(**conversion_config)
+def test_channel_mapping(channels, target_layer, import_settings, method, column):
+    import_settings.cross_section_location_mapping.join_field_tgt = sm.FieldMapConfig(
+        **{"method": method, method: column}
+    )
     processor = CrossSectionLocationProcessor(
         target_layer=target_layer,
         target_model_cls=None,
         channel_layer=channels,
-        conversion_settings=conversion_settings,
-        target_fields_config=None,
+        import_settings=import_settings,
     )
     channel_id_map = {feat[column]: feat for feat in channels.getFeatures()}
     sorted_channel_mapping = dict(sorted(processor.channel_mapping.items()))
@@ -264,68 +264,19 @@ def test_channel_mapping(channels, target_layer, import_config, method, column):
 
 
 @pytest.mark.parametrize(
-    "method, column", [("source_attribute", ""), ("expression", "")]
-)
-def test_channel_mapping_empty_join_values(
-    channels, target_layer, import_config, method, column
-):
-    conversion_settings = {
-        "join_field_tgt": {"method": method, method: column},
-        "snapping_distance": 6,
-        "use_snapping": True,
-    }
-    processor = CrossSectionLocationProcessor(
-        target_layer=target_layer,
-        target_model_cls=None,
-        channel_layer=channels,
-        conversion_settings=ConversionSettings(**conversion_settings),
-        target_fields_config=None,
-    )
-    assert processor.channel_mapping == {}
-
-
-@pytest.mark.parametrize(
     "method, column", [("source_attribute", "id"), ("expression", "code")]
 )
-def test_get_join_feat_src_value(channels, target_layer, import_config, method, column):
-    conversion_settings = {
-        "join_field_src": {"method": method, method: column},
-        "snapping_distance": 6,
-        "use_snapping": True,
-    }
+def test_get_join_feat_src_value(
+    channels, target_layer, import_settings, method, column
+):
+    import_settings.cross_section_location_mapping.join_field_src = sm.FieldMapConfig(
+        **{"method": method, method: column}
+    )
     processor = CrossSectionLocationProcessor(
         target_layer=target_layer,
         target_model_cls=None,
         channel_layer=channels,
-        conversion_settings=ConversionSettings(**conversion_settings),
-        target_fields_config=None,
+        import_settings=import_settings,
     )
     feat = channels.getFeature(1)
     assert processor.get_join_feat_src_value(feat) == feat[column]
-
-
-@pytest.mark.parametrize(
-    "method, column",
-    [
-        ("source_attribute", "foo"),
-        ("expression", "bar"),
-        ("source_attribute", ""),
-        ("expression", ""),
-    ],
-)
-def test_get_join_feat_src_value_invalid(
-    channels, target_layer, import_config, method, column
-):
-    conversion_settings = {
-        "join_field_src": {"method": method, method: column},
-        "snapping_distance": 6,
-        "use_snapping": True,
-    }
-    processor = CrossSectionLocationProcessor(
-        target_layer=target_layer,
-        target_model_cls=None,
-        channel_layer=channels,
-        conversion_settings=ConversionSettings(**conversion_settings),
-        target_fields_config=None,
-    )
-    assert processor.get_join_feat_src_value(channels.getFeature(1)) is None

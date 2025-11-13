@@ -81,11 +81,12 @@ from threedi_schematisation_editor.utils import (
     progress_bar_callback_factory,
     set_wal_for_sqlite_mode,
 )
-from threedi_schematisation_editor.vector_data_importer.dialogs.import_features import (
-    ImportCrossSectionDataDialog,
-    ImportCrossSectionLocationDialog,
-    ImportFeaturesDialog,
-    ImportStructuresDialog,
+from threedi_schematisation_editor.vector_data_importer.wizard import (
+    ImportConduitWizard,
+    ImportConnectionNodesWizard,
+    ImportCrossSectionDataWizard,
+    ImportCrossSectionLocationWizard,
+    ImportStructureWizard,
 )
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
@@ -418,35 +419,33 @@ class ThreediSchematisationEditorPlugin:
     def import_external(self, model_cls, dialog_cls):
         if not self.model_gpkg:
             return
-        import_dlg = dialog_cls(model_cls, self.model_gpkg, self.layer_manager, self.uc)
+        # import_dlg = dialog_cls(model_cls)
+        import_dlg = dialog_cls(model_cls, self.model_gpkg, self.layer_manager)
         import_dlg.exec_()
 
     def import_external_connection_nodes(self):
-        self.import_external(dm.ConnectionNode, ImportFeaturesDialog)
+        self.import_external(dm.ConnectionNode, ImportConnectionNodesWizard)
 
     def import_external_cross_section_data(self):
-        self.import_external(dm.CrossSectionData, ImportCrossSectionDataDialog)
+        self.import_external(dm.CrossSectionData, ImportCrossSectionDataWizard)
 
     def import_external_cross_section_locations(self):
-        self.import_external(dm.CrossSectionLocation, ImportCrossSectionLocationDialog)
-
-    def import_external_structures(self, model_cls):
-        self.import_external(model_cls, ImportStructuresDialog)
+        self.import_external(dm.CrossSectionLocation, ImportCrossSectionLocationWizard)
 
     def import_external_culverts(self):
-        self.import_external_structures(dm.Culvert)
+        self.import_external(dm.Culvert, ImportStructureWizard)
 
     def import_external_orifices(self):
-        self.import_external_structures(dm.Orifice)
+        self.import_external(dm.Orifice, ImportStructureWizard)
 
     def import_external_weirs(self):
-        self.import_external_structures(dm.Weir)
+        self.import_external(dm.Weir, ImportStructureWizard)
 
     def import_external_pipes(self):
-        self.import_external_structures(dm.Pipe)
+        self.import_external(dm.Pipe, ImportConduitWizard)
 
     def import_external_channels(self):
-        self.import_external_structures(dm.Channel)
+        self.import_external(dm.Channel, ImportConduitWizard)
 
     def on_project_close(self):
         if self.layer_manager is None:

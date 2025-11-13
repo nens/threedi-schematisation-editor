@@ -23,6 +23,10 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
     PipesImporter,
     WeirsImporter,
 )
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
+    ImportSettings,
+    IntegrationMode,
+)
 
 
 class BaseImporter(QgsProcessingAlgorithm):
@@ -40,10 +44,10 @@ class BaseImporter(QgsProcessingAlgorithm):
         return QCoreApplication.translate("Processing", string)
 
     def group(self):
-        return self.tr("Conversion")
+        return self.tr("Import")
 
     def groupId(self):
-        return "conversion"
+        return "import"
 
     def name(self):
         return f"threedi_import_{self.FEATURE_TYPE}s"
@@ -135,7 +139,8 @@ class BaseImporter(QgsProcessingAlgorithm):
             )
 
         with open(import_config_file) as import_config_json:
-            import_config = json.loads(import_config_json.read())
+            import_settings_dict = json.loads(import_config_json.read())
+        import_config = ImportSettings(**import_settings_dict)
 
         importer = self.create_importer(source_layer, target_gpkg, import_config)
 
@@ -183,13 +188,11 @@ class StructureImporter(BaseImporter):
     INTEGRATOR_CLASS = None  # To be overridden by subclasses
 
     def create_importer(self, source_layer, target_gpkg, import_config):
-        conversion_settings = import_config["conversion_settings"]
-        edit_channels = conversion_settings.get("edit_channels", False)
-
-        if edit_channels:
-            return self.INTEGRATOR_CLASS(source_layer, target_gpkg, import_config)
-        else:
+        integration_mode = import_config.integration.integration_mode
+        if integration_mode == IntegrationMode.NONE:
             return self.IMPORTER_CLASS(source_layer, target_gpkg, import_config)
+        else:
+            return self.INTEGRATOR_CLASS(source_layer, target_gpkg, import_config)
 
 
 class ImportCulverts(StructureImporter):

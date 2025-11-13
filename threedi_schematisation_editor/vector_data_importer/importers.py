@@ -13,8 +13,7 @@ from qgis.core import (
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.integrators import (
-    ChannelIntegrator,
-    PipeIntegrator,
+    LinearIntegrator,
 )
 from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
@@ -22,12 +21,6 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionLocationProcessor,
     LineProcessor,
 )
-from threedi_schematisation_editor.vector_data_importer.settings_model import (
-    ConversionSettings,
-    get_field_map_config,
-)
-
-# from threedi_schematisation_editor.vector_data_importer.utils import ConversionSettings
 
 
 class Importer:
@@ -36,10 +29,6 @@ class Importer:
         self.target_gpkg = target_gpkg
         self.import_settings = import_settings
         self.processor = None
-
-    @cached_property
-    def conversion_settings(self):
-        return ConversionSettings(**self.import_settings.get("conversion_settings", {}))
 
     @cached_property
     def external_source_name(self):
@@ -75,11 +64,15 @@ class Importer:
             input_feature_ids = [id for id in input_feature_ids if id in selected_ids]
         return input_feature_ids
 
-    def process_features(self, input_feature_ids, new_features=None):
+    def process_features(
+        self, input_feature_ids, new_features=None, progress_callback=None
+    ):
         external_features = [
             self.external_source.getFeature(feat_id) for feat_id in input_feature_ids
         ]
-        processed_features = self.processor.process_features(external_features)
+        processed_features = self.processor.process_features(
+            external_features, progress_callback=progress_callback
+        )
         if new_features is None or len(new_features) == 0:
             return processed_features
         else:
@@ -92,10 +85,14 @@ class Importer:
             if layer.name() in new_features:
                 layer.addFeatures(new_features[layer.name()])
 
-    def import_features(self, context=None, selected_ids=None):
+    def import_features(self, context=None, selected_ids=None, progress_callback=None):
         self.start_editing()
         input_feature_ids = self.get_input_feature_ids(selected_ids)
-        new_features = self.process_features(input_feature_ids)
+        if progress_callback:
+            progress_callback(value=0, maximum=len(input_feature_ids))
+        new_features = self.process_features(
+            input_feature_ids, progress_callback=progress_callback
+        )
         self.add_features_to_layers(new_features)
 
 
@@ -115,9 +112,7 @@ class CrossSectionDataImporter(Importer):
             ]
         self.target_layers = target_layers
         self.processor = CrossSectionDataProcessor(
-            target_fields_config=self.import_settings.get("fields", {}),
-            target_layers=target_layers,
-            conversion_settings=self.conversion_settings,
+            target_layers=target_layers, import_settings=self.import_settings
         )
 
     @property
@@ -147,16 +142,6 @@ class SpatialImporter(Importer):
             if node_layer is None
             else node_layer
         )
-        self.fields_configurations = {
-            target_model_cls: get_field_map_config(
-                self.import_settings.get("fields", {}), target_model_cls
-            )
-        }
-        if target_model_cls != dm.ConnectionNode:
-            self.fields_configurations[dm.ConnectionNode] = get_field_map_config(
-                import_settings.get("connection_node_fields", {}),
-                dm.ConnectionNode,
-            )
         self.integrator = None
         self.processor = None
 
@@ -191,10 +176,10 @@ class SpatialImporter(Importer):
             layers += self.integrator.modifiable_layers
         return layers
 
-    def integrate_features(self, input_feature_ids):
+    def integrate_features(self, input_feature_ids, progress_callback=None):
         if self.integrator:
             new_features, integrated_ids = self.integrator.integrate_features(
-                input_feature_ids
+                input_feature_ids, progress_callback=progress_callback
             )
             input_feature_ids = [
                 id for id in input_feature_ids if id not in integrated_ids
@@ -203,7 +188,7 @@ class SpatialImporter(Importer):
             new_features = defaultdict(list)
         return new_features, input_feature_ids
 
-    def import_features(self, context=None, selected_ids=None):
+    def import_features(self, context=None, selected_ids=None, progress_callback=None):
         """Method responsible for the importing structures from the external feature source."""
         # setup processor
         self.processor.transformation = self.get_transformation(context)
@@ -211,11 +196,17 @@ class SpatialImporter(Importer):
         # start editing
         self.start_editing()
         input_feature_ids = self.get_input_feature_ids(selected_ids)
+        if progress_callback:
+            progress_callback(value=0, maximum=len(input_feature_ids))
         # Integrate features using the integrator (if any)
         # items that are integrated are skipped in further processing
-        new_features, input_feature_ids = self.integrate_features(input_feature_ids)
+        new_features, input_feature_ids = self.integrate_features(
+            input_feature_ids, progress_callback=progress_callback
+        )
         # Process remaining features that are not integrated
-        new_features = self.process_features(input_feature_ids, new_features)
+        new_features = self.process_features(
+            input_feature_ids, new_features, progress_callback
+        )
         # Add newly created features to layers
         self.add_features_to_layers(new_features)
 
@@ -223,7 +214,9 @@ class SpatialImporter(Importer):
 class LinesImporter(SpatialImporter):
     def __init__(
         self,
-        *args,
+        external_source,
+        target_gpkg,
+        import_settings,
         target_model_cls,
         target_layer=None,
         node_layer=None,
@@ -231,7 +224,9 @@ class LinesImporter(SpatialImporter):
         cross_section_location_layer=None,
     ):
         super().__init__(
-            *args,
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
             target_model_cls=target_model_cls,
             target_layer=target_layer,
             node_layer=node_layer,
@@ -240,18 +235,11 @@ class LinesImporter(SpatialImporter):
             self.target_layer,
             self.target_model_cls,
             self.node_layer,
-            self.fields_configurations,
-            self.conversion_settings,
+            import_settings,
         )
-        if self.conversion_settings.edit_channels:
-            self.integrator = ChannelIntegrator.from_importer(
-                conduit_layer, cross_section_location_layer, self
-            )
-        elif self.conversion_settings.edit_pipes and self.target_model_cls in [
-            dm.Weir,
-            dm.Orifice,
-        ]:
-            self.integrator = PipeIntegrator.from_importer(conduit_layer, self)
+        self.integrator = LinearIntegrator.get_integrator(
+            conduit_layer, cross_section_location_layer, self
+        )
 
 
 class CulvertsImporter(LinesImporter):
@@ -259,14 +247,18 @@ class CulvertsImporter(LinesImporter):
 
     def __init__(
         self,
-        *args,
+        external_source,
+        target_gpkg,
+        import_settings,
         structure_layer=None,
         node_layer=None,
         conduit_layer=None,
         cross_section_location_layer=None,
     ):
         super().__init__(
-            *args,
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
             target_model_cls=dm.Culvert,
             target_layer=structure_layer,
             node_layer=node_layer,
@@ -280,14 +272,18 @@ class OrificesImporter(LinesImporter):
 
     def __init__(
         self,
-        *args,
+        external_source,
+        target_gpkg,
+        import_settings,
         structure_layer=None,
         node_layer=None,
         conduit_layer=None,
         cross_section_location_layer=None,
     ):
         super().__init__(
-            *args,
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
             target_model_cls=dm.Orifice,
             target_layer=structure_layer,
             node_layer=node_layer,
@@ -301,14 +297,18 @@ class WeirsImporter(LinesImporter):
 
     def __init__(
         self,
-        *args,
+        external_source,
+        target_gpkg,
+        import_settings,
         structure_layer=None,
         node_layer=None,
         conduit_layer=None,
         cross_section_location_layer=None,
     ):
         super().__init__(
-            *args,
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
             target_model_cls=dm.Weir,
             target_layer=structure_layer,
             node_layer=node_layer,
@@ -320,50 +320,79 @@ class WeirsImporter(LinesImporter):
 class PipesImporter(LinesImporter):
     """Class with methods responsible for the importing pipes from the external data source."""
 
-    def __init__(self, *args, structure_layer=None, node_layer=None):
+    def __init__(
+        self,
+        external_source,
+        target_gpkg,
+        import_settings,
+        structure_layer=None,
+        node_layer=None,
+    ):
         super().__init__(
-            *args,
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
             target_model_cls=dm.Pipe,
             target_layer=structure_layer,
             node_layer=node_layer,
         )
 
 
-class CrossSectionLocationImporter(SpatialImporter):
-    def __init__(self, *args, target_layer=None):
-        super().__init__(
-            *args, target_model_cls=dm.CrossSectionLocation, target_layer=target_layer
-        )
-        self.processor = CrossSectionLocationProcessor(
-            target_layer=self.target_layer,
-            target_model_cls=dm.CrossSectionLocation,
-            channel_layer=gpkg_layer(self.target_gpkg, dm.Channel.__tablename__),
-            conversion_settings=self.conversion_settings,
-            target_fields_config=self.fields_configurations[dm.CrossSectionLocation],
-        )
-
-
 class ChannelsImporter(LinesImporter):
     """Class with methods responsible for the importing channels from the external data source."""
 
-    def __init__(self, *args, structure_layer=None, node_layer=None):
+    def __init__(
+        self,
+        external_source,
+        target_gpkg,
+        import_settings,
+        structure_layer=None,
+        node_layer=None,
+    ):
         super().__init__(
-            *args,
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
             target_model_cls=dm.Channel,
             target_layer=structure_layer,
             node_layer=node_layer,
         )
 
 
+class CrossSectionLocationImporter(SpatialImporter):
+    def __init__(
+        self, external_source, target_gpkg, import_settings, target_layer=None
+    ):
+        super().__init__(
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
+            target_model_cls=dm.CrossSectionLocation,
+            target_layer=target_layer,
+        )
+        self.processor = CrossSectionLocationProcessor(
+            target_layer=self.target_layer,
+            target_model_cls=dm.CrossSectionLocation,
+            channel_layer=gpkg_layer(self.target_gpkg, dm.Channel.__tablename__),
+            import_settings=self.import_settings,
+        )
+
+
 class ConnectionNodesImporter(SpatialImporter):
     """Connection nodes importer class."""
 
-    def __init__(self, *args, target_layer=None):
+    def __init__(
+        self, external_source, target_gpkg, import_settings, target_layer=None
+    ):
         super().__init__(
-            *args, target_model_cls=dm.ConnectionNode, target_layer=target_layer
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
+            target_model_cls=dm.ConnectionNode,
+            target_layer=target_layer,
         )
         self.processor = ConnectionNodeProcessor(
             self.target_layer,
             self.target_model_cls,
-            self.fields_configurations[self.target_model_cls],
+            self.import_settings,
         )

@@ -1,5 +1,6 @@
 import warnings
 from enum import Enum
+from threading import Event
 
 from qgis.core import (
     NULL,
@@ -106,7 +107,7 @@ class FeatureManager:
             self.next_id += 1
 
 
-class ColumnImportMethod(Enum):
+class ColumnImportMethod(str, Enum):
     AUTO = "auto"
     ATTRIBUTE = "source_attribute"
     DEFAULT = "default"
@@ -115,6 +116,10 @@ class ColumnImportMethod(Enum):
 
     def __str__(self):
         return self.name.capitalize()
+
+    @staticmethod
+    def all() -> list["ColumnImportMethod"]:
+        return [item for item in ColumnImportMethod]
 
 
 def get_src_geometry(feature: QgsFeature, none_ok=False) -> QgsGeometry:
@@ -148,3 +153,27 @@ def get_src_geometry(feature: QgsFeature, none_ok=False) -> QgsGeometry:
             GeometryImporterWarning,
         )
         return None
+
+
+class CancellationToken:
+    def __init__(self):
+        self._event = Event()
+        self._interrupted = False
+
+    @property
+    def is_cancelled(self):
+        return self._event.is_set()
+
+    @property
+    def was_interrupted(self):
+        return self._interrupted
+
+    def interrupt(self):
+        """Called when actually breaking from processing"""
+        self._interrupted = True
+
+    def cancel(self):
+        self._event.set()
+
+    def reset(self):
+        self._event.clear()

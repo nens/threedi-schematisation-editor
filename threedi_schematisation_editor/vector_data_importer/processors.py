@@ -27,10 +27,10 @@ from threedi_schematisation_editor.utils import (
     get_next_feature_id,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (
+    CancellationToken,
     ColumnImportMethod,
     FeatureManager,
     get_field_config_value,
-    get_float_value_from_feature,
     get_src_geometry,
     update_attributes,
 )
@@ -38,14 +38,21 @@ from threedi_schematisation_editor.warnings import ProcessorWarning
 
 
 class Processor:
+    _cancellation_token = CancellationToken()
+
     def process_feature(self, src_feat: QgsFeature) -> dict[str, list[QgsFeature]]:
         raise NotImplementedError
 
     def process_features(
-        self, external_features: list[QgsFeature]
+        self, external_features: list[QgsFeature], progress_callback: callable = None
     ) -> dict[str, list[QgsFeature]]:
         new_features = defaultdict(list)
         for external_src_feat in external_features:
+            if self._cancellation_token.is_cancelled:  # Direct check of the token
+                self._cancellation_token.interrupt()
+                break
+            if progress_callback:
+                progress_callback(add=1)
             for name, features in self.process_feature(external_src_feat).items():
                 new_features[name] += features
         return new_features
@@ -92,20 +99,15 @@ class CrossSectionDataProcessor(Processor):
         dm.CrossSectionLocation,
     ]
 
-    def __init__(
-        self,
-        target_fields_config,
-        target_layers,
-        conversion_settings,
-    ):
-        self.target_fields_config = target_fields_config
+    def __init__(self, target_layers, import_settings):
+        self.target_fields_config = import_settings.fields
         self.target_layer_map = {
             CrossSectionDataProcessor.get_unified_object_type_str(
                 target_layer.name()
             ): target_layer
             for target_layer in target_layers
         }
-        self.conversion_settings = conversion_settings
+        self.cross_section_data_remap = import_settings.cross_section_data_remap
         self.source_feat_map: dict[QgsFeature, QgsFeature] = {}
         self.target_model_cls_map: dict[QgsFeature, type] = {}
 
@@ -145,7 +147,7 @@ class CrossSectionDataProcessor(Processor):
         return {}
 
     def process_features(
-        self, external_features: QgsFeature
+        self, external_features: QgsFeature, progress_callback: callable = None
     ) -> dict[str, list[QgsFeature]]:
         # match imported features to features in the schematisation
         self.build_target_map(external_features)
@@ -155,7 +157,7 @@ class CrossSectionDataProcessor(Processor):
         external_features = [
             self.get_feat_from_group(feat_group) for feat_group in grouped_features
         ]
-        return super().process_features(external_features)
+        return super().process_features(external_features, progress_callback)
 
     def build_target_map(self, features):
         self.source_feat_map.clear()
@@ -397,7 +399,7 @@ class CrossSectionDataProcessor(Processor):
                     group,
                     cross_section_shape,
                     self.target_fields_config,
-                    self.conversion_settings.set_lowest_point_to_zero,
+                    self.cross_section_data_remap.set_lowest_point_to_zero,
                 )
             )
         else:
@@ -421,7 +423,7 @@ class CrossSectionDataProcessor(Processor):
             )
         # set reference levels if needed
         if (
-            self.conversion_settings.use_lowest_point_as_reference
+            self.cross_section_data_remap.use_lowest_point_as_reference
             and cross_section_shape.is_tabulated
         ):
             model_cls = self.target_model_cls_map[feature]
@@ -528,34 +530,33 @@ class CrossSectionLocationProcessor(SpatialProcessor):
         target_layer,
         target_model_cls,
         channel_layer,
-        conversion_settings,
-        target_fields_config,
+        import_settings,
     ):
         super().__init__(target_layer, target_model_cls)
         self.channel_layer = channel_layer
         self.channel_spatial_index = QgsSpatialIndex(channel_layer)
-        self.conversion_settings = conversion_settings
-        self.target_fields_config = target_fields_config
+        self.join_field_tgt = (
+            import_settings.cross_section_location_mapping.join_field_tgt
+        )
+        self.join_field_src = (
+            import_settings.cross_section_location_mapping.join_field_src
+        )
+        self.snapping_distance = (
+            import_settings.cross_section_location_mapping.snap_distance
+        )
+        self.target_fields_config = import_settings.fields
 
     @cached_property
     def channel_mapping(self):
-        if (
-            self.conversion_settings.join_field_tgt.get("method")
-            == ColumnImportMethod.ATTRIBUTE.value
-        ):
-            col = self.conversion_settings.join_field_tgt.get(
-                ColumnImportMethod.ATTRIBUTE.value
-            )
+        if self.join_field_tgt.get("method") == ColumnImportMethod.ATTRIBUTE.value:
+            col = self.join_field_tgt.get(ColumnImportMethod.ATTRIBUTE.value)
             if col:
                 return {
                     feature[col]: feature
                     for feature in self.channel_layer.getFeatures()
                 }
-        elif (
-            self.conversion_settings.join_field_tgt.get("method")
-            == ColumnImportMethod.EXPRESSION.value
-        ):
-            expression_str = self.conversion_settings.join_field_tgt.get(
+        elif self.join_field_tgt.get("method") == ColumnImportMethod.EXPRESSION.value:
+            expression_str = self.join_field_tgt.get(
                 ColumnImportMethod.EXPRESSION.value
             )
             expression = QgsExpression(expression_str)
@@ -570,28 +571,20 @@ class CrossSectionLocationProcessor(SpatialProcessor):
 
     @cached_property
     def join_field_src(self):
-        if self.conversion_settings.join_field_src in self.target_fields.names():
-            return self.conversion_settings.join_field_src
+        if self.join_field_src in self.target_fields.names():
+            return self.join_field_src
         else:
             return None
 
     def get_join_feat_src_value(self, feat):
-        if self.conversion_settings.join_field_src is None:
+        if self.join_field_src is None:
             return
-        if (
-            self.conversion_settings.join_field_src.get("method")
-            == ColumnImportMethod.ATTRIBUTE.value
-        ):
-            field = self.conversion_settings.join_field_src.get(
-                ColumnImportMethod.ATTRIBUTE.value
-            )
+        if self.join_field_src.get("method") == ColumnImportMethod.ATTRIBUTE.value:
+            field = self.join_field_src.get(ColumnImportMethod.ATTRIBUTE.value)
             if field in feat.fields().names():
                 return feat[field]
-        elif (
-            self.conversion_settings.join_field_src.get("method")
-            == ColumnImportMethod.EXPRESSION.value
-        ):
-            expression_str = self.conversion_settings.join_field_src.get(
+        elif self.join_field_src.get("method") == ColumnImportMethod.EXPRESSION.value:
+            expression_str = self.join_field_src.get(
                 ColumnImportMethod.EXPRESSION.value
             )
             expression = QgsExpression(expression_str)
@@ -625,8 +618,9 @@ class CrossSectionLocationProcessor(SpatialProcessor):
                     # in case of multiple matches, perform match based on midpoint
                     geom = geom.interpolate(geom.length() / 2)
             if geom.type() == QgsWkbTypes.GeometryType.PointGeometry:
+                #
                 closest_feature_id = self.channel_spatial_index.nearestNeighbor(
-                    geom.asPoint(), 1, self.conversion_settings.snapping_distance
+                    geom.asPoint(), 1, self.snapping_distance
                 )
                 if len(closest_feature_id) > 0:
                     channel_match = next(
@@ -703,10 +697,10 @@ class ConnectionNodeProcessor(SpatialProcessor):
         self,
         target_layer,
         target_model_cls,
-        fields_configuration,
+        import_settings,
     ):
         super().__init__(target_layer, target_model_cls)
-        self.fields_configuration = fields_configuration
+        self.fields_configuration = import_settings.fields
 
     def process_feature(self, src_feat):
         """Process source point into connection node feature."""
@@ -732,27 +726,30 @@ class StructureProcessor(SpatialProcessor, ABC):
         target_layer,
         target_model_cls,
         node_layer,
-        fields_configurations,
-        conversion_settings,
+        import_settings,
     ):
         super().__init__(target_layer, target_model_cls)
         self.node_fields = node_layer.fields()
         self.node_name = node_layer.name()
         self.node_layer = node_layer
         self.node_manager = FeatureManager(get_next_feature_id(node_layer))
-        self.fields_configurations = fields_configurations
-        self.conversion_settings = conversion_settings
+        self.fields_configurations = import_settings.fields
+        self.cn_fields_configurations = import_settings.connection_node_fields
+        self.connection_nodes_settings = import_settings.connection_nodes
+        self.point_to_line_conversion_settings = (
+            import_settings.point_to_line_conversion
+        )
 
     def get_node(self, point):
         snapped = False
         node = None
-        if self.conversion_settings.use_snapping:
+        if self.connection_nodes_settings.snap:
             node = find_connection_node(
-                point, self.node_locator, self.conversion_settings.snapping_distance
+                point, self.node_locator, self.connection_nodes_settings.snap_distance
             )
             snapped = node is not None
-        if self.conversion_settings.create_connection_nodes and (
-            not snapped or not self.conversion_settings.use_snapping
+        if self.connection_nodes_settings.create_nodes and (
+            not snapped or not self.connection_nodes_settings.snap
         ):
             node = self.node_manager.create_new(
                 QgsGeometry.fromPointXY(point), self.node_fields
@@ -784,14 +781,14 @@ class PointProcessor(StructureProcessor):
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
         update_attributes(
-            self.fields_configurations[dm.ConnectionNode],
+            self.cn_fields_configurations,
             dm.ConnectionNode,
             src_feat,
             *new_nodes,
         )
         new_nodes = self.update_connection_nodes(new_feat)
         update_attributes(
-            self.fields_configurations[self.target_model_cls],
+            self.fields_configurations,
             self.target_model_cls,
             src_feat,
             new_feat,
@@ -801,7 +798,9 @@ class PointProcessor(StructureProcessor):
 
 class LineProcessor(StructureProcessor):
     @staticmethod
-    def new_geometry(src_feat, src_geom, conversion_settings, target_model_cls):
+    def new_geometry(
+        src_feat, src_geom, point_to_line_conversion_settings, target_model_cls
+    ):
         """Create new structure geometry based on the source structure feature."""
         geometry_type = src_geom.type()
         if geometry_type == QgsWkbTypes.GeometryType.LineGeometry:
@@ -814,15 +813,11 @@ class LineProcessor(StructureProcessor):
             dst_geometry = QgsGeometry.fromPolylineXY(dst_polyline)
         elif geometry_type == QgsWkbTypes.GeometryType.PointGeometry:
             start_point = src_geom.asPoint()
-            length = get_float_value_from_feature(
-                src_feat,
-                conversion_settings.length_source_field,
-                conversion_settings.length_fallback_value,
+            length = get_field_config_value(
+                point_to_line_conversion_settings.length, src_feat
             )
-            azimuth = get_float_value_from_feature(
-                src_feat,
-                conversion_settings.azimuth_source_field,
-                conversion_settings.azimuth_fallback_value,
+            azimuth = get_field_config_value(
+                point_to_line_conversion_settings.azimuth, src_feat
             )
             end_point = start_point.project(length, azimuth)
             dst_polyline = [start_point, end_point]
@@ -855,20 +850,23 @@ class LineProcessor(StructureProcessor):
         if src_geom is None:
             return {}
         new_geom = LineProcessor.new_geometry(
-            src_feat, src_geom, self.conversion_settings, self.target_model_cls
+            src_feat,
+            src_geom,
+            self.point_to_line_conversion_settings,
+            self.target_model_cls,
         )
         if self.transformation:
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
         update_attributes(
-            self.fields_configurations[self.target_model_cls],
+            self.fields_configurations,
             self.target_model_cls,
             src_feat,
             new_feat,
         )
         new_nodes = self.update_connection_nodes(new_feat)
         update_attributes(
-            self.fields_configurations[dm.ConnectionNode],
+            self.cn_fields_configurations,
             dm.ConnectionNode,
             src_feat,
             *new_nodes,

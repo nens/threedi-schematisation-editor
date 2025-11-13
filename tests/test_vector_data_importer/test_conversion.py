@@ -16,6 +16,10 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
 from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionDataProcessor,
 )
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
+    CrossSectionDataRemap,
+    ImportSettings,
+)
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 
@@ -37,10 +41,11 @@ def get_source_layer(name, layername):
     return gpkg_layer(src, layername)
 
 
-def get_import_config_path(import_config_name):
+def get_import_config(import_config_name):
     src = CONFIG_PATH.joinpath(import_config_name).with_suffix(".json")
     with open(src) as import_config_json:
-        return json.loads(import_config_json.read())
+        import_settings_dict = json.loads(import_config_json.read())
+    return ImportSettings(**import_settings_dict)
 
 
 def compare_layer_geom(layer, ref_layer):
@@ -92,7 +97,7 @@ def test_multi_import(qgis_application):
     # This uses two instances of the CulvertsImporter, which mimics the procedure in the UI
     layer_pt = get_source_layer("culvert_2layers", "culvert_point")
     layer_line = get_source_layer("culvert_2layers", "culvert_line")
-    import_config = get_import_config_path("culvert")
+    import_config = get_import_config("culvert")
     target_gpkg = SCHEMATISATION_PATH.joinpath("test_2culverts.gpkg")
     layers = get_schematisation_layers(target_gpkg, "culvert")
     importer = CulvertsImporter(layer_pt, target_gpkg, import_config, **layers)
@@ -105,7 +110,7 @@ def test_multi_import(qgis_application):
 def test_integrate_weir_too_long(qgis_application):
     # Test integrating multiple weirs on a channel where the total length of the weirs
     # is larger than the channel
-    import_config = get_import_config_path("integrate_weirs_nosnap_too_long.json")
+    import_config = get_import_config("integrate_weirs_nosnap_too_long.json")
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg")
     src_layer = get_source_layer("weirs_too_long.gpkg", "dhydro_weir")
     layers = get_schematisation_layers(target_gpkg, "weir")
@@ -117,7 +122,7 @@ def test_integrate_weir_too_long(qgis_application):
 
 
 def test_integrate_isolated_weir(qgis_application):
-    import_config = get_import_config_path("integrate_weirs_snap.json")
+    import_config = get_import_config("integrate_weirs_snap.json")
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_channel_with_weir.gpkg")
     src_layer = get_source_layer("weir_isolated.gpkg", "dhydro_weir")
     layers = get_schematisation_layers(target_gpkg, "weir")
@@ -127,7 +132,7 @@ def test_integrate_isolated_weir(qgis_application):
 
 
 def test_import_connection_nodes(qgis_application):
-    import_config = get_import_config_path("import_connection_nodes.json")
+    import_config = get_import_config("import_connection_nodes.json")
     target_gpkg = get_temp_copy(
         SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg")
     )
@@ -151,7 +156,7 @@ def test_import_connection_nodes(qgis_application):
 def test_import_weirs(qgis_application, integrate: bool, snap: bool):
     target_layer_name = "weir"
     test_name = f"{'integrate' if integrate else 'import'}_weirs_{'no' if snap else ''}snap.json"
-    import_config = get_import_config_path(test_name)
+    import_config = get_import_config(test_name)
     src_layer = get_source_layer("weirs.gpkg", "dhydro_weir")
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_channel_with_weir.gpkg")
     layers = get_schematisation_layers(target_gpkg, target_layer_name)
@@ -161,7 +166,7 @@ def test_import_weirs(qgis_application, integrate: bool, snap: bool):
 
 
 def test_fix_positioning(qgis_application):
-    import_config = get_import_config_path("import_weirs_fix.json")
+    import_config = get_import_config("import_weirs_fix.json")
     src_layer = get_source_layer("weirs_fix_positions.gpkg", "dhydro_weir")
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg")
     layers = get_schematisation_layers(target_gpkg, "weir")
@@ -171,9 +176,8 @@ def test_fix_positioning(qgis_application):
 
 
 def test_integrate_pipe(qgis_application):
-    import_config = get_import_config_path("integrate_weirs_nosnap.json")
-    import_config["conversion_settings"]["edit_channels"] = False
-    import_config["conversion_settings"]["edit_pipes"] = True
+    import_config = get_import_config("integrate_weirs_nosnap.json")
+    import_config.integration.integration_mode = "pipes"
     src_layer = get_source_layer("weirs.gpkg", "dhydro_weir")
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_pipe.gpkg")
     # TODO: target_gpgk is modified
@@ -187,20 +191,21 @@ def test_integrate_pipe(qgis_application):
     "test_name", ["test_points", "test_lines", "test_no_geom", "test_var_matching"]
 )
 def test_import_cross_section_location(qgis_application, test_name):
-    import_config = {
-        "conversion_settings": {
-            "join_field_src": {
-                "method": "source_attribute",
-                "source_attribute": "channel_code",
+    import_config = ImportSettings(
+        **{
+            "cross_section_location_mapping": {
+                "join_field_src": {
+                    "method": "source_attribute",
+                    "source_attribute": "channel_code",
+                },
+                "join_field_tgt": {
+                    "method": "source_attribute",
+                    "source_attribute": "code",
+                },
             },
-            "join_field_tgt": {
-                "method": "source_attribute",
-                "source_attribute": "code",
-            },
-            "snapping_distance": 6,
-            "use_snapping": True,
+            "connection_nodes": {"snap": True, "snap_distance": 6},
         }
-    }
+    )
     src_layer = get_source_layer("cross_section_location.gpkg", test_name)
     target_gpkg = SCHEMATISATION_PATH.joinpath("channel_wo_csl.gpkg")
     temp_gpkg = str(get_temp_copy(target_gpkg))
@@ -222,20 +227,15 @@ def test_import_cross_section_location(qgis_application, test_name):
 
 def test_import_cross_section_location_with_expression(qgis_application):
     test_name = "test_no_geom"
-    import_config = {
-        "conversion_settings": {
-            "join_field_src": {
-                "method": "expression",
-                "expression": "channel_id",
+    import_config = ImportSettings(
+        **{
+            "cross_section_location_mapping": {
+                "join_field_src": {"method": "expression", "expression": "channel_id"},
+                "join_field_tgt": {"method": "expression", "expression": "id"},
             },
-            "join_field_tgt": {
-                "method": "expression",
-                "expression": "id",
-            },
-            "snapping_distance": 6,
-            "use_snapping": True,
+            "connection_nodes": {"snap": True, "snap_distance": 6},
         }
-    }
+    )
     src_layer = get_source_layer("cross_section_location.gpkg", test_name)
     target_gpkg = SCHEMATISATION_PATH.joinpath("channel_wo_csl.gpkg")
     temp_gpkg = str(get_temp_copy(target_gpkg))
@@ -256,13 +256,15 @@ def test_import_cross_section_location_with_expression(qgis_application):
 
 
 def test_import_adjacent_channels(qgis_application):
-    import_config = {
-        "conversion_settings": {
-            "use_snapping": True,
-            "create_connection_nodes": True,
-            "snapping_distance": 1,
+    import_config = ImportSettings(
+        **{
+            "connection_nodes": {
+                "snap": True,
+                "snap_distance": 1,
+                "create_nodes": True,
+            },
         }
-    }
+    )
     src_layer = get_source_layer("channels.gpkg", "test_data")
     target_gpkg = SCHEMATISATION_PATH.joinpath("empty.gpkg")
     layers = get_schematisation_layers(target_gpkg, "channel")
@@ -294,9 +296,12 @@ def test_import_cross_section_data(qgis_application):
     }
     for target, ref in target_map_fields.items():
         field_config[target] = {"method": method, method: ref}
-    import_config = {
-        "fields": field_config,
-    }
+    cross_section_data_remap = CrossSectionDataRemap(
+        set_lowest_point_to_zero=False, use_lowest_point_as_reference=False
+    )
+    import_config = ImportSettings(
+        fields=field_config, cross_section_data_remap=cross_section_data_remap
+    )
     src_layer = get_source_layer("cross_section_data.gpkg", "cross_section_data")
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_csd_import.gpkg")
     temp_gpkg = str(get_temp_copy(target_gpkg))
