@@ -75,7 +75,6 @@ class ExtractLayerByNameAlgorithm(QgsProcessingAlgorithm):
 
 
 class GetConfigFileAlgorithm(QgsProcessingAlgorithm):
-
     CONFIG_DIR = "CONFIG_DIR"
     BASE_NAME = "BASE_NAME"
     OUTPUT_JSON = "OUTPUT_JSON"
@@ -135,4 +134,3 @@ class GetConfigFileAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return GetConfigFileAlgorithm()
-
