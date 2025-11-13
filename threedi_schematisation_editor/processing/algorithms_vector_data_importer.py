@@ -89,6 +89,14 @@ class BaseImporter(QgsProcessingAlgorithm):
         )
         self.addParameter(target_gpkg)
 
+        # Hidden file output. Not shown in UI, but available in processing model builder
+        self.addOutput(
+            QgsProcessingOutputFile(
+                self.TARGET_GPKG,
+                'Target schematisation database'
+            )
+        )
+
     def get_source_layer_types(self):
         # Default is both line and point, overridden in connection nodes
         return [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint]
