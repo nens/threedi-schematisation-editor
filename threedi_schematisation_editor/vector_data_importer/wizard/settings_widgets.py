@@ -360,7 +360,7 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
         row_dict = {
             "length": FieldMapRow(label="Structure length", config=self.model.length),
             "azimuth": FieldMapRow(
-                label="Sturcture direction (azimuth)", config=self.model.azimuth
+                label="Structure direction (azimuth)", config=self.model.azimuth
             ),
         }
         self.setup_ui(row_dict)
