@@ -1,5 +1,7 @@
 # Copyright (C) 2025 by Lutra Consulting
+import json
 from operator import itemgetter
+from pathlib import Path
 
 from qgis.core import (
     QgsFeature,
@@ -15,15 +17,15 @@ from qgis.core import (
     QgsProcessingParameterVectorLayer,
     QgsProject,
 )
-
 from qgis.PyQt.QtCore import QCoreApplication
 
-import json
-from pathlib import Path
-
-from threedi_schematisation_editor.enumerators import SewerageType
-from threedi_schematisation_editor.utils import get_feature_by_id, get_next_feature_id, spatial_index
 from threedi_schematisation_editor.data_models import SurfaceParameters
+from threedi_schematisation_editor.enumerators import SewerageType
+from threedi_schematisation_editor.utils import (
+    get_feature_by_id,
+    get_next_feature_id,
+    spatial_index,
+)
 
 
 class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
@@ -62,8 +64,7 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
         return "0d"
 
     def shortHelpString(self):
-        return (
-            f"""
+        return f"""
             <p>Connect {self.parameter_names[self.POLYGON_LAYER]} features to the sewer system by creating {self.default_values[self.MAP_LAYER]} features. The new features are added to the {self.parameter_names[self.MAP_LAYER]} directly.</p>
             <p>For each {self.parameter_names[self.POLYGON_LAYER]} feature, the nearest pipe is found; it is mapped to the nearest of this pipe's connection nodes.</p>
             <p>In some cases, you may want to prefer e.g. stormwater drains or sanitary sewers over combined sewers. This can be done by setting the stormwater sewer preference to a value greater than zero.</p>
@@ -85,7 +86,6 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
             <h4>Search distance</h4>
             <p>Only pipes within search distance (m) from the surface will be used in the algorithm.</p>
             """
-        )
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -172,41 +172,79 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
     def processAlgorithm(self, parameters, context, feedback):
         surface_lyr = self.parameterAsLayer(parameters, self.POLYGON_LAYER, context)
         if surface_lyr is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.POLYGON_LAYER))
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.POLYGON_LAYER)
+            )
         surface_map_lyr = self.parameterAsLayer(parameters, self.MAP_LAYER, context)
         if surface_map_lyr is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.MAP_LAYER))
-        selected_surfaces = self.parameterAsBool(parameters, self.SELECTED_POLYGONS, context)
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.MAP_LAYER)
+            )
+        selected_surfaces = self.parameterAsBool(
+            parameters, self.SELECTED_POLYGONS, context
+        )
         pipe_lyr = self.parameterAsLayer(parameters, self.PIPE_LAYER, context)
         if pipe_lyr is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.PIPE_LAYER))
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.PIPE_LAYER)
+            )
         selected_pipes = self.parameterAsBool(parameters, self.SELECTED_PIPES, context)
         node_lyr = self.parameterAsLayer(parameters, self.NODE_LAYER, context)
         if node_lyr is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.NODE_LAYER))
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.NODE_LAYER)
+            )
         sewerage_types = self.parameterAsEnums(parameters, self.SEWERAGE_TYPES, context)
         if sewerage_types is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.SEWERAGE_TYPES))
-        storm_pref = self.parameterAsDouble(parameters, self.STORMWATER_SEWER_PREFERENCE, context)
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.SEWERAGE_TYPES)
+            )
+        storm_pref = self.parameterAsDouble(
+            parameters, self.STORMWATER_SEWER_PREFERENCE, context
+        )
         if storm_pref is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.STORMWATER_SEWER_PREFERENCE))
-        sanitary_pref = self.parameterAsDouble(parameters, self.SANITARY_SEWER_PREFERENCE, context)
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.STORMWATER_SEWER_PREFERENCE)
+            )
+        sanitary_pref = self.parameterAsDouble(
+            parameters, self.SANITARY_SEWER_PREFERENCE, context
+        )
         if sanitary_pref is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.SANITARY_SEWER_PREFERENCE))
-        search_distance = self.parameterAsDouble(parameters, self.SEARCH_DISTANCE, context)
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.SANITARY_SEWER_PREFERENCE)
+            )
+        search_distance = self.parameterAsDouble(
+            parameters, self.SEARCH_DISTANCE, context
+        )
         if search_distance is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.SEARCH_DISTANCE))
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.SEARCH_DISTANCE)
+            )
         surface_to_pipes_distances = {}
-        pipe_iterator = pipe_lyr.selectedFeatures() if selected_pipes else pipe_lyr.getFeatures()
+        pipe_iterator = (
+            pipe_lyr.selectedFeatures() if selected_pipes else pipe_lyr.getFeatures()
+        )
         pipe_filter_request = QgsFeatureRequest(
-            [feat.id() for feat in pipe_iterator if feat["sewerage_type"] in sewerage_types]
+            [
+                feat.id()
+                for feat in pipe_iterator
+                if feat["sewerage_type"] in sewerage_types
+            ]
         )
         pipe_features, pipe_index = spatial_index(pipe_lyr, pipe_filter_request)
         feedback.setProgress(0)
-        number_of_surfaces = surface_lyr.selectedFeatureCount() if selected_surfaces else surface_lyr.featureCount()
+        number_of_surfaces = (
+            surface_lyr.selectedFeatureCount()
+            if selected_surfaces
+            else surface_lyr.featureCount()
+        )
         number_of_steps = number_of_surfaces * 2
         step = 1
-        for surface_feat in surface_lyr.selectedFeatures() if selected_surfaces else surface_lyr.getFeatures():
+        for surface_feat in (
+            surface_lyr.selectedFeatures()
+            if selected_surfaces
+            else surface_lyr.getFeatures()
+        ):
             if feedback.isCanceled():
                 return {}
             surface_fid = surface_feat.id()
@@ -228,7 +266,9 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
                     surface_pipe_distance -= storm_pref
                 elif pipe_sewerage_type == SewerageType.SANITARY_SEWER.value:
                     surface_pipe_distance -= sanitary_pref
-                surface_to_pipes_distances[surface_fid].append((pipe_feat.id(), surface_pipe_distance))
+                surface_to_pipes_distances[surface_fid].append(
+                    (pipe_feat.id(), surface_pipe_distance)
+                )
             feedback.setProgress(100 * step / number_of_steps)
             step += 1
         surface_map_feats = []
@@ -266,7 +306,9 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
             surface_map_feat[self.polygon_id_field] = surface_feat["id"]
             surface_map_feat["connection_node_id"] = surface_node_id
             surface_map_feat["percentage"] = 100.0
-            surface_map_geom = QgsGeometry.fromPolylineXY([surface_centroid.asPoint(), node_geom.asPoint()])
+            surface_map_geom = QgsGeometry.fromPolylineXY(
+                [surface_centroid.asPoint(), node_geom.asPoint()]
+            )
             surface_map_feat.setGeometry(surface_map_geom)
             surface_map_feats.append(surface_map_feat)
             next_surface_map_id += 1
@@ -294,7 +336,7 @@ class LinkSurfacesWithConnectionNodes(LinkToConnectionNodesAlgorithm):
         return {
             LinkToConnectionNodesAlgorithm.POLYGON_LAYER: "Surface layer",
             LinkToConnectionNodesAlgorithm.SELECTED_POLYGONS: "Selected surfaces only",
-            LinkToConnectionNodesAlgorithm.MAP_LAYER: "Surface map layer"
+            LinkToConnectionNodesAlgorithm.MAP_LAYER: "Surface map layer",
         }
 
     @property
@@ -304,8 +346,8 @@ class LinkSurfacesWithConnectionNodes(LinkToConnectionNodesAlgorithm):
             LinkToConnectionNodesAlgorithm.MAP_LAYER: "Surface map",
             LinkToConnectionNodesAlgorithm.SEWERAGE_TYPES: [
                 SewerageType.COMBINED_SEWER.value,
-                SewerageType.STORM_DRAIN.value
-            ]
+                SewerageType.STORM_DRAIN.value,
+            ],
         }
 
     @property
@@ -330,7 +372,7 @@ class LinkDWFWithConnectionNodes(LinkToConnectionNodesAlgorithm):
         return {
             LinkToConnectionNodesAlgorithm.POLYGON_LAYER: "Dry weather flow layer",
             LinkToConnectionNodesAlgorithm.SELECTED_POLYGONS: "Selected DWF polygons only",
-            LinkToConnectionNodesAlgorithm.MAP_LAYER: "Dry weather flow map layer"
+            LinkToConnectionNodesAlgorithm.MAP_LAYER: "Dry weather flow map layer",
         }
 
     @property
@@ -340,8 +382,8 @@ class LinkDWFWithConnectionNodes(LinkToConnectionNodesAlgorithm):
             LinkToConnectionNodesAlgorithm.MAP_LAYER: "Dry weather flow map",
             LinkToConnectionNodesAlgorithm.SEWERAGE_TYPES: [
                 SewerageType.COMBINED_SEWER.value,
-                SewerageType.SANITARY_SEWER.value
-            ]
+                SewerageType.SANITARY_SEWER.value,
+            ],
         }
 
     @property
@@ -363,20 +405,20 @@ class AddNWRWSurfaceParameters(QgsProcessingAlgorithm):
     Add NWRW surface parameters to a surface parameter layer.
     """
 
-    SURFACE_PARAMETERS = 'SURFACE_PARAMETERS_LAYER'
+    SURFACE_PARAMETERS = "SURFACE_PARAMETERS_LAYER"
 
     def tr(self, string):
         """Returns a translatable string"""
-        return QCoreApplication.translate('Processing', string)
+        return QCoreApplication.translate("Processing", string)
 
     def createInstance(self):
         return AddNWRWSurfaceParameters()
 
     def name(self):
-        return 'threedi_add_nwrw_surface_parameters'
+        return "threedi_add_nwrw_surface_parameters"
 
     def displayName(self):
-        return self.tr('Add NWRW surface parameters')
+        return self.tr("Add NWRW surface parameters")
 
     def group(self):
         return self.tr("Inflow")
@@ -385,7 +427,7 @@ class AddNWRWSurfaceParameters(QgsProcessingAlgorithm):
         return "0d"
 
     def shortHelpString(self):
-        return  f"""
+        return f"""
             <p>Add surface parameters from the Dutch NWRW inflow model to a schematisation.</p>
             <h3>Parameters</h3>
             <h4>Target surface parameters layer</h4>
@@ -397,8 +439,8 @@ class AddNWRWSurfaceParameters(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterMapLayer(
                 self.SURFACE_PARAMETERS,
-                'Target surface parameters layer',
-                defaultValue='Surface parameters'
+                "Target surface parameters layer",
+                defaultValue="Surface parameters",
             )
         )
 
@@ -407,32 +449,47 @@ class AddNWRWSurfaceParameters(QgsProcessingAlgorithm):
         Process the algorithm.
         """
         # Get the target layer
-        target_layer = self.parameterAsVectorLayer(parameters, self.SURFACE_PARAMETERS, context)
+        target_layer = self.parameterAsVectorLayer(
+            parameters, self.SURFACE_PARAMETERS, context
+        )
         if not target_layer:
-            raise QgsProcessingException(f"Target layer {target_layer.name()} is not found")
+            raise QgsProcessingException(
+                f"Target layer {target_layer.name()} is not found"
+            )
             return {}
 
         # Check if the target layer exists and has the required fields
         if not target_layer.isValid():
-            raise QgsProcessingException(f"Target layer {target_layer.name()} is not valid")
+            raise QgsProcessingException(
+                f"Target layer {target_layer.name()} is not valid"
+            )
             return {}
 
         required_fields = [field for field in SurfaceParameters.__annotations__.keys()]
         layer_fields = [field.name() for field in target_layer.fields()]
         if set(required_fields) - set(layer_fields):
-            raise QgsProcessingException(f"Target layer {target_layer.name()} does not contain the expected fields")
+            raise QgsProcessingException(
+                f"Target layer {target_layer.name()} does not contain the expected fields"
+            )
 
         # Load the surface parameters from the JSON file
         # No error handling because the json is not supplied by the user
-        json_path = Path(__file__).parent.absolute() / 'data' / 'nwrw_surface_parameters.json'
+        json_path = (
+            Path(__file__).parent.absolute() / "data" / "nwrw_surface_parameters.json"
+        )
         feedback.pushInfo(f"load {str(json_path)}")
-        with json_path.open('r', encoding='utf-8') as f:
+        with json_path.open("r", encoding="utf-8") as f:
             nwrw_parameters = json.load(f)
 
         # Get the existing IDs from the target layer
         request = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)
         existing_ids = set(
-            [feature['id'] for feature in target_layer.getFeatures(request) if 'id' in feature.fields().names()])
+            [
+                feature["id"]
+                for feature in target_layer.getFeatures(request)
+                if "id" in feature.fields().names()
+            ]
+        )
 
         # Start editing the target layer
         target_layer.startEditing()
@@ -440,8 +497,10 @@ class AddNWRWSurfaceParameters(QgsProcessingAlgorithm):
         try:
             # Process each parameter from the JSON file
             for param in nwrw_parameters:
-                if param['id'] in existing_ids:
-                    feedback.pushInfo(f"Skipped adding NWRW surface parameter {param['id']}, because id already exists")
+                if param["id"] in existing_ids:
+                    feedback.pushInfo(
+                        f"Skipped adding NWRW surface parameter {param['id']}, because id already exists"
+                    )
                     continue
                 feature = QgsFeature(target_layer.fields())
                 for field_name, value in param.items():
@@ -454,6 +513,8 @@ class AddNWRWSurfaceParameters(QgsProcessingAlgorithm):
         except Exception as e:
             target_layer.rollBack()
             # manual raise is needed to ensure the processing fails when there is no output
-            raise QgsProcessingException(f"Error adding NWRW surface parameters to layer {target_layer.name()}")
+            raise QgsProcessingException(
+                f"Error adding NWRW surface parameters to layer {target_layer.name()}"
+            )
 
         return {}

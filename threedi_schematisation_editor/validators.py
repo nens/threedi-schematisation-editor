@@ -18,7 +18,15 @@ class ValidationAutofix:
 class FieldValidationError:
     """Structure with field validation output."""
 
-    def __init__(self, data_model_cls, feature_id, source_id, field_name, current_value, error_message=None):
+    def __init__(
+        self,
+        data_model_cls,
+        feature_id,
+        source_id,
+        field_name,
+        current_value,
+        error_message=None,
+    ):
         self.data_model_cls = data_model_cls
         self.feature_id = feature_id
         self.source_id = source_id
@@ -29,7 +37,9 @@ class FieldValidationError:
 
     def add_autofix(self, fixed_value, field_name=None):
         """Add autofix object with proposed value."""
-        fix = ValidationAutofix(field_name if field_name else self.field_name, fixed_value)
+        fix = ValidationAutofix(
+            field_name if field_name else self.field_name, fixed_value
+        )
         self.fixes.append(fix)
 
 
@@ -133,7 +143,10 @@ class CrossSectionTableValidator(AttributeValidator):
         """Return available validations method list."""
         available_methods = []
         shape = self.feature["cross_section_shape"]
-        if shape in {en.CrossSectionShape.TABULATED_RECTANGLE.value, en.CrossSectionShape.TABULATED_TRAPEZIUM.value}:
+        if shape in {
+            en.CrossSectionShape.TABULATED_RECTANGLE.value,
+            en.CrossSectionShape.TABULATED_TRAPEZIUM.value,
+        }:
             available_methods += [
                 self._not_empty,
                 self._valid_format,
@@ -147,7 +160,12 @@ class CrossSectionTableValidator(AttributeValidator):
         error_msg = f"'{self.field_name}' value is NULL"
         if self.field_value in self.empty_values:
             validation_error = FieldValidationError(
-                self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
+                self.model,
+                self.fid,
+                self.id,
+                self.field_name,
+                self.field_value,
+                error_msg,
             )
             if self.autofix:
                 validation_error.add_autofix(NULL, "cross_section_width")
@@ -160,11 +178,17 @@ class CrossSectionTableValidator(AttributeValidator):
         if self.field_value not in self.empty_values:
             try:
                 _float_values = [
-                    (float(h.replace(",", ".")), float(w.replace(",", "."))) for h, w in self.cross_section_table_values
+                    (float(h.replace(",", ".")), float(w.replace(",", ".")))
+                    for h, w in self.cross_section_table_values
                 ]
             except ValueError:
                 validation_error = FieldValidationError(
-                    self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
+                    self.model,
+                    self.fid,
+                    self.id,
+                    self.field_name,
+                    self.field_value,
+                    error_msg,
                 )
                 self.validation_errors.append(validation_error)
                 self.invalid_format_detected = True
@@ -172,11 +196,19 @@ class CrossSectionTableValidator(AttributeValidator):
     def _no_trailing_blank_chars(self):
         """Check if field value have no trailing blank characters."""
         error_msg = f"'{self.field_name}' value have trailing whitespaces"
-        if self.field_value not in self.empty_values and not self.invalid_format_detected:
+        if (
+            self.field_value not in self.empty_values
+            and not self.invalid_format_detected
+        ):
             stripped_field_value = self.field_value.rstrip()
             if self.field_value != stripped_field_value:
                 validation_error = FieldValidationError(
-                    self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
+                    self.model,
+                    self.fid,
+                    self.id,
+                    self.field_name,
+                    self.field_value,
+                    error_msg,
                 )
                 if self.autofix:
                     validation_error.add_autofix(stripped_field_value)
@@ -185,17 +217,28 @@ class CrossSectionTableValidator(AttributeValidator):
     def _no_dot_separator(self):
         """Check if float values are dot separated."""
         error_msg = f"'{self.field_name}' value contains coma-separated float numbers"
-        if self.field_value not in self.empty_values and not self.invalid_format_detected:
+        if (
+            self.field_value not in self.empty_values
+            and not self.invalid_format_detected
+        ):
             for value in chain.from_iterable(self.cross_section_table_values):
                 if "," in value:
                     validation_error = FieldValidationError(
-                        self.model, self.fid, self.id, self.field_name, self.field_value, error_msg
+                        self.model,
+                        self.fid,
+                        self.id,
+                        self.field_name,
+                        self.field_value,
+                        error_msg,
                     )
                     if self.autofix:
                         fixed_values_list = [
-                            (h.replace(",", "."), w.replace(",", ".")) for h, w in self.cross_section_table_values
+                            (h.replace(",", "."), w.replace(",", "."))
+                            for h, w in self.cross_section_table_values
                         ]
-                        fixed_field_value = "\n".join(f"{h}, {w}" for h, w in fixed_values_list)
+                        fixed_field_value = "\n".join(
+                            f"{h}, {w}" for h, w in fixed_values_list
+                        )
                         validation_error.add_autofix(fixed_field_value)
                     self.validation_errors.append(validation_error)
                     break

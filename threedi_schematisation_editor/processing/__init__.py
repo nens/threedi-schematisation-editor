@@ -9,17 +9,23 @@ from threedi_schematisation_editor.processing.alghorithms_inflow import (
     LinkDWFWithConnectionNodes,
     LinkSurfacesWithConnectionNodes,
 )
-
+from threedi_schematisation_editor.processing.algorithm_rasterize_channels import (
+    RasterizeChannelsAlgorithm,
+)
 from threedi_schematisation_editor.processing.algorithms_1d import BottomLevelCalculator
-from threedi_schematisation_editor.processing.algorithms_1d2d import GenerateExchangeLines
-from threedi_schematisation_editor.processing.algorithms_conversion import (
+from threedi_schematisation_editor.processing.algorithms_1d2d import (
+    GenerateExchangeLines,
+)
+from threedi_schematisation_editor.processing.algorithms_vector_data_importer import (
+    ImportChannels,
     ImportConnectionNodes,
+    ImportCrossSectionData,
+    ImportCrossSectionLocation,
     ImportCulverts,
     ImportOrifices,
     ImportPipes,
     ImportWeirs,
 )
-from threedi_schematisation_editor.processing.algorithm_rasterize_channels import RasterizeChannelsAlgorithm
 
 
 class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
@@ -35,7 +41,9 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
         return "3Di Schematisation Editor"
 
     def icon(self):
-        icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "icons", "icon.png")
+        icon_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "icons", "icon.png"
+        )
         return QIcon(icon_path)
 
     def load(self):
@@ -52,11 +60,14 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
             LinkDWFWithConnectionNodes(),
             AddNWRWSurfaceParameters(),
             GenerateExchangeLines(),
+            ImportCrossSectionLocation(),
+            ImportCrossSectionData(),
             ImportConnectionNodes(),
             ImportCulverts(),
             ImportOrifices(),
             ImportWeirs(),
             ImportPipes(),
+            ImportChannels(),
             BottomLevelCalculator(),
             RasterizeChannelsAlgorithm(),
         ]

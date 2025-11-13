@@ -1,5 +1,6 @@
 # Copyright (C) 2025 by Lutra Consulting
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field, fields
 from itertools import chain
 from types import MappingProxyType, SimpleNamespace
 from typing import Optional
@@ -11,6 +12,7 @@ from threedi_schematisation_editor.enumerators import (
     BoundaryType2D,
     ControlType,
     CrestType,
+    CrossSectionDataTargetType,
     CrossSectionShape,
     ExchangeTypeChannel,
     ExchangeTypeCulvert,
@@ -19,7 +21,6 @@ from threedi_schematisation_editor.enumerators import (
     FlowVariable,
     FrictionShallowWaterDepthCorrection,
     FrictionType,
-    FrictionTypeExtended,
     GeometryType,
     InfiltrationSurfaceOption,
     InitializationType,
@@ -41,6 +42,11 @@ from threedi_schematisation_editor.enumerators import (
     UseNestedNewton,
     Visualisation,
 )
+from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+
+DISPLAY_NAME_FIELD = "display_name"
+DISPLAY_UNIT_FIELD = "display_unit"
+ALLOWED_METHODS_FIELD = "allowed_methods"
 
 
 class HighPrecisionFloat(float):
@@ -52,6 +58,7 @@ class HighPrecisionFloat(float):
     pass
 
 
+@dataclass
 class ModelObject:
     __tablename__ = None
     __layername__ = None
@@ -65,24 +72,49 @@ class ModelObject:
         namespace = SimpleNamespace(**field_names_dict)
         return namespace
 
-    @classmethod
-    def hidden_fields(cls) -> set:
-        return set()
-
     @staticmethod
-    def display_names() -> list:
-        return list()
+    def default_display_name(display_name):
+        REPLACEMENTS = [
+            (r"\bcross section\b", "cross-section"),
+            (r"\btags\b", "tag"),
+        ]
+        for pattern, replacement in REPLACEMENTS:
+            display_name = re.sub(
+                pattern, replacement, display_name, flags=re.IGNORECASE
+            )
+        display_name = display_name.replace("_", " ").capitalize()
+        # replace ID after capitalization so ID won't become Id
+        display_name = re.sub(r"\bid\b", "ID", display_name, flags=re.IGNORECASE)
+        return display_name
+
+    @classmethod
+    def display_names(cls) -> list:
+        display_names = []
+        for field in fields(cls):
+            display_name = field.metadata.get(
+                DISPLAY_NAME_FIELD, cls.default_display_name(field.name)
+            )
+            if DISPLAY_UNIT_FIELD in field.metadata:
+                display_name += f" [{field.metadata[DISPLAY_UNIT_FIELD]}]"
+            display_names.append(display_name)
+        return display_names
 
     @classmethod
     def fields_display_names(cls) -> dict:
         display_names_mapping = {
             field_name: display_name
-            for field_name, display_name in zip(cls.__annotations__.keys(), cls.display_names())
+            for field_name, display_name in zip(
+                cls.__annotations__.keys(), cls.display_names()
+            )
         }
         return display_names_mapping
 
     @staticmethod
     def obsolete_fields() -> set:
+        return set()
+
+    @classmethod
+    def hidden_fields(cls) -> set:
         return set()
 
 
@@ -95,37 +127,23 @@ class ConnectionNode(ModelObject):
     id: int
     code: Optional[str]
     display_name: Optional[str]
-    storage_area: Optional[float]
-    initial_water_level: Optional[float]
+    storage_area: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m²"})
+    initial_water_level: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     visualisation: Optional[Visualisation]
-    manhole_surface_level: Optional[float]
-    bottom_level: Optional[float]
-    exchange_level: Optional[float]
+    manhole_surface_level: Optional[float] = field(
+        metadata={DISPLAY_UNIT_FIELD: "m MSL"}
+    )
+    bottom_level: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m MSL"})
+    exchange_level: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m MSL"})
     exchange_type: Optional[ExchangeTypeNode]
-    exchange_thickness: Optional[float]
-    hydraulic_conductivity_in: Optional[float]
-    hydraulic_conductivity_out: Optional[float]
+    exchange_thickness: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    hydraulic_conductivity_in: Optional[float] = field(
+        metadata={DISPLAY_UNIT_FIELD: "m/d"}
+    )
+    hydraulic_conductivity_out: Optional[float] = field(
+        metadata={DISPLAY_UNIT_FIELD: "m/d"}
+    )
     tags: Optional[str]
-
-    @staticmethod
-    def display_names() -> list:
-        display_names_list = [
-            "ID",
-            "Code",
-            "Display name",
-            "Storage area [m²]",
-            "Initial water level [m]",
-            "Visualisation",
-            "Manhole surface level [m MSL]",
-            "Bottom level [m MSL]",
-            "Exchange level [m MSL]",
-            "Exchange type",
-            "Exchange thickness [m]",
-            "Hydraulic conductivity in [m/d]",
-            "Hydraulic conductivity out [m/d]",
-            "Tag",
-        ]
-        return display_names_list
 
 
 @dataclass
@@ -214,31 +232,6 @@ class Weir(ModelObject):
     __layername__ = "Weir"
     __geometrytype__ = GeometryType.Linestring
 
-    @staticmethod
-    def display_names() -> list:
-        display_names_list = [
-            "ID",
-            "Code",
-            "Display name",
-            "Crest level",
-            "Crest type",
-            "Discharge coefficient positive",
-            "Discharge coefficient negative",
-            "Material ID",
-            "Friction value",
-            "Friction type",
-            "Sewerage",
-            "External",
-            "Connection node start ID",
-            "Connection node end ID",
-            "Cross section shape",
-            "Cross section width [m]",
-            "Cross section height [m]",
-            "Cross section table",
-            "Tag",
-        ]
-        return display_names_list
-
     id: int
     code: Optional[str]
     display_name: Optional[str]
@@ -247,15 +240,31 @@ class Weir(ModelObject):
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
     material_id: Optional[int]
-    friction_value: float
-    friction_type: FrictionType
-    sewerage: bool
+    friction_value: Optional[float]
+    friction_type: Optional[FrictionType]
+    sewerage: Optional[bool]
     external: Optional[bool]
-    connection_node_id_start: int
-    connection_node_id_end: int
-    cross_section_shape: CrossSectionShape
-    cross_section_width: Optional[float]
-    cross_section_height: Optional[float]
+    connection_node_id_start: int = field(
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node start ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
+    )
+    connection_node_id_end: int = field(
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node end ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
+    )
+    cross_section_shape: Optional[CrossSectionShape]
+    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
     tags: Optional[str]
 
@@ -270,46 +279,39 @@ class Culvert(ModelObject):
     code: Optional[str]
     display_name: Optional[str]
     exchange_type: Optional[ExchangeTypeCulvert]
-    calculation_point_distance: Optional[float]
-    invert_level_start: float
-    invert_level_end: float
+    calculation_point_distance: Optional[float] = field(
+        metadata={DISPLAY_UNIT_FIELD: "m"}
+    )
+    invert_level_start: Optional[float]
+    invert_level_end: Optional[float]
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
     material_id: Optional[int]
-    friction_value: float
-    friction_type: FrictionType
-    connection_node_id_start: int
-    connection_node_id_end: int
-    cross_section_shape: CrossSectionShape
-    cross_section_width: Optional[float]
-    cross_section_height: Optional[float]
+    friction_value: Optional[float]
+    friction_type: Optional[FrictionType]
+    connection_node_id_start: int = field(
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node start ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
+    )
+    connection_node_id_end: int = field(
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node end ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
+    )
+    cross_section_shape: Optional[CrossSectionShape]
+    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
     tags: Optional[str]
-
-    @staticmethod
-    def display_names() -> list:
-        display_names_list = [
-            "ID",
-            "Code",
-            "Display name",
-            "Exchange type",
-            "Calculation point distance [m]",
-            "Invert level start point",
-            "Invert level end point",
-            "Discharge coefficient positive",
-            "Discharge coefficient negative",
-            "Material ID",
-            "Friction value",
-            "Friction type",
-            "Connection node start ID",
-            "Connection node end ID",
-            "Cross section shape",
-            "Cross section width [m]",
-            "Cross section height [m]",
-            "Cross section table",
-            "Tag",
-        ]
-        return display_names_list
 
 
 @dataclass
@@ -326,40 +328,32 @@ class Orifice(ModelObject):
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
     material_id: Optional[int]
-    friction_value: float
-    friction_type: FrictionType
-    sewerage: bool
-    connection_node_id_start: int
-    connection_node_id_end: int
-    cross_section_shape: CrossSectionShape
-    cross_section_width: Optional[float]
-    cross_section_height: Optional[float]
+    friction_value: Optional[float]
+    friction_type: Optional[FrictionType]
+    sewerage: Optional[bool]
+    connection_node_id_start: int = field(
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node start ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
+    )
+    connection_node_id_end: int = field(
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node end ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
+    )
+    cross_section_shape: Optional[CrossSectionShape]
+    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
     tags: Optional[str]
-
-    @staticmethod
-    def display_names() -> list:
-        display_names_list = [
-            "ID",
-            "Code",
-            "Display name",
-            "Crest level",
-            "Crest type",
-            "Discharge coefficient positive",
-            "Discharge coefficient negative",
-            "Material ID",
-            "Friction value",
-            "Friction type",
-            "Sewerage",
-            "Connection node start ID",
-            "Connection node end ID",
-            "Cross section shape",
-            "Cross section width [m]",
-            "Cross section height [m]",
-            "Cross section table",
-            "Tag",
-        ]
-        return display_names_list
 
 
 @dataclass
@@ -371,51 +365,46 @@ class Pipe(ModelObject):
     id: int
     code: Optional[str]
     display_name: Optional[str]
-    exchange_type: ExchangeTypePipe
-    calculation_point_distance: Optional[float]
-    invert_level_start: float
-    invert_level_end: float
+    exchange_type: Optional[ExchangeTypePipe]
+    calculation_point_distance: Optional[float] = field(
+        metadata={DISPLAY_UNIT_FIELD: "m"}
+    )
+    invert_level_start: Optional[float]
+    invert_level_end: Optional[float]
     material_id: Optional[int]
-    friction_value: float
-    friction_type: FrictionType
+    friction_value: Optional[float]
+    friction_type: Optional[FrictionType]
     sewerage_type: Optional[SewerageType]
-    connection_node_id_start: int
-    connection_node_id_end: int
-    cross_section_shape: CrossSectionShape
-    cross_section_width: Optional[float]
-    cross_section_height: Optional[float]
+    connection_node_id_start: int = field(
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node start ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
+    )
+    connection_node_id_end: int = field(
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node end ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
+    )
+    cross_section_shape: Optional[CrossSectionShape]
+    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
-    exchange_thickness: Optional[float]
-    hydraulic_conductivity_in: Optional[float]
-    hydraulic_conductivity_out: Optional[float]
+    exchange_thickness: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    hydraulic_conductivity_in: Optional[float] = field(
+        metadata={DISPLAY_UNIT_FIELD: "m/d"}
+    )
+    hydraulic_conductivity_out: Optional[float] = field(
+        metadata={DISPLAY_UNIT_FIELD: "m/d"}
+    )
     tags: Optional[str]
-
-    @staticmethod
-    def display_names() -> list:
-        display_names_list = [
-            "ID",
-            "Code",
-            "Display name",
-            "exchange type",
-            "Calculation point distance [m]",
-            "Invert level start point",
-            "Invert level end point",
-            "Material ID",
-            "Friction value",
-            "Friction type",
-            "Sewerage type",
-            "Connection node start ID",
-            "Connection node end ID",
-            "Cross section shape",
-            "Cross section width [m]",
-            "Cross section height [m]",
-            "Cross section table",
-            "Exchange thickness [m]",
-            "Hydraulic conductivity in [m/d]",
-            "Hydraulic conductivity out [m/d]",
-            "Tag",
-        ]
-        return display_names_list
 
 
 @dataclass
@@ -427,14 +416,14 @@ class CrossSectionLocation(ModelObject):
     id: int
     code: Optional[str]
     display_name: Optional[str]
-    reference_level: float
-    friction_type: FrictionTypeExtended
+    friction_value: Optional[float]
+    friction_type: Optional[FrictionType]
     friction_value: float
     bank_level: Optional[float]
-    channel_id: int
-    cross_section_shape: CrossSectionShape
-    cross_section_width: Optional[float]
-    cross_section_height: Optional[float]
+    channel_id: int = field(metadata={ALLOWED_METHODS_FIELD: [ColumnImportMethod.AUTO]})
+    cross_section_shape: Optional[CrossSectionShape]
+    cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    cross_section_height: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
     cross_section_table: Optional[str]
     cross_section_friction_values: Optional[str]
     cross_section_vegetation_table: Optional[str]
@@ -446,6 +435,57 @@ class CrossSectionLocation(ModelObject):
 
 
 @dataclass
+class CrossSectionData(ModelObject):
+    """Data class for cross section data import. This class does NOT match a class in threedi-schema!"""
+
+    __tablename__ = "Cross section data"
+    __layername__ = "Cross section data"
+    __geometrytype__ = None
+
+    target_object_type: CrossSectionDataTargetType
+    target_object_id: Optional[int]
+    target_object_code: Optional[str]
+    order_by: float = field(
+        metadata={
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+            ]
+        }
+    )
+    cross_section_shape: Optional[CrossSectionShape] = field(
+        metadata={
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.DEFAULT,
+                ColumnImportMethod.EXPRESSION,
+            ]
+        }
+    )
+    cross_section_width: Optional[float] = field(
+        metadata={
+            DISPLAY_UNIT_FIELD: "m",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+            ],
+        }
+    )
+    cross_section_height: Optional[float] = field(
+        metadata={
+            DISPLAY_UNIT_FIELD: "m",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+            ],
+        }
+    )
+    cross_section_y: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    cross_section_z: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+
+
+@dataclass
 class Channel(ModelObject):
     __tablename__ = "channel"
     __layername__ = "Channel"
@@ -454,13 +494,35 @@ class Channel(ModelObject):
     id: int
     code: Optional[str]
     display_name: Optional[str]
-    exchange_type: ExchangeTypeChannel
-    calculation_point_distance: Optional[float]
-    connection_node_id_start: int
-    connection_node_id_end: int
-    exchange_thickness: Optional[float]
-    hydraulic_conductivity_in: Optional[float]
-    hydraulic_conductivity_out: Optional[float]
+    exchange_type: Optional[ExchangeTypeChannel]
+    calculation_point_distance: Optional[float] = field(
+        metadata={DISPLAY_UNIT_FIELD: "m"}
+    )
+    connection_node_id_start: int = field(
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node start ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
+    )
+    connection_node_id_end: int = field(
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node end ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
+    )
+    exchange_thickness: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})
+    hydraulic_conductivity_in: Optional[float] = field(
+        metadata={DISPLAY_UNIT_FIELD: "m/d"}
+    )
+    hydraulic_conductivity_out: Optional[float] = field(
+        metadata={DISPLAY_UNIT_FIELD: "m/d"}
+    )
     tags: Optional[str]
 
 
@@ -757,7 +819,7 @@ class InterceptionSettings(ModelObject):
     __layername__ = "Interception"
     __geometrytype__ = GeometryType.NoGeometry
 
-    RELATED_RASTERS = (("interception_file", "Interception [m]"),)
+    RELATED_RASTERS = (("interception_file", "Interception m"),)
 
     id: int
     interception: Optional[float]
@@ -784,7 +846,7 @@ class SimpleInfiltrationSettings(ModelObject):
 
     RELATED_RASTERS = (
         ("infiltration_rate_file", "Infiltration rate [mm/d]"),
-        ("max_infiltration_volume_file", "Max infiltration volume [m]"),
+        ("max_infiltration_volume_file", "Max infiltration volume m"),
     )
 
     id: int
@@ -867,7 +929,9 @@ class NumericalSettings(ModelObject):
     convergence_cg: Optional[HighPrecisionFloat]
     convergence_eps: Optional[HighPrecisionFloat]
     flow_direction_threshold: Optional[HighPrecisionFloat]
-    friction_shallow_water_depth_correction: Optional[FrictionShallowWaterDepthCorrection]
+    friction_shallow_water_depth_correction: Optional[
+        FrictionShallowWaterDepthCorrection
+    ]
     general_numerical_threshold: Optional[HighPrecisionFloat]
     time_integration_method: Optional[TimeIntegrationMethod]
     limiter_waterlevel_gradient_1d: Optional[bool]
@@ -1025,9 +1089,9 @@ class VegetationDrag2D(ModelObject):
     __geometrytype__ = GeometryType.NoGeometry
 
     RELATED_RASTERS = (
-        ("vegetation_height_file", "Vegetation height [m]"),
+        ("vegetation_height_file", "Vegetation height m"),
         ("vegetation_stem_count_file", "Vegetation stem count [-]"),
-        ("vegetation_stem_diameter_file", "Vegetation stem diameter [m]"),
+        ("vegetation_stem_diameter_file", "Vegetation stem diameter m"),
         ("vegetation_drag_coefficient_file", "Vegetation drag coefficient [-]"),
     )
 
@@ -1127,7 +1191,9 @@ ELEMENTS_WITH_TIMESERIES = (
 )
 
 ELEMENTS_WITH_RASTERS = tuple(
-    model_cls for model_cls in chain(SETTINGS_ELEMENTS, HYDROLOGICAL_PROCESSES) if model_cls.RELATED_RASTERS
+    model_cls
+    for model_cls in chain(SETTINGS_ELEMENTS, HYDROLOGICAL_PROCESSES)
+    if model_cls.RELATED_RASTERS
 )
 
 TABLE_MANNING = MappingProxyType(

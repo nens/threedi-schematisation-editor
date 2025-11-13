@@ -1,19 +1,21 @@
 # Copyright (C) 2025 by Lutra Consulting
 import os.path
-import logging
 import platform
-
 from collections import defaultdict
 from pathlib import Path
 
-from qgis.core import QgsApplication, QgsLayerTreeNode, QgsProject, QgsMessageLog, Qgis
+import pyplugin_installer
+from qgis.core import (
+    Qgis,
+    QgsApplication,
+    QgsLayerTreeNode,
+    QgsMessageLog,
+    QgsProject,
+    QgsSettings,
+)
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QCursor, QIcon
-from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu
-
-import pyplugin_installer
-from qgis.core import QgsSettings
-from qgis.PyQt.QtWidgets import QMessageBox
+from qgis.PyQt.QtWidgets import QAction, QComboBox, QDialog, QMenu, QMessageBox
 from qgis.utils import isPluginLoaded, startPlugin
 
 
@@ -57,24 +59,35 @@ from threedi_schema import ThreediDatabase
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.communication import UICommunication
-from threedi_schematisation_editor.custom_widgets import (
-    ImportFeaturesDialog, ImportStructuresDialog, LoadSchematisationDialog)
-from threedi_schematisation_editor.processing import \
-    ThreediSchematisationEditorProcessingProvider
+from threedi_schematisation_editor.load_schematisation.load_schematisation import (
+    LoadSchematisationDialog,
+)
+from threedi_schematisation_editor.processing import (
+    ThreediSchematisationEditorProcessingProvider,
+)
 from threedi_schematisation_editor.user_layer_manager import LayersManager
-from threedi_schematisation_editor.utils import (ConversionError,
-                                                 add_gpkg_connection,
-                                                 add_settings_entry,
-                                                 can_write_in_dir,
-                                                 check_enable_macros_option,
-                                                 check_enable_embedded_python_option,
-                                                 check_wal_for_sqlite,
-                                                 get_filepath, get_icon_path,
-                                                 is_gpkg_connection_exists,
-                                                 migrate_schematisation_schema,
-                                                 progress_bar_callback_factory,
-                                                 set_wal_for_sqlite_mode,
-                                                 )
+from threedi_schematisation_editor.utils import (
+    ConversionError,
+    add_gpkg_connection,
+    add_settings_entry,
+    can_write_in_dir,
+    check_enable_embedded_python_option,
+    check_enable_macros_option,
+    check_wal_for_sqlite,
+    get_filepath,
+    get_icon_path,
+    is_gpkg_connection_exists,
+    migrate_schematisation_schema,
+    progress_bar_callback_factory,
+    set_wal_for_sqlite_mode,
+)
+from threedi_schematisation_editor.vector_data_importer.wizard import (
+    ImportConduitWizard,
+    ImportConnectionNodesWizard,
+    ImportCrossSectionDataWizard,
+    ImportCrossSectionLocationWizard,
+    ImportStructureWizard,
+)
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
 
@@ -117,27 +130,46 @@ class ThreediSchematisationEditorPlugin:
         self.active_schematisation_combo = QComboBox()
         self.active_schematisation_combo.setMinimumWidth(250)
         self.active_schematisation_combo.setPlaceholderText("No active schematisation")
-        self.active_schematisation_combo.currentIndexChanged.connect(self.active_schematisation_changed)
+        self.active_schematisation_combo.currentIndexChanged.connect(
+            self.active_schematisation_changed
+        )
         self.toolbar.addWidget(self.active_schematisation_combo)
         self.toolbar.addSeparator()
         self.action_open = QAction(
-            QIcon(get_icon_path("icon_load.svg")), "Load 3Di Schematisation", self.iface.mainWindow()
+            QIcon(get_icon_path("icon_load.svg")),
+            "Load 3Di Schematisation",
+            self.iface.mainWindow(),
         )
         self.action_open.triggered.connect(self.load_schematisation)
         self.action_remove = QAction(
-            QIcon(get_icon_path("icon_unload.svg")), "Remove 3Di Schematisation", self.iface.mainWindow()
+            QIcon(get_icon_path("icon_unload.svg")),
+            "Remove 3Di Schematisation",
+            self.iface.mainWindow(),
         )
         self.action_remove.triggered.connect(self.remove_model_from_project)
         import_features_icon_path = get_icon_path("icon_import.png")
         import_actions_spec = [
             ("Connection nodes", self.import_external_connection_nodes, None),
+            (
+                "Cross-section data",
+                self.import_external_cross_section_data,
+                None,
+            ),
+            (
+                "Cross-section locations",
+                self.import_external_cross_section_locations,
+                None,
+            ),
             ("Culverts", self.import_external_culverts, None),
             ("Orifices", self.import_external_orifices, None),
             ("Weirs", self.import_external_weirs, None),
             ("Pipes", self.import_external_pipes, None),
+            ("Channels", self.import_external_channels, None),
         ]
         self.action_import_features = self.add_multi_action_button(
-            "Import schematisation objects", import_features_icon_path, import_actions_spec
+            "Import schematisation objects",
+            import_features_icon_path,
+            import_actions_spec,
         )
         self.toolbar.addAction(self.action_open)
         self.toolbar.addAction(self.action_remove)
@@ -148,7 +180,9 @@ class ThreediSchematisationEditorPlugin:
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
-        self.active_schematisation_combo.currentIndexChanged.disconnect(self.active_schematisation_changed)
+        self.active_schematisation_combo.currentIndexChanged.disconnect(
+            self.active_schematisation_changed
+        )
         del self.toolbar
         del self.active_schematisation_combo
         del self.action_open
@@ -170,7 +204,8 @@ class ThreediSchematisationEditorPlugin:
         model_nodes = [
             node
             for node in root_node.children()
-            if node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup and node.name().startswith("3Di schematisation:")
+            if node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup
+            and node.name().startswith("3Di schematisation:")
         ]
         for model_node in model_nodes:
             model_groups = {
@@ -191,7 +226,9 @@ class ThreediSchematisationEditorPlugin:
             if connection_node_tree_layer is None:
                 continue
             connection_node_layer = connection_node_tree_layer.layer()
-            model_gpkg = os.path.normpath(connection_node_layer.source().rsplit("|", 1)[0])
+            model_gpkg = os.path.normpath(
+                connection_node_layer.source().rsplit("|", 1)[0]
+            )
             for sub_grp in model_groups.values():
                 for nested_node in sub_grp.children():
                     if nested_node.nodeType() == QgsLayerTreeNode.NodeType.NodeLayer:
@@ -202,10 +239,14 @@ class ThreediSchematisationEditorPlugin:
     def switch_workspace_context(self, active_layer):
         if not active_layer:
             return
-        expected_layer_source = os.path.normpath(active_layer.source().rsplit("|", 1)[0])
+        expected_layer_source = os.path.normpath(
+            active_layer.source().rsplit("|", 1)[0]
+        )
         if active_layer.id() in self.model_layers_map[expected_layer_source]:
             try:
-                lm = self.workspace_context_manager.layer_managers[expected_layer_source]
+                lm = self.workspace_context_manager.layer_managers[
+                    expected_layer_source
+                ]
             except KeyError:
                 return
             if lm.model_gpkg_path != self.model_gpkg:
@@ -217,7 +258,9 @@ class ThreediSchematisationEditorPlugin:
             lm = self.workspace_context_manager.layer_managers[combo_model_gpkg]
             self.iface.setActiveLayer(lm.model_handlers[dm.ConnectionNode].layer)
         if self.model_gpkg is not None:
-            self.active_schematisation_combo.setToolTip(f"Currently active schematisation: {self.model_gpkg}")
+            self.active_schematisation_combo.setToolTip(
+                f"Currently active schematisation: {self.model_gpkg}"
+            )
         else:
             self.active_schematisation_combo.setToolTip("No active schematisation")
 
@@ -229,7 +272,11 @@ class ThreediSchematisationEditorPlugin:
             action_arguments.insert(0, icon)
         main_action = QAction(*action_arguments)
         menu = QMenu()
-        for sub_action_name, sub_action_callback, sub_icon_path in actions_specification:
+        for (
+            sub_action_name,
+            sub_action_callback,
+            sub_icon_path,
+        ) in actions_specification:
             sub_action_arguments = [sub_action_name, parent_window]
             if sub_icon_path:
                 sub_icon = QIcon(sub_icon_path)
@@ -292,9 +339,13 @@ class ThreediSchematisationEditorPlugin:
         self.toggle_active_project_actions()
 
     def on_3di_project_save(self):
-        project_model_gpkgs_str = "|".join(lm.model_gpkg_path for lm in self.workspace_context_manager)
+        project_model_gpkgs_str = "|".join(
+            lm.model_gpkg_path for lm in self.workspace_context_manager
+        )
         if project_model_gpkgs_str:
-            self.project.setCustomVariables({self.THREEDI_GPKG_VAR_NAMES: project_model_gpkgs_str})
+            self.project.setCustomVariables(
+                {self.THREEDI_GPKG_VAR_NAMES: project_model_gpkgs_str}
+            )
 
     def load_schematisation(self, model_gpkg=None):
         if not model_gpkg:
@@ -302,7 +353,9 @@ class ThreediSchematisationEditorPlugin:
             result = schematisation_loader.exec_()
             if result != QDialog.Accepted:
                 return
-            schematisation_filepath = schematisation_loader.selected_schematisation_filepath
+            schematisation_filepath = (
+                schematisation_loader.selected_schematisation_filepath
+            )
             if not can_write_in_dir(os.path.dirname(schematisation_filepath)):
                 warn_msg = "You don't have required write permissions to load data from the selected location."
                 self.uc.show_warn(warn_msg)
@@ -321,7 +374,9 @@ class ThreediSchematisationEditorPlugin:
             QCoreApplication.processEvents()
             if len(migration_feedback_msg) > 0 and migration_succeed:
                 self.uc.show_info(migration_feedback_msg)
-                QgsMessageLog.logMessage(migration_feedback_msg, level=Qgis.Warning, tag="Messages")
+                QgsMessageLog.logMessage(
+                    migration_feedback_msg, level=Qgis.Warning, tag="Messages"
+                )
             elif not migration_succeed:
                 self.uc.clear_message_bar()
                 self.uc.show_warn(migration_feedback_msg)
@@ -361,33 +416,36 @@ class ThreediSchematisationEditorPlugin:
         self.toggle_active_project_actions()
         self.iface.mapCanvas().refresh()
 
-    def import_external_connection_nodes(self):
+    def import_external(self, model_cls, dialog_cls):
         if not self.model_gpkg:
             return
-        import_nodes_dlg = ImportFeaturesDialog(dm.ConnectionNode, self.model_gpkg, self.layer_manager, self.uc)
-        import_nodes_dlg.exec_()
+        # import_dlg = dialog_cls(model_cls)
+        import_dlg = dialog_cls(model_cls, self.model_gpkg, self.layer_manager)
+        import_dlg.exec_()
+
+    def import_external_connection_nodes(self):
+        self.import_external(dm.ConnectionNode, ImportConnectionNodesWizard)
+
+    def import_external_cross_section_data(self):
+        self.import_external(dm.CrossSectionData, ImportCrossSectionDataWizard)
+
+    def import_external_cross_section_locations(self):
+        self.import_external(dm.CrossSectionLocation, ImportCrossSectionLocationWizard)
 
     def import_external_culverts(self):
-        if not self.model_gpkg:
-            return
-        import_culverts_dlg = ImportStructuresDialog(dm.Culvert, self.model_gpkg, self.layer_manager, self.uc)
-        import_culverts_dlg.exec_()
+        self.import_external(dm.Culvert, ImportStructureWizard)
 
     def import_external_orifices(self):
-        if not self.model_gpkg:
-            return
-        import_orifices_dlg = ImportStructuresDialog(dm.Orifice, self.model_gpkg, self.layer_manager, self.uc)
-        import_orifices_dlg.exec_()
+        self.import_external(dm.Orifice, ImportStructureWizard)
 
     def import_external_weirs(self):
-        if not self.model_gpkg:
-            return
-        import_weirs_dlg = ImportStructuresDialog(dm.Weir, self.model_gpkg, self.layer_manager, self.uc)
-        import_weirs_dlg.exec_()
+        self.import_external(dm.Weir, ImportStructureWizard)
 
     def import_external_pipes(self):
-        import_pipes_dlg = ImportStructuresDialog(dm.Pipe, self.model_gpkg, self.layer_manager, self.uc)
-        import_pipes_dlg.exec_()
+        self.import_external(dm.Pipe, ImportConduitWizard)
+
+    def import_external_channels(self):
+        self.import_external(dm.Channel, ImportConduitWizard)
 
     def on_project_close(self):
         if self.layer_manager is None:

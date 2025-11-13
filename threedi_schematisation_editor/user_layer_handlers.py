@@ -69,7 +69,9 @@ class UserLayerHandler:
         self.layer.featureAdded.disconnect(self.on_added_feature)
         self.layer.featuresDeleted.disconnect(self.on_delete_features)
         if self.MODEL in self.layer_manager.VALUE_RELATIONS:
-            self.layer.styleChanged.disconnect(self.trigger_setup_value_relation_widgets)
+            self.layer.styleChanged.disconnect(
+                self.trigger_setup_value_relation_widgets
+            )
         self.disconnect_additional_signals()
 
     def connect_additional_signals(self):
@@ -84,7 +86,10 @@ class UserLayerHandler:
     def field_indexes(self):
         """Return field name to its index map"""
         field_names = [field.name() for field in self.layer.fields()]
-        field_index_map = {field_name: self.layer.fields().lookupField(field_name) for field_name in field_names}
+        field_index_map = {
+            field_name: self.layer.fields().lookupField(field_name)
+            for field_name in field_names
+        }
         return field_index_map
 
     @property
@@ -146,7 +151,9 @@ class UserLayerHandler:
             self.layer.startEditing()
         for fix in validation_error.fixes:
             field_idx = self.field_indexes[fix.field_name]
-            self.layer.changeAttributeValue(validation_error.feature_id, field_idx, fix.fixed_value)
+            self.layer.changeAttributeValue(
+                validation_error.feature_id, field_idx, fix.fixed_value
+            )
 
     def validate_features(self, autofix=True):
         """Validate features (and fix on the fly if required)."""
@@ -175,7 +182,9 @@ class UserLayerHandler:
         other_1d_handlers = self.other_linked_handlers
         for layer_handler in other_1d_handlers:
             layer = layer_handler.layer
-            disconnect_signal(layer.beforeCommitChanges, layer_handler.on_commit_changes)
+            disconnect_signal(
+                layer.beforeCommitChanges, layer_handler.on_commit_changes
+            )
         for layer_handler in other_1d_handlers:
             layer = layer_handler.layer
             if layer.isEditable():
@@ -208,7 +217,10 @@ class UserLayerHandler:
         """Recursively detect all dependent features of the model element with given FID."""
         dependent_features = set()
         feature_unique_key = (model_cls, fid)
-        if model_cls not in dm.MODEL_DEPENDENCIES or feature_unique_key in visited_features:
+        if (
+            model_cls not in dm.MODEL_DEPENDENCIES
+            or feature_unique_key in visited_features
+        ):
             return dependent_features
         visited_features.add(feature_unique_key)
         handler = self.layer_manager.model_handlers[model_cls]
@@ -220,13 +232,19 @@ class UserLayerHandler:
             return dependent_features
         feat_table_name = model_cls.__tablename__
         feat_real_id = feat_real["id"]
-        for dependent_data_model, dependent_fields in dm.MODEL_DEPENDENCIES[model_cls].items():
-            dependent_layer = self.layer_manager.model_handlers[dependent_data_model].layer
+        for dependent_data_model, dependent_fields in dm.MODEL_DEPENDENCIES[
+            model_cls
+        ].items():
+            dependent_layer = self.layer_manager.model_handlers[
+                dependent_data_model
+            ].layer
             expr_parts = []
             for dependent_feat_id_field in dependent_fields:
                 if isinstance(dependent_feat_id_field, tuple):
                     # We have a pair of fields: field with dependent feature ID and field with dependent feature type
-                    dependent_feat_id_field, dependent_feat_type_field = dependent_feat_id_field
+                    dependent_feat_id_field, dependent_feat_type_field = (
+                        dependent_feat_id_field
+                    )
                     expr_part = f'("{dependent_feat_id_field}" = {feat_real_id} AND "{dependent_feat_type_field}" = \'{feat_table_name}\')'
                 else:
                     expr_part = f'"{dependent_feat_id_field}" = {feat_real_id}'
@@ -242,7 +260,9 @@ class UserLayerHandler:
         if dependent_features:
             sub_dependent_features = set()
             for dep_model_cls, dep_fid in dependent_features:
-                sub_dependent_features |= self.detect_dependent_features(dep_fid, dep_model_cls, visited_features)
+                sub_dependent_features |= self.detect_dependent_features(
+                    dep_fid, dep_model_cls, visited_features
+                )
             dependent_features |= sub_dependent_features
         dependent_features.add(feature_unique_key)
         return dependent_features
@@ -251,9 +271,15 @@ class UserLayerHandler:
         """Action on delete features signal."""
         if self.MODEL not in dm.MODEL_DEPENDENCIES:
             return
-        features_to_delete, visited_features, grouped_features_to_delete = set(), set(), defaultdict(list)
+        features_to_delete, visited_features, grouped_features_to_delete = (
+            set(),
+            set(),
+            defaultdict(list),
+        )
         for deleted_fid in feature_ids:
-            features_to_delete |= self.detect_dependent_features(deleted_fid, self.MODEL, visited_features)
+            features_to_delete |= self.detect_dependent_features(
+                deleted_fid, self.MODEL, visited_features
+            )
         for model_cls, feat_id in features_to_delete:
             grouped_features_to_delete[model_cls].append(feat_id)
         if len(features_to_delete) > len(feature_ids):
@@ -262,13 +288,24 @@ class UserLayerHandler:
                 f"There are other features referencing to the deleted '{self.MODEL.__layername__}' element(s). "
                 "Please decide how do you want to proceed."
             )
-            delete_feat, delete_all, cancel = "Delete this feature only", "Delete all referenced features", "Cancel"
-            clicked_button = self.layer_manager.uc.custom_ask(None, title, msg, delete_feat, delete_all, cancel)
+            delete_feat, delete_all, cancel = (
+                "Delete this feature only",
+                "Delete all referenced features",
+                "Cancel",
+            )
+            clicked_button = self.layer_manager.uc.custom_ask(
+                None, title, msg, delete_feat, delete_all, cancel
+            )
             if clicked_button == delete_feat:
                 pass
             elif clicked_button == delete_all:
-                for dependent_model, dependent_feat_ids in grouped_features_to_delete.items():
-                    dependent_handler = self.layer_manager.model_handlers[dependent_model]
+                for (
+                    dependent_model,
+                    dependent_feat_ids,
+                ) in grouped_features_to_delete.items():
+                    dependent_handler = self.layer_manager.model_handlers[
+                        dependent_model
+                    ]
                     try:
                         dependent_handler.disconnect_handler_signals()
                         dependent_layer = dependent_handler.layer
@@ -285,7 +322,9 @@ class UserLayerHandler:
         """Return layer feature with the given id."""
         feat = None
         if object_id not in (None, NULL):
-            feats = self.layer_manager.get_layer_features(self.MODEL, f'"{id_field}" = {object_id}')
+            feats = self.layer_manager.get_layer_features(
+                self.MODEL, f'"{id_field}" = {object_id}'
+            )
             try:
                 feat = next(feats)
             except StopIteration:
@@ -296,7 +335,9 @@ class UserLayerHandler:
         """Return layer multiple features with the given id."""
         feats = []
         if object_id not in (None, NULL):
-            for feat in self.layer_manager.get_layer_features(self.MODEL, f'"{id_field}" = {object_id}'):
+            for feat in self.layer_manager.get_layer_features(
+                self.MODEL, f'"{id_field}" = {object_id}'
+            ):
                 feats.append(feat)
         return feats
 
@@ -330,7 +371,9 @@ class UserLayerHandler:
             feat.setGeometry(geometry)
         return feat
 
-    def create_new_feature_from_template(self, template_feat, geometry=None, fields_to_skip=None):
+    def create_new_feature_from_template(
+        self, template_feat, geometry=None, fields_to_skip=None
+    ):
         """
         Take all attributes from the template feature and create a new feature with the given geometry.
         Do not copy fields values listed in fields_to_skip.
@@ -355,7 +398,10 @@ class UserLayerHandler:
         if vertices_count < 3:
             return
         start_vertex_idx, end_vertex_idx = 0, vertices_count - 1
-        start_point, end_point = geom.vertexAt(start_vertex_idx), geom.vertexAt(end_vertex_idx)
+        start_point, end_point = (
+            geom.vertexAt(start_vertex_idx),
+            geom.vertexAt(end_vertex_idx),
+        )
         new_source_geom = QgsGeometry.fromPolyline([start_point, end_point])
         feat.setGeometry(new_source_geom)
         self.layer.updateFeature(feat)
@@ -369,19 +415,31 @@ class UserLayerHandler:
         if model_geometry_type == GeometryType.Point:
             point = geometry.asPoint()
             connection_node_feat = find_point_nodes(point, node_layer)
-            connection_node_id = connection_node_feat["id"] if connection_node_feat else None
+            connection_node_id = (
+                connection_node_feat["id"] if connection_node_feat else None
+            )
             connection_node_id_idx = layer_fields.lookupField("connection_node_id")
             changes = {connection_node_id_idx: connection_node_id}
             self.layer.changeAttributeValues(feat_id, changes)
         elif model_geometry_type == GeometryType.Linestring:
             linestring = geometry.asPolyline()
-            start_connection_node_feat, end_connection_node_feat = find_linestring_nodes(linestring, node_layer)
+            start_connection_node_feat, end_connection_node_feat = (
+                find_linestring_nodes(linestring, node_layer)
+            )
             changes = {}
-            start_connection_node_id = start_connection_node_feat["id"] if start_connection_node_feat else None
-            start_connection_node_id_idx = layer_fields.lookupField("connection_node_id_start")
+            start_connection_node_id = (
+                start_connection_node_feat["id"] if start_connection_node_feat else None
+            )
+            start_connection_node_id_idx = layer_fields.lookupField(
+                "connection_node_id_start"
+            )
             changes[start_connection_node_id_idx] = start_connection_node_id
-            end_connection_node_id = end_connection_node_feat["id"] if end_connection_node_feat else None
-            end_connection_node_id_idx = layer_fields.lookupField("connection_node_id_end")
+            end_connection_node_id = (
+                end_connection_node_feat["id"] if end_connection_node_feat else None
+            )
+            end_connection_node_id_idx = layer_fields.lookupField(
+                "connection_node_id_end"
+            )
             changes[end_connection_node_id_idx] = end_connection_node_id
             if self.MODEL == dm.PumpMap:
                 pump_layer = self.layer_manager.model_handlers[dm.Pump].layer
@@ -393,12 +451,16 @@ class UserLayerHandler:
 
     def trigger_update_node_references(self, feat_id, geometry):
         """Triggering update of the node references after feature geometry change."""
-        update_node_references_method = partial(self.update_node_references, feat_id, geometry)
+        update_node_references_method = partial(
+            self.update_node_references, feat_id, geometry
+        )
         QTimer.singleShot(0, update_node_references_method)
 
     def trigger_setup_value_relation_widgets(self):
         """Triggering update of the value relation widgets after layer style change."""
-        setup_value_relation_widgets_method = partial(self.layer_manager.setup_value_relation_widgets, self.MODEL)
+        setup_value_relation_widgets_method = partial(
+            self.layer_manager.setup_value_relation_widgets, self.MODEL
+        )
         QTimer.singleShot(0, setup_value_relation_widgets_method)
 
 
@@ -480,19 +542,27 @@ class PumpHandler(UserLayerHandler):
 
     def adjust_visualisation(self, feat_id):
         """Adjusting underlying connection node  type."""
-        if feat_id < 0:  # This logic should be triggered just once after adding feature, but before committing changes.
+        if (
+            feat_id < 0
+        ):  # This logic should be triggered just once after adding feature, but before committing changes.
             feat = self.layer.getFeature(feat_id)
             point = feat.geometry().asPoint()
-            connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+            connection_node_handler = self.layer_manager.model_handlers[
+                dm.ConnectionNode
+            ]
             connection_node_layer = connection_node_handler.layer
             connection_node_feat = find_point_nodes(point, connection_node_layer)
             if connection_node_feat is not None:
                 connection_node_fid = connection_node_feat.id()
                 if not connection_node_layer.isEditable():
                     connection_node_layer.startEditing()
-                visualisation_idx = connection_node_layer.fields().lookupField("visualisation")
+                visualisation_idx = connection_node_layer.fields().lookupField(
+                    "visualisation"
+                )
                 connection_node_layer.changeAttributeValue(
-                    connection_node_fid, visualisation_idx, Visualisation.PUMP_CHAMBER.value
+                    connection_node_fid,
+                    visualisation_idx,
+                    Visualisation.PUMP_CHAMBER.value,
                 )
 
     def get_pump_feats_for_node_id(self, node_id):
@@ -508,9 +578,15 @@ class PumpHandler(UserLayerHandler):
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         if template_feat is not None:
             template_connection_node_id = template_feat["connection_node_id"]
-            node_template = connection_node_handler.layer.getFeature(template_connection_node_id)
-            node_feat = connection_node_handler.create_new_feature_from_template(node_template, geometry=geometry)
-            pump_feat = self.create_new_feature_from_template(template_feat, geometry=geometry)
+            node_template = connection_node_handler.layer.getFeature(
+                template_connection_node_id
+            )
+            node_feat = connection_node_handler.create_new_feature_from_template(
+                node_template, geometry=geometry
+            )
+            pump_feat = self.create_new_feature_from_template(
+                template_feat, geometry=geometry
+            )
         else:
             node_feat = connection_node_handler.create_new_feature(geometry=geometry)
             pump_feat = self.create_new_feature(geometry=geometry)
@@ -661,6 +737,7 @@ class PipeHandler(UserLayerHandler):
         """Disconnecting signals to action specific for the particular layers."""
         self.layer.geometryChanged.disconnect(self.trigger_update_node_references)
 
+
 class CrossSectionLocationHandler(UserLayerHandler):
     MODEL = dm.CrossSectionLocation
     RELATED_MODELS = MappingProxyType(
@@ -680,7 +757,9 @@ class CrossSectionLocationHandler(UserLayerHandler):
 
     def trigger_update_channel_references(self, feat_id, geometry):
         """Triggering update of the channel references after feature geometry change."""
-        update_channel_references_method = partial(self.update_channel_references, feat_id, geometry)
+        update_channel_references_method = partial(
+            self.update_channel_references, feat_id, geometry
+        )
         QTimer.singleShot(0, update_channel_references_method)
 
     def update_channel_references(self, feat_id, geometry):
@@ -717,12 +796,16 @@ class ChannelHandler(UserLayerHandler):
 
     def trigger_fulfill_geometry_requirements(self, channel_fid):
         """Triggering geometry modifications on newly added feature."""
-        modify_geometry_method = partial(self.fulfill_geometry_requirements, channel_fid)
+        modify_geometry_method = partial(
+            self.fulfill_geometry_requirements, channel_fid
+        )
         QTimer.singleShot(0, modify_geometry_method)
 
     def trigger_on_channel_geometry_change(self, channel_fid, new_geometry):
         """Triggering geometry modifications on newly added feature."""
-        on_channel_geometry_change_method = partial(self.on_channel_geometry_change, channel_fid, new_geometry)
+        on_channel_geometry_change_method = partial(
+            self.on_channel_geometry_change, channel_fid, new_geometry
+        )
         QTimer.singleShot(0, on_channel_geometry_change_method)
 
     def fulfill_geometry_requirements(self, channel_fid):
@@ -744,28 +827,47 @@ class ChannelHandler(UserLayerHandler):
         feat = self.layer.getFeature(channel_fid)
         channel_id = feat["id"]
         try:
-            feat_real = next(self.layer_dt.getFeatures(QgsFeatureRequest(QgsExpression(f'"id" = {channel_id}'))))
+            feat_real = next(
+                self.layer_dt.getFeatures(
+                    QgsFeatureRequest(QgsExpression(f'"id" = {channel_id}'))
+                )
+            )
         except StopIteration:  # Feature not committed
             return
         old_geometry = feat_real.geometry()
-        old_geometry_length, new_geometry_length = old_geometry.length(), new_geometry.length()
-        channel_request = QgsFeatureRequest(QgsExpression(f'"channel_id" = {channel_id}'))
+        old_geometry_length, new_geometry_length = (
+            old_geometry.length(),
+            new_geometry.length(),
+        )
+        channel_request = QgsFeatureRequest(
+            QgsExpression(f'"channel_id" = {channel_id}')
+        )
         # Adjust cross-section locations
-        cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
+        cross_section_location_handler = self.layer_manager.model_handlers[
+            dm.CrossSectionLocation
+        ]
         cross_section_location_layer = cross_section_location_handler.layer
-        channel_cross_section_locations = list(cross_section_location_handler.layer_dt.getFeatures(channel_request))
+        channel_cross_section_locations = list(
+            cross_section_location_handler.layer_dt.getFeatures(channel_request)
+        )
         for xs_feat in channel_cross_section_locations:
             xs_fid = xs_feat.id()
             xs_geometry = xs_feat.geometry()
-            xs_fractional_milage = old_geometry.lineLocatePoint(xs_geometry) / old_geometry_length
+            xs_fractional_milage = (
+                old_geometry.lineLocatePoint(xs_geometry) / old_geometry_length
+            )
             if xs_fractional_milage < 0:
                 continue
-            new_xs_position = new_geometry.interpolate(xs_fractional_milage * new_geometry_length)
+            new_xs_position = new_geometry.interpolate(
+                xs_fractional_milage * new_geometry_length
+            )
             cross_section_location_layer.changeGeometry(xs_fid, new_xs_position)
         # Adjust potential breaches
         potential_breach_handler = self.layer_manager.model_handlers[dm.PotentialBreach]
         potential_breach_layer = potential_breach_handler.layer
-        channel_potential_breaches = list(potential_breach_handler.layer_dt.getFeatures(channel_request))
+        channel_potential_breaches = list(
+            potential_breach_handler.layer_dt.getFeatures(channel_request)
+        )
         for breach_feat in channel_potential_breaches:
             breach_fid = breach_feat.id()
             breach_geometry = breach_feat.geometry()
@@ -773,12 +875,18 @@ class ChannelHandler(UserLayerHandler):
             breach_point_geom = QgsGeometry.fromPointXY(breach_start_point)
             if not old_geometry.intersects(breach_point_geom.buffer(0.0000001, 5)):
                 continue
-            breach_fractional_milage = old_geometry.lineLocatePoint(breach_point_geom) / old_geometry_length
+            breach_fractional_milage = (
+                old_geometry.lineLocatePoint(breach_point_geom) / old_geometry_length
+            )
             if breach_fractional_milage < 0:
                 continue
-            new_breach_adjacent_position = new_geometry.interpolate(breach_fractional_milage * new_geometry_length)
+            new_breach_adjacent_position = new_geometry.interpolate(
+                breach_fractional_milage * new_geometry_length
+            )
             breach_start_point = new_breach_adjacent_position.asPoint()
-            new_breach_geometry = QgsGeometry.fromPolylineXY([breach_start_point, breach_end_point])
+            new_breach_geometry = QgsGeometry.fromPolylineXY(
+                [breach_start_point, breach_end_point]
+            )
             potential_breach_layer.changeGeometry(breach_fid, new_breach_geometry)
 
 
@@ -810,7 +918,13 @@ class Lateral2DHandler(UserLayerHandler):
 
 class ObstacleHandler(UserLayerHandler):
     MODEL = dm.Obstacle
-    DEFAULTS = MappingProxyType({"affects_2d": True, "affects_1d2d_open_water": True, "affects_1d2d_closed": False})
+    DEFAULTS = MappingProxyType(
+        {
+            "affects_2d": True,
+            "affects_1d2d_open_water": True,
+            "affects_1d2d_closed": False,
+        }
+    )
 
 
 class GridRefinementLineHandler(UserLayerHandler):
@@ -843,7 +957,9 @@ class Windshielding1DHandler(UserLayerHandler):
 
     def trigger_update_channel_references(self, feat_id, geometry):
         """Triggering update of the channel references after feature geometry change."""
-        update_channel_references_method = partial(self.update_channel_references, feat_id, geometry)
+        update_channel_references_method = partial(
+            self.update_channel_references, feat_id, geometry
+        )
         QTimer.singleShot(0, update_channel_references_method)
 
     def update_channel_references(self, feat_id, geometry):
@@ -879,12 +995,16 @@ class PotentialBreachHandler(UserLayerHandler):
 
     def trigger_simplify_potential_breach(self, potential_breach_feat_id):
         """Triggering geometry simplification on newly added feature."""
-        simplify_method = partial(self.simplify_linear_feature, potential_breach_feat_id)
+        simplify_method = partial(
+            self.simplify_linear_feature, potential_breach_feat_id
+        )
         QTimer.singleShot(0, simplify_method)
 
     def trigger_update_channel_references(self, feat_id, geometry):
         """Triggering update of the channel references after feature geometry change."""
-        update_channel_references_method = partial(self.update_channel_references, feat_id, geometry)
+        update_channel_references_method = partial(
+            self.update_channel_references, feat_id, geometry
+        )
         QTimer.singleShot(0, update_channel_references_method)
 
     def update_channel_references(self, feat_id, geometry):
@@ -923,7 +1043,9 @@ class SurfaceHandler(UserLayerHandler):
         surface_link_handler = self.layer_manager.model_handlers[dm.SurfaceMap]
         surface_link_layer = surface_link_handler.layer
         surface_feat = surface_layer.getFeature(feat_id)
-        link_feat = surface_link_handler.get_feat_by_id(surface_feat["id"], "surface_id")
+        link_feat = surface_link_handler.get_feat_by_id(
+            surface_feat["id"], "surface_id"
+        )
         point = geometry.centroid().asPoint()
         link_linestring = link_feat.geometry().asPolyline()
         link_linestring[0] = point
@@ -949,7 +1071,9 @@ class SurfaceMapHandler(UserLayerHandler):
 
     def trigger_update_link_references(self, feat_id, geometry):
         """Triggering update of the references to the connections nodes and surfaces after geometry change."""
-        update_link_references_method = partial(self.update_link_references, feat_id, geometry)
+        update_link_references_method = partial(
+            self.update_link_references, feat_id, geometry
+        )
         QTimer.singleShot(0, update_link_references_method)
 
     def update_link_references(self, feat_id, geometry):
@@ -965,7 +1089,9 @@ class SurfaceMapHandler(UserLayerHandler):
         end_connection_node_feat = find_point_nodes(end_point, node_layer)
         changes = {}
         start_surface_id = start_surface_feat["id"] if start_surface_feat else None
-        end_connection_node_id = end_connection_node_feat["id"] if end_connection_node_feat else None
+        end_connection_node_id = (
+            end_connection_node_feat["id"] if end_connection_node_feat else None
+        )
         start_surface_id_idx = layer_fields.lookupField("surface_id")
         end_connection_node_id_idx = layer_fields.lookupField("connection_node_id")
         changes[start_surface_id_idx] = start_surface_id
@@ -1000,7 +1126,9 @@ class DryWeatherFlowHandler(UserLayerHandler):
         dwf_link_handler = self.layer_manager.model_handlers[dm.DryWeatherFlowMap]
         dwf_link_layer = dwf_link_handler.layer
         dwf_feat = dwf_layer.getFeature(feat_id)
-        link_feat = dwf_link_handler.get_feat_by_id(dwf_feat["id"], "dry_weather_flow_id")
+        link_feat = dwf_link_handler.get_feat_by_id(
+            dwf_feat["id"], "dry_weather_flow_id"
+        )
         point = geometry.centroid().asPoint()
         link_linestring = link_feat.geometry().asPolyline()
         link_linestring[0] = point
@@ -1026,7 +1154,9 @@ class DryWeatherFlowMapHandler(UserLayerHandler):
 
     def trigger_update_link_references(self, feat_id, geometry):
         """Triggering update of the references to the connections nodes and surfaces after geometry change."""
-        update_link_references_method = partial(self.update_link_references, feat_id, geometry)
+        update_link_references_method = partial(
+            self.update_link_references, feat_id, geometry
+        )
         QTimer.singleShot(0, update_link_references_method)
 
     def update_link_references(self, feat_id, geometry):
@@ -1042,7 +1172,9 @@ class DryWeatherFlowMapHandler(UserLayerHandler):
         end_connection_node_feat = find_point_nodes(end_point, node_layer)
         changes = {}
         start_surface_id = start_surface_feat["id"] if start_surface_feat else None
-        end_connection_node_id = end_connection_node_feat["id"] if end_connection_node_feat else None
+        end_connection_node_id = (
+            end_connection_node_feat["id"] if end_connection_node_feat else None
+        )
         start_surface_id_idx = layer_fields.lookupField("dry_weather_flow_id")
         end_connection_node_id_idx = layer_fields.lookupField("connection_node_id")
         changes[start_surface_id_idx] = start_surface_id
@@ -1109,7 +1241,10 @@ class TagHandler(UserLayerHandler):
 class AbstractControlHandler(UserLayerHandler):
     @cached_property
     def target_data_models(self):
-        return {model_cls.__tablename__: model_cls for model_cls in [dm.Pump, dm.Orifice, dm.Weir]}
+        return {
+            model_cls.__tablename__: model_cls
+            for model_cls in [dm.Pump, dm.Orifice, dm.Weir]
+        }
 
     def snap_to_target_centroid(self, feat_id):
         """Move geometry to target centroid (if target is linear)."""
@@ -1165,7 +1300,9 @@ class AbstractControlHandler(UserLayerHandler):
 
     def trigger_update_target_references(self, feat_id, geometry):
         """Triggering update of the target references after feature geometry change."""
-        update_target_references_method = partial(self.update_target_references, feat_id, geometry)
+        update_target_references_method = partial(
+            self.update_target_references, feat_id, geometry
+        )
         QTimer.singleShot(0, update_target_references_method)
 
 
@@ -1208,12 +1345,18 @@ class MeasureMapHandler(UserLayerHandler):
 
     @cached_property
     def control_data_models(self):
-        return {model_cls.__tablename__: model_cls for model_cls in [dm.MemoryControl, dm.TableControl]}
+        return {
+            model_cls.__tablename__: model_cls
+            for model_cls in [dm.MemoryControl, dm.TableControl]
+        }
 
     def update_control_references(self, feat_id, geometry):
         """Update references to the control and measure location feature after geometry change."""
         feature_polyline = geometry.asPolyline()
-        feature_start_point, feature_end_point = feature_polyline[0], feature_polyline[-1]
+        feature_start_point, feature_end_point = (
+            feature_polyline[0],
+            feature_polyline[-1],
+        )
         control_feature, control_type = None, None
         layer_fields = self.layer.fields()
         for model_cls in self.control_data_models.values():
@@ -1229,16 +1372,26 @@ class MeasureMapHandler(UserLayerHandler):
         changes = {control_id_idx: control_id, control_type_idx: control_type}
         measure_location_handler = self.layer_manager.model_handlers[dm.MeasureLocation]
         measure_location_layer = measure_location_handler.layer
-        measure_location_feat = find_point_nodes(feature_start_point, measure_location_layer)
+        measure_location_feat = find_point_nodes(
+            feature_start_point, measure_location_layer
+        )
         if measure_location_feat is not None:
-            measure_location_id = measure_location_feat["id"] if measure_location_feat is not None else None
-            measure_location_id_idx = layer_fields.lookupField("control_measure_location_id")
+            measure_location_id = (
+                measure_location_feat["id"]
+                if measure_location_feat is not None
+                else None
+            )
+            measure_location_id_idx = layer_fields.lookupField(
+                "control_measure_location_id"
+            )
             changes[measure_location_id_idx] = measure_location_id
         self.layer.changeAttributeValues(feat_id, changes)
 
     def trigger_update_control_references(self, feat_id, geometry):
         """Triggering update of the control and measure location references after feature geometry change."""
-        update_control_references_method = partial(self.update_control_references, feat_id, geometry)
+        update_control_references_method = partial(
+            self.update_control_references, feat_id, geometry
+        )
         QTimer.singleShot(0, update_control_references_method)
 
     def trigger_simplify_measure_map(self, measure_map_id):

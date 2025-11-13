@@ -9,30 +9,31 @@
 *                                                                         *
 ***************************************************************************
 """
-from typing import List, Union, Tuple
+
+from typing import List, Tuple, Union
 from uuid import uuid4
 
 import numpy as np
+import processing
 from osgeo import gdal
-from qgis.PyQt.QtCore import QCoreApplication, QVariant
 from qgis.core import (
     Qgis,
     QgsApplication,
     QgsCoordinateTransform,
-    QgsGeometry,
-    QgsMesh,
-    QgsMeshLayer,
-    QgsProcessingMultiStepFeedback,
     QgsFeature,
     QgsFeatureSink,
     QgsFeatureSource,
     QgsField,
     QgsFields,
+    QgsGeometry,
+    QgsMesh,
+    QgsMeshLayer,
     QgsPoint,
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,
     QgsProcessingFeedback,
+    QgsProcessingMultiStepFeedback,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterNumber,
@@ -44,20 +45,21 @@ from qgis.core import (
     QgsVectorLayer,
     QgsWkbTypes,
 )
-import processing
-from shapely import __version__ as shapely_version, geos_version
+from qgis.PyQt.QtCore import QCoreApplication, QVariant
+from shapely import __version__ as shapely_version
+from shapely import geos_version
 
+from threedi_schematisation_editor.processing.deps.merge import merge_rasters
 from threedi_schematisation_editor.processing.deps.rasterize_channel import (
     Channel,
     CrossSectionLocation,
     EmptyOffsetError,
+    IntersectingSidesError,
     InvalidOffsetError,
-    WidthsNotIncreasingError,
     NoCrossSectionLocationsError,
-    fill_wedges, IntersectingSidesError,
+    WidthsNotIncreasingError,
+    fill_wedges,
 )
-from threedi_schematisation_editor.processing.deps.merge import merge_rasters
-
 
 DEBUG_MODE = False
 
@@ -73,10 +75,10 @@ def align_qgs_rectangle(extent: QgsRectangle, xres, yres):
 
 
 def read_channels(
-        channel_features: QgsFeatureSource,
-        cross_section_location_features: QgsFeatureSource,
-        pixel_size: float,
-        feedback: Union[QgsProcessingFeedback, QgsProcessingMultiStepFeedback],
+    channel_features: QgsFeatureSource,
+    cross_section_location_features: QgsFeatureSource,
+    pixel_size: float,
+    feedback: Union[QgsProcessingFeedback, QgsProcessingMultiStepFeedback],
 ) -> Tuple[List[Channel], List[int]]:
     channels = []
     errors = []
@@ -88,18 +90,22 @@ def read_channels(
             f"Reading channel and cross-section data for channel {channel_id}..."
         )
         channel = Channel.from_qgs_feature(channel_feature)
-        for cross_section_location_feature in cross_section_location_features.getFeatures():
+        for (
+            cross_section_location_feature
+        ) in cross_section_location_features.getFeatures():
             if channel_id == cross_section_location_feature.attribute("channel_id"):
                 cross_section_location = CrossSectionLocation.from_qgs_feature(
                     cross_section_location_feature,
                     wall_displacement=pixel_size / 4.0,
-                    simplify_tolerance=0.01
+                    simplify_tolerance=0.01,
                 )
                 channel.add_cross_section_location(cross_section_location)
         channel.geometry = channel.geometry.simplify(pixel_size)
         try:
             if DEBUG_MODE:
-                feedback.pushInfo(f"Channel has {len(channel.cross_section_locations)} cross-section locations")
+                feedback.pushInfo(
+                    f"Channel has {len(channel.cross_section_locations)} cross-section locations"
+                )
             channels += channel.make_valid()
         except EmptyOffsetError:
             errors.append(channel_id)
@@ -126,27 +132,28 @@ def read_channels(
             )
         except Exception as e:
             errors.append(channel_id)
-            feedback.reportError(f"ERROR: Channel with id {channel_id} could not be read. Error details: {repr(e)}")
+            feedback.reportError(
+                f"ERROR: Channel with id {channel_id} could not be read. Error details: {repr(e)}"
+            )
         feedback.setProgress(100 * i / channel_features.featureCount())
     return channels, errors
 
 
 def rasterize(
-        channels: List[Channel],
-        pixel_size: float,
-        crs,
-        errors: List[int],
-        warnings: List[int],
-        feedback: Union[QgsProcessingFeedback, QgsProcessingMultiStepFeedback],
-        context,
-        points_sink: QgsFeatureSink = None,
-        points_fields: QgsFields = None,
-        triangles_sink: QgsFeatureSink = None,
-        triangles_fields: QgsFields = None,
-        outline_sink: QgsFeatureSink = None,
-        outline_fields: QgsFields = None,
+    channels: List[Channel],
+    pixel_size: float,
+    crs,
+    errors: List[int],
+    warnings: List[int],
+    feedback: Union[QgsProcessingFeedback, QgsProcessingMultiStepFeedback],
+    context,
+    points_sink: QgsFeatureSink = None,
+    points_fields: QgsFields = None,
+    triangles_sink: QgsFeatureSink = None,
+    triangles_fields: QgsFields = None,
+    outline_sink: QgsFeatureSink = None,
+    outline_fields: QgsFields = None,
 ) -> Tuple[List[str], int]:
-
     rasters = []
     total_missing_pixels = 0
     for i, channel in enumerate(channels):
@@ -160,8 +167,9 @@ def rasterize(
             )
         points = [QgsPoint(*point.geom.coords[0]) for point in channel.points]
         if DEBUG_MODE:
-            for (point_idx, qgs_point) in [
-                (point.index, QgsPoint(*point.geom.coords[0])) for point in channel.points
+            for point_idx, qgs_point in [
+                (point.index, QgsPoint(*point.geom.coords[0]))
+                for point in channel.points
             ]:
                 point_feature = QgsFeature()
                 point_feature.setFields(points_fields)
@@ -174,11 +182,11 @@ def rasterize(
         provider_meta = QgsProviderRegistry.instance().providerMetadata("mdal")
         mesh = QgsMesh()
         temp_mesh_filename = f"{uuid4()}.nc"
-        temp_mesh_fullpath = QgsProcessingUtils.generateTempFilename(
-            temp_mesh_filename
-        )
+        temp_mesh_fullpath = QgsProcessingUtils.generateTempFilename(temp_mesh_filename)
         mesh_format = "Ugrid"
-        provider_meta.createMeshData(mesh=mesh, fileName=temp_mesh_fullpath, driverName=mesh_format, crs=crs)
+        provider_meta.createMeshData(
+            mesh=mesh, fileName=temp_mesh_fullpath, driverName=mesh_format, crs=crs
+        )
         mesh_layer = QgsMeshLayer(temp_mesh_fullpath, "editable mesh", "mdal")
 
         # add points to mesh
@@ -203,7 +211,9 @@ def rasterize(
                     triangle_geometry = QgsGeometry()
                     triangle_geometry.fromWkb(triangle.geometry.wkb)
                     triangle_feature.setGeometry(triangle_geometry)
-                    triangles_sink.addFeature(triangle_feature, QgsFeatureSink.FastInsert)
+                    triangles_sink.addFeature(
+                        triangle_feature, QgsFeatureSink.FastInsert
+                    )
                 outline_feature = QgsFeature()
                 outline_feature.setFields(outline_fields)
                 outline_feature.setAttribute(0, i)
@@ -227,7 +237,8 @@ def rasterize(
                 for j, triangle in triangles_dict.items():
                     if (
                         j == 0
-                        or np.sum(np.in1d(triangle.vertex_indices, occupied_vertices)) >= 2
+                        or np.sum(np.in1d(triangle.vertex_indices, occupied_vertices))
+                        >= 2
                     ):
                         error = editor.addFace(triangle.vertex_indices)
                         # To list error types, run [e for e in Qgis.MeshEditingErrorType]
@@ -235,7 +246,9 @@ def rasterize(
                             finished = False
                             processed_triangles.append(j)
                             faces_added += 1
-                            occupied_vertices = np.append(occupied_vertices, triangle.vertex_indices)
+                            occupied_vertices = np.append(
+                                occupied_vertices, triangle.vertex_indices
+                            )
                         elif DEBUG_MODE:
                             feedback.pushInfo(
                                 f"Could not (yet) add triangle {j}.\n"
@@ -253,15 +266,19 @@ def rasterize(
                 )
                 if DEBUG_MODE:
                     feedback.pushInfo("Missing triangles:")
-                    tri_queries = [f"SELECT ST_GeomFromText('{tri.geometry.wkt}') as geom /*:polygon:28992*/" for tri in
-                                   triangles_dict.values()]
+                    tri_queries = [
+                        f"SELECT ST_GeomFromText('{tri.geometry.wkt}') as geom /*:polygon:28992*/"
+                        for tri in triangles_dict.values()
+                    ]
                     feedback.pushInfo("\nUNION\n".join(tri_queries))
                 if missing_area > (pixel_size**2):
-                    warnings.append(channel.id),
+                    (warnings.append(channel.id),)
                     missing_pixels = int(missing_area / (pixel_size**2))
                     total_missing_pixels += missing_pixels
-                    warning_msg = (f"Up to {missing_pixels} pixel(s) may be missing from the raster for "
-                                   f"channel {channel.id[0]}")
+                    warning_msg = (
+                        f"Up to {missing_pixels} pixel(s) may be missing from the raster for "
+                        f"channel {channel.id[0]}"
+                    )
                     if channel.id[1] > 0:
                         warning_msg += f", part {channel.id[1] + 1}"
                     feedback.pushWarning(f"Warning: {warning_msg}!")
@@ -318,9 +335,7 @@ def rasterize(
             # use QgsProcessingAlgorithm.run() instead of processing.run() to be able to hide feedback but still be
             # able to check if algorithm ran succesfully (ok == True)
             reg = QgsApplication.processingRegistry()
-            alg_cliprasterbymasklayer = reg.algorithmById(
-                "gdal:cliprasterbymasklayer"
-            )
+            alg_cliprasterbymasklayer = reg.algorithmById("gdal:cliprasterbymasklayer")
             results, ok = alg_cliprasterbymasklayer.run(
                 clip_parameters, context=context, feedback=QgsProcessingFeedback()
             )
@@ -336,11 +351,9 @@ def rasterize(
             errors.append(channel.id)
             feedback.reportError(
                 f"Error: could not rasterize channel {channel.id} (IntersectingSidesError)",
-                fatalError=False
+                fatalError=False,
             )
-            feedback.reportError(
-                str(e)
-            )
+            feedback.reportError(str(e))
         except Exception as e:
             errors.append(channel.id)
             feedback.reportError(
@@ -369,7 +382,6 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
         POINTS_OUTPUT = "POINTS_OUTPUT"
 
     def initAlgorithm(self, config):
-
         self.addParameter(
             QgsProcessingParameterFeatureSource(
                 self.INPUT_CHANNELS,
@@ -390,9 +402,7 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.INPUT_DEM,
-                self.tr("Digital Elevation Model"),
-                optional=True
+                self.INPUT_DEM, self.tr("Digital Elevation Model"), optional=True
             )
         )
 
@@ -415,22 +425,19 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
         if DEBUG_MODE:
             self.addParameter(
                 QgsProcessingParameterFeatureSink(
-                    self.TRIANGLE_OUTPUT,
-                    self.tr('Triangle output')
+                    self.TRIANGLE_OUTPUT, self.tr("Triangle output")
                 )
             )
 
             self.addParameter(
                 QgsProcessingParameterFeatureSink(
-                    self.OUTLINE_OUTPUT,
-                    self.tr('Outline output')
+                    self.OUTLINE_OUTPUT, self.tr("Outline output")
                 )
             )
 
             self.addParameter(
                 QgsProcessingParameterFeatureSink(
-                    self.POINTS_OUTPUT,
-                    self.tr('Points output')
+                    self.POINTS_OUTPUT, self.tr("Points output")
                 )
             )
 
@@ -438,13 +445,15 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
         if int(shapely_version.split(".")[0]) < 2:
             feedback.reportError(
                 f"Required Shapely version >= 2.0.0. Installed Shapely version: {shapely_version}",
-                fatalError=True
+                fatalError=True,
             )
-        if not (geos_version[0] > 3 or (geos_version[0] == 3 and geos_version[1] >= 12)):
+        if not (
+            geos_version[0] > 3 or (geos_version[0] == 3 and geos_version[1] >= 12)
+        ):
             feedback.reportError(
                 f"Required GEOS version >= 3.12.0. Installed GEOS version: {'.'.join(geos_version)}. "
                 f"Please use QGIS 3.28.13 or higher, which is shipped with the correct GEOS version.",
-                fatalError=True
+                fatalError=True,
             )
         channel_features = self.parameterAsSource(
             parameters, self.INPUT_CHANNELS, context
@@ -456,65 +465,39 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
         output_raster = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
 
         if DEBUG_MODE:
-
             outline_fields = QgsFields()
-            outline_fields.append(
-                QgsField(
-                    name="channel_nr",
-                    type=QVariant.Int
-                )
-            )
+            outline_fields.append(QgsField(name="channel_nr", type=QVariant.Int))
             (outline_sink, outline_dest_id) = self.parameterAsSink(
                 parameters,
                 self.OUTLINE_OUTPUT,
                 context,
                 outline_fields,
                 QgsWkbTypes.PolygonZ,
-                cross_section_location_features.sourceCrs()
+                cross_section_location_features.sourceCrs(),
             )
 
             triangles_fields = QgsFields()
-            triangles_fields.append(
-                QgsField(
-                    name="channel_nr",
-                    type=QVariant.Int
-                )
-            )
-            triangles_fields.append(
-                QgsField(
-                    name="triangle_nr",
-                    type=QVariant.Int
-                )
-            )
+            triangles_fields.append(QgsField(name="channel_nr", type=QVariant.Int))
+            triangles_fields.append(QgsField(name="triangle_nr", type=QVariant.Int))
             (triangles_sink, triangles_dest_id) = self.parameterAsSink(
                 parameters,
                 self.TRIANGLE_OUTPUT,
                 context,
                 triangles_fields,
                 QgsWkbTypes.PolygonZ,
-                cross_section_location_features.sourceCrs()
+                cross_section_location_features.sourceCrs(),
             )
 
             points_fields = QgsFields()
-            points_fields.append(
-                QgsField(
-                    name="channel_nr",
-                    type=QVariant.Int
-                )
-            )
-            points_fields.append(
-                QgsField(
-                    name="index",
-                    type=QVariant.Int
-                )
-            )
+            points_fields.append(QgsField(name="channel_nr", type=QVariant.Int))
+            points_fields.append(QgsField(name="index", type=QVariant.Int))
             (points_sink, points_dest_id) = self.parameterAsSink(
                 parameters,
                 self.POINTS_OUTPUT,
                 context,
                 points_fields,
                 QgsWkbTypes.PointZ,
-                cross_section_location_features.sourceCrs()
+                cross_section_location_features.sourceCrs(),
             )
 
         dem = self.parameterAsRasterLayer(parameters, self.INPUT_DEM, context)
@@ -522,7 +505,9 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
             parameters, self.INPUT_PIXEL_SIZE, context
         )
         if dem:
-            if np.abs(dem.rasterUnitsPerPixelX() - dem.rasterUnitsPerPixelY()) > 0.0001:  # 1/10 mm tolerance
+            if (
+                np.abs(dem.rasterUnitsPerPixelX() - dem.rasterUnitsPerPixelY()) > 0.0001
+            ):  # 1/10 mm tolerance
                 feedback.reportError(
                     f"Input Digital Elevation Model has different X and Y resolutions. "
                     f"X resolution: {dem.rasterUnitsPerPixelX()}"
@@ -536,7 +521,8 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
             pixel_size = user_pixel_size
         else:
             feedback.reportError(
-                "Either 'Digital Elevation Model' or 'Pixel size' has to be specified", fatalError=True
+                "Either 'Digital Elevation Model' or 'Pixel size' has to be specified",
+                fatalError=True,
             )
             raise QgsProcessingException()
 
@@ -546,7 +532,7 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
             channel_features=channel_features,
             cross_section_location_features=cross_section_location_features,
             pixel_size=pixel_size,
-            feedback=feedback
+            feedback=feedback,
         )
         if feedback.isCanceled():
             return {}
@@ -556,9 +542,7 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
             return {}
 
         if len(channels) == 0:
-            feedback.reportError(
-                "No valid channels to process", fatalError=True
-            )
+            feedback.reportError("No valid channels to process", fatalError=True)
             raise QgsProcessingException()
 
         feedback.pushInfo("Step 2/4: Rasterize channels")
@@ -580,9 +564,7 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
         )
         feedback.setProgressText("Step 3/4: Merge rasters...")
         if len(rasters) == 0:
-            feedback.reportError(
-                "No valid channels to process", fatalError=True
-            )
+            feedback.reportError("No valid channels to process", fatalError=True)
             raise QgsProcessingException()
         rasters_datasets = [gdal.Open(raster) for raster in rasters]
         if dem:

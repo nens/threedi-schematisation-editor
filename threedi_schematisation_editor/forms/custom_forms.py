@@ -13,8 +13,8 @@ from qgis.PyQt.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
-    QLabel,
     QDoubleSpinBox,
+    QLabel,
     QLineEdit,
     QPlainTextEdit,
     QPushButton,
@@ -60,7 +60,9 @@ class AbstractBaseForm(QObject):
     AUTOGENERATE_ID = "Autogenerate"
 
     def __init__(self, layer_manager, dialog, layer, feature):
-        super().__init__(parent=dialog)  # We need to set dialog as a parent to keep form alive
+        super().__init__(
+            parent=dialog
+        )  # We need to set dialog as a parent to keep form alive
         self.layer_manager = layer_manager
         self.iface = layer_manager.iface
         self.uc = layer_manager.uc
@@ -79,9 +81,15 @@ class AbstractBaseForm(QObject):
         self.layer.editingStopped.connect(self.toggle_edit_mode)
         self.button_box = self.dialog.findChild(QObject, "buttonBox")
         self.button_box.accepted.connect(self.postprocess_on_acceptance)
-        self.dialog.active_form_signals.add((self.layer.editingStarted, self.toggle_edit_mode))
-        self.dialog.active_form_signals.add((self.layer.editingStopped, self.toggle_edit_mode))
-        self.dialog.active_form_signals.add((self.button_box.accepted, self.postprocess_on_acceptance))
+        self.dialog.active_form_signals.add(
+            (self.layer.editingStarted, self.toggle_edit_mode)
+        )
+        self.dialog.active_form_signals.add(
+            (self.layer.editingStopped, self.toggle_edit_mode)
+        )
+        self.dialog.active_form_signals.add(
+            (self.button_box.accepted, self.postprocess_on_acceptance)
+        )
 
     def purge_form_dialog_signals(self):
         """Remove all signals created by this form."""
@@ -142,28 +150,47 @@ class AbstractBaseForm(QObject):
                     if widget is None:
                         continue
                     try:
-                        customization_fn = related_handler.FORM_CUSTOMIZATIONS[field_name]
+                        customization_fn = related_handler.FORM_CUSTOMIZATIONS[
+                            field_name
+                        ]
                         customization_fn(widget)
                     except KeyError:
                         pass
-                    self.foreign_widgets[widget_name] = (widget, related_cls, numerical_modifier, field_name)
+                    self.foreign_widgets[widget_name] = (
+                        widget,
+                        related_cls,
+                        numerical_modifier,
+                        field_name,
+                    )
 
     def toggle_edit_mode(self):
         """Toggling editing for foreign widgets."""
         editing_active = self.layer.isEditable()
-        for widget, related_cls, numerical_modifier, field_name in self.foreign_widgets.values():
+        for (
+            widget,
+            related_cls,
+            numerical_modifier,
+            field_name,
+        ) in self.foreign_widgets.values():
             widget.setEnabled(editing_active)
         for widget in self.custom_widgets.values():
             widget.setEnabled(editing_active)
         if hasattr(self, "cross_section_shape"):
-            setup_cross_section_widgets(self, self.cross_section_shape, self.cross_section_prefix)
+            setup_cross_section_widgets(
+                self, self.cross_section_shape, self.cross_section_prefix
+            )
             if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
                 friction_type = self.dialog.findChild(QObject, "friction_type")
                 setup_friction_and_vegetation_widgets(
-                    self, self.cross_section_shape, friction_type, self.cross_section_prefix
+                    self,
+                    self.cross_section_shape,
+                    friction_type,
+                    self.cross_section_prefix,
                 )
 
-    def populate_widgets(self, data_model_cls=None, feature=None, start_end_modifier=None):
+    def populate_widgets(
+        self, data_model_cls=None, feature=None, start_end_modifier=None
+    ):
         """
         Populate form's widgets - widgets are named after their attributes in the data model.
         If data_model_cls is given, then populate widgets for this class and feature.
@@ -187,28 +214,48 @@ class AbstractBaseForm(QObject):
             else:
                 if self.layer.isEditable():
                     edit_signal = self.get_widget_editing_signal(widget)
-                    edit_slot = partial(self.set_validation_background, widget, field_type)
+                    edit_slot = partial(
+                        self.set_validation_background, widget, field_type
+                    )
                     connect_signal(edit_signal, edit_slot)
                     self.dialog.active_form_signals.add((edit_signal, edit_slot))
                     self.set_validation_background(widget, field_type)
                 else:
                     widget.setStyleSheet("")
-            real_field_type = optional_type(field_type) if is_optional(field_type) else field_type
+            real_field_type = (
+                optional_type(field_type) if is_optional(field_type) else field_type
+            )
             if data_model_cls != self.MODEL:
                 # Populate combo boxes of related features only and if it wasn't populated already
                 if issubclass(real_field_type, Enum) and widget.count() == 0:
-                    cbo_items = {t.name.capitalize().replace("_", " "): t.value for t in real_field_type}
+                    cbo_items = {
+                        t.name.capitalize().replace("_", " "): t.value
+                        for t in real_field_type
+                    }
                     self.populate_combo(widget, cbo_items)
             is_foreign = data_model_cls != self.MODEL
-            self.set_widget_value(widget, feature[field_name], var_type=real_field_type, is_foreign=is_foreign)
+            self.set_widget_value(
+                widget,
+                feature[field_name],
+                var_type=real_field_type,
+                is_foreign=is_foreign,
+            )
             self.set_validation_background(widget, field_type)
             self.main_widgets[widget_name] = widget
             clear_value_button_name = f"{widget_name}_clear"
             if clear_value_button_name not in self.custom_widgets:
-                clear_value_button = self.dialog.findChild(QToolButton, clear_value_button_name)
+                clear_value_button = self.dialog.findChild(
+                    QToolButton, clear_value_button_name
+                )
                 if clear_value_button is not None:
                     clear_signal = clear_value_button.clicked
-                    clear_slot = partial(self.handle_clear_value, widget, feature, data_model_cls, field_name)
+                    clear_slot = partial(
+                        self.handle_clear_value,
+                        widget,
+                        feature,
+                        data_model_cls,
+                        field_name,
+                    )
                     connect_signal(clear_signal, clear_slot)
                     self.dialog.active_form_signals.add((clear_signal, clear_slot))
                     self.custom_widgets[clear_value_button_name] = clear_value_button
@@ -247,7 +294,9 @@ class AbstractBaseForm(QObject):
                 if fid == self.MIN_FID:
                     # We need to postpone changing field value to NULL as it needs to be done after accepting form
                     if field_idx not in self.extra_logic:
-                        self.extra_logic[field_idx] = partial(self.mark_null_field, widget, field_idx)
+                        self.extra_logic[field_idx] = partial(
+                            self.mark_null_field, widget, field_idx
+                        )
                 else:
                     layer.changeAttributeValue(fid, field_idx, NULL)
                 field_type = model_cls.__annotations__[field_name]
@@ -260,7 +309,10 @@ class AbstractBaseForm(QObject):
 
     def populate_foreign_widgets(self):
         """Populating values within foreign layers widgets."""
-        for (data_model_cls, start_end_modifier), feature in self.foreign_models_features.items():
+        for (
+            data_model_cls,
+            start_end_modifier,
+        ), feature in self.foreign_models_features.items():
             if feature is not None:
                 self.populate_widgets(data_model_cls, feature, start_end_modifier)
 
@@ -280,7 +332,9 @@ class AbstractBaseForm(QObject):
             widget.setCursorPosition(0)
         elif isinstance(widget, QCheckBox):
             widget.setChecked(bool(value))
-        elif isinstance(widget, (QgsSpinBox, QSpinBox, QgsDoubleSpinBox, QDoubleSpinBox)):
+        elif isinstance(
+            widget, (QgsSpinBox, QSpinBox, QgsDoubleSpinBox, QDoubleSpinBox)
+        ):
             if value not in (None, NULL):
                 value = var_type(value) if var_type is not None else value
                 widget.setValue(value)
@@ -349,13 +403,20 @@ class AbstractBaseForm(QObject):
 
     def connect_foreign_widgets(self):
         """Connect widget signals responsible for handling related layers attributes."""
-        for widget_name, (widget, model_cls, numerical_modifier, field_name) in self.foreign_widgets.items():
+        for widget_name, (
+            widget,
+            model_cls,
+            numerical_modifier,
+            field_name,
+        ) in self.foreign_widgets.items():
             signal = self.get_widget_editing_signal(widget)
             try:
                 feature = self.foreign_models_features[model_cls, numerical_modifier]
             except KeyError:
                 continue
-            slot = partial(self.set_value_from_widget, widget, feature, model_cls, field_name)
+            slot = partial(
+                self.set_value_from_widget, widget, feature, model_cls, field_name
+            )
             connect_signal(signal, slot)
             self.dialog.active_form_signals.add((signal, slot))
 
@@ -409,7 +470,10 @@ class AbstractFormWithTag(AbstractBaseForm):
         """Return all available tags data."""
         tags_handler = self.layer_manager.model_handlers[dm.Tag]
         tags_layer = tags_handler.layer
-        tags_data = {tag_feat["id"]: tag_feat["description"] for tag_feat in tags_layer.getFeatures()}
+        tags_data = {
+            tag_feat["id"]: tag_feat["description"]
+            for tag_feat in tags_layer.getFeatures()
+        }
         return tags_data
 
     @property
@@ -418,7 +482,9 @@ class AbstractFormWithTag(AbstractBaseForm):
         try:
             assigned_tag_ids_str = self.feature["tags"]
             assigned_tag_ids = (
-                [int(tag_id) for tag_id in assigned_tag_ids_str.split(",")] if assigned_tag_ids_str else []
+                [int(tag_id) for tag_id in assigned_tag_ids_str.split(",")]
+                if assigned_tag_ids_str
+                else []
             )
         except KeyError:
             assigned_tag_ids = []
@@ -445,7 +511,9 @@ class AbstractFormWithTag(AbstractBaseForm):
         """Connect other widgets."""
         super().connect_custom_widgets()
         connect_signal(self.tags_widget.checkedItemsChanged, self.save_tag_edits)
-        self.dialog.active_form_signals.add((self.tags_widget.checkedItemsChanged, self.save_tag_edits))
+        self.dialog.active_form_signals.add(
+            (self.tags_widget.checkedItemsChanged, self.save_tag_edits)
+        )
 
     def save_tag_edits(self):
         """Save tag references to the feature attribute."""
@@ -462,8 +530,12 @@ class AbstractFormWithTag(AbstractBaseForm):
         self.tags_widget.clear()
         for tag_id, tag_description in self.all_tags_data.items():
             tag_text = f"{tag_id}: {tag_description}"
-            check_state = Qt.Checked if tag_id in self.assigned_tag_ids else Qt.Unchecked
-            self.tags_widget.addItemWithCheckState(text=tag_text, state=check_state, userData=tag_id)
+            check_state = (
+                Qt.Checked if tag_id in self.assigned_tag_ids else Qt.Unchecked
+            )
+            self.tags_widget.addItemWithCheckState(
+                text=tag_text, state=check_state, userData=tag_id
+            )
         connect_signal(self.tags_widget.checkedItemsChanged, self.save_tag_edits)
 
     def populate_with_extra_widgets(self):
@@ -498,20 +570,32 @@ class AbstractFormWithDistribution(AbstractBaseForm):
     def setup_distribution_table_widgets(self):
         """Setup distribution widgets."""
         distribution_table_widget_name = "distribution_table"
-        self.distribution_table = self.dialog.findChild(QTableWidget, distribution_table_widget_name)
+        self.distribution_table = self.dialog.findChild(
+            QTableWidget, distribution_table_widget_name
+        )
         # Somehow `cellChanged` signal keeps connected between feature switch within a form view
         disconnect_signal(self.distribution_table.cellChanged)
-        self.distribution_table_clear = self.dialog.findChild(QPushButton, f"{distribution_table_widget_name}_clear")
+        self.distribution_table_clear = self.dialog.findChild(
+            QPushButton, f"{distribution_table_widget_name}_clear"
+        )
         for widget in [self.distribution_table, self.distribution_table_clear]:
             self.custom_widgets[widget.objectName()] = self.distribution_table
 
     def connect_custom_widgets(self):
         """Connect other widgets."""
         super().connect_custom_widgets()
-        connect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
-        self.dialog.active_form_signals.add((self.distribution_table.cellChanged, self.save_distribution_table_edits))
-        connect_signal(self.distribution_table_clear.clicked, self.clear_table_row_values)
-        self.dialog.active_form_signals.add((self.distribution_table_clear.clicked, self.clear_table_row_values))
+        connect_signal(
+            self.distribution_table.cellChanged, self.save_distribution_table_edits
+        )
+        self.dialog.active_form_signals.add(
+            (self.distribution_table.cellChanged, self.save_distribution_table_edits)
+        )
+        connect_signal(
+            self.distribution_table_clear.clicked, self.clear_table_row_values
+        )
+        self.dialog.active_form_signals.add(
+            (self.distribution_table_clear.clicked, self.clear_table_row_values)
+        )
 
     def update_distribution_table_header(self):
         """Update distribution table headers."""
@@ -538,33 +622,45 @@ class AbstractFormWithDistribution(AbstractBaseForm):
         if self.creation is True:
             self.feature[self.distribution_table_field_name] = distribution_table_str
         else:
-            distribution_table_idx = self.layer.fields().lookupField(self.distribution_table_field_name)
+            distribution_table_idx = self.layer.fields().lookupField(
+                self.distribution_table_field_name
+            )
             changes = {distribution_table_idx: distribution_table_str}
             self.layer.changeAttributeValues(self.feature.id(), changes)
 
     def clear_table_row_values(self):
         """Slot for clearing table values."""
-        disconnect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+        disconnect_signal(
+            self.distribution_table.cellChanged, self.save_distribution_table_edits
+        )
         for row_num in range(self.NUMBER_OF_ROWS):
             self.distribution_table.setItem(row_num, 0, QTableWidgetItem(""))
         self.save_distribution_table_edits()
-        connect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+        connect_signal(
+            self.distribution_table.cellChanged, self.save_distribution_table_edits
+        )
 
     def populate_distribution_table_data(self):
         """Populate distribution tabular data in the table widget."""
-        disconnect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+        disconnect_signal(
+            self.distribution_table.cellChanged, self.save_distribution_table_edits
+        )
         self.distribution_table.clearContents()
         self.distribution_table.setRowCount(self.NUMBER_OF_ROWS)
         self.distribution_table.setColumnCount(1)
         self.update_distribution_table_header()
-        self.distribution_table.setItemDelegateForColumn(0, NumericItemDelegate(self.distribution_table))
+        self.distribution_table.setItemDelegateForColumn(
+            0, NumericItemDelegate(self.distribution_table)
+        )
         if self.feature is not None:
             table = self.feature[self.distribution_table_field_name] or ""
         else:
             table = ""
         for row_number, row_value in enumerate(table.split(",")):
             self.distribution_table.setItem(row_number, 0, QTableWidgetItem(row_value))
-        connect_signal(self.distribution_table.cellChanged, self.save_distribution_table_edits)
+        connect_signal(
+            self.distribution_table.cellChanged, self.save_distribution_table_edits
+        )
 
     def populate_with_extra_widgets(self):
         """Populate basic and extra widgets for the given custom form."""
@@ -580,9 +676,13 @@ class AbstractFormWithMaterial(AbstractBaseForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
         self.material_id_field_name = "material_id"
-        self.material_id_widget = self.dialog.findChild(QComboBox, self.material_id_field_name)
+        self.material_id_widget = self.dialog.findChild(
+            QComboBox, self.material_id_field_name
+        )
         connect_signal(self.material_id_widget.activated, self.update_material_friction)
-        self.dialog.active_form_signals.add((self.material_id_widget.activated, self.update_material_friction))
+        self.dialog.active_form_signals.add(
+            (self.material_id_widget.activated, self.update_material_friction)
+        )
         try:
             self.initial_material_id = self.feature[self.material_id_field_name]
         except KeyError:
@@ -592,7 +692,9 @@ class AbstractFormWithMaterial(AbstractBaseForm):
     def material_friction_widgets(self):
         """Return material friction widgets."""
         material_friction_widgets_map = {
-            "friction_coefficient": self.dialog.findChild(QDoubleSpinBox, "friction_value"),
+            "friction_coefficient": self.dialog.findChild(
+                QDoubleSpinBox, "friction_value"
+            ),
             "friction_type": self.dialog.findChild(QComboBox, "friction_type"),
         }
         return material_friction_widgets_map
@@ -604,7 +706,9 @@ class AbstractFormWithMaterial(AbstractBaseForm):
         material_layer = material_handler.layer
         material_field_names = material_layer.fields().names()
         material_data = {
-            material_feat["id"]: dict(zip(material_field_names, material_feat.attributes()))
+            material_feat["id"]: dict(
+                zip(material_field_names, material_feat.attributes())
+            )
             for material_feat in material_layer.getFeatures()
         }
         return material_data
@@ -623,9 +727,13 @@ class AbstractFormWithMaterial(AbstractBaseForm):
         if current_material_id not in self.all_material_data:
             return
         current_material_data = self.all_material_data[current_material_id]
-        for material_field_name, field_name_widget in self.material_friction_widgets.items():
+        for (
+            material_field_name,
+            field_name_widget,
+        ) in self.material_friction_widgets.items():
             widget_value = current_material_data[material_field_name]
             self.set_widget_value(field_name_widget, widget_value)
+
 
 class AbstractFormWithTable(AbstractBaseForm):
     """Base edit form for user layers with table."""
@@ -660,9 +768,15 @@ class AbstractFormWithTable(AbstractBaseForm):
         # Somehow `cellChanged` signal keeps connected between feature switch within a form view
         disconnect_signal(self.table.cellChanged)
         self.table_add = self.dialog.findChild(QPushButton, f"{table_widget_name}_add")
-        self.table_delete = self.dialog.findChild(QPushButton, f"{table_widget_name}_delete")
-        self.table_copy = self.dialog.findChild(QPushButton, f"{table_widget_name}_copy")
-        self.table_paste = self.dialog.findChild(QPushButton, f"{table_widget_name}_paste")
+        self.table_delete = self.dialog.findChild(
+            QPushButton, f"{table_widget_name}_delete"
+        )
+        self.table_copy = self.dialog.findChild(
+            QPushButton, f"{table_widget_name}_copy"
+        )
+        self.table_paste = self.dialog.findChild(
+            QPushButton, f"{table_widget_name}_paste"
+        )
         for widget in [
             self.table,
             self.table_add,
@@ -676,15 +790,25 @@ class AbstractFormWithTable(AbstractBaseForm):
         """Connect other widgets."""
         super().connect_custom_widgets()
         connect_signal(self.table.cellChanged, self.save_table_edits)
-        self.dialog.active_form_signals.add((self.table.cellChanged, self.save_table_edits))
+        self.dialog.active_form_signals.add(
+            (self.table.cellChanged, self.save_table_edits)
+        )
         connect_signal(self.table_add.clicked, self.add_table_row)
-        self.dialog.active_form_signals.add((self.table_add.clicked, self.add_table_row))
+        self.dialog.active_form_signals.add(
+            (self.table_add.clicked, self.add_table_row)
+        )
         connect_signal(self.table_delete.clicked, self.delete_table_rows)
-        self.dialog.active_form_signals.add((self.table_delete.clicked, self.delete_table_rows))
+        self.dialog.active_form_signals.add(
+            (self.table_delete.clicked, self.delete_table_rows)
+        )
         connect_signal(self.table_paste.clicked, self.paste_table_rows)
-        self.dialog.active_form_signals.add((self.table_paste.clicked, self.paste_table_rows))
+        self.dialog.active_form_signals.add(
+            (self.table_paste.clicked, self.paste_table_rows)
+        )
         connect_signal(self.table_copy.clicked, self.copy_table_rows)
-        self.dialog.active_form_signals.add((self.table_copy.clicked, self.copy_table_rows))
+        self.dialog.active_form_signals.add(
+            (self.table_copy.clicked, self.copy_table_rows)
+        )
 
     def update_table_header(self):
         """Update table headers."""
@@ -710,7 +834,9 @@ class AbstractFormWithTable(AbstractBaseForm):
     def get_table_text(self):
         """Get table data as a string representation."""
         table_values = self.get_table_values()
-        table_str = self.ROW_SEPARATOR.join(self.COLUMN_SEPARATOR.join(row) for row in table_values)
+        table_str = self.ROW_SEPARATOR.join(
+            self.COLUMN_SEPARATOR.join(row) for row in table_values
+        )
         return table_str
 
     def save_table_edits(self):
@@ -736,7 +862,7 @@ class AbstractFormWithTable(AbstractBaseForm):
         """Slot for handling deletion of the selected rows."""
         selected_rows = {idx.row() for idx in self.table.selectedIndexes()}
         for row_number in sorted(selected_rows, reverse=True):
-            self.table.removeRow(row_number)
+            self.table.remove_row(row_number)
         self.save_table_edits()
 
     def paste_table_rows(self):
@@ -747,7 +873,9 @@ class AbstractFormWithTable(AbstractBaseForm):
         disconnect_signal(self.table.cellChanged, self.save_table_edits)
         for row in rows:
             try:
-                height_str, width_str = row.replace(" ", "").split(self.COLUMN_SEPARATOR)
+                height_str, width_str = row.replace(" ", "").split(
+                    self.COLUMN_SEPARATOR
+                )
             except ValueError:
                 continue
             self.table.insertRow(last_row_num)
@@ -760,7 +888,9 @@ class AbstractFormWithTable(AbstractBaseForm):
     def copy_table_rows(self):
         """Slot for copying table values into the clipboard."""
         table_values = self.get_table_values()
-        clipboard_values = "\n".join([",".join(row_values) for row_values in table_values])
+        clipboard_values = "\n".join(
+            [",".join(row_values) for row_values in table_values]
+        )
         QApplication.clipboard().setText(clipboard_values)
 
     def clear_table_row_values(self):
@@ -785,7 +915,9 @@ class AbstractFormWithTable(AbstractBaseForm):
         self.table.setColumnCount(table_columns_count)
         self.update_table_header()
         for column_idx in range(table_columns_count):
-            self.table.setItemDelegateForColumn(column_idx, NumericItemDelegate(self.table))
+            self.table.setItemDelegateForColumn(
+                column_idx, NumericItemDelegate(self.table)
+            )
         for row_num_main in range(number_of_rows_main):
             self.table.insertRow(row_num_main)
         if self.feature is not None:
@@ -793,7 +925,9 @@ class AbstractFormWithTable(AbstractBaseForm):
         else:
             table = ""
         for row_number, row in enumerate(table.split(self.ROW_SEPARATOR)):
-            row_values = [val for val in row.replace(" ", "").split(self.COLUMN_SEPARATOR)]
+            row_values = [
+                val for val in row.replace(" ", "").split(self.COLUMN_SEPARATOR)
+            ]
             for col_idx, row_value in enumerate(row_values):
                 self.table.setItem(row_number, col_idx, QTableWidgetItem(row_value))
         connect_signal(self.table.cellChanged, self.save_table_edits)
@@ -861,7 +995,9 @@ class AbstractFormWithXSTable(AbstractBaseForm):
         if self.MODEL == dm.Channel:
             self.cross_section_prefix = "cross_section_location_"
             self.current_cross_section_location = None
-            self.layer_with_xs = self.layer_manager.model_handlers[dm.CrossSectionLocation].layer
+            self.layer_with_xs = self.layer_manager.model_handlers[
+                dm.CrossSectionLocation
+            ].layer
         else:
             self.cross_section_prefix = ""
             self.current_cross_section_location = self.feature
@@ -881,9 +1017,18 @@ class AbstractFormWithXSTable(AbstractBaseForm):
     @property
     def cross_section_table_edit_slot_signal_pairs(self):
         slot_signal_pairs = [
-            (self.cross_section_table_cell_changed_signal, self.cross_section_table_cell_changed_slot),
-            (self.cross_section_friction_cell_changed_signal, self.cross_section_friction_cell_changed_slot),
-            (self.cross_section_vegetation_cell_changed_signal, self.cross_section_vegetation_cell_changed_slot),
+            (
+                self.cross_section_table_cell_changed_signal,
+                self.cross_section_table_cell_changed_slot,
+            ),
+            (
+                self.cross_section_friction_cell_changed_signal,
+                self.cross_section_friction_cell_changed_slot,
+            ),
+            (
+                self.cross_section_vegetation_cell_changed_signal,
+                self.cross_section_vegetation_cell_changed_slot,
+            ),
         ]
         return slot_signal_pairs
 
@@ -894,12 +1039,20 @@ class AbstractFormWithXSTable(AbstractBaseForm):
         xs_table_delete = f"{self.cross_section_prefix}cross_section_table_delete"
         xs_table_paste = f"{self.cross_section_prefix}cross_section_table_paste"
         xs_table_copy = f"{self.cross_section_prefix}cross_section_table_copy"
-        self.cross_section_shape = self.dialog.findChild(QObject, f"{self.cross_section_prefix}cross_section_shape")
+        self.cross_section_shape = self.dialog.findChild(
+            QObject, f"{self.cross_section_prefix}cross_section_shape"
+        )
         self.cross_section_table = self.dialog.findChild(QTableWidget, xs_table)
         self.cross_section_table_add = self.dialog.findChild(QPushButton, xs_table_add)
-        self.cross_section_table_delete = self.dialog.findChild(QPushButton, xs_table_delete)
-        self.cross_section_table_paste = self.dialog.findChild(QPushButton, xs_table_paste)
-        self.cross_section_table_copy = self.dialog.findChild(QPushButton, xs_table_copy)
+        self.cross_section_table_delete = self.dialog.findChild(
+            QPushButton, xs_table_delete
+        )
+        self.cross_section_table_paste = self.dialog.findChild(
+            QPushButton, xs_table_paste
+        )
+        self.cross_section_table_copy = self.dialog.findChild(
+            QPushButton, xs_table_copy
+        )
         self.custom_widgets[xs_table] = self.cross_section_table
         self.custom_widgets[xs_table_add] = self.cross_section_table_add
         self.custom_widgets[xs_table_delete] = self.cross_section_table_delete
@@ -907,29 +1060,55 @@ class AbstractFormWithXSTable(AbstractBaseForm):
         self.custom_widgets[xs_table_copy] = self.cross_section_table_copy
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
             xs_friction = f"{self.cross_section_prefix}cross_section_friction_widget"
-            xs_vegetation = f"{self.cross_section_prefix}cross_section_vegetation_widget"
-            xs_friction_clear = f"{self.cross_section_prefix}cross_section_friction_clear"
-            xs_vegetation_clear = f"{self.cross_section_prefix}cross_section_vegetation_clear"
+            xs_vegetation = (
+                f"{self.cross_section_prefix}cross_section_vegetation_widget"
+            )
+            xs_friction_clear = (
+                f"{self.cross_section_prefix}cross_section_friction_clear"
+            )
+            xs_vegetation_clear = (
+                f"{self.cross_section_prefix}cross_section_vegetation_clear"
+            )
             xs_friction_copy = f"{self.cross_section_prefix}cross_section_friction_copy"
-            xs_vegetation_copy = f"{self.cross_section_prefix}cross_section_vegetation_copy"
-            self.cross_section_friction = self.dialog.findChild(QTableWidget, xs_friction)
-            self.cross_section_vegetation = self.dialog.findChild(QTableWidget, xs_vegetation)
-            self.cross_section_friction_clear = self.dialog.findChild(QPushButton, xs_friction_clear)
-            self.cross_section_vegetation_clear = self.dialog.findChild(QPushButton, xs_vegetation_clear)
-            self.cross_section_friction_copy = self.dialog.findChild(QPushButton, xs_friction_copy)
-            self.cross_section_vegetation_copy = self.dialog.findChild(QPushButton, xs_vegetation_copy)
+            xs_vegetation_copy = (
+                f"{self.cross_section_prefix}cross_section_vegetation_copy"
+            )
+            self.cross_section_friction = self.dialog.findChild(
+                QTableWidget, xs_friction
+            )
+            self.cross_section_vegetation = self.dialog.findChild(
+                QTableWidget, xs_vegetation
+            )
+            self.cross_section_friction_clear = self.dialog.findChild(
+                QPushButton, xs_friction_clear
+            )
+            self.cross_section_vegetation_clear = self.dialog.findChild(
+                QPushButton, xs_vegetation_clear
+            )
+            self.cross_section_friction_copy = self.dialog.findChild(
+                QPushButton, xs_friction_copy
+            )
+            self.cross_section_vegetation_copy = self.dialog.findChild(
+                QPushButton, xs_vegetation_copy
+            )
             self.custom_widgets[xs_friction] = self.cross_section_friction
             self.custom_widgets[xs_vegetation] = self.cross_section_vegetation
             self.custom_widgets[xs_friction_clear] = self.cross_section_friction_clear
-            self.custom_widgets[xs_vegetation_clear] = self.cross_section_vegetation_clear
+            self.custom_widgets[xs_vegetation_clear] = (
+                self.cross_section_vegetation_clear
+            )
             self.custom_widgets[xs_friction_copy] = self.cross_section_friction_copy
             self.custom_widgets[xs_vegetation_copy] = self.cross_section_vegetation_copy
 
     def setup_form_widgets(self):
         """Setting up all form widgets."""
         super().setup_form_widgets()
-        setup_cross_section_widgets(self, self.cross_section_shape, self.cross_section_prefix)
-        friction_type = self.dialog.findChild(QObject, f"{self.cross_section_prefix}friction_type")
+        setup_cross_section_widgets(
+            self, self.cross_section_shape, self.cross_section_prefix
+        )
+        friction_type = self.dialog.findChild(
+            QObject, f"{self.cross_section_prefix}friction_type"
+        )
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
             setup_friction_and_vegetation_widgets(
                 self, self.cross_section_shape, friction_type, self.cross_section_prefix
@@ -939,9 +1118,13 @@ class AbstractFormWithXSTable(AbstractBaseForm):
         """Connect other widgets."""
         super().connect_custom_widgets()
         cross_section_table_edit_signal = self.cross_section_table.cellChanged
-        cross_section_table_edit_slot = partial(self.edit_table_row, "cross_section_table")
+        cross_section_table_edit_slot = partial(
+            self.edit_table_row, "cross_section_table"
+        )
         connect_signal(cross_section_table_edit_signal, cross_section_table_edit_slot)
-        self.dialog.active_form_signals.add((cross_section_table_edit_signal, cross_section_table_edit_slot))
+        self.dialog.active_form_signals.add(
+            (cross_section_table_edit_signal, cross_section_table_edit_slot)
+        )
         self.cross_section_table_cell_changed_signal = cross_section_table_edit_signal
         self.cross_section_table_cell_changed_slot = cross_section_table_edit_slot
 
@@ -967,47 +1150,111 @@ class AbstractFormWithXSTable(AbstractBaseForm):
 
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
             cross_section_friction_edit_signal = self.cross_section_friction.cellChanged
-            cross_section_vegetation_edit_signal = self.cross_section_vegetation.cellChanged
-            cross_section_friction_clear_signal = self.cross_section_friction_clear.clicked
-            cross_section_vegetation_clear_signal = self.cross_section_vegetation_clear.clicked
-            cross_section_friction_copy_signal = self.cross_section_friction_copy.clicked
-            cross_section_vegetation_copy_signal = self.cross_section_vegetation_copy.clicked
-            cross_section_friction_edit_slot = partial(self.edit_table_row, "cross_section_friction_values")
-            cross_section_vegetation_edit_slot = partial(self.edit_table_row, "cross_section_vegetation_table")
-            cross_section_friction_clear_slot = partial(self.clear_table_row_values, "cross_section_friction_values")
-            cross_section_vegetation_clear_slot = partial(self.clear_table_row_values, "cross_section_vegetation_table")
-            cross_section_friction_copy_slot = partial(self.copy_table_rows, "cross_section_friction_values")
-            cross_section_vegetation_copy_slot = partial(self.copy_table_rows, "cross_section_vegetation_table")
-            connect_signal(cross_section_friction_edit_signal, cross_section_friction_edit_slot)
-            connect_signal(cross_section_vegetation_edit_signal, cross_section_vegetation_edit_slot)
-            connect_signal(cross_section_friction_clear_signal, cross_section_friction_clear_slot)
-            connect_signal(cross_section_vegetation_clear_signal, cross_section_vegetation_clear_slot)
-            connect_signal(cross_section_friction_copy_signal, cross_section_friction_copy_slot)
-            connect_signal(cross_section_vegetation_copy_signal, cross_section_vegetation_copy_slot)
-            self.dialog.active_form_signals.add((cross_section_friction_edit_signal, cross_section_friction_edit_slot))
+            cross_section_vegetation_edit_signal = (
+                self.cross_section_vegetation.cellChanged
+            )
+            cross_section_friction_clear_signal = (
+                self.cross_section_friction_clear.clicked
+            )
+            cross_section_vegetation_clear_signal = (
+                self.cross_section_vegetation_clear.clicked
+            )
+            cross_section_friction_copy_signal = (
+                self.cross_section_friction_copy.clicked
+            )
+            cross_section_vegetation_copy_signal = (
+                self.cross_section_vegetation_copy.clicked
+            )
+            cross_section_friction_edit_slot = partial(
+                self.edit_table_row, "cross_section_friction_values"
+            )
+            cross_section_vegetation_edit_slot = partial(
+                self.edit_table_row, "cross_section_vegetation_table"
+            )
+            cross_section_friction_clear_slot = partial(
+                self.clear_table_row_values, "cross_section_friction_values"
+            )
+            cross_section_vegetation_clear_slot = partial(
+                self.clear_table_row_values, "cross_section_vegetation_table"
+            )
+            cross_section_friction_copy_slot = partial(
+                self.copy_table_rows, "cross_section_friction_values"
+            )
+            cross_section_vegetation_copy_slot = partial(
+                self.copy_table_rows, "cross_section_vegetation_table"
+            )
+            connect_signal(
+                cross_section_friction_edit_signal, cross_section_friction_edit_slot
+            )
+            connect_signal(
+                cross_section_vegetation_edit_signal, cross_section_vegetation_edit_slot
+            )
+            connect_signal(
+                cross_section_friction_clear_signal, cross_section_friction_clear_slot
+            )
+            connect_signal(
+                cross_section_vegetation_clear_signal,
+                cross_section_vegetation_clear_slot,
+            )
+            connect_signal(
+                cross_section_friction_copy_signal, cross_section_friction_copy_slot
+            )
+            connect_signal(
+                cross_section_vegetation_copy_signal, cross_section_vegetation_copy_slot
+            )
             self.dialog.active_form_signals.add(
-                (cross_section_vegetation_edit_signal, cross_section_vegetation_edit_slot)
+                (cross_section_friction_edit_signal, cross_section_friction_edit_slot)
+            )
+            self.dialog.active_form_signals.add(
+                (
+                    cross_section_vegetation_edit_signal,
+                    cross_section_vegetation_edit_slot,
+                )
             )
             self.dialog.active_form_signals.add(
                 (cross_section_friction_clear_signal, cross_section_friction_clear_slot)
             )
             self.dialog.active_form_signals.add(
-                (cross_section_vegetation_clear_signal, cross_section_vegetation_clear_slot)
+                (
+                    cross_section_vegetation_clear_signal,
+                    cross_section_vegetation_clear_slot,
+                )
             )
-            self.dialog.active_form_signals.add((cross_section_friction_copy_signal, cross_section_friction_copy_slot))
             self.dialog.active_form_signals.add(
-                (cross_section_vegetation_copy_signal, cross_section_vegetation_copy_slot)
+                (cross_section_friction_copy_signal, cross_section_friction_copy_slot)
             )
-            self.cross_section_friction_cell_changed_signal = cross_section_friction_edit_signal
-            self.cross_section_friction_cell_changed_slot = cross_section_friction_edit_slot
-            self.cross_section_vegetation_cell_changed_signal = cross_section_vegetation_edit_signal
-            self.cross_section_vegetation_cell_changed_slot = cross_section_vegetation_edit_slot
-            self.cross_section_friction_clear_signal = cross_section_friction_clear_signal
-            self.cross_section_vegetation_clear_signal = cross_section_vegetation_clear_signal
+            self.dialog.active_form_signals.add(
+                (
+                    cross_section_vegetation_copy_signal,
+                    cross_section_vegetation_copy_slot,
+                )
+            )
+            self.cross_section_friction_cell_changed_signal = (
+                cross_section_friction_edit_signal
+            )
+            self.cross_section_friction_cell_changed_slot = (
+                cross_section_friction_edit_slot
+            )
+            self.cross_section_vegetation_cell_changed_signal = (
+                cross_section_vegetation_edit_signal
+            )
+            self.cross_section_vegetation_cell_changed_slot = (
+                cross_section_vegetation_edit_slot
+            )
+            self.cross_section_friction_clear_signal = (
+                cross_section_friction_clear_signal
+            )
+            self.cross_section_vegetation_clear_signal = (
+                cross_section_vegetation_clear_signal
+            )
             self.cross_section_friction_clear_slot = cross_section_friction_clear_slot
-            self.cross_section_vegetation_clear_slot = cross_section_vegetation_clear_slot
+            self.cross_section_vegetation_clear_slot = (
+                cross_section_vegetation_clear_slot
+            )
             self.cross_section_friction_copy_signal = cross_section_friction_copy_signal
-            self.cross_section_vegetation_copy_signal = cross_section_vegetation_copy_signal
+            self.cross_section_vegetation_copy_signal = (
+                cross_section_vegetation_copy_signal
+            )
             self.cross_section_friction_copy_slot = cross_section_friction_copy_slot
             self.cross_section_vegetation_copy_slot = cross_section_vegetation_copy_slot
 
@@ -1023,7 +1270,12 @@ class AbstractFormWithXSTable(AbstractBaseForm):
         elif table_field_name == "cross_section_friction_values":
             table_header += ["Friction coefficient"]
         elif table_field_name == "cross_section_vegetation_table":
-            table_header += ["Stem density [m-2]", "Stem diameter [m]", "Height [m]", "Drag coefficient [-]"]
+            table_header += [
+                "Stem density [m-2]",
+                "Stem diameter [m]",
+                "Height [m]",
+                "Drag coefficient [-]",
+            ]
         else:
             pass
         return table_header
@@ -1054,19 +1306,29 @@ class AbstractFormWithXSTable(AbstractBaseForm):
 
     def get_cross_section_table_text(self, table_field_name="cross_section_table"):
         """Get cross-section table data as a string representation."""
-        cross_section_table_values = self.get_cross_section_table_values(table_field_name)
-        cross_section_table_str = "\n".join(", ".join(row) for row in cross_section_table_values if all(row))
+        cross_section_table_values = self.get_cross_section_table_values(
+            table_field_name
+        )
+        cross_section_table_str = "\n".join(
+            ", ".join(row) for row in cross_section_table_values if all(row)
+        )
         return cross_section_table_str
 
     def save_cross_section_table_edits(self, table_field_name="cross_section_table"):
         """Save cross-section table value to the feature attribute."""
         cross_section_table_str = self.get_cross_section_table_text(table_field_name)
         if self.creation is True:
-            self.current_cross_section_location[table_field_name] = cross_section_table_str
+            self.current_cross_section_location[table_field_name] = (
+                cross_section_table_str
+            )
         else:
-            cross_section_table_idx = self.layer_with_xs_fields.lookupField(table_field_name)
+            cross_section_table_idx = self.layer_with_xs_fields.lookupField(
+                table_field_name
+            )
             changes = {cross_section_table_idx: cross_section_table_str}
-            self.layer_with_xs.changeAttributeValues(self.current_cross_section_location.id(), changes)
+            self.layer_with_xs.changeAttributeValues(
+                self.current_cross_section_location.id(), changes
+            )
 
     def edit_table_row(self, table_field_name):
         """Slot for handling table cells edits."""
@@ -1074,7 +1336,9 @@ class AbstractFormWithXSTable(AbstractBaseForm):
 
     def add_table_row(self):
         """Slot for handling new row addition."""
-        selected_rows = {idx.row() for idx in self.cross_section_table.selectedIndexes()}
+        selected_rows = {
+            idx.row() for idx in self.cross_section_table.selectedIndexes()
+        }
         if selected_rows:
             last_row_number = max(selected_rows) + 1
         else:
@@ -1087,13 +1351,15 @@ class AbstractFormWithXSTable(AbstractBaseForm):
 
     def delete_table_rows(self):
         """Slot for handling deletion of the selected rows."""
-        selected_rows = {idx.row() for idx in self.cross_section_table.selectedIndexes()}
+        selected_rows = {
+            idx.row() for idx in self.cross_section_table.selectedIndexes()
+        }
         for row_number in sorted(selected_rows, reverse=True):
-            self.cross_section_table.removeRow(row_number)
+            self.cross_section_table.remove_row(row_number)
             if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
                 frict_vege_last_row_number = row_number - 1
-                self.cross_section_friction.removeRow(frict_vege_last_row_number)
-                self.cross_section_vegetation.removeRow(frict_vege_last_row_number)
+                self.cross_section_friction.remove_row(frict_vege_last_row_number)
+                self.cross_section_vegetation.remove_row(frict_vege_last_row_number)
         self.save_cross_section_table_edits()
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
             self.save_cross_section_table_edits("cross_section_friction_values")
@@ -1104,7 +1370,10 @@ class AbstractFormWithXSTable(AbstractBaseForm):
         text = QApplication.clipboard().text()
         rows = text.split("\n")
         last_row_num = self.cross_section_table.rowCount()
-        for cell_changed_signal, cell_changed_slot in self.cross_section_table_edit_slot_signal_pairs:
+        for (
+            cell_changed_signal,
+            cell_changed_slot,
+        ) in self.cross_section_table_edit_slot_signal_pairs:
             if cell_changed_signal is not None and cell_changed_slot is not None:
                 disconnect_signal(cell_changed_signal, cell_changed_slot)
         for row in rows:
@@ -1113,22 +1382,33 @@ class AbstractFormWithXSTable(AbstractBaseForm):
             except ValueError:
                 continue
             self.cross_section_table.insertRow(last_row_num)
-            self.cross_section_table.setItem(last_row_num, 0, QTableWidgetItem(height_str))
-            self.cross_section_table.setItem(last_row_num, 1, QTableWidgetItem(width_str))
+            self.cross_section_table.setItem(
+                last_row_num, 0, QTableWidgetItem(height_str)
+            )
+            self.cross_section_table.setItem(
+                last_row_num, 1, QTableWidgetItem(width_str)
+            )
             if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
                 frict_vege_last_row_number = last_row_num - 1
                 self.cross_section_friction.insertRow(frict_vege_last_row_number)
                 self.cross_section_vegetation.insertRow(frict_vege_last_row_number)
             last_row_num += 1
-        for cell_changed_signal, cell_changed_slot in self.cross_section_table_edit_slot_signal_pairs:
+        for (
+            cell_changed_signal,
+            cell_changed_slot,
+        ) in self.cross_section_table_edit_slot_signal_pairs:
             if cell_changed_signal is not None and cell_changed_slot is not None:
                 connect_signal(cell_changed_signal, cell_changed_slot)
         self.save_cross_section_table_edits()
 
     def copy_table_rows(self, table_field_name):
         """Slot for copying table values into the clipboard."""
-        cross_section_table_values = self.get_cross_section_table_values(table_field_name)
-        clipboard_values = "\n".join([",".join(row_values) for row_values in cross_section_table_values])
+        cross_section_table_values = self.get_cross_section_table_values(
+            table_field_name
+        )
+        clipboard_values = "\n".join(
+            [",".join(row_values) for row_values in cross_section_table_values]
+        )
         QApplication.clipboard().setText(clipboard_values)
 
     def clear_table_row_values(self, table_field_name):
@@ -1136,20 +1416,29 @@ class AbstractFormWithXSTable(AbstractBaseForm):
         table_widget = self.cross_section_table_field_widget_map[table_field_name]
         num_of_rows = table_widget.rowCount()
         num_of_cols = table_widget.columnCount()
-        for cell_changed_signal, cell_changed_slot in self.cross_section_table_edit_slot_signal_pairs:
+        for (
+            cell_changed_signal,
+            cell_changed_slot,
+        ) in self.cross_section_table_edit_slot_signal_pairs:
             if cell_changed_signal is not None and cell_changed_slot is not None:
                 disconnect_signal(cell_changed_signal, cell_changed_slot)
         for row_num in range(num_of_rows):
             for col_num in range(num_of_cols):
                 table_widget.setItem(row_num, col_num, QTableWidgetItem(""))
-        for cell_changed_signal, cell_changed_slot in self.cross_section_table_edit_slot_signal_pairs:
+        for (
+            cell_changed_signal,
+            cell_changed_slot,
+        ) in self.cross_section_table_edit_slot_signal_pairs:
             if cell_changed_signal is not None and cell_changed_slot is not None:
                 connect_signal(cell_changed_signal, cell_changed_slot)
         self.save_cross_section_table_edits(table_field_name)
 
     def populate_cross_section_table_data(self):
         """Populate cross-section tabular data in the table widget."""
-        for cell_changed_signal, cell_changed_slot in self.cross_section_table_edit_slot_signal_pairs:
+        for (
+            cell_changed_signal,
+            cell_changed_slot,
+        ) in self.cross_section_table_edit_slot_signal_pairs:
             if cell_changed_signal is not None and cell_changed_slot is not None:
                 disconnect_signal(cell_changed_signal, cell_changed_slot)
         leading_table_name = "cross_section_table"
@@ -1157,7 +1446,10 @@ class AbstractFormWithXSTable(AbstractBaseForm):
         if self.current_cross_section_location is not None:
             table = self.current_cross_section_location[leading_table_name] or ""
         number_of_rows_main = len(table.split("\n"))
-        for table_field_name, table_widget in self.cross_section_table_field_widget_map.items():
+        for (
+            table_field_name,
+            table_widget,
+        ) in self.cross_section_table_field_widget_map.items():
             if table_widget is None:
                 continue
             table_header = self.get_cross_section_table_header(table_field_name)
@@ -1167,9 +1459,15 @@ class AbstractFormWithXSTable(AbstractBaseForm):
             table_widget.setColumnCount(table_columns_count)
             self.update_cross_section_table_header(table_field_name)
             for column_idx in range(table_columns_count):
-                table_widget.setItemDelegateForColumn(column_idx, NumericItemDelegate(table_widget))
+                table_widget.setItemDelegateForColumn(
+                    column_idx, NumericItemDelegate(table_widget)
+                )
             for row_num_main in range(number_of_rows_main):
-                table_widget.insertRow(row_num_main if table_field_name == leading_table_name else row_num_main - 1)
+                table_widget.insertRow(
+                    row_num_main
+                    if table_field_name == leading_table_name
+                    else row_num_main - 1
+                )
             if self.current_cross_section_location is not None:
                 table = self.current_cross_section_location[table_field_name] or ""
             else:
@@ -1179,8 +1477,13 @@ class AbstractFormWithXSTable(AbstractBaseForm):
                 if len(row_values) != table_columns_count:
                     continue
                 for col_idx, row_value in enumerate(row_values):
-                    table_widget.setItem(row_number, col_idx, QTableWidgetItem(row_value))
-        for cell_changed_signal, cell_changed_slot in self.cross_section_table_edit_slot_signal_pairs:
+                    table_widget.setItem(
+                        row_number, col_idx, QTableWidgetItem(row_value)
+                    )
+        for (
+            cell_changed_signal,
+            cell_changed_slot,
+        ) in self.cross_section_table_edit_slot_signal_pairs:
             if cell_changed_signal is not None and cell_changed_slot is not None:
                 connect_signal(cell_changed_signal, cell_changed_slot)
 
@@ -1193,16 +1496,27 @@ class AbstractFormWithXSTable(AbstractBaseForm):
 
     def activate_field_based_conditions(self):
         """Activate filed based conditions."""
-        shape_widget = self.dialog.findChild(QObject, f"{self.cross_section_prefix}cross_section_shape")
-        friction_widget = self.dialog.findChild(QObject, f"{self.cross_section_prefix}friction_type")
+        shape_widget = self.dialog.findChild(
+            QObject, f"{self.cross_section_prefix}cross_section_shape"
+        )
+        friction_widget = self.dialog.findChild(
+            QObject, f"{self.cross_section_prefix}friction_type"
+        )
         if shape_widget is not None:
             shape_edit_signal = self.get_widget_editing_signal(shape_widget)
             shape_edit_slot = partial(
-                setup_cross_section_definition_widgets, self, shape_widget, friction_widget, self.cross_section_prefix
+                setup_cross_section_definition_widgets,
+                self,
+                shape_widget,
+                friction_widget,
+                self.cross_section_prefix,
             )
             connect_signal(shape_edit_signal, shape_edit_slot)
             self.dialog.active_form_signals.add((shape_edit_signal, shape_edit_slot))
-        if friction_widget is not None and self.MODEL in {dm.Channel, dm.CrossSectionLocation}:
+        if friction_widget is not None and self.MODEL in {
+            dm.Channel,
+            dm.CrossSectionLocation,
+        }:
             friction_edit_signal = self.get_widget_editing_signal(friction_widget)
             friction_edit_slot = partial(
                 setup_friction_and_vegetation_widgets,
@@ -1212,7 +1526,9 @@ class AbstractFormWithXSTable(AbstractBaseForm):
                 self.cross_section_prefix,
             )
             connect_signal(friction_edit_signal, friction_edit_slot)
-            self.dialog.active_form_signals.add((friction_edit_signal, friction_edit_slot))
+            self.dialog.active_form_signals.add(
+                (friction_edit_signal, friction_edit_slot)
+            )
 
 
 class AbstractFormWithNode(AbstractBaseForm):
@@ -1233,16 +1549,22 @@ class AbstractFormWithNode(AbstractBaseForm):
     def setup_connection_node_on_edit(self):
         """Setting up connection nodes during editing feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        connection_node_feat = connection_node_handler.get_feat_by_id(self.feature["connection_node_id"])
+        connection_node_feat = connection_node_handler.get_feat_by_id(
+            self.feature["connection_node_id"]
+        )
         self.connection_node = connection_node_feat
 
     def setup_connection_node_on_creation(self):
         """Setting up connection nodes during adding feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_layer = connection_node_handler.layer
-        connection_node_feat = find_point_nodes(self.feature.geometry().asPoint(), connection_node_layer)
+        connection_node_feat = find_point_nodes(
+            self.feature.geometry().asPoint(), connection_node_layer
+        )
         if connection_node_feat is None:
-            connection_node_feat = connection_node_handler.create_new_feature(self.feature.geometry())
+            connection_node_feat = connection_node_handler.create_new_feature(
+                self.feature.geometry()
+            )
             self.extra_features[connection_node_handler].append(connection_node_feat)
         # Sequence related features ids
         self.sequence_related_features_ids()
@@ -1289,8 +1611,12 @@ class AbstractFormWithStartEndNode(AbstractBaseForm):
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         connection_node_id_start = self.feature["connection_node_id_start"]
         connection_node_id_end = self.feature["connection_node_id_end"]
-        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_id_start)
-        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_id_end)
+        self.connection_node_start = connection_node_handler.get_feat_by_id(
+            connection_node_id_start
+        )
+        self.connection_node_end = connection_node_handler.get_feat_by_id(
+            connection_node_id_end
+        )
 
     def setup_connection_nodes_on_creation(self):
         """Setting up connection nodes during adding feature."""
@@ -1298,30 +1624,50 @@ class AbstractFormWithStartEndNode(AbstractBaseForm):
         connection_node_layer = connection_node_handler.layer
         linestring = self.feature.geometry().asPolyline()
         start_point, end_point = linestring[0], linestring[-1]
-        start_connection_node_feat, end_connection_node_feat = find_linestring_nodes(linestring, connection_node_layer)
+        start_connection_node_feat, end_connection_node_feat = find_linestring_nodes(
+            linestring, connection_node_layer
+        )
         if start_connection_node_feat is not None and end_connection_node_feat is None:
             # Create and add ending points
             end_geom = QgsGeometry.fromPointXY(end_point)
-            end_connection_node_feat = connection_node_handler.create_new_feature_from_template(
-                start_connection_node_feat, geometry=end_geom
+            end_connection_node_feat = (
+                connection_node_handler.create_new_feature_from_template(
+                    start_connection_node_feat, geometry=end_geom
+                )
             )
-            self.extra_features[connection_node_handler].append(end_connection_node_feat)
-        elif start_connection_node_feat is None and end_connection_node_feat is not None:
+            self.extra_features[connection_node_handler].append(
+                end_connection_node_feat
+            )
+        elif (
+            start_connection_node_feat is None and end_connection_node_feat is not None
+        ):
             # Create and add starting points
             start_geom = QgsGeometry.fromPointXY(start_point)
-            start_connection_node_feat = connection_node_handler.create_new_feature_from_template(
-                end_connection_node_feat, geometry=start_geom
+            start_connection_node_feat = (
+                connection_node_handler.create_new_feature_from_template(
+                    end_connection_node_feat, geometry=start_geom
+                )
             )
-            self.extra_features[connection_node_handler].append(start_connection_node_feat)
+            self.extra_features[connection_node_handler].append(
+                start_connection_node_feat
+            )
         elif start_connection_node_feat is None and end_connection_node_feat is None:
             # Create and add starting points
             start_geom = QgsGeometry.fromPointXY(start_point)
-            start_connection_node_feat = connection_node_handler.create_new_feature(geometry=start_geom)
-            self.extra_features[connection_node_handler].append(start_connection_node_feat)
+            start_connection_node_feat = connection_node_handler.create_new_feature(
+                geometry=start_geom
+            )
+            self.extra_features[connection_node_handler].append(
+                start_connection_node_feat
+            )
             # Create and add ending points
             end_geom = QgsGeometry.fromPointXY(end_point)
-            end_connection_node_feat = connection_node_handler.create_new_feature(geometry=end_geom)
-            self.extra_features[connection_node_handler].append(end_connection_node_feat)
+            end_connection_node_feat = connection_node_handler.create_new_feature(
+                geometry=end_geom
+            )
+            self.extra_features[connection_node_handler].append(
+                end_connection_node_feat
+            )
         # Sequence related features ids
         self.sequence_related_features_ids()
         # Assign features as a form instance attributes.
@@ -1338,7 +1684,9 @@ class AbstractFormWithStartEndNode(AbstractBaseForm):
         self.feature["connection_node_id_start"] = connection_node_id_start
         self.feature["connection_node_id_end"] = connection_node_id_end
         if connection_node_start_code and connection_node_end_code:
-            code_display_name = f"{connection_node_start_code}-{connection_node_end_code}"
+            code_display_name = (
+                f"{connection_node_start_code}-{connection_node_end_code}"
+            )
         else:
             code_display_name = None
         try:
@@ -1402,7 +1750,9 @@ class AbstractNodeToSurfaceMapForm(AbstractFormWithTag):
         start_point, end_point = linestring[0], linestring[-1]
         surface_handler = self.layer_manager.model_handlers[self.surface_model]
         surface_layer = surface_handler.layer
-        surface_feats = find_point_polygons(start_point, surface_layer, allow_multiple=True)
+        surface_feats = find_point_polygons(
+            start_point, surface_layer, allow_multiple=True
+        )
         surfaces_no = len(surface_feats)
         if surfaces_no == 0:
             surface_feat = None
@@ -1410,7 +1760,10 @@ class AbstractNodeToSurfaceMapForm(AbstractFormWithTag):
             surface_feat = next(iter(surface_feats))
         else:
             surface_feats_by_id = {int(feat["id"]): feat for feat in surface_feats}
-            surface_entries = [f"{feat_id} ({feat['display_name']})" for feat_id, feat in surface_feats_by_id.items()]
+            surface_entries = [
+                f"{feat_id} ({feat['display_name']})"
+                for feat_id, feat in surface_feats_by_id.items()
+            ]
             surface_entry = self.uc.pick_item(title, message, None, *surface_entries)
             surface_id = int(surface_entry.split()[0]) if surface_entry else None
             surface_feat = surface_feats_by_id[surface_id] if surface_id else None
@@ -1436,14 +1789,17 @@ class AbstractFormWithTargetStructure(AbstractBaseForm):
     def target_structure_types(self):
         """Return supported target structure type data models."""
         target_structure_data_models = {
-            model_cls.__tablename__: model_cls for model_cls in [dm.Weir, dm.Orifice, dm.Pump]
+            model_cls.__tablename__: model_cls
+            for model_cls in [dm.Weir, dm.Orifice, dm.Pump]
         }
         return target_structure_data_models
 
     def setup_target_structure_on_edit(self):
         """Setting up target structure during editing feature."""
         try:
-            target_structure_type = self.target_structure_types[self.feature["target_type"]]
+            target_structure_type = self.target_structure_types[
+                self.feature["target_type"]
+            ]
             model_cls = self.target_structure_types[target_structure_type]
             structure_handler = self.layer_manager.model_handlers[model_cls]
             structure_feat = structure_handler.get_feat_by_id(self.feature["target_id"])
@@ -1466,7 +1822,10 @@ class AbstractFormWithTargetStructure(AbstractBaseForm):
             else:
                 continue
             if structure_feat is not None:
-                self.structure_feature, self.structure_feature_type = structure_feat, structure_type
+                self.structure_feature, self.structure_feature_type = (
+                    structure_feat,
+                    structure_type,
+                )
                 break
 
     def populate_with_extra_widgets(self):
@@ -1488,7 +1847,12 @@ class ConnectionNodeForm(AbstractFormWithTag):
     MODEL = dm.ConnectionNode
 
 
-class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag, AbstractFormWithMaterial):
+class PipeForm(
+    AbstractFormWithStartEndNode,
+    AbstractFormWithXSTable,
+    AbstractFormWithTag,
+    AbstractFormWithMaterial,
+):
     """Pipe user layer edit form logic."""
 
     MODEL = dm.Pipe
@@ -1525,7 +1889,12 @@ class PipeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFo
         self.populate_tag_widgets()
 
 
-class WeirForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag, AbstractFormWithMaterial):
+class WeirForm(
+    AbstractFormWithStartEndNode,
+    AbstractFormWithXSTable,
+    AbstractFormWithTag,
+    AbstractFormWithMaterial,
+):
     """Weir user layer edit form logic."""
 
     MODEL = dm.Weir
@@ -1560,7 +1929,12 @@ class WeirForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFo
         self.populate_tag_widgets()
 
 
-class CulvertForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag, AbstractFormWithMaterial):
+class CulvertForm(
+    AbstractFormWithStartEndNode,
+    AbstractFormWithXSTable,
+    AbstractFormWithTag,
+    AbstractFormWithMaterial,
+):
     """Culvert user layer edit form logic."""
 
     MODEL = dm.Culvert
@@ -1595,7 +1969,12 @@ class CulvertForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
         self.populate_tag_widgets()
 
 
-class OrificeForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag, AbstractFormWithMaterial):
+class OrificeForm(
+    AbstractFormWithStartEndNode,
+    AbstractFormWithXSTable,
+    AbstractFormWithTag,
+    AbstractFormWithMaterial,
+):
     """Orifice user layer edit form logic."""
 
     MODEL = dm.Orifice
@@ -1664,7 +2043,9 @@ class PumpMapForm(AbstractFormWithTag):
         pump_handler = self.layer_manager.model_handlers[dm.Pump]
         connection_node_id_end = self.feature["connection_node_id_end"]
         pump_id = self.feature["pump_id"]
-        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_id_end)
+        self.connection_node_end = connection_node_handler.get_feat_by_id(
+            connection_node_id_end
+        )
         self.pump = pump_handler.get_feat_by_id(pump_id)
 
     def setup_pump_on_creation(self):
@@ -1674,30 +2055,44 @@ class PumpMapForm(AbstractFormWithTag):
         connection_node_layer = connection_node_handler.layer
         linestring = self.feature.geometry().asPolyline()
         start_point, end_point = linestring[0], linestring[-1]
-        start_connection_node_feat, end_connection_node_feat = find_linestring_nodes(linestring, connection_node_layer)
+        start_connection_node_feat, end_connection_node_feat = find_linestring_nodes(
+            linestring, connection_node_layer
+        )
         start_pump_feat = self.pump
         if start_pump_feat is None:
             start_geom = QgsGeometry.fromPointXY(start_point)
             if start_connection_node_feat is None:
-                start_pump_feat, start_connection_node_feat = pump_handler.create_pump_with_connection_node(start_geom)
-                self.extra_features[connection_node_handler].append(start_connection_node_feat)
+                start_pump_feat, start_connection_node_feat = (
+                    pump_handler.create_pump_with_connection_node(start_geom)
+                )
+                self.extra_features[connection_node_handler].append(
+                    start_connection_node_feat
+                )
             else:
                 start_pump_feat = pump_handler.create_new_feature(start_geom)
                 start_pump_feat["connection_node_id"] = start_connection_node_feat["id"]
             if end_connection_node_feat is None:
                 end_geom = QgsGeometry.fromPointXY(end_point)
-                end_connection_node_feat = connection_node_handler.create_new_feature_from_template(
-                    start_connection_node_feat, geometry=end_geom
+                end_connection_node_feat = (
+                    connection_node_handler.create_new_feature_from_template(
+                        start_connection_node_feat, geometry=end_geom
+                    )
                 )
-                self.extra_features[connection_node_handler].append(end_connection_node_feat)
+                self.extra_features[connection_node_handler].append(
+                    end_connection_node_feat
+                )
             self.extra_features[pump_handler].append(start_pump_feat)
         else:
             if end_connection_node_feat is None:
                 end_geom = QgsGeometry.fromPointXY(end_point)
-                end_connection_node_feat = connection_node_handler.create_new_feature_from_template(
-                    start_connection_node_feat, geometry=end_geom
+                end_connection_node_feat = (
+                    connection_node_handler.create_new_feature_from_template(
+                        start_connection_node_feat, geometry=end_geom
+                    )
                 )
-                self.extra_features[connection_node_handler].append(end_connection_node_feat)
+                self.extra_features[connection_node_handler].append(
+                    end_connection_node_feat
+                )
         # Assign features as a form instance attributes.
         self.connection_node_end = end_connection_node_feat
         self.pump = start_pump_feat
@@ -1730,7 +2125,9 @@ class PumpMapForm(AbstractFormWithTag):
         start_point, end_point = linestring[0], linestring[-1]
         pump_handler = self.layer_manager.model_handlers[dm.Pump]
         pump_layer = pump_handler.layer
-        start_pump_feats = find_point_nodes(start_point, pump_layer, allow_multiple=True)
+        start_pump_feats = find_point_nodes(
+            start_point, pump_layer, allow_multiple=True
+        )
         pump_no = len(start_pump_feats)
         if pump_no == 0:
             pump_feat = None
@@ -1738,7 +2135,10 @@ class PumpMapForm(AbstractFormWithTag):
             pump_feat = next(iter(start_pump_feats))
         else:
             pump_feats_by_id = {feat["id"]: feat for feat in start_pump_feats}
-            pump_entries = [f"{feat_id} ({feat['display_name']})" for feat_id, feat in pump_feats_by_id.items()]
+            pump_entries = [
+                f"{feat_id} ({feat['display_name']})"
+                for feat_id, feat in pump_feats_by_id.items()
+            ]
             pump_entry = self.uc.pick_item(title, message, None, *pump_entries)
             pump_id = int(pump_entry.split()[0]) if pump_entry else None
             pump_feat = pump_feats_by_id[pump_id] if pump_id else None
@@ -1807,7 +2207,9 @@ class DryWeatherFlowDistributionForm(AbstractFormWithTag, AbstractFormWithDistri
         self.populate_tag_widgets()
 
 
-class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag):
+class ChannelForm(
+    AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag
+):
     """Channel user layer edit form logic."""
 
     MODEL = dm.Channel
@@ -1816,8 +2218,12 @@ class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
         super().__init__(*args, *kwargs)
         self.cross_section_locations = None
         xs_locations_cbo_name = "cross_section_locations"
-        self.current_cross_section_locations_cbo = self.dialog.findChild(QComboBox, xs_locations_cbo_name)
-        self.custom_widgets[xs_locations_cbo_name] = self.current_cross_section_locations_cbo
+        self.current_cross_section_locations_cbo = self.dialog.findChild(
+            QComboBox, xs_locations_cbo_name
+        )
+        self.custom_widgets[xs_locations_cbo_name] = (
+            self.current_cross_section_locations_cbo
+        )
 
     @property
     def foreign_models_features(self):
@@ -1832,34 +2238,66 @@ class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
     def setup_cross_section_location_on_edit(self):
         """Setting up cross-section location during editing feature."""
         connection_node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
-        cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
+        cross_section_location_handler = self.layer_manager.model_handlers[
+            dm.CrossSectionLocation
+        ]
         connection_node_id_start = self.feature["connection_node_id_start"]
         connection_node_id_end = self.feature["connection_node_id_end"]
         channel_id = self.feature["id"]
-        self.connection_node_start = connection_node_handler.get_feat_by_id(connection_node_id_start)
-        self.connection_node_end = connection_node_handler.get_feat_by_id(connection_node_id_end)
-        self.cross_section_locations = cross_section_location_handler.get_multiple_feats_by_id(channel_id, "channel_id")
+        self.connection_node_start = connection_node_handler.get_feat_by_id(
+            connection_node_id_start
+        )
+        self.connection_node_end = connection_node_handler.get_feat_by_id(
+            connection_node_id_end
+        )
+        self.cross_section_locations = (
+            cross_section_location_handler.get_multiple_feats_by_id(
+                channel_id, "channel_id"
+            )
+        )
         if self.cross_section_locations:
-            channel_cross_section_location_ids = {str(feat["id"]): feat for feat in self.cross_section_locations}
-            self.populate_combo(self.current_cross_section_locations_cbo, channel_cross_section_location_ids, False)
+            channel_cross_section_location_ids = {
+                str(feat["id"]): feat for feat in self.cross_section_locations
+            }
+            self.populate_combo(
+                self.current_cross_section_locations_cbo,
+                channel_cross_section_location_ids,
+                False,
+            )
             self.current_cross_section_location = self.cross_section_locations[0]
 
     def setup_cross_section_location_on_creation(self):
         """Setting up cross-section location during adding feature."""
-        cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
+        cross_section_location_handler = self.layer_manager.model_handlers[
+            dm.CrossSectionLocation
+        ]
         channel_geom = self.feature.geometry()
         linestring = self.feature.geometry().asPolyline()
         if len(linestring) >= 3:
             cross_section_location_point = linestring[1]
-            cross_section_location_geom = QgsGeometry.fromPointXY(cross_section_location_point)
+            cross_section_location_geom = QgsGeometry.fromPointXY(
+                cross_section_location_point
+            )
         else:
-            cross_section_location_geom = channel_geom.interpolate(channel_geom.length() / 2.0)
-        cross_section_location_feat = cross_section_location_handler.create_new_feature(cross_section_location_geom)
-        channel_cross_section_location_ids = {str(cross_section_location_feat["id"]): cross_section_location_feat}
-        self.populate_combo(self.current_cross_section_locations_cbo, channel_cross_section_location_ids, False)
+            cross_section_location_geom = channel_geom.interpolate(
+                channel_geom.length() / 2.0
+            )
+        cross_section_location_feat = cross_section_location_handler.create_new_feature(
+            cross_section_location_geom
+        )
+        channel_cross_section_location_ids = {
+            str(cross_section_location_feat["id"]): cross_section_location_feat
+        }
+        self.populate_combo(
+            self.current_cross_section_locations_cbo,
+            channel_cross_section_location_ids,
+            False,
+        )
         self.cross_section_locations = [cross_section_location_feat]
         self.current_cross_section_location = cross_section_location_feat
-        self.extra_features[cross_section_location_handler].append(self.current_cross_section_location)
+        self.extra_features[cross_section_location_handler].append(
+            self.current_cross_section_location
+        )
 
     def fill_related_attributes(self):
         """Filling feature values based on related features attributes."""
@@ -1875,37 +2313,67 @@ class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
         except StopIteration:
             global_settings_feat = None
         if global_settings_feat:
-            self.current_cross_section_location["friction_type"] = global_settings_feat["friction_type"]
+            self.current_cross_section_location["friction_type"] = global_settings_feat[
+                "friction_type"
+            ]
 
     def set_current_cross_section_location(self, current_text):
         """Set handling of selected channel cross-section location."""
         if current_text:
-            cross_section_location_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
+            cross_section_location_handler = self.layer_manager.model_handlers[
+                dm.CrossSectionLocation
+            ]
             for signal, slot in self.dialog.active_form_signals:
                 disconnect_signal(signal, slot)
-            self.current_cross_section_location = cross_section_location_handler.get_feat_by_id(int(current_text))
+            self.current_cross_section_location = (
+                cross_section_location_handler.get_feat_by_id(int(current_text))
+            )
             self.populate_foreign_widgets()
             for signal, slot in self.dialog.active_form_signals:
                 connect_signal(signal, slot)
             self.populate_cross_section_table_data()
-        setup_cross_section_widgets(self, self.cross_section_shape, self.cross_section_prefix)
+        setup_cross_section_widgets(
+            self, self.cross_section_shape, self.cross_section_prefix
+        )
 
     def set_cross_section_location_value_from_widget(self, widget, field_name):
         """Set currently selected cross-section attribute."""
-        self.set_value_from_widget(widget, self.current_cross_section_location, dm.CrossSectionLocation, field_name)
+        self.set_value_from_widget(
+            widget,
+            self.current_cross_section_location,
+            dm.CrossSectionLocation,
+            field_name,
+        )
 
     def connect_foreign_widgets(self):
         """Connect widget signals responsible for handling related layers attributes."""
-        for widget_name, (widget, model_cls, numerical_modifier, field_name) in self.foreign_widgets.items():
+        for widget_name, (
+            widget,
+            model_cls,
+            numerical_modifier,
+            field_name,
+        ) in self.foreign_widgets.items():
             signal = self.get_widget_editing_signal(widget)
             try:
-                feature_or_features = self.foreign_models_features[model_cls, numerical_modifier]
+                feature_or_features = self.foreign_models_features[
+                    model_cls, numerical_modifier
+                ]
             except KeyError:
                 continue
             if model_cls == dm.CrossSectionLocation:
-                slot = partial(self.set_cross_section_location_value_from_widget, widget, field_name)
+                slot = partial(
+                    self.set_cross_section_location_value_from_widget,
+                    widget,
+                    field_name,
+                )
             else:
-                slot = partial(self.set_value_from_widget, widget, feature_or_features, model_cls, field_name)
+                slot = partial(
+                    self.set_value_from_widget,
+                    widget,
+                    feature_or_features,
+                    model_cls,
+                    field_name,
+                )
             connect_signal(signal, slot)
             self.dialog.active_form_signals.add((signal, slot))
 
@@ -1919,7 +2387,10 @@ class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithXSTable, Abstrac
 
     def populate_foreign_widgets(self):
         """Populating values within foreign layers widgets."""
-        for (data_model_cls, start_end_modifier), feature_or_features in self.foreign_models_features.items():
+        for (
+            data_model_cls,
+            start_end_modifier,
+        ), feature_or_features in self.foreign_models_features.items():
             if data_model_cls == dm.CrossSectionLocation:
                 feature = self.current_cross_section_location
             else:
@@ -1970,58 +2441,99 @@ class CrossSectionLocationForm(AbstractFormWithXSTable):
         point_geom = self.feature.geometry()
         point = point_geom.asPoint()
         if find_point_nodes(point, connection_node_handler.layer) is not None:
-            self.uc.show_warn("WARNING: Cross-section shouldn't be placed at connection node location!")
+            self.uc.show_warn(
+                "WARNING: Cross-section shouldn't be placed at connection node location!"
+            )
         channel_feat = find_point_polyline(point, channel_layer)
         if channel_feat:
             channel_id = channel_feat["id"]
             channel_geom = channel_feat.geometry()
             point_distance_on_channel = channel_geom.lineLocatePoint(point_geom)
-            other_cross_sections = self.handler.get_multiple_feats_by_id(channel_id, "channel_id")
+            other_cross_sections = self.handler.get_multiple_feats_by_id(
+                channel_id, "channel_id"
+            )
             other_cross_sections_num = len(other_cross_sections)
             cross_section_num = other_cross_sections_num + 1
             channel_code = channel_feat["code"]
-            cross_section_location_code = f"{channel_code}_cross_section_{cross_section_num}"
+            cross_section_location_code = (
+                f"{channel_code}_cross_section_{cross_section_num}"
+            )
             self.feature["channel_id"] = channel_id
             self.feature["code"] = cross_section_location_code
             self.channel = channel_feat
             if other_cross_sections:
                 new_feat_with_distance = (self.feature, point_distance_on_channel)
                 cross_sections_with_distance = [
-                    (feat, channel_geom.lineLocatePoint(feat.geometry())) for feat in other_cross_sections
+                    (feat, channel_geom.lineLocatePoint(feat.geometry()))
+                    for feat in other_cross_sections
                 ]
                 cross_sections_with_distance.append(new_feat_with_distance)
                 cross_sections_with_distance.sort(key=itemgetter(-1))
-                new_feat_index = cross_sections_with_distance.index(new_feat_with_distance)
-                near_cross_sections_fields = ["reference_level", "bank_level", "friction_value"]
+                new_feat_index = cross_sections_with_distance.index(
+                    new_feat_with_distance
+                )
+                near_cross_sections_fields = [
+                    "reference_level",
+                    "bank_level",
+                    "friction_value",
+                ]
                 near_cross_sections_values = {}
                 if new_feat_index == 0:
                     # New cross-section is first along channel
-                    closest_existing_cross_section, closest_xs_distance = cross_sections_with_distance[1]
+                    closest_existing_cross_section, closest_xs_distance = (
+                        cross_sections_with_distance[1]
+                    )
                     for field_name in near_cross_sections_fields:
-                        near_cross_sections_values[field_name] = closest_existing_cross_section[field_name]
+                        near_cross_sections_values[field_name] = (
+                            closest_existing_cross_section[field_name]
+                        )
                 elif new_feat_index == other_cross_sections_num:
                     # New cross-section is last along channel
-                    closest_existing_cross_section, closest_xs_distance = cross_sections_with_distance[-2]
+                    closest_existing_cross_section, closest_xs_distance = (
+                        cross_sections_with_distance[-2]
+                    )
                     for field_name in near_cross_sections_fields:
-                        near_cross_sections_values[field_name] = closest_existing_cross_section[field_name]
+                        near_cross_sections_values[field_name] = (
+                            closest_existing_cross_section[field_name]
+                        )
                 else:
                     # New cross-section is somewhere in the middle
-                    before_xs, before_xs_distance = cross_sections_with_distance[new_feat_index - 1]
-                    after_xs, after_xs_distance = cross_sections_with_distance[new_feat_index + 1]
-                    point_distance_to_before = point_distance_on_channel - before_xs_distance
-                    point_distance_to_after = after_xs_distance - point_distance_on_channel
+                    before_xs, before_xs_distance = cross_sections_with_distance[
+                        new_feat_index - 1
+                    ]
+                    after_xs, after_xs_distance = cross_sections_with_distance[
+                        new_feat_index + 1
+                    ]
+                    point_distance_to_before = (
+                        point_distance_on_channel - before_xs_distance
+                    )
+                    point_distance_to_after = (
+                        after_xs_distance - point_distance_on_channel
+                    )
                     if point_distance_to_before < point_distance_to_after:
-                        closest_existing_cross_section, closest_xs_distance = before_xs, before_xs_distance
+                        closest_existing_cross_section, closest_xs_distance = (
+                            before_xs,
+                            before_xs_distance,
+                        )
                     else:
-                        closest_existing_cross_section, closest_xs_distance = after_xs, after_xs_distance
+                        closest_existing_cross_section, closest_xs_distance = (
+                            after_xs,
+                            after_xs_distance,
+                        )
                     before_to_after_distance = after_xs_distance - before_xs_distance
-                    interpolation_coefficient = point_distance_to_before / before_to_after_distance
+                    interpolation_coefficient = (
+                        point_distance_to_before / before_to_after_distance
+                    )
                     for field_name in near_cross_sections_fields:
                         before_value = before_xs[field_name]
                         after_value = after_xs[field_name]
                         if before_value != NULL and after_value != NULL:
                             value = round(
-                                before_value + ((after_value - before_value) * interpolation_coefficient),
+                                before_value
+                                + (
+                                    (after_value - before_value)
+                                    * interpolation_coefficient
+                                ),
                                 3,
                             )
                         elif before_value != NULL and after_value == NULL:
@@ -2042,7 +2554,9 @@ class CrossSectionLocationForm(AbstractFormWithXSTable):
                     "cross_section_friction_values",
                     "cross_section_vegetation_table",
                 ]:
-                    self.feature[xs_field_name] = closest_existing_cross_section[xs_field_name]
+                    self.feature[xs_field_name] = closest_existing_cross_section[
+                        xs_field_name
+                    ]
         try:
             global_settings_feat = next(global_settings_layer.getFeatures())
             self.feature["friction_type"] = global_settings_feat["friction_type"]
@@ -2104,7 +2618,9 @@ class ExchangeLineForm(AbstractFormWithTag):
         self.populate_tag_widgets()
 
 
-class BoundaryCondition1D(AbstractFormWithTag, AbstractFormWithNode, AbstractFormWithTimeseries):
+class BoundaryCondition1D(
+    AbstractFormWithTag, AbstractFormWithNode, AbstractFormWithTimeseries
+):
     """Boundary Condition 1D user layer edit form logic."""
 
     MODEL = dm.BoundaryCondition1D
@@ -2206,14 +2722,27 @@ class MeasureLocation(AbstractFormWithNode, AbstractFormWithTag):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
 
+
 def map_action_type_to_labels(action_type_str: str):
-    if action_type_str == en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " "):
-        return ("Discharge coefficient positive [-]", "Discharge coefficient negative [-]")
-    elif action_type_str == en.ActionType.SET_CREST_LEVEL.value.capitalize().replace("_", " "):
+    if (
+        action_type_str
+        == en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " ")
+    ):
+        return (
+            "Discharge coefficient positive [-]",
+            "Discharge coefficient negative [-]",
+        )
+    elif action_type_str == en.ActionType.SET_CREST_LEVEL.value.capitalize().replace(
+        "_", " "
+    ):
         return ("Crest level [m MSL]", "")
-    elif action_type_str == en.ActionType.SET_GATE_LEVEL.value.capitalize().replace("_", " "):
+    elif action_type_str == en.ActionType.SET_GATE_LEVEL.value.capitalize().replace(
+        "_", " "
+    ):
         return ("Gate level [m MSL]", "")
-    elif action_type_str == en.ActionType.SET_PUMP_CAPACITY.value.capitalize().replace("_", " "):
+    elif action_type_str == en.ActionType.SET_PUMP_CAPACITY.value.capitalize().replace(
+        "_", " "
+    ):
         return ("Pump capacity [L/s]", "")
     else:
         raise NotImplementedError(f"Unsupported action type: {action_type_str}")
@@ -2244,10 +2773,15 @@ class MemoryControl(AbstractFormWithTargetStructure, AbstractFormWithTag):
             action_value_2_label.setText("Action value 2")
             return
 
-        if action_type_str != en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " "):
+        if (
+            action_type_str
+            != en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace(
+                "_", " "
+            )
+        ):
             # If action type is anything other than "set_discharge_coefficients", disable action value 2
-            action_value_2.setValue(0.0) # TODO: also fires save_table_edits?
-            action_value_2.setEnabled(False) 
+            action_value_2.setValue(0.0)  # TODO: also fires save_table_edits?
+            action_value_2.setEnabled(False)
         else:
             action_value_2.setEnabled(True)
 
@@ -2255,7 +2789,10 @@ class MemoryControl(AbstractFormWithTargetStructure, AbstractFormWithTag):
         action_value_1_label.setText(label1 or "Action value")
         action_value_2_label.setText(label2 or "Action value 2")
 
-class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable, AbstractFormWithTag):
+
+class TableControl(
+    AbstractFormWithTargetStructure, AbstractFormWithActionTable, AbstractFormWithTag
+):
     """Table Control user layer edit form logic."""
 
     MODEL = dm.TableControl
@@ -2296,7 +2833,12 @@ class TableControl(AbstractFormWithTargetStructure, AbstractFormWithActionTable,
             return
 
         action_type_column_idx = 2
-        if action_type_str != en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace("_", " "):
+        if (
+            action_type_str
+            != en.ActionType.SET_DISCHARGE_COEFFICIENTS.value.capitalize().replace(
+                "_", " "
+            )
+        ):
             # Clear the values in the to-be-hidden column, also fires save_table_edits
             for r in range(self.table.rowCount()):
                 item = self.table.item(r, action_type_column_idx)
@@ -2336,7 +2878,8 @@ class MeasureMap(AbstractFormWithTag):
     def control_types(self):
         """Return supported structure control data models."""
         control_data_models = {
-            model_cls.__tablename__.split("_", 1)[0]: model_cls for model_cls in [dm.TableControl, dm.MemoryControl]
+            model_cls.__tablename__.split("_", 1)[0]: model_cls
+            for model_cls in [dm.TableControl, dm.MemoryControl]
         }
         return control_data_models
 
@@ -2352,8 +2895,12 @@ class MeasureMap(AbstractFormWithTag):
         except KeyError:
             pass
         try:
-            measure_location_handler = self.layer_manager.model_handlers[dm.MeasureLocation]
-            measure_location_feat = measure_location_handler.get_feat_by_id(self.feature["measure_location_id"])
+            measure_location_handler = self.layer_manager.model_handlers[
+                dm.MeasureLocation
+            ]
+            measure_location_feat = measure_location_handler.get_feat_by_id(
+                self.feature["measure_location_id"]
+            )
             self.measure_location_feature = measure_location_feat
         except KeyError:
             pass
@@ -2363,8 +2910,13 @@ class MeasureMap(AbstractFormWithTag):
         measure_location_handler = self.layer_manager.model_handlers[dm.MeasureLocation]
         measure_location_layer = measure_location_handler.layer
         feature_linestring = self.feature.geometry().asPolyline()
-        feature_start_point, feature_end_point = feature_linestring[0], feature_linestring[-1]
-        measure_location_feat = find_point_nodes(feature_start_point, measure_location_layer)
+        feature_start_point, feature_end_point = (
+            feature_linestring[0],
+            feature_linestring[-1],
+        )
+        measure_location_feat = find_point_nodes(
+            feature_start_point, measure_location_layer
+        )
         if measure_location_feat is not None:
             self.measure_location_feature = measure_location_feat
         for control_type, control_model_cls in self.control_types.items():
@@ -2373,7 +2925,10 @@ class MeasureMap(AbstractFormWithTag):
             feature_end_point = self.feature.geometry().asPolyline()[-1]
             control_feat = find_point_nodes(feature_end_point, control_layer)
             if control_feat is not None:
-                self.control_feature, self.control_feature_type = control_feat, control_type
+                self.control_feature, self.control_feature_type = (
+                    control_feat,
+                    control_type,
+                )
                 break
 
     def populate_with_extra_widgets(self):

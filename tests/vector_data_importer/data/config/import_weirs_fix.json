@@ -1,0 +1,173 @@
+{
+  "target_layer": "weir",
+  "fields": {
+    "id": {
+      "method": "auto",
+      "source_attribute": ""
+    },
+    "code": {
+      "method": "source_attribute",
+      "source_attribute": "fid"
+    },
+    "display_name": {
+      "method": "expression",
+      "source_attribute": "",
+      "expression": "'Weir '||id"
+    },
+    "crest_level": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "crest_type": {
+      "method": "default",
+      "source_attribute": "",
+      "default_value": 4,
+      "expression": "-- 3:  /*Broad crested*/\r\n-- 4:  /*Short crested*/\r\n\r\nCASE WHEN \"CrestWidth\" >= 5 THEN 3 \r\n     WHEN \"CrestWidth\" < 5 THEN 4 \r\n\t ELSE 3 \r\nEND\r\n\r\n-- ELSE: CrestWidth IS NULL\r\n"
+    },
+    "discharge_coefficient_positive": {
+      "method": "expression",
+      "source_attribute": "",
+      "expression": "CASE \r\n\tWHEN \"allowedflowdir\"  in ('both', 'positive') THEN  \"corrcoeff\" \r\n\tWHEN \"allowedflowdir\"  in ('none', 'negative') THEN  0\r\nEND\r\n"
+    },
+    "discharge_coefficient_negative": {
+      "method": "expression",
+      "source_attribute": "",
+      "expression": "CASE \r\n\tWHEN \"allowedflowdir\"  in ('both', 'negative') THEN  \"corrcoeff\" \r\n\tWHEN \"allowedflowdir\"  in ('none', 'positive') THEN  0\r\nEND\r\n"
+    },
+    "material_id": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "friction_value": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "friction_type": {
+      "method": "ignore",
+      "source_attribute": "",
+      "default_value": 2
+    },
+    "sewerage": {
+      "method": "default",
+      "source_attribute": "",
+      "default_value": false
+    },
+    "external": {
+      "method": "default",
+      "source_attribute": "",
+      "default_value": false
+    },
+    "connection_node_id_start": {
+      "method": "auto",
+      "source_attribute": ""
+    },
+    "connection_node_id_end": {
+      "method": "auto",
+      "source_attribute": ""
+    },
+    "cross_section_shape": {
+      "method": "default",
+      "source_attribute": "",
+      "default_value": 1
+    },
+    "cross_section_width": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "cross_section_height": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "cross_section_table": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "tags": {
+      "method": "ignore",
+      "source_attribute": ""
+    }
+  },
+  "connection_nodes": {
+    "snap": true,
+    "snap_distance": 0.1,
+    "create_nodes": true
+  },
+  "point_to_line_conversion": {
+    "length": {
+      "method": "source_attribute",
+      "source_attribute": "weir_length",
+      "default_value": 1.0
+    },
+    "azimuth": {
+      "method": "default",
+      "default_value": 90
+    }
+  },
+  "integration": {
+    "integration_mode": "channels",
+    "min_length": 5.0
+  },
+  "connection_node_fields": {
+    "id": {
+      "method": "auto",
+      "source_attribute": ""
+    },
+    "code": {
+      "method": "expression",
+      "source_attribute": "",
+      "expression": "'Weir '||\"id\""
+    },
+    "display_name": {
+      "method": "ignore",
+      "source_attribute": "",
+      "expression": "'Orifice '||\"LongName\""
+    },
+    "storage_area": {
+      "method": "ignore",
+      "source_attribute": "",
+      "default_value": 1.0
+    },
+    "initial_water_level": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "visualisation": {
+      "method": "default",
+      "source_attribute": "",
+      "default_value": 99
+    },
+    "manhole_surface_level": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "bottom_level": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "exchange_level": {
+      "method": "source_attribute",
+      "source_attribute": "bank_level"
+    },
+    "exchange_type": {
+      "method": "default",
+      "source_attribute": "",
+      "default_value": 2
+    },
+    "exchange_thickness": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "hydraulic_conductivity_in": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "hydraulic_conductivity_out": {
+      "method": "ignore",
+      "source_attribute": ""
+    },
+    "tags": {
+      "method": "ignore",
+      "source_attribute": ""
+    }
+  }
+}

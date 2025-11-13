@@ -56,7 +56,9 @@ class WorkspaceContextManager:
             if layer_manager == self.active_layer_manager:
                 del self.active_layer_manager
             del self.layer_managers[layer_manager.model_gpkg_path]
-            lm_idx = self.plugin.active_schematisation_combo.findData(layer_manager.model_gpkg_path)
+            lm_idx = self.plugin.active_schematisation_combo.findData(
+                layer_manager.model_gpkg_path
+            )
             self.plugin.active_schematisation_combo.removeItem(lm_idx)
         if self.layer_managers:
             self.set_active_layer_manager(next(iter(self.layer_managers.values())))
@@ -70,5 +72,7 @@ class WorkspaceContextManager:
     def set_active_layer_manager(self, layer_manager):
         """Set the active Layer Manager instance."""
         self.active_layer_manager = layer_manager
-        lm_idx = self.plugin.active_schematisation_combo.findData(layer_manager.model_gpkg_path)
+        lm_idx = self.plugin.active_schematisation_combo.findData(
+            layer_manager.model_gpkg_path
+        )
         self.plugin.active_schematisation_combo.setCurrentIndex(lm_idx)
