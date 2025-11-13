@@ -5,6 +5,7 @@ from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingException,
+    QgsProcessingOutputFile,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterFile,
     QgsProject,
@@ -85,6 +86,13 @@ class BaseImporter(QgsProcessingAlgorithm):
         )
         self.addParameter(target_gpkg)
 
+        # Hidden file output. Not shown in UI, but available in processing model builder
+        self.addOutput(
+            QgsProcessingOutputFile(
+                self.TARGET_GPKG,
+                'Target schematisation database'
+            )
+        )
     def get_source_layer_types(self):
         # Default is both line and point, overridden in connection nodes
         return [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint]
@@ -147,7 +155,7 @@ class BaseImporter(QgsProcessingAlgorithm):
         # Use the right import method based on the importer type
         importer.import_features(context=context)
         importer.commit_pending_changes()
-        return {}
+        return {self.TARGET_GPKG: target_gpkg}
 
 
 class SimpleImporter(BaseImporter):
