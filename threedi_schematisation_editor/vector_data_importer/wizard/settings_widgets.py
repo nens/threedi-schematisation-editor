@@ -419,7 +419,7 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
 
     @property
     def group_name(self):
-        return "Join to channel by attribute"
+        return "Join to channel by attribute (optional)"
 
     def _sync_auto_methods(self, top_left, bottom_right, roles):
         table_model = self.field_map_widget.table_model
