@@ -23,9 +23,11 @@ from qgis.PyQt.QtWidgets import (
     QTableView,
     QVBoxLayout,
     QWidget,
+    QWizardPage,
 )
 
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
+from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map import (
     FieldMapColumn,
@@ -35,6 +37,14 @@ from threedi_schematisation_editor.vector_data_importer.wizard.field_map import 
 from threedi_schematisation_editor.vector_data_importer.wizard.models import (
     GenericSettingsModel,
 )
+
+
+def get_wizard(widget) -> Optional["QWizard"]:
+    """Helper function to get the parent VDIWizard instance"""
+    parent = widget.parent()
+    if isinstance(widget.parent(), QWizardPage):
+        return parent.wizard()
+    return None
 
 
 class LayerSettingsWidget(QWidget):
@@ -225,16 +235,18 @@ class IntegrationSettingsWidget(SettingsWidget):
 
     def setup_integration_settings(self, settings_container):
         grid_layout = QGridLayout()
-        grid_layout.addWidget(QLabel("Snap to channel/pipe withing"), 0, 0)
+        grid_layout.addWidget(QLabel("Snap to channel/pipe within"), 0, 0)
         grid_layout.addWidget(
             QLabel("Minimum length of a channel/pipe after edit"), 1, 0
         )
         self.snap_distance = QDoubleSpinBox()
         self.snap_distance.setMinimum(sm.get_field_min(self.model, "snap_distance"))
         self.snap_distance.setMaximum(sm.get_field_max(self.model, "snap_distance"))
+        self.snap_distance.setSuffix(" m")
         self.min_length = QDoubleSpinBox()
         self.min_length.setMinimum(sm.get_field_min(self.model, "min_length"))
         self.min_length.setMaximum(sm.get_field_max(self.model, "min_length"))
+        self.min_length.setSuffix(" m")
         grid_layout.addWidget(self.snap_distance, 0, 1)
         grid_layout.addWidget(self.min_length, 1, 1)
         settings_container.setLayout(grid_layout)
@@ -352,6 +364,8 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
             ),
         }
         self.setup_ui(row_dict)
+        self.field_map_widget.table_model.set_default_value_units("length", " m")
+        self.field_map_widget.table_model.set_default_value_units("azimuth", " m")
 
     @property
     def group_name(self):
@@ -368,11 +382,15 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
                 config=self.model.join_field_src,
             ),
             "join_field_tgt": FieldMapRow(
-                label="Join field in source", config=self.model.join_field_tgt
+                label="Join field in source layer", config=self.model.join_field_tgt
             ),
         }
         extra_layout = self.get_extra_layout()
         self.setup_ui(row_dict, extra_layout)
+        # Use channel layer for join_field_src attributes
+        self.field_map_widget.table_model.set_fixed_source_attributes_from_data_model(
+            "join_field_src", dm.Channel
+        )
 
     def get_extra_layout(self) -> list[QBoxLayout]:
         snap_distance_label = QLabel("Snap to geometry object within:")
@@ -401,7 +419,7 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
 
     @property
     def group_name(self):
-        return "Join to channel by attribute"
+        return "Join to channel by attribute (optional)"
 
     def _sync_auto_methods(self, top_left, bottom_right, roles):
         table_model = self.field_map_widget.table_model

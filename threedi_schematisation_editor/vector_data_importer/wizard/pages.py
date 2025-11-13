@@ -1,10 +1,9 @@
 from typing import Optional, Type
 
 from pydantic import BaseModel
-from qgis.core import Qgis, QgsMessageLog
+from qgis.core import Qgis, QgsApplication, QgsMessageLog
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor, QIcon, QPalette, QTextBlockFormat, QTextCharFormat
-
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -17,6 +16,7 @@ from qgis.PyQt.QtWidgets import (
     QProgressBar,
     QPushButton,
     QSizePolicy,
+    QStyle,
     QTableView,
     QToolButton,
     QVBoxLayout,
@@ -146,10 +146,12 @@ class SettingsPage(QWizardPage):
 
 
 class FieldMapPage(QWizardPage):
-    def __init__(self, model_cls, name):
+    def __init__(self, model_cls, name, title_suffix=None):
         super().__init__()
         self.row_dict = self.create_rows(model_cls)
-        self.layer_name = model_cls.__layername__.lower()
+        self.title_suffix = (
+            title_suffix if title_suffix else f"{model_cls.__layername__.lower()}s"
+        )
         self.setup_ui()
         self.name = name
 
@@ -176,7 +178,7 @@ class FieldMapPage(QWizardPage):
         if layer:
             self.field_map_widget.update_layer(layer)
         self.setTitle(
-            f"Map {self.wizard().selected_layer.name()} fields to {self.layer_name}s"
+            f"Map {self.wizard().selected_layer.name()} fields to {self.title_suffix}"
         )
         super().initializePage()
 
@@ -221,13 +223,13 @@ class RunPage(QWizardPage):
         self.log = LogPanel()
 
         # Save to template
-        save_settings_button = QPushButton("Choose file...")
-        save_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        save_settings_button.clicked.connect(self.on_save_button_clicked)
+        self.save_settings_button = QPushButton("Save as...")
+        self.save_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.save_settings_button.clicked.connect(self.on_save_button_clicked)
         self.saved_status = QLabel("Import configuration not saved")
         save_box = QGroupBox("Save import configuration to template (optional)")
         layout = QVBoxLayout()
-        layout.addWidget(save_settings_button)
+        layout.addWidget(self.save_settings_button)
         layout.addWidget(self.saved_status)
         save_box.setLayout(layout)
 
@@ -236,6 +238,16 @@ class RunPage(QWizardPage):
         main_layout.addWidget(self.log)
         main_layout.addWidget(save_box)
         self.setLayout(main_layout)
+
+    def on_run_start(self):
+        self.cancel_button.setEnabled(True)
+        self.progress_bar.reset()
+        self.save_settings_button.setEnabled(False)
+        self.clear_log()
+
+    def on_run_finish(self):
+        self.cancel_button.setEnabled(False)
+        self.save_settings_button.setEnabled(True)
 
     def update_log(self, msg: str, fg_color: Optional[str] = None):
         if msg in [None, ""]:
@@ -247,18 +259,13 @@ class RunPage(QWizardPage):
         cursor.insertText(msg + "\n", format)
         self.log.text.ensureCursorVisible()
 
+    def clear_log(self):
+        self.log.text.clear()
+
     def on_cancel(self):
         QgsMessageLog.logMessage("Cancel requested", "DEBUG", Qgis.Info)
         self.cancel_requested.emit()
         self.cancel_button.setEnabled(False)
-
-    def on_run_import(self):
-        self.cancel_button.setEnabled(True)
-        self.wizard().run_import()
-        self.cancel_button.setEnabled(False)
-
-    def initializePage(self):
-        settings = self.wizard().get_settings()
 
 
 class LogPanel(QWidget):
@@ -276,44 +283,32 @@ class LogPanel(QWidget):
         palette.setColor(QPalette.Text, QColor("black"))
         self.setPalette(palette)
 
-        # --- Buttons ---
-        copy_button = QToolButton()
-        copy_button.setIcon(QIcon.fromTheme("edit-copy"))
+        # --- Copy Button ---
+        copy_button = QToolButton(self.text)
+        copy_button.setIcon(QgsApplication.getThemeIcon("mActionEditCopy.svg"))
         copy_button.setToolTip("Copy log to clipboard")
         copy_button.clicked.connect(self.copy_log)
 
-        save_button = QToolButton()
-        save_button.setIcon(QIcon.fromTheme("document-save"))
-        save_button.setToolTip("Save log to file")
-        save_button.clicked.connect(self.save_log)
-
-        clear_button = QToolButton()
-        clear_button.setIcon(QIcon.fromTheme("edit-clear"))
-        clear_button.setToolTip("Clear log")
-        clear_button.clicked.connect(self.text.clear)
+        # Make button background transparent
+        copy_button.setStyleSheet(
+            "QToolButton { background: transparent; border: none; }"
+        )
 
         # --- Layout ---
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(copy_button)
-        button_layout.addWidget(save_button)
-        button_layout.addWidget(clear_button)
-        button_layout.addStretch()
-
         layout = QVBoxLayout()
         layout.addWidget(self.text)
-        layout.addLayout(button_layout)
         self.setLayout(layout)
+
+        # Position the copy button in the top-right corner of the text area
+        def updateButtonPosition():
+            margin = 5  # pixels from the edge
+            copy_button.move(self.text.width() - copy_button.width() - margin, margin)
+
+        # Update button position when text area is resized
+        self.text.resizeEvent = lambda e: updateButtonPosition()
+        updateButtonPosition()
 
     # --- Slots ---
     def copy_log(self) -> None:
         self.text.selectAll()
         self.text.copy()
-
-    def save_log(self) -> None:
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Save Log", "log.txt", "Text Files (*.txt)"
-        )
-        if not path:
-            return
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(self.text.toPlainText())

@@ -6,6 +6,7 @@ from pydantic import ValidationError
 
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
+from threedi_schematisation_editor.utils import get_type_for_casting
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 
 
@@ -54,6 +55,13 @@ def test_create_field_map_config():
     assert isinstance(valid_config, sm.FieldMapConfig)
 
 
+def test_create_field_map_config_with_type():
+    allowed_methods = [ColumnImportMethod.IGNORE, ColumnImportMethod.DEFAULT]
+    config = sm.create_field_map_config(allowed_methods, field_type=Optional[int])
+    valid_config = config(method=ColumnImportMethod.IGNORE)
+    assert valid_config.model_fields["default_value"].annotation.__args__[0] == int
+
+
 class TestGetAllowedMethodsForModelClassField:
     @staticmethod
     def get_metadata(allowed_methods):
@@ -63,7 +71,10 @@ class TestGetAllowedMethodsForModelClassField:
         return metadata
 
     @pytest.mark.parametrize("is_optional", [False, True])
-    @pytest.mark.parametrize("allowed_methods", [None, [ColumnImportMethod.IGNORE]])
+    @pytest.mark.parametrize(
+        "allowed_methods",
+        [None, [ColumnImportMethod.IGNORE], [ColumnImportMethod.DEFAULT]],
+    )
     def test_optional(self, is_optional, allowed_methods):
         # By not including metadata in this test we test for the case where all methods are allowed
         # If allowed or excluded fields are specified, IGNORE may not be allowed even for an optional type

@@ -44,7 +44,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
 
 class ImportWorker(QObject):
     progress = pyqtSignal(dict)
-    finished = pyqtSignal(str, str, str)  # message, success
+    finished = pyqtSignal(bool, str, str, str)  # message, success
 
     def __init__(self, callable_func, cancellation_token):
         super().__init__()
@@ -64,11 +64,13 @@ class ImportWorker(QObject):
                 status_msg = "Import was cancelled.\n"
             else:
                 status_msg = "Import completed successfully.\n"
+            success = True
         except Exception as e:
             status_msg = "Import failed with traceback:"
             error_msg = f"{traceback.format_exc()}"
+            success = False
         warning_msg = warnings_catcher.warnings_msg
-        self.finished.emit(status_msg, warning_msg, error_msg)
+        self.finished.emit(success, status_msg, warning_msg, error_msg)
 
 
 class VDIWizard(QWizard):
@@ -82,6 +84,8 @@ class VDIWizard(QWizard):
         dm.CrossSectionLocation: vdi_importers.CrossSectionLocationImporter,
     }
     settings_widgets_classes: list[SettingsWidget] = []
+    import_started = pyqtSignal()
+    import_finished = pyqtSignal()
 
     def __init__(
         self,
@@ -91,12 +95,10 @@ class VDIWizard(QWizard):
         parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
-        self.import_finished = False
         self.model_cls = model_cls
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self.setup_ui()
-        self.setOption(QWizard.NoCancelButton, True)
 
     @property
     def wizard_title(self):
@@ -142,7 +144,15 @@ class VDIWizard(QWizard):
         for page in self.connection_node_pages:
             self.addPage(page)
         self.addPage(self.run_page)
+        # Connect import start and finish signals
+        self.import_started.connect(self.run_page.on_run_start)
+        self.import_started.connect(lambda: self.set_enabled_nav(False))
+        self.import_finished.connect(self.run_page.on_run_finish)
+        self.import_finished.connect(lambda: self.set_enabled_nav(True))
+        # Rename buttons
+        self.setButtonText(self.CancelButton, "Close")
         self.setButtonText(self.FinishButton, "Run import")
+        # set up button to run import
         self.finish_button = self.button(self.FinishButton)
         self.finish_button.clicked.disconnect()
         self.finish_button.clicked.connect(self.run_import)
@@ -259,11 +269,19 @@ class VDIWizard(QWizard):
             **layer_dict,
         )
 
-    def run_import(self):
-        self.finish_button.setEnabled(False)
-        self.run_page.cancel_button.setEnabled(True)
-        progress_bar = self.run_page.progress_bar
+    def set_enabled_nav(self, enabled):
+        buttons = [
+            self.NextButton,
+            self.BackButton,
+            self.CancelButton,
+            self.FinishButton,
+        ]
+        for button in buttons:
+            self.button(button).setEnabled(enabled)
 
+    def run_import(self):
+        self.import_started.emit()
+        progress_bar = self.run_page.progress_bar
         settings = self.get_settings()
         selected_feat_ids = (
             self.use_selected_features
@@ -280,7 +298,7 @@ class VDIWizard(QWizard):
         cancellation_token = CancellationToken()
         self.run_page.cancel_requested.connect(cancellation_token.cancel)
         importer.processor._cancellation_token = cancellation_token
-        if importer.integrator:
+        if isinstance(importer, vdi_importers.SpatialImporter) and importer.integrator:
             importer.integrator._cancellation_token = cancellation_token
 
         # Setup worker and thread
@@ -301,7 +319,7 @@ class VDIWizard(QWizard):
         def update_progress(progress_dict):
             if progress_dict["maximum"] is not None:
                 progress_bar.setMaximum(progress_dict["maximum"])
-            if progress_dict["value"]:
+            if progress_dict["value"] is not None:
                 progress_bar.setValue(progress_dict["value"])
             elif progress_dict["add"]:
                 progress_bar.setValue(progress_bar.value() + progress_dict["add"])
@@ -309,11 +327,11 @@ class VDIWizard(QWizard):
         self.worker.progress.connect(update_progress)
 
         # Connect finish handling
-        def handle_finished(status_msg, warning_msg, error_msg):
+        def handle_finished(success, status_msg, warning_msg, error_msg):
             error_color = "#FF0000"
             warning_color = "#FFA500"
             self.run_page.update_log(
-                status_msg, fg_color=error_color if error_msg else None
+                status_msg, fg_color=error_color if not success else None
             )
             self.run_page.update_log(error_msg)
             self.run_page.update_log(warning_msg, fg_color=warning_color)
@@ -322,13 +340,11 @@ class VDIWizard(QWizard):
                 "so you can review the changes before saving them to the layers."
             )
             self.run_page.update_log(final_msg)
-
             self.run_page.cancel_button.setEnabled(False)
             for handler in handlers:
                 handler.connect_handler_signals()
                 handler.layer.triggerRepaint()
-            self.run_page.cancel_button.setEnabled(False)
-            self.finish_button.setEnabled(True)
+            self.import_finished.emit()
 
         self.worker.finished.connect(handle_finished)
 
@@ -432,6 +448,14 @@ class ImportCrossSectionDataWizard(VDIWizard):
     @property
     def wizard_title(self):
         return f"Import {self.model_cls.__layername__}"
+
+    @cached_property
+    def field_map_page(self):
+        return FieldMapPage(
+            model_cls=self.model_cls,
+            name="fields",
+            title_suffix="schematisation objects",
+        )
 
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         handlers = [

@@ -1,24 +1,27 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from enum import Enum
 from functools import cached_property
-from typing import Any, Optional, get_type_hints
+from typing import Any, Optional
 
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 from qgis.core import Qgis, QgsMessageLog, QgsVectorLayer
 from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
+    QAbstractSpinBox,
     QComboBox,
     QDialog,
     QDialogButtonBox,
+    QDoubleSpinBox,
     QHeaderView,
     QLabel,
     QLineEdit,
     QPushButton,
     QScrollArea,
     QSizePolicy,
+    QSpinBox,
     QStyledItemDelegate,
     QStyleOptionViewItem,
     QTableView,
@@ -26,10 +29,10 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
+from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import enum_entry_name_format
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     FieldMapConfig,
-    create_field_map_config,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog import (
@@ -155,22 +158,31 @@ class FieldMapModel(QAbstractTableModel):
         }
         self.current_layer_attributes = []
         self._fixed_source_attributes = {}
+        self._default_value_units = {}
         self.layer: QgsVectorLayer = None
 
     def set_fixed_source_attributes(self, row_key: str, source_attribute: list[str]):
         # Only add fixed source attributes for existing rows
-        # Not catching any errors because this is the developpers problem
         if row_key in self.row_dict:
             self._fixed_source_attributes[row_key] = source_attribute
 
-    def get_valid_source_attributes(self, row_idx: int) -> list[str]:
-        row_key = list(self.row_dict.keys())[row_idx]
-        if row_key in self._fixed_source_attributes:
-            return self._fixed_source_attributes[row_key]
-        return self.current_layer_attributes
+    def set_fixed_source_attributes_from_data_model(
+        self, row_key: str, model_cls: dm.ModelObject
+    ):
+        attributes = [model_field.name for model_field in fields(model_cls)]
+        self.set_fixed_source_attributes(row_key, attributes)
 
-    def set_fixed_source_attributes_for_row(self, row_name, attributes):
-        self._fixed_source_attributes[row_name] = attributes
+    def get_default_value_units(self, row_idx: int) -> Optional[str]:
+        row_key = list(self.row_dict.keys())[row_idx]
+        return self._default_value_units.get(row_key)
+
+    def set_default_value_units(self, row_key: str, units: str):
+        if row_key in self.row_dict:
+            self._default_value_units[row_key] = units
+
+    def get_valid_source_attributes(self, row_idx: int) -> Optional[list[str]]:
+        row_key = list(self.row_dict.keys())[row_idx]
+        return self._fixed_source_attributes.get(row_key, self.current_layer_attributes)
 
     def rowCount(self, parent=QModelIndex()):
         return len(self.rows) if self.rows else 0
@@ -266,9 +278,7 @@ class FieldMapDelegate(QStyledItemDelegate):
             row = index.model().rows[index.row()]
             for m in row.config._metadata.allowed_methods:
                 editor.addItem(str(m), m)
-            editor.currentIndexChanged.connect(
-                lambda idx, editor=editor: self.commitData.emit(editor)
-            )
+            # For some reason setting enabled status only works properly if this is handled here
             if row.config.method:
                 editor.setCurrentIndex(editor.findData(row.config.method))
             # Ensure editor states are updated after setting method
@@ -307,7 +317,6 @@ class FieldMapDelegate(QStyledItemDelegate):
             )
         elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.DEFAULT_VALUE:
             config = index.model().rows[index.row()].config
-            current_value = config.default_value
             value_type = config.model_fields["default_value"].annotation.__args__[0]
             # Dirty magic to use a combobox for bools and enums
             if value_type == bool or (
@@ -322,12 +331,37 @@ class FieldMapDelegate(QStyledItemDelegate):
                     ]
                 for display_text, data in items:
                     editor.addItem(display_text, data)
-                editor.setCurrentIndex(editor.findData(current_value))
+                editor.currentIndexChanged.connect(
+                    lambda idx, editor=editor: self.commitData.emit(editor)
+                )
+            elif value_type in [int, float]:
+                editor = (
+                    QDoubleSpinBox(parent) if value_type == float else QSpinBox(parent)
+                )
+                unit = index.model().get_default_value_units(index.row())
+                if unit:
+                    editor.setSuffix(f" {unit}")
             else:
                 editor = QLineEdit(parent)
-                editor.setText(str(current_value) if current_value else "")
         else:
             return super().createEditor(parent, option, index)
+        # Update editor data on change; needed to update valid status
+        if isinstance(editor, QgsFieldExpressionWidget):
+            editor.fieldChanged.connect(
+                lambda field, idx=index: self.commitExpressionData(idx, editor)
+            )
+        elif isinstance(editor, QComboBox):
+            editor.currentIndexChanged.connect(
+                lambda idx, editor=editor: self.commitData.emit(editor)
+            )
+        elif isinstance(editor, QLineEdit):
+            editor.textChanged.connect(
+                lambda text, editor=editor: self.commitData.emit(editor)
+            )
+        elif isinstance(editor, QAbstractSpinBox):
+            editor.valueChanged.connect(
+                lambda value, editor=editor: self.commitData.emit(editor)
+            )
         self._editors[(index.row(), index.column())] = editor
         return editor
 
@@ -388,6 +422,12 @@ class FieldMapDelegate(QStyledItemDelegate):
             current_value = index.model().rows[index.row()].config.default_value
             if isinstance(editor, QComboBox):
                 editor.setCurrentIndex(editor.findData(current_value))
+            elif isinstance(editor, QAbstractSpinBox):
+                if current_value:
+                    if isinstance(editor, QDoubleSpinBox):
+                        editor.setValue(float(current_value))
+                    elif isinstance(editor, QSpinBox):
+                        editor.setValue(int(current_value))
             else:
                 editor.setText(str(current_value) if current_value is not None else "")
         # update style
@@ -409,6 +449,8 @@ class FieldMapDelegate(QStyledItemDelegate):
         elif column == FieldMapColumn.DEFAULT_VALUE:
             if isinstance(editor, QComboBox):
                 value = editor.currentData()
+            elif isinstance(editor, QAbstractSpinBox):
+                value = editor.value()
             else:
                 value = editor.text()
         if value is not None:
@@ -529,6 +571,14 @@ class FieldMapWidget(QWidget):
                 if field_map_column == FieldMapColumn.LABEL:
                     continue
                 self.table_view.openPersistentEditor(self.table_model.index(row, col))
+                # The text in some editors is selected after creating the editor
+                # This removes the selection
+                editor = self.table_view.indexWidget(self.table_model.index(row, col))
+                if editor:
+                    if isinstance(editor, QAbstractSpinBox):
+                        editor.lineEdit().deselect()
+                    elif isinstance(editor, QLineEdit):
+                        editor.deselect()
 
     def close_persistent_editors(self):
         """Close all persistent editors in the table"""
