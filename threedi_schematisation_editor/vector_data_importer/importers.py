@@ -70,8 +70,6 @@ class Importer:
         external_features = [
             self.external_source.getFeature(feat_id) for feat_id in input_feature_ids
         ]
-        if progress_callback:
-            progress_callback(value=0, maximum=len(external_features))
         processed_features = self.processor.process_features(
             external_features, progress_callback=progress_callback
         )
@@ -90,6 +88,8 @@ class Importer:
     def import_features(self, context=None, selected_ids=None, progress_callback=None):
         self.start_editing()
         input_feature_ids = self.get_input_feature_ids(selected_ids)
+        if progress_callback:
+            progress_callback(value=0, maximum=len(input_feature_ids))
         new_features = self.process_features(
             input_feature_ids, progress_callback=progress_callback
         )
@@ -196,6 +196,8 @@ class SpatialImporter(Importer):
         # start editing
         self.start_editing()
         input_feature_ids = self.get_input_feature_ids(selected_ids)
+        if progress_callback:
+            progress_callback(value=0, maximum=len(input_feature_ids))
         # Integrate features using the integrator (if any)
         # items that are integrated are skipped in further processing
         new_features, input_feature_ids = self.integrate_features(
