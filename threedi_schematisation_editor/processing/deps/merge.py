@@ -1,11 +1,10 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Union, List, Tuple
+from typing import List, Tuple, Union
 
-from osgeo import gdal, osr
 import numpy as np
+from osgeo import gdal, osr
 from shapely.geometry import MultiPolygon, Polygon, box
-
 
 gdal.UseExceptions()
 osr.UseExceptions()
@@ -45,8 +44,9 @@ def read_as_array(
         raise ValueError("bbox does not intersect with raster")
 
     intersection_xmin, intersection_ymin = max(xmin, 0), max(ymin, 0)
-    intersection_xmax, intersection_ymax = min(xmax, raster.RasterXSize), min(
-        ymax, raster.RasterYSize
+    intersection_xmax, intersection_ymax = (
+        min(xmax, raster.RasterXSize),
+        min(ymax, raster.RasterYSize),
     )
     arr = band.ReadAsArray(
         int(round(intersection_xmin)),
@@ -59,8 +59,14 @@ def read_as_array(
         arr_pad = np.pad(
             arr,
             (
-                (int(round(intersection_ymin - ymin)), int(round(ymax - intersection_ymax))),
-                (int(round(intersection_xmin - xmin)), int(round(xmax - intersection_xmax))),
+                (
+                    int(round(intersection_ymin - ymin)),
+                    int(round(ymax - intersection_ymax)),
+                ),
+                (
+                    int(round(intersection_xmin - xmin)),
+                    int(round(xmax - intersection_xmax)),
+                ),
             ),
             "constant",
             constant_values=((ndv, ndv), (ndv, ndv)),
@@ -144,7 +150,7 @@ def tile_aggregate(
 
 
 def progress_gdal_to_qgis(complete, message, qgs_feedback):
-    qgs_feedback.setProgress(complete*100)
+    qgs_feedback.setProgress(complete * 100)
 
 
 def merge_rasters(
@@ -163,7 +169,6 @@ def merge_rasters(
     tile_size in pixels
     """
     with TemporaryDirectory() as temp_dir:
-
         temp_dir_path = Path(temp_dir)
 
         # resample rasters if their pixel size is different from output_pixel_size (tiny difference is allowed)
@@ -171,12 +176,19 @@ def merge_rasters(
         for i, raster in enumerate(rasters):
             # GeoTransform: (ulx, xres, xskew, uly, yskew, yres)
             _, xres, _, _, _, yres = raster.GetGeoTransform()
-            if abs(abs(xres) - abs(output_pixel_size)) > 1/(1000*tile_size) or \
-                    abs(abs(yres) - abs(output_pixel_size)) > 1/(1000*tile_size):
+            if abs(abs(xres) - abs(output_pixel_size)) > 1 / (1000 * tile_size) or abs(
+                abs(yres) - abs(output_pixel_size)
+            ) > 1 / (1000 * tile_size):
                 print("Resampling...")
-                resampled_raster_file_name = str(temp_dir_path / f"resampled_raster_{i}.tif")
-                options = gdal.WarpOptions(xRes=output_pixel_size, yRes=output_pixel_size, resampleAlg="near")
-                resampled_raster = gdal.Warp(resampled_raster_file_name, raster, options=options)
+                resampled_raster_file_name = str(
+                    temp_dir_path / f"resampled_raster_{i}.tif"
+                )
+                options = gdal.WarpOptions(
+                    xRes=output_pixel_size, yRes=output_pixel_size, resampleAlg="near"
+                )
+                resampled_raster = gdal.Warp(
+                    resampled_raster_file_name, raster, options=options
+                )
                 resampled_rasters.append(resampled_raster)
             else:
                 resampled_rasters.append(raster)
@@ -220,7 +232,14 @@ def merge_rasters(
                         output_nodatavalue=output_nodatavalue,
                     )
                 tile_path = temp_dir_path / f"tile_row_{tile_row}_col_{tile_col}.tif"
-                geotransform = (tile_minx, output_pixel_size, xskew, tile_maxy, yskew, -1 * output_pixel_size)
+                geotransform = (
+                    tile_minx,
+                    output_pixel_size,
+                    xskew,
+                    tile_maxy,
+                    yskew,
+                    -1 * output_pixel_size,
+                )
                 write_raster(
                     output_filename=tile_path,
                     geotransform=geotransform,
@@ -229,7 +248,9 @@ def merge_rasters(
                 )
                 tiles.append(str(tile_path))
                 if feedback:
-                    feedback.setProgress((tile_row * ncols + tile_col + 1) / ntiles * 100)
+                    feedback.setProgress(
+                        (tile_row * ncols + tile_col + 1) / ntiles * 100
+                    )
 
         # clean up
         for i in range(len(resampled_rasters)):
@@ -249,9 +270,8 @@ def merge_rasters(
             srcDS=vrt,
             creationOptions=["COMPRESS=DEFLATE", "PREDICTOR=2", "ZLEVEL=9"],
             callback=callback,
-            callback_data=callback_data
+            callback_data=callback_data,
         )
 
         # clean up
         vrt = None
-

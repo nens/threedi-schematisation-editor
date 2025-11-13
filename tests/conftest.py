@@ -2,12 +2,11 @@ import gc
 import os
 
 import pytest
+from processing.algs.gdal.GdalAlgorithmProvider import GdalAlgorithmProvider
+from processing.core.Processing import Processing
 from qgis._3d import Qgs3DAlgorithms
 from qgis.analysis import QgsNativeAlgorithms
 from qgis.core import QgsApplication, QgsProcessingFeedback
-
-from processing.algs.gdal.GdalAlgorithmProvider import GdalAlgorithmProvider
-from processing.core.Processing import Processing
 
 _singletons = {}
 

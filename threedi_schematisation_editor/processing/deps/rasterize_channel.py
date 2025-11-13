@@ -2,13 +2,12 @@
 #  cross-section locations (in .split() or .make_valid()) do not have id.
 
 from enum import Enum
-from typing import Iterator, List, Union, Set, Sequence, Tuple, Optional
+from typing import Iterator, List, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
-from shapely import wkt, set_precision, MultiPoint
+from shapely import MultiPoint, set_precision, wkt
 from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point, Polygon
-from shapely.ops import unary_union, linemerge, nearest_points, transform
-
+from shapely.ops import linemerge, nearest_points, transform, unary_union
 
 # Shapely method "offset_curve" docs: The side is determined by the sign of the distance parameter
 # (negative for right side offset, positive for left side offset). Left and right are determined by following
@@ -66,14 +65,15 @@ def is_left_of_line(point: Point, line: LineString) -> Union[bool, None]:
 
 
 def parse_cross_section_table(
-        table: str,
-        cross_section_shape: int,
-        wall_displacement: float = 0
+    table: str, cross_section_shape: int, wall_displacement: float = 0
 ) -> Tuple[np.array, np.array]:
     """
     Returns [y_ordinates], [z_ordinates]
     """
-    if cross_section_shape in (SupportedShape.TABULATED_RECTANGLE.value, SupportedShape.TABULATED_TRAPEZIUM.value):
+    if cross_section_shape in (
+        SupportedShape.TABULATED_RECTANGLE.value,
+        SupportedShape.TABULATED_TRAPEZIUM.value,
+    ):
         heights = list()
         widths = list()
         for row in table.split("\n"):
@@ -95,12 +95,12 @@ def parse_cross_section_table(
                 widths.append(float(width))
         # convert to YZ
         if widths[0] == 0:  # do not duplicate middle y value if it is 0
-            y_ordinates = np.hstack([np.flip(widths)/-2, np.array(widths)[1:]/2])
+            y_ordinates = np.hstack([np.flip(widths) / -2, np.array(widths)[1:] / 2])
             z_ordinates = np.hstack([np.flip(heights), np.array(heights)[1:]])
         else:
-            y_ordinates = np.hstack([np.flip(widths)/-2, np.array(widths)/2])
+            y_ordinates = np.hstack([np.flip(widths) / -2, np.array(widths) / 2])
             z_ordinates = np.hstack([np.flip(heights), heights])
-        y_ordinates += np.max(widths)/2
+        y_ordinates += np.max(widths) / 2
     elif cross_section_shape == SupportedShape.YZ.value:
         y_list = list()
         z_list = list()
@@ -129,11 +129,15 @@ def parse_cross_section_table(
                 y_ordinates = y_ordinates[valid_mask]
                 z_ordinates = z_ordinates[valid_mask]
     elif not is_monotonically_increasing(y_ordinates):
-        raise YNotIncreasingError("Could not make this cross-section valid. Use a wall_displacement > 0")
+        raise YNotIncreasingError(
+            "Could not make this cross-section valid. Use a wall_displacement > 0"
+        )
     return y_ordinates, z_ordinates
 
 
-def simplify(y_ordinates: np.array, z_ordinates: np.array, tolerance: float) -> Tuple[np.array, np.array]:
+def simplify(
+    y_ordinates: np.array, z_ordinates: np.array, tolerance: float
+) -> Tuple[np.array, np.array]:
     """
     Simplify a YZ cross-section using shapely LineString.simplify()
     """
@@ -168,7 +172,9 @@ def reverse(geom):
     return transform(_reverse, geom)
 
 
-def variable_buffer(linestring: LineString, radii: Sequence[float], shifts: Sequence[float] = None) -> Polygon:
+def variable_buffer(
+    linestring: LineString, radii: Sequence[float], shifts: Sequence[float] = None
+) -> Polygon:
     """
     Create a buffer around a Linestring, for which the buffer distance varies per vertex
     By default, the buffer is symmetrical. This can be varied by specifying the ``shifts``
@@ -183,15 +189,15 @@ def variable_buffer(linestring: LineString, radii: Sequence[float], shifts: Sequ
     if shifts is not None:
         # shift each vertex onto the offset_curve with given shift
         shifts = np.array(shifts)
-        shifts[np.logical_and(-0.001 < shifts, shifts < 0.001)] = 0  # if shift is too close to 0, offset_curve()
-                                                                     # produces a GEOSException in some cases
+        shifts[np.logical_and(-0.001 < shifts, shifts < 0.001)] = (
+            0  # if shift is too close to 0, offset_curve()
+        )
+        # produces a GEOSException in some cases
         vertices = [
             nearest_points(offset_curve_fixed(linestring, shifts[i]), vertices[i])[0]
             for i, coord in enumerate(linestring.coords)
         ]
-    buffered_points = [
-        v.buffer(radii[i]) for i, v in enumerate(vertices)
-    ]
+    buffered_points = [v.buffer(radii[i]) for i, v in enumerate(vertices)]
     convex_hulls = [
         MultiPolygon([buffered_points[i], buffered_points[i + 1]]).convex_hull
         for i in range(len(buffered_points) - 1)
@@ -219,12 +225,16 @@ def highest_valid_index_single_offset(line: LineString, offset: float) -> int:
     lowest_invalid_idx = len(vertex_positions) - 1
     current_idx = len(vertex_positions) - 1
     while lowest_invalid_idx - highest_valid_idx > 1:
-        test_line = LineString([(Point(vertex)) for vertex in line.coords[:current_idx + 1]])
+        test_line = LineString(
+            [(Point(vertex)) for vertex in line.coords[: current_idx + 1]]
+        )
         if is_valid_offset(test_line, offset):
             highest_valid_idx = current_idx
         else:
             lowest_invalid_idx = current_idx
-        current_idx = int(highest_valid_idx + (lowest_invalid_idx-highest_valid_idx)/2)
+        current_idx = int(
+            highest_valid_idx + (lowest_invalid_idx - highest_valid_idx) / 2
+        )
     return highest_valid_idx
 
 
@@ -239,21 +249,27 @@ def highest_valid_index(line: LineString, offsets: Sequence[float]) -> int:
     by this function.
     """
     offsets = list(offsets)  # allow numpy array as type of ``offsets``
-    offsets.sort(key=lambda x: -1 * abs(x))  # largest offsets first, because will probably result in the lowest index
+    offsets.sort(
+        key=lambda x: -1 * abs(x)
+    )  # largest offsets first, because will probably result in the lowest index
     minimum_idx = len(line.coords) - 1
     for offset in offsets:
-        line = LineString([(Point(vertex)) for vertex in line.coords[:minimum_idx + 1]])
+        line = LineString(
+            [(Point(vertex)) for vertex in line.coords[: minimum_idx + 1]]
+        )
         minimum_idx = min(minimum_idx, highest_valid_index_single_offset(line, offset))
     return minimum_idx
 
 
 class EmptyOffsetError(ValueError):
     """Raised when the parallel offset at given offset distance results in an empty geometry"""
+
     # TODO Remove
 
 
 class InvalidOffsetError(ValueError):
     """Raised when the parallel offset at given offset distance results in a geometry that is not a LineString"""
+
     # TODO Remove
 
 
@@ -263,11 +279,12 @@ class WedgeFillPointsAlreadySetError(ValueError):
 
 class WidthsNotIncreasingError(ValueError):
     """Raised when one a width of a tabular cross-section < than the previous width of that crosssection"""
+
     # TODO Check if this can be removed
 
 
 class MinYNotZeroError(ValueError):
-    """"Raised when a YZ cross-section's lowest value is not 0"""
+    """ "Raised when a YZ cross-section's lowest value is not 0"""
 
 
 class YNotIncreasingError(ValueError):
@@ -279,7 +296,7 @@ class NoCrossSectionLocationsError(ValueError):
 
 
 class IntersectingSidesError(ValueError):
-    """"Raised when the two lines between which triangulate_between() tries to triangulate"""
+    """ "Raised when the two lines between which triangulate_between() tries to triangulate"""
 
 
 class TriangulationError(ValueError):
@@ -289,15 +306,18 @@ class TriangulationError(ValueError):
     The attribute ``locations`` is a list of points located at the last position where valid triangulation was still
     possible
     """
-    def __init__(self, *args, locations: List['IndexedPoint']):
+
+    def __init__(self, *args, locations: List["IndexedPoint"]):
         super().__init__(*args)
-        self.locations: List['IndexedPoint'] = locations
+        self.locations: List["IndexedPoint"] = locations
 
 
 class IndexedPoint:
     def __init__(self, *args, index: int):
-        self.geom: Point = Point(*args)  # since shapely 2.0, it is no longer possible to add any custom attributes
-                                         # to a Point, so it is impossible to inherit all from Point and add index
+        self.geom: Point = Point(
+            *args
+        )  # since shapely 2.0, it is no longer possible to add any custom attributes
+        # to a Point, so it is impossible to inherit all from Point and add index
         self.index = index
 
     @property
@@ -335,12 +355,16 @@ class Triangle:
     def geometry(self) -> Polygon:
         return Polygon(LineString([point.geom for point in self.points]))
 
-    def are_sides_shared(self, line: LineString) -> Tuple[List[LineString], List[LineString]]:
+    def are_sides_shared(
+        self, line: LineString
+    ) -> Tuple[List[LineString], List[LineString]]:
         """Return the sides of the Triangle that are within ``line``, and the sides that are not"""
         yes = []
         no = []
         coords = self.geometry.exterior.coords
-        segments = [LineString([coords[i - 1], coords[i]]) for i in range(1, len(coords))]
+        segments = [
+            LineString([coords[i - 1], coords[i]]) for i in range(1, len(coords))
+        ]
         for segment in segments:
             if segment.within(line):
                 yes.append(segment)
@@ -348,7 +372,11 @@ class Triangle:
                 no.append(segment)
         return yes, no
 
-    def is_between(self, left_side_line: Union[Point, LineString], right_side_line: Union[Point, LineString]):
+    def is_between(
+        self,
+        left_side_line: Union[Point, LineString],
+        right_side_line: Union[Point, LineString],
+    ):
         """
         Returns True if the triangle 'touches' both lines but does not cross any of the sides
         'Touches' is defined here as:
@@ -367,35 +395,52 @@ class Triangle:
 
         # case 2: one or more sides of the triangle are shared with one of the side lines
         shared_sides_left, non_shared_sides_left = self.are_sides_shared(left_side_line)
-        shared_sides_right, non_shared_sides_right = self.are_sides_shared(right_side_line)
+        shared_sides_right, non_shared_sides_right = self.are_sides_shared(
+            right_side_line
+        )
 
         # case 2.1: one side of the triangle are within one of the sides
         # --- the point opposite the shared side has to touch the other line
         if len(shared_sides_left) + len(shared_sides_right) == 1:
             # note: crosses() and touches() are mutually exclusive
             if len(shared_sides_left) == 1:
-                result = any(side.touches(right_side_line) for side in non_shared_sides_left)
+                result = any(
+                    side.touches(right_side_line) for side in non_shared_sides_left
+                )
                 return result
             if len(shared_sides_right) == 1:
-                result = any(side.touches(left_side_line) for side in non_shared_sides_right)
+                result = any(
+                    side.touches(left_side_line) for side in non_shared_sides_right
+                )
                 return result
 
         # case 2.2: two sides of the triangle are within one of the sides
-        if len(shared_sides_left) == 1 and \
-                len(shared_sides_right) == 1 and \
-                shared_sides_left[0] != shared_sides_right[0]:
+        if (
+            len(shared_sides_left) == 1
+            and len(shared_sides_right) == 1
+            and shared_sides_left[0] != shared_sides_right[0]
+        ):
             return True
         elif len(shared_sides_left) == 2:
-            check_point = non_shared_sides_left[0].interpolate(distance=0.5, normalized=True)
-            return is_left_of_line(check_point, shared_sides_left[0]) is False and \
+            check_point = non_shared_sides_left[0].interpolate(
+                distance=0.5, normalized=True
+            )
+            return (
                 is_left_of_line(check_point, shared_sides_left[0]) is False
+                and is_left_of_line(check_point, shared_sides_left[0]) is False
+            )
 
         elif len(shared_sides_right) == 2:
-            check_point = non_shared_sides_right[0].interpolate(distance=0.5, normalized=True)
-            return is_left_of_line(check_point, shared_sides_right[0]) and \
-                is_left_of_line(check_point, shared_sides_right[0])
+            check_point = non_shared_sides_right[0].interpolate(
+                distance=0.5, normalized=True
+            )
+            return is_left_of_line(
+                check_point, shared_sides_right[0]
+            ) and is_left_of_line(check_point, shared_sides_right[0])
         else:
-            raise ValueError("Unexpected situation encountered, I do not know if the triangle is between the lines")
+            raise ValueError(
+                "Unexpected situation encountered, I do not know if the triangle is between the lines"
+            )
 
 
 class CrossSectionLocation:
@@ -440,7 +485,9 @@ class CrossSectionLocation:
         self.parent = parent
 
     @classmethod
-    def from_qgs_feature(cls, feature, wall_displacement: float, simplify_tolerance: float):
+    def from_qgs_feature(
+        cls, feature, wall_displacement: float, simplify_tolerance: float
+    ):
         """
         wall_displacement is used as simplify tolerance for the cross-section. remaining vertical segments are made
         diagonal by displacing the top or bottom by wall_displacement
@@ -451,15 +498,15 @@ class CrossSectionLocation:
         id = feature.attribute("id")
         cross_section_shape = feature.attribute("cross_section_shape")
         if cross_section_shape in (
-                SupportedShape.TABULATED_RECTANGLE.value,
-                SupportedShape.TABULATED_TRAPEZIUM.value,
-                SupportedShape.YZ.value,
+            SupportedShape.TABULATED_RECTANGLE.value,
+            SupportedShape.TABULATED_TRAPEZIUM.value,
+            SupportedShape.YZ.value,
         ):
             table = feature.attribute("cross_section_table")
             y, z = parse_cross_section_table(
                 table=table,
                 cross_section_shape=cross_section_shape,
-                wall_displacement=wall_displacement
+                wall_displacement=wall_displacement,
             )
             y, z = simplify(y, z, tolerance=simplify_tolerance)
         elif cross_section_shape == SupportedShape.OPEN_RECTANGLE.value:
@@ -479,7 +526,7 @@ class CrossSectionLocation:
         )
 
     @classmethod
-    def clone(cls, source: 'CrossSectionLocation') -> 'CrossSectionLocation':
+    def clone(cls, source: "CrossSectionLocation") -> "CrossSectionLocation":
         clone = cls(
             id=source.id,
             reference_level=source.reference_level,
@@ -497,14 +544,17 @@ class CrossSectionLocation:
         return self._parent
 
     @parent.setter
-    def parent(self, parent: 'Channel'):
+    def parent(self, parent: "Channel"):
         """
         Set the parent of this CrossSectionLocation
         Also calculates the normalized position of the CrossSectionLocation along the channel
         """
         self._parent = parent
-        self._position_normalized = None if parent is None else \
-            self.parent.geometry.project(self.geometry, normalized=True)
+        self._position_normalized = (
+            None
+            if parent is None
+            else self.parent.geometry.project(self.geometry, normalized=True)
+        )
 
     @property
     def position(self):
@@ -537,7 +587,10 @@ class CrossSectionLocation:
             z0_index_after = z0_indices[z0_indices > average_z0_index][0]
             y_before = self.y_ordinates[z0_index_before]
             y_after = self.y_ordinates[z0_index_after]
-            return y_before + ((average_z0_index-z0_index_before)/(z0_index_after-z0_index_before))*(y_after-y_before)
+            return y_before + (
+                (average_z0_index - z0_index_before)
+                / (z0_index_after - z0_index_before)
+            ) * (y_after - y_before)
 
     @property
     def offsets(self):
@@ -563,6 +616,7 @@ class Channel:
 
     The same system is applied to connection node ids
     """
+
     def __init__(
         self,
         id: Union[int, Tuple[int, int]],
@@ -571,12 +625,16 @@ class Channel:
         geometry: LineString,
     ):
         self.id = id if type(id) == tuple else (id, 0)
-        self.connection_node_id_start = connection_node_id_start \
-            if (type(connection_node_id_start) == tuple) \
+        self.connection_node_id_start = (
+            connection_node_id_start
+            if (type(connection_node_id_start) == tuple)
             else (connection_node_id_start, 0)
-        self.connection_node_id_end = connection_node_id_end \
-            if (type(connection_node_id_end) == tuple) \
+        )
+        self.connection_node_id_end = (
+            connection_node_id_end
+            if (type(connection_node_id_end) == tuple)
             else (connection_node_id_end, 0)
+        )
         self.cross_section_locations: List[CrossSectionLocation] = []
         self.geometry: LineString = geometry
         self.parallel_offsets: List[ParallelOffset] = []
@@ -620,7 +678,7 @@ class Channel:
             raise NoCrossSectionLocationsError("Channel has no cross-section locations")
         offsets_list = [xsec.offsets for xsec in self.cross_section_locations]
         all_offsets_array = np.hstack(offsets_list)
-        result = np.unique((1000*np.round(all_offsets_array, 3)).astype(int))/1000
+        result = np.unique((1000 * np.round(all_offsets_array, 3)).astype(int)) / 1000
         return result
 
     @property
@@ -642,19 +700,28 @@ class Channel:
         """
         Return the highest index of the channel's ``IndexedPoint``s
         """
-        po_points_last_index = self.parallel_offsets[-1].vertex_indices[-1] if self.parallel_offsets else -1
-        wedge_fill_points_last_index = self._wedge_fill_points[-1].index if self._wedge_fill_points else -1
+        po_points_last_index = (
+            self.parallel_offsets[-1].vertex_indices[-1]
+            if self.parallel_offsets
+            else -1
+        )
+        wedge_fill_points_last_index = (
+            self._wedge_fill_points[-1].index if self._wedge_fill_points else -1
+        )
         result = np.max([po_points_last_index, wedge_fill_points_last_index])
         return result
-
 
     @property
     def outline(self) -> Polygon:
         """
         Generate a polygon that describes the extent of the rasterized channel
         """
-        radii = np.array([self.max_width_at(position) / 2 for position in self.vertex_positions])
-        thalweg_ys = np.array([self.thalweg_y_at(position) for position in self.vertex_positions])
+        radii = np.array(
+            [self.max_width_at(position) / 2 for position in self.vertex_positions]
+        )
+        thalweg_ys = np.array(
+            [self.thalweg_y_at(position) for position in self.vertex_positions]
+        )
         shifts = (radii - thalweg_ys) * -1
         result = variable_buffer(linestring=self.geometry, radii=radii, shifts=shifts)
 
@@ -669,8 +736,12 @@ class Channel:
         Inserts ``cross_section_location`` in the list of the channel's cross-section locations ordered by their
         position
         """
-        if cross_section_location.id in [xsec.id for xsec in self.cross_section_locations]:
-            raise ValueError("Cannot add multiple cross-section locations with the same ID to the same channel")
+        if cross_section_location.id in [
+            xsec.id for xsec in self.cross_section_locations
+        ]:
+            raise ValueError(
+                "Cannot add multiple cross-section locations with the same ID to the same channel"
+            )
         cross_section_location.parent = self
         self.cross_section_locations.append(cross_section_location)
         self.cross_section_locations.sort(key=lambda x: x.position)
@@ -706,12 +777,17 @@ class Channel:
         vertices = [Point(x, y) for x, y in simplified_geometry.coords]
         positions = [simplified_geometry.project(vertex) for vertex in vertices]
         cross_section_points = [
-            simplified_geometry.interpolate(xsec_pos) for xsec_pos in self.cross_section_location_positions
+            simplified_geometry.interpolate(xsec_pos)
+            for xsec_pos in self.cross_section_location_positions
         ]
         pos_vertex_dict = dict(zip(positions, vertices))
-        pos_cross_section_dict = dict(zip(self.cross_section_location_positions, cross_section_points))
+        pos_cross_section_dict = dict(
+            zip(self.cross_section_location_positions, cross_section_points)
+        )
         pos_vertex_dict.update(pos_cross_section_dict)
-        self.geometry = LineString([vertex for pos, vertex in sorted(pos_vertex_dict.items())])
+        self.geometry = LineString(
+            [vertex for pos, vertex in sorted(pos_vertex_dict.items())]
+        )
 
     def generate_parallel_offsets(self, offset_0: bool = False):
         """
@@ -725,8 +801,14 @@ class Channel:
         self._wedge_fill_triangles = []
         self._extra_outline = []
         # offsets are sorted from left to right
-        offsets = sorted(list(set(self.unique_offsets) | {0}), reverse=RIGHT == -1) if offset_0 else self.unique_offsets
-        self.parallel_offsets = [ParallelOffset(parent=self, offset_distance=offset) for offset in offsets]
+        offsets = (
+            sorted(list(set(self.unique_offsets) | {0}), reverse=RIGHT == -1)
+            if offset_0
+            else self.unique_offsets
+        )
+        self.parallel_offsets = [
+            ParallelOffset(parent=self, offset_distance=offset) for offset in offsets
+        ]
 
         last_vertex_index = -1
         # -1 so that we have 0-based indexing, because QgsMesh vertices have 0-based indices too
@@ -763,7 +845,7 @@ class Channel:
             all_points += po.points
         all_points += self._wedge_fill_points
         all_points.sort(key=lambda x: x.index)
-        assert len(all_points) -1 == all_points[-1].index
+        assert len(all_points) - 1 == all_points[-1].index
         return all_points
 
     @staticmethod
@@ -796,7 +878,9 @@ class Channel:
         triangles = self._parallel_offset_triangles + self._wedge_fill_triangles
 
         if not len(triangles) > 0:
-            raise RuntimeError("Call fill_parallel_offsets() or fill_wedge() before using triangles().")
+            raise RuntimeError(
+                "Call fill_parallel_offsets() or fill_wedge() before using triangles()."
+            )
 
         # sort
         processed_sides = triangles[0].sides
@@ -859,10 +943,12 @@ class Channel:
         """
         self._parallel_offset_triangles = []
         for i in range(len(self.parallel_offsets) - 1):
-            for tri in self.parallel_offsets[i].triangulate(self.parallel_offsets[i + 1]):
+            for tri in self.parallel_offsets[i].triangulate(
+                self.parallel_offsets[i + 1]
+            ):
                 self._parallel_offset_triangles.append(tri)
 
-    def fill_wedge(self, other: 'Channel'):
+    def fill_wedge(self, other: "Channel"):
         """
         Add points and triangles to fill the wedge-shaped gap between self and other. Also updates self.outline
         """
@@ -938,7 +1024,9 @@ class Channel:
 
         # add points from `channel_to_update`, including the 0 point
         # sort on abs(offset_distance) to make sure we always go from the middle to the outside
-        for po in sorted(channel_to_update.parallel_offsets, key=lambda x: np.abs(x.offset_distance)):
+        for po in sorted(
+            channel_to_update.parallel_offsets, key=lambda x: np.abs(x.offset_distance)
+        ):
             if po.offset_distance * channel_to_update_side >= 0:
                 channel_to_update_offsets.append(po.offset_distance)
                 channel_to_update_points.append(po.points[channel_to_update_idx])
@@ -951,14 +1039,15 @@ class Channel:
         wedge_fill_points_source_offsets = []
         last_index = channel_to_update.last_index
         # sort on abs(offset_distance) to make sure we always go from the middle to the outside
-        for po in sorted(wedge_fill_points_source.parallel_offsets, key=lambda x: np.abs(x.offset_distance)):
+        for po in sorted(
+            wedge_fill_points_source.parallel_offsets,
+            key=lambda x: np.abs(x.offset_distance),
+        ):
             if po.offset_distance * wedge_fill_points_source_side > 0:
                 wedge_fill_points_source_offsets.append(po.offset_distance)
                 existing_point = po.points[wedge_fill_points_source_idx]
                 wedge_fill_points.append(
-                    IndexedPoint(
-                        existing_point.geom, index=last_index + 1
-                    )
+                    IndexedPoint(existing_point.geom, index=last_index + 1)
                 )
                 last_index += 1
 
@@ -986,12 +1075,13 @@ class Channel:
         )
         width_at_extra_point = wedge_fill_points_source.max_width_at(position)
         thalweg_y_at_extra_point = wedge_fill_points_source.thalweg_y_at(position)
-        shift = -1 * ((width_at_extra_point/2) - thalweg_y_at_extra_point)
+        shift = -1 * ((width_at_extra_point / 2) - thalweg_y_at_extra_point)
         extra_point_shifted = nearest_points(
-            offset_curve_fixed(wedge_fill_points_source.geometry, shift),
-            extra_point
+            offset_curve_fixed(wedge_fill_points_source.geometry, shift), extra_point
         )[0]
-        channel_to_update._extra_outline.append(extra_point_shifted.buffer(width_at_extra_point / 2))
+        channel_to_update._extra_outline.append(
+            extra_point_shifted.buffer(width_at_extra_point / 2)
+        )
 
     def as_query(self) -> str:
         selects = []
@@ -1001,7 +1091,9 @@ class Channel:
             )
         return "\nUNION\n".join(selects)
 
-    def split(self, vertex_index: int) -> Union[Tuple['Channel', 'Channel'], Tuple['Channel', None]]:
+    def split(
+        self, vertex_index: int
+    ) -> Union[Tuple["Channel", "Channel"], Tuple["Channel", None]]:
         """
         Split this Channel in two Channels at given ``vertex_index``
         Both channels will include the first cross-section location beyond the split point
@@ -1026,8 +1118,13 @@ class Channel:
         first_part = Channel(
             id=self.id,
             connection_node_id_start=self.connection_node_id_start,
-            connection_node_id_end=(self.connection_node_id_start[0], self.connection_node_id_start[1] + 1),
-            geometry=LineString([(Point(vertex)) for vertex in self.geometry.coords[:vertex_index + 1]])
+            connection_node_id_end=(
+                self.connection_node_id_start[0],
+                self.connection_node_id_start[1] + 1,
+            ),
+            geometry=LineString(
+                [(Point(vertex)) for vertex in self.geometry.coords[: vertex_index + 1]]
+            ),
         )
         for xsec in self.cross_section_locations:
             xsec_copy = CrossSectionLocation.clone(xsec)
@@ -1044,9 +1141,14 @@ class Channel:
 
         last_part = Channel(
             id=(self.id[0], self.id[1] + 1),
-            connection_node_id_start=(self.connection_node_id_start[0], self.connection_node_id_start[1] + 1),
+            connection_node_id_start=(
+                self.connection_node_id_start[0],
+                self.connection_node_id_start[1] + 1,
+            ),
             connection_node_id_end=self.connection_node_id_end,
-            geometry=LineString([(Point(vertex)) for vertex in self.geometry.coords[vertex_index:]])
+            geometry=LineString(
+                [(Point(vertex)) for vertex in self.geometry.coords[vertex_index:]]
+            ),
         )
         for xsec in reversed(self.cross_section_locations):
             xsec_copy = CrossSectionLocation.clone(xsec)
@@ -1055,15 +1157,15 @@ class Channel:
             # A bit hacky but quick way to give this cross-section location a "ghost" location on its new channel
             xsec_copy_idx = last_part.cross_section_location_index(xsec.id)
             last_part.cross_section_locations[xsec_copy_idx]._position_normalized = (
-                (xsec.position - first_part.geometry.length) / last_part.geometry.length
-            )
+                xsec.position - first_part.geometry.length
+            ) / last_part.geometry.length
             if xsec.position <= vertex_index_position:
                 # the first cross-section location before the start of the last part has been added, so we can stop
                 break
 
         return first_part, last_part
 
-    def make_valid_parallel_offsets(self) -> List['Channel']:
+    def make_valid_parallel_offsets(self) -> List["Channel"]:
         """
         Make Channel valid enough to generate parallel offsets (and generate them in the process)
 
@@ -1075,9 +1177,13 @@ class Channel:
         result = []
         possibly_invalid_channel = self
         while possibly_invalid_channel:
-            hvi = highest_valid_index(line=possibly_invalid_channel.geometry, offsets=self.unique_offsets)
+            hvi = highest_valid_index(
+                line=possibly_invalid_channel.geometry, offsets=self.unique_offsets
+            )
             hvi = 1 if hvi == 0 else hvi
-            valid_part, possibly_invalid_channel = possibly_invalid_channel.split(vertex_index=hvi)
+            valid_part, possibly_invalid_channel = possibly_invalid_channel.split(
+                vertex_index=hvi
+            )
             result.append(valid_part)
         for channel in result:
             channel.generate_parallel_offsets()
@@ -1091,13 +1197,23 @@ class Channel:
         Also runs ``make_valid_triangulate()`` on the output channels
         """
         result = []
-        num_po_vertices = np.sum([len(po.geometry.coords) for po in self.parallel_offsets])
+        num_po_vertices = np.sum(
+            [len(po.geometry.coords) for po in self.parallel_offsets]
+        )
         if num_po_vertices > VERTEX_LIMIT:
-            channel_vertex_limit = int(min(VERTEX_LIMIT / num_po_vertices, 1) * len(self.geometry.coords)) - 1
+            channel_vertex_limit = (
+                int(min(VERTEX_LIMIT / num_po_vertices, 1) * len(self.geometry.coords))
+                - 1
+            )
             possibly_invalid_channel = self
             while possibly_invalid_channel:
-                vertex_index = min(len(possibly_invalid_channel.geometry.coords) - 1, channel_vertex_limit)
-                valid_part, possibly_invalid_channel = possibly_invalid_channel.split(vertex_index=vertex_index)
+                vertex_index = min(
+                    len(possibly_invalid_channel.geometry.coords) - 1,
+                    channel_vertex_limit,
+                )
+                valid_part, possibly_invalid_channel = possibly_invalid_channel.split(
+                    vertex_index=vertex_index
+                )
                 valid_part.generate_parallel_offsets()
                 result.append(valid_part)
         else:
@@ -1116,7 +1232,9 @@ class Channel:
             valid_part_found = False
             while not valid_part_found:
                 index = 1 if index == 0 else index
-                first_part, last_part = possibly_invalid_channel.split(vertex_index=index)
+                first_part, last_part = possibly_invalid_channel.split(
+                    vertex_index=index
+                )
                 try:
                     first_part.generate_parallel_offsets()
                     first_part.fill_parallel_offsets()
@@ -1142,28 +1260,39 @@ class Channel:
                         min_pos = 2
                         for point in first_part_error.locations:
                             channel_vertices = MultiPoint(
-                                [Point(coord) for coord in possibly_invalid_channel.geometry.coords]
+                                [
+                                    Point(coord)
+                                    for coord in possibly_invalid_channel.geometry.coords
+                                ]
                             )
-                            snapped_point = nearest_points(channel_vertices, point.geom)[0]
+                            snapped_point = nearest_points(
+                                channel_vertices, point.geom
+                            )[0]
                             # Why not use shapely.snap() here, you ask?
                             # I tried, but it gave really weird results in some cases
-                            pos = possibly_invalid_channel.geometry.project(snapped_point, normalized=True)
+                            pos = possibly_invalid_channel.geometry.project(
+                                snapped_point, normalized=True
+                            )
                             if pos < min_pos:
                                 split_point = snapped_point
                                 min_pos = pos
-                        index = index_of_vertex(possibly_invalid_channel.geometry, split_point)
+                        index = index_of_vertex(
+                            possibly_invalid_channel.geometry, split_point
+                        )
                         first_iteration = False
                     else:
                         index = int(np.ceil(index / 2))
                 except EmptyOffsetError:
                     if first_iteration:
                         # Make a first guess for the index
-                        index = int(np.ceil((len(possibly_invalid_channel.geometry.coords)) / 2))
+                        index = int(
+                            np.ceil((len(possibly_invalid_channel.geometry.coords)) / 2)
+                        )
                     else:
                         index -= 1
         return result
 
-    def make_valid(self) -> List['Channel']:
+    def make_valid(self) -> List["Channel"]:
         made_valid_po = self.make_valid_parallel_offsets()
         made_valid_vertex_count = []
         for channel in made_valid_po:
@@ -1193,8 +1322,12 @@ class ParallelOffset:
             # handle normal case where CrossSectionLocation is located on the Channel
             if pos >= 0 and pos <= self.parent.geometry.length:
                 location_xy = self.parent.geometry.interpolate(pos)
-                cross_section_location_point = nearest_points(location_xy, self.geometry)[0]
-                cross_section_location_positions.append(self.geometry.project(cross_section_location_point))
+                cross_section_location_point = nearest_points(
+                    location_xy, self.geometry
+                )[0]
+                cross_section_location_positions.append(
+                    self.geometry.project(cross_section_location_point)
+                )
 
             # handle 'ghost' cross-section locations that belong to channels created by Channel.split()
             # it is implicitly assumed that the channel in the "ghost" section(s) is straight, i.e. the length of the
@@ -1203,7 +1336,8 @@ class ParallelOffset:
                 cross_section_location_positions.append(pos)
 
         z_ordinates_at_cross_sections = [
-            xsec.z_at(self.offset_distance) for xsec in self.parent.cross_section_locations
+            xsec.z_at(self.offset_distance)
+            for xsec in self.parent.cross_section_locations
         ]
         self.vertex_positions = [
             self.geometry.project(Point(vertex)) for vertex in self.geometry.coords
@@ -1219,7 +1353,11 @@ class ParallelOffset:
     def points(self) -> List[IndexedPoint]:
         result = []
         for i, (x, y) in enumerate(self.geometry.coords):
-            result.append(IndexedPoint(x, y, self.heights_at_vertices[i], index=self.vertex_indices[i]))
+            result.append(
+                IndexedPoint(
+                    x, y, self.heights_at_vertices[i], index=self.vertex_indices[i]
+                )
+            )
         return result
 
     def set_vertex_indices(self, first_vertex_index: int):
@@ -1227,7 +1365,9 @@ class ParallelOffset:
             range(first_vertex_index, first_vertex_index + len(self.geometry.coords))
         )
 
-    def triangle_is_valid(self, triangle_points: Sequence[Point], other_parallel_offset: 'ParallelOffset'):
+    def triangle_is_valid(
+        self, triangle_points: Sequence[Point], other_parallel_offset: "ParallelOffset"
+    ):
         """
         Return True if none of the sides of the triangle crosses the parallel offsets that should enclose it
         """
@@ -1240,7 +1380,7 @@ class ParallelOffset:
                 valid = False
         return valid
 
-    def triangulate(self, other: 'ParallelOffset'):
+    def triangulate(self, other: "ParallelOffset"):
         return triangulate_between(
             left_side_points=self.points,
             right_side_points=other.points,
@@ -1265,18 +1405,23 @@ def triangulate_between(
         raise ValueError("right_side_points is empty")
 
     # flip points of one side if that makes the sides more parallel
-    if left_side_points[0].geom.distance(right_side_points[0].geom) > \
-            left_side_points[0].geom.distance(right_side_points[-1].geom):
+    if left_side_points[0].geom.distance(right_side_points[0].geom) > left_side_points[
+        0
+    ].geom.distance(right_side_points[-1].geom):
         right_side_points.reverse()
 
     # make lines out of the IndexedPoint lists, and calculate distances of each point along that line
-    left_side_line = LineString([point.geom for point in left_side_points]) \
-        if len(left_side_points) > 1 \
+    left_side_line = (
+        LineString([point.geom for point in left_side_points])
+        if len(left_side_points) > 1
         else left_side_points[0].geom
+    )
 
-    right_side_line = LineString([point.geom for point in right_side_points]) \
-        if len(right_side_points) > 1 \
+    right_side_line = (
+        LineString([point.geom for point in right_side_points])
+        if len(right_side_points) > 1
         else right_side_points[0].geom
+    )
 
     # raise error if lines intersect
     if left_side_line.intersects(right_side_line):
@@ -1290,8 +1435,13 @@ def triangulate_between(
     left_side_last_idx = len(left_side_points) - 1
     right_side_last_idx = len(right_side_points) - 1
 
-    while (left_side_idx < left_side_last_idx) or (right_side_idx < right_side_last_idx):
-        triangle_points = [left_side_points[left_side_idx], right_side_points[right_side_idx]]
+    while (left_side_idx < left_side_last_idx) or (
+        right_side_idx < right_side_last_idx
+    ):
+        triangle_points = [
+            left_side_points[left_side_idx],
+            right_side_points[right_side_idx],
+        ]
         # first we handle the case where the end of the line has been reached at one of the sides
         if left_side_idx == left_side_last_idx:
             right_side_idx += 1
@@ -1302,29 +1452,50 @@ def triangulate_between(
 
         # then we handle the 'normal' case when we are still halfway at both sides
         else:
-            move_on_left_side_cross_line = LineString([
-                left_side_points[left_side_idx + 1].geom,
-                right_side_points[right_side_idx].geom
-            ])
-            move_on_right_side_cross_line = LineString([
-                left_side_points[left_side_idx].geom,
-                right_side_points[right_side_idx + 1].geom
-            ])
-            move = LEFT if move_on_left_side_cross_line.length < move_on_right_side_cross_line.length else RIGHT
+            move_on_left_side_cross_line = LineString(
+                [
+                    left_side_points[left_side_idx + 1].geom,
+                    right_side_points[right_side_idx].geom,
+                ]
+            )
+            move_on_right_side_cross_line = LineString(
+                [
+                    left_side_points[left_side_idx].geom,
+                    right_side_points[right_side_idx + 1].geom,
+                ]
+            )
+            move = (
+                LEFT
+                if move_on_left_side_cross_line.length
+                < move_on_right_side_cross_line.length
+                else RIGHT
+            )
 
             # switch move side if moving on that side results in invalid triangle
-            test_triangle_move_left = Triangle(triangle_points + [left_side_points[left_side_idx + 1]])
-            test_triangle_move_right = Triangle(triangle_points + [right_side_points[right_side_idx + 1]])
+            test_triangle_move_left = Triangle(
+                triangle_points + [left_side_points[left_side_idx + 1]]
+            )
+            test_triangle_move_right = Triangle(
+                triangle_points + [right_side_points[right_side_idx + 1]]
+            )
             if move == LEFT:
-                if not test_triangle_move_left.is_between(left_side_line, right_side_line):
-                    if test_triangle_move_right.is_between(left_side_line, right_side_line):
+                if not test_triangle_move_left.is_between(
+                    left_side_line, right_side_line
+                ):
+                    if test_triangle_move_right.is_between(
+                        left_side_line, right_side_line
+                    ):
                         move = RIGHT
                     else:
                         # both 'default' options are invalid
                         move = 0
             elif move == RIGHT:
-                if not test_triangle_move_right.is_between(left_side_line, right_side_line):
-                    if test_triangle_move_left.is_between(left_side_line, right_side_line):
+                if not test_triangle_move_right.is_between(
+                    left_side_line, right_side_line
+                ):
+                    if test_triangle_move_left.is_between(
+                        left_side_line, right_side_line
+                    ):
                         move = LEFT
                     else:
                         # both 'default' options are invalid
@@ -1342,27 +1513,46 @@ def triangulate_between(
                 # curvy
                 solution_possible = True
                 if left_side_idx + 1 < left_side_last_idx:
-                    test_triangle_move_left_left = Triangle([left_side_points[left_side_idx + n] for n in [0, 1, 2]])
+                    test_triangle_move_left_left = Triangle(
+                        [left_side_points[left_side_idx + n] for n in [0, 1, 2]]
+                    )
                 else:
                     solution_possible = False
                 if right_side_idx + 1 < right_side_last_idx:
-                    test_triangle_move_right_right = Triangle([right_side_points[right_side_idx + n] for n in [0, 1, 2]])
+                    test_triangle_move_right_right = Triangle(
+                        [right_side_points[right_side_idx + n] for n in [0, 1, 2]]
+                    )
                 else:
                     solution_possible = False
 
                 if solution_possible:
-                    if test_triangle_move_left_left.geometry.area > 0 \
-                            and test_triangle_move_left_left.is_between(left_side_line, right_side_line):
-                        triangle_points = [left_side_points[left_side_idx + n] for n in [0, 1, 2]]
+                    if (
+                        test_triangle_move_left_left.geometry.area > 0
+                        and test_triangle_move_left_left.is_between(
+                            left_side_line, right_side_line
+                        )
+                    ):
+                        triangle_points = [
+                            left_side_points[left_side_idx + n] for n in [0, 1, 2]
+                        ]
                         left_side_idx += 2
-                    elif test_triangle_move_right_right.geometry.area > 0 \
-                            and test_triangle_move_right_right.is_between(left_side_line, right_side_line):
-                        triangle_points = [right_side_points[right_side_idx + n] for n in [0, 1, 2]]
+                    elif (
+                        test_triangle_move_right_right.geometry.area > 0
+                        and test_triangle_move_right_right.is_between(
+                            left_side_line, right_side_line
+                        )
+                    ):
+                        triangle_points = [
+                            right_side_points[right_side_idx + n] for n in [0, 1, 2]
+                        ]
                         right_side_idx += 2
                     else:
                         solution_possible = False
                 if not solution_possible:
-                    raise TriangulationError("No valid triangle found, cannot continue", locations=triangle_points)
+                    raise TriangulationError(
+                        "No valid triangle found, cannot continue",
+                        locations=triangle_points,
+                    )
 
         yield Triangle(points=triangle_points)
 
