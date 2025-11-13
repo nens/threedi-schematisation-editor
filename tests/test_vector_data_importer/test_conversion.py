@@ -92,7 +92,7 @@ def compare_results(ref_name, layers, target_object, channel_layer_name="channel
         compare_layer_geom(layer, ref_layers[name])
 
 
-def test_multi_import(qgis_application):
+def test_multi_import():
     # Test importing two layers without commit in between
     # This uses two instances of the CulvertsImporter, which mimics the procedure in the UI
     layer_pt = get_source_layer("culvert_2layers", "culvert_point")
@@ -107,7 +107,7 @@ def test_multi_import(qgis_application):
     compare_results("multi_import", layers, "culvert")
 
 
-def test_integrate_weir_too_long(qgis_application):
+def test_integrate_weir_too_long():
     # Test integrating multiple weirs on a channel where the total length of the weirs
     # is larger than the channel
     import_config = get_import_config("integrate_weirs_nosnap_too_long.json")
@@ -121,7 +121,7 @@ def test_integrate_weir_too_long(qgis_application):
     assert len([item for item in layers["structure_layer"].getFeatures()]) == 0
 
 
-def test_integrate_isolated_weir(qgis_application):
+def test_integrate_isolated_weir():
     import_config = get_import_config("integrate_weirs_snap.json")
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_channel_with_weir.gpkg")
     src_layer = get_source_layer("weir_isolated.gpkg", "dhydro_weir")
@@ -131,7 +131,7 @@ def test_integrate_isolated_weir(qgis_application):
     compare_results("test_isolated_weir", layers, "weir")
 
 
-def test_import_connection_nodes(qgis_application):
+def test_import_connection_nodes():
     import_config = get_import_config("import_connection_nodes.json")
     target_gpkg = get_temp_copy(
         SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg")
@@ -153,7 +153,7 @@ def test_import_connection_nodes(qgis_application):
 @pytest.mark.parametrize(
     "integrate,snap", [(True, True), (True, False), (False, True), (False, False)]
 )
-def test_import_weirs(qgis_application, integrate: bool, snap: bool):
+def test_import_weirs(integrate: bool, snap: bool):
     target_layer_name = "weir"
     test_name = f"{'integrate' if integrate else 'import'}_weirs_{'no' if snap else ''}snap.json"
     import_config = get_import_config(test_name)
@@ -165,7 +165,7 @@ def test_import_weirs(qgis_application, integrate: bool, snap: bool):
     compare_results(f"test_{test_name}", layers, target_layer_name)
 
 
-def test_fix_positioning(qgis_application):
+def test_fix_positioning():
     import_config = get_import_config("import_weirs_fix.json")
     src_layer = get_source_layer("weirs_fix_positions.gpkg", "dhydro_weir")
     target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg")
@@ -175,7 +175,7 @@ def test_fix_positioning(qgis_application):
     compare_results("test_weirs_fix_positions", layers, "weir")
 
 
-def test_integrate_pipe(qgis_application):
+def test_integrate_pipe():
     import_config = get_import_config("integrate_weirs_nosnap.json")
     import_config.integration.integration_mode = "pipes"
     src_layer = get_source_layer("weirs.gpkg", "dhydro_weir")
@@ -190,7 +190,7 @@ def test_integrate_pipe(qgis_application):
 @pytest.mark.parametrize(
     "test_name", ["test_points", "test_lines", "test_no_geom", "test_var_matching"]
 )
-def test_import_cross_section_location(qgis_application, test_name):
+def test_import_cross_section_location(test_name):
     import_config = ImportSettings(
         **{
             "cross_section_location_mapping": {
@@ -225,7 +225,7 @@ def test_import_cross_section_location(qgis_application, test_name):
     compare_layer_attributes(target_layer, ref_layer, "channel_id")
 
 
-def test_import_cross_section_location_with_expression(qgis_application):
+def test_import_cross_section_location_with_expression():
     test_name = "test_no_geom"
     import_config = ImportSettings(
         **{
@@ -255,7 +255,7 @@ def test_import_cross_section_location_with_expression(qgis_application):
     compare_layer_attributes(target_layer, ref_layer, "channel_id")
 
 
-def test_import_adjacent_channels(qgis_application):
+def test_import_adjacent_channels():
     import_config = ImportSettings(
         **{
             "connection_nodes": {
@@ -275,7 +275,7 @@ def test_import_adjacent_channels(qgis_application):
     compare_results("test_import_channels", layers, "channel")
 
 
-def test_import_cross_section_data(qgis_application):
+def test_import_cross_section_data():
     config_fields = [
         "cross_section_shape",
         "cross_section_width",

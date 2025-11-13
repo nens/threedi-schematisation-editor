@@ -9,6 +9,9 @@ from threedi_schematisation_editor.processing.alghorithms_inflow import (
     LinkDWFWithConnectionNodes,
     LinkSurfacesWithConnectionNodes,
 )
+from threedi_schematisation_editor.processing.algorithm_rasterize_channels import (
+    RasterizeChannelsAlgorithm,
+)
 from threedi_schematisation_editor.processing.algorithms_1d import BottomLevelCalculator
 from threedi_schematisation_editor.processing.algorithms_1d2d import (
     GenerateExchangeLines,
@@ -66,6 +69,7 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
             ImportPipes(),
             ImportChannels(),
             BottomLevelCalculator(),
+            RasterizeChannelsAlgorithm(),
         ]
         for alg in self.algorithms_list:
             self.addAlgorithm(alg)

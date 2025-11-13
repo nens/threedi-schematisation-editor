@@ -1,7 +1,13 @@
 History
 =======
 
-2.3.5 (unreleased)
+2.3.6 (unreleased)
+------------------
+
+- Add Rasterize channel processing algorithm (#448)
+
+
+2.3.5 (2025-10-22)
 ------------------
 
 - Improve handling of structures integrated on channels: prevent structures from sticking out on the start or end of the channel; prevent overlapping structures; prevent too short channels in between structures and at the start or end of the channel. (#376)

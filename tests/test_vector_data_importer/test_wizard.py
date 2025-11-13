@@ -28,7 +28,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog 
 from .utils import *
 
 
-def test_wizard_settings(qgis_application):
+def test_wizard_settings():
     model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
     wizard = ImportStructureWizard(dm.Culvert, model_gpkg, None)
     with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
@@ -38,7 +38,7 @@ def test_wizard_settings(qgis_application):
     assert wizard.get_settings().model_dump() == serialized_settings
 
 
-def test_wizard_run(qgis_application):
+def test_wizard_run():
     import_config_file = CONFIG_PATH.joinpath("import_connection_nodes.json")
     source_gpkg = str(get_temp_copy(SOURCE_PATH.joinpath("connection_nodes.gpkg")))
     src_layer = gpkg_layer(source_gpkg, "connection_nodes")
@@ -69,14 +69,14 @@ class TestIntegrationSettingsWidget:
             else:
                 assert not radio_button.isChecked()
 
-    def test_defaults(self, qgis_application):
+    def test_defaults(self):
         widget = settings_widgets.IntegrationSettingsWidget()
         model = sm.IntegrationSettings()
         self.check_radio_button_state(widget, sm.IntegrationMode.NONE)
         assert widget.snap_distance.value() == model.snap_distance
         assert widget.min_length.value() == model.min_length
 
-    def test_deserialize(self, qgis_application):
+    def test_deserialize(self):
         widget = settings_widgets.IntegrationSettingsWidget()
         settings = {
             "integration_mode": sm.IntegrationMode.PIPES,
@@ -88,7 +88,7 @@ class TestIntegrationSettingsWidget:
         assert widget.snap_distance.value() == settings["snap_distance"]
         assert widget.min_length.value() == settings["min_length"]
 
-    def test_get_settings(self, qgis_application):
+    def test_get_settings(self):
         widget = settings_widgets.IntegrationSettingsWidget()
         settings = {
             "integration_mode": sm.IntegrationMode.PIPES,
@@ -106,7 +106,7 @@ class TestIntegrationSettingsWidget:
             sm.IntegrationMode.CHANNELS,
         ],
     )
-    def test_enable_integration_settings(self, integration_mode, qgis_application):
+    def test_enable_integration_settings(self, integration_mode):
         widget = settings_widgets.IntegrationSettingsWidget()
         widget.deserialize({"integration_mode": integration_mode})
         expected_enabled = (
@@ -117,14 +117,14 @@ class TestIntegrationSettingsWidget:
 
 
 class TestConnectNodeSettings:
-    def test_defaults(self, qgis_application):
+    def test_defaults(self):
         widget = settings_widgets.ConnectionNodeSettingsWidget()
         model = sm.ConnectionNodeSettings()
         assert widget.create_nodes.isChecked() == model.create_nodes
         assert widget.snap.isChecked() == model.snap
         assert widget.snap_distance.value() == model.snap_distance
 
-    def test_deserialize(self, qgis_application):
+    def test_deserialize(self):
         widget = settings_widgets.ConnectionNodeSettingsWidget()
         settings = {"create_nodes": True, "snap": False, "snap_distance": 10.5}
         widget.deserialize(settings)
@@ -132,21 +132,21 @@ class TestConnectNodeSettings:
         assert widget.snap.isChecked() == settings["snap"]
         assert widget.snap_distance.value() == settings["snap_distance"]
 
-    def test_get_settings(self, qgis_application):
+    def test_get_settings(self):
         widget = settings_widgets.ConnectionNodeSettingsWidget()
         settings = {"create_nodes": True, "snap": False, "snap_distance": 10.5}
         widget.deserialize(settings)
         assert widget.get_settings().model_dump() == settings
 
     @pytest.mark.parametrize("snap_enabled", [True, False])
-    def test_toggle_snap_distance(self, snap_enabled, qgis_application):
+    def test_toggle_snap_distance(self, snap_enabled):
         widget = settings_widgets.ConnectionNodeSettingsWidget()
         widget.deserialize({"snap": snap_enabled})
         assert widget.snap_distance.isEnabled() == snap_enabled
 
 
 class TestCrossSectionDataRemapSettingsWidget:
-    def test_defaults(self, qgis_application):
+    def test_defaults(self):
         widget = settings_widgets.CrossSectionDataRemapSettingsWidget()
         model = sm.CrossSectionDataRemap()
         assert (
@@ -158,7 +158,7 @@ class TestCrossSectionDataRemapSettingsWidget:
             == model.use_lowest_point_as_reference
         )
 
-    def test_deserialize(self, qgis_application):
+    def test_deserialize(self):
         widget = settings_widgets.CrossSectionDataRemapSettingsWidget()
         settings = {
             "set_lowest_point_to_zero": True,
@@ -174,7 +174,7 @@ class TestCrossSectionDataRemapSettingsWidget:
             == settings["use_lowest_point_as_reference"]
         )
 
-    def test_get_settings(self, qgis_application):
+    def test_get_settings(self):
         widget = settings_widgets.CrossSectionDataRemapSettingsWidget()
         settings = {
             "set_lowest_point_to_zero": True,
@@ -185,13 +185,13 @@ class TestCrossSectionDataRemapSettingsWidget:
 
 
 class TestCrossSectionLocationMappingSettingsWidget:
-    def test_deserialize(self, qgis_application):
+    def test_deserialize(self):
         widget = settings_widgets.CrossSectionLocationMappingSettingsWidget()
         settings = {"snap_distance": 100}
         widget.deserialize(settings)
         assert widget.snap_distance.value() == settings["snap_distance"]
 
-    def test_get_settings(self, qgis_application):
+    def test_get_settings(self):
         widget = settings_widgets.CrossSectionLocationMappingSettingsWidget()
         settings = {"snap_distance": 100}
         widget.deserialize(settings)
@@ -200,7 +200,7 @@ class TestCrossSectionLocationMappingSettingsWidget:
 
 
 class TestFieldMapWidget:
-    def test_get_settings(self, qgis_application):
+    def test_get_settings(self):
         row_dict = {
             "foo": field_map.FieldMapRow(
                 label="foo",

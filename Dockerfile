@@ -1,5 +1,12 @@
 FROM qgis/qgis:final-3_34_4
-RUN apt-get update && apt-get install -y python3-pyqt5.qtwebsockets wget python3-scipy python3-h5py zip && apt-get clean
+RUN apt-get update && \
+    apt-get install -y \
+        python3-pyqt5.qtwebsockets \
+        wget \
+        python3-scipy \
+        python3-h5py \
+        zip \
+    && apt-get clean
 COPY requirements-dev.txt /root
 COPY requirements-test.txt /root
 # coverage is already installed globally, so we need to force-install it explicitly
