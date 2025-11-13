@@ -16,6 +16,7 @@ class ExtractLayerByNameAlgorithm(QgsProcessingAlgorithm):
     """
     Extract a layer by name from a GeoPackage
     """
+
     INPUT_GPKG = "INPUT_GPKG"
     LAYER_NAME = "LAYER_NAME"
     OUTPUT = "OUTPUT"
@@ -30,16 +31,12 @@ class ExtractLayerByNameAlgorithm(QgsProcessingAlgorithm):
 
         # Layer name input (string)
         self.addParameter(
-            QgsProcessingParameterString(
-                self.LAYER_NAME, description="Layer name"
-            )
+            QgsProcessingParameterString(self.LAYER_NAME, description="Layer name")
         )
 
         # Define output layer
         self.addOutput(
-            QgsProcessingOutputVectorLayer(
-                self.OUTPUT, description="Extracted layer"
-            )
+            QgsProcessingOutputVectorLayer(self.OUTPUT, description="Extracted layer")
         )
 
     def processAlgorithm(self, parameters, context, feedback):
