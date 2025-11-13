@@ -4,7 +4,7 @@ from functools import cached_property
 from typing import Any, Optional
 
 from pydantic import ValidationError
-from qgis.core import Qgis, QgsMessageLog, QgsVectorLayer
+from qgis.core import QgsVectorLayer
 from qgis.gui import QgsFieldExpressionWidget
 from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor

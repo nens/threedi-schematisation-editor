@@ -2,7 +2,7 @@ from dataclasses import fields
 from typing import Optional, Type
 
 from pydantic import BaseModel
-from qgis.core import Qgis, QgsMessageLog
+from qgis.core import Qgis
 from qgis.gui import QgsMapLayerComboBox
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtWidgets import (

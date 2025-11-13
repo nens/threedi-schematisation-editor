@@ -1,7 +1,7 @@
 from typing import Optional, Type
 
 from pydantic import BaseModel
-from qgis.core import Qgis, QgsApplication, QgsMessageLog
+from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor, QIcon, QPalette, QTextBlockFormat, QTextCharFormat
 from qgis.PyQt.QtWidgets import (
@@ -263,7 +263,6 @@ class RunPage(QWizardPage):
         self.log.text.clear()
 
     def on_cancel(self):
-        QgsMessageLog.logMessage("Cancel requested", "DEBUG", Qgis.Info)
         self.cancel_requested.emit()
         self.cancel_button.setEnabled(False)
 
