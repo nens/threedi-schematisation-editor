@@ -13,6 +13,10 @@ from threedi_schematisation_editor.processing.algorithms_1d import BottomLevelCa
 from threedi_schematisation_editor.processing.algorithms_1d2d import (
     GenerateExchangeLines,
 )
+from threedi_schematisation_editor.processing.algorithms_import_utils import (
+    ExtractLayerByNameAlgorithm,
+    GetConfigFileAlgorithm,
+)
 from threedi_schematisation_editor.processing.algorithms_vector_data_importer import (
     ImportChannels,
     ImportConnectionNodes,
@@ -66,6 +70,8 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
             ImportPipes(),
             ImportChannels(),
             BottomLevelCalculator(),
+            ExtractLayerByNameAlgorithm(),
+            GetConfigFileAlgorithm(),
         ]
         for alg in self.algorithms_list:
             self.addAlgorithm(alg)
