@@ -15,7 +15,8 @@ History
 - Simplify setting display names for data models
 - Add support for validation of configuration files for vector data importing (#441)
 - Move code for load schematisation to its own folder
-
+- Replace single window UI with multi-page wizard (#430)
+- Refactor import settings and store them in a nested pydantic model (#430)
 
 2.3.4 (2025-10-01)
 ------------------
