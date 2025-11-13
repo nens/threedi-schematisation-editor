@@ -15,6 +15,8 @@ History
 - Simplify setting display names for data models
 - Add support for validation of configuration files for vector data importing (#441)
 - Move code for load schematisation to its own folder
+- Add import utility algorithms GetConfigFileAlgorithm, ExtractLayerByNameAlgorithm
+- Let import algorithms return the target geopackage so that they can be chained in the Processing Model Builder
 
 
 2.3.4 (2025-10-01)
