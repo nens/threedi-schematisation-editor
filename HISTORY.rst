@@ -23,6 +23,9 @@ History
 - Move code for load schematisation to its own folder
 - Replace single window UI with multi-page wizard (#430)
 - Refactor import settings and store them in a nested pydantic model (#430)
+- Add import utility algorithms GetConfigFileAlgorithm, ExtractLayerByNameAlgorithm
+- Let import algorithms return the target geopackage so that they can be chained in the Processing Model Builder
+
 
 2.3.4 (2025-10-01)
 ------------------
