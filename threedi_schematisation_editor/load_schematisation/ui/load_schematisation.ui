@@ -26,7 +26,7 @@
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
-       <string>3Di Working Directory</string>
+       <string>Rana modelling directory</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
        <item row="0" column="0">
@@ -39,7 +39,7 @@
        <item row="1" column="0">
         <widget class="QLabel" name="missing_lib_label">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt; color:#ff0000;&quot;&gt;'threedi-mi-utils' library is missing. Please install it, to get the list of the 3Di Working Directory schematisations.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt; color:#ff0000;&quot;&gt;'threedi-mi-utils' library is missing. Please install it, to get the list of the Rana modelling directory schematisations.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>

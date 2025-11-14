@@ -1,4 +1,4 @@
-# Copyright (C) 2025 by Lutra Consulting
+# Copyright (C) 2025 by Nelen & Schuurmans
 import os
 import re
 from functools import cached_property
@@ -258,14 +258,14 @@ class LayersManager:
 
     @cached_property
     def model_revision(self):
-        """3Di model schematisation revision."""
+        """Rana schematisation revision."""
         model_gpkg_path_obj = Path(self.model_gpkg_path)
         try:
             from threedi_mi_utils import LocalSchematisation
 
             model_files_dir = model_gpkg_path_obj.parents[
                 2
-            ]  # 3Di model folder structure candidate
+            ]  # Rana modelling directory candidate
             local_schematisation = LocalSchematisation.initialize_from_location(
                 model_files_dir, use_config_for_revisions=False
             )
@@ -304,9 +304,9 @@ class LayersManager:
     def main_group(self):
         """Main model group."""
         if self.model_revision is not None:
-            model_group_name = f"3Di schematisation: {self.detailed_model_name}"
+            model_group_name = f"Rana schematisation: {self.detailed_model_name}"
         else:
-            model_group_name = f"3Di schematisation: {self.model_gpkg_path}"
+            model_group_name = f"Rana schematisation: {self.model_gpkg_path}"
         return model_group_name
 
     @property

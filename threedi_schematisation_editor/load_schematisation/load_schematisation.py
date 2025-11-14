@@ -30,7 +30,7 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
         self.list_working_dir_schematisations()
 
     def list_working_dir_schematisations(self):
-        """Populate 3Di Working Directory schematisations."""
+        """Populate Rana modelling directory schematisations."""
         try:
             from threedi_mi_utils import (
                 WIPRevision,

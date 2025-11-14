@@ -1,4 +1,4 @@
-# Copyright (C) 2025 by Lutra Consulting
+# Copyright (C) 2025 by Nelen & Schuurmans
 import os
 
 from qgis.core import QgsProcessingProvider
@@ -42,7 +42,7 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
         return "threedi_schematisation_editor"
 
     def name(self):
-        return "3Di Schematisation Editor"
+        return "Rana Schematisation Editor"
 
     def icon(self):
         icon_path = os.path.join(
