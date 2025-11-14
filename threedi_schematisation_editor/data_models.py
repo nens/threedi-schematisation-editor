@@ -1,4 +1,4 @@
-# Copyright (C) 2025 by Lutra Consulting
+# Copyright (C) 2025 by Nelen & Schuurmans
 import re
 from dataclasses import dataclass, field, fields
 from itertools import chain

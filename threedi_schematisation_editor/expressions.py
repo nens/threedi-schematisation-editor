@@ -123,7 +123,7 @@ def _cross_section_max_height(shape: int, width: float, height: float, table: st
 
 @qgsfunction(
     args="auto",
-    group="3Di",
+    group="Rana",
     handlesnull=True,
     helpText=CROSS_SECTION_MAX_HEIGHT_HELPTEXT,
 )
@@ -148,7 +148,7 @@ def _cross_section_max_width(shape: int, width: float, table: str):
 
 @qgsfunction(
     args="auto",
-    group="3Di",
+    group="Rana",
     handlesnull=True,
     helpText=CROSS_SECTION_MAX_WIDTH_HELPTEXT,
 )
@@ -160,7 +160,7 @@ def cross_section_max_width(shape: int, width: float, table: str, feature, paren
 
 
 @qgsfunction(
-    args="auto", group="3Di", handlesnull=True, helpText=CROSS_SECTION_LABEL_HELPTEXT
+    args="auto", group="Rana", handlesnull=True, helpText=CROSS_SECTION_LABEL_HELPTEXT
 )
 def cross_section_label(
     shape: int,

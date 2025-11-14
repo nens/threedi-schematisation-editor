@@ -1,4 +1,4 @@
-# Copyright (C) 2025 by Lutra Consulting
+# Copyright (C) 2025 by Nelen & Schuurmans
 import json
 from operator import itemgetter
 from pathlib import Path
@@ -70,13 +70,13 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
             <p>In some cases, you may want to prefer e.g. stormwater drains or sanitary sewers over combined sewers. This can be done by setting the stormwater sewer preference to a value greater than zero.</p>
             <h3>Parameters</h3>
             <h4>{self.parameter_names[self.POLYGON_LAYER]}</h4>
-            <p>{self.parameter_names[self.POLYGON_LAYER]} that is added to the project with the 3Di Schematisation Editor.</p>
+            <p>{self.parameter_names[self.POLYGON_LAYER]} that is added to the project with the Rana Schematisation Editor.</p>
             <h4>{self.parameter_names[self.MAP_LAYER]}</h4>
-            <p>{self.parameter_names[self.MAP_LAYER]} that is added to the project with the 3Di Schematisation Editor.</p>
+            <p>{self.parameter_names[self.MAP_LAYER]} that is added to the project with the Rana Schematisation Editor.</p>
             <h4>Pipe layer</h4>
-            <p>Pipe layer that is added to the project with the 3Di Schematisation Editor.</p>
+            <p>Pipe layer that is added to the project with the Rana Schematisation Editor.</p>
             <h4>Connection node layer</h4>
-            <p>Connection node layer that is added to the project with the 3Di Schematisation Editor.</p>
+            <p>Connection node layer that is added to the project with the Rana Schematisation Editor.</p>
             <h4>Sewerage types</h4>
             <p>Only pipes of the selected sewerage types will be used in the algorithm</p>
             <h4>Stormwater sewer preference</h4>
@@ -431,7 +431,7 @@ class AddNWRWSurfaceParameters(QgsProcessingAlgorithm):
             <p>Add surface parameters from the Dutch NWRW inflow model to a schematisation.</p>
             <h3>Parameters</h3>
             <h4>Target surface parameters layer</h4>
-            <p>Surface parameters layer of the 3Di schematisation that you want to add NWRW surface parameters to. Add it to your project to be able to select it.</p>
+            <p>Surface parameters layer of the Rana schematisation that you want to add NWRW surface parameters to. Add it to your project to be able to select it.</p>
             """
 
     def initAlgorithm(self, config=None):

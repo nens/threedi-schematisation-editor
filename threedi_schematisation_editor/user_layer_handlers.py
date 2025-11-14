@@ -1,4 +1,4 @@
-# Copyright (C) 2025 by Lutra Consulting
+# Copyright (C) 2025 by Nelen & Schuurmans
 from collections import defaultdict
 from functools import cached_property, partial
 from types import MappingProxyType
