@@ -5,11 +5,6 @@ History
 ------------------
 
 - Add Rasterize channel processing algorithm (#448)
-
-
-2.3.5 (2025-10-22)
-------------------
-
 - Improve handling of structures integrated on channels: prevent structures from sticking out on the start or end of the channel; prevent overlapping structures; prevent too short channels in between structures and at the start or end of the channel. (#376)
 - Add importer for channels (#251)
 - Add importer for cross section locations (#252)
@@ -17,12 +12,16 @@ History
 - Only create connection nodes when `create_connection_nodes` is set to True
 - Add option to integrate weirs and orifices on pipes (#246)
 - Add importer for cross section data (#253)
-- Fix crashes during project load (#437)
 - Simplify setting display names for data models
 - Add support for validation of configuration files for vector data importing (#441)
 - Move code for load schematisation to its own folder
 - Replace single window UI with multi-page wizard (#430)
 - Refactor import settings and store them in a nested pydantic model (#430)
+
+2.3.5 (2025-10-22)
+------------------
+
+- Fix crashes during project load (#437)
 
 2.3.4 (2025-10-01)
 ------------------
