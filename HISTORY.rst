@@ -1,7 +1,7 @@
 History
 =======
 
-2.3.6 (unreleased)
+2.4.0 (2025-11-18)
 ------------------
 
 - Add Rasterize channel processing algorithm (#448)
