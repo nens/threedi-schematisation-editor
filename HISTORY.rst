@@ -1,7 +1,7 @@
 History
 =======
 
-2.4.2 (unreleased)
+2.4.2 (2025-11-18)
 ------------------
 
 - Bump dependency loader to 1.2.6.
