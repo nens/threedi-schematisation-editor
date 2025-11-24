@@ -678,7 +678,7 @@ class CrossSectionLocationProcessor(SpatialProcessor):
             None,
         )
         new_geom = CrossSectionLocationProcessor.get_new_geom(src_geom, ref_channel)
-        if new_geom.isEmpty():
+        if new_geom is None or new_geom.isEmpty():
             return {self.target_name: []}
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
         update_attributes(
