@@ -19,9 +19,9 @@ changelog=https://docs.3di.live/a_releasenotes_3di_mi.html
 # Tags are comma separated with spaces allowed
 tags=Rana, edit, 1D, 2D, hydraulics
 
-homepage=https://www.3diwatermanagement.com
+homepage=https://www.ranawaterintelligence.com
 category=Plugins
-icon=icons/icon.png
+icon=icons/icon.svg
 experimental=False
 hasProcessingProvider=no
 
