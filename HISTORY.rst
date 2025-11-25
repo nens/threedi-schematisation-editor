@@ -9,6 +9,7 @@ History
 - Fix checking for empty geometry in cross-section location importer which caused features with empty geometries to be added to the cross-section location layer (#457)
 - Set range of spin boxes for default values in field mapping widgets to -1e9 to 1e9 (#459)
 - Set number of decimals for float spin boxes for default values in field mapping widgets (#459)
+- Skip adding empty settings page to vector data importer wizard (#462)
 
 
 2.4.2 (2025-11-18)
