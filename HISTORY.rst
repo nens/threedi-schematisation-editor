@@ -5,7 +5,7 @@ History
 ------------------
 
 - Fix checking for empty geometry in cross-section location importer which caused features with empty geometries to be added to the cross-section location layer
-
+- Skip adding empty settings page to vector data importer wizard
 
 2.4.2 (2025-11-18)
 ------------------
