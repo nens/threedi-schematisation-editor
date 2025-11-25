@@ -766,7 +766,6 @@ class PointProcessor(StructureProcessor):
             if snapped:
                 new_feat.setGeometry(QgsGeometry.fromPointXY(node.geometry().asPoint()))
             if not snapped:
-                self.node_layer.addFeature(node)
                 new_nodes.append(node)
         return new_nodes
 
@@ -793,6 +792,9 @@ class PointProcessor(StructureProcessor):
             src_feat,
             new_feat,
         )
+        # Add here so the next feature can also use these nodes
+        for node in new_nodes:
+            self.node_layer.addFeature(node)
         return {self.target_name: [new_feat]}
 
 
@@ -840,7 +842,7 @@ class LineProcessor(StructureProcessor):
                     polyline[idx] = node.geometry().asPoint()
                     new_feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
                 if not snapped:
-                    self.node_layer.addFeature(node)
+                    # self.node_layer.addFeature(node)
                     new_nodes.append(node)
         return new_nodes
 
@@ -871,4 +873,7 @@ class LineProcessor(StructureProcessor):
             src_feat,
             *new_nodes,
         )
+        # Add here so the next feature can also use these nodes
+        for node in new_nodes:
+            self.node_layer.addFeature(node)
         return {self.target_name: [new_feat]}
