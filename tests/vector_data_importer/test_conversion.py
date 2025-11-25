@@ -324,3 +324,36 @@ def test_import_cross_section_data():
             "cross_section_table",
         ]:
             compare_layer_attributes(target_layer, ref_layer, attribute)
+
+
+def test_created_connection_nodes_attributes():
+    default_storage_area = 0.64
+    import_config = ImportSettings(
+        **{
+            "connection_nodes": {
+                "snap": False,
+                "create_nodes": True,
+            },
+        },
+        **{
+            "connection_node_fields": {
+                "storage_area": {
+                    "method": "default",
+                    "default_value": default_storage_area,
+                },
+            }
+        },
+    )
+    src_layer = get_source_layer("channels.gpkg", "test_data")
+    target_gpkg = SCHEMATISATION_PATH.joinpath("empty.gpkg")
+    layers = get_schematisation_layers(target_gpkg, "channel")
+    del layers["conduit_layer"]
+    del layers["cross_section_location_layer"]
+    importer = ChannelsImporter(src_layer, target_gpkg, import_config, **layers)
+    importer.import_features()
+    assert all(
+        [
+            feat["storage_area"] == default_storage_area
+            for feat in layers["node_layer"].getFeatures()
+        ]
+    )
