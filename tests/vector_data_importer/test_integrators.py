@@ -17,7 +17,6 @@ from threedi_schematisation_editor.vector_data_importer.integrators import (
     LinearIntegrator,
     LinearIntegratorStructureData,
 )
-from threedi_schematisation_editor.vector_data_importer.utils import FeatureManager
 
 
 @pytest.fixture
