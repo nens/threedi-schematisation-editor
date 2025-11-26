@@ -4,6 +4,7 @@ import pytest
 import shapely
 from shapely.testing import assert_geometries_equal
 
+from tests.utils import get_temp_copy
 from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.importers import (
     ChannelsImporter,

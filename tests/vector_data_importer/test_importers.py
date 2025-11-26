@@ -12,6 +12,7 @@ from qgis.core import (
 )
 
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
+from tests.utils import get_temp_copy
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.vector_data_importer.importers import (
     CrossSectionDataImporter,
@@ -21,7 +22,7 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
     SpatialImporter,
 )
 
-from .utils import SCHEMATISATION_PATH, get_temp_copy
+from .utils import SCHEMATISATION_PATH
 
 
 @pytest.fixture
