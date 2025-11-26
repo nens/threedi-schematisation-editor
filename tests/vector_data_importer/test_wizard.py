@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -10,6 +9,7 @@ import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 import threedi_schematisation_editor.vector_data_importer.wizard.field_map as field_map
 import threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets as settings_widgets
+from tests.utils import get_temp_copy
 from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard import (

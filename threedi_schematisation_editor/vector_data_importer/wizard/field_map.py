@@ -335,9 +335,14 @@ class FieldMapDelegate(QStyledItemDelegate):
                     lambda idx, editor=editor: self.commitData.emit(editor)
                 )
             elif value_type in [int, float]:
-                editor = (
-                    QDoubleSpinBox(parent) if value_type == float else QSpinBox(parent)
-                )
+                # Note that we set a very wide range, which users should experience as infinite
+                if value_type == float:
+                    editor = QDoubleSpinBox(parent)
+                    editor.setRange(-1.0e9, 1.0e9)
+                    editor.setDecimals(3)
+                else:
+                    editor = QSpinBox(parent)
+                    editor.setRange(int(-1e9), int(1e9))
                 unit = index.model().get_default_value_units(index.row())
                 if unit:
                     editor.setSuffix(f" {unit}")

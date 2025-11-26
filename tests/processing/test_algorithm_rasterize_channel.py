@@ -9,12 +9,12 @@ from qgis.core import (
     QgsVectorLayer,
 )
 
-from tests.utils import DATA_DIR
+from tests.utils import DATA_DIR, get_temp_copy
 from threedi_schematisation_editor.processing.algorithm_rasterize_channels import (
     RasterizeChannelsAlgorithm,
 )
 
-gpkg_path = (DATA_DIR / "rasterize_channels_test_inputs.gpkg").resolve()
+gpkg_path = get_temp_copy((DATA_DIR / "rasterize_channels_test_inputs.gpkg").resolve())
 channel_features = str(gpkg_path) + "|layername=channel"
 cross_section_location_features = str(gpkg_path) + "|layername=cross_section_location"
 
