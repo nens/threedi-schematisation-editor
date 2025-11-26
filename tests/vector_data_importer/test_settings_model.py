@@ -6,7 +6,6 @@ from pydantic import ValidationError
 
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
-from threedi_schematisation_editor.utils import get_type_for_casting
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 
 
