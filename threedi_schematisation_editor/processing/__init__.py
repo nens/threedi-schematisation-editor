@@ -46,7 +46,7 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
 
     def icon(self):
         icon_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "icons", "icon.svg"
+            os.path.dirname(os.path.dirname(__file__)), "icons", "rana_blue_on_transparent.svg"
         )
         return QIcon(icon_path)
 

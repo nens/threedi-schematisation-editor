@@ -147,7 +147,7 @@ class ThreediSchematisationEditorPlugin:
             self.iface.mainWindow(),
         )
         self.action_remove.triggered.connect(self.remove_model_from_project)
-        import_features_icon_path = get_icon_path("icon_import.png")
+        import_features_icon_path = get_icon_path("icon_import.svg")
         import_actions_spec = [
             ("Connection nodes", self.import_external_connection_nodes, None),
             (
