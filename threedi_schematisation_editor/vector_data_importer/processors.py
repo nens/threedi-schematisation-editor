@@ -745,7 +745,7 @@ class StructureProcessor(SpatialProcessor, ABC):
     def get_node(self, point):
         # If snapping is not set, only try to snap to overlapping nodes (using snapping distance 1e-9)
         snap_distance = (
-            self.point_to_line_conversion_settings.snap_distance
+            self.connection_nodes_settings.snap_distance
             if self.connection_nodes_settings.snap
             else 1e-9
         )
