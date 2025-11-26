@@ -138,7 +138,8 @@ class VDIWizard(QWizard):
         self.resize(1000, 750)
         # add pages
         self.addPage(self.start_page)
-        self.addPage(self.settings_page)
+        if len(self.settings_widgets_classes) > 0:
+            self.addPage(self.settings_page)
         if self.field_map_page:
             self.addPage(self.field_map_page)
         for page in self.connection_node_pages:
