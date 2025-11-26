@@ -1,7 +1,7 @@
 History
 =======
 
-2.4.3 (unreleased)
+2.4.3 (2025-11-26)
 ------------------
 
 - Fix checking for empty geometry in cross-section location importer which caused features with empty geometries to be added to the cross-section location layer (#457)
