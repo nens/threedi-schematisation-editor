@@ -5,6 +5,8 @@ History
 ------------------
 
 - Fix checking for empty geometry in cross-section location importer which caused features with empty geometries to be added to the cross-section location layer (#457)
+- Fix snapping to nodes created during import (#460)
+- Snap to overlapping nodes also when snapping is not enabled (#460)
 - Skip adding empty settings page to vector data importer wizard (#462)
 - Set range of spin boxes for default values in field mapping widgets to -1e9 to 1e9 (#459)
 - Set number of decimals for float spin boxes for default values in field mapping widgets (#459)
