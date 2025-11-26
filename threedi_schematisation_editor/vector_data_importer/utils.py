@@ -1,6 +1,7 @@
 import warnings
 from enum import Enum
 from threading import Event
+from typing import Optional
 
 from qgis.core import (
     NULL,
@@ -8,9 +9,13 @@ from qgis.core import (
     QgsExpressionContext,
     QgsFeature,
     QgsGeometry,
+    QgsPointLocator,
     QgsPointXY,
+    QgsProject,
+    QgsVectorLayer,
     QgsWkbTypes,
 )
+from qgis.gui import QgisInterface
 
 from threedi_schematisation_editor.utils import TypeConversionError, convert_to_type
 from threedi_schematisation_editor.warnings import (
@@ -177,3 +182,10 @@ class CancellationToken:
 
     def reset(self):
         self._event.clear()
+
+
+def get_point_locator(
+    layer: QgsVectorLayer, context: Optional[QgisInterface] = None
+) -> QgsPointLocator:
+    project = context.project() if context else QgsProject.instance()
+    return QgsPointLocator(layer, layer.crs(), project.transformContext())

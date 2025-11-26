@@ -246,22 +246,6 @@ class TestSpatialImporter:
             "EPSG:4326", "EPSG:28992", "transform_context"
         )
 
-    @patch(
-        "threedi_schematisation_editor.vector_data_importer.importers.QgsPointLocator"
-    )
-    def test_get_locator(
-        self, mock_locator, mock_project, spatial_importer, node_layer
-    ):
-        """Test that get_locator returns a QgsPointLocator."""
-        # Mock the QgsProject instance and transform context
-        mock_instance = MagicMock()
-        mock_project.instance.return_value = mock_instance
-        mock_instance.transformContext.return_value = "transform_context"
-        spatial_importer.get_locator(None)
-        mock_locator.assert_called_once_with(
-            node_layer, "EPSG:28992", "transform_context"
-        )
-
     def test_process_commit_errors(self, spatial_importer):
         """Test that process_commit_errors returns the commit errors message."""
         layer = MagicMock()

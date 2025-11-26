@@ -21,6 +21,7 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionLocationProcessor,
     LineProcessor,
 )
+from threedi_schematisation_editor.vector_data_importer.utils import get_point_locator
 
 
 class Importer:
@@ -162,12 +163,6 @@ class SpatialImporter(Importer):
             self.external_source.sourceCrs(), self.target_layer.crs(), transform_ctx
         )
 
-    def get_locator(self, context=None):
-        project = context.project() if context else QgsProject.instance()
-        return QgsPointLocator(
-            self.node_layer, self.target_layer.crs(), project.transformContext()
-        )
-
     @property
     def modifiable_layers(self):
         """Return a list of the layers that can be modified."""
@@ -192,7 +187,10 @@ class SpatialImporter(Importer):
         """Method responsible for the importing structures from the external feature source."""
         # setup processor
         self.processor.transformation = self.get_transformation(context)
-        self.processor.node_locator = self.get_locator(context=context)
+        self.processor.node_locator = get_point_locator(
+            self.node_layer, context=context
+        )
+        self.processor.context = context
         # start editing
         self.start_editing()
         input_feature_ids = self.get_input_feature_ids(selected_ids)
