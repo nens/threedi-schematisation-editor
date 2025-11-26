@@ -12,6 +12,7 @@ from qgis.core import (
 )
 
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
+from tests.utils import get_temp_copy
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.vector_data_importer.importers import (
     CrossSectionDataImporter,
@@ -21,7 +22,7 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
     SpatialImporter,
 )
 
-from .utils import SCHEMATISATION_PATH, get_temp_copy
+from .utils import SCHEMATISATION_PATH
 
 
 @pytest.fixture
@@ -244,22 +245,6 @@ class TestSpatialImporter:
         result = importer_different_crs.get_transformation()
         mock_transform.assert_called_once_with(
             "EPSG:4326", "EPSG:28992", "transform_context"
-        )
-
-    @patch(
-        "threedi_schematisation_editor.vector_data_importer.importers.QgsPointLocator"
-    )
-    def test_get_locator(
-        self, mock_locator, mock_project, spatial_importer, node_layer
-    ):
-        """Test that get_locator returns a QgsPointLocator."""
-        # Mock the QgsProject instance and transform context
-        mock_instance = MagicMock()
-        mock_project.instance.return_value = mock_instance
-        mock_instance.transformContext.return_value = "transform_context"
-        spatial_importer.get_locator(None)
-        mock_locator.assert_called_once_with(
-            node_layer, "EPSG:28992", "transform_context"
         )
 
     def test_process_commit_errors(self, spatial_importer):

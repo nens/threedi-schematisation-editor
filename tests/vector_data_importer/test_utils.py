@@ -6,6 +6,7 @@ import shapely
 from PyQt5.QtCore import QVariant
 from qgis.core import (
     NULL,
+    QgsCoordinateReferenceSystem,
     QgsCurvePolygon,
     QgsExpression,
     QgsExpressionContext,
@@ -15,8 +16,11 @@ from qgis.core import (
     QgsGeometry,
     QgsLineString,
     QgsPoint,
+    QgsPointLocator,
     QgsPointXY,
     QgsPolygon,
+    QgsProject,
+    QgsVectorLayer,
     QgsWkbTypes,
 )
 from shapely.testing import assert_geometries_equal
@@ -26,6 +30,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     FeatureManager,
     get_field_config_value,
     get_float_value_from_feature,
+    get_point_locator,
     get_src_geometry,
     update_attributes,
 )
@@ -378,3 +383,19 @@ class TestGetSrcGeometry:
         ):
             with pytest.warns(GeometryImporterWarning):
                 get_src_geometry(feature, none_ok=True)
+
+
+@pytest.mark.parametrize("use_context", [True, False])
+def test_get_point_locator(use_context):
+    layer = QgsVectorLayer("Point?crs=EPSG:28992", "test", "memory")
+    if use_context:
+        context = mock.Mock()
+        project = QgsProject.instance()  # Use real project instance
+        context.project.return_value = project
+    else:
+        context = None
+    locator = get_point_locator(layer, context)
+    assert isinstance(locator, QgsPointLocator)
+    assert locator.destinationCrs().authid() == "EPSG:28992"
+    if use_context:
+        assert context.project.call_count == 1

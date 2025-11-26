@@ -1,15 +1,40 @@
 History
 =======
 
-2.3.6 (unreleased)
+2.4.4 (unreleased)
+------------------
+
+- Nothing changed yet.
+
+
+2.4.3 (2025-11-26)
+------------------
+
+- Fix checking for empty geometry in cross-section location importer which caused features with empty geometries to be added to the cross-section location layer (#457)
+- Fix snapping to nodes created during import (#460)
+- Snap to overlapping nodes also when snapping is not enabled (#460)
+- Skip adding empty settings page to vector data importer wizard (#462)
+- Set range of spin boxes for default values in field mapping widgets to -1e9 to 1e9 (#459)
+- Set number of decimals for float spin boxes for default values in field mapping widgets (#459)
+- Fix setting attributes of newly created connection nodes when importing channels, pipes, weirs, orifices and culverts (#461)
+
+
+2.4.2 (2025-11-18)
+------------------
+
+- Bump dependency loader to 1.2.6.
+
+
+2.4.1 (2025-11-18)
+------------------
+
+- Bump dependency loader to 1.2.5.
+
+
+2.4.0 (2025-11-18)
 ------------------
 
 - Add Rasterize channel processing algorithm (#448)
-
-
-2.3.5 (2025-10-22)
-------------------
-
 - Improve handling of structures integrated on channels: prevent structures from sticking out on the start or end of the channel; prevent overlapping structures; prevent too short channels in between structures and at the start or end of the channel. (#376)
 - Add importer for channels (#251)
 - Add importer for cross section locations (#252)
@@ -17,7 +42,6 @@ History
 - Only create connection nodes when `create_connection_nodes` is set to True
 - Add option to integrate weirs and orifices on pipes (#246)
 - Add importer for cross section data (#253)
-- Fix crashes during project load (#437)
 - Simplify setting display names for data models
 - Add support for validation of configuration files for vector data importing (#441)
 - Move code for load schematisation to its own folder
@@ -25,6 +49,13 @@ History
 - Refactor import settings and store them in a nested pydantic model (#430)
 - Add import utility algorithms GetConfigFileAlgorithm, ExtractLayerByNameAlgorithm
 - Let import algorithms return the target geopackage so that they can be chained in the Processing Model Builder
+- Add news item for Rana transition
+
+
+2.3.5 (2025-10-22)
+------------------
+
+- Fix crashes during project load (#437)
 
 
 2.3.4 (2025-10-01)

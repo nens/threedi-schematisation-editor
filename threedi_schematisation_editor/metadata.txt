@@ -3,7 +3,7 @@ name=Rana Schematisation Editor
 qgisMinimumVersion=3.28
 qgisMaximumVersion=3.99
 description=Rana Schematisation Editor
-version=2.3.6
+version=2.4.4
 author=Nelen & Schuurmans
 email=servicedesk@nelen-schuurmans.nl
 about=View and edit Rana schematisations in the Rana Desktop Client.
@@ -27,5 +27,5 @@ hasProcessingProvider=no
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
-plugin_dependencies=Nelen and Schuurmans Dependency Loader==1.2.3
+plugin_dependencies=Nelen and Schuurmans Dependency Loader==1.2.6
 
