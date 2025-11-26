@@ -743,16 +743,15 @@ class StructureProcessor(SpatialProcessor, ABC):
         )
 
     def get_node(self, point):
-        snapped = False
-        node = None
-        if self.connection_nodes_settings.snap:
-            node = find_connection_node(
-                point, self.node_locator, self.connection_nodes_settings.snap_distance
-            )
-            snapped = node is not None
-        if self.connection_nodes_settings.create_nodes and (
-            not snapped or not self.connection_nodes_settings.snap
-        ):
+        # If snapping is not set, only try to snap to overlapping nodes (using snapping distance 1e-9)
+        snap_distance = (
+            self.point_to_line_conversion_settings.snap_distance
+            if self.connection_nodes_settings.snap
+            else 1e-9
+        )
+        node = find_connection_node(point, self.node_locator, snap_distance)
+        snapped = node is not None
+        if self.connection_nodes_settings.create_nodes and not snapped:
             node = self.node_manager.create_new(
                 QgsGeometry.fromPointXY(point), self.node_fields
             )
