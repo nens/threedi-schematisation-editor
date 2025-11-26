@@ -5,6 +5,7 @@ History
 ------------------
 
 - Fix checking for empty geometry in cross-section location importer which caused features with empty geometries to be added to the cross-section location layer
+- Fix setting attributes of newly created connection nodes when importing channels, pipes, weirs, orifices and culverts (#461)
 
 
 2.4.2 (2025-11-18)
