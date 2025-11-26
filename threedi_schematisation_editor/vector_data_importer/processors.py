@@ -31,6 +31,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
     FeatureManager,
     get_field_config_value,
+    get_point_locator,
     get_src_geometry,
     update_attributes,
 )
@@ -68,6 +69,7 @@ class SpatialProcessor(Processor):
         self.target_model_cls = target_model_cls
         self.transformation = None
         self.node_locator = None
+        self.context = None
 
     @classmethod
     def snap_connection_node(
@@ -795,6 +797,8 @@ class PointProcessor(StructureProcessor):
         # Add here so the next feature can also use these nodes
         for node in new_nodes:
             self.node_layer.addFeature(node)
+        if new_nodes:
+            self.node_locator = get_point_locator(self.node_layer, self.context)
         return {self.target_name: [new_feat]}
 
 
@@ -836,13 +840,13 @@ class LineProcessor(StructureProcessor):
             (-1, "connection_node_id_end"),
         ]:
             node, snapped = self.get_node(polyline[idx])
+
             if node:
                 new_feat[name] = node["id"]
                 if snapped:
                     polyline[idx] = node.geometry().asPoint()
                     new_feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
                 if not snapped:
-                    # self.node_layer.addFeature(node)
                     new_nodes.append(node)
         return new_nodes
 
@@ -876,4 +880,6 @@ class LineProcessor(StructureProcessor):
         # Add here so the next feature can also use these nodes
         for node in new_nodes:
             self.node_layer.addFeature(node)
+        if new_nodes:
+            self.node_locator = get_point_locator(self.node_layer, self.context)
         return {self.target_name: [new_feat]}
