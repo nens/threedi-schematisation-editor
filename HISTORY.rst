@@ -4,8 +4,9 @@ History
 2.4.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
-
+- Remove 3Di from user facing text, replace with Rana
+- Remove Lutra copyright statements
+- Replace icons for Rana-style icons
 
 2.4.3 (2025-11-26)
 ------------------
