@@ -285,8 +285,8 @@ class VDIWizard(QWizard):
         progress_bar = self.run_page.progress_bar
         settings = self.get_settings()
         selected_feat_ids = (
-            self.use_selected_features
-            if self.start_page.use_selected_features
+            self.selected_layer.selectedFeatureIds()
+            if self.use_selected_features
             else None
         )
         handlers, layers = self.prepare_import()
