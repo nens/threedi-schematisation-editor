@@ -4,7 +4,7 @@ History
 2.4.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix bug with  "use selected features" (#469)
 
 
 2.4.3 (2025-11-26)
