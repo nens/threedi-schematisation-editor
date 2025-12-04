@@ -5,6 +5,7 @@ History
 ------------------
 
 - Fix bug with  "use selected features" (#469)
+- Make crest_level en crest_type optional for Weir and Orifice (#471)
 
 
 2.4.3 (2025-11-26)
