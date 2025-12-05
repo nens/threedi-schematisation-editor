@@ -235,8 +235,8 @@ class Weir(ModelObject):
     id: int
     code: Optional[str]
     display_name: Optional[str]
-    crest_level: float
-    crest_type: CrestType
+    crest_level: Optional[float]
+    crest_type: Optional[CrestType]
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
     material_id: Optional[int]
@@ -323,8 +323,8 @@ class Orifice(ModelObject):
     id: int
     code: Optional[str]
     display_name: Optional[str]
-    crest_level: float
-    crest_type: CrestType
+    crest_level: Optional[float]
+    crest_type: Optional[CrestType]
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
     material_id: Optional[int]
