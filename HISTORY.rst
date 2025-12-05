@@ -4,6 +4,9 @@ History
 2.4.4 (unreleased)
 ------------------
 
+- Remove 3Di from user facing text, replace with Rana
+- Remove Lutra copyright statements
+- Replace icons for Rana-style icons
 - Fix bug with  "use selected features" (#469)
 - Make crest_level en crest_type optional for Weir and Orifice (#471)
 
@@ -57,6 +60,7 @@ History
 ------------------
 
 - Fix crashes during project load (#437)
+
 
 2.3.4 (2025-10-01)
 ------------------

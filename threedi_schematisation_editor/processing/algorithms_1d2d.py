@@ -1,4 +1,4 @@
-# Copyright (C) 2025 by Lutra Consulting
+# Copyright (C) 2025 by Nelen & Schuurmans
 from qgis.core import (
     Qgis,
     QgsFeature,
@@ -49,11 +49,11 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
             <p>This processing algorithm generates exchange lines for (a selection of) channels. The resulting exchange line's geometry is a copy of the input channel's geometry, at user specified distance from that channel (the GIS term for this is 'offset curve'). The resulting exchange lines is added to the exchange line layer, and the attribute 'channel_id' refers to the channel it was derived from.</p>
             <h3>Parameters</h3>
             <h4>Input channel layer</h4>
-            <p>Usually this is the Channel layer that is added to the project with the 3Di Schematisation Editor. Technically, any layer with a line geometry and the fields 'id' and 'exchange_type' can be used as input.</p>
+            <p>Usually this is the Channel layer that is added to the project with the Rana Schematisation Editor. Technically, any layer with a line geometry and the fields 'id' and 'exchange_type' can be used as input.</p>
             <h4>Distance</h4>
             <p>Offset distance in meters. A positive value will place the output exchange line to the left of the line, negative values will place it to the right.</p>
             <h4>Exchange lines layer</h4>
-            <p>The layer to which the results are written. Usually this is the 'Exchange line' layer that is added to the project with the 3Di Schematisation Editor. Technically, any layer with a line geometry and the field 'channel_id' can be used.</p>
+            <p>The layer to which the results are written. Usually this is the 'Exchange line' layer that is added to the project with the Rana Schematisation Editor. Technically, any layer with a line geometry and the field 'channel_id' can be used.</p>
             """
         )
 
