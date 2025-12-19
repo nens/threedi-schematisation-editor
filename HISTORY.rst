@@ -1,7 +1,7 @@
 History
 =======
 
-2.4.4 (unreleased)
+2.4.4 (2025-12-19)
 ------------------
 
 - Remove 3Di from user facing text, replace with Rana
