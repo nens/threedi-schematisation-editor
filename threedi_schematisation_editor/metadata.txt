@@ -1,14 +1,14 @@
 [general]
-name=3Di Schematisation Editor
+name=Rana Schematisation Editor
 qgisMinimumVersion=3.28
 qgisMaximumVersion=3.99
-description=3Di Schematisation Editor
+description=Rana Schematisation Editor
 version=2.4.4
-author=3Di Water Management
+author=Nelen & Schuurmans
 email=servicedesk@nelen-schuurmans.nl
-about=View and edit 3Di schematisations in the Modeller Interface.
+about=View and edit Rana schematisations in the Rana Desktop Client.
 
-    For questions on 3Di or the use of this plugin please contact us via
+    For questions on Rana or the use of this plugin please contact us via
     servicedesk@nelen-schuurmans.nl
 
 tracker=https://github.com/nens/threedi-schematisation-editor/issues
@@ -17,11 +17,11 @@ repository=https://github.com/nens/threedi-schematisation-editor/issues
 changelog=https://docs.3di.live/a_releasenotes_3di_mi.html
 
 # Tags are comma separated with spaces allowed
-tags=3Di, edit, 1D, 2D, hydraulics
+tags=Rana, edit, 1D, 2D, hydraulics
 
-homepage=https://www.3diwatermanagement.com
+homepage=https://www.ranawaterintelligence.com
 category=Plugins
-icon=icons/icon.png
+icon=icons/rana_blue_on_transparent.svg
 experimental=False
 hasProcessingProvider=no
 

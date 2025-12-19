@@ -1,4 +1,4 @@
-# Copyright (C) 2025 by Lutra Consulting
+# Copyright (C) 2025 by Nelen & Schuurmans
 import os.path
 import platform
 from collections import defaultdict
@@ -99,7 +99,7 @@ def classFactory(iface):
 
 
 class ThreediSchematisationEditorPlugin:
-    PLUGIN_NAME = "3Di Schematisation Editor"
+    PLUGIN_NAME = "Rana Schematisation Editor"
     THREEDI_GPKG_VAR_NAMES = "threedi_gpkg_var"
 
     def __init__(self, iface):
@@ -137,17 +137,17 @@ class ThreediSchematisationEditorPlugin:
         self.toolbar.addSeparator()
         self.action_open = QAction(
             QIcon(get_icon_path("icon_load.svg")),
-            "Load 3Di Schematisation",
+            "Load Rana schematisation",
             self.iface.mainWindow(),
         )
         self.action_open.triggered.connect(self.load_schematisation)
         self.action_remove = QAction(
             QIcon(get_icon_path("icon_unload.svg")),
-            "Remove 3Di Schematisation",
+            "Remove Rana schematisation",
             self.iface.mainWindow(),
         )
         self.action_remove.triggered.connect(self.remove_model_from_project)
-        import_features_icon_path = get_icon_path("icon_import.png")
+        import_features_icon_path = get_icon_path("icon_import.svg")
         import_actions_spec = [
             ("Connection nodes", self.import_external_connection_nodes, None),
             (
@@ -205,7 +205,7 @@ class ThreediSchematisationEditorPlugin:
             node
             for node in root_node.children()
             if node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup
-            and node.name().startswith("3Di schematisation:")
+            and node.name().startswith("Rana schematisation:")
         ]
         for model_node in model_nodes:
             model_groups = {
@@ -385,8 +385,8 @@ class ThreediSchematisationEditorPlugin:
         elif model_gpkg.endswith(".gpkg"):
             version_num = ThreediDatabase(model_gpkg).schema.get_version()
             if version_num < 300:
-                warn_msg = "The selected file is not a valid 3Di schematisation database.\n\nYou may have selected a geopackage that was created by an older version of the 3Di Schematisation Editor (before version 2.0). In that case, there will probably be a Spatialite (*.sqlite) in the same folder. Please use that file instead."
-                self.uc.show_warn(warn_msg, None, "3Di Schematisation Editor")
+                warn_msg = "The selected file is not a valid Rana schematisation database.\n\nYou may have selected a geopackage that was created by an older version of the Rana Schematisation Editor (before version 2.0). In that case, there will probably be a Spatialite (*.sqlite) in the same folder. Please use that file instead."
+                self.uc.show_warn(warn_msg, None, "Rana Schematisation Editor")
                 return
 
         lm = LayersManager(self.iface, self.uc, model_gpkg)

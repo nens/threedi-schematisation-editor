@@ -1,5 +1,5 @@
-# 3Di Schematisation Editor for QGIS, licensed under GPLv2 or (at your option) any later version
-# Copyright (C) 2025 by Lutra Consulting for 3Di Water Management
+# Rana Schematisation Editor for QGIS, licensed under GPLv2 or (at your option) any later version
+# Copyright (C) 2025 by Nelen & Schuurmans
 import os
 import re
 import shutil
