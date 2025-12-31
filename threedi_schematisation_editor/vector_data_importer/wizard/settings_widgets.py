@@ -68,24 +68,27 @@ class LayerSettingsWidget(QWidget):
         layer_selector.layerChanged.connect(self.update_layer)
         layer_selector.setCurrentIndex(0)
         layer_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        use_selected = QCheckBox("Selected features only")
+        self.use_selected = QCheckBox("Selected features only")
+        self.use_selected.setEnabled(False)
         # set up layout
         layout = QVBoxLayout(self)
         layout.addWidget(label)
         layout.addWidget(layer_selector)
-        layout.addWidget(use_selected)
+        layout.addWidget(self.use_selected)
         # Connect widgets to model updates
-        use_selected.toggled.connect(self.update_use_selected)
+        self.use_selected.toggled.connect(self.update_use_selected)
 
     def update_layer(self, layer):
         if layer:
             self.selected_layer = layer
             self.model.selected_layer = layer.name()
             self.layer_changed.emit(layer.name())  # Emit with layer name
+            self.use_selected.setEnabled(len(layer.selectedFeatureIds()) > 0)
         else:
             self.selected_layer = None
             self.model.selected_layer = ""
             self.layer_changed.emit("")
+            self.use_selected.setEnabled(False)
 
     def update_use_selected(self, checked):
         self.model.use_selected_features = checked
