@@ -155,6 +155,13 @@ class LinearIntegrator:
             layer_name = layer.name()
             self.spatial_indexes_map[layer_name] = spatial_index(layer)
 
+    def set_transformed_spatial_index(self, transform):
+        # update spatial index for source when source has a transformation
+        # this is not done at initialization because the transform is aware of the context
+        self.spatial_indexes_map["source"] = spatial_index(
+            self.external_source, transform=transform
+        )
+
     def setup_node_by_location(self):
         """Setup nodes by location."""
         self.node_by_location = {}
@@ -628,13 +635,6 @@ class ChannelIntegrator(LinearIntegrator):
                 self.get_conduit_structures_data(
                     conduit_feature, conduit_geom, input_feature_ids
                 )
-            )
-            from qgis.core import Qgis, QgsMessageLog
-
-            QgsMessageLog.logMessage(
-                f"found {len(conduit_structures)} structures for integration",
-                "DEBUG",
-                Qgis.Info,
             )
             if not conduit_structures:
                 continue
