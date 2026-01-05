@@ -4,7 +4,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Optional, Type
 
-from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes
+from qgis.core import QgsFeature, QgsGeometry, QgsVectorLayerUtils, QgsWkbTypes
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
@@ -520,6 +520,7 @@ class PipeIntegrator(LinearIntegrator):
             importer.import_settings,
             importer.external_source,
             importer.target_gpkg,
+            importer.processor.transformation,
         )
 
     def integrate_features(self, input_feature_ids, progress_callback: callable = None):
@@ -627,6 +628,13 @@ class ChannelIntegrator(LinearIntegrator):
                 self.get_conduit_structures_data(
                     conduit_feature, conduit_geom, input_feature_ids
                 )
+            )
+            from qgis.core import Qgis, QgsMessageLog
+
+            QgsMessageLog.logMessage(
+                f"found {len(conduit_structures)} structures for integration",
+                "DEBUG",
+                Qgis.Info,
             )
             if not conduit_structures:
                 continue

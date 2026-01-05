@@ -173,6 +173,13 @@ class SpatialImporter(Importer):
 
     def integrate_features(self, input_feature_ids, progress_callback=None):
         if self.integrator:
+            # TODO: handle transform here?
+            if self.processor.transformation:
+                from threedi_schematisation_editor.utils import spatial_index
+
+                self.integrator.spatial_indexes_map["source"] = spatial_index(
+                    self.external_source, transform=self.processor.transformation
+                )
             new_features, integrated_ids = self.integrator.integrate_features(
                 input_feature_ids, progress_callback=progress_callback
             )
