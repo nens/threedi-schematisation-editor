@@ -527,7 +527,6 @@ class PipeIntegrator(LinearIntegrator):
             importer.import_settings,
             importer.external_source,
             importer.target_gpkg,
-            importer.processor.transformation,
         )
 
     def integrate_features(self, input_feature_ids, progress_callback: callable = None):
