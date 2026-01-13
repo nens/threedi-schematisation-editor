@@ -4,7 +4,7 @@ History
 2.4.6 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Use for loop instead of widget.findData() to find index in QComboBox to avoid confusion between NULL and 0 (#476)
 
 
 2.4.5 (2026-01-05)

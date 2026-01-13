@@ -345,7 +345,13 @@ class AbstractBaseForm(QObject):
                     widget.setValue(widget.maximum())  # workaround for the issue #129
                 widget.clear()
         elif isinstance(widget, QComboBox):
-            item_idx = widget.findData(value if value != NULL else None)
+            key = value if value != NULL else None
+            # we use a for loop instead of widget.findData() because findData does not discriminate between NULL and 0
+            item_idx = -1
+            for i in range(0, widget.count()):
+                if widget.itemData(i) == key:
+                    item_idx = i
+                    break
             if item_idx >= 0:
                 widget.setCurrentIndex(item_idx)
         elif isinstance(widget, QPlainTextEdit):
