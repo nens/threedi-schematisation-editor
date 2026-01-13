@@ -346,7 +346,7 @@ class AbstractBaseForm(QObject):
                 widget.clear()
         elif isinstance(widget, QComboBox):
             key = value if value != NULL else None
-            # we use a print statement instead of widget.findData() because findData does not discriminate between NULL and 0
+            # we use a for loop instead of widget.findData() because findData does not discriminate between NULL and 0
             item_idx = -1
             for i in range(0, widget.count()):
                 if widget.itemData(i) == key:
