@@ -21,6 +21,7 @@ History
 - Replace icons for Rana-style icons
 - Fix bug with  "use selected features" (#469)
 - Make crest_level en crest_type optional for Weir and Orifice (#471)
+- Disable selected features only option when no layer or no features are selected (#472)
 
 
 2.4.3 (2025-11-26)
