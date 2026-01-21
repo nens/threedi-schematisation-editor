@@ -5,6 +5,7 @@ History
 ------------------
 
 - Fix bug that caused integration to fail when source and target crs differ (#473)
+- Use for loop instead of widget.findData() to find index in QComboBox to avoid confusion between NULL and 0 (#476)
 
 
 2.4.5 (2026-01-05)
@@ -21,6 +22,7 @@ History
 - Replace icons for Rana-style icons
 - Fix bug with  "use selected features" (#469)
 - Make crest_level en crest_type optional for Weir and Orifice (#471)
+- Disable selected features only option when no layer or no features are selected (#472)
 
 
 2.4.3 (2025-11-26)
