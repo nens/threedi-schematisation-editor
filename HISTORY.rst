@@ -4,6 +4,7 @@ History
 2.4.6 (unreleased)
 ------------------
 
+- Fix bug that caused integration to fail when source and target crs differ (#473)
 - Use for loop instead of widget.findData() to find index in QComboBox to avoid confusion between NULL and 0 (#476)
 
 

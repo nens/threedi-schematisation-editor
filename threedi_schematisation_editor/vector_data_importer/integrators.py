@@ -4,7 +4,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Optional, Type
 
-from qgis.core import QgsFeature, QgsGeometry, QgsWkbTypes
+from qgis.core import QgsFeature, QgsGeometry, QgsVectorLayerUtils, QgsWkbTypes
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
@@ -154,6 +154,13 @@ class LinearIntegrator:
         for layer in self.spatial_layers:
             layer_name = layer.name()
             self.spatial_indexes_map[layer_name] = spatial_index(layer)
+
+    def set_transformed_spatial_index(self, transform):
+        # update spatial index for source when source has a transformation
+        # this is not done at initialization because the transform is aware of the context
+        self.spatial_indexes_map["source"] = spatial_index(
+            self.external_source, transform=transform
+        )
 
     def setup_node_by_location(self):
         """Setup nodes by location."""

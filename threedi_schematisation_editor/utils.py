@@ -898,12 +898,17 @@ def validation_errors_summary(validation_errors):
     return summary_message
 
 
-def spatial_index(layer, request=None):
+def spatial_index(layer, request=None, transform=None):
     """Creating spatial index over layer features."""
     features = {}
     index = QgsSpatialIndex()
     for feat in layer.getFeatures() if request is None else layer.getFeatures(request):
         feat_copy = QgsFeature(feat)
+        if transform:
+            geom = feat_copy.geometry()
+            geom.transform(transform)
+            feat_copy.setGeometry(geom)
+
         features[feat.id()] = feat_copy
         index.addFeature(feat_copy)
     return features, index

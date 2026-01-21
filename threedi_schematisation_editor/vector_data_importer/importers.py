@@ -173,6 +173,10 @@ class SpatialImporter(Importer):
 
     def integrate_features(self, input_feature_ids, progress_callback=None):
         if self.integrator:
+            if self.processor.transformation:
+                self.integrator.set_transformed_spatial_index(
+                    transform=self.processor.transformation
+                )
             new_features, integrated_ids = self.integrator.integrate_features(
                 input_feature_ids, progress_callback=progress_callback
             )
