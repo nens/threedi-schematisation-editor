@@ -1,7 +1,7 @@
 History
 =======
 
-2.4.6 (unreleased)
+2.4.6 (2026-01-23)
 ------------------
 
 - Fix bug that caused integration to fail when source and target crs differ (#473)
