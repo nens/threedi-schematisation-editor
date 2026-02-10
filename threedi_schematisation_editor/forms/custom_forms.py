@@ -2213,23 +2213,14 @@ class DryWeatherFlowDistributionForm(AbstractFormWithTag, AbstractFormWithDistri
         self.populate_tag_widgets()
 
 
-class ChannelForm(
-    AbstractFormWithStartEndNode, AbstractFormWithXSTable, AbstractFormWithTag
-):
+class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithTag):
     """Channel user layer edit form logic."""
 
     MODEL = dm.Channel
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.cross_section_locations = None
-        xs_locations_cbo_name = "cross_section_locations"
-        self.current_cross_section_locations_cbo = self.dialog.findChild(
-            QComboBox, xs_locations_cbo_name
-        )
-        self.custom_widgets[xs_locations_cbo_name] = (
-            self.current_cross_section_locations_cbo
-        )
+        self.current_cross_section_location = None
 
     @property
     def foreign_models_features(self):
@@ -2237,7 +2228,6 @@ class ChannelForm(
         fm_features = {
             (dm.ConnectionNode, 1): self.connection_node_start,
             (dm.ConnectionNode, 2): self.connection_node_end,
-            (dm.CrossSectionLocation, float("inf")): self.cross_section_locations,
         }
         return fm_features
 
@@ -2256,21 +2246,13 @@ class ChannelForm(
         self.connection_node_end = connection_node_handler.get_feat_by_id(
             connection_node_id_end
         )
-        self.cross_section_locations = (
+        cross_section_locations = (
             cross_section_location_handler.get_multiple_feats_by_id(
                 channel_id, "channel_id"
             )
         )
-        if self.cross_section_locations:
-            channel_cross_section_location_ids = {
-                str(feat["id"]): feat for feat in self.cross_section_locations
-            }
-            self.populate_combo(
-                self.current_cross_section_locations_cbo,
-                channel_cross_section_location_ids,
-                False,
-            )
-            self.current_cross_section_location = self.cross_section_locations[0]
+        if cross_section_locations:
+            self.current_cross_section_location = cross_section_locations[0]
 
     def setup_cross_section_location_on_creation(self):
         """Setting up cross-section location during adding feature."""
@@ -2291,15 +2273,6 @@ class ChannelForm(
         cross_section_location_feat = cross_section_location_handler.create_new_feature(
             cross_section_location_geom
         )
-        channel_cross_section_location_ids = {
-            str(cross_section_location_feat["id"]): cross_section_location_feat
-        }
-        self.populate_combo(
-            self.current_cross_section_locations_cbo,
-            channel_cross_section_location_ids,
-            False,
-        )
-        self.cross_section_locations = [cross_section_location_feat]
         self.current_cross_section_location = cross_section_location_feat
         self.extra_features[cross_section_location_handler].append(
             self.current_cross_section_location
@@ -2323,34 +2296,6 @@ class ChannelForm(
                 "friction_type"
             ]
 
-    def set_current_cross_section_location(self, current_text):
-        """Set handling of selected channel cross-section location."""
-        if current_text:
-            cross_section_location_handler = self.layer_manager.model_handlers[
-                dm.CrossSectionLocation
-            ]
-            for signal, slot in self.dialog.active_form_signals:
-                disconnect_signal(signal, slot)
-            self.current_cross_section_location = (
-                cross_section_location_handler.get_feat_by_id(int(current_text))
-            )
-            self.populate_foreign_widgets()
-            for signal, slot in self.dialog.active_form_signals:
-                connect_signal(signal, slot)
-            self.populate_cross_section_table_data()
-        setup_cross_section_widgets(
-            self, self.cross_section_shape, self.cross_section_prefix
-        )
-
-    def set_cross_section_location_value_from_widget(self, widget, field_name):
-        """Set currently selected cross-section attribute."""
-        self.set_value_from_widget(
-            widget,
-            self.current_cross_section_location,
-            dm.CrossSectionLocation,
-            field_name,
-        )
-
     def connect_foreign_widgets(self):
         """Connect widget signals responsible for handling related layers attributes."""
         for widget_name, (
@@ -2366,43 +2311,15 @@ class ChannelForm(
                 ]
             except KeyError:
                 continue
-            if model_cls == dm.CrossSectionLocation:
-                slot = partial(
-                    self.set_cross_section_location_value_from_widget,
-                    widget,
-                    field_name,
-                )
-            else:
-                slot = partial(
-                    self.set_value_from_widget,
-                    widget,
-                    feature_or_features,
-                    model_cls,
-                    field_name,
-                )
+            slot = partial(
+                self.set_value_from_widget,
+                widget,
+                feature_or_features,
+                model_cls,
+                field_name,
+            )
             connect_signal(signal, slot)
             self.dialog.active_form_signals.add((signal, slot))
-
-    def connect_custom_widgets(self):
-        """Connect other widgets."""
-        super().connect_custom_widgets()
-        signal = self.current_cross_section_locations_cbo.currentTextChanged
-        slot = self.set_current_cross_section_location
-        connect_signal(signal, slot)
-        self.dialog.active_form_signals.add((signal, slot))
-
-    def populate_foreign_widgets(self):
-        """Populating values within foreign layers widgets."""
-        for (
-            data_model_cls,
-            start_end_modifier,
-        ), feature_or_features in self.foreign_models_features.items():
-            if data_model_cls == dm.CrossSectionLocation:
-                feature = self.current_cross_section_location
-            else:
-                feature = feature_or_features
-            if feature is not None:
-                self.populate_widgets(data_model_cls, feature, start_end_modifier)
 
     def populate_with_extra_widgets(self):
         """Populate basic and extra widgets for the given custom form."""
@@ -2415,7 +2332,6 @@ class ChannelForm(
         # Populate widgets based on features attributes
         self.populate_foreign_widgets()
         self.populate_widgets()
-        self.populate_cross_section_table_data()
         self.populate_tag_widgets()
 
 

@@ -4,7 +4,7 @@ History
 2.4.7 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Remove cross section location tab from channel edit form (#480)
 
 
 2.4.6 (2026-01-23)
