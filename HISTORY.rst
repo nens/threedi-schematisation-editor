@@ -4,7 +4,7 @@ History
 2.4.8 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Bumped nens-dependency-loader to 1.2.12.
 
 
 2.4.7 (2026-02-11)
