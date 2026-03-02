@@ -347,7 +347,7 @@ class ThreediSchematisationEditorPlugin:
                 {self.THREEDI_GPKG_VAR_NAMES: project_model_gpkgs_str}
             )
 
-    def load_schematisation(self, model_gpkg=None):
+    def load_schematisation(self, model_gpkg=None, parents=None):
         if not model_gpkg:
             schematisation_loader = LoadSchematisationDialog(self.uc)
             result = schematisation_loader.exec_()
@@ -389,7 +389,7 @@ class ThreediSchematisationEditorPlugin:
                 self.uc.show_warn(warn_msg, None, "Rana Schematisation Editor")
                 return
 
-        lm = LayersManager(self.iface, self.uc, model_gpkg)
+        lm = LayersManager(self.iface, self.uc, model_gpkg, parents=parents)
         if lm in self.workspace_context_manager:
             self.uc.clear_message_bar()
             warn_msg = "Selected schematisation is already loaded. Loading canceled."
