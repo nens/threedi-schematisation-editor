@@ -97,7 +97,9 @@ class LayersManager:
         self.layer_handlers = {}
         self.spawned_groups = {}
         self.active_form_signals = set()
-        self.parents = parents if parents else []
+        self.parents = (
+            parents if parents else []
+        )  # parents of the root object in the layers view
         self.iface.currentLayerChanged.connect(self.on_active_layer_changed)
 
     @cached_property
