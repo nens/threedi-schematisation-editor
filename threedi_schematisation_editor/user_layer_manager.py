@@ -99,7 +99,7 @@ class LayersManager:
         self.active_form_signals = set()
         self.parents = (
             parents if parents else []
-        )  # parents of the root object in the layers view
+        )  # folder tree used as parent in the hierarchy in the Layers panel
         self.iface.currentLayerChanged.connect(self.on_active_layer_changed)
 
     @cached_property
