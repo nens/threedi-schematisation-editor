@@ -88,7 +88,7 @@ class LayersManager:
         }
     )
 
-    def __init__(self, iface, user_communication, model_gpkg_path):
+    def __init__(self, iface, user_communication, model_gpkg_path, parents=None):
         self.iface = iface
         self.uc = user_communication
         self.model_gpkg_path = os.path.normpath(model_gpkg_path)
@@ -97,6 +97,9 @@ class LayersManager:
         self.layer_handlers = {}
         self.spawned_groups = {}
         self.active_form_signals = set()
+        self.parents = (
+            parents if parents else []
+        )  # folder tree used as parent in the hierarchy in the Layers panel
         self.iface.currentLayerChanged.connect(self.on_active_layer_changed)
 
     @cached_property
@@ -310,6 +313,25 @@ class LayersManager:
         return model_group_name
 
     @property
+    def root(self):
+        root = QgsProject.instance().layerTreeRoot()
+        for parent in self.parents:
+            if not root.findGroup(parent):
+                root = root.addGroup(parent)
+            else:
+                root = root.findGroup(parent)
+        return root
+
+    def clear_root(self):
+        if self.parents:
+            root = self.root.parent()
+            for parent in reversed(self.parents):
+                group = root.findGroup(parent)
+                if not group.children():
+                    root.removeChildNode(group)
+                root = root.parent()
+
+    @property
     def group_names(self):
         """Names of User Layer groups."""
         names = tuple(
@@ -378,7 +400,7 @@ class LayersManager:
     def create_groups(self):
         """Creating all User Layers groups."""
         self.remove_groups()
-        main_group = create_tree_group(self.main_group)
+        main_group = create_tree_group(self.main_group, root=self.root)
         for group_name in self.group_names:
             grp = create_tree_group(group_name, root=main_group)
             grp.setExpanded(False)
@@ -387,9 +409,7 @@ class LayersManager:
     def register_groups(self):
         """Registering all User Layers groups."""
         groups_registered = False
-        project = QgsProject.instance()
-        root = project.layerTreeRoot()
-        main_group = root.findGroup(self.main_group)
+        main_group = self.root.findGroup(self.main_group)
         if not main_group:
             return groups_registered
         for group_name in self.group_names:
@@ -403,7 +423,8 @@ class LayersManager:
     def remove_groups(self):
         """Removing all User Layers groups."""
         self.remove_loaded_layers()
-        remove_group_with_children(self.main_group)
+        remove_group_with_children(self.main_group, self.root)
+        self.clear_root()
         self.spawned_groups.clear()
 
     def get_layer_data_model(self, layer):

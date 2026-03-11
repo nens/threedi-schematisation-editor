@@ -4,7 +4,7 @@ History
 2.4.9 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Extend load_schematisation function with an optional parent path
 
 
 2.4.8 (2026-02-18)

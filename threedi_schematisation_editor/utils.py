@@ -268,10 +268,11 @@ def remove_layer(layer):
     QgsProject.instance().removeMapLayer(layer)
 
 
-def remove_group_with_children(name):
+def remove_group_with_children(name, root=None):
     """Removing group with all layers from the map canvas."""
-    project = QgsProject.instance()
-    root = project.layerTreeRoot()
+    if not root:
+        project = QgsProject.instance()
+        root = project.layerTreeRoot()
     group = root.findGroup(name)
     if group is not None:
         group.removeAllChildren()
