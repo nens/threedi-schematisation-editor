@@ -1,7 +1,7 @@
 History
 =======
 
-2.4.9 (unreleased)
+2.4.9 (2026-03-13)
 ------------------
 
 - Extend load_schematisation function with an optional parent path
