@@ -367,33 +367,34 @@ class ThreediSchematisationEditorPlugin:
                 return
             model_gpkg = schematisation_filepath
 
-        if model_gpkg.endswith(".sqlite"):
-            QCoreApplication.processEvents()
-            migration_info = "Schema migration..."
-            self.uc.progress_bar(migration_info, 0, 100, 0, clear_msg_bar=True)
-            progress_bar_callback = progress_bar_callback_factory(self.uc)
-            migration_succeed, migration_feedback_msg = migrate_schematisation_schema(
-                model_gpkg, progress_bar_callback
-            )
-            self.uc.progress_bar("Migration complete!", 0, 100, 100, clear_msg_bar=True)
-            QCoreApplication.processEvents()
-            if len(migration_feedback_msg) > 0 and migration_succeed:
-                self.uc.show_info(migration_feedback_msg)
-                QgsMessageLog.logMessage(
-                    migration_feedback_msg, level=Qgis.Warning, tag="Messages"
-                )
-            elif not migration_succeed:
-                self.uc.clear_message_bar()
-                self.uc.show_warn(migration_feedback_msg)
-                return
-            model_gpkg = model_gpkg.rsplit(".", 1)[0] + ".gpkg"
-        elif model_gpkg.endswith(".gpkg"):
-            version_num = ThreediDatabase(model_gpkg).schema.get_version()
-            if version_num < 300:
-                warn_msg = "The selected file is not a valid Rana schematisation database.\n\nYou may have selected a geopackage that was created by an older version of the Rana Schematisation Editor (before version 2.0). In that case, there will probably be a Spatialite (*.sqlite) in the same folder. Please use that file instead."
-                self.uc.show_warn(warn_msg, None, "Rana Schematisation Editor")
-                return
+        version_num = ThreediDatabase(model_gpkg).schema.get_version()
+        # Valide file type and schema version combinations
+        if model_gpkg.endswith(".gpkg") and version_num < 300:
+            invalid_warn_msg = "The selected file is not a valid Rana schematisation database.\n\nYou may have selected a geopackage that was created by an older version of the Rana Schematisation Editor (before version 2.0). In that case, there will probably be a Spatialite (*.sqlite) in the same folder. Please use that file instead."
+            self.uc.show_warn(invalid_warn_msg, None, "Rana Schematisation Editor")
+            return
 
+        # Upgrade schematisation schema if needed
+        QCoreApplication.processEvents()
+        migration_info = "Schema migration..."
+        self.uc.progress_bar(migration_info, 0, 100, 0, clear_msg_bar=True)
+        progress_bar_callback = progress_bar_callback_factory(self.uc)
+        migration_succeed, migration_feedback_msg = migrate_schematisation_schema(
+            model_gpkg, progress_bar_callback
+        )
+        self.uc.progress_bar("Migration complete!", 0, 100, 100, clear_msg_bar=True)
+        QCoreApplication.processEvents()
+        if len(migration_feedback_msg) > 0 and migration_succeed:
+            self.uc.show_info(migration_feedback_msg)
+            QgsMessageLog.logMessage(
+                migration_feedback_msg, level=Qgis.Warning, tag="Messages"
+            )
+        elif not migration_succeed:
+            self.uc.clear_message_bar()
+            self.uc.show_warn(migration_feedback_msg)
+            return
+        if model_gpkg.endswith(".sqlite"):
+            model_gpkg = model_gpkg.rsplit(".", 1)[0] + ".gpkg"
         lm = LayersManager(self.iface, self.uc, model_gpkg, parents=parents)
         if lm in self.workspace_context_manager:
             self.uc.clear_message_bar()

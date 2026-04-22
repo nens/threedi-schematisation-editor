@@ -5,6 +5,7 @@ History
 -------------------
 
 - Fix incorrect QTableWidget method calls from `remove_row()` to `removeRow()` (nens/rana#3873)
+- Also upgrade geopackages upon loading (nens/threedi-schematisation-editor#486)
 
 
 2.4.9 (2026-03-13)
