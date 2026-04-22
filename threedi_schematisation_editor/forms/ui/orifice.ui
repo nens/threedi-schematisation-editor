@@ -608,9 +608,9 @@ coefficient positive</string>
                  <property name="locale">
                   <locale language="English" country="UnitedStates"/>
                  </property>
-                 <property name="text">
-                  <string>Discharge capacity</string>
-                 </property>
+                  <property name="text">
+                   <string>Discharge capacity [m3/s]</string>
+                  </property>
                  <property name="alignment">
                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
                  </property>
