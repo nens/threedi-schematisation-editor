@@ -851,7 +851,6 @@ def migrate_schematisation_schema(schematisation_filepath, progress_callback=Non
             )
         except Exception as e:
             migration_feedback_msg += f"{e}"
-
     return migration_succeed, migration_feedback_msg
 
 

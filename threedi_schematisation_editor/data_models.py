@@ -327,6 +327,7 @@ class Orifice(ModelObject):
     crest_type: Optional[CrestType]
     discharge_coefficient_positive: Optional[float]
     discharge_coefficient_negative: Optional[float]
+    discharge_capacity: Optional[float]
     material_id: Optional[int]
     friction_value: Optional[float]
     friction_type: Optional[FrictionType]
