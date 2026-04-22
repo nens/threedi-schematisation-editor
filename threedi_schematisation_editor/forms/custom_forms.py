@@ -1343,7 +1343,8 @@ class AbstractFormWithXSTable(AbstractBaseForm):
     def add_table_row(self):
         """Slot for handling new row addition."""
         selected_rows = {
-            idx.row() for idx in self.cross_section_table.selectedIndexes()
+            idx.row()
+            for idx in self.cross_section_table.selectionModel().selectedIndexes()
         }
         if selected_rows:
             last_row_number = max(selected_rows) + 1
@@ -1358,7 +1359,8 @@ class AbstractFormWithXSTable(AbstractBaseForm):
     def delete_table_rows(self):
         """Slot for handling deletion of the selected rows."""
         selected_rows = {
-            idx.row() for idx in self.cross_section_table.selectedIndexes()
+            idx.row()
+            for idx in self.cross_section_table.selectionModel().selectedIndexes()
         }
         for row_number in sorted(selected_rows, reverse=True):
             self.cross_section_table.removeRow(row_number)
