@@ -801,30 +801,34 @@ def zoom_to_layer(layer: QgsMapLayer, iface: QgisInterface):
 
 def migrate_schematisation_schema(schematisation_filepath, progress_callback=None):
     """Migrate schematisation schema to the latest version."""
-    migration_succeed = False
     srid = None
-
+    can_migrate = False
+    migration_feedback_msg = ""
+    migration_succeed = False
     try:
         from threedi_schema import ThreediDatabase, errors
 
         backup_filepath = backup_schematisation_file(schematisation_filepath)
         threedi_db = ThreediDatabase(schematisation_filepath)
         schema = threedi_db.schema
-        srid, _ = schema._get_epsg_data()
-        if srid is None:
-            try:
-                srid = schema._get_dem_epsg()
-            except errors.InvalidSRIDException:
-                srid = None
-        if srid is None:
-            migration_feedback_msg = "Could not fetch valid EPSG code from database or DEM; aborting database migration."
+        if schema.get_version() < 230:
+            srid, _ = schema._get_epsg_data()
+            if srid is None:
+                try:
+                    srid = schema._get_dem_epsg()
+                except errors.InvalidSRIDException:
+                    srid = None
+            if srid is None:
+                migration_feedback_msg = "Could not fetch valid EPSG code from database or DEM; aborting database migration."
+            can_migrate = srid is not None
+        else:
+            can_migrate = True
     except ImportError:
         migration_feedback_msg = "Missing threedi-schema library (or its dependencies). Schema migration failed."
     except Exception as e:
         migration_feedback_msg = f"{e}"
 
-    if srid is not None:
-        migration_feedback_msg = ""
+    if can_migrate:
         try:
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always", UserWarning)
