@@ -132,21 +132,35 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="NoFlag" name="discharge_coefficient_negative">
-      <editWidget type="Range">
-        <config>
-          <Option type="Map">
-            <Option value="true" type="bool" name="AllowNull" />
-            <Option value="1.7976931348623157e+308" type="double" name="Max" />
-            <Option value="-1.7976931348623157e+308" type="double" name="Min" />
-            <Option value="4" type="int" name="Precision" />
-            <Option value="1" type="double" name="Step" />
-            <Option value="SpinBox" type="QString" name="Style" />
-          </Option>
-        </config>
-      </editWidget>
-    </field>
-    <field configurationFlags="NoFlag" name="sewerage">
+     <field configurationFlags="NoFlag" name="discharge_coefficient_negative">
+       <editWidget type="Range">
+         <config>
+           <Option type="Map">
+             <Option value="true" type="bool" name="AllowNull" />
+             <Option value="1.7976931348623157e+308" type="double" name="Max" />
+             <Option value="-1.7976931348623157e+308" type="double" name="Min" />
+             <Option value="4" type="int" name="Precision" />
+             <Option value="1" type="double" name="Step" />
+             <Option value="SpinBox" type="QString" name="Style" />
+           </Option>
+         </config>
+       </editWidget>
+     </field>
+     <field configurationFlags="NoFlag" name="discharge_capacity">
+       <editWidget type="Range">
+         <config>
+           <Option type="Map">
+             <Option value="true" type="bool" name="AllowNull" />
+             <Option value="1.7976931348623157e+308" type="double" name="Max" />
+             <Option value="-1.7976931348623157e+308" type="double" name="Min" />
+             <Option value="4" type="int" name="Precision" />
+             <Option value="1" type="double" name="Step" />
+             <Option value="SpinBox" type="QString" name="Style" />
+           </Option>
+         </config>
+       </editWidget>
+     </field>
+     <field configurationFlags="NoFlag" name="sewerage">
       <editWidget type="CheckBox">
         <config>
           <Option type="Map">
