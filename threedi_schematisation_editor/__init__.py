@@ -369,9 +369,7 @@ class ThreediSchematisationEditorPlugin:
 
         version_num = ThreediDatabase(model_gpkg).schema.get_version()
         # Valide file type and schema version combinations
-        if (model_gpkg.endswith(".sqlite") and version_num >= 300) or (
-            model_gpkg.endswith(".gpkg") and version_num < 300
-        ):
+        if model_gpkg.endswith(".gpkg") and version_num < 300:
             invalid_warn_msg = "The selected file is not a valid Rana schematisation database.\n\nYou may have selected a geopackage that was created by an older version of the Rana Schematisation Editor (before version 2.0). In that case, there will probably be a Spatialite (*.sqlite) in the same folder. Please use that file instead."
             self.uc.show_warn(invalid_warn_msg, None, "Rana Schematisation Editor")
             return
