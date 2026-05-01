@@ -12,6 +12,7 @@ from qgis.core import (
     QgsExpression,
     QgsFeatureRequest,
     QgsFieldConstraints,
+    QgsLayerTreeNode,
     QgsMessageLog,
     QgsProject,
     QgsRasterLayer,
@@ -312,22 +313,36 @@ class LayersManager:
             model_group_name = f"Rana schematisation: {self.model_gpkg_path}"
         return model_group_name
 
+    @staticmethod
+    def _find_direct_child_group(node, name):
+        """Return the direct child group with the given name, or None."""
+        return next(
+            (
+                c
+                for c in node.children()
+                if c.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup
+                and c.name() == name
+            ),
+            None,
+        )
+
     @property
     def root(self):
         root = QgsProject.instance().layerTreeRoot()
         for parent in self.parents:
-            if not root.findGroup(parent):
+            child = self._find_direct_child_group(root, parent)
+            if child is None:
                 root = root.addGroup(parent)
             else:
-                root = root.findGroup(parent)
+                root = child
         return root
 
     def clear_root(self):
         if self.parents:
             root = self.root.parent()
             for parent in reversed(self.parents):
-                group = root.findGroup(parent)
-                if not group.children():
+                group = self._find_direct_child_group(root, parent)
+                if group is not None and not group.children():
                     root.removeChildNode(group)
                 root = root.parent()
 

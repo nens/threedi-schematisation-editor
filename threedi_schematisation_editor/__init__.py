@@ -198,16 +198,26 @@ class ThreediSchematisationEditorPlugin:
     def layer_manager(self):
         return self.workspace_context_manager.active_layer_manager
 
+    @staticmethod
+    def _find_schematisation_groups(node):
+        """Recursively find all 'Rana schematisation:' groups in the layer tree."""
+        results = []
+        for child in node.children():
+            if child.nodeType() != QgsLayerTreeNode.NodeType.NodeGroup:
+                continue
+            if child.name().startswith("Rana schematisation:"):
+                results.append(child)
+            else:
+                results.extend(
+                    ThreediSchematisationEditorPlugin._find_schematisation_groups(child)
+                )
+        return results
+
     @property
     def model_layers_map(self):
         model_layers = defaultdict(set)
         root_node = QgsProject.instance().layerTreeRoot()
-        model_nodes = [
-            node
-            for node in root_node.children()
-            if node.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup
-            and node.name().startswith("Rana schematisation:")
-        ]
+        model_nodes = self._find_schematisation_groups(root_node)
         for model_node in model_nodes:
             model_groups = {
                 node.name(): node
