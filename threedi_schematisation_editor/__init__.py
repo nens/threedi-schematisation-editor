@@ -208,7 +208,9 @@ class ThreediSchematisationEditorPlugin:
             if child.name().startswith("Rana schematisation:"):
                 results.append(child)
             else:
-                results.extend(ThreediSchematisationEditorPlugin._find_schematisation_groups(child))
+                results.extend(
+                    ThreediSchematisationEditorPlugin._find_schematisation_groups(child)
+                )
         return results
 
     @property

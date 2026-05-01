@@ -320,7 +320,8 @@ class LayersManager:
             (
                 c
                 for c in node.children()
-                if c.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup and c.name() == name
+                if c.nodeType() == QgsLayerTreeNode.NodeType.NodeGroup
+                and c.name() == name
             ),
             None,
         )
