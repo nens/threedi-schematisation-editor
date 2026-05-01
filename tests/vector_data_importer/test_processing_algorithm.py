@@ -1,9 +1,9 @@
+import processing
 import pytest
 from processing.core.Processing import Processing
 from qgis.analysis import QgsNativeAlgorithms
 from qgis.core import QgsApplication, QgsProcessingFeedback
 
-import processing
 from tests.utils import get_temp_copy
 from threedi_schematisation_editor.processing import (
     ThreediSchematisationEditorProcessingProvider,
