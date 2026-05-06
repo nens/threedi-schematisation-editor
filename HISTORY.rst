@@ -1,7 +1,7 @@
 History
 =======
 
-2.4.10 (unreleased)
+2.4.10 (2026-05-06)
 -------------------
 
 - Fix incorrect QTableWidget method calls from `remove_row()` to `removeRow()` (nens/rana#3873)
