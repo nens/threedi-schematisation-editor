@@ -14,7 +14,6 @@ from typing import List, Tuple, Union
 from uuid import uuid4
 
 import numpy as np
-import processing
 from osgeo import gdal
 from qgis.core import (
     Qgis,
@@ -49,6 +48,7 @@ from qgis.PyQt.QtCore import QCoreApplication, QVariant
 from shapely import __version__ as shapely_version
 from shapely import geos_version
 
+import processing
 from threedi_schematisation_editor.processing.deps.merge import merge_rasters
 from threedi_schematisation_editor.processing.deps.rasterize_channel import (
     Channel,
