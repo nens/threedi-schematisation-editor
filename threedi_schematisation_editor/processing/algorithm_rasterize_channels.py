@@ -15,7 +15,6 @@ from uuid import uuid4
 
 import numpy as np
 import processing
-
 from osgeo import gdal
 from qgis.core import (
     Qgis,
