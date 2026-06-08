@@ -329,6 +329,8 @@ class VDIWizard(QWizard):
 
         # Connect finish handling
         def handle_finished(success, status_msg, warning_msg, error_msg):
+            if not success:
+                progress_bar.set_failed()
             error_color = "#FF0000"
             warning_color = "#FFA500"
             self.run_page.update_log(
