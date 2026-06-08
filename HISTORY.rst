@@ -4,7 +4,7 @@ History
 2.4.11 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Add progress bar colors: blue while running, green on completion, red on failure (nens/rana#294)
 
 
 2.4.10 (2026-05-06)
