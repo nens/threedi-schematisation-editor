@@ -22,8 +22,8 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
     QWizardPage,
 )
+from threedi_mi_utils.ui import ColoredProgressBar
 
-from threedi_schematisation_editor.communication import ColoredProgressBar
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     get_field_map_config_for_model_class_field,
 )
