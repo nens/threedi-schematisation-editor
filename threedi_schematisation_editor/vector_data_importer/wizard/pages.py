@@ -13,7 +13,6 @@ from qgis.PyQt.QtWidgets import (
     QLabel,
     QMessageBox,
     QPlainTextEdit,
-    QProgressBar,
     QPushButton,
     QSizePolicy,
     QStyle,
@@ -23,6 +22,7 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
     QWizardPage,
 )
+from threedi_mi_utils.ui import ColoredProgressBar
 
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     get_field_map_config_for_model_class_field,
@@ -208,7 +208,7 @@ class RunPage(QWizardPage):
 
     def setup_ui(self):
         # Progress bar and cancel button
-        self.progress_bar = QProgressBar()
+        self.progress_bar = ColoredProgressBar()
         self.progress_bar.setMinimum(0)
         self.progress_bar.setTextVisible(True)
         self.progress_bar.setFormat("import feature %v of %m")

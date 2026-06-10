@@ -2,6 +2,7 @@
 from qgis.core import Qgis, QgsMessageLog
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QInputDialog, QMessageBox, QProgressBar, QPushButton
+from threedi_mi_utils.ui import ColoredProgressBar
 
 
 class UICommunication:
@@ -130,7 +131,7 @@ class UICommunication:
         if clear_msg_bar:
             self.iface.messageBar().clearWidgets()
         pmb = self.iface.messageBar().createMessage(msg)
-        pb = QProgressBar()
+        pb = ColoredProgressBar()
         pb.setMinimum(int(minimum))
         pb.setMaximum(int(maximum))
         pb.setValue(int(init_value))
