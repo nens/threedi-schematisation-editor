@@ -1,6 +1,7 @@
 # Copyright (C) 2025 by Nelen & Schuurmans
 import json
 
+from pydantic import ValidationError
 from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -27,6 +28,7 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     ImportSettings,
     IntegrationMode,
+    validate_field_map,
 )
 
 
@@ -146,9 +148,18 @@ class BaseImporter(QgsProcessingAlgorithm):
 
         with open(import_config_file) as import_config_json:
             import_settings_dict = json.loads(import_config_json.read())
-        import_config = ImportSettings(**import_settings_dict)
+        try:
+            import_config = ImportSettings(**import_settings_dict)
+        except ValidationError as e:
+            raise QgsProcessingException(f"Invalid import settings: {e}") from e
 
         importer = self.create_importer(source_layer, target_gpkg, import_config)
+        target_model_cls = getattr(importer, "target_model_cls", None)
+        if target_model_cls is not None:
+            try:
+                validate_field_map(import_config.fields, target_model_cls)
+            except ValidationError as e:
+                raise QgsProcessingException(f"Invalid field map settings: {e}") from e
 
         # Use the right import method based on the importer type
         importer.import_features(context=context)

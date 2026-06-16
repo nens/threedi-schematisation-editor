@@ -171,7 +171,7 @@ def validate_field_map(field_map: dict, model_cls: Type) -> dict:
     model_field_names = {f.name for f in fields(model_cls)}
     return {
         field_name: get_field_map_config_for_model_class_field(field_name, model_cls)(
-            **field_data
+            **field_data if isinstance(field_data, dict) else field_data.model_dump()
         )
         for field_name, field_data in field_map.items()
         if field_name in model_field_names

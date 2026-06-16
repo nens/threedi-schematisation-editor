@@ -1,8 +1,11 @@
+import copy
+import json
+
 import processing
 import pytest
 from processing.core.Processing import Processing
 from qgis.analysis import QgsNativeAlgorithms
-from qgis.core import QgsApplication, QgsProcessingFeedback
+from qgis.core import QgsApplication, QgsProcessingException, QgsProcessingFeedback
 
 from tests.utils import get_temp_copy
 from threedi_schematisation_editor.processing import (
@@ -57,3 +60,29 @@ def test_threedi_import_structure(qgis_application_with_processor):
         run_processing_operation("threedi_import_weirs", task)
     except Exception as e:
         pytest.fail(f"Test failed due to an unexpected exception: {e}")
+
+
+def test_threedi_import_rejects_invalid_field_method(
+    qgis_application_with_processor, tmp_path
+):
+    """Processing algorithm raises QgsProcessingException for a disallowed field method."""
+    with open(CONFIG_PATH / "import_weirs_nosnap.json") as f:
+        config = copy.deepcopy(json.load(f))
+    config["fields"]["id"] = {"method": "source_attribute", "source_attribute": "id"}
+
+    config_file = tmp_path / "invalid_config.json"
+    config_file.write_text(json.dumps(config))
+
+    task = {
+        "SOURCE_LAYER": str(get_temp_copy(SOURCE_PATH / "weirs.gpkg")),
+        "IMPORT_CONFIG": str(config_file),
+        "TARGET_GPKG": str(
+            get_temp_copy(SCHEMATISATION_PATH / "schematisation_channel.gpkg")
+        ),
+    }
+    with pytest.raises(QgsProcessingException, match="Invalid field map"):
+        processing.run(
+            "threedi_schematisation_editor:threedi_import_weirs",
+            task,
+            feedback=QgsProcessingFeedback(),
+        )
