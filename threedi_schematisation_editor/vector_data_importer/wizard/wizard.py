@@ -1,6 +1,7 @@
 import json
 import traceback
 from functools import cached_property
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from pydantic import BaseModel, ValidationError
@@ -231,6 +232,8 @@ class VDIWizard(QWizard):
         )
         if file_path:
             update_last_config_dir(file_path)
+            if Path(file_path).suffix != ".json":
+                file_path += ".json"
             try:
                 settings = self.get_settings().model_dump()
                 with open(file_path, "w") as f:
