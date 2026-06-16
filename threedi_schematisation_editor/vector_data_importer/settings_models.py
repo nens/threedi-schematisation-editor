@@ -160,6 +160,24 @@ def get_field_map_config_for_model_class_field(
     )
 
 
+def validate_field_map(field_map: dict, model_cls: Type) -> dict:
+    """Validate a field map dict against a target data model class.
+
+    Re-validates each entry using the custom FieldMapConfig subclass for that
+    field, which enforces the correct allowed methods and required fields.
+    Fields not present on the model class are silently skipped.
+    Raises ValidationError if any entry is invalid.
+    """
+    model_field_names = {f.name for f in fields(model_cls)}
+    return {
+        field_name: get_field_map_config_for_model_class_field(field_name, model_cls)(
+            **field_data
+        )
+        for field_name, field_data in field_map.items()
+        if field_name in model_field_names
+    }
+
+
 def get_allowed_methods_for_model_class_field(
     model_field,
 ) -> list[ColumnImportMethod]:
