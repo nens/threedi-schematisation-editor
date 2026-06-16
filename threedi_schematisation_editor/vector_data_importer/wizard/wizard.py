@@ -348,6 +348,8 @@ class VDIWizard(QWizard):
                 handler.connect_handler_signals()
                 handler.layer.triggerRepaint()
             self.import_finished.emit()
+            if success:
+                self.button(self.CancelButton).setFocus()
 
         self.worker.finished.connect(handle_finished)
 
