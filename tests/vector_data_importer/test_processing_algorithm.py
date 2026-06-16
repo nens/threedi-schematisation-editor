@@ -86,3 +86,23 @@ def test_threedi_import_rejects_invalid_field_method(
             task,
             feedback=QgsProcessingFeedback(),
         )
+
+
+def test_threedi_import_rejects_invalid_json(qgis_application_with_processor, tmp_path):
+    """Processing algorithm raises QgsProcessingException for malformed JSON."""
+    config_file = tmp_path / "bad.json"
+    config_file.write_text("this is not json{{{")
+
+    task = {
+        "SOURCE_LAYER": str(get_temp_copy(SOURCE_PATH / "weirs.gpkg")),
+        "IMPORT_CONFIG": str(config_file),
+        "TARGET_GPKG": str(
+            get_temp_copy(SCHEMATISATION_PATH / "schematisation_channel.gpkg")
+        ),
+    }
+    with pytest.raises(QgsProcessingException, match="Could not read import config"):
+        processing.run(
+            "threedi_schematisation_editor:threedi_import_weirs",
+            task,
+            feedback=QgsProcessingFeedback(),
+        )
