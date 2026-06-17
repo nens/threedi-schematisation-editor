@@ -53,9 +53,6 @@ class ConnectionNodeSettings(BaseModel):
     snap: bool = True
     snap_distance: float = Field(default=1.0, ge=0, le=1000000.0)
 
-    def serialize(self):
-        return asdict(self)
-
 
 class IntegrationSettings(BaseModel):
     # class variables used to identify model
