@@ -555,3 +555,36 @@ class TestFieldMapModelDeserialize:
         assert model.row_dict["good"].config.method == ColumnImportMethod.AUTO
         # bad row left at its default (method=None), not raised
         assert model.row_dict["bad"].config.method is None
+
+
+class TestGetDraftSettings:
+    def _make_wizard(self):
+        model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
+        return ImportStructureWizard(dm.Culvert, model_gpkg, None)
+
+    def test_returns_data_when_field_map_rows_incomplete(self):
+        # get_draft_settings() must not raise even when field map rows have method=None
+        wizard = self._make_wizard()
+        data = wizard.get_draft_settings()
+        assert isinstance(data, dict)
+        assert "fields" in data
+
+    def test_field_map_rows_include_invalid_rows(self):
+        # Raw config is collected regardless of validity — restore handles filtering
+        wizard = self._make_wizard()
+        data = wizard.get_draft_settings()
+        # All rows present, including those with method=None
+        first_row = next(iter(data["fields"].values()))
+        assert "method" in first_row
+
+    def test_matches_serialize_when_wizard_is_complete(self):
+        # When the wizard is fully configured, get_draft_settings produces
+        # data equivalent to serialize() after round-tripping through restore
+        wizard = self._make_wizard()
+        with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
+            wizard.deserialize(json.load(f))
+        draft_data = wizard.get_draft_settings()
+        # Restore into a fresh wizard and verify state matches
+        wizard2 = self._make_wizard()
+        wizard2.restore_draft_lenient(draft_data)
+        assert wizard2.serialize() == wizard.serialize()

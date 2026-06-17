@@ -262,6 +262,20 @@ class VDIWizard(QWizard):
     def serialize(self):
         return self.get_settings().model_dump()
 
+    def get_draft_settings(self):
+        data = {}
+        for page_id in self.pageIds():
+            page = self.page(page_id)
+            if isinstance(page, FieldMapPage):
+                data[page.name] = {
+                    key: row.config.model_dump()
+                    for key, row in page.field_map_widget.row_dict.items()
+                }
+            elif callable(getattr(page, "get_settings", None)):
+                for key, value in page.get_settings().items():
+                    data[key] = value.model_dump() if hasattr(value, "model_dump") else value
+        return data
+
     def has_changes(self):
         try:
             current = self.serialize()
@@ -294,7 +308,7 @@ class VDIWizard(QWizard):
         msg.button(QMessageBox.Save).setText("Save draft")
         result = msg.exec_()
         if result == QMessageBox.Save:
-            save_draft(type(self).__name__, self.serialize())
+            save_draft(type(self).__name__, self.get_draft_settings())
             super().reject()
         elif result == QMessageBox.Discard:
             delete_draft(type(self).__name__)
