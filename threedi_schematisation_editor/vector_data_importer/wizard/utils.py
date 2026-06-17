@@ -8,7 +8,6 @@ from qgis.PyQt.QtCore import QSettings
 
 from threedi_schematisation_editor import warnings as threedi_warnings
 
-
 VDI_DRAFTS_FOLDER = "vdi_preset_drafts"
 
 

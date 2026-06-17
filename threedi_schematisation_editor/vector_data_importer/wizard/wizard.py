@@ -285,11 +285,13 @@ class VDIWizard(QWizard):
             return
         msg = QMessageBox(self)
         msg.setWindowTitle("Unsaved import settings")
-        msg.setText("You have unsaved import settings. Do you want to save them as draft to reuse in a later import of the same type?")
+        msg.setText(
+            "You have unsaved import settings. Do you want to save them as draft to reuse in a later import of the same type?"
+        )
         msg.setStandardButtons(
             QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel
         )
-        msg.setButtonText(QMessageBox.Save, "Save draft")
+        msg.button(QMessageBox.Save).setText("Save draft")
         result = msg.exec_()
         if result == QMessageBox.Save:
             save_draft(type(self).__name__, self.serialize())
@@ -316,8 +318,8 @@ class VDIWizard(QWizard):
         msg.setWindowTitle("Previous draft found")
         msg.setText("A previous draft was found for this import type.")
         msg.setStandardButtons(QMessageBox.RestoreDefaults | QMessageBox.Cancel)
-        msg.setButtonText(QMessageBox.RestoreDefaults, "Restore draft")
-        msg.setButtonText(QMessageBox.Cancel, "Start fresh")
+        msg.button(QMessageBox.RestoreDefaults).setText("Restore draft")
+        msg.button(QMessageBox.Cancel).setText("Start fresh")
         result = msg.exec_()
         if result == QMessageBox.RestoreDefaults:
             self.restore_draft_lenient(draft)

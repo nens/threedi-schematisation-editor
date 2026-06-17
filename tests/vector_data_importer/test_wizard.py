@@ -443,7 +443,10 @@ class TestDraftHelpers:
         assert get_draft(self.WIZARD_NAME) is None
 
     def test_save_and_get_draft_round_trips(self):
-        data = {"fields": {"foo": {"method": "auto"}}, "connection_nodes": {"snap": True}}
+        data = {
+            "fields": {"foo": {"method": "auto"}},
+            "connection_nodes": {"snap": True},
+        }
         save_draft(self.WIZARD_NAME, data)
         assert get_draft(self.WIZARD_NAME) == data
 
@@ -481,6 +484,7 @@ class TestVDIWizardHasChanges:
         # raises (e.g. user cleared a field leaving method=None), that counts
         # as a change.
         from unittest.mock import patch
+
         wizard = self._make_wizard()
         with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
             wizard.deserialize(json.load(f))
@@ -505,7 +509,10 @@ class TestRestoreDraftLenient:
         assert wizard.serialize() == wizard_ref.serialize()
 
     def test_skips_failing_page_and_continues(self):
-        from threedi_schematisation_editor.vector_data_importer.wizard.pages import SettingsPage
+        from threedi_schematisation_editor.vector_data_importer.wizard.pages import (
+            SettingsPage,
+        )
+
         wizard = self._make_wizard()
         with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
             data = json.load(f)
@@ -527,11 +534,13 @@ class TestFieldMapModelDeserialize:
     def test_skips_invalid_row_and_applies_valid_rows(self):
         # A draft with one bad row should still apply the remaining rows
         import threedi_schematisation_editor.vector_data_importer.settings_models as sm
+        from threedi_schematisation_editor.vector_data_importer.utils import (
+            ColumnImportMethod,
+        )
         from threedi_schematisation_editor.vector_data_importer.wizard.field_map import (
             FieldMapModel,
             FieldMapRow,
         )
-        from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 
         row_dict = {
             "good": FieldMapRow(label="good"),
