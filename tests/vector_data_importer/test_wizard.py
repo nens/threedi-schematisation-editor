@@ -521,3 +521,28 @@ class TestRestoreDraftLenient:
         with patch.object(SettingsPage, "deserialize", exploding_deserialize):
             # Must not raise even though the first SettingsPage.deserialize call fails
             wizard.restore_draft_lenient(data)
+
+
+class TestFieldMapModelDeserialize:
+    def test_skips_invalid_row_and_applies_valid_rows(self):
+        # A draft with one bad row should still apply the remaining rows
+        import threedi_schematisation_editor.vector_data_importer.settings_models as sm
+        from threedi_schematisation_editor.vector_data_importer.wizard.field_map import (
+            FieldMapModel,
+            FieldMapRow,
+        )
+        from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+
+        row_dict = {
+            "good": FieldMapRow(label="good"),
+            "bad": FieldMapRow(label="bad"),
+        }
+        model = FieldMapModel(row_dict)
+        data = {
+            "good": {"method": ColumnImportMethod.AUTO},
+            "bad": {"method": "not_a_valid_method"},
+        }
+        model.deserialize(data)
+        assert model.row_dict["good"].config.method == ColumnImportMethod.AUTO
+        # bad row left at its default (method=None), not raised
+        assert model.row_dict["bad"].config.method is None
