@@ -62,57 +62,60 @@ def test_threedi_import_structure(qgis_application_with_processor):
         pytest.fail(f"Test failed due to an unexpected exception: {e}")
 
 
-def test_threedi_import_rejects_invalid_field_method(
-    qgis_application_with_processor, tmp_path
+@pytest.mark.parametrize(
+    "config_patch,expected_match",
+    [
+        # Disallowed method for a 'fields' entry (id only allows AUTO)
+        (
+            {
+                "fields": {
+                    "id": {"method": "source_attribute", "source_attribute": "id"}
+                }
+            },
+            "Invalid field map \\(fields\\)",
+        ),
+        # Disallowed method for a 'connection_node_fields' entry (id only allows AUTO)
+        (
+            {
+                "connection_node_fields": {
+                    "id": {"method": "source_attribute", "source_attribute": "id"}
+                }
+            },
+            "Invalid field map \\(connection_node_fields\\)",
+        ),
+        # Invalid ImportSettings schema: snap_distance must be a float
+        (
+            {"connection_nodes": {"snap_distance": "not_a_number"}},
+            "Invalid import settings",
+        ),
+    ],
+)
+def test_threedi_import_rejects_invalid_config(
+    qgis_application_with_processor, tmp_path, config_patch, expected_match
 ):
-    """Processing algorithm raises QgsProcessingException for a disallowed field method."""
+    """Processing algorithm raises QgsProcessingException for invalid import configs."""
     with open(CONFIG_PATH / "import_weirs_nosnap.json") as f:
         config = copy.deepcopy(json.load(f))
-    config["fields"]["id"] = {"method": "source_attribute", "source_attribute": "id"}
+
+    for key, value in config_patch.items():
+        if isinstance(value, dict) and isinstance(config.get(key), dict):
+            config[key].update(value)
+        else:
+            config[key] = value
 
     config_file = tmp_path / "invalid_config.json"
     config_file.write_text(json.dumps(config))
 
-    task = {
-        "SOURCE_LAYER": str(get_temp_copy(SOURCE_PATH / "weirs.gpkg")),
-        "IMPORT_CONFIG": str(config_file),
-        "TARGET_GPKG": str(
-            get_temp_copy(SCHEMATISATION_PATH / "schematisation_channel.gpkg")
-        ),
-    }
-    with pytest.raises(QgsProcessingException, match="Invalid field map"):
+    with pytest.raises(QgsProcessingException, match=expected_match):
         processing.run(
             "threedi_schematisation_editor:threedi_import_weirs",
-            task,
-            feedback=QgsProcessingFeedback(),
-        )
-
-
-def test_threedi_import_rejects_invalid_connection_node_field_method(
-    qgis_application_with_processor, tmp_path
-):
-    """Processing algorithm raises QgsProcessingException for a disallowed connection_node_fields method."""
-    with open(CONFIG_PATH / "import_weirs_nosnap.json") as f:
-        config = copy.deepcopy(json.load(f))
-    config["connection_node_fields"]["id"] = {
-        "method": "source_attribute",
-        "source_attribute": "id",
-    }
-
-    config_file = tmp_path / "invalid_cn_config.json"
-    config_file.write_text(json.dumps(config))
-
-    task = {
-        "SOURCE_LAYER": str(get_temp_copy(SOURCE_PATH / "weirs.gpkg")),
-        "IMPORT_CONFIG": str(config_file),
-        "TARGET_GPKG": str(
-            get_temp_copy(SCHEMATISATION_PATH / "schematisation_channel.gpkg")
-        ),
-    }
-    with pytest.raises(QgsProcessingException, match="Invalid field map"):
-        processing.run(
-            "threedi_schematisation_editor:threedi_import_weirs",
-            task,
+            {
+                "SOURCE_LAYER": str(get_temp_copy(SOURCE_PATH / "weirs.gpkg")),
+                "IMPORT_CONFIG": str(config_file),
+                "TARGET_GPKG": str(
+                    get_temp_copy(SCHEMATISATION_PATH / "schematisation_channel.gpkg")
+                ),
+            },
             feedback=QgsProcessingFeedback(),
         )
 
@@ -122,16 +125,15 @@ def test_threedi_import_rejects_invalid_json(qgis_application_with_processor, tm
     config_file = tmp_path / "bad.json"
     config_file.write_text("this is not json{{{")
 
-    task = {
-        "SOURCE_LAYER": str(get_temp_copy(SOURCE_PATH / "weirs.gpkg")),
-        "IMPORT_CONFIG": str(config_file),
-        "TARGET_GPKG": str(
-            get_temp_copy(SCHEMATISATION_PATH / "schematisation_channel.gpkg")
-        ),
-    }
     with pytest.raises(QgsProcessingException, match="Could not read import config"):
         processing.run(
             "threedi_schematisation_editor:threedi_import_weirs",
-            task,
+            {
+                "SOURCE_LAYER": str(get_temp_copy(SOURCE_PATH / "weirs.gpkg")),
+                "IMPORT_CONFIG": str(config_file),
+                "TARGET_GPKG": str(
+                    get_temp_copy(SCHEMATISATION_PATH / "schematisation_channel.gpkg")
+                ),
+            },
             feedback=QgsProcessingFeedback(),
         )

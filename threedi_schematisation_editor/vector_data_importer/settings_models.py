@@ -160,7 +160,7 @@ def get_field_map_config_for_model_class_field(
     )
 
 
-def validate_field_map(field_map: dict, model_cls: Type) -> dict:
+def validate_field_map(field_map: dict, model_cls: Type) -> None:
     """Validate a field map dict against a target data model class.
 
     Re-validates each entry using the custom FieldMapConfig subclass for that
@@ -169,13 +169,14 @@ def validate_field_map(field_map: dict, model_cls: Type) -> dict:
     Raises ValidationError if any entry is invalid.
     """
     model_field_names = {f.name for f in fields(model_cls)}
-    return {
-        field_name: get_field_map_config_for_model_class_field(field_name, model_cls)(
-            **field_data if isinstance(field_data, dict) else field_data.model_dump()
+    for field_name, field_data in field_map.items():
+        if field_name not in model_field_names:
+            continue
+        field_cfg_cls = get_field_map_config_for_model_class_field(
+            field_name, model_cls
         )
-        for field_name, field_data in field_map.items()
-        if field_name in model_field_names
-    }
+        kwargs = field_data if isinstance(field_data, dict) else field_data.model_dump()
+        field_cfg_cls(**kwargs)
 
 
 def get_allowed_methods_for_model_class_field(

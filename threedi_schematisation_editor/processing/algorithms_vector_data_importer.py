@@ -43,7 +43,7 @@ def load_import_settings(file_path, model_cls, connection_node_model_cls=None):
     """
     try:
         with open(file_path) as f:
-            import_settings_dict = json.loads(f.read())
+            import_settings_dict = json.load(f)
     except (OSError, json.JSONDecodeError) as e:
         raise QgsProcessingException(
             f"Could not read import config {file_path}: {e}"
@@ -58,7 +58,7 @@ def load_import_settings(file_path, model_cls, connection_node_model_cls=None):
         try:
             validate_field_map(import_config.fields, model_cls)
         except ValidationError as e:
-            raise QgsProcessingException(f"Invalid field map: {e}") from e
+            raise QgsProcessingException(f"Invalid field map (fields): {e}") from e
 
     if connection_node_model_cls is not None:
         try:
@@ -66,7 +66,9 @@ def load_import_settings(file_path, model_cls, connection_node_model_cls=None):
                 import_config.connection_node_fields, connection_node_model_cls
             )
         except ValidationError as e:
-            raise QgsProcessingException(f"Invalid field map: {e}") from e
+            raise QgsProcessingException(
+                f"Invalid field map (connection_node_fields): {e}"
+            ) from e
 
     return import_config
 
@@ -295,6 +297,8 @@ class ImportCrossSectionLocation(SimpleImporter):
 class ImportCrossSectionData(SimpleImporter):
     IMPORTER_CLASS = CrossSectionDataImporter
     FEATURE_TYPE = "cross_section_data"
+    # TARGET_MODEL_CLS is intentionally not set: CrossSectionData is a virtual
+    # import-only class with no single target model.
 
     def get_source_layer_types(self):
         return [
