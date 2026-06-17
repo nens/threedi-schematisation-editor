@@ -487,3 +487,37 @@ class TestVDIWizardHasChanges:
         wizard._initial_state = wizard.serialize()  # as load_settings_from_json would
         with patch.object(wizard, "serialize", side_effect=Exception("incomplete")):
             assert wizard.has_changes() is True
+
+
+class TestRestoreDraftLenient:
+    def _make_wizard(self):
+        model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
+        return ImportStructureWizard(dm.Culvert, model_gpkg, None)
+
+    def test_applies_valid_data(self):
+        # restore_draft_lenient should produce the same state as a regular deserialize
+        wizard = self._make_wizard()
+        wizard_ref = self._make_wizard()
+        with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
+            data = json.load(f)
+        wizard.restore_draft_lenient(data)
+        wizard_ref.deserialize(data)
+        assert wizard.serialize() == wizard_ref.serialize()
+
+    def test_skips_failing_page_and_continues(self):
+        from threedi_schematisation_editor.vector_data_importer.wizard.pages import SettingsPage
+        wizard = self._make_wizard()
+        with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
+            data = json.load(f)
+        call_count = [0]
+        original = SettingsPage.deserialize
+
+        def exploding_deserialize(self_page, d):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise RuntimeError("simulated failure")
+            return original(self_page, d)
+
+        with patch.object(SettingsPage, "deserialize", exploding_deserialize):
+            # Must not raise even though the first SettingsPage.deserialize call fails
+            wizard.restore_draft_lenient(data)

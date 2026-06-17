@@ -107,6 +107,7 @@ class VDIWizard(QWizard):
             self._initial_state = self.serialize()
         except Exception:
             self._initial_state = None
+        self.offer_draft_restore()
 
     @property
     def wizard_title(self):
@@ -278,7 +279,7 @@ class VDIWizard(QWizard):
             return
         msg = QMessageBox(self)
         msg.setWindowTitle("Unsaved import settings")
-        msg.setText("You have unsaved import settings.")
+        msg.setText("You have unsaved import settings. Do you want to save them as draft to reuse in a later import of the same type?")
         msg.setStandardButtons(
             QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel
         )
@@ -291,6 +292,29 @@ class VDIWizard(QWizard):
             delete_draft(type(self).__name__)
             super().reject()
         # Cancel: do nothing, wizard stays open
+
+    def restore_draft_lenient(self, data):
+        for page_id in self.pageIds():
+            page = self.page(page_id)
+            if hasattr(page, "deserialize"):
+                try:
+                    page.deserialize(data)
+                except Exception:
+                    pass
+
+    def offer_draft_restore(self):
+        draft = get_draft(type(self).__name__)
+        if draft is None:
+            return
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Previous draft found")
+        msg.setText("A previous draft was found for this import type.")
+        msg.setStandardButtons(QMessageBox.RestoreDefaults | QMessageBox.Cancel)
+        msg.setButtonText(QMessageBox.RestoreDefaults, "Restore draft")
+        msg.setButtonText(QMessageBox.Cancel, "Start fresh")
+        result = msg.exec_()
+        if result == QMessageBox.RestoreDefaults:
+            self.restore_draft_lenient(draft)
 
     def get_settings(self) -> BaseModel:
         data = {}
