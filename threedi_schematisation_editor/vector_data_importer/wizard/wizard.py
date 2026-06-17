@@ -103,13 +103,19 @@ class VDIWizard(QWizard):
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self._import_succeeded = False
+        self._draft_restore_offered = False
         self.setup_ui()
         try:
             self._initial_state = self.serialize()
         except Exception:
             self._initial_state = None
         self._initial_draft = self.get_draft_settings()
-        self.offer_draft_restore()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not self._draft_restore_offered:
+            self._draft_restore_offered = True
+            self.offer_draft_restore()
 
     @property
     def wizard_title(self):
