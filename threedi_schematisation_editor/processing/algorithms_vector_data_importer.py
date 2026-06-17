@@ -33,11 +33,12 @@ from threedi_schematisation_editor.vector_data_importer.settings_models import (
 )
 
 
-def load_import_settings(file_path, model_cls):
+def load_import_settings(file_path, model_cls, connection_node_model_cls=None):
     """Load and fully validate import settings from a JSON file.
 
     Handles JSON parse errors, ImportSettings validation, and field map
-    validation against the target model class.
+    validation against the target model class and (optionally) the connection
+    node model class.
     Raises QgsProcessingException on any failure.
     """
     try:
@@ -57,7 +58,15 @@ def load_import_settings(file_path, model_cls):
         try:
             validate_field_map(import_config.fields, model_cls)
         except ValidationError as e:
-            raise QgsProcessingException(f"Invalid field map settings: {e}") from e
+            raise QgsProcessingException(f"Invalid field map: {e}") from e
+
+    if connection_node_model_cls is not None:
+        try:
+            validate_field_map(
+                import_config.connection_node_fields, connection_node_model_cls
+            )
+        except ValidationError as e:
+            raise QgsProcessingException(f"Invalid field map: {e}") from e
 
     return import_config
 
@@ -69,7 +78,10 @@ class BaseImporter(QgsProcessingAlgorithm):
     IMPORT_CONFIG = "IMPORT_CONFIG"
     TARGET_GPKG = "TARGET_GPKG"
     FEATURE_TYPE = ""  # To be overridden by subclasses
-    target_model_cls = None  # Override in subclasses that have a single target model
+    TARGET_MODEL_CLS = None  # Override in subclasses that have a single target model
+    CONNECTION_NODE_MODEL_CLS = (
+        None  # Override in subclasses that validate connection_node_fields
+    )
 
     def createInstance(self):
         return self.__class__()
@@ -177,7 +189,9 @@ class BaseImporter(QgsProcessingAlgorithm):
                 self.invalidSourceError(parameters, self.TARGET_GPKG)
             )
 
-        import_config = load_import_settings(import_config_file, self.target_model_cls)
+        import_config = load_import_settings(
+            import_config_file, self.TARGET_MODEL_CLS, self.CONNECTION_NODE_MODEL_CLS
+        )
 
         importer = self.create_importer(source_layer, target_gpkg, import_config)
 
@@ -199,7 +213,7 @@ class ImportConnectionNodes(SimpleImporter):
 
     IMPORTER_CLASS = ConnectionNodesImporter
     FEATURE_TYPE = "connection_node"
-    target_model_cls = dm.ConnectionNode
+    TARGET_MODEL_CLS = dm.ConnectionNode
 
     def get_source_layer_types(self):
         return [QgsProcessing.TypeVectorPoint]
@@ -210,7 +224,7 @@ class ImportPipes(SimpleImporter):
 
     IMPORTER_CLASS = PipesImporter
     FEATURE_TYPE = "pipe"
-    target_model_cls = dm.Pipe
+    TARGET_MODEL_CLS = dm.Pipe
 
 
 class ImportChannels(SimpleImporter):
@@ -218,7 +232,7 @@ class ImportChannels(SimpleImporter):
 
     IMPORTER_CLASS = ChannelsImporter
     FEATURE_TYPE = "channel"
-    target_model_cls = dm.Channel
+    TARGET_MODEL_CLS = dm.Channel
 
 
 class StructureImporter(BaseImporter):
@@ -241,7 +255,8 @@ class ImportCulverts(StructureImporter):
     FEATURE_TYPE = "culvert"
     IMPORTER_CLASS = CulvertsImporter
     INTEGRATOR_CLASS = CulvertsImporter
-    target_model_cls = dm.Culvert
+    TARGET_MODEL_CLS = dm.Culvert
+    CONNECTION_NODE_MODEL_CLS = dm.ConnectionNode
 
 
 class ImportOrifices(StructureImporter):
@@ -250,7 +265,8 @@ class ImportOrifices(StructureImporter):
     FEATURE_TYPE = "orifice"
     IMPORTER_CLASS = OrificesImporter
     INTEGRATOR_CLASS = OrificesImporter
-    target_model_cls = dm.Orifice
+    TARGET_MODEL_CLS = dm.Orifice
+    CONNECTION_NODE_MODEL_CLS = dm.ConnectionNode
 
 
 class ImportWeirs(StructureImporter):
@@ -259,13 +275,14 @@ class ImportWeirs(StructureImporter):
     FEATURE_TYPE = "weir"
     IMPORTER_CLASS = WeirsImporter
     INTEGRATOR_CLASS = WeirsImporter
-    target_model_cls = dm.Weir
+    TARGET_MODEL_CLS = dm.Weir
+    CONNECTION_NODE_MODEL_CLS = dm.ConnectionNode
 
 
 class ImportCrossSectionLocation(SimpleImporter):
     IMPORTER_CLASS = CrossSectionLocationImporter
     FEATURE_TYPE = "cross_section_location"
-    target_model_cls = dm.CrossSectionLocation
+    TARGET_MODEL_CLS = dm.CrossSectionLocation
 
     def get_source_layer_types(self):
         return [
