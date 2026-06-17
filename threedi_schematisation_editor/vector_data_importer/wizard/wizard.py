@@ -102,6 +102,7 @@ class VDIWizard(QWizard):
         self.model_cls = model_cls
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
+        self._import_succeeded = False
         self.setup_ui()
         try:
             self._initial_state = self.serialize()
@@ -275,6 +276,10 @@ class VDIWizard(QWizard):
         return current != self._initial_state
 
     def reject(self):
+        if self._import_succeeded:
+            delete_draft(type(self).__name__)
+            super().reject()
+            return
         if not self.has_changes():
             super().reject()
             return
@@ -420,7 +425,7 @@ class VDIWizard(QWizard):
                 handler.connect_handler_signals()
                 handler.layer.triggerRepaint()
             if success:
-                delete_draft(type(self).__name__)
+                self._import_succeeded = True
             self.import_finished.emit()
             if success:
                 self.button(self.CancelButton).setFocus()
