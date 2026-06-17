@@ -549,6 +549,5 @@ class TestFieldMapModelDeserialize:
         }
         model.deserialize(data)
         assert model.row_dict["good"].config.method == ColumnImportMethod.AUTO
-        # bad row stores the raw value — model_construct doesn't validate;
-        # is_valid will catch it at import time
-        assert model.row_dict["bad"].config.method == "not_a_valid_method"
+        # bad row left at its default (method=None), not raised
+        assert model.row_dict["bad"].config.method is None

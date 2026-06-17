@@ -238,11 +238,7 @@ class FieldMapModel(QAbstractTableModel):
                 try:
                     row.deserialize(row_data)
                 except Exception:
-                    # Strict deserialization failed — store raw config so
-                    # incomplete state (e.g. method=DEFAULT, no value yet)
-                    # is preserved rather than lost. Validity is checked at
-                    # import time via is_valid / valid_config.
-                    row.config = row.config.__class__.model_construct(**row_data)
+                    pass
         self.emit_all_changed()
 
     def emit_all_changed(self):
