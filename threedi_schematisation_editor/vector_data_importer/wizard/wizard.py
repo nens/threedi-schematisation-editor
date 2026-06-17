@@ -406,6 +406,7 @@ class VDIWizard(QWizard):
 
         # Connect finish handling
         def handle_finished(success, status_msg, warning_msg, error_msg):
+            self._import_succeeded = success
             if not success:
                 progress_bar.set_failed()
             error_color = "#FF0000"
@@ -424,8 +425,6 @@ class VDIWizard(QWizard):
             for handler in handlers:
                 handler.connect_handler_signals()
                 handler.layer.triggerRepaint()
-            if success:
-                self._import_succeeded = True
             self.import_finished.emit()
             if success:
                 self.button(self.CancelButton).setFocus()
