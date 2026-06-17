@@ -469,7 +469,7 @@ class TestVDIWizardHasChanges:
         # Fresh wizard: serialize() raises (field map rows have method=None),
         # _initial_state is None, and there is no source layer — has_changes is False.
         wizard = self._make_wizard()
-        assert wizard.has_changes() is False
+        assert wizard.has_changes is False
 
     def test_has_changes_false_when_state_matches_initial(self):
         # Simulate what load_settings_from_json does: deserialize then snapshot.
@@ -477,7 +477,7 @@ class TestVDIWizardHasChanges:
         with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
             wizard.deserialize(json.load(f))
         wizard._initial_state = wizard.serialize()  # as load_settings_from_json would
-        assert wizard.has_changes() is False
+        assert wizard.has_changes is False
 
     def test_has_changes_true_when_draft_differs_from_initial(self):
         # After a row is changed, get_draft_settings() differs from _initial_draft
@@ -489,7 +489,7 @@ class TestVDIWizardHasChanges:
         wizard = self._make_wizard()
         first_row = next(iter(wizard.field_map_page.field_map_widget.row_dict.values()))
         first_row.config.method = ColumnImportMethod.AUTO
-        assert wizard.has_changes() is True
+        assert wizard.has_changes is True
 
 
 class TestRestoreDraftLenient:

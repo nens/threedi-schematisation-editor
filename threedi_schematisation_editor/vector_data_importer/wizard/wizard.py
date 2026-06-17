@@ -286,6 +286,7 @@ class VDIWizard(QWizard):
                     )
         return data
 
+    @property
     def has_changes(self):
         try:
             current = self.serialize()
@@ -302,7 +303,7 @@ class VDIWizard(QWizard):
             delete_draft(type(self).__name__)
             super().reject()
             return
-        if not self.has_changes():
+        if not self.has_changes:
             super().reject()
             return
         msg = QMessageBox(self)
