@@ -10,3 +10,4 @@ threedi_schematisation_editor/__pycache__
 *.zip
 *.aux.xml
 specs/
+.minispec/memory/
