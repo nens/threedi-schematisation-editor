@@ -336,6 +336,7 @@ class VDIWizard(QWizard):
         result = msg.exec_()
         if result == QMessageBox.RestoreDefaults:
             self.restore_draft_lenient(draft)
+            self._initial_draft = self.get_draft_settings()
 
     def get_settings(self) -> BaseModel:
         data = {}
