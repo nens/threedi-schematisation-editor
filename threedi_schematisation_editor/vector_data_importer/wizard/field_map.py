@@ -134,11 +134,10 @@ class FieldMapRow:
         return FieldMapConfig.model_validate(self.config.model_dump())
 
     def deserialize(self, data: dict[str, Any]) -> None:
-        # Use model_construct (no validation) so incomplete configs (e.g.
-        # method=DEFAULT with no default_value yet) are preserved as-is.
-        # Validity is checked separately via is_valid / valid_config at import time.
+        # Get the custom config class that has the validation, including allowed methods
         config_class = self.config.__class__
-        self.config = config_class.model_construct(**data)
+        # Use the custom class (CustomFieldMapConfig) for deserialization
+        self.config = config_class(**data)
 
     @property
     def is_valid(self) -> bool:
@@ -239,7 +238,11 @@ class FieldMapModel(QAbstractTableModel):
                 try:
                     row.deserialize(row_data)
                 except Exception:
-                    pass
+                    # Strict deserialization failed — store raw config so
+                    # incomplete state (e.g. method=DEFAULT, no value yet)
+                    # is preserved rather than lost. Validity is checked at
+                    # import time via is_valid / valid_config.
+                    row.config = row.config.__class__.model_construct(**row_data)
         self.emit_all_changed()
 
     def emit_all_changed(self):
