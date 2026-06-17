@@ -251,6 +251,7 @@ class VDIWizard(QWizard):
                 with open(file_path, "w") as f:
                     json.dump(settings, f, indent=4)
                 QMessageBox.information(self, "Success", "Settings saved successfully!")
+                delete_draft(type(self).__name__)
                 return file_path
             except Exception as e:
                 QMessageBox.critical(
@@ -418,6 +419,8 @@ class VDIWizard(QWizard):
             for handler in handlers:
                 handler.connect_handler_signals()
                 handler.layer.triggerRepaint()
+            if success:
+                delete_draft(type(self).__name__)
             self.import_finished.emit()
             if success:
                 self.button(self.CancelButton).setFocus()
