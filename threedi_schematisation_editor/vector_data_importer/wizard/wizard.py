@@ -100,6 +100,10 @@ class VDIWizard(QWizard):
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
         self.setup_ui()
+        try:
+            self._initial_state = self.serialize()
+        except Exception:
+            self._initial_state = None
 
     @property
     def wizard_title(self):
@@ -201,6 +205,10 @@ class VDIWizard(QWizard):
             try:
                 settings = sm.ImportSettings(**json_settings)
                 self.deserialize(settings.model_dump())
+                try:
+                    self._initial_state = self.serialize()
+                except Exception:
+                    pass
                 QMessageBox.information(
                     self, "Success", "Settings loaded successfully!"
                 )
@@ -247,6 +255,19 @@ class VDIWizard(QWizard):
 
     def serialize(self):
         return self.get_settings().model_dump()
+
+    def has_changes(self):
+        try:
+            current = self.serialize()
+        except Exception:
+            # serialize() raises when field map rows are incomplete. Only treat
+            # this as a change if a preset was previously loaded successfully
+            # (i.e. _initial_state was set). If no preset was ever loaded the
+            # wizard is still in its original unready state.
+            return self._initial_state is not None
+        if self._initial_state is None:
+            return False
+        return current != self._initial_state
 
     def get_settings(self) -> BaseModel:
         data = {}

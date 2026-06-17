@@ -455,3 +455,35 @@ class TestDraftHelpers:
     def test_delete_draft_is_idempotent(self):
         delete_draft(self.WIZARD_NAME)  # nothing stored — must not raise
         assert get_draft(self.WIZARD_NAME) is None
+
+
+class TestVDIWizardHasChanges:
+    def _make_wizard(self):
+        model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
+        return ImportStructureWizard(dm.Culvert, model_gpkg, None)
+
+    def test_has_changes_false_at_init(self):
+        # Fresh wizard: serialize() raises (field map rows have method=None),
+        # _initial_state is None, and there is no source layer — has_changes is False.
+        wizard = self._make_wizard()
+        assert wizard.has_changes() is False
+
+    def test_has_changes_false_when_state_matches_initial(self):
+        # Simulate what load_settings_from_json does: deserialize then snapshot.
+        wizard = self._make_wizard()
+        with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
+            wizard.deserialize(json.load(f))
+        wizard._initial_state = wizard.serialize()  # as load_settings_from_json would
+        assert wizard.has_changes() is False
+
+    def test_has_changes_true_when_serialize_raises(self):
+        # After a preset is loaded (_initial_state is set), if serialize() then
+        # raises (e.g. user cleared a field leaving method=None), that counts
+        # as a change.
+        from unittest.mock import patch
+        wizard = self._make_wizard()
+        with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
+            wizard.deserialize(json.load(f))
+        wizard._initial_state = wizard.serialize()  # as load_settings_from_json would
+        with patch.object(wizard, "serialize", side_effect=Exception("incomplete")):
+            assert wizard.has_changes() is True
