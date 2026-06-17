@@ -108,6 +108,7 @@ class VDIWizard(QWizard):
             self._initial_state = self.serialize()
         except Exception:
             self._initial_state = None
+        self._initial_draft = self.get_draft_settings()
         self.offer_draft_restore()
 
     @property
@@ -280,11 +281,9 @@ class VDIWizard(QWizard):
         try:
             current = self.serialize()
         except Exception:
-            # serialize() raises when field map rows are incomplete. Only treat
-            # this as a change if a preset was previously loaded successfully
-            # (i.e. _initial_state was set). If no preset was ever loaded the
-            # wizard is still in its original unready state.
-            return self._initial_state is not None
+            # serialize() raises when field map rows are incomplete — compare
+            # raw draft data against the initial snapshot instead.
+            return self.get_draft_settings() != self._initial_draft
         if self._initial_state is None:
             return False
         return current != self._initial_state

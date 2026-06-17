@@ -479,18 +479,14 @@ class TestVDIWizardHasChanges:
         wizard._initial_state = wizard.serialize()  # as load_settings_from_json would
         assert wizard.has_changes() is False
 
-    def test_has_changes_true_when_serialize_raises(self):
-        # After a preset is loaded (_initial_state is set), if serialize() then
-        # raises (e.g. user cleared a field leaving method=None), that counts
-        # as a change.
-        from unittest.mock import patch
-
+    def test_has_changes_true_when_draft_differs_from_initial(self):
+        # After a row is changed, get_draft_settings() differs from _initial_draft
+        # even when serialize() raises (other rows still incomplete).
+        from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
         wizard = self._make_wizard()
-        with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
-            wizard.deserialize(json.load(f))
-        wizard._initial_state = wizard.serialize()  # as load_settings_from_json would
-        with patch.object(wizard, "serialize", side_effect=Exception("incomplete")):
-            assert wizard.has_changes() is True
+        first_row = next(iter(wizard.field_map_page.field_map_widget.row_dict.values()))
+        first_row.config.method = ColumnImportMethod.AUTO
+        assert wizard.has_changes() is True
 
 
 class TestRestoreDraftLenient:
