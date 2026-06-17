@@ -281,7 +281,9 @@ class VDIWizard(QWizard):
                 }
             elif callable(getattr(page, "get_settings", None)):
                 for key, value in page.get_settings().items():
-                    data[key] = value.model_dump() if hasattr(value, "model_dump") else value
+                    data[key] = (
+                        value.model_dump() if hasattr(value, "model_dump") else value
+                    )
         return data
 
     def has_changes(self):
@@ -334,8 +336,10 @@ class VDIWizard(QWizard):
         if draft is None:
             return
         msg = QMessageBox(self)
-        msg.setWindowTitle("Previous draft found")
-        msg.setText("A previous draft was found for this import type.")
+        msg.setWindowTitle("Draft import configuration found")
+        msg.setText(
+            "A previous import configuration was found for this import type. Do you want to restore these settings?"
+        )
         msg.setStandardButtons(QMessageBox.RestoreDefaults | QMessageBox.Cancel)
         msg.button(QMessageBox.RestoreDefaults).setText("Restore draft")
         msg.button(QMessageBox.Cancel).setText("Start fresh")

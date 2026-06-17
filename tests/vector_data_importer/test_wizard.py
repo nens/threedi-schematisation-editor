@@ -482,7 +482,10 @@ class TestVDIWizardHasChanges:
     def test_has_changes_true_when_draft_differs_from_initial(self):
         # After a row is changed, get_draft_settings() differs from _initial_draft
         # even when serialize() raises (other rows still incomplete).
-        from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+        from threedi_schematisation_editor.vector_data_importer.utils import (
+            ColumnImportMethod,
+        )
+
         wizard = self._make_wizard()
         first_row = next(iter(wizard.field_map_page.field_map_widget.row_dict.values()))
         first_row.config.method = ColumnImportMethod.AUTO
