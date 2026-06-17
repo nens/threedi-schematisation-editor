@@ -1,6 +1,7 @@
 # Copyright (C) 2025 by Nelen & Schuurmans
 import json
 
+from pydantic import ValidationError
 from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -14,6 +15,7 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
+import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.importers import (
     ChannelsImporter,
     ConnectionNodesImporter,
@@ -27,7 +29,48 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     ImportSettings,
     IntegrationMode,
+    validate_field_map,
 )
+
+
+def load_import_settings(file_path, model_cls, connection_node_model_cls=None):
+    """Load and fully validate import settings from a JSON file.
+
+    Handles JSON parse errors, ImportSettings validation, and field map
+    validation against the target model class and (optionally) the connection
+    node model class.
+    Raises QgsProcessingException on any failure.
+    """
+    try:
+        with open(file_path) as f:
+            import_settings_dict = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        raise QgsProcessingException(
+            f"Could not read import config {file_path}: {e}"
+        ) from e
+
+    try:
+        import_config = ImportSettings(**import_settings_dict)
+    except ValidationError as e:
+        raise QgsProcessingException(f"Invalid import settings: {e}") from e
+
+    if model_cls is not None:
+        try:
+            validate_field_map(import_config.fields, model_cls)
+        except ValidationError as e:
+            raise QgsProcessingException(f"Invalid field map (fields): {e}") from e
+
+    if connection_node_model_cls is not None:
+        try:
+            validate_field_map(
+                import_config.connection_node_fields, connection_node_model_cls
+            )
+        except ValidationError as e:
+            raise QgsProcessingException(
+                f"Invalid field map (connection_node_fields): {e}"
+            ) from e
+
+    return import_config
 
 
 class BaseImporter(QgsProcessingAlgorithm):
@@ -37,6 +80,10 @@ class BaseImporter(QgsProcessingAlgorithm):
     IMPORT_CONFIG = "IMPORT_CONFIG"
     TARGET_GPKG = "TARGET_GPKG"
     FEATURE_TYPE = ""  # To be overridden by subclasses
+    TARGET_MODEL_CLS = None  # Override in subclasses that have a single target model
+    CONNECTION_NODE_MODEL_CLS = (
+        None  # Override in subclasses that validate connection_node_fields
+    )
 
     def createInstance(self):
         return self.__class__()
@@ -144,9 +191,9 @@ class BaseImporter(QgsProcessingAlgorithm):
                 self.invalidSourceError(parameters, self.TARGET_GPKG)
             )
 
-        with open(import_config_file) as import_config_json:
-            import_settings_dict = json.loads(import_config_json.read())
-        import_config = ImportSettings(**import_settings_dict)
+        import_config = load_import_settings(
+            import_config_file, self.TARGET_MODEL_CLS, self.CONNECTION_NODE_MODEL_CLS
+        )
 
         importer = self.create_importer(source_layer, target_gpkg, import_config)
 
@@ -167,7 +214,8 @@ class ImportConnectionNodes(SimpleImporter):
     """Import connection nodes."""
 
     IMPORTER_CLASS = ConnectionNodesImporter
-    FEATURE_TYPE = "connection_node"  # To be overridden by subclasses
+    FEATURE_TYPE = "connection_node"
+    TARGET_MODEL_CLS = dm.ConnectionNode
 
     def get_source_layer_types(self):
         return [QgsProcessing.TypeVectorPoint]
@@ -178,6 +226,7 @@ class ImportPipes(SimpleImporter):
 
     IMPORTER_CLASS = PipesImporter
     FEATURE_TYPE = "pipe"
+    TARGET_MODEL_CLS = dm.Pipe
 
 
 class ImportChannels(SimpleImporter):
@@ -185,6 +234,7 @@ class ImportChannels(SimpleImporter):
 
     IMPORTER_CLASS = ChannelsImporter
     FEATURE_TYPE = "channel"
+    TARGET_MODEL_CLS = dm.Channel
 
 
 class StructureImporter(BaseImporter):
@@ -207,6 +257,8 @@ class ImportCulverts(StructureImporter):
     FEATURE_TYPE = "culvert"
     IMPORTER_CLASS = CulvertsImporter
     INTEGRATOR_CLASS = CulvertsImporter
+    TARGET_MODEL_CLS = dm.Culvert
+    CONNECTION_NODE_MODEL_CLS = dm.ConnectionNode
 
 
 class ImportOrifices(StructureImporter):
@@ -215,6 +267,8 @@ class ImportOrifices(StructureImporter):
     FEATURE_TYPE = "orifice"
     IMPORTER_CLASS = OrificesImporter
     INTEGRATOR_CLASS = OrificesImporter
+    TARGET_MODEL_CLS = dm.Orifice
+    CONNECTION_NODE_MODEL_CLS = dm.ConnectionNode
 
 
 class ImportWeirs(StructureImporter):
@@ -223,11 +277,14 @@ class ImportWeirs(StructureImporter):
     FEATURE_TYPE = "weir"
     IMPORTER_CLASS = WeirsImporter
     INTEGRATOR_CLASS = WeirsImporter
+    TARGET_MODEL_CLS = dm.Weir
+    CONNECTION_NODE_MODEL_CLS = dm.ConnectionNode
 
 
 class ImportCrossSectionLocation(SimpleImporter):
     IMPORTER_CLASS = CrossSectionLocationImporter
     FEATURE_TYPE = "cross_section_location"
+    TARGET_MODEL_CLS = dm.CrossSectionLocation
 
     def get_source_layer_types(self):
         return [
@@ -240,6 +297,8 @@ class ImportCrossSectionLocation(SimpleImporter):
 class ImportCrossSectionData(SimpleImporter):
     IMPORTER_CLASS = CrossSectionDataImporter
     FEATURE_TYPE = "cross_section_data"
+    # TARGET_MODEL_CLS is intentionally not set: CrossSectionData is a virtual
+    # import-only class with no single target model.
 
     def get_source_layer_types(self):
         return [
