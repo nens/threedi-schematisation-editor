@@ -6,6 +6,7 @@ History
 
 - Add progress bar colors: blue while running, green on completion, red on failure (nens/rana-qgis-plugin#294)
 - Enforce .json suffix when saving importer presets to file (nens/threedi-schematisation-editor#493)
+- Validate settings files when importing via processing algorithm (nens/threedi-schematisation-editor#449)
 
 
 2.4.10 (2026-05-06)
