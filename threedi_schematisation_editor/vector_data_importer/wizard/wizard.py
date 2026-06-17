@@ -271,6 +271,7 @@ class VDIWizard(QWizard):
                 data[page.name] = {
                     key: row.config.model_dump()
                     for key, row in page.field_map_widget.row_dict.items()
+                    if row.is_valid
                 }
             elif callable(getattr(page, "get_settings", None)):
                 for key, value in page.get_settings().items():
@@ -310,7 +311,6 @@ class VDIWizard(QWizard):
             save_draft(type(self).__name__, self.get_draft_settings())
             super().reject()
         elif result == QMessageBox.Discard:
-            delete_draft(type(self).__name__)
             super().reject()
         # Cancel: do nothing, wizard stays open
 
