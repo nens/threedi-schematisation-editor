@@ -18,7 +18,10 @@ from threedi_schematisation_editor.vector_data_importer.wizard import (
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
     LAST_CONFIG_DIR_ENTRY,
+    delete_draft,
+    get_draft,
     get_last_config_dir,
+    save_draft,
     update_last_config_dir,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog import (
@@ -425,3 +428,30 @@ def test_config_dir_functions():
     assert get_last_config_dir() == other_path
     # reset last config dir
     settings.setValue(LAST_CONFIG_DIR_ENTRY, last_config_dir_str)
+
+
+class TestDraftHelpers:
+    WIZARD_NAME = "TestWizard"
+
+    def setup_method(self):
+        delete_draft(self.WIZARD_NAME)
+
+    def teardown_method(self):
+        delete_draft(self.WIZARD_NAME)
+
+    def test_get_draft_returns_none_when_absent(self):
+        assert get_draft(self.WIZARD_NAME) is None
+
+    def test_save_and_get_draft_round_trips(self):
+        data = {"fields": {"foo": {"method": "auto"}}, "connection_nodes": {"snap": True}}
+        save_draft(self.WIZARD_NAME, data)
+        assert get_draft(self.WIZARD_NAME) == data
+
+    def test_delete_draft_removes_entry(self):
+        save_draft(self.WIZARD_NAME, {"x": 1})
+        delete_draft(self.WIZARD_NAME)
+        assert get_draft(self.WIZARD_NAME) is None
+
+    def test_delete_draft_is_idempotent(self):
+        delete_draft(self.WIZARD_NAME)  # nothing stored — must not raise
+        assert get_draft(self.WIZARD_NAME) is None

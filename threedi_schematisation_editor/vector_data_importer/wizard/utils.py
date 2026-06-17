@@ -1,10 +1,15 @@
 import inspect
+import json
 import warnings
 from pathlib import Path
 
+from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import QSettings
 
 from threedi_schematisation_editor import warnings as threedi_warnings
+
+
+VDI_DRAFTS_FOLDER = "vdi_preset_drafts"
 
 
 class CatchThreediWarnings:
@@ -88,3 +93,32 @@ def update_last_config_dir(config_dir: str):
         settings.setValue(LAST_CONFIG_DIR_ENTRY, config_dir)
     elif Path(config_dir).is_file():
         settings.setValue(LAST_CONFIG_DIR_ENTRY, str(Path(config_dir).parent))
+
+
+def _draft_path(wizard_class_name):
+    folder = Path(QgsApplication.qgisSettingsDirPath()) / VDI_DRAFTS_FOLDER
+    return folder / f"{wizard_class_name}.json"
+
+
+def get_draft(wizard_class_name):
+    path = _draft_path(wizard_class_name)
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return None
+
+
+def save_draft(wizard_class_name, data):
+    path = _draft_path(wizard_class_name)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def delete_draft(wizard_class_name):
+    path = _draft_path(wizard_class_name)
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
