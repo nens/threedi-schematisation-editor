@@ -38,7 +38,10 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
 from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
     CatchThreediWarnings,
     create_font,
+    delete_draft,
+    get_draft,
     get_last_config_dir,
+    save_draft,
     update_last_config_dir,
 )
 
@@ -268,6 +271,26 @@ class VDIWizard(QWizard):
         if self._initial_state is None:
             return False
         return current != self._initial_state
+
+    def reject(self):
+        if not self.has_changes():
+            super().reject()
+            return
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Unsaved import settings")
+        msg.setText("You have unsaved import settings.")
+        msg.setStandardButtons(
+            QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel
+        )
+        msg.setButtonText(QMessageBox.Save, "Save draft")
+        result = msg.exec_()
+        if result == QMessageBox.Save:
+            save_draft(type(self).__name__, self.serialize())
+            super().reject()
+        elif result == QMessageBox.Discard:
+            delete_draft(type(self).__name__)
+            super().reject()
+        # Cancel: do nothing, wizard stays open
 
     def get_settings(self) -> BaseModel:
         data = {}

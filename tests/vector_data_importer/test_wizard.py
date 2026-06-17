@@ -487,3 +487,75 @@ class TestVDIWizardHasChanges:
         wizard._initial_state = wizard.serialize()  # as load_settings_from_json would
         with patch.object(wizard, "serialize", side_effect=Exception("incomplete")):
             assert wizard.has_changes() is True
+
+
+class TestVDIWizardReject:
+    PATCH_TARGET = (
+        "threedi_schematisation_editor.vector_data_importer.wizard.wizard.QMessageBox"
+    )
+
+    def _make_wizard_with_changes(self):
+        model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
+        wizard = ImportStructureWizard(dm.Culvert, model_gpkg, None)
+        with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
+            wizard.deserialize(json.load(f))
+        wizard._initial_state = wizard.serialize()
+        # Simulate a further change so has_changes() returns True
+        wizard._initial_state = {}
+        return wizard
+
+    def test_reject_no_dialog_when_no_changes(self):
+        from unittest.mock import patch
+        from qgis.PyQt.QtWidgets import QMessageBox as RealQMessageBox
+        model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
+        wizard = ImportStructureWizard(dm.Culvert, model_gpkg, None)
+        with patch(self.PATCH_TARGET) as MockBox:
+            wizard.reject()
+            MockBox.assert_not_called()
+
+    def test_reject_save_draft_stores_and_closes(self):
+        from unittest.mock import patch
+        from qgis.PyQt.QtWidgets import QMessageBox as RealQMessageBox
+        wizard = self._make_wizard_with_changes()
+        wizard_class = type(wizard).__name__
+        delete_draft(wizard_class)
+        expected_state = wizard.serialize()
+        with patch(self.PATCH_TARGET) as MockBox:
+            MockBox.Save = RealQMessageBox.Save
+            MockBox.Discard = RealQMessageBox.Discard
+            MockBox.Cancel = RealQMessageBox.Cancel
+            MockBox.return_value.exec_.return_value = RealQMessageBox.Save
+            wizard.reject()
+        assert get_draft(wizard_class) == expected_state
+        delete_draft(wizard_class)
+
+    def test_reject_discard_deletes_draft_and_closes(self):
+        from unittest.mock import patch
+        from qgis.PyQt.QtWidgets import QMessageBox as RealQMessageBox
+        wizard = self._make_wizard_with_changes()
+        wizard_class = type(wizard).__name__
+        save_draft(wizard_class, {"pre_existing": True})
+        with patch(self.PATCH_TARGET) as MockBox:
+            MockBox.Save = RealQMessageBox.Save
+            MockBox.Discard = RealQMessageBox.Discard
+            MockBox.Cancel = RealQMessageBox.Cancel
+            MockBox.return_value.exec_.return_value = RealQMessageBox.Discard
+            wizard.reject()
+        assert get_draft(wizard_class) is None
+
+    def test_reject_cancel_keeps_wizard_open(self):
+        from unittest.mock import patch, MagicMock
+        from qgis.PyQt.QtWidgets import QMessageBox as RealQMessageBox
+        wizard = self._make_wizard_with_changes()
+        with patch(self.PATCH_TARGET) as MockBox:
+            MockBox.Save = RealQMessageBox.Save
+            MockBox.Discard = RealQMessageBox.Discard
+            MockBox.Cancel = RealQMessageBox.Cancel
+            MockBox.return_value.exec_.return_value = RealQMessageBox.Cancel
+            with patch.object(type(wizard), "reject", wraps=wizard.reject) as mock_reject:
+                pass
+            # Verify super().reject() was NOT called by checking wizard is not hidden
+            mock_super_reject = MagicMock()
+            with patch("qgis.PyQt.QtWidgets.QWizard.reject", mock_super_reject):
+                wizard.reject()
+            mock_super_reject.assert_not_called()
