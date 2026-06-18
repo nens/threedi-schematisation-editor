@@ -74,6 +74,11 @@ pre-commit run --all-files
 - All tests auto-use the `qgis_app_initialized` fixture (`tests/conftest.py`) which starts a headless `QgsApplication`.
 - Test files mirror the plugin structure under `tests/`.
 - Write tests for new business logic. Prefer integration-style tests that work through QGIS layer/feature APIs.
+- **Run targeted tests during development**, not the full suite — the full suite is slow. Target a specific file or test:
+  ```bash
+  docker compose run --rm qgis-desktop bash -c "QT_QPA_PLATFORM=offscreen pytest tests/path/to/test_file.py -v"
+  ```
+  Run the full suite (`make test`) only before committing or when verifying a broad change.
 
 ## Key conventions
 

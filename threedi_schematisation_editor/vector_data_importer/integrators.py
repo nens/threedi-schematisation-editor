@@ -266,11 +266,10 @@ class LinearIntegrator:
         conduit_structures.sort(key=attrgetter("m"))
         return conduit_structures, processed_structure_ids
 
-    def find_ambiguous_structures(self, selected_ids=None):
+    def get_multi_conduit_matches(self, selected_ids=None) -> set:
         """Return fids of source structures that snap to more than one conduit.
 
-        These structures are ambiguous and should be skipped during integration.
-        Emits a single StructuresIntegratorWarning listing all skipped structures.
+        Emits a single StructuresIntegratorWarning listing all such structures.
         """
         if selected_ids is None:
             selected_ids = set()
@@ -300,18 +299,18 @@ class LinearIntegrator:
                     continue
                 if hit is not None:
                     matches[structure_fid].add(conduit_feat["id"])
-        ambiguous = {fid: ids for fid, ids in matches.items() if len(ids) > 1}
-        if ambiguous:
+        multi_matches = {fid: ids for fid, ids in matches.items() if len(ids) > 1}
+        if multi_matches:
             lines = [
                 f"  - structure fid {fid} matches conduits {sorted(ids)}"
-                for fid, ids in ambiguous.items()
+                for fid, ids in multi_matches.items()
             ]
             msg = (
-                f"Skipped {len(ambiguous)} structure(s) within snapping distance of "
+                f"Skipped {len(multi_matches)} structure(s) within snapping distance of "
                 f"multiple conduits:\n" + "\n".join(lines)
             )
             warnings.warn(msg, StructuresIntegratorWarning)
-        return set(ambiguous.keys())
+        return set(multi_matches.keys())
 
     def add_node(self, point, node_layer_fields, node_attributes):
         node_feat = self.node_manager.create_new(
