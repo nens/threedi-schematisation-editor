@@ -9,3 +9,16 @@ threedi_schematisation_editor/__pycache__
 /.idea
 *.zip
 *.aux.xml
+
+# Local runtime files
+symbology-style.db
+user-history.db
+*.tif
+*.ipynb
+.envrc
+tests/vector_data_importer/data/debug/
+
+# Local AI stuff
+.minispec/
+.opencode/
+specs/
