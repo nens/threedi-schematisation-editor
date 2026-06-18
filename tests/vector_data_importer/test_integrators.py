@@ -426,6 +426,138 @@ class TestChannelStructureIntegration:
 
         assert (structure_fid in result) == match
 
+    @pytest.mark.parametrize(
+        "conduit_y_positions, expect_in_result, expect_warning",
+        [
+            ([0, 200], True, False),  # one match -> in result
+            ([0, 2], False, True),  # two matches -> excluded, warning emitted
+            ([200, 201], False, False),  # no match -> empty result, no warning
+        ],
+        ids=["single_match", "multi_match", "no_match"],
+    )
+    def test_get_conduit_matches(
+        self,
+        channel_fields,
+        structure_fields,
+        conduit_y_positions,
+        expect_in_result,
+        expect_warning,
+    ):
+        conduits = []
+        for i, y in enumerate(conduit_y_positions):
+            feat = QgsFeature(channel_fields)
+            feat.setGeometry(
+                QgsGeometry.fromPolylineXY([QgsPointXY(0, y), QgsPointXY(100, y)])
+            )
+            feat.setAttribute("id", (i + 1) * 10)
+            conduits.append(feat)
+
+        structure = QgsFeature(structure_fields)
+        structure.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 1)))
+        structure.setAttribute("id", 99)
+        structure.setAttribute("length", 5.0)
+        structure_fid = structure.id()
+
+        integrator = MagicMock()
+        integrator.snapping_distance = 5.0
+        integrator.point_to_line_settings = sm.PointToLineSettings(
+            length={
+                "method": "source_attribute",
+                "source_attribute": "length",
+                "default_value": 5.0,
+            },
+            azimuth={"method": "default", "default_value": 0.0},
+        )
+        structure_index = MagicMock()
+        structure_index.intersects.return_value = [structure_fid]
+        integrator.spatial_indexes_map = {
+            "source": ({structure_fid: structure}, structure_index)
+        }
+        integrator.integrate_layer.getFeatures.return_value = conduits
+
+        if expect_warning:
+            with pytest.warns(StructuresIntegratorWarning):
+                result = LinearIntegrator.get_conduit_matches(integrator)
+        else:
+            result = LinearIntegrator.get_conduit_matches(integrator)
+
+        matched_structures = [
+            structures
+            for conduit, structures in result
+            if conduit.id() == conduits[0].id()
+        ]
+        if expect_in_result:
+            assert len(matched_structures) == 1
+            assert structure in matched_structures[0]
+        else:
+            assert matched_structures == []
+
+    def test_get_conduit_matches_selected_ids(self, channel_fields, structure_fields):
+        """Structure outside selected_ids is not counted as a match."""
+        fields_c = QgsFields()
+        fields_c.append(QgsField("id", QVariant.Int))
+        conduit = QgsFeature(fields_c)
+        conduit.setGeometry(
+            QgsGeometry.fromPolylineXY([QgsPointXY(0, 0), QgsPointXY(100, 0)])
+        )
+        conduit.setAttribute("id", 10)
+
+        structure = QgsFeature(structure_fields)
+        structure.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 1)))
+        structure.setAttribute("id", 99)
+        structure.setAttribute("length", 5.0)
+        structure_fid = structure.id()
+
+        integrator = MagicMock()
+        integrator.snapping_distance = 5.0
+        integrator.point_to_line_settings = sm.PointToLineSettings(
+            length={
+                "method": "source_attribute",
+                "source_attribute": "length",
+                "default_value": 5.0,
+            },
+            azimuth={"method": "default", "default_value": 0.0},
+        )
+        structure_index = MagicMock()
+        structure_index.intersects.return_value = [structure_fid]
+        integrator.spatial_indexes_map = {
+            "source": ({structure_fid: structure}, structure_index)
+        }
+        integrator.integrate_layer.getFeatures.return_value = [conduit]
+
+        result = LinearIntegrator.get_conduit_matches(integrator, selected_ids={999})
+
+        assert result == []
+
+    def test_get_conduit_structure_from_point_new_signature(
+        self, channel_feature, point_structure_feature
+    ):
+        """get_conduit_structure_from_point takes no snapping_distance, returns data."""
+        length_config = sm.FieldMapConfig(
+            method=sm.ColumnImportMethod.ATTRIBUTE,
+            source_attribute="length",
+            default_value=5.0,
+        )
+        result = LinearIntegrator.get_conduit_structure_from_point(
+            point_structure_feature, channel_feature, length_config
+        )
+        assert result.conduit_id == 1
+        assert result.feature["id"] == 4
+        assert result.m == 50.0
+        assert result.length == 10.0
+
+    def test_get_conduit_structure_from_line_new_signature(
+        self, channel_feature, line_structure_feature
+    ):
+        """get_conduit_structure_from_line takes no snapping_distance, returns data."""
+        result = LinearIntegrator.get_conduit_structure_from_line(
+            line_structure_feature, channel_feature
+        )
+        assert result.conduit_id == 1
+        assert result.feature["id"] == 3
+        assert result.m == 50.0
+        assert result.length == 50.0
+
 
 class TestCrossSectionIntegration:
     """Tests for cross section integration methods of the LinearIntegrator class."""
