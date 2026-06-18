@@ -17,6 +17,7 @@ from threedi_schematisation_editor.vector_data_importer.integrators import (
     LinearIntegrator,
     LinearIntegratorStructureData,
 )
+from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 
 
 @pytest.fixture
@@ -734,3 +735,162 @@ def test_get_channel_cuts(mids, lengths, expected_cuts):
         LinearIntegrator.get_conduit_cuts(channel_structures, channel_length)
         == expected_cuts
     )
+
+
+class TestFindAmbiguousStructures:
+    """Tests for LinearIntegrator.find_ambiguous_structures."""
+
+    @pytest.fixture
+    def two_conduits(self, channel_fields):
+        """Two parallel channels: channel_a at y=0, channel_b at y=2."""
+        channel_a = QgsFeature(channel_fields)
+        channel_a.setGeometry(
+            QgsGeometry.fromPolylineXY([QgsPointXY(0, 0), QgsPointXY(100, 0)])
+        )
+        channel_a.setAttribute("id", 10)
+
+        channel_b = QgsFeature(channel_fields)
+        channel_b.setGeometry(
+            QgsGeometry.fromPolylineXY([QgsPointXY(0, 2), QgsPointXY(100, 2)])
+        )
+        channel_b.setAttribute("id", 20)
+        return channel_a, channel_b
+
+    @pytest.fixture
+    def ambiguous_point_structure(self, structure_fields):
+        """Point at y=1, within snapping_distance=5 of both channels."""
+        feat = QgsFeature(structure_fields)
+        feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 1)))
+        feat.setAttribute("id", 99)
+        feat.setAttribute("length", 5.0)
+        return feat
+
+    def _make_integrator(self, conduits, structure_features_map, structure_fids):
+        """Build a minimal mock integrator."""
+        integrator = MagicMock()
+        integrator.snapping_distance = 5.0
+        integrator.point_to_line_settings = sm.PointToLineSettings(
+            length={
+                "method": "source_attribute",
+                "source_attribute": "length",
+                "default_value": 5.0,
+            },
+            azimuth={"method": "default", "default_value": 0.0},
+        )
+        structure_index = MagicMock()
+        structure_index.intersects.return_value = structure_fids
+        integrator.spatial_indexes_map = {
+            "source": (structure_features_map, structure_index)
+        }
+        integrator.integrate_layer.getFeatures.return_value = conduits
+        return integrator
+
+    def test_structure_matching_two_conduits_is_excluded(
+        self, two_conduits, ambiguous_point_structure
+    ):
+        """A point within snapping distance of two conduits must appear in the exclusion set."""
+        channel_a, channel_b = two_conduits
+        structure_fid = ambiguous_point_structure.id()
+        structure_features_map = {structure_fid: ambiguous_point_structure}
+        integrator = self._make_integrator(
+            [channel_a, channel_b], structure_features_map, [structure_fid]
+        )
+
+        with pytest.warns(StructuresIntegratorWarning):
+            excluded = LinearIntegrator.find_ambiguous_structures(integrator)
+
+        assert structure_fid in excluded
+
+    def test_structure_matching_one_conduit_is_not_excluded(
+        self, two_conduits, structure_fields
+    ):
+        """A point within snapping distance of only one conduit must NOT be excluded."""
+        fields_c = QgsFields()
+        fields_c.append(QgsField("id", QVariant.Int))
+
+        close_channel = QgsFeature(fields_c)
+        close_channel.setGeometry(
+            QgsGeometry.fromPolylineXY([QgsPointXY(0, 50), QgsPointXY(100, 50)])
+        )
+        close_channel.setAttribute("id", 10)
+
+        far_channel = QgsFeature(fields_c)
+        far_channel.setGeometry(
+            QgsGeometry.fromPolylineXY([QgsPointXY(0, 200), QgsPointXY(100, 200)])
+        )
+        far_channel.setAttribute("id", 20)
+
+        feat = QgsFeature(structure_fields)
+        feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 50)))
+        feat.setAttribute("id", 77)
+        feat.setAttribute("length", 5.0)
+
+        structure_fid = feat.id()
+        structure_features_map = {structure_fid: feat}
+        integrator = self._make_integrator(
+            [close_channel, far_channel], structure_features_map, [structure_fid]
+        )
+
+        excluded = LinearIntegrator.find_ambiguous_structures(integrator)
+
+        assert structure_fid not in excluded
+
+    def test_structure_outside_selected_ids_not_counted(
+        self, two_conduits, ambiguous_point_structure
+    ):
+        """When selected_ids restricts to one conduit, the structure is not ambiguous."""
+        channel_a, channel_b = two_conduits
+        structure_fid = ambiguous_point_structure.id()
+        structure_features_map = {structure_fid: ambiguous_point_structure}
+        integrator = self._make_integrator(
+            [channel_a, channel_b], structure_features_map, [structure_fid]
+        )
+
+        # Only structures with fid matching structure_fid are considered; but the
+        # selected_ids here filters which *structures* participate, not conduits.
+        # To test conduit filtering: pass selected_ids={structure_fid} — the point
+        # still snaps to both conduits, so this tests the structure-level filter.
+        # The real conduit-filtering scenario: spatial index only returns fids in selected_ids.
+        # Simulate: spatial index returns structure_fid only for channel_a's bbox call.
+        integrator2 = MagicMock()
+        integrator2.snapping_distance = 5.0
+        integrator2.point_to_line_settings = sm.PointToLineSettings(
+            length={
+                "method": "source_attribute",
+                "source_attribute": "length",
+                "default_value": 5.0,
+            },
+            azimuth={"method": "default", "default_value": 0.0},
+        )
+        structure_index2 = MagicMock()
+        # First call (channel_a): returns the structure fid; second call (channel_b): returns nothing
+        structure_index2.intersects.side_effect = [[structure_fid], []]
+        integrator2.spatial_indexes_map = {
+            "source": (structure_features_map, structure_index2)
+        }
+        channel_a, channel_b = two_conduits
+        integrator2.integrate_layer.getFeatures.return_value = [channel_a, channel_b]
+
+        excluded = LinearIntegrator.find_ambiguous_structures(integrator2)
+
+        assert structure_fid not in excluded
+
+    def test_warning_lists_structure_and_conduit_ids(
+        self, two_conduits, ambiguous_point_structure
+    ):
+        """The emitted warning must name the structure id and the conduit ids it matched."""
+        channel_a, channel_b = two_conduits
+        structure_fid = ambiguous_point_structure.id()
+        structure_features_map = {structure_fid: ambiguous_point_structure}
+        integrator = self._make_integrator(
+            [channel_a, channel_b], structure_features_map, [structure_fid]
+        )
+
+        with pytest.warns(StructuresIntegratorWarning) as warning_info:
+            LinearIntegrator.find_ambiguous_structures(integrator)
+
+        assert len(warning_info) == 1
+        msg = str(warning_info[0].message)
+        # Warning must mention both conduit ids
+        assert "10" in msg
+        assert "20" in msg

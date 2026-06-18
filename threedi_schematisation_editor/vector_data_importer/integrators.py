@@ -266,6 +266,53 @@ class LinearIntegrator:
         conduit_structures.sort(key=attrgetter("m"))
         return conduit_structures, processed_structure_ids
 
+    def find_ambiguous_structures(self, selected_ids=None):
+        """Return fids of source structures that snap to more than one conduit.
+
+        These structures are ambiguous and should be skipped during integration.
+        Emits a single StructuresIntegratorWarning listing all skipped structures.
+        """
+        if selected_ids is None:
+            selected_ids = set()
+        structure_features_map, structure_index = self.spatial_indexes_map["source"]
+        # structure_fid -> set of conduit attribute ids that match it
+        matches = defaultdict(set)
+        for conduit_feat in self.integrate_layer.getFeatures():
+            conduit_geom = conduit_feat.geometry()
+            structure_fids = structure_index.intersects(conduit_geom.boundingBox())
+            for structure_fid in structure_fids:
+                if selected_ids and structure_fid not in selected_ids:
+                    continue
+                structure_feat = structure_features_map[structure_fid]
+                geom_type = structure_feat.geometry().type()
+                if geom_type == QgsWkbTypes.GeometryType.LineGeometry:
+                    hit = LinearIntegrator.get_conduit_structure_from_line(
+                        structure_feat, conduit_feat, self.snapping_distance
+                    )
+                elif geom_type == QgsWkbTypes.GeometryType.PointGeometry:
+                    hit = LinearIntegrator.get_conduit_structure_from_point(
+                        structure_feat,
+                        conduit_feat,
+                        self.snapping_distance,
+                        self.point_to_line_settings.length,
+                    )
+                else:
+                    continue
+                if hit is not None:
+                    matches[structure_fid].add(conduit_feat["id"])
+        ambiguous = {fid: ids for fid, ids in matches.items() if len(ids) > 1}
+        if ambiguous:
+            lines = [
+                f"  - structure fid {fid} matches conduits {sorted(ids)}"
+                for fid, ids in ambiguous.items()
+            ]
+            msg = (
+                f"Skipped {len(ambiguous)} structure(s) within snapping distance of "
+                f"multiple conduits:\n" + "\n".join(lines)
+            )
+            warnings.warn(msg, StructuresIntegratorWarning)
+        return set(ambiguous.keys())
+
     def add_node(self, point, node_layer_fields, node_attributes):
         node_feat = self.node_manager.create_new(
             QgsGeometry.fromPointXY(point), node_layer_fields, node_attributes
