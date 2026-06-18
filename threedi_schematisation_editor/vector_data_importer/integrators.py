@@ -224,19 +224,27 @@ class LinearIntegrator:
         )
 
     def get_conduit_structures_data(
-        self, conduit_feat, conduit_geometry, selected_ids=None
+        self,
+        conduit_feat,
+        conduit_geometry,
+        selected_ids=None,
+        excluded_structure_ids=None,
     ):
         """Extract and calculate channel structures data."""
         conduit_structures = []
         processed_structure_ids = set()
         if selected_ids is None:
             selected_ids = set()
+        if excluded_structure_ids is None:
+            excluded_structure_ids = set()
         structure_features_map, structure_index = self.spatial_indexes_map["source"]
         structure_fids = structure_index.intersects(conduit_geometry.boundingBox())
         for structure_fid in structure_fids:
             if structure_fid in processed_structure_ids:
                 continue
             if selected_ids and structure_fid not in selected_ids:
+                continue
+            if structure_fid in excluded_structure_ids:
                 continue
             structure_feat = structure_features_map[structure_fid]
             if (
