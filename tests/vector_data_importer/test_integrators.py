@@ -212,17 +212,12 @@ class TestChannelStructureIntegration:
                 result = LinearIntegrator.get_conduit_matches(integrator)
         else:
             result = LinearIntegrator.get_conduit_matches(integrator)
-
-        matched_structures = [
-            structures
-            for conduit, structures in result
-            if conduit.id() == conduits[0].id()
-        ]
-        if expect_in_result:
-            assert len(matched_structures) == 1
-            assert structure in matched_structures[0]
+        if not expect_in_result:
+            assert len(result) == 0
         else:
-            assert matched_structures == []
+            assert len(result) == 1
+            assert result[0][0] in conduits
+            assert structure in result[0][1]
 
     def test_get_conduit_matches_selected_ids(self, channel_fields, structure_fields):
         """Structure outside selected_ids is not counted as a match."""
