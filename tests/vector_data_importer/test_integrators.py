@@ -737,95 +737,58 @@ def test_get_channel_cuts(mids, lengths, expected_cuts):
     )
 
 
-class TestGetMultiConduitMatches:
-    """Tests for LinearIntegrator.get_multi_conduit_matches."""
-
-    @pytest.fixture
-    def two_conduits(self, channel_fields):
-        """Two parallel channels: channel_a at y=0, channel_b at y=2."""
-        channel_a = QgsFeature(channel_fields)
-        channel_a.setGeometry(
-            QgsGeometry.fromPolylineXY([QgsPointXY(0, 0), QgsPointXY(100, 0)])
+@pytest.mark.parametrize(
+    "conduit_y_positions, match",
+    [
+        # Structure at y=1 within snapping_distance=5 of both conduits -> in result
+        ([0, 2], True),
+        # Structure at y=1, second conduit at y=200 is out of range -> not in result
+        ([1, 200], False),
+    ],
+    ids=["two_conduit_match", "one_conduit_match"],
+)
+def test_get_multi_conduit_matches(
+    channel_fields,
+    structure_fields,
+    conduit_y_positions,
+    match,
+):
+    conduits = []
+    for i, y in enumerate(conduit_y_positions):
+        feat = QgsFeature(channel_fields)
+        feat.setGeometry(
+            QgsGeometry.fromPolylineXY([QgsPointXY(0, y), QgsPointXY(100, y)])
         )
-        channel_a.setAttribute("id", 10)
+        feat.setAttribute("id", (i + 1) * 10)
+        conduits.append(feat)
 
-        channel_b = QgsFeature(channel_fields)
-        channel_b.setGeometry(
-            QgsGeometry.fromPolylineXY([QgsPointXY(0, 2), QgsPointXY(100, 2)])
-        )
-        channel_b.setAttribute("id", 20)
-        return channel_a, channel_b
+    structure = QgsFeature(structure_fields)
+    structure.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 1)))
+    structure.setAttribute("id", 99)
+    structure.setAttribute("length", 5.0)
+    structure_fid = structure.id()
 
-    @pytest.fixture
-    def ambiguous_point_structure(self, structure_fields):
-        """Point at y=1, within snapping_distance=5 of both channels."""
-        feat = QgsFeature(structure_fields)
-        feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 1)))
-        feat.setAttribute("id", 99)
-        feat.setAttribute("length", 5.0)
-        return feat
-
-    def _make_integrator(self, conduits, structure_features_map, structure_fids):
-        """Build a minimal mock integrator."""
-        integrator = MagicMock()
-        integrator.snapping_distance = 5.0
-        integrator.point_to_line_settings = sm.PointToLineSettings(
-            length={
-                "method": "source_attribute",
-                "source_attribute": "length",
-                "default_value": 5.0,
-            },
-            azimuth={"method": "default", "default_value": 0.0},
-        )
-        structure_index = MagicMock()
-        structure_index.intersects.return_value = structure_fids
-        integrator.spatial_indexes_map = {
-            "source": (structure_features_map, structure_index)
-        }
-        integrator.integrate_layer.getFeatures.return_value = conduits
-        return integrator
-
-    @pytest.mark.parametrize(
-        "conduit_y_positions, expected_in_result, expect_warning",
-        [
-            # Structure at y=1 within snapping_distance=5 of both conduits -> in result
-            ([0, 2], True, True),
-            # Structure at y=1 within snapping_distance=5 of close conduit only -> not in result
-            ([1, 200], False, False),
-        ],
-        ids=["two_conduit_match", "one_conduit_match"],
+    integrator = MagicMock()
+    integrator.snapping_distance = 5.0
+    integrator.point_to_line_settings = sm.PointToLineSettings(
+        length={
+            "method": "source_attribute",
+            "source_attribute": "length",
+            "default_value": 5.0,
+        },
+        azimuth={"method": "default", "default_value": 0.0},
     )
-    def test_get_multi_conduit_matches(
-        self,
-        channel_fields,
-        structure_fields,
-        conduit_y_positions,
-        expected_in_result,
-        expect_warning,
-    ):
-        conduits = []
-        for i, y in enumerate(conduit_y_positions):
-            feat = QgsFeature(channel_fields)
-            feat.setGeometry(
-                QgsGeometry.fromPolylineXY([QgsPointXY(0, y), QgsPointXY(100, y)])
-            )
-            feat.setAttribute("id", (i + 1) * 10)
-            conduits.append(feat)
+    structure_index = MagicMock()
+    structure_index.intersects.return_value = [structure_fid]
+    integrator.spatial_indexes_map = {
+        "source": ({structure_fid: structure}, structure_index)
+    }
+    integrator.integrate_layer.getFeatures.return_value = conduits
 
-        structure = QgsFeature(structure_fields)
-        structure.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 1)))
-        structure.setAttribute("id", 99)
-        structure.setAttribute("length", 5.0)
-        structure_fid = structure.id()
-
-        integrator = self._make_integrator(
-            conduits, {structure_fid: structure}, [structure_fid]
-        )
-
-        if expect_warning:
-            with pytest.warns(StructuresIntegratorWarning):
-                result = LinearIntegrator.get_multi_conduit_matches(integrator)
-        else:
+    if match:
+        with pytest.warns(StructuresIntegratorWarning):
             result = LinearIntegrator.get_multi_conduit_matches(integrator)
+    else:
+        result = LinearIntegrator.get_multi_conduit_matches(integrator)
 
-        assert (structure_fid in result) == expected_in_result
+    assert (structure_fid in result) == match
