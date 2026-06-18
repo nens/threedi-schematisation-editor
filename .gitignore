@@ -17,3 +17,8 @@ user-history.db
 *.ipynb
 .envrc
 tests/vector_data_importer/data/debug/
+
+# Local AI stuff
+.minispec/
+.opencode/
+specs/
