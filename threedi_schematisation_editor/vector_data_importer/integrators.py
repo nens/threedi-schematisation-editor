@@ -256,103 +256,6 @@ class LinearIntegrator:
             if any(s.id() not in multi for s in structures)
         ]
 
-    def get_conduit_structures_data(
-        self,
-        conduit_feat,
-        conduit_geometry,
-        selected_ids=None,
-        excluded_structure_ids=None,
-    ):
-        """Extract and calculate channel structures data."""
-        conduit_structures = []
-        processed_structure_ids = set()
-        if selected_ids is None:
-            selected_ids = set()
-        if excluded_structure_ids is None:
-            excluded_structure_ids = set()
-        structure_features_map, structure_index = self.spatial_indexes_map["source"]
-        structure_fids = structure_index.intersects(conduit_geometry.boundingBox())
-        for structure_fid in structure_fids:
-            if structure_fid in processed_structure_ids:
-                continue
-            if selected_ids and structure_fid not in selected_ids:
-                continue
-            if structure_fid in excluded_structure_ids:
-                continue
-            structure_feat = structure_features_map[structure_fid]
-            if (
-                structure_feat.geometry().type()
-                == QgsWkbTypes.GeometryType.LineGeometry
-            ):
-                conduit_structure = LinearIntegrator.get_conduit_structure_from_line(
-                    structure_feat,
-                    conduit_feat,
-                    self.snapping_distance,
-                )
-            elif (
-                structure_feat.geometry().type()
-                == QgsWkbTypes.GeometryType.PointGeometry
-            ):
-                conduit_structure = LinearIntegrator.get_conduit_structure_from_point(
-                    structure_feat,
-                    conduit_feat,
-                    self.snapping_distance,
-                    self.point_to_line_settings.length,
-                )
-            else:
-                continue
-            if conduit_structure is not None:
-                conduit_structures.append(conduit_structure)
-                processed_structure_ids.add(structure_fid)
-        conduit_structures.sort(key=attrgetter("m"))
-        return conduit_structures, processed_structure_ids
-
-    def get_multi_conduit_matches(self, selected_ids=None) -> set:
-        """Return fids of source structures that snap to more than one conduit.
-
-        Emits a single StructuresIntegratorWarning listing all such structures.
-        """
-        if selected_ids is None:
-            selected_ids = set()
-        structure_features_map, structure_index = self.spatial_indexes_map["source"]
-        # structure_fid -> set of conduit attribute ids that match it
-        matches = defaultdict(set)
-        for conduit_feat in self.integrate_layer.getFeatures():
-            conduit_geom = conduit_feat.geometry()
-            structure_fids = structure_index.intersects(conduit_geom.boundingBox())
-            for structure_fid in structure_fids:
-                if selected_ids and structure_fid not in selected_ids:
-                    continue
-                structure_feat = structure_features_map[structure_fid]
-                geom_type = structure_feat.geometry().type()
-                if geom_type == QgsWkbTypes.GeometryType.LineGeometry:
-                    hit = LinearIntegrator.get_conduit_structure_from_line(
-                        structure_feat, conduit_feat, self.snapping_distance
-                    )
-                elif geom_type == QgsWkbTypes.GeometryType.PointGeometry:
-                    hit = LinearIntegrator.get_conduit_structure_from_point(
-                        structure_feat,
-                        conduit_feat,
-                        self.snapping_distance,
-                        self.point_to_line_settings.length,
-                    )
-                else:
-                    continue
-                if hit is not None:
-                    matches[structure_fid].add(conduit_feat["id"])
-        multi_matches = {fid: ids for fid, ids in matches.items() if len(ids) > 1}
-        if multi_matches:
-            lines = [
-                f"  - structure fid {fid} matches conduits {sorted(ids)}"
-                for fid, ids in multi_matches.items()
-            ]
-            msg = (
-                f"Skipped {len(multi_matches)} structure(s) within snapping distance of "
-                f"multiple conduits:\n" + "\n".join(lines)
-            )
-            warnings.warn(msg, StructuresIntegratorWarning)
-        return set(multi_matches.keys())
-
     def add_node(self, point, node_layer_fields, node_attributes):
         node_feat = self.node_manager.create_new(
             QgsGeometry.fromPointXY(point), node_layer_fields, node_attributes
@@ -619,9 +522,10 @@ class PipeIntegrator(LinearIntegrator):
     def integrate_features(self, input_feature_ids, progress_callback: callable = None):
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
-        excluded_ids = self.get_multi_conduit_matches(input_feature_ids)
-        for conduit_feature in self.integrate_layer.getFeatures():
-            if self._cancellation_token.is_cancelled:  # Direct check of the token
+        for conduit_feature, structure_feats in self.get_conduit_matches(
+            input_feature_ids
+        ):
+            if self._cancellation_token.is_cancelled:
                 self._cancellation_token.interrupt()
                 break
             if progress_callback:
@@ -629,13 +533,16 @@ class PipeIntegrator(LinearIntegrator):
             conduit_geom = get_src_geometry(conduit_feature)
             if conduit_geom is None:
                 continue
-            conduit_structures, processed_structures_fids = (
-                self.get_conduit_structures_data(
-                    conduit_feature,
-                    conduit_geom,
-                    input_feature_ids,
-                    excluded_structure_ids=excluded_ids,
-                )
+            conduit_structures = sorted(
+                (
+                    LinearIntegrator.get_conduit_structure_from_line(s, conduit_feature)
+                    if s.geometry().type() == QgsWkbTypes.GeometryType.LineGeometry
+                    else LinearIntegrator.get_conduit_structure_from_point(
+                        s, conduit_feature, self.point_to_line_settings.length
+                    )
+                    for s in structure_feats
+                ),
+                key=attrgetter("m"),
             )
             if not conduit_structures:
                 continue
@@ -644,7 +551,7 @@ class PipeIntegrator(LinearIntegrator):
             )
             for key in added_features:
                 features_to_add[key] += added_features[key]
-            all_processed_structure_ids |= processed_structures_fids
+            all_processed_structure_ids |= {s.id() for s in structure_feats}
         return features_to_add, list(all_processed_structure_ids)
 
 
@@ -712,9 +619,10 @@ class ChannelIntegrator(LinearIntegrator):
     def integrate_features(self, input_feature_ids, progress_callback: callable = None):
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
-        excluded_ids = self.get_multi_conduit_matches(input_feature_ids)
-        for conduit_feature in self.integrate_layer.getFeatures():
-            if self._cancellation_token.is_cancelled:  # Direct check of the token
+        for conduit_feature, structure_feats in self.get_conduit_matches(
+            input_feature_ids
+        ):
+            if self._cancellation_token.is_cancelled:
                 self._cancellation_token.interrupt()
                 break
             if progress_callback:
@@ -722,13 +630,16 @@ class ChannelIntegrator(LinearIntegrator):
             conduit_geom = get_src_geometry(conduit_feature)
             if conduit_geom is None:
                 continue
-            conduit_structures, processed_structures_fids = (
-                self.get_conduit_structures_data(
-                    conduit_feature,
-                    conduit_geom,
-                    input_feature_ids,
-                    excluded_structure_ids=excluded_ids,
-                )
+            conduit_structures = sorted(
+                (
+                    LinearIntegrator.get_conduit_structure_from_line(s, conduit_feature)
+                    if s.geometry().type() == QgsWkbTypes.GeometryType.LineGeometry
+                    else LinearIntegrator.get_conduit_structure_from_point(
+                        s, conduit_feature, self.point_to_line_settings.length
+                    )
+                    for s in structure_feats
+                ),
+                key=attrgetter("m"),
             )
             if not conduit_structures:
                 continue
@@ -742,7 +653,7 @@ class ChannelIntegrator(LinearIntegrator):
             )
             for key in added_features:
                 features_to_add[key] += added_features[key]
-            all_processed_structure_ids |= processed_structures_fids
+            all_processed_structure_ids |= {s.id() for s in structure_feats}
         visited_channel_ids = [
             channel["id"] for channel in features_to_add[self.integrate_layer.name()]
         ]
