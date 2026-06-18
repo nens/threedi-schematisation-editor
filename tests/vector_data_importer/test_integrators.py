@@ -260,7 +260,7 @@ class TestChannelStructureIntegration:
 
         assert result == []
 
-    def test_get_conduit_structure_from_point_new_signature(
+    def test_get_conduit_structure_from_point(
         self, channel_feature, point_structure_feature
     ):
         """get_conduit_structure_from_point takes no snapping_distance, returns data."""
@@ -277,7 +277,7 @@ class TestChannelStructureIntegration:
         assert result.m == 50.0
         assert result.length == 10.0
 
-    def test_get_conduit_structure_from_line_new_signature(
+    def test_get_conduit_structure_from_line(
         self, channel_feature, line_structure_feature
     ):
         """get_conduit_structure_from_line takes no snapping_distance, returns data."""
