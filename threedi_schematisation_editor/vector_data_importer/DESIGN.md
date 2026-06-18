@@ -252,6 +252,17 @@ When objects are integrated onto existing structures, an `Integrator` handles fi
 
 The integrator to use is determined by `IntegrationMode` and created via the factory method `LinearIntegrator.get_integrator()`.
 
+### Matching: `get_conduit_matches`
+
+Before integration, `LinearIntegrator.get_conduit_matches()` performs a single pass over all conduits to determine which structures snap to which conduit. It returns a list of `(conduit, [structures])` pairs containing only unambiguous matches.
+
+Matching uses a two-step spatial filter:
+
+1. **Coarse filter:** the conduit's bounding box, expanded by `snapping_distance`, is used to query the spatial index for candidate structures.
+2. **Precise check:** a buffer of `snapping_distance` is constructed around the structure's point (or endpoints for line structures) and tested for intersection with the conduit geometry.
+
+Structures that pass the precise check for more than one conduit are considered ambiguous. They are excluded from integration, reported together in a single `StructuresIntegratorWarning`, and marked as processed so they do not fall through to the processor.
+
 
 ## Warnings
 
