@@ -8,6 +8,7 @@ from qgis.core import (
     QgsFields,
     QgsGeometry,
     QgsPointXY,
+    QgsSpatialIndex,
     QgsWkbTypes,
 )
 
@@ -259,6 +260,52 @@ class TestChannelStructureIntegration:
         result = LinearIntegrator.get_conduit_matches(integrator, selected_ids={999})
 
         assert result == []
+
+    def test_get_conduit_matches_structure_outside_raw_bbox_within_snapping_distance(
+        self, channel_fields, structure_fields
+    ):
+        """Structure outside conduit raw bounding box but within snapping distance is matched.
+
+        A horizontal conduit at y=0 has a degenerate bounding box (zero height).
+        A structure at y=8 is outside that raw bbox but within snapping_distance=10,
+        so it should still be found and returned as a match.
+        """
+        conduit = QgsFeature(channel_fields)
+        conduit.setGeometry(
+            QgsGeometry.fromPolylineXY([QgsPointXY(0, 0), QgsPointXY(100, 0)])
+        )
+        conduit.setAttribute("id", 10)
+
+        structure = QgsFeature(structure_fields)
+        structure.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 8)))
+        structure.setAttribute("id", 99)
+        structure.setAttribute("length", 5.0)
+        structure_fid = structure.id()
+
+        # Use a real spatial index so the bounding box query is exercised.
+        index = QgsSpatialIndex()
+        index.addFeature(structure)
+        structure_features_map = {structure_fid: structure}
+
+        integrator = MagicMock()
+        integrator.snapping_distance = 10.0
+        integrator.point_to_line_settings = sm.PointToLineSettings(
+            length={
+                "method": "source_attribute",
+                "source_attribute": "length",
+                "default_value": 5.0,
+            },
+            azimuth={"method": "default", "default_value": 0.0},
+        )
+        integrator.spatial_indexes_map = {"source": (structure_features_map, index)}
+        integrator.integrate_layer.getFeatures.return_value = [conduit]
+
+        result = LinearIntegrator.get_conduit_matches(integrator)
+
+        assert len(result) == 1
+        matched_conduit, matched_structures = result[0]
+        assert matched_conduit.id() == conduit.id()
+        assert structure in matched_structures
 
     def test_get_conduit_structure_from_point(
         self, channel_feature, point_structure_feature

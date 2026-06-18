@@ -205,7 +205,9 @@ class LinearIntegrator:
         conduit_matches = {}
         for conduit_feat in self.integrate_layer.getFeatures():
             conduit_geom = conduit_feat.geometry()
-            structure_fids = structure_index.intersects(conduit_geom.boundingBox())
+            bbox = conduit_geom.boundingBox()
+            bbox.grow(self.snapping_distance)
+            structure_fids = structure_index.intersects(bbox)
             for structure_fid in structure_fids:
                 if selected_ids and structure_fid not in selected_ids:
                     continue
