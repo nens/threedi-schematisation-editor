@@ -586,6 +586,7 @@ class PipeIntegrator(LinearIntegrator):
     def integrate_features(self, input_feature_ids, progress_callback: callable = None):
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
+        excluded_ids = self.get_multi_conduit_matches(input_feature_ids)
         for conduit_feature in self.integrate_layer.getFeatures():
             if self._cancellation_token.is_cancelled:  # Direct check of the token
                 self._cancellation_token.interrupt()
@@ -597,7 +598,10 @@ class PipeIntegrator(LinearIntegrator):
                 continue
             conduit_structures, processed_structures_fids = (
                 self.get_conduit_structures_data(
-                    conduit_feature, conduit_geom, input_feature_ids
+                    conduit_feature,
+                    conduit_geom,
+                    input_feature_ids,
+                    excluded_structure_ids=excluded_ids,
                 )
             )
             if not conduit_structures:
@@ -675,6 +679,7 @@ class ChannelIntegrator(LinearIntegrator):
     def integrate_features(self, input_feature_ids, progress_callback: callable = None):
         all_processed_structure_ids = set()
         features_to_add = defaultdict(list)
+        excluded_ids = self.get_multi_conduit_matches(input_feature_ids)
         for conduit_feature in self.integrate_layer.getFeatures():
             if self._cancellation_token.is_cancelled:  # Direct check of the token
                 self._cancellation_token.interrupt()
@@ -686,7 +691,10 @@ class ChannelIntegrator(LinearIntegrator):
                 continue
             conduit_structures, processed_structures_fids = (
                 self.get_conduit_structures_data(
-                    conduit_feature, conduit_geom, input_feature_ids
+                    conduit_feature,
+                    conduit_geom,
+                    input_feature_ids,
+                    excluded_structure_ids=excluded_ids,
                 )
             )
             if not conduit_structures:
