@@ -9,6 +9,8 @@ History
 - Validate settings files when importing via processing algorithm (nens/threedi-schematisation-editor#449)
 - Skip integration (with warning) when object matches to multiple conduits (nens/threedi-schematisation-editor#409)
 - Fix structures outside conduit raw bounding box not being matched despite being within snapping distance
+- Fix loading import settings; affects: point_to_line_conversion.lenght, point_to_line_conversion.azimuth, cross_section_location_mapping.join_field_src, join_field_src.join_field_tgt (nens/threedi-schematisation-editor#473)
+- Correct azimuth units in UI (was 'm', should be °)
 
 
 2.4.10 (2026-05-06)
