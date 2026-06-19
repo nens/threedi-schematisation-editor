@@ -421,6 +421,7 @@ class CrossSectionLocation(ModelObject):
     friction_type: Optional[FrictionType]
     friction_value: float
     bank_level: Optional[float]
+    reference_level: Optional[float]
     channel_id: int = field(metadata={ALLOWED_METHODS_FIELD: [ColumnImportMethod.AUTO]})
     cross_section_shape: Optional[CrossSectionShape]
     cross_section_width: Optional[float] = field(metadata={DISPLAY_UNIT_FIELD: "m"})

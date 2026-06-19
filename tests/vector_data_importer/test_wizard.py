@@ -18,7 +18,10 @@ from threedi_schematisation_editor.vector_data_importer.wizard import (
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
     LAST_CONFIG_DIR_ENTRY,
+    delete_draft,
+    get_draft,
     get_last_config_dir,
+    save_draft,
     update_last_config_dir,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.value_map_dialog import (
@@ -425,3 +428,129 @@ def test_config_dir_functions():
     assert get_last_config_dir() == other_path
     # reset last config dir
     settings.setValue(LAST_CONFIG_DIR_ENTRY, last_config_dir_str)
+
+
+class TestDraftHelpers:
+    WIZARD_NAME = "TestWizard"
+
+    def setup_method(self):
+        delete_draft(self.WIZARD_NAME)
+
+    def teardown_method(self):
+        delete_draft(self.WIZARD_NAME)
+
+    def test_get_draft_returns_none_when_absent(self):
+        assert get_draft(self.WIZARD_NAME) is None
+
+    def test_save_and_get_draft_round_trips(self):
+        data = {
+            "fields": {"foo": {"method": "auto"}},
+            "connection_nodes": {"snap": True},
+        }
+        save_draft(self.WIZARD_NAME, data)
+        assert get_draft(self.WIZARD_NAME) == data
+
+    def test_delete_draft_removes_entry(self):
+        save_draft(self.WIZARD_NAME, {"x": 1})
+        delete_draft(self.WIZARD_NAME)
+        assert get_draft(self.WIZARD_NAME) is None
+
+    def test_delete_draft_is_idempotent(self):
+        delete_draft(self.WIZARD_NAME)  # nothing stored — must not raise
+        assert get_draft(self.WIZARD_NAME) is None
+
+
+class TestVDIWizardHasChanges:
+    def _make_wizard(self):
+        model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
+        return ImportStructureWizard(dm.Culvert, model_gpkg, None)
+
+    def test_has_changes_false_at_init(self):
+        # Fresh wizard: serialize() raises (field map rows have method=None),
+        # _initial_state is None, and there is no source layer — has_changes is False.
+        wizard = self._make_wizard()
+        assert wizard.has_changes is False
+
+    def test_has_changes_false_when_state_matches_initial(self):
+        # Simulate what load_settings_from_json does: deserialize then snapshot.
+        wizard = self._make_wizard()
+        with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
+            wizard.deserialize(json.load(f))
+        wizard._initial_state = wizard.serialize()  # as load_settings_from_json would
+        assert wizard.has_changes is False
+
+    def test_has_changes_true_when_draft_differs_from_initial(self):
+        # After a row is changed, get_draft_settings() differs from _initial_draft
+        # even when serialize() raises (other rows still incomplete).
+        from threedi_schematisation_editor.vector_data_importer.utils import (
+            ColumnImportMethod,
+        )
+
+        wizard = self._make_wizard()
+        first_row = next(iter(wizard.field_map_page.field_map_widget.row_dict.values()))
+        first_row.config.method = ColumnImportMethod.AUTO
+        assert wizard.has_changes is True
+
+
+class TestRestoreDraftLenient:
+    def _make_wizard(self):
+        model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
+        return ImportStructureWizard(dm.Culvert, model_gpkg, None)
+
+    def test_applies_valid_data(self):
+        # restore_draft_lenient should produce the same state as a regular deserialize
+        wizard = self._make_wizard()
+        wizard_ref = self._make_wizard()
+        with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
+            data = json.load(f)
+        wizard.restore_draft_lenient(data)
+        wizard_ref.deserialize(data)
+        assert wizard.serialize() == wizard_ref.serialize()
+
+    def test_skips_failing_page_and_continues(self):
+        from threedi_schematisation_editor.vector_data_importer.wizard.pages import (
+            SettingsPage,
+        )
+
+        wizard = self._make_wizard()
+        with open(DATA_PATH.joinpath("import_culvert.json"), "r") as f:
+            data = json.load(f)
+        call_count = [0]
+        original = SettingsPage.deserialize
+
+        def exploding_deserialize(self_page, d):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise RuntimeError("simulated failure")
+            return original(self_page, d)
+
+        with patch.object(SettingsPage, "deserialize", exploding_deserialize):
+            # Must not raise even though the first SettingsPage.deserialize call fails
+            wizard.restore_draft_lenient(data)
+
+
+class TestFieldMapModelDeserialize:
+    def test_skips_invalid_row_and_applies_valid_rows(self):
+        # A draft with one bad row should still apply the remaining rows
+        import threedi_schematisation_editor.vector_data_importer.settings_models as sm
+        from threedi_schematisation_editor.vector_data_importer.utils import (
+            ColumnImportMethod,
+        )
+        from threedi_schematisation_editor.vector_data_importer.wizard.field_map import (
+            FieldMapModel,
+            FieldMapRow,
+        )
+
+        row_dict = {
+            "good": FieldMapRow(label="good"),
+            "bad": FieldMapRow(label="bad"),
+        }
+        model = FieldMapModel(row_dict)
+        data = {
+            "good": {"method": ColumnImportMethod.AUTO},
+            "bad": {"method": "not_a_valid_method"},
+        }
+        model.deserialize(data)
+        assert model.row_dict["good"].config.method == ColumnImportMethod.AUTO
+        # bad row left at its default (method=None), not raised
+        assert model.row_dict["bad"].config.method is None

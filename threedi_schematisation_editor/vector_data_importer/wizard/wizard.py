@@ -38,7 +38,10 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
 from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
     CatchThreediWarnings,
     create_font,
+    delete_draft,
+    get_draft,
     get_last_config_dir,
+    save_draft,
     update_last_config_dir,
 )
 
@@ -99,7 +102,20 @@ class VDIWizard(QWizard):
         self.model_cls = model_cls
         self.model_gpkg = model_gpkg
         self.layer_manager = layer_manager
+        self._import_succeeded = False
+        self._draft_restore_offered = False
         self.setup_ui()
+        try:
+            self._initial_state = self.serialize()
+        except Exception:
+            self._initial_state = None
+        self._initial_draft = self.get_draft_settings()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not self._draft_restore_offered:
+            self._draft_restore_offered = True
+            self.offer_draft_restore()
 
     @property
     def wizard_title(self):
@@ -201,6 +217,10 @@ class VDIWizard(QWizard):
             try:
                 settings = sm.ImportSettings(**json_settings)
                 self.deserialize(settings.model_dump())
+                try:
+                    self._initial_state = self.serialize()
+                except Exception:
+                    pass
                 QMessageBox.information(
                     self, "Success", "Settings loaded successfully!"
                 )
@@ -239,6 +259,7 @@ class VDIWizard(QWizard):
                 with open(file_path, "w") as f:
                     json.dump(settings, f, indent=4)
                 QMessageBox.information(self, "Success", "Settings saved successfully!")
+                delete_draft(type(self).__name__)
                 return file_path
             except Exception as e:
                 QMessageBox.critical(
@@ -248,6 +269,86 @@ class VDIWizard(QWizard):
     def serialize(self):
         return self.get_settings().model_dump()
 
+    def get_draft_settings(self):
+        data = {}
+        for page_id in self.pageIds():
+            page = self.page(page_id)
+            if isinstance(page, FieldMapPage):
+                data[page.name] = {
+                    key: row.config.model_dump()
+                    for key, row in page.field_map_widget.row_dict.items()
+                    if row.is_valid
+                }
+            elif isinstance(page, SettingsPage):
+                for key, value in page.get_settings().items():
+                    data[key] = (
+                        value.model_dump() if hasattr(value, "model_dump") else value
+                    )
+        return data
+
+    @property
+    def has_changes(self):
+        try:
+            current = self.serialize()
+        except Exception:
+            # serialize() raises when field map rows are incomplete — compare
+            # raw draft data against the initial snapshot instead.
+            return self.get_draft_settings() != self._initial_draft
+        if self._initial_state is None:
+            return False
+        return current != self._initial_state
+
+    def reject(self):
+        if self._import_succeeded:
+            delete_draft(type(self).__name__)
+            super().reject()
+            return
+        if not self.has_changes:
+            super().reject()
+            return
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Unsaved import settings")
+        msg.setText(
+            "You have unsaved import settings. Do you want to save them as draft to reuse in a later import of the same type?"
+        )
+        msg.setStandardButtons(
+            QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel
+        )
+        msg.button(QMessageBox.Save).setText("Save draft")
+        result = msg.exec_()
+        if result == QMessageBox.Save:
+            save_draft(type(self).__name__, self.get_draft_settings())
+            super().reject()
+        elif result == QMessageBox.Discard:
+            super().reject()
+        # Cancel: do nothing, wizard stays open
+
+    def restore_draft_lenient(self, data):
+        for page_id in self.pageIds():
+            page = self.page(page_id)
+            if hasattr(page, "deserialize"):
+                try:
+                    page.deserialize(data)
+                except Exception:
+                    pass
+
+    def offer_draft_restore(self):
+        draft = get_draft(type(self).__name__)
+        if draft is None:
+            return
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Draft import configuration found")
+        msg.setText(
+            "A previous import configuration was found for this import type. Do you want to restore these settings?"
+        )
+        msg.setStandardButtons(QMessageBox.RestoreDefaults | QMessageBox.Cancel)
+        msg.button(QMessageBox.RestoreDefaults).setText("Restore draft")
+        msg.button(QMessageBox.Cancel).setText("Start fresh")
+        result = msg.exec_()
+        if result == QMessageBox.RestoreDefaults:
+            self.restore_draft_lenient(draft)
+            self._initial_draft = self.get_draft_settings()
+
     def get_settings(self) -> BaseModel:
         data = {}
         for page_id in self.pageIds():
@@ -255,7 +356,7 @@ class VDIWizard(QWizard):
             if isinstance(page, FieldMapPage) and page.name == "connection_node_fields":
                 if not self.settings_page.create_nodes:
                     continue
-            if callable(getattr(page, "get_settings", None)):
+            if isinstance(page, (FieldMapPage, SettingsPage)):
                 data.update(page.get_settings())
 
         return sm.ImportSettings(**data)
@@ -332,6 +433,7 @@ class VDIWizard(QWizard):
 
         # Connect finish handling
         def handle_finished(success, status_msg, warning_msg, error_msg):
+            self._import_succeeded = success
             if not success:
                 progress_bar.set_failed()
             error_color = "#FF0000"

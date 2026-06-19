@@ -239,7 +239,10 @@ class FieldMapModel(QAbstractTableModel):
         for key, row_data in data.items():
             row = self.row_dict.get(key)
             if row:
-                row.deserialize(row_data)
+                try:
+                    row.deserialize(row_data)
+                except Exception:
+                    pass
         self.emit_all_changed()
 
     def emit_all_changed(self):
