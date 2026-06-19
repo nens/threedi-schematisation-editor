@@ -10,6 +10,7 @@ History
 - Store draft settings upon closing importer wizard (nens/rana#4263)
 - Skip integration (with warning) when object matches to multiple conduits (nens/threedi-schematisation-editor#409)
 - Fix structures outside conduit raw bounding box not being matched despite being within snapping distance
+- Add reference_level field for cross section location import (nens/rana#3644)
 
 
 2.4.10 (2026-05-06)
