@@ -368,7 +368,7 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
         }
         self.setup_ui(row_dict)
         self.field_map_widget.table_model.set_default_value_units("length", " m")
-        self.field_map_widget.table_model.set_default_value_units("azimuth", " m")
+        self.field_map_widget.table_model.set_default_value_units("azimuth", " °")
 
     @property
     def group_name(self):

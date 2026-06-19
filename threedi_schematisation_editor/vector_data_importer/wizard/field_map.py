@@ -137,7 +137,11 @@ class FieldMapRow:
         # Get the custom config class that has the validation, including allowed methods
         config_class = self.config.__class__
         # Use the custom class (CustomFieldMapConfig) for deserialization
-        self.config = config_class(**data)
+        new_config = config_class(**data)
+        # Update the existing config in place to preserve any external references
+        # (e.g. FieldMapSettingsWidget.model.length points to the same object)
+        for field_name in config_class.model_fields:
+            setattr(self.config, field_name, getattr(new_config, field_name))
 
     @property
     def is_valid(self) -> bool:
