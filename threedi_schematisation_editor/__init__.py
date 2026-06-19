@@ -181,6 +181,10 @@ class ThreediSchematisationEditorPlugin:
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
+        self.iface.currentLayerChanged.disconnect(self.switch_workspace_context)
+        self.project.removeAll.disconnect(self.on_project_close)
+        self.project.readProject.disconnect(self.on_3di_project_read)
+        self.project.writeProject.disconnect(self.on_3di_project_save)
         self.active_schematisation_combo.currentIndexChanged.disconnect(
             self.active_schematisation_changed
         )
