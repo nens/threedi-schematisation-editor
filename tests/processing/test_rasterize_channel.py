@@ -2,6 +2,8 @@
 
 import numpy as np
 import pytest
+from qgis.core import NULL, QgsFeature, QgsField, QgsFields, QgsGeometry, QgsPointXY
+from qgis.PyQt.QtCore import QVariant
 from shapely import __version__ as shapely_version
 from shapely import geos_version, wkb, wkt
 from shapely.geometry import LineString, Point
@@ -2159,25 +2161,28 @@ def test_triangulate_between(plot: bool = False):
     )
 
 
-if __name__ == "__main__":
-    test_parse_cross_section_table()
-    test_is_valid_offset()
-    test_highest_valid_index_single_offset()
-    test_highest_valid_index()
-    test_channel_azimuth_at()
-    test_cross_section_location_thalweg_y()
-    test_cross_section_location_z_at()
-    test_channel_vertex_positions()
-    test_channel_properties()
-    test_channel_outline()
-    test_channel_parallel_offsets()
-    test_channel_split()
-    test_two_vertex_channel()
-    test_cross_section_starting_at_0_0()
-    test_channel_max_width_at()
-    test_parallel_offset_heights_at_vertices()
-    test_find_wedge_channels()
-    test_fill_wedge()
-    test_indexed_point()
-    test_triangle()
-    test_triangulate_between()
+def test_cross_section_location_from_qgs_feature_tabulated_trapezium_null_width():
+    """Tabulated cross-sections have NULL width in the database; from_qgs_feature must
+    use the cross_section_table data and not mistake QGIS NULL for a real width value."""
+    fields = QgsFields()
+    fields.append(QgsField("id", QVariant.Int))
+    fields.append(QgsField("cross_section_shape", QVariant.Int))
+    fields.append(QgsField("cross_section_table", QVariant.String))
+    fields.append(QgsField("cross_section_width", QVariant.Double))
+    fields.append(QgsField("reference_level", QVariant.Double))
+    fields.append(QgsField("bank_level", QVariant.Double))
+    feature = QgsFeature(fields)
+    feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(1.0, 1.0)))
+    feature.setAttribute("id", 1)
+    feature.setAttribute(
+        "cross_section_shape", SupportedShape.TABULATED_TRAPEZIUM.value
+    )
+    feature.setAttribute("cross_section_table", "0,0\n1,2\n2,4")
+    feature.setAttribute("cross_section_width", NULL)
+    feature.setAttribute("reference_level", -1.0)
+    feature.setAttribute("bank_level", 1.0)
+    xsec = CrossSectionLocation.from_qgs_feature(
+        feature, wall_displacement=0.01, simplify_tolerance=0.01
+    )
+    # The y-ordinates should come from the table, not be [0.0, 0.0]
+    assert len(xsec.y_ordinates) > 2
