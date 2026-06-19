@@ -279,7 +279,7 @@ class VDIWizard(QWizard):
                     for key, row in page.field_map_widget.row_dict.items()
                     if row.is_valid
                 }
-            elif callable(getattr(page, "get_settings", None)):
+            elif isinstance(page, SettingsPage):
                 for key, value in page.get_settings().items():
                     data[key] = (
                         value.model_dump() if hasattr(value, "model_dump") else value
@@ -356,7 +356,7 @@ class VDIWizard(QWizard):
             if isinstance(page, FieldMapPage) and page.name == "connection_node_fields":
                 if not self.settings_page.create_nodes:
                     continue
-            if callable(getattr(page, "get_settings", None)):
+            if isinstance(page, (FieldMapPage, SettingsPage)):
                 data.update(page.get_settings())
 
         return sm.ImportSettings(**data)
