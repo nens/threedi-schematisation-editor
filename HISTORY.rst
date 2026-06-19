@@ -7,6 +7,7 @@ History
 - Add progress bar colors: blue while running, green on completion, red on failure (nens/rana-qgis-plugin#294)
 - Enforce .json suffix when saving importer presets to file (nens/threedi-schematisation-editor#493)
 - Validate settings files when importing via processing algorithm (nens/threedi-schematisation-editor#449)
+- Store draft settings upon closing importer wizard (nens/rana#4263)
 - Skip integration (with warning) when object matches to multiple conduits (nens/threedi-schematisation-editor#409)
 - Fix structures outside conduit raw bounding box not being matched despite being within snapping distance
 
