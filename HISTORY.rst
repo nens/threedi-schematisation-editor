@@ -1,7 +1,7 @@
 History
 =======
 
-2.4.11 (unreleased)
+2.4.12 (unreleased)
 -------------------
 
 - Add progress bar colors: blue while running, green on completion, red on failure (nens/rana-qgis-plugin#294)
@@ -13,6 +13,12 @@ History
 - Fix loading import settings; affects: point_to_line_conversion.lenght, point_to_line_conversion.azimuth, cross_section_location_mapping.join_field_src, join_field_src.join_field_tgt (nens/threedi-schematisation-editor#473)
 - Correct azimuth units in UI (was 'm', should be °)
 - Add reference_level field for cross section location import (nens/rana#3644)
+
+
+2.4.11 (2026-06-22)
+-------------------
+
+- Fix bug YNotIncreasingError in Rasterize Channels processing algorithm  (nens/rana#4484)
 
 
 2.4.10 (2026-05-06)
