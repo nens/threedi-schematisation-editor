@@ -1,7 +1,7 @@
 History
 =======
 
-2.4.11 (unreleased)
+2.4.11 (2026-06-22)
 -------------------
 
 - Fix bug YNotIncreasingError in Rasterize Channels processing algorithm  (nens/rana#4484)
