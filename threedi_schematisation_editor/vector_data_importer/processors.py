@@ -882,3 +882,75 @@ class LineProcessor(StructureProcessor):
         if new_nodes:
             self.node_locator = get_point_locator(self.node_layer, self.context)
         return {self.target_name: [new_feat]}
+
+
+class SurfaceProcessor(SpatialProcessor):
+    def __init__(self, target_layer, surface_map_layer, import_settings):
+        super().__init__(target_layer, dm.Surface)
+        self.surface_map_name = surface_map_layer.name() if surface_map_layer else None
+        self.surface_map_manager = (
+            FeatureManager(get_next_feature_id(surface_map_layer))
+            if surface_map_layer
+            else None
+        )
+        self.surface_map_fields = (
+            surface_map_layer.fields() if surface_map_layer else None
+        )
+        self.fields_configuration = import_settings.fields
+        self.surface_settings = import_settings.surface
+
+    @staticmethod
+    def filter_features(features, filter_settings):
+        """Return features where the filter expression/attribute evaluates to < threshold.
+
+        Features where the evaluated value is NULL are kept (safe default).
+        If filter_settings.method is None, all features are returned unchanged.
+        """
+        if filter_settings.method is None:
+            return features
+
+        field_config = filter_settings.model_dump(exclude={"threshold"})
+        threshold = filter_settings.threshold
+        result = []
+        for feat in features:
+            value = get_field_config_value(field_config, feat)
+            if value == NULL or value is None:
+                result.append(feat)
+                continue
+            try:
+                if float(value) < threshold:
+                    result.append(feat)
+            except (TypeError, ValueError):
+                warnings.warn(
+                    f"Surface filter: feature {feat.id()} has non-numeric filter "
+                    f"value {value!r} — feature skipped",
+                    ProcessorWarning,
+                )
+        return result
+
+    @staticmethod
+    def _to_polygon_geometry(src_geom):
+        """Convert a (Curve)Polygon geometry to a plain Polygon.
+
+        Plain polygons are returned as-is. CurvePolygons are segmentized.
+        """
+        if QgsWkbTypes.isCurvedType(src_geom.wkbType()):
+            return QgsGeometry(src_geom.constGet().segmentize())
+        return src_geom
+
+    def process_feature(self, src_feat):
+        src_geom = get_src_geometry(src_feat)
+        if src_geom is None:
+            return {}
+        new_geom = self._to_polygon_geometry(src_geom)
+        if self.transformation:
+            new_geom.transform(self.transformation)
+        new_feat = self.target_manager.create_new(new_geom, self.target_fields)
+        new_feat["area"] = new_geom.area()
+        update_attributes(
+            self.fields_configuration,
+            dm.Surface,
+            src_feat,
+            new_feat,
+        )
+        return {self.target_name: [new_feat], self.surface_map_name: []}
