@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Iterator, List, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
-from qgis.core import NULL
 from shapely import MultiPoint, set_precision, wkt
 from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point, Polygon
 from shapely.ops import linemerge, nearest_points, transform, unary_union
@@ -468,7 +467,7 @@ class CrossSectionLocation:
         :param geometry:
         :param parent:
         """
-        if width is not None and width != NULL:
+        if width is not None:
             # convert width to YZ coordinates
             y_ordinates = np.array([0.0, width])
             z_ordinates = np.array([0.0, 0.0])
