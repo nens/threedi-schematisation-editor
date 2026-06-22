@@ -239,6 +239,33 @@ class CrossSectionLocationSettings(BaseModel):
     snap_distance: float = Field(default=1.0, ge=0, le=1000000.0)
 
 
+class SurfaceFilterSettings(BaseModel):
+    name: ClassVar[str] = "surface_filter"
+    method: Optional[ColumnImportMethod] = None  # None = no filter
+    source_attribute: Optional[str] = None
+    expression: Optional[str] = None
+    threshold: float = Field(default=100.0)
+
+
+class SewerTypeMapping(BaseModel):
+    sewerage_type: int
+    percentage_column: Optional[str] = None  # None = skip this type
+
+
+class SurfaceLinkingSettings(BaseModel):
+    name: ClassVar[str] = "surface_linking"
+    search_distance: float = Field(default=10.0, ge=0, le=1000000.0)
+    stormwater_sewer_preference: float = Field(default=0.0, ge=0, le=1000000.0)
+    sanitary_sewer_preference: float = Field(default=0.0, ge=0, le=1000000.0)
+
+
+class SurfaceSettings(BaseModel):
+    name: ClassVar[str] = "surface"
+    filter: SurfaceFilterSettings = SurfaceFilterSettings()
+    sewer_type_mappings: list[SewerTypeMapping] = []
+    linking: SurfaceLinkingSettings = SurfaceLinkingSettings()
+
+
 class ImportSettings(BaseModel):
     connection_nodes: ConnectionNodeSettings = ConnectionNodeSettings()
     integration: IntegrationSettings = IntegrationSettings()
@@ -247,5 +274,6 @@ class ImportSettings(BaseModel):
     cross_section_location_mapping: CrossSectionLocationSettings = (
         CrossSectionLocationSettings()
     )
+    surface: SurfaceSettings = SurfaceSettings()
     fields: dict[str, FieldMapConfig] = {}
     connection_node_fields: dict[str, FieldMapConfig] = {}
