@@ -115,12 +115,20 @@ If you need to add new layer operations during the import, keep them inside the 
 
 The `Importer` class hierarchy handles the import orchestration. Each concrete importer knows its target model class and which processor/integrator to use.
 
+Key refactor notes (summary):
+
+- SpatialImporter has been simplified: it now only holds the `target_layer`, provides `get_transformation()` and a basic `import_features()` implementation (transform → start editing → process → add). It no longer manages node-related resources or integration orchestration.
+- Responsibility for `node_layer`, `integrator`, `integrate_features()`, and `node_locator` setup has been moved down to `LinesImporter` (and its subclasses) because integration is only relevant for linear structures.
+- A new `SurfaceImporter` is a direct child of `SpatialImporter`. It adds `surface_map_layer`, exposes `modifiable_layers = [target_layer, surface_map_layer]`, and applies `filter_features()` in `get_input_feature_ids()` before processing. When importing, both `target_layer` and `surface_map_layer` are put into edit mode. The pipe layer and node layer are passed to `SurfaceProcessor` at construction time but are not stored on the importer itself.
+- `ConnectionNodesImporter` and `CrossSectionLocationImporter` remain direct children of `SpatialImporter` and benefit from the simplified `SpatialImporter.import_features()` (no node/integrator setup is performed unnecessarily).
+
 ```mermaid
 classDiagram
     Importer <|-- CrossSectionDataImporter
     Importer <|-- SpatialImporter
     SpatialImporter <|-- ConnectionNodesImporter
     SpatialImporter <|-- CrossSectionLocationImporter
+    SpatialImporter <|-- SurfaceImporter
     SpatialImporter <|-- LinesImporter
     LinesImporter <|-- CulvertsImporter
     LinesImporter <|-- OrificesImporter
@@ -129,7 +137,6 @@ classDiagram
     LinesImporter <|-- ChannelsImporter
 
     class Importer {
-        +integrator = None
         +processor = None
         +external_source
         +target_gpkg
@@ -145,10 +152,9 @@ classDiagram
     }
 
     class SpatialImporter {
-        +integrator = None
-        +target_model_cls
-        +import_features()
-        +integrate_features()
+        +target_layer
+        +get_transformation()
+        +import_features()   // basic: transform -> start_editing -> process -> add
     }
 
     class ConnectionNodesImporter {
@@ -161,9 +167,18 @@ classDiagram
         +processor = CrossSectionLocationProcessor
     }
 
+    class SurfaceImporter {
+        +surface_map_layer
+        +modifiable_layers = [target_layer, surface_map_layer]
+        +get_input_feature_ids() // applies filter_features before returning ids
+        +filter_features() // static method
+    }
+
     class LinesImporter {
-        +processor = LineProcessor
+        +node_layer
         +integrator = LinearIntegrator
+        +modifiable_layers = [target_layer, node_layer] + integrator.layers
+        +import_features() // node_locator setup -> integrate_features() -> process -> add
     }
 
     class CulvertsImporter {
@@ -188,10 +203,17 @@ classDiagram
 
 ```
 
+Further details
+
+- SpatialImporter.import_features(): performs coordinate transformation, calls the processor, and adds resulting features. It starts editing only the `target_layer` by default.
+- LinesImporter.import_features(): in addition to SpatialImporter behaviour it prepares the `node_locator`, initialises/uses an `integrator` (LinearIntegrator), and may put `node_layer` and integrator-managed layers into edit mode. Integration (splitting existing conduits, creating nodes) is now scoped to LinesImporter where the required resources are available.
+- SurfaceImporter: intended for imports that produce both a target surface layer and an auxiliary surface map. It overrides `get_input_feature_ids()` to apply `filter_features()` (a static method on `SurfaceImporter`) before returning the ids to process — features that fail the filter are excluded. Both `target_layer` and `surface_map_layer` are put into edit mode. The pipe layer and node layer are passed to `SurfaceProcessor` at construction time; `SurfaceImporter` does not hold them directly.
+
+
 
 ## Processors
 
-Processing is split into processing for connection nodes, cross section locations, points and lines, and cross section data. The base class `Processor` acts as an interface and collects shared logic. `SpatialProcessor` adds functionality for spatial data (coordinate transformation, node snapping) and manages indices of added target objects via a `target_manager` (`FeatureManager`). `StructureProcessor` adds a `node_manager` for connection node index tracking and further shared functionality for lines and points.
+Processing is split into processing for connection nodes, cross section locations, points and lines, cross section data, and surfaces. The base class `Processor` acts as an interface and collects shared logic. `SpatialProcessor` adds functionality for spatial data (coordinate transformation, node snapping) and manages indices of added target objects via a `target_manager` (`FeatureManager`). `StructureProcessor` adds a `node_manager` for connection node index tracking and further shared functionality for lines and points. `SurfaceProcessor` handles polygon surfaces: it converts curved geometries to plain polygons, computes area, applies field mapping, and creates `surface_map` entries by spatially linking each surface to the nearest pipe of the configured sewerage type.
 
 ```mermaid
 classDiagram
@@ -199,6 +221,7 @@ classDiagram
     Processor <|-- CrossSectionDataProcessor
     SpatialProcessor <|-- ConnectionNodeProcessor
     SpatialProcessor <|-- CrossSectionLocationProcessor
+    SpatialProcessor <|-- SurfaceProcessor
     SpatialProcessor <|-- StructureProcessor
     StructureProcessor <|-- PointProcessor
     StructureProcessor <|-- LineProcessor
@@ -227,6 +250,17 @@ classDiagram
     
     class CrossSectionLocationProcessor {
         +process_feature()
+    }
+
+    class SurfaceProcessor {
+        +pipe_features
+        +pipe_index
+        +node_layer
+        +surface_map_manager
+        +process_feature()
+        +_find_nearest_pipe() // static
+        +_create_surface_map_features()
+        +_to_polygon_geometry() // static
     }
 
     class StructureProcessor {

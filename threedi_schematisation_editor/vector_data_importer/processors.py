@@ -918,35 +918,6 @@ class SurfaceProcessor(SpatialProcessor):
         self.pipe_features, self.pipe_index = spatial_index(pipe_layer, request=request)
 
     @staticmethod
-    def filter_features(features, filter_settings):
-        """Return features where the filter expression/attribute evaluates to < threshold.
-
-        Features where the evaluated value is NULL are kept (safe default).
-        If filter_settings.method is None, all features are returned unchanged.
-        """
-        if filter_settings.method is None:
-            return features
-
-        field_config = filter_settings.model_dump(exclude={"threshold"})
-        threshold = filter_settings.threshold
-        result = []
-        for feat in features:
-            value = get_field_config_value(field_config, feat)
-            if value == NULL or value is None:
-                result.append(feat)
-                continue
-            try:
-                if float(value) < threshold:
-                    result.append(feat)
-            except (TypeError, ValueError):
-                warnings.warn(
-                    f"Surface filter: feature {feat.id()} has non-numeric filter "
-                    f"value {value!r} — feature skipped",
-                    ProcessorWarning,
-                )
-        return result
-
-    @staticmethod
     def _to_polygon_geometry(src_geom):
         """Convert a (Curve)Polygon geometry to a plain Polygon.
 

@@ -18,6 +18,7 @@ The actual page flow varies per wizard type:
 | `ImportCrossSectionLocationWizard` | Start -> Settings -> Field Map -> Run |
 | `ImportConduitWizard` | Start -> Settings -> Field Map -> [CN Field Map] -> Run |
 | `ImportStructureWizard` | Start -> Settings -> Field Map -> [CN Field Map] -> Run |
+| `ImportSurfaceWizard` | Start -> Settings -> Field Map -> Run |
 
 Wizards are created for different kinds of importers, all based on `VDIWizard` which handles most of the work such as building the UI, loading and saving config files and running the actual import. Subclasses provide importer-specific settings and modifications: 
 

@@ -1,3 +1,4 @@
+import warnings as stdlib_warnings
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -7,20 +8,22 @@ from qgis.core import (
     QgsField,
     QgsFields,
     QgsGeometry,
-    QgsPointXY,
-    QgsWkbTypes,
 )
 
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from tests.utils import get_temp_copy
 from threedi_schematisation_editor import data_models as dm
+from threedi_schematisation_editor.vector_data_importer import settings_models as sm
 from threedi_schematisation_editor.vector_data_importer.importers import (
     CrossSectionDataImporter,
     CrossSectionLocationImporter,
     Importer,
     LinesImporter,
     SpatialImporter,
+    SurfaceImporter,
 )
+from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+from threedi_schematisation_editor.warnings import ProcessorWarning
 
 from .utils import SCHEMATISATION_PATH
 
@@ -131,12 +134,10 @@ def cross_section_location_layer():
 
 
 @pytest.fixture
-def spatial_importer(
-    external_source, target_gpkg, import_settings, target_layer, node_layer
-):
-    """Create an Importer instance with standard parameters."""
+def spatial_importer(external_source, target_gpkg, import_settings, target_layer):
+    """Create a SpatialImporter instance with standard parameters."""
     return SpatialImporter(
-        external_source, target_gpkg, import_settings, dm.Pipe, target_layer, node_layer
+        external_source, target_gpkg, import_settings, dm.Pipe, target_layer
     )
 
 
@@ -153,7 +154,7 @@ def importer_different_crs(
     """Create an Importer instance with different CRS."""
     external_source.sourceCrs.return_value = "EPSG:4326"
     return SpatialImporter(
-        external_source, target_gpkg, import_settings, dm.Pipe, target_layer, node_layer
+        external_source, target_gpkg, import_settings, dm.Pipe, target_layer
     )
 
 
@@ -208,9 +209,7 @@ class TestImporter:
 class TestSpatialImporter:
     """Tests for the Importer base class."""
 
-    def test_init(
-        self, external_source, target_gpkg, import_settings, target_layer, node_layer
-    ):
+    def test_init(self, external_source, target_gpkg, import_settings, target_layer):
         """Test that the Importer initializes correctly."""
         importer = SpatialImporter(
             external_source,
@@ -218,12 +217,9 @@ class TestSpatialImporter:
             import_settings,
             dm.Pipe,
             target_layer,
-            node_layer,
         )
         assert importer.target_model_cls == dm.Pipe
         assert importer.target_layer == target_layer
-        assert importer.node_layer == node_layer
-        assert importer.integrator is None
         assert importer.processor is None
 
     # @patch('threedi_schematisation_editor.vector_data_importer.importers.QgsCoordinateTransform')
@@ -253,69 +249,61 @@ class TestSpatialImporter:
         layer.commitErrors.return_value = ["Error 1", "Error 2"]
         assert SpatialImporter.process_commit_errors(layer) == "Error 1\nError 2"
 
-    def test_commit_pending_changes(self, spatial_importer, target_layer, node_layer):
+    def test_commit_pending_changes(self, spatial_importer, target_layer):
         """Test that commit_pending_changes commits changes for modified layers."""
         target_layer.isModified.return_value = True
-        node_layer.isModified.return_value = False
         spatial_importer.commit_pending_changes()
         target_layer.commitChanges.assert_called_once()
-        node_layer.commitChanges.assert_not_called()
 
-    def test_modifiable_layers_without_integrator(
-        self, spatial_importer, target_layer, node_layer
-    ):
-        """Test that modifiable_layers returns the target and node layers when there is no integrator."""
-        assert spatial_importer.modifiable_layers == [target_layer, node_layer]
 
-    @patch(
-        "threedi_schematisation_editor.vector_data_importer.integrators.ChannelIntegrator.from_importer"
-    )
-    @patch(
-        "threedi_schematisation_editor.vector_data_importer.integrators.PipeIntegrator.from_importer"
-    )
-    @pytest.mark.parametrize(
-        "integration_mode, target_cls, make_channel_integrator, make_pipe_integrator",
-        [
-            (sm.IntegrationMode.CHANNELS, dm.Weir, True, False),
-            (sm.IntegrationMode.PIPES, dm.Weir, False, True),
-            (sm.IntegrationMode.NONE, dm.Weir, False, False),
-            (sm.IntegrationMode.PIPES, dm.Culvert, False, False),
-        ],
-    )
-    def test_init_integrator(
-        self,
-        mock_pipe_integrator_from_importer,
-        mock_channel_integrator_from_importer,
+@patch(
+    "threedi_schematisation_editor.vector_data_importer.integrators.ChannelIntegrator.from_importer"
+)
+@patch(
+    "threedi_schematisation_editor.vector_data_importer.integrators.PipeIntegrator.from_importer"
+)
+@pytest.mark.parametrize(
+    "integration_mode, target_cls, make_channel_integrator, make_pipe_integrator",
+    [
+        (sm.IntegrationMode.CHANNELS, dm.Weir, True, False),
+        (sm.IntegrationMode.PIPES, dm.Weir, False, True),
+        (sm.IntegrationMode.NONE, dm.Weir, False, False),
+        (sm.IntegrationMode.PIPES, dm.Culvert, False, False),
+    ],
+)
+def test_lines_importer_init(
+    mock_pipe_integrator_from_importer,
+    mock_channel_integrator_from_importer,
+    external_source,
+    target_gpkg,
+    import_settings,
+    target_layer,
+    node_layer,
+    integration_mode,
+    target_cls,
+    make_channel_integrator,
+    make_pipe_integrator,
+):
+    """Test that the Importer initializes the correct integrator."""
+    import_settings.integration.integration_mode = integration_mode
+    importer = LinesImporter(
         external_source,
         target_gpkg,
         import_settings,
-        target_layer,
-        node_layer,
-        integration_mode,
-        target_cls,
-        make_channel_integrator,
-        make_pipe_integrator,
-    ):
-        """Test that the Importer initializes the correct integrator."""
-        import_settings.integration.integration_mode = integration_mode
-        importer = LinesImporter(
-            external_source,
-            target_gpkg,
-            import_settings,
-            target_model_cls=target_cls,
-            target_layer=target_layer,
-            node_layer=node_layer,
+        target_model_cls=target_cls,
+        target_layer=target_layer,
+        node_layer=node_layer,
+    )
+    if make_channel_integrator:
+        mock_channel_integrator_from_importer.assert_called_once_with(
+            None, None, importer
         )
-        if make_channel_integrator:
-            mock_channel_integrator_from_importer.assert_called_once_with(
-                None, None, importer
-            )
-        else:
-            mock_channel_integrator_from_importer.assert_not_called()
-        if make_pipe_integrator:
-            mock_pipe_integrator_from_importer.assert_called_once_with(None, importer)
-        else:
-            mock_pipe_integrator_from_importer.assert_not_called()
+    else:
+        mock_channel_integrator_from_importer.assert_not_called()
+    if make_pipe_integrator:
+        mock_pipe_integrator_from_importer.assert_called_once_with(None, importer)
+    else:
+        mock_pipe_integrator_from_importer.assert_not_called()
 
 
 def test_cross_section_data_importer_auto_layers(import_settings):
@@ -338,7 +326,6 @@ def test_spatial_importer_auto_layers():
         import_settings={},
         target_model_cls=dm.Pipe,
         target_layer=None,
-        node_layer=None,
     )
     for layer in importer.modifiable_layers:
         assert layer.isValid()
@@ -350,3 +337,84 @@ def test_cross_section_location_auto_layers(import_settings):
         None, str(gpkg), import_settings, target_layer=None
     )
     assert importer.processor.channel_layer.isValid()
+
+
+def make_polygon_feature(runoff_pct=50.0, maaiveld=0.0, open_water=0.0, wkt=None):
+    fields = QgsFields()
+    fields.append(QgsField("id", QVariant.Int))
+    fields.append(QgsField("runoff_pct", QVariant.Double))
+    fields.append(QgsField("maaiveld", QVariant.Double))
+    fields.append(QgsField("open_water", QVariant.Double))
+    feat = QgsFeature(fields)
+    feat.setAttribute("id", 1)
+    feat.setAttribute("runoff_pct", runoff_pct)
+    feat.setAttribute("maaiveld", maaiveld)
+    feat.setAttribute("open_water", open_water)
+    feat.setGeometry(
+        QgsGeometry.fromWkt(wkt)
+        if wkt
+        else QgsGeometry.fromWkt("Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))")
+    )
+    return feat
+
+
+@pytest.mark.parametrize(
+    "feat_args, filter_kwargs, kept",
+    [
+        (
+            {"runoff_pct": 50.0},
+            {"method": ColumnImportMethod.ATTRIBUTE, "source_attribute": "runoff_pct"},
+            True,
+        ),
+        (
+            {"runoff_pct": 100.0},
+            {"method": ColumnImportMethod.ATTRIBUTE, "source_attribute": "runoff_pct"},
+            False,
+        ),
+        (
+            {"maaiveld": 40.0, "open_water": 50.0},
+            {
+                "method": ColumnImportMethod.EXPRESSION,
+                "expression": '"maaiveld" + "open_water"',
+            },
+            True,
+        ),
+        (
+            {"maaiveld": 60.0, "open_water": 40.0},
+            {
+                "method": ColumnImportMethod.EXPRESSION,
+                "expression": '"maaiveld" + "open_water"',
+            },
+            False,
+        ),
+        (
+            {},
+            {"method": ColumnImportMethod.ATTRIBUTE, "source_attribute": "nonexistent"},
+            True,
+        ),  # NULL → kept
+        ({"runoff_pct": 50.0}, {}, True),  # no filter → kept
+    ],
+)
+def test_filter_features(feat_args, filter_kwargs, kept):
+    feat = make_polygon_feature(**feat_args)
+    settings = sm.SurfaceFilterSettings(**filter_kwargs)
+    result = SurfaceImporter.filter_features([feat], settings)
+    assert (feat in result) == kept
+
+
+def test_filter_features_non_numeric_warns_and_excludes():
+    fields = QgsFields()
+    fields.append(QgsField("id", QVariant.Int))
+    fields.append(QgsField("label", QVariant.String))
+    feat = QgsFeature(fields)
+    feat.setAttribute("id", 1)
+    feat.setAttribute("label", "not_a_number")
+    feat.setGeometry(QgsGeometry.fromWkt("Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))"))
+    settings = sm.SurfaceFilterSettings(
+        method=ColumnImportMethod.ATTRIBUTE, source_attribute="label"
+    )
+    with stdlib_warnings.catch_warnings(record=True) as caught:
+        stdlib_warnings.simplefilter("always")
+        result = SurfaceImporter.filter_features([feat], settings)
+    assert result == []
+    assert any(issubclass(w.category, ProcessorWarning) for w in caught)
