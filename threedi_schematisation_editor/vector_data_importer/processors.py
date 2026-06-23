@@ -22,9 +22,12 @@ from qgis.core import (
 from threedi_schema.domain.constants import CrossSectionShape
 
 from threedi_schematisation_editor import data_models as dm
+from threedi_schematisation_editor.enumerators import SewerageType
 from threedi_schematisation_editor.utils import (
     find_connection_node,
+    get_feature_by_id,
     get_next_feature_id,
+    spatial_index,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (
     CancellationToken,
@@ -885,7 +888,15 @@ class LineProcessor(StructureProcessor):
 
 
 class SurfaceProcessor(SpatialProcessor):
-    def __init__(self, target_layer, surface_map_layer, import_settings):
+    def __init__(
+        self,
+        target_layer,
+        surface_map_layer,
+        import_settings,
+        pipe_layer,
+        node_layer,
+        selected_pipes_only=False,
+    ):
         super().__init__(target_layer, dm.Surface)
         self.surface_map_name = surface_map_layer.name() if surface_map_layer else None
         self.surface_map_manager = (
@@ -898,6 +909,13 @@ class SurfaceProcessor(SpatialProcessor):
         )
         self.fields_configuration = import_settings.fields
         self.surface_settings = import_settings.surface
+        self.node_layer = node_layer
+        request = (
+            QgsFeatureRequest(pipe_layer.selectedFeatureIds())
+            if selected_pipes_only
+            else None
+        )
+        self.pipe_features, self.pipe_index = spatial_index(pipe_layer, request=request)
 
     @staticmethod
     def filter_features(features, filter_settings):
@@ -938,6 +956,100 @@ class SurfaceProcessor(SpatialProcessor):
             return QgsGeometry(src_geom.constGet().segmentize())
         return src_geom
 
+    @staticmethod
+    def _find_nearest_pipe(surface_geom, pipe_features, pipe_ids, mapping, linking):
+        """Return the nearest pipe QgsFeature of the correct sewerage_type, or None.
+
+        Applies stormwater/sanitary preference offsets before ranking.
+        Returns None (without warning) when no pipe matches — caller decides whether
+        to warn based on context.
+        """
+        candidates = []
+        for pipe_id in pipe_ids:
+            pipe_feat = pipe_features[pipe_id]
+            if pipe_feat["sewerage_type"] != mapping.sewerage_type:
+                continue
+            dist = surface_geom.distance(pipe_feat.geometry())
+            if dist > linking.search_distance:
+                continue
+            if mapping.sewerage_type == SewerageType.STORM_DRAIN.value:
+                dist -= linking.stormwater_sewer_preference
+            elif mapping.sewerage_type == SewerageType.SANITARY_SEWER.value:
+                dist -= linking.sanitary_sewer_preference
+            candidates.append((dist, pipe_feat))
+
+        if not candidates:
+            return None
+        return min(candidates, key=lambda x: x[0])[1]
+
+    def _create_surface_map_features(self, new_feat, src_feat, surface_geom):
+        """Create surface_map features linking new_feat to connection nodes.
+
+        For each sewer type mapping with a non-zero percentage column value,
+        finds the nearest pipe of that sewerage_type within search_distance and
+        links to the nearest of its two connection nodes.
+        Emits a ProcessorWarning when no pipe is found within search_distance.
+        """
+        linking = self.surface_settings.linking
+        surface_map_feats = []
+
+        for mapping in self.surface_settings.sewer_type_mappings:
+            if mapping.percentage_column is None:
+                continue
+            try:
+                pct = float(src_feat[mapping.percentage_column])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if pct <= 0:
+                continue
+
+            surface_buffer = surface_geom.buffer(linking.search_distance, 5)
+            pipe_ids = self.pipe_index.intersects(surface_buffer.boundingBox())
+            nearest_pipe = SurfaceProcessor._find_nearest_pipe(
+                surface_geom, self.pipe_features, pipe_ids, mapping, linking
+            )
+
+            if nearest_pipe is None:
+                warnings.warn(
+                    f"Surface {new_feat['id']}: no pipe of sewerage_type "
+                    f"{mapping.sewerage_type} found within {linking.search_distance}m "
+                    f"— surface_map entry skipped",
+                    ProcessorWarning,
+                )
+                continue
+
+            start_node = get_feature_by_id(
+                self.node_layer, nearest_pipe["connection_node_id_start"]
+            )
+            end_node = get_feature_by_id(
+                self.node_layer, nearest_pipe["connection_node_id_end"]
+            )
+            if start_node is None or end_node is None:
+                continue
+
+            if surface_geom.distance(start_node.geometry()) <= surface_geom.distance(
+                end_node.geometry()
+            ):
+                node_id = nearest_pipe["connection_node_id_start"]
+                node_geom = start_node.geometry()
+            else:
+                node_id = nearest_pipe["connection_node_id_end"]
+                node_geom = end_node.geometry()
+
+            centroid = surface_geom.pointOnSurface()
+            sm_geom = QgsGeometry.fromPolylineXY(
+                [centroid.asPoint(), node_geom.asPoint()]
+            )
+            sm_feat = self.surface_map_manager.create_new(
+                sm_geom, self.surface_map_fields
+            )
+            sm_feat["surface_id"] = new_feat["id"]
+            sm_feat["connection_node_id"] = node_id
+            sm_feat["percentage"] = pct
+            surface_map_feats.append(sm_feat)
+
+        return surface_map_feats
+
     def process_feature(self, src_feat):
         src_geom = get_src_geometry(src_feat)
         if src_geom is None:
@@ -953,4 +1065,7 @@ class SurfaceProcessor(SpatialProcessor):
             src_feat,
             new_feat,
         )
-        return {self.target_name: [new_feat], self.surface_map_name: []}
+        surface_map_feats = self._create_surface_map_features(
+            new_feat, src_feat, new_geom
+        )
+        return {self.target_name: [new_feat], self.surface_map_name: surface_map_feats}
