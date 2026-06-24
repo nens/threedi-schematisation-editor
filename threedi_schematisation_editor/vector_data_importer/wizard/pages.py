@@ -73,6 +73,14 @@ class StartPage(QWizardPage):
     def isComplete(self) -> bool:
         return self.layer_settings_widget.selected_layer not in [None, ""]
 
+    def get_settings(self) -> dict:
+        return {"source": self.layer_settings_widget.get_settings()}
+
+    def deserialize(self, data):
+        source_data = data.get("source", {})
+        if source_data:
+            self.layer_settings_widget.deserialize(source_data)
+
     @property
     def selected_layer(self):
         return self.layer_settings_widget.selected_layer
@@ -106,14 +114,15 @@ class SettingsPage(QWizardPage):
             widget.dataChanged.connect(self.completeChanged)
             group_box = QGroupBox(widget.group_name)
             group_box.setLayout(widget.layout())
-            layout.addWidget(group_box)
+            stretch = 1 if getattr(widget, "expanding", False) else 0
+            layout.addWidget(group_box, stretch)
         self.setLayout(layout)
 
     def initializePage(self):
         # update layers just before showing
         layer = self.wizard().selected_layer
         for widget in self.settings_widgets:
-            if isinstance(widget, FieldMapSettingsWidget):
+            if hasattr(widget, "update_layer"):
                 widget.update_layer(layer)
 
     @property
@@ -141,6 +150,13 @@ class SettingsPage(QWizardPage):
     def isComplete(self) -> bool:
         for widget in self.settings_widgets:
             if not widget.is_valid:
+                return False
+        return True
+
+    def validatePage(self) -> bool:
+        """Warn (but don't block) when no sewerage type mappings are configured."""
+        for widget in self.settings_widgets:
+            if not widget.validate():
                 return False
         return True
 

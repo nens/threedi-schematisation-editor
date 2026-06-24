@@ -58,10 +58,13 @@ def surface_map_fields():
 
 
 def make_import_settings(**surface_kwargs):
+    sewer_type_mappings = surface_kwargs.pop("sewer_type_mappings", [])
+    linking = surface_kwargs.pop("linking", sm.SurfaceLinkingSettings())
     return sm.ImportSettings(
-        surface=sm.SurfaceSettings(**surface_kwargs)
-        if surface_kwargs
-        else sm.SurfaceSettings(),
+        surface_map_percentage=sm.SurfaceMapPercentageSettings(
+            sewer_type_mappings=sewer_type_mappings
+        ),
+        surface_linking=linking,
         fields={
             "id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO),
             "surface_parameters_id": sm.FieldMapConfig(

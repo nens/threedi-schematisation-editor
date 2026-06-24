@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from pydantic import BaseModel, ValidationError
-from qgis.core import Qgis, QgsMapLayerProxyModel, QgsMessageLog
+from qgis.core import Qgis, QgsMapLayerProxyModel, QgsMessageLog, QgsProject
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
 from qgis.PyQt.QtGui import QPalette
 from qgis.PyQt.QtWidgets import (
@@ -20,7 +20,10 @@ from qgis.PyQt.QtWidgets import (
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.vector_data_importer.importers as vdi_importers
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
-from threedi_schematisation_editor.vector_data_importer.utils import CancellationToken
+from threedi_schematisation_editor.vector_data_importer.utils import (
+    CancellationToken,
+    compute_selected_ids,
+)
 from threedi_schematisation_editor.vector_data_importer.wizard.pages import (
     FieldMapPage,
     RunPage,
@@ -34,6 +37,8 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
     IntegrationSettingsWidget,
     PointToLIneConversionSettingsWidget,
     SettingsWidget,
+    SurfaceConnectionSettingsWidget,
+    SurfaceMapPercentageSettingsWidget,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
     CatchThreediWarnings,
@@ -86,6 +91,7 @@ class VDIWizard(QWizard):
         dm.Pipe: vdi_importers.PipesImporter,
         dm.Channel: vdi_importers.ChannelsImporter,
         dm.CrossSectionLocation: vdi_importers.CrossSectionLocationImporter,
+        dm.Surface: vdi_importers.SurfaceImporter,
     }
     settings_widgets_classes: list[SettingsWidget] = []
     import_started = pyqtSignal()
@@ -356,7 +362,7 @@ class VDIWizard(QWizard):
             if isinstance(page, FieldMapPage) and page.name == "connection_node_fields":
                 if not self.settings_page.create_nodes:
                     continue
-            if isinstance(page, (FieldMapPage, SettingsPage)):
+            if isinstance(page, (StartPage, FieldMapPage, SettingsPage)):
                 data.update(page.get_settings())
 
         return sm.ImportSettings(**data)
@@ -384,15 +390,14 @@ class VDIWizard(QWizard):
         for button in buttons:
             self.button(button).setEnabled(enabled)
 
+    def _compute_feature_ids(self, source_settings):
+        return compute_selected_ids(self.selected_layer, source_settings)
+
     def run_import(self):
         self.import_started.emit()
         progress_bar = self.run_page.progress_bar
         settings = self.get_settings()
-        selected_feat_ids = (
-            self.selected_layer.selectedFeatureIds()
-            if self.use_selected_features
-            else None
-        )
+        selected_feat_ids = self._compute_feature_ids(settings.source)
         handlers, layers = self.prepare_import()
         for handler in handlers:
             handler.disconnect_handler_signals()
@@ -601,4 +606,51 @@ class ImportCrossSectionLocationWizard(VDIWizard):
             QgsMapLayerProxyModel.LineLayer
             | QgsMapLayerProxyModel.PointLayer
             | QgsMapLayerProxyModel.NoGeometry
+        )
+
+
+class ImportSurfaceWizard(VDIWizard):
+    settings_widgets_classes = [
+        SurfaceMapPercentageSettingsWidget,
+        SurfaceConnectionSettingsWidget,
+    ]
+
+    @property
+    def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
+        return QgsMapLayerProxyModel.PolygonLayer
+
+    def prepare_import(self):
+        surface_handler = self.layer_manager.model_handlers[dm.Surface]
+        surface_map_handler = self.layer_manager.model_handlers[dm.SurfaceMap]
+        pipe_handler = self.layer_manager.model_handlers[dm.Pipe]
+        node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
+        handlers = [surface_handler, surface_map_handler]
+
+        linking = self.settings_page.get_settings()[sm.SurfaceLinkingSettings.name]
+
+        def resolve_layer(name, fallback):
+            if name:
+                matches = QgsProject.instance().mapLayersByName(name)
+                if matches:
+                    return matches[0]
+            return fallback
+
+        layers = {
+            "surface_layer": surface_handler.layer,
+            "surface_map_layer": resolve_layer(
+                linking.surface_map_layer_name, surface_map_handler.layer
+            ),
+            "pipe_layer": resolve_layer(linking.pipe_layer_name, pipe_handler.layer),
+            "node_layer": resolve_layer(linking.node_layer_name, node_handler.layer),
+        }
+        return handlers, layers
+
+    def get_importer(self, import_settings: sm.ImportSettings, layer_dict):
+        selected_pipes_only = import_settings.surface_linking.selected_pipes_only
+        return vdi_importers.SurfaceImporter(
+            self.selected_layer,
+            self.model_gpkg,
+            import_settings,
+            selected_pipes_only=selected_pipes_only,
+            **layer_dict,
         )

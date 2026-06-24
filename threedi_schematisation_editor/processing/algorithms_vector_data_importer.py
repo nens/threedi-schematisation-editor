@@ -31,6 +31,9 @@ from threedi_schematisation_editor.vector_data_importer.settings_models import (
     IntegrationMode,
     validate_field_map,
 )
+from threedi_schematisation_editor.vector_data_importer.utils import (
+    compute_selected_ids,
+)
 
 
 def load_import_settings(file_path, model_cls, connection_node_model_cls=None):
@@ -197,8 +200,10 @@ class BaseImporter(QgsProcessingAlgorithm):
 
         importer = self.create_importer(source_layer, target_gpkg, import_config)
 
-        # Use the right import method based on the importer type
-        importer.import_features(context=context)
+        # The source_layer from the UI takes priority over any layer name in the config.
+        # filter_expression from the config is applied against the UI-selected layer.
+        selected_ids = compute_selected_ids(source_layer, import_config.source)
+        importer.import_features(context=context, selected_ids=selected_ids)
         importer.commit_pending_changes()
         return {self.TARGET_GPKG: target_gpkg}
 

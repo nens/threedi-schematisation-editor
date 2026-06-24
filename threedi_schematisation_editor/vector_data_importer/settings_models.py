@@ -239,12 +239,11 @@ class CrossSectionLocationSettings(BaseModel):
     snap_distance: float = Field(default=1.0, ge=0, le=1000000.0)
 
 
-class SurfaceFilterSettings(BaseModel):
-    name: ClassVar[str] = "surface_filter"
-    method: Optional[ColumnImportMethod] = None  # None = no filter
-    source_attribute: Optional[str] = None
-    expression: Optional[str] = None
-    threshold: float = Field(default=100.0)
+class SourceSettings(BaseModel):
+    name: ClassVar[str] = "source"
+    selected_layer_name: str = ""
+    use_selected_features: bool = False
+    filter_expression: Optional[str] = None
 
 
 class SewerTypeMapping(BaseModel):
@@ -252,21 +251,28 @@ class SewerTypeMapping(BaseModel):
     percentage_column: Optional[str] = None  # None = skip this type
 
 
+class SurfaceMapPercentageSettings(BaseModel):
+    name: ClassVar[str] = "surface_map_percentage"
+    sewer_type_mappings: list[SewerTypeMapping] = []
+
+
 class SurfaceLinkingSettings(BaseModel):
     name: ClassVar[str] = "surface_linking"
     search_distance: float = Field(default=10.0, ge=0, le=1000000.0)
     stormwater_sewer_preference: float = Field(default=0.0, ge=0, le=1000000.0)
     sanitary_sewer_preference: float = Field(default=0.0, ge=0, le=1000000.0)
-
-
-class SurfaceSettings(BaseModel):
-    name: ClassVar[str] = "surface"
-    filter: SurfaceFilterSettings = SurfaceFilterSettings()
-    sewer_type_mappings: list[SewerTypeMapping] = []
-    linking: SurfaceLinkingSettings = SurfaceLinkingSettings()
+    surface_map_layer_name: str = Field(
+        default_factory=lambda: dm.SurfaceMap.__layername__
+    )
+    pipe_layer_name: str = Field(default_factory=lambda: dm.Pipe.__layername__)
+    node_layer_name: str = Field(
+        default_factory=lambda: dm.ConnectionNode.__layername__
+    )
+    selected_pipes_only: bool = False
 
 
 class ImportSettings(BaseModel):
+    source: SourceSettings = SourceSettings()
     connection_nodes: ConnectionNodeSettings = ConnectionNodeSettings()
     integration: IntegrationSettings = IntegrationSettings()
     cross_section_data_remap: CrossSectionDataRemap = CrossSectionDataRemap()
@@ -274,6 +280,9 @@ class ImportSettings(BaseModel):
     cross_section_location_mapping: CrossSectionLocationSettings = (
         CrossSectionLocationSettings()
     )
-    surface: SurfaceSettings = SurfaceSettings()
+    surface_map_percentage: SurfaceMapPercentageSettings = (
+        SurfaceMapPercentageSettings()
+    )
+    surface_linking: SurfaceLinkingSettings = SurfaceLinkingSettings()
     fields: dict[str, FieldMapConfig] = {}
     connection_node_fields: dict[str, FieldMapConfig] = {}

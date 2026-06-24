@@ -312,6 +312,19 @@ The same importer classes can be invoked headlessly via QGIS Processing algorith
 
 The import settings are collected in `ImportSettings` (a pydantic model) which holds several submodels for connection node settings, integration settings, cross-section data remapping, point-to-line conversion, and field mappings.
 
+Surface-specific settings
+
+The surface import path has its own settings model `SurfaceSettings` which captures configuration for surface imports (filters, field mappings and auxiliary surface-map behaviour). `SurfaceSettings` contains a nested `SurfaceLinkingSettings` model that controls how imported surface polygons are spatially linked to existing schematisation pipes/nodes.
+
+`SurfaceLinkingSettings` contains the following fields:
+
+- `surface_map_layer_name: str` — name of the surface-map layer to write to (defaults to the schematisation's surface map layer name).
+- `pipe_layer_name: str` — name of the pipe layer to use when finding the nearest pipe for spatial linking (defaults to the schematisation pipe layer name).
+- `node_layer_name: str` — name of the connection node layer used by some linking logic (defaults to the schematisation connection node layer name).
+- `selected_pipes_only: bool` — when true, only pipes selected in the provided pipe layer are considered as candidates for linking; when false the full pipe layer is used. Defaults to `False`.
+
+These linking settings default to the canonical schematisation layer names so that in the common case the user does not need to change them. The settings (including `SurfaceLinkingSettings`) are serialized to and from JSON with the rest of the `ImportSettings` model and are restored by the wizard when loading a saved configuration.
+
 The `FieldMapConfig` is a model designed to validate configuration that maps values from a source layer to a target layer. It has custom validations:
 * required fields based on the value of `method`;
 * allowed methods based on the `allowed_methods` in the field metadata.

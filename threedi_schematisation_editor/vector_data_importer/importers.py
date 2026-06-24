@@ -1,10 +1,8 @@
-import warnings
 from collections import defaultdict
 from functools import cached_property
 from typing import Optional
 
 from qgis.core import (
-    NULL,
     QgsCoordinateTransform,
     QgsProject,
     QgsVectorLayer,
@@ -23,10 +21,8 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     SurfaceProcessor,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (
-    get_field_config_value,
     get_point_locator,
 )
-from threedi_schematisation_editor.warnings import ProcessorWarning
 
 
 class Importer:
@@ -458,42 +454,3 @@ class SurfaceImporter(SpatialImporter):
     @property
     def modifiable_layers(self):
         return [self.target_layer, self.surface_map_layer]
-
-    @staticmethod
-    def filter_features(features, filter_settings):
-        """Return features where the filter expression/attribute evaluates to < threshold.
-
-        Features where the evaluated value is NULL are kept (safe default).
-        If filter_settings.method is None, all features are returned unchanged.
-        """
-        if filter_settings.method is None:
-            return features
-
-        field_config = filter_settings.model_dump(exclude={"threshold"})
-        threshold = filter_settings.threshold
-        result = []
-        for feat in features:
-            value = get_field_config_value(field_config, feat)
-            if value == NULL or value is None:
-                result.append(feat)
-                continue
-            try:
-                if float(value) < threshold:
-                    result.append(feat)
-            except (TypeError, ValueError):
-                warnings.warn(
-                    f"Surface filter: feature {feat.id()} has non-numeric filter "
-                    f"value {value!r} — feature skipped",
-                    ProcessorWarning,
-                )
-        return result
-
-    def get_input_feature_ids(self, selected_ids):
-        input_feature_ids = super().get_input_feature_ids(selected_ids)
-        all_features = [
-            self.external_source.getFeature(fid) for fid in input_feature_ids
-        ]
-        filtered_features = SurfaceImporter.filter_features(
-            all_features, self.import_settings.surface.filter
-        )
-        return [f.id() for f in filtered_features]

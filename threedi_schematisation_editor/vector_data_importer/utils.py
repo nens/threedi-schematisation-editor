@@ -8,6 +8,7 @@ from qgis.core import (
     QgsExpression,
     QgsExpressionContext,
     QgsFeature,
+    QgsFeatureRequest,
     QgsGeometry,
     QgsPointLocator,
     QgsPointXY,
@@ -189,3 +190,66 @@ def get_point_locator(
 ) -> QgsPointLocator:
     project = context.project() if context else QgsProject.instance()
     return QgsPointLocator(layer, layer.crs(), project.transformContext())
+
+
+def compute_selected_ids(layer, source_settings):
+    """Return the list of feature IDs to import given source selection and filter expression.
+
+    Returns None when neither selected-only nor an expression is configured,
+    meaning the importer should process all features.
+
+    Cases:
+    1. use_selected=False, no expression  -> None (all features)
+    2. use_selected=True,  no expression  -> list of selected feature IDs
+    3. use_selected=False, expression set -> list of IDs matching expression
+    4. use_selected=True,  expression set -> selected IDs filtered by expression
+    """
+    use_selected = source_settings.use_selected_features
+    expression_str = source_settings.filter_expression
+
+    if use_selected:
+        candidate_ids = list(layer.selectedFeatureIds())
+    else:
+        candidate_ids = None  # all features
+
+    if not expression_str:
+        return candidate_ids
+
+    expression = QgsExpression(expression_str)
+
+    if expression.hasParserError():
+        warnings.warn(
+            f"Filter expression has a syntax error ({expression.parserErrorString()}) "
+            f"— expression ignored, all candidate features will be imported",
+            FeaturesImporterWarning,
+        )
+        return candidate_ids
+
+    field_names = {f.name() for f in layer.fields()}
+    unknown = expression.referencedColumns() - field_names - {"*"}
+    if unknown:
+        warnings.warn(
+            f"Filter expression references fields not found in the layer: "
+            f"{sorted(unknown)} — expression ignored, all candidate features will be imported",
+            FeaturesImporterWarning,
+        )
+        return candidate_ids
+
+    context = QgsExpressionContext()
+    if candidate_ids is not None:
+        request = layer.getFeatures(QgsFeatureRequest().setFilterFids(candidate_ids))
+    else:
+        request = layer.getFeatures()
+    result = []
+    for feat in request:
+        context.setFeature(feat)
+        try:
+            if expression.evaluate(context):
+                result.append(feat.id())
+        except Exception as e:
+            warnings.warn(
+                f"Filter expression evaluation failed for feature {feat.id()}: {e} "
+                f"— feature skipped",
+                FeaturesImporterWarning,
+            )
+    return result

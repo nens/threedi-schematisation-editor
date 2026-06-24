@@ -30,6 +30,7 @@ classDiagram
     VDIWizard <|-- ImportWithCreateConnectionNodesWizard
     ImportWithCreateConnectionNodesWizard <|-- ImportConduitWizard
     ImportWithCreateConnectionNodesWizard <|-- ImportStructureWizard
+    VDIWizard <|-- ImportSurfaceWizard
     
     class VDIWizard {
         +settings_widgets_classes = []
@@ -78,6 +79,13 @@ classDiagram
         +prepare_import()
     }
 
+    class ImportSurfaceWizard {
+        +settings_widgets_classes
+        +layer_filter
+        +prepare_import()
+        +get_importer()
+    }
+
 ```
 
 
@@ -108,6 +116,15 @@ class SettingsWidget{
 ```
 
 Upon initialization the widgets are instantiated and put in a group box using the `group_name`. The settings page holds a list of settings widgets which are all based on `SettingsWidget`.
+
+
+Surface settings widget
+
+The wizard provides a `SurfaceSettingsWidget` implementation used by `ImportSurfaceWizard`. `SurfaceSettingsWidget` manages the surface-specific configuration visible on the Settings page: the surface filter and field mappings, sewerage type mappings, and a spatial linking section.
+
+The spatial linking section exposes three QgsMapLayerComboBox widgets (surface map layer, pipe layer, node layer) and a `selected_pipes_only` checkbox. The widget keeps its `SurfaceLinkingSettings` model in sync with the UI: changes to any combo or the checkbox immediately write the corresponding layer name or flag into the nested `linking` model. When deserializing the settings, the widget restores the combo selections via `setCurrentText(name)` and the checkbox state from `selected_pipes_only`.
+
+All of these surface settings are included in the `SurfaceSettings` model returned by `get_settings()` and persisted in the import JSON.
 
 
 ## Field map page and widgets

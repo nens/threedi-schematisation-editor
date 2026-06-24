@@ -2,9 +2,10 @@ from dataclasses import fields
 from typing import Optional, Type
 
 from pydantic import BaseModel
-from qgis.core import Qgis
-from qgis.gui import QgsMapLayerComboBox
-from qgis.PyQt.QtCore import Qt, pyqtSignal
+from qgis.core import Qgis, QgsExpression, QgsMapLayerProxyModel
+from qgis.gui import QgsFieldExpressionWidget, QgsMapLayerComboBox
+from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, pyqtSignal
+from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
     QBoxLayout,
@@ -18,8 +19,12 @@ from qgis.PyQt.QtWidgets import (
     QHeaderView,
     QLabel,
     QLineEdit,
+    QMessageBox,
+    QPushButton,
     QRadioButton,
+    QScrollArea,
     QSizePolicy,
+    QStyledItemDelegate,
     QTableView,
     QVBoxLayout,
     QWidget,
@@ -28,14 +33,15 @@ from qgis.PyQt.QtWidgets import (
 
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from threedi_schematisation_editor import data_models as dm
+from threedi_schematisation_editor.enumerators import SewerageType
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
+    SourceSettings,
+)
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map import (
     FieldMapColumn,
     FieldMapRow,
     FieldMapWidget,
-)
-from threedi_schematisation_editor.vector_data_importer.wizard.models import (
-    GenericSettingsModel,
 )
 
 
@@ -54,44 +60,92 @@ class LayerSettingsWidget(QWidget):
         self, layer_filter: Optional[Qgis.LayerFilters | Qgis.LayerFilter] = None
     ):
         super().__init__()
-        self.model = GenericSettingsModel()
+        self.model = SourceSettings()
         self.setup_ui(layer_filter)
         self.selected_layer = None
 
     def setup_ui(self, layer_filter):
         # create widgets
         label = QLabel("Select layer to import:")
-        layer_selector = QgsMapLayerComboBox()
-        layer_selector.setAllowEmptyLayer(True)
+        self.layer_selector = QgsMapLayerComboBox()
+        self.layer_selector.setAllowEmptyLayer(True)
         if layer_filter:
-            layer_selector.setFilters(layer_filter)
-        layer_selector.layerChanged.connect(self.update_layer)
-        layer_selector.setCurrentIndex(0)
-        layer_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            self.layer_selector.setFilters(layer_filter)
+        self.layer_selector.layerChanged.connect(self.update_layer)
+        self.layer_selector.setCurrentIndex(0)
+        self.layer_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.use_selected = QCheckBox("Selected features only")
         self.use_selected.setEnabled(False)
+        self.filter_expression = QgsFieldExpressionWidget()
+        self.filter_expression.setAllowEmptyFieldName(True)
+        self.filter_expression.setEnabled(False)
+        expr_layout = QHBoxLayout()
+        expr_layout.addWidget(QLabel("Filter expression:"))
+        expr_layout.addWidget(self.filter_expression)
         # set up layout
         layout = QVBoxLayout(self)
         layout.addWidget(label)
-        layout.addWidget(layer_selector)
+        layout.addWidget(self.layer_selector)
         layout.addWidget(self.use_selected)
+        layout.addLayout(expr_layout)
         # Connect widgets to model updates
         self.use_selected.toggled.connect(self.update_use_selected)
+        self.filter_expression.fieldChanged.connect(self.update_filter_expression)
 
     def update_layer(self, layer):
         if layer:
             self.selected_layer = layer
-            self.model.selected_layer = layer.name()
-            self.layer_changed.emit(layer.name())  # Emit with layer name
+            self.model.selected_layer_name = layer.name()
+            self.layer_changed.emit(layer.name())
             self.use_selected.setEnabled(len(layer.selectedFeatureIds()) > 0)
+            self.filter_expression.setLayer(layer)
+            self.filter_expression.setEnabled(True)
+            self._clear_expression_if_invalid()
         else:
             self.selected_layer = None
-            self.model.selected_layer = ""
+            self.model.selected_layer_name = ""
             self.layer_changed.emit("")
             self.use_selected.setEnabled(False)
+            self.filter_expression.setLayer(None)
+            self.filter_expression.setEnabled(False)
+
+    def _clear_expression_if_invalid(self):
+        """Clear the expression if it references fields not present in the current layer."""
+        expr_str = self.filter_expression.expression()
+        if not expr_str or self.selected_layer is None:
+            return
+        expr = QgsExpression(expr_str)
+        if expr.hasParserError():
+            self.filter_expression.setExpression("")
+            self.model.filter_expression = None
+            return
+        field_names = {f.name() for f in self.selected_layer.fields()}
+        unknown = expr.referencedColumns() - field_names - {"*"}
+        if unknown:
+            self.filter_expression.setExpression("")
+            self.model.filter_expression = None
 
     def update_use_selected(self, checked):
         self.model.use_selected_features = checked
+
+    def update_filter_expression(self, expression):
+        self.model.filter_expression = expression or None
+
+    def get_settings(self) -> SourceSettings:
+        return self.model
+
+    def deserialize(self, data: dict):
+        self.use_selected.setChecked(data.get("use_selected_features", False))
+        if self.selected_layer is None:
+            layer_name = data.get("selected_layer_name") or ""
+            if layer_name:
+                idx = self.layer_selector.findText(layer_name)
+                if idx >= 0:
+                    self.layer_selector.setLayer(self.layer_selector.layer(idx))
+        expr = data.get("filter_expression") or ""
+        self.filter_expression.setExpression(expr)
+        self.model.filter_expression = expr or None
+        self._clear_expression_if_invalid()
 
 
 class SettingsWidget(QWidget):
@@ -110,6 +164,9 @@ class SettingsWidget(QWidget):
     @property
     def is_valid(self) -> bool:
         return True
+
+    def validate(self) -> bool:
+        return self.is_valid
 
     def get_settings(self) -> BaseModel:
         # loudly fail when model is missing
@@ -446,3 +503,377 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
                     ColumnImportMethod.AUTO,
                     Qt.EditRole,
                 )
+
+
+_NUMERIC_QTYPES = {
+    QVariant.Int,
+    QVariant.LongLong,
+    QVariant.Double,
+    QVariant.UInt,
+    QVariant.ULongLong,
+}
+
+# Ordered list of (display_name, sewerage_type_value) for the sewerage type combobox
+_SEWERAGE_TYPE_ITEMS = [
+    (t.name.replace("_", " ").capitalize(), t.value) for t in SewerageType
+]
+
+
+class SewerTypeMappingModel(QAbstractTableModel):
+    """Table model backing the sewerage type → percentage column mapping table."""
+
+    SEWERAGE_TYPE_COL = 0
+    PERCENTAGE_COL = 1
+    HEADERS = ["Sewerage type", "Percentage column"]
+
+    def __init__(self, numeric_fields=None, parent=None):
+        super().__init__(parent)
+        self._rows = []
+        self._numeric_fields = numeric_fields or []
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self._rows)
+
+    def columnCount(self, parent=QModelIndex()):
+        return 2
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            return self.HEADERS[section]
+        return None
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid() or role not in (Qt.DisplayRole, Qt.EditRole):
+            return None
+        value = self._rows[index.row()][index.column()]
+        if index.column() == self.SEWERAGE_TYPE_COL:
+            if value is None:
+                return ""
+            return next((n for n, v in _SEWERAGE_TYPE_ITEMS if v == value), "")
+        return value or ""
+
+    def setData(self, index, value, role=Qt.EditRole):
+        if role != Qt.EditRole or not index.isValid():
+            return False
+        self._rows[index.row()][index.column()] = value
+        self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
+        return True
+
+    def flags(self, index):
+        return Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
+    def add_row(self):
+        row = len(self._rows)
+        self.beginInsertRows(QModelIndex(), row, row)
+        self._rows.append([None, None])
+        self.endInsertRows()
+
+    def remove_rows(self, rows):
+        for row in sorted(rows, reverse=True):
+            self.beginRemoveRows(QModelIndex(), row, row)
+            self._rows.pop(row)
+            self.endRemoveRows()
+
+    def set_numeric_fields(self, fields):
+        self._numeric_fields = fields
+        for row in self._rows:
+            if row[self.PERCENTAGE_COL] not in fields:
+                row[self.PERCENTAGE_COL] = None
+        if self._rows:
+            self.dataChanged.emit(
+                self.index(0, self.PERCENTAGE_COL),
+                self.index(len(self._rows) - 1, self.PERCENTAGE_COL),
+            )
+
+    def get_mappings(self):
+        result = []
+        for sewerage_type, col in self._rows:
+            if sewerage_type is not None and col:
+                result.append(
+                    sm.SewerTypeMapping(
+                        sewerage_type=sewerage_type,
+                        percentage_column=col,
+                    )
+                )
+        return result
+
+    def set_mappings(self, mappings):
+        self.beginResetModel()
+        self._rows = [[m.sewerage_type, m.percentage_column] for m in mappings]
+        if not self._rows:
+            self._rows = [[None, None]]
+        self.endResetModel()
+
+
+class SewerTypeMappingDelegate(QStyledItemDelegate):
+    """Combobox delegate for both columns of the sewerage type mapping table."""
+
+    def createEditor(self, parent, option, index):
+        combo = QComboBox(parent)
+        model = index.model()
+        if index.column() == SewerTypeMappingModel.SEWERAGE_TYPE_COL:
+            combo.addItem("", None)
+            for name, value in _SEWERAGE_TYPE_ITEMS:
+                combo.addItem(name, value)
+        else:
+            combo.addItem("", None)
+            for field_name in model._numeric_fields:
+                combo.addItem(field_name, field_name)
+        combo.currentIndexChanged.connect(lambda _: self.commitData.emit(combo))
+        return combo
+
+    def setEditorData(self, editor, index):
+        row_value = index.model()._rows[index.row()][index.column()]
+        idx = editor.findData(row_value)
+        editor.setCurrentIndex(max(idx, 0))
+
+    def setModelData(self, editor, model, index):
+        model.setData(index, editor.currentData(), Qt.EditRole)
+
+
+class SurfaceMapPercentageSettingsWidget(SettingsWidget):
+    """Maps sewerage types to the source percentage column for surface_map creation."""
+
+    expanding = True  # tells SettingsPage to give this widget vertical stretch
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.model = sm.SurfaceMapPercentageSettings()
+        self.setup_ui()
+
+    @property
+    def name(self) -> str:
+        return sm.SurfaceMapPercentageSettings.name
+
+    @property
+    def group_name(self) -> str:
+        return "Sewerage type → percentage column"
+
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+
+        self._sewer_model = SewerTypeMappingModel()
+        self._sewer_model.add_row()  # start with one empty row
+        self._sewer_model.dataChanged.connect(self._update_sewer_model)
+        self._sewer_model.rowsInserted.connect(self._update_sewer_model)
+        self._sewer_model.rowsRemoved.connect(self._update_sewer_model)
+
+        self._sewer_table = QTableView()
+        self._sewer_table.setModel(self._sewer_model)
+        self._sewer_table.setItemDelegate(SewerTypeMappingDelegate())
+        self._sewer_table.verticalHeader().hide()
+        self._sewer_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self._sewer_table.setEditTriggers(
+            QAbstractItemView.CurrentChanged | QAbstractItemView.SelectedClicked
+        )
+        header = self._sewer_table.horizontalHeader()
+        header.setSectionResizeMode(
+            SewerTypeMappingModel.SEWERAGE_TYPE_COL, QHeaderView.Stretch
+        )
+        header.setSectionResizeMode(
+            SewerTypeMappingModel.PERCENTAGE_COL, QHeaderView.Stretch
+        )
+        self._sewer_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.setContentsMargins(0, 0, 0, 0)
+        add_btn = QPushButton("Add row")
+        add_btn.setIcon(QIcon.fromTheme("list-add"))
+        add_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        add_btn.clicked.connect(self._sewer_model.add_row)
+        del_btn = QPushButton("Delete row")
+        del_btn.setIcon(QIcon.fromTheme("list-remove"))
+        del_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        del_btn.clicked.connect(self._delete_sewer_rows)
+        btn_layout.addWidget(del_btn)
+        btn_layout.addStretch()
+        btn_layout.addWidget(add_btn)
+
+        layout.addWidget(self._sewer_table)
+        layout.addLayout(btn_layout)
+
+    def update_layer(self, layer):
+        """Populate percentage column combo with numeric fields from source layer."""
+        numeric_fields = (
+            [f.name() for f in layer.fields() if f.type() in _NUMERIC_QTYPES]
+            if layer
+            else []
+        )
+        self._sewer_model.set_numeric_fields(numeric_fields)
+
+    def _delete_sewer_rows(self):
+        rows = sorted(
+            {idx.row() for idx in self._sewer_table.selectedIndexes()}, reverse=True
+        )
+        if rows:
+            self._sewer_model.remove_rows(rows)
+
+    def _update_sewer_model(self):
+        self.model.sewer_type_mappings = self._sewer_model.get_mappings()
+        self.dataChanged.emit()
+
+    @property
+    def is_valid(self) -> bool:
+        return True
+
+    def validate(self) -> bool:
+        if not self._sewer_model.get_mappings():
+            reply = QMessageBox.warning(
+                self,
+                "No sewerage type mappings",
+                "No sewerage type mappings are configured. "
+                "Surfaces will be imported without any surface map entries.\n\n"
+                "Continue anyway?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            return reply == QMessageBox.Yes
+        return True
+
+    def get_settings(self) -> sm.SurfaceMapPercentageSettings:
+        return self.model
+
+    def deserialize(self, data):
+        self.model = (
+            sm.SurfaceMapPercentageSettings(**data)
+            if data
+            else sm.SurfaceMapPercentageSettings()
+        )
+        self._sewer_model.set_mappings(self.model.sewer_type_mappings)
+
+
+class SurfaceConnectionSettingsWidget(SettingsWidget):
+    """Settings for linking surfaces to pipes and connection nodes."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.model = sm.SurfaceLinkingSettings()
+        self.setup_ui()
+
+    @property
+    def name(self) -> str:
+        return sm.SurfaceLinkingSettings.name
+
+    @property
+    def group_name(self) -> str:
+        return "Spatial linking"
+
+    def setup_ui(self):
+        layout = QGridLayout(self)
+
+        layout.addWidget(QLabel("Surface map layer:"), 0, 0)
+        self._surface_map_layer = QgsMapLayerComboBox()
+        self._surface_map_layer.setAllowEmptyLayer(True)
+        self._surface_map_layer.setFilters(QgsMapLayerProxyModel.LineLayer)
+        self._surface_map_layer.setCurrentText(dm.SurfaceMap.__layername__)
+        layout.addWidget(self._surface_map_layer, 0, 1)
+
+        layout.addWidget(QLabel("Pipe layer:"), 1, 0)
+        self._pipe_layer = QgsMapLayerComboBox()
+        self._pipe_layer.setAllowEmptyLayer(True)
+        self._pipe_layer.setFilters(QgsMapLayerProxyModel.LineLayer)
+        self._pipe_layer.setCurrentText(dm.Pipe.__layername__)
+        self._selected_pipes_only = QCheckBox("Selected only")
+        pipe_row = QHBoxLayout()
+        pipe_row.addWidget(self._pipe_layer)
+        pipe_row.addWidget(self._selected_pipes_only)
+        layout.addLayout(pipe_row, 1, 1)
+
+        layout.addWidget(QLabel("Connection node layer:"), 2, 0)
+        self._node_layer = QgsMapLayerComboBox()
+        self._node_layer.setAllowEmptyLayer(True)
+        self._node_layer.setFilters(QgsMapLayerProxyModel.PointLayer)
+        self._node_layer.setCurrentText(dm.ConnectionNode.__layername__)
+        layout.addWidget(self._node_layer, 2, 1)
+
+        _defaults = sm.SurfaceLinkingSettings()
+
+        layout.addWidget(QLabel("Search distance (m):"), 3, 0)
+        self._search_distance = QDoubleSpinBox()
+        self._search_distance.setDecimals(1)
+        self._search_distance.setMinimum(
+            sm.get_field_min(sm.SurfaceLinkingSettings, "search_distance")
+        )
+        self._search_distance.setMaximum(
+            sm.get_field_max(sm.SurfaceLinkingSettings, "search_distance")
+        )
+        self._search_distance.setValue(_defaults.search_distance)
+        self._search_distance.setSuffix(" m")
+        layout.addWidget(self._search_distance, 3, 1)
+
+        layout.addWidget(QLabel("Stormwater sewer preference (m):"), 4, 0)
+        self._storm_pref = QDoubleSpinBox()
+        self._storm_pref.setDecimals(1)
+        self._storm_pref.setMinimum(
+            sm.get_field_min(sm.SurfaceLinkingSettings, "stormwater_sewer_preference")
+        )
+        self._storm_pref.setMaximum(
+            sm.get_field_max(sm.SurfaceLinkingSettings, "stormwater_sewer_preference")
+        )
+        self._storm_pref.setValue(_defaults.stormwater_sewer_preference)
+        self._storm_pref.setSuffix(" m")
+        layout.addWidget(self._storm_pref, 4, 1)
+
+        layout.addWidget(QLabel("Sanitary sewer preference (m):"), 5, 0)
+        self._sanitary_pref = QDoubleSpinBox()
+        self._sanitary_pref.setDecimals(1)
+        self._sanitary_pref.setMinimum(
+            sm.get_field_min(sm.SurfaceLinkingSettings, "sanitary_sewer_preference")
+        )
+        self._sanitary_pref.setMaximum(
+            sm.get_field_max(sm.SurfaceLinkingSettings, "sanitary_sewer_preference")
+        )
+        self._sanitary_pref.setValue(_defaults.sanitary_sewer_preference)
+        self._sanitary_pref.setSuffix(" m")
+        layout.addWidget(self._sanitary_pref, 5, 1)
+
+        self._search_distance.valueChanged.connect(self._update_model)
+        self._storm_pref.valueChanged.connect(self._update_model)
+        self._sanitary_pref.valueChanged.connect(self._update_model)
+        self._surface_map_layer.layerChanged.connect(self._update_model)
+        self._pipe_layer.layerChanged.connect(self._update_model)
+        self._node_layer.layerChanged.connect(self._update_model)
+        self._selected_pipes_only.toggled.connect(self._update_model)
+
+        self.deserialize({})
+
+    def _update_model(self):
+        layer_name_selector_map = {
+            "surface_map_layer_name": self._surface_map_layer,
+            "pipe_layer_name": self._pipe_layer,
+            "node_layer_name": self._node_layer,
+        }
+        layer_names = {
+            name: selector.currentLayer().name()
+            for name, selector in layer_name_selector_map.items()
+            if selector.currentLayer() is not None
+        }
+        self.model = sm.SurfaceLinkingSettings(
+            search_distance=self._search_distance.value(),
+            stormwater_sewer_preference=self._storm_pref.value(),
+            sanitary_sewer_preference=self._sanitary_pref.value(),
+            selected_pipes_only=self._selected_pipes_only.isChecked(),
+            **layer_names,
+        )
+        self.dataChanged.emit()
+
+    @property
+    def is_valid(self) -> bool:
+        return True
+
+    def get_settings(self) -> sm.SurfaceLinkingSettings:
+        return self.model
+
+    def deserialize(self, data):
+        self.model = (
+            sm.SurfaceLinkingSettings(**data) if data else sm.SurfaceLinkingSettings()
+        )
+        self._search_distance.setValue(self.model.search_distance)
+        self._storm_pref.setValue(self.model.stormwater_sewer_preference)
+        self._sanitary_pref.setValue(self.model.sanitary_sewer_preference)
+        self._selected_pipes_only.setChecked(self.model.selected_pipes_only)
+        self._surface_map_layer.setCurrentText(self.model.surface_map_layer_name)
+        self._pipe_layer.setCurrentText(self.model.pipe_layer_name)
+        self._node_layer.setCurrentText(self.model.node_layer_name)

@@ -676,8 +676,10 @@ class Surface(ModelObject):
     id: int
     code: Optional[str]
     display_name: Optional[str]
-    area: float
-    surface_parameters_id: int
+    area: Optional[float] = field(
+        metadata={ALLOWED_METHODS_FIELD: ColumnImportMethod.all()}
+    )
+    surface_parameters_id: Optional[int]
     tags: Optional[str]
 
 

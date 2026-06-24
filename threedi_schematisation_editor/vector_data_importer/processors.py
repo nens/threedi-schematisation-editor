@@ -4,7 +4,6 @@ from collections import defaultdict
 from functools import cached_property
 from typing import Optional
 
-from PyQt5.QtCore import QVariant
 from qgis.core import (
     NULL,
     Qgis,
@@ -19,6 +18,7 @@ from qgis.core import (
     QgsVectorLayer,
     QgsWkbTypes,
 )
+from qgis.PyQt.QtCore import QVariant
 from threedi_schema.domain.constants import CrossSectionShape
 
 from threedi_schematisation_editor import data_models as dm
@@ -908,7 +908,10 @@ class SurfaceProcessor(SpatialProcessor):
             surface_map_layer.fields() if surface_map_layer else None
         )
         self.fields_configuration = import_settings.fields
-        self.surface_settings = import_settings.surface
+        self.sewer_type_mappings = (
+            import_settings.surface_map_percentage.sewer_type_mappings
+        )
+        self.linking = import_settings.surface_linking
         self.node_layer = node_layer
         request = (
             QgsFeatureRequest(pipe_layer.selectedFeatureIds())
@@ -961,10 +964,10 @@ class SurfaceProcessor(SpatialProcessor):
         links to the nearest of its two connection nodes.
         Emits a ProcessorWarning when no pipe is found within search_distance.
         """
-        linking = self.surface_settings.linking
+        linking = self.linking
         surface_map_feats = []
 
-        for mapping in self.surface_settings.sewer_type_mappings:
+        for mapping in self.sewer_type_mappings:
             if mapping.percentage_column is None:
                 continue
             try:
@@ -1029,13 +1032,18 @@ class SurfaceProcessor(SpatialProcessor):
         if self.transformation:
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
-        new_feat["area"] = new_geom.area()
         update_attributes(
             self.fields_configuration,
             dm.Surface,
             src_feat,
             new_feat,
         )
+        area_config = self.fields_configuration.get("area")
+        if (
+            area_config
+            and ColumnImportMethod(area_config["method"]) == ColumnImportMethod.AUTO
+        ):
+            new_feat["area"] = new_geom.area()
         surface_map_feats = self._create_surface_map_features(
             new_feat, src_feat, new_geom
         )
