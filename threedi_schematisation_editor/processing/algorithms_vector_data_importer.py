@@ -24,6 +24,7 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
     CulvertsImporter,
     OrificesImporter,
     PipesImporter,
+    SurfaceImporter,
     WeirsImporter,
 )
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
@@ -322,3 +323,12 @@ class ImportCrossSectionData(SimpleImporter):
         return self.tr(
             f"""Import {self.get_feature_repr()} from the external source layer."""
         )
+
+
+class ImportSurfaces(SimpleImporter):
+    IMPORTER_CLASS = SurfaceImporter
+    FEATURE_TYPE = "surface"
+    TARGET_MODEL_CLS = dm.Surface
+
+    def get_source_layer_types(self):
+        return [QgsProcessing.TypeVectorPolygon]
