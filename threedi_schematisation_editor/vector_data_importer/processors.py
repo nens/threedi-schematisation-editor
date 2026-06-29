@@ -22,7 +22,6 @@ from qgis.PyQt.QtCore import QVariant
 from threedi_schema.domain.constants import CrossSectionShape
 
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.enumerators import SewerageType
 from threedi_schematisation_editor.utils import (
     find_connection_node,
     get_feature_by_id,
@@ -912,6 +911,10 @@ class SurfaceProcessor(SpatialProcessor):
             import_settings.surface_map_percentage.sewer_type_mappings
         )
         self.linking = import_settings.surface_linking
+        self.preference_by_type = {
+            p.sewerage_type: p.preference
+            for p in import_settings.surface_linking.sewer_type_preferences
+        }
         self.node_layer = node_layer
         request = (
             QgsFeatureRequest(pipe_layer.selectedFeatureIds())
@@ -931,10 +934,12 @@ class SurfaceProcessor(SpatialProcessor):
         return src_geom
 
     @staticmethod
-    def _find_nearest_pipe(surface_geom, pipe_features, pipe_ids, mapping, linking):
+    def _find_nearest_pipe(
+        surface_geom, pipe_features, pipe_ids, mapping, linking, preference_by_type
+    ):
         """Return the nearest pipe QgsFeature of the correct sewerage_type, or None.
 
-        Applies stormwater/sanitary preference offsets before ranking.
+        Applies configurable per-type preference offsets before ranking.
         Returns None (without warning) when no pipe matches — caller decides whether
         to warn based on context.
         """
@@ -946,10 +951,7 @@ class SurfaceProcessor(SpatialProcessor):
             dist = surface_geom.distance(pipe_feat.geometry())
             if dist > linking.search_distance:
                 continue
-            if mapping.sewerage_type == SewerageType.STORM_DRAIN.value:
-                dist -= linking.stormwater_sewer_preference
-            elif mapping.sewerage_type == SewerageType.SANITARY_SEWER.value:
-                dist -= linking.sanitary_sewer_preference
+            dist -= preference_by_type.get(mapping.sewerage_type, 0.0)
             candidates.append((dist, pipe_feat))
 
         if not candidates:
@@ -980,7 +982,12 @@ class SurfaceProcessor(SpatialProcessor):
             surface_buffer = surface_geom.buffer(linking.search_distance, 5)
             pipe_ids = self.pipe_index.intersects(surface_buffer.boundingBox())
             nearest_pipe = SurfaceProcessor._find_nearest_pipe(
-                surface_geom, self.pipe_features, pipe_ids, mapping, linking
+                surface_geom,
+                self.pipe_features,
+                pipe_ids,
+                mapping,
+                linking,
+                self.preference_by_type,
             )
 
             if nearest_pipe is None:

@@ -266,6 +266,7 @@ def test_find_nearest_pipe(pipes_specs, expected_idx):
         list(pipe_features.keys()),
         mapping_config,
         linking_config,
+        {},  # no preferences
     )
     if expected_idx is None:
         assert result is None
@@ -274,16 +275,16 @@ def test_find_nearest_pipe(pipes_specs, expected_idx):
 
 
 @pytest.mark.parametrize(
-    "sewerage_type, pref_field, pref_value, near_xy, far_xy, expected_id",
+    "sewerage_type, pref_value, near_xy, far_xy, expected_id",
     [
         # Storm drain preference offsets distance: far pipe wins after offset
-        (1, "stormwater_sewer_preference", 20.0, (50, 0), (5, 0), 2),
+        (1, 20.0, (50, 0), (5, 0), 2),
         # Sanitary sewer preference offsets distance: far pipe wins after offset
-        (2, "sanitary_sewer_preference", 20.0, (50, 0), (5, 0), 2),
+        (2, 20.0, (50, 0), (5, 0), 2),
     ],
 )
 def test_find_nearest_pipe_preference_offset(
-    sewerage_type, pref_field, pref_value, near_xy, far_xy, expected_id
+    sewerage_type, pref_value, near_xy, far_xy, expected_id
 ):
     """Preference offset can make the geometrically farther pipe win."""
     surface_geom = QgsGeometry.fromWkt("Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))")
@@ -293,13 +294,21 @@ def test_find_nearest_pipe_preference_offset(
     mapping_config = sm.SewerTypeMapping(
         sewerage_type=sewerage_type, percentage_column="runoff_pct"
     )
-    linking_config = sm.SurfaceLinkingSettings(**{pref_field: pref_value})
+    linking_config = sm.SurfaceLinkingSettings(
+        sewer_type_preferences=[
+            sm.SewerTypePreference(sewerage_type=sewerage_type, preference=pref_value)
+        ]
+    )
+    preference_by_type = {
+        p.sewerage_type: p.preference for p in linking_config.sewer_type_preferences
+    }
     result = SurfaceProcessor._find_nearest_pipe(
         surface_geom,
         pipe_features,
         list(pipe_features.keys()),
         mapping_config,
         linking_config,
+        preference_by_type,
     )
     assert result.id() == expected_id
 
