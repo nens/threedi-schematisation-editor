@@ -911,10 +911,6 @@ class SurfaceProcessor(SpatialProcessor):
             import_settings.surface_map_percentage.sewer_type_mappings
         )
         self.linking = import_settings.surface_linking
-        self.preference_by_type = {
-            p.sewerage_type: p.preference
-            for p in import_settings.surface_linking.sewer_type_preferences
-        }
         self.node_layer = node_layer
         request = (
             QgsFeatureRequest(pipe_layer.selectedFeatureIds())
@@ -934,12 +930,9 @@ class SurfaceProcessor(SpatialProcessor):
         return src_geom
 
     @staticmethod
-    def _find_nearest_pipe(
-        surface_geom, pipe_features, pipe_ids, mapping, linking, preference_by_type
-    ):
+    def _find_nearest_pipe(surface_geom, pipe_features, pipe_ids, mapping, linking):
         """Return the nearest pipe QgsFeature of the correct sewerage_type, or None.
 
-        Applies configurable per-type preference offsets before ranking.
         Returns None (without warning) when no pipe matches — caller decides whether
         to warn based on context.
         """
@@ -949,7 +942,6 @@ class SurfaceProcessor(SpatialProcessor):
             if pipe_feat["sewerage_type"] != mapping.sewerage_type:
                 continue
             dist = surface_geom.distance(pipe_feat.geometry())
-            dist -= preference_by_type.get(mapping.sewerage_type, 0.0)
             if dist > linking.search_distance:
                 continue
             candidates.append((dist, pipe_feat))
@@ -987,7 +979,6 @@ class SurfaceProcessor(SpatialProcessor):
                 pipe_ids,
                 mapping,
                 linking,
-                self.preference_by_type,
             )
 
             if nearest_pipe is None:

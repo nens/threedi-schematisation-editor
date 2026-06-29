@@ -631,114 +631,6 @@ class SewerTypeMappingDelegate(QStyledItemDelegate):
         model.setData(index, editor.currentData(), Qt.EditRole)
 
 
-class SewerTypePreferenceModel(QAbstractTableModel):
-    """Table model backing the sewerage type → preference offset (m) table."""
-
-    SEWERAGE_TYPE_COL = 0
-    PREFERENCE_COL = 1
-    HEADERS = ["Sewerage type", "Preference (m)"]
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._rows = []
-
-    def rowCount(self, parent=QModelIndex()):
-        return len(self._rows)
-
-    def columnCount(self, parent=QModelIndex()):
-        return 2
-
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return self.HEADERS[section]
-        return None
-
-    def data(self, index, role=Qt.DisplayRole):
-        if not index.isValid() or role not in (Qt.DisplayRole, Qt.EditRole):
-            return None
-        value = self._rows[index.row()][index.column()]
-        if index.column() == self.SEWERAGE_TYPE_COL:
-            if value is None:
-                return ""
-            return next((n for n, v in _SEWERAGE_TYPE_ITEMS if v == value), "")
-        return value if value is not None else 0.0
-
-    def setData(self, index, value, role=Qt.EditRole):
-        if role != Qt.EditRole or not index.isValid():
-            return False
-        self._rows[index.row()][index.column()] = value
-        self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
-        return True
-
-    def flags(self, index):
-        return Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable
-
-    def add_row(self):
-        row = len(self._rows)
-        self.beginInsertRows(QModelIndex(), row, row)
-        self._rows.append([None, 0.0])
-        self.endInsertRows()
-
-    def remove_rows(self, rows):
-        for row in sorted(rows, reverse=True):
-            self.beginRemoveRows(QModelIndex(), row, row)
-            self._rows.pop(row)
-            self.endRemoveRows()
-
-    def get_preferences(self):
-        result = []
-        for sewerage_type, preference in self._rows:
-            if sewerage_type is not None:
-                result.append(
-                    sm.SewerTypePreference(
-                        sewerage_type=sewerage_type,
-                        preference=preference or 0.0,
-                    )
-                )
-        return result
-
-    def set_preferences(self, preferences):
-        self.beginResetModel()
-        self._rows = [[p.sewerage_type, p.preference] for p in preferences]
-        self.endResetModel()
-
-
-class SewerTypePreferenceDelegate(QStyledItemDelegate):
-    """Delegate for the sewerage type preference table.
-
-    Column 0: sewerage type combobox (same items as SewerTypeMappingDelegate).
-    Column 1: plain double editor.
-    """
-
-    def createEditor(self, parent, option, index):
-        if index.column() == SewerTypePreferenceModel.SEWERAGE_TYPE_COL:
-            combo = QComboBox(parent)
-            combo.addItem("", None)
-            for name, value in _SEWERAGE_TYPE_ITEMS:
-                combo.addItem(name, value)
-            combo.currentIndexChanged.connect(lambda _: self.commitData.emit(combo))
-            return combo
-        spinbox = QDoubleSpinBox(parent)
-        spinbox.setDecimals(1)
-        spinbox.setRange(0, 1000000.0)
-        spinbox.setSuffix(" m")
-        return spinbox
-
-    def setEditorData(self, editor, index):
-        value = index.model()._rows[index.row()][index.column()]
-        if index.column() == SewerTypePreferenceModel.SEWERAGE_TYPE_COL:
-            idx = editor.findData(value)
-            editor.setCurrentIndex(max(idx, 0))
-        else:
-            editor.setValue(value or 0.0)
-
-    def setModelData(self, editor, model, index):
-        if index.column() == SewerTypePreferenceModel.SEWERAGE_TYPE_COL:
-            model.setData(index, editor.currentData(), Qt.EditRole)
-        else:
-            model.setData(index, editor.value(), Qt.EditRole)
-
-
 class SurfaceMapPercentageSettingsWidget(SettingsWidget):
     """Maps sewerage types to the source percentage column for surface_map creation."""
 
@@ -916,60 +808,8 @@ class SurfaceConnectionSettingsWidget(SettingsWidget):
         self._pipe_layer.layerChanged.connect(self._update_model)
         self._node_layer.layerChanged.connect(self._update_model)
         self._selected_pipes_only.toggled.connect(self._update_model)
-
-        # Preference table — placed below the grid in a VBoxLayout wrapper
-        outer_layout = QVBoxLayout()
-        outer_layout.setContentsMargins(0, 0, 0, 0)
-        outer_layout.addLayout(layout)
-
-        pref_label = QLabel("Sewerage type preference offsets:")
-        outer_layout.addWidget(pref_label)
-
-        self._pref_model = SewerTypePreferenceModel()
-        self._pref_model.dataChanged.connect(self._update_model)
-        self._pref_model.rowsInserted.connect(self._update_model)
-        self._pref_model.rowsRemoved.connect(self._update_model)
-
-        self._pref_table = QTableView()
-        self._pref_table.setModel(self._pref_model)
-        self._pref_table.setItemDelegate(SewerTypePreferenceDelegate())
-        self._pref_table.verticalHeader().hide()
-        self._pref_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self._pref_table.setEditTriggers(
-            QAbstractItemView.CurrentChanged | QAbstractItemView.SelectedClicked
-        )
-        header = self._pref_table.horizontalHeader()
-        header.setSectionResizeMode(
-            SewerTypePreferenceModel.SEWERAGE_TYPE_COL, QHeaderView.Stretch
-        )
-        header.setSectionResizeMode(
-            SewerTypePreferenceModel.PREFERENCE_COL, QHeaderView.Stretch
-        )
-        outer_layout.addWidget(self._pref_table)
-
-        btn_layout = QHBoxLayout()
-        add_btn = QPushButton("Add row")
-        add_btn.setIcon(QIcon.fromTheme("list-add"))
-        add_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        add_btn.clicked.connect(self._pref_model.add_row)
-        del_btn = QPushButton("Delete row")
-        del_btn.setIcon(QIcon.fromTheme("list-remove"))
-        del_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        del_btn.clicked.connect(self._delete_pref_rows)
-        btn_layout.addWidget(del_btn)
-        btn_layout.addStretch()
-        btn_layout.addWidget(add_btn)
-        outer_layout.addLayout(btn_layout)
-
-        self.setLayout(outer_layout)
+        self.setLayout(layout)
         self.deserialize({})
-
-    def _delete_pref_rows(self):
-        rows = sorted(
-            {idx.row() for idx in self._pref_table.selectedIndexes()}, reverse=True
-        )
-        if rows:
-            self._pref_model.remove_rows(rows)
 
     def _update_model(self):
         layer_name_selector_map = {
@@ -984,7 +824,6 @@ class SurfaceConnectionSettingsWidget(SettingsWidget):
         }
         self.model = sm.SurfaceLinkingSettings(
             search_distance=self._search_distance.value(),
-            sewer_type_preferences=self._pref_model.get_preferences(),
             selected_pipes_only=self._selected_pipes_only.isChecked(),
             **layer_names,
         )
@@ -1002,7 +841,6 @@ class SurfaceConnectionSettingsWidget(SettingsWidget):
             sm.SurfaceLinkingSettings(**data) if data else sm.SurfaceLinkingSettings()
         )
         self._search_distance.setValue(self.model.search_distance)
-        self._pref_model.set_preferences(self.model.sewer_type_preferences)
         self._selected_pipes_only.setChecked(self.model.selected_pipes_only)
         self._surface_map_layer.setCurrentText(self.model.surface_map_layer_name)
         self._pipe_layer.setCurrentText(self.model.pipe_layer_name)

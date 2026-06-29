@@ -251,11 +251,6 @@ class SewerTypeMapping(BaseModel):
     percentage_column: Optional[str] = None  # None = skip this type
 
 
-class SewerTypePreference(BaseModel):
-    sewerage_type: int
-    preference: float = Field(default=0.0, ge=0, le=1000000.0)
-
-
 class SurfaceMapPercentageSettings(BaseModel):
     name: ClassVar[str] = "surface_map_percentage"
     sewer_type_mappings: list[SewerTypeMapping] = []
@@ -264,7 +259,6 @@ class SurfaceMapPercentageSettings(BaseModel):
 class SurfaceLinkingSettings(BaseModel):
     name: ClassVar[str] = "surface_linking"
     search_distance: float = Field(default=10.0, ge=0, le=1000000.0)
-    sewer_type_preferences: list[SewerTypePreference] = []
     surface_map_layer_name: str = Field(
         default_factory=lambda: dm.SurfaceMap.__layername__
     )

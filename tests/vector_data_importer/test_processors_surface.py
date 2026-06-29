@@ -266,51 +266,11 @@ def test_find_nearest_pipe(pipes_specs, expected_idx):
         list(pipe_features.keys()),
         mapping_config,
         linking_config,
-        {},  # no preferences
     )
     if expected_idx is None:
         assert result is None
     else:
         assert pipe_features[expected_idx] == result
-
-
-@pytest.mark.parametrize(
-    "sewerage_type, pref_value, near_xy, far_xy, expected_id",
-    [
-        # Storm drain preference offsets distance: far pipe wins after offset
-        (1, 20.0, (50, 0), (5, 0), 2),
-        # Sanitary sewer preference offsets distance: far pipe wins after offset
-        (2, 20.0, (50, 0), (5, 0), 2),
-    ],
-)
-def test_find_nearest_pipe_preference_offset(
-    sewerage_type, pref_value, near_xy, far_xy, expected_id
-):
-    """Preference offset can make the geometrically farther pipe win."""
-    surface_geom = QgsGeometry.fromWkt("Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))")
-    near = make_pipe_feat(1, sewerage_type, 10, 11, near_xy, (near_xy[0], 2))
-    far = make_pipe_feat(2, sewerage_type, 20, 21, far_xy, (far_xy[0], 2))
-    pipe_features = {near.id(): near, far.id(): far}
-    mapping_config = sm.SewerTypeMapping(
-        sewerage_type=sewerage_type, percentage_column="runoff_pct"
-    )
-    linking_config = sm.SurfaceLinkingSettings(
-        sewer_type_preferences=[
-            sm.SewerTypePreference(sewerage_type=sewerage_type, preference=pref_value)
-        ]
-    )
-    preference_by_type = {
-        p.sewerage_type: p.preference for p in linking_config.sewer_type_preferences
-    }
-    result = SurfaceProcessor._find_nearest_pipe(
-        surface_geom,
-        pipe_features,
-        list(pipe_features.keys()),
-        mapping_config,
-        linking_config,
-        preference_by_type,
-    )
-    assert result.id() == expected_id
 
 
 def run_create_surface_map(processor, node_by_id, surface_feat):

@@ -289,7 +289,7 @@ Notes:
 1. Read the percentage value from the source feature's configured percentage column. If the value is missing or zero the mapping is skipped.
 2. Buffer the surface geometry by `SurfaceLinkingSettings.search_distance` to build a search area.
 3. Query a pre-built `QgsSpatialIndex` of pipe features for candidates whose bounding box intersects the buffer. The pipe index is constructed once during `SurfaceProcessor` initialization for performance.
-4. Among candidate pipes of the required `sewerage_type`, compute the distance from the surface geometry to each pipe geometry. Apply optional preference offsets by subtracting `stormwater_sewer_preference` for storm drains or `sanitary_sewer_preference` for sanitary pipes to prefer one type where configured. Discard candidates whose (unadjusted) distance exceeds `search_distance`.
+4. Among candidate pipes of the required `sewerage_type`, compute the distance from the surface geometry to each pipe geometry and discard candidates whose distance exceeds `search_distance`.
 5. Choose the pipe with the lowest adjusted distance. If no pipe is found within `search_distance` the processor emits a `ProcessorWarning` for this mapping and skips it.
 6. For the chosen pipe, compare the surface geometry's distance to the pipe's start node and end node (node features are looked up from the node layer using `get_feature_by_id` / expression queries). Select the nearer node.
 7. Create a `surface_map` feature with:
@@ -312,8 +312,7 @@ flowchart TD
   C --> D[Query pipe spatial index for bbox intersections]
   D --> E{Any candidate pipes of matching sewerage_type?}
   E -- No --> F[Emit ProcessorWarning and skip mapping]
-  E -- Yes --> G[For each candidate compute distance to pipe geometry]
-  G --> H[Apply preference offsets to distances]
+  E -- Yes --> H[For each candidate compute distance to pipe geometry]
   H --> I[Discard candidates with distance > search_distance]
   I --> J{Any remaining candidates?}
   J -- No --> F
