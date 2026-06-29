@@ -1046,10 +1046,7 @@ class SurfaceProcessor(SpatialProcessor):
             new_feat,
         )
         area_config = self.fields_configuration.get("area")
-        if (
-            area_config
-            and ColumnImportMethod(area_config["method"]) == ColumnImportMethod.AUTO
-        ):
+        if not area_config or ColumnImportMethod(area_config["method"]) == ColumnImportMethod.AUTO:
             new_feat["area"] = new_geom.area()
         surface_map_feats = self._create_surface_map_features(
             new_feat, src_feat, new_geom
