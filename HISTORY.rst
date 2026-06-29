@@ -1,7 +1,7 @@
 History
 =======
 
-2.4.12 (unreleased)
+2.4.12 (2026-06-29)
 -------------------
 
 - Add progress bar colors: blue while running, green on completion, red on failure (nens/rana-qgis-plugin#294)
