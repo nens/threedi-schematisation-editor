@@ -115,12 +115,7 @@ If you need to add new layer operations during the import, keep them inside the 
 
 The `Importer` class hierarchy handles the import orchestration. Each concrete importer knows its target model class and which processor/integrator to use.
 
-Key refactor notes (summary):
-
-- SpatialImporter has been simplified: it now only holds the `target_layer`, provides `get_transformation()` and a basic `import_features()` implementation (transform → start editing → process → add). It no longer manages node-related resources or integration orchestration.
-- Responsibility for `node_layer`, `integrator`, `integrate_features()`, and `node_locator` setup has been moved down to `LinesImporter` (and its subclasses) because integration is only relevant for linear structures.
-- A new `SurfaceImporter` is a direct child of `SpatialImporter`. It adds `surface_map_layer`, exposes `modifiable_layers = [target_layer, surface_map_layer]`, and applies `filter_features()` in `get_input_feature_ids()` before processing. When importing, both `target_layer` and `surface_map_layer` are put into edit mode. The pipe layer and node layer are passed to `SurfaceProcessor` at construction time but are not stored on the importer itself.
-- `ConnectionNodesImporter` and `CrossSectionLocationImporter` remain direct children of `SpatialImporter` and benefit from the simplified `SpatialImporter.import_features()` (no node/integrator setup is performed unnecessarily).
+`SpatialImporter` holds the `target_layer`, provides `get_transformation()` and a basic `import_features()` implementation (transform → start editing → process → add). Node-related resources and integration orchestration are scoped to `LinesImporter` because integration is only relevant for linear structures. `SurfaceImporter` is a direct child of `SpatialImporter` that additionally manages a `surface_map_layer`.
 
 ```mermaid
 classDiagram
@@ -170,8 +165,6 @@ classDiagram
     class SurfaceImporter {
         +surface_map_layer
         +modifiable_layers = [target_layer, surface_map_layer]
-        +get_input_feature_ids() // applies filter_features before returning ids
-        +filter_features() // static method
     }
 
     class LinesImporter {
@@ -203,12 +196,9 @@ classDiagram
 
 ```
 
-Further details
-
-- SpatialImporter.import_features(): performs coordinate transformation, calls the processor, and adds resulting features. It starts editing only the `target_layer` by default.
-- LinesImporter.import_features(): in addition to SpatialImporter behaviour it prepares the `node_locator`, initialises/uses an `integrator` (LinearIntegrator), and may put `node_layer` and integrator-managed layers into edit mode. Integration (splitting existing conduits, creating nodes) is now scoped to LinesImporter where the required resources are available.
-- SurfaceImporter: intended for imports that produce both a target surface layer and an auxiliary surface map. It overrides `get_input_feature_ids()` to apply `filter_features()` (a static method on `SurfaceImporter`) before returning the ids to process — features that fail the filter are excluded. Both `target_layer` and `surface_map_layer` are put into edit mode. The pipe layer and node layer are passed to `SurfaceProcessor` at construction time; `SurfaceImporter` does not hold them directly.
-
+- `SpatialImporter.import_features()` performs coordinate transformation, calls the processor, and adds resulting features. It puts only the `target_layer` into edit mode by default.
+- `LinesImporter.import_features()` additionally prepares the `node_locator`, initialises an `integrator` (`LinearIntegrator`), and puts the `node_layer` and any integrator-managed layers into edit mode.
+- `SurfaceImporter` produces both a target surface layer and an auxiliary `surface_map_layer`. Both are put into edit mode. The pipe layer and node layer are passed to `SurfaceProcessor` at construction time for spatial linking.
 
 
 ## Processors
@@ -276,6 +266,65 @@ classDiagram
     }
 ```
 
+
+## Connection node matching
+
+When importing point or linear structures the processors attempt to match each feature endpoint to an existing connection node according to the active connection node settings. Behaviour (applies to `PointProcessor` and `LineProcessor`):
+
+1. After transforming the geometry, `update_connection_nodes()` is called for each endpoint.
+2. For each endpoint, `get_node(point)` is used which consults a `QgsPointLocator` built from the schematisation's existing connection node layer (`node_locator`).
+3. The locator attempts to snap to the nearest existing connection node within `snap_distance` (from `ConnectionNodeSettings`.snap_distance). If `ConnectionNodeSettings.snap` is `False` the effective snap distance is effectively 0 (1e-9 m), so only exactly overlapping nodes will snap.
+4. If a node is found within snap distance: the imported feature's `connection_node_id` is set to that node's id and the feature endpoint geometry is snapped to the node's exact position.
+5. If no node is found and `ConnectionNodeSettings.create_nodes` is `True`: a new connection node is created at that point and added to the node layer immediately so subsequent endpoints can also snap to it.
+6. If no node is found and `create_nodes` is False: no connection node is assigned (the `connection_node_id` remains `NULL`).
+
+Notes:
+- For `LineProcessor` both start and end points are processed via `update_connection_nodes` and the line geometry endpoints may be moved to snap to existing nodes.
+- New nodes are added immediately to the node layer during processing so they are available for later features in the same import pass.
+
+## Surface-to-pipe linking
+
+`SurfaceProcessor` creates `surface_map` entries by spatially linking imported surface polygons to the nearest pipe of the configured sewerage type. The algorithm (implemented in _`create_surface_map_features`) runs for each imported surface and for each mapping entry in `SurfaceMapPercentageSettings.sewer_type_mappings`:
+
+1. Read the percentage value from the source feature's configured percentage column. If the value is missing or zero the mapping is skipped.
+2. Buffer the surface geometry by `SurfaceLinkingSettings.search_distance` to build a search area.
+3. Query a pre-built `QgsSpatialIndex` of pipe features for candidates whose bounding box intersects the buffer. The pipe index is constructed once during `SurfaceProcessor` initialization for performance.
+4. Among candidate pipes of the required `sewerage_type`, compute the distance from the surface geometry to each pipe geometry. Apply optional preference offsets by subtracting `stormwater_sewer_preference` for storm drains or `sanitary_sewer_preference` for sanitary pipes to prefer one type where configured. Discard candidates whose (unadjusted) distance exceeds `search_distance`.
+5. Choose the pipe with the lowest adjusted distance. If no pipe is found within `search_distance` the processor emits a `ProcessorWarning` for this mapping and skips it.
+6. For the chosen pipe, compare the surface geometry's distance to the pipe's start node and end node (node features are looked up from the node layer using `get_feature_by_id` / expression queries). Select the nearer node.
+7. Create a `surface_map` feature with:
+   - `surface_id` = the new surface's id
+   - `connection_node_id` = the chosen node's id
+   - `percentage` = the percentage value from the source feature
+   - `geometry` = LINESTRING from `surface.pointOnSurface()` to the chosen node point
+
+Performance notes:
+- The pipe spatial index is built once at `SurfaceProcessor` construction time to avoid repeated index builds.
+- Node lookups use expression queries on the node layer (`get_feature_by_id`) and are performed per mapping; this is acceptable for typical import sizes but can be a hotspot for very large imports.
+
+Mermaid flowchart of the surface-to-pipe linking algorithm:
+
+```mermaid
+flowchart TD
+  A[Start mapping entry for surface] --> B{Read percentage value}
+  B -- missing or 0 --> Z[Skip mapping]
+  B -- >0 --> C[Buffer surface by search_distance]
+  C --> D[Query pipe spatial index for bbox intersections]
+  D --> E{Any candidate pipes of matching sewerage_type?}
+  E -- No --> F[Emit ProcessorWarning and skip mapping]
+  E -- Yes --> G[For each candidate compute distance to pipe geometry]
+  G --> H[Apply preference offsets to distances]
+  H --> I[Discard candidates with distance > search_distance]
+  I --> J{Any remaining candidates?}
+  J -- No --> F
+  J -- Yes --> K[Pick pipe with lowest adjusted distance]
+  K --> L[Compare distance to pipe start node vs end node]
+  L --> M[Choose nearer node]
+  M --> N[Create surface_map feature]
+  N --> O[Done for this mapping entry]
+  Z --> O
+  F --> O
+```
 
 ## Integrators
 
