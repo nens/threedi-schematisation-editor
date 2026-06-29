@@ -949,9 +949,9 @@ class SurfaceProcessor(SpatialProcessor):
             if pipe_feat["sewerage_type"] != mapping.sewerage_type:
                 continue
             dist = surface_geom.distance(pipe_feat.geometry())
+            dist -= preference_by_type.get(mapping.sewerage_type, 0.0)
             if dist > linking.search_distance:
                 continue
-            dist -= preference_by_type.get(mapping.sewerage_type, 0.0)
             candidates.append((dist, pipe_feat))
 
         if not candidates:
@@ -1046,7 +1046,10 @@ class SurfaceProcessor(SpatialProcessor):
             new_feat,
         )
         area_config = self.fields_configuration.get("area")
-        if not area_config or ColumnImportMethod(area_config["method"]) == ColumnImportMethod.AUTO:
+        if (
+            not area_config
+            or ColumnImportMethod(area_config["method"]) == ColumnImportMethod.AUTO
+        ):
             new_feat["area"] = new_geom.area()
         surface_map_feats = self._create_surface_map_features(
             new_feat, src_feat, new_geom
