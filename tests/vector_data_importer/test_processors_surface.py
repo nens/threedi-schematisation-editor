@@ -273,6 +273,31 @@ def test_find_nearest_pipe(pipes_specs, expected_idx):
         assert pipe_features[expected_idx] == result
 
 
+@pytest.mark.parametrize(
+    "surface_wkt, start_xy, end_xy, expected_node_id",
+    [
+        # Surface at origin → start node (5, 0) is closer than end node (5, 100)
+        ("Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))", (5, 0), (5, 100), 10),
+        # Surface at origin → end node (0, 1) is closer than start node (100, 0)
+        ("Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))", (100, 0), (0, 1), 11),
+    ],
+)
+def test_choose_closer_node(surface_wkt, start_xy, end_xy, expected_node_id):
+    surface_geom = QgsGeometry.fromWkt(surface_wkt)
+    pipe = make_pipe_feat(1, 0, 10, 11, start_xy, end_xy)
+    node_by_id = {
+        10: make_node_feat(10, start_xy),
+        11: make_node_feat(11, end_xy),
+    }
+    node_layer = MagicMock()
+    with patch(
+        "threedi_schematisation_editor.vector_data_importer.processors.get_feature_by_id",
+        side_effect=lambda layer, oid: node_by_id.get(oid),
+    ):
+        result = SurfaceProcessor._choose_closer_node(surface_geom, pipe, node_layer)
+    assert result["id"] == expected_node_id
+
+
 def run_create_surface_map(processor, node_by_id, surface_feat):
     new_feat = QgsFeature(processor.target_fields)
     new_feat["id"] = 1
