@@ -968,8 +968,25 @@ class SurfaceProcessor(SpatialProcessor):
             return None
         return min(candidates, key=lambda x: x[0])[1]
 
+    def _create_sm_feat(self, new_feat, surface_geom, node):
+        """Create a single surface_map feature linking new_feat to node."""
+        centroid = surface_geom.pointOnSurface()
+        sm_geom = QgsGeometry.fromPolylineXY(
+            [centroid.asPoint(), node.geometry().asPoint()]
+        )
+        sm_feat = self.surface_map_manager.create_new(sm_geom, self.surface_map_fields)
+        sm_feat["surface_id"] = new_feat["id"]
+        sm_feat["connection_node_id"] = node["id"]
+        sm_feat["percentage"] = 100
+        return sm_feat
+
     def _create_surface_map_features(self, new_feat, src_feat, surface_geom, expression_context=None):
         """Create surface_map features linking new_feat to connection nodes.
+
+        When attribute matching is configured, derives a lookup value from
+        src_feat and searches for exactly one matching row in the configured
+        table. On success, creates one surface_map entry at 100%. On 0 or 2+
+        matches, falls back to spatial (sewerage-type loop) matching.
 
         For each sewer type mapping with a non-zero percentage column value,
         finds the nearest pipe of that sewerage_type within search_distance and
@@ -978,6 +995,33 @@ class SurfaceProcessor(SpatialProcessor):
         """
         linking = self.linking
         surface_map_feats = []
+
+        if linking.attribute_match_table is not None:
+            input_val = get_field_config_value(
+                linking.attribute_match_input_config,
+                src_feat,
+                expression_context,
+            )
+            if linking.attribute_match_table == "connection_node":
+                matches = [
+                    f
+                    for f in self.node_layer.getFeatures()
+                    if f[linking.attribute_match_col] == input_val
+                ]
+                if len(matches) == 1:
+                    return [self._create_sm_feat(new_feat, surface_geom, matches[0])]
+            elif linking.attribute_match_table == "pipe":
+                matches = [
+                    f
+                    for f in self.pipe_features.values()
+                    if f[linking.attribute_match_col] == input_val
+                ]
+                if len(matches) == 1:
+                    node = SurfaceProcessor._choose_closer_node(
+                        surface_geom, matches[0], self.node_layer
+                    )
+                    if node is not None:
+                        return [self._create_sm_feat(new_feat, surface_geom, node)]
 
         for mapping in self.sewer_type_mappings:
             if mapping.percentage_column is None:
@@ -1014,18 +1058,15 @@ class SurfaceProcessor(SpatialProcessor):
             if node is None:
                 continue
 
-            node_id = node["id"]
-            node_geom = node.geometry()
-
             centroid = surface_geom.pointOnSurface()
             sm_geom = QgsGeometry.fromPolylineXY(
-                [centroid.asPoint(), node_geom.asPoint()]
+                [centroid.asPoint(), node.geometry().asPoint()]
             )
             sm_feat = self.surface_map_manager.create_new(
                 sm_geom, self.surface_map_fields
             )
             sm_feat["surface_id"] = new_feat["id"]
-            sm_feat["connection_node_id"] = node_id
+            sm_feat["connection_node_id"] = node["id"]
             sm_feat["percentage"] = pct
             surface_map_feats.append(sm_feat)
 
