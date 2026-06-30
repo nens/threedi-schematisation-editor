@@ -996,7 +996,7 @@ class SurfaceProcessor(SpatialProcessor):
         linking = self.linking
         surface_map_feats = []
 
-        if linking.attribute_match_table is not None:
+        if linking.attribute_match_enabled and linking.attribute_match_table is not None:
             input_val = get_field_config_value(
                 linking.attribute_match_input_config,
                 src_feat,
@@ -1022,6 +1022,9 @@ class SurfaceProcessor(SpatialProcessor):
                     )
                     if node is not None:
                         return [self._create_sm_feat(new_feat, surface_geom, node)]
+
+        if not linking.spatial_match_enabled:
+            return surface_map_feats
 
         for mapping in self.sewer_type_mappings:
             if mapping.percentage_column is None:

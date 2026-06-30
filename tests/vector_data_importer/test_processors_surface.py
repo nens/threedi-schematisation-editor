@@ -453,6 +453,8 @@ def make_attr_match_processor(
 
     linking = sm.SurfaceLinkingSettings(
         search_distance=100.0,
+        attribute_match_enabled=True,
+        spatial_match_enabled=True,
         attribute_match_table=match_table,
         attribute_match_col="code",
         attribute_match_input_config=sm.FieldMapConfig(
