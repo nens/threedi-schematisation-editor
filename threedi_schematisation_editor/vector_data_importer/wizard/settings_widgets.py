@@ -761,6 +761,7 @@ class SurfaceConnectionSettingsWidget(FieldMapSettingsWidget):
         # Single FieldMapRow for the attribute-match source value
         InputConfig = create_field_map_config(
             allowed_methods=[
+                ColumnImportMethod.IGNORE,
                 ColumnImportMethod.ATTRIBUTE,
                 ColumnImportMethod.EXPRESSION,
                 ColumnImportMethod.DEFAULT,
@@ -769,7 +770,7 @@ class SurfaceConnectionSettingsWidget(FieldMapSettingsWidget):
         row_dict = {
             "attribute_match_input_config": FieldMapRow(
                 label="Source value",
-                config=InputConfig(method=ColumnImportMethod.ATTRIBUTE),
+                config=InputConfig(method=ColumnImportMethod.IGNORE),
             )
         }
 
