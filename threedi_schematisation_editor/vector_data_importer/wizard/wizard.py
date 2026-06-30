@@ -162,6 +162,9 @@ class VDIWizard(QWizard):
         # add pages
         self.addPage(self.start_page)
         if len(self.settings_widgets_classes) > 0:
+            settings_page = SettingsPage(
+                settings_widgets_classes=self.settings_widgets_classes,
+            )
             self.addPage(self.settings_page)
         if self.field_map_page:
             self.addPage(self.field_map_page)
@@ -622,27 +625,8 @@ class ImportSurfaceWizard(VDIWizard):
     def prepare_import(self):
         surface_handler = self.layer_manager.model_handlers[dm.Surface]
         surface_map_handler = self.layer_manager.model_handlers[dm.SurfaceMap]
-        pipe_handler = self.layer_manager.model_handlers[dm.Pipe]
-        node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         handlers = [surface_handler, surface_map_handler]
-
-        linking = self.settings_page.get_settings()[sm.SurfaceLinkingSettings.name]
-
-        def resolve_layer(name, fallback):
-            if name:
-                matches = QgsProject.instance().mapLayersByName(name)
-                if matches:
-                    return matches[0]
-            return fallback
-
-        layers = {
-            "surface_layer": surface_handler.layer,
-            "surface_map_layer": resolve_layer(
-                linking.surface_map_layer_name, surface_map_handler.layer
-            ),
-            "pipe_layer": resolve_layer(linking.pipe_layer_name, pipe_handler.layer),
-            "node_layer": resolve_layer(linking.node_layer_name, node_handler.layer),
-        }
+        layers = {"surface_layer": surface_handler.layer, "surface_map_layer": None}
         return handlers, layers
 
     def get_importer(self, import_settings: sm.ImportSettings, layer_dict):

@@ -745,204 +745,156 @@ class SurfaceMapPercentageSettingsWidget(SettingsWidget):
         self._sewer_model.set_mappings(self.model.sewer_type_mappings)
 
 
-class SurfaceConnectionSettingsWidget(FieldMapSettingsWidget):
-    """Settings for linking surfaces to pipes and connection nodes.
-
-    Two independently enabled sections:
-    - Attribute matching (checkbox-gated): match table, match column, source value
-    - Spatial matching (checkbox-gated, on by default): layer pickers + search distance
-
-    At least one section must be enabled to proceed (is_valid).
-    """
-
-    _MATCH_TABLE_OPTIONS = {
-        "": None,
-        "Pipe": "pipe",
-        "Connection node": "connection_node",
-    }
-
+class SurfaceConnectionSettingsWidget(SettingsWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.model = sm.SurfaceLinkingSettings()
-
-        InputConfig = create_field_map_config(
-            allowed_methods=[
-                ColumnImportMethod.IGNORE,
-                ColumnImportMethod.ATTRIBUTE,
-                ColumnImportMethod.EXPRESSION,
-                ColumnImportMethod.DEFAULT,
-            ],
-            field_type=str,
-        )
-        row_dict = {
-            "attribute_match_input_config": FieldMapRow(
-                label="Source value",
-                config=InputConfig(method=ColumnImportMethod.IGNORE),
-            )
-        }
-
-        extra_layout = self._build_extra_layout()
-        self.setup_ui(row_dict, extra_layout)
-
-        self._update_sections_enabled()
+        self.setup_ui()
+        self.update_sections_enabled()
         self.deserialize({})
 
-    def _build_extra_layout(self):
+    def update_layer(self, layer):
+        self.match_field_map_widget.update_layer(layer)
+
+    def setup_ui(self):
+        # TODO: consider less bloated UI
         layout = QVBoxLayout()
         _defaults = sm.SurfaceLinkingSettings()
-
         # --- Attribute matching section ---
-        self._attr_checkbox = QCheckBox("Attribute matching")
-        layout.addWidget(self._attr_checkbox)
-
-        self._attr_widget = QWidget()
-        attr_grid = QGridLayout(self._attr_widget)
-        attr_grid.setContentsMargins(20, 0, 0, 0)
-
-        attr_grid.addWidget(QLabel("Match table:"), 0, 0)
-        self._match_table = QComboBox()
-        self._match_table.addItems(list(self._MATCH_TABLE_OPTIONS.keys()))
-        attr_grid.addWidget(self._match_table, 0, 1)
-
-        attr_grid.addWidget(QLabel("Match column:"), 1, 0)
-        self._match_col = QComboBox()
-        attr_grid.addWidget(self._match_col, 1, 1)
-
-        layout.addWidget(self._attr_widget)
+        self.match_no_table_radio = QRadioButton("None")
+        self.match_no_table_radio.setChecked(True)
+        self.match_pipe_table_radio = QRadioButton("Pipe")
+        self.match_node_table_radio = QRadioButton("Connection node")
+        match_table_group = QButtonGroup(self)
+        match_table_group.addButton(self.match_no_table_radio)
+        match_table_group.addButton(self.match_pipe_table_radio)
+        match_table_group.addButton(self.match_node_table_radio)
+        self.match_table_col = QComboBox()
+        row = QHBoxLayout()
+        row.addWidget(self.match_no_table_radio)
+        row.addWidget(self.match_pipe_table_radio)
+        row.addWidget(self.match_node_table_radio)
+        row.addWidget(self.match_table_col)
+        layout.addLayout(row)
+        config = create_field_map_config(
+            allowed_methods=[
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+            ]
+        )
+        row_dict = {
+            "attribute_match_input": FieldMapRow(
+                label="Source value", config=config.model_construct(method=None)
+            )
+        }
+        self.match_field_map_widget = FieldMapWidget(
+            row_dict,
+            hidden_columns=[FieldMapColumn.LABEL, FieldMapColumn.DEFAULT_VALUE],
+        )
+        self.match_field_map_widget.dataChanged.connect(self.dataChanged.emit)
+        self.match_field_map_widget.open_persistent_editors()
+        layout.addWidget(self.match_field_map_widget)
+        self.match_attr_settings = [self.match_table_col, self.match_field_map_widget]
 
         # --- Spatial matching section ---
-        self._spatial_checkbox = QCheckBox("Spatial matching")
-        layout.addWidget(self._spatial_checkbox)
-
-        self._spatial_widget = QWidget()
-        spatial_grid = QGridLayout(self._spatial_widget)
-        spatial_grid.setContentsMargins(20, 0, 0, 0)
-
-        spatial_grid.addWidget(QLabel("Surface map layer:"), 0, 0)
-        self._surface_map_layer = QgsMapLayerComboBox()
-        self._surface_map_layer.setAllowEmptyLayer(True)
-        self._surface_map_layer.setFilters(QgsMapLayerProxyModel.LineLayer)
-        self._surface_map_layer.setCurrentText(dm.SurfaceMap.__layername__)
-        spatial_grid.addWidget(self._surface_map_layer, 0, 1)
-
-        spatial_grid.addWidget(QLabel("Pipe layer:"), 1, 0)
-        self._pipe_layer = QgsMapLayerComboBox()
-        self._pipe_layer.setAllowEmptyLayer(True)
-        self._pipe_layer.setFilters(QgsMapLayerProxyModel.LineLayer)
-        self._pipe_layer.setCurrentText(dm.Pipe.__layername__)
-        self._selected_pipes_only = QCheckBox("Selected only")
-        pipe_row = QHBoxLayout()
-        pipe_row.addWidget(self._pipe_layer)
-        pipe_row.addWidget(self._selected_pipes_only)
-        spatial_grid.addLayout(pipe_row, 1, 1)
-
-        spatial_grid.addWidget(QLabel("Connection node layer:"), 2, 0)
-        self._node_layer = QgsMapLayerComboBox()
-        self._node_layer.setAllowEmptyLayer(True)
-        self._node_layer.setFilters(QgsMapLayerProxyModel.PointLayer)
-        self._node_layer.setCurrentText(dm.ConnectionNode.__layername__)
-        spatial_grid.addWidget(self._node_layer, 2, 1)
-
-        spatial_grid.addWidget(QLabel("Search distance (m):"), 3, 0)
-        self._search_distance = QDoubleSpinBox()
-        self._search_distance.setDecimals(1)
-        self._search_distance.setMinimum(
+        self.match_spatial_checkbox = QCheckBox("Spatial matching")
+        # layout.addWidget(self.match_spatial_checkbox)
+        spat_layout = QHBoxLayout()
+        spat_layout.addWidget(self.match_spatial_checkbox)
+        spat_layout.addWidget(QLabel("Search distance (m):"))
+        self.search_distance = QDoubleSpinBox()
+        self.search_distance.setDecimals(1)
+        self.search_distance.setMinimum(
             sm.get_field_min(sm.SurfaceLinkingSettings, "search_distance")
         )
-        self._search_distance.setMaximum(
+        self.search_distance.setMaximum(
             sm.get_field_max(sm.SurfaceLinkingSettings, "search_distance")
         )
-        self._search_distance.setValue(_defaults.search_distance)
-        self._search_distance.setSuffix(" m")
-        spatial_grid.addWidget(self._search_distance, 3, 1)
-
-        layout.addWidget(self._spatial_widget)
-
+        self.search_distance.setValue(_defaults.search_distance)
+        self.search_distance.setSuffix(" m")
+        spat_layout.addWidget(self.search_distance)
+        layout.addLayout(spat_layout)
+        self.spatial_settings = [self.search_distance]
+        self.selected_pipes_only = QCheckBox("Only match selected pipes")
+        layout.addWidget(self.selected_pipes_only)
         # Signal connections
-        self._attr_checkbox.toggled.connect(self._on_sections_toggled)
-        self._spatial_checkbox.toggled.connect(self._on_sections_toggled)
-        self._match_table.currentTextChanged.connect(self._on_match_table_changed)
-        self._match_col.currentTextChanged.connect(self._update_model)
-        self._surface_map_layer.layerChanged.connect(self._update_model)
-        self._pipe_layer.layerChanged.connect(self._update_model)
-        self._node_layer.layerChanged.connect(self._update_model)
-        self._selected_pipes_only.toggled.connect(self._update_model)
-        self._search_distance.valueChanged.connect(self._update_model)
-
-        return layout
-
-    def _on_sections_toggled(self):
-        self._update_sections_enabled()
-        self._update_model()
-
-    def _on_match_table_changed(self):
-        self._repopulate_match_col()
-        self._update_sections_enabled()
-        self._update_model()
-
-    def _update_sections_enabled(self):
-        """Enable/disable section widgets based on checkbox state."""
-        attr_on = self._attr_checkbox.isChecked()
-        self._attr_widget.setEnabled(attr_on)
-        self.field_map_widget.setEnabled(
-            attr_on
-            and bool(self._match_table.currentText())
-            and bool(self._match_col.currentText())
+        self.match_no_table_radio.toggled.connect(
+            lambda checked: self.on_match_table_changed()
         )
-        self._spatial_widget.setEnabled(self._spatial_checkbox.isChecked())
+        self.match_pipe_table_radio.toggled.connect(
+            lambda checked: self.on_match_table_changed()
+        )
+        self.match_node_table_radio.toggled.connect(
+            lambda checked: self.on_match_table_changed()
+        )
+        self.match_field_map_widget.dataChanged.connect(self.update_model)
+        self.match_spatial_checkbox.toggled.connect(self.on_sections_toggled)
+        self.match_table_col.currentTextChanged.connect(self.update_model)
+        self.search_distance.valueChanged.connect(self.update_model)
+        self.selected_pipes_only.toggled.connect(self.update_model)
+        self.setLayout(layout)
 
-    def _repopulate_match_col(self):
-        """Populate match column combo from the selected match table's layer."""
-        self._match_col.blockSignals(True)
-        self._match_col.clear()
-        table_key = self._match_table.currentText()
-        match_table = self._MATCH_TABLE_OPTIONS.get(table_key)
-        layer = None
-        if match_table == "pipe":
-            layer = self._pipe_layer.currentLayer()
-        elif match_table == "connection_node":
-            layer = self._node_layer.currentLayer()
-        if layer is not None:
-            self._match_col.addItem("")
-            for field in layer.fields():
-                self._match_col.addItem(field.name())
-        self._match_col.blockSignals(False)
+    def on_sections_toggled(self):
+        self.update_sections_enabled()
+        self.update_model()
 
-    def update_layer(self, layer):
-        super().update_layer(layer)
-        self._repopulate_match_col()
+    def on_match_table_changed(self):
+        self.repopulate_match_col()
+        self.update_sections_enabled()
+        self.update_model()
 
-    def _update_model(self):
-        layer_name_selector_map = {
-            "surface_map_layer_name": self._surface_map_layer,
-            "pipe_layer_name": self._pipe_layer,
-            "node_layer_name": self._node_layer,
-        }
-        layer_names = {
-            name: selector.currentLayer().name()
-            for name, selector in layer_name_selector_map.items()
-            if selector.currentLayer() is not None
-        }
-        attr_on = self._attr_checkbox.isChecked()
-        table_key = self._match_table.currentText()
-        match_table = self._MATCH_TABLE_OPTIONS.get(table_key) if attr_on else None
-        match_col = (self._match_col.currentText() or None) if attr_on else None
+    def update_sections_enabled(self):
+        """Enable/disable section widgets based on checkbox state."""
+        for widget in self.match_attr_settings:
+            widget.setEnabled(not self.match_no_table_radio.isChecked())
+        for widget in self.spatial_settings:
+            widget.setEnabled(self.match_spatial_checkbox.isChecked())
+
+    @property
+    def match_table_model(self):
+        if self.match_pipe_table_radio.isChecked():
+            return dm.Pipe
+        elif self.match_node_table_radio.isChecked():
+            return dm.ConnectionNode
+        else:
+            return None
+
+    def repopulate_match_col(self):
+        """Populate match column combo from the selected match table's data model."""
+        self.match_table_col.blockSignals(True)
+        self.match_table_col.clear()
+        if self.match_table_model is not None:
+            self.match_table_col.addItem("")
+            for f in fields(self.match_table_model):
+                self.match_table_col.addItem(f.name)
+        self.match_table_col.blockSignals(False)
+
+    def update_model(self):
+        layer_names = {}
+        match_by_table = not self.match_no_table_radio.isChecked()
+        match_table_model = self.match_table_model
+        match_table = (
+            match_table_model.__tablename__ if match_table_model is not None else None
+        )
+        match_col = (
+            (self.match_table_col.currentText() or None) if match_by_table else None
+        )
         input_cfg = (
-            self.field_map_widget.get_settings().get("attribute_match_input_config")
-            if attr_on and match_table and match_col
+            self.match_field_map_widget.get_settings().get("attribute_match_input")
+            if match_by_table and match_table and match_col
             else None
         )
         self.model = sm.SurfaceLinkingSettings(
-            search_distance=self._search_distance.value(),
-            selected_pipes_only=self._selected_pipes_only.isChecked(),
-            attribute_match_enabled=attr_on,
-            spatial_match_enabled=self._spatial_checkbox.isChecked(),
+            search_distance=self.search_distance.value(),
+            selected_pipes_only=self.selected_pipes_only.isChecked(),
+            attribute_match_enabled=match_by_table,
+            spatial_match_enabled=self.match_spatial_checkbox.isChecked(),
             attribute_match_table=match_table,
             attribute_match_col=match_col,
             attribute_match_input_config=input_cfg,
             **layer_names,
         )
-        self._update_sections_enabled()
+        self.update_sections_enabled()
         self.dataChanged.emit()
 
     @property
@@ -955,24 +907,16 @@ class SurfaceConnectionSettingsWidget(FieldMapSettingsWidget):
 
     @property
     def is_valid(self) -> bool:
-        attr_on = self._attr_checkbox.isChecked()
-        spatial_on = self._spatial_checkbox.isChecked()
-        if not attr_on and not spatial_on:
+        if (
+            not self.match_no_table_radio.isChecked()
+            and not self.match_field_map_widget.is_valid
+        ):
             return False
-        if attr_on:
-            if not self._match_table.currentText():
-                return False
-            if not self._match_col.currentText():
-                return False
-            if not self.field_map_widget.is_valid:
-                return False
-        if spatial_on:
-            if self._surface_map_layer.currentLayer() is None:
-                return False
-            if self._pipe_layer.currentLayer() is None:
-                return False
-            if self._node_layer.currentLayer() is None:
-                return False
+        if (
+            not self.match_no_table_radio.isChecked()
+            and self.match_table_col.currentIndex() == 0
+        ):
+            return False
         return True
 
     def get_settings(self) -> sm.SurfaceLinkingSettings:
@@ -982,27 +926,21 @@ class SurfaceConnectionSettingsWidget(FieldMapSettingsWidget):
         self.model = (
             sm.SurfaceLinkingSettings(**data) if data else sm.SurfaceLinkingSettings()
         )
-        # Spatial section
-        self._spatial_checkbox.setChecked(self.model.spatial_match_enabled)
-        self._search_distance.setValue(self.model.search_distance)
-        self._selected_pipes_only.setChecked(self.model.selected_pipes_only)
-        self._surface_map_layer.setCurrentText(self.model.surface_map_layer_name)
-        self._pipe_layer.setCurrentText(self.model.pipe_layer_name)
-        self._node_layer.setCurrentText(self.model.node_layer_name)
-        # Attribute section
-        self._attr_checkbox.setChecked(self.model.attribute_match_enabled)
-        table_label = next(
-            (k for k, v in self._MATCH_TABLE_OPTIONS.items()
-             if v == self.model.attribute_match_table),
-            "",
-        )
-        self._match_table.setCurrentText(table_label)
-        self._repopulate_match_col()
-        if self.model.attribute_match_col:
-            self._match_col.setCurrentText(self.model.attribute_match_col)
-        if self.model.attribute_match_input_config is not None:
-            self.field_map_widget.deserialize(
-                {"attribute_match_input_config":
-                 self.model.attribute_match_input_config.model_dump()}
+        if self.model.attribute_match_enabled:
+            if self.model.attribute_match_table == dm.Pipe.__tablename__:
+                self.match_pipe_table_radio.setChecked(True)
+            else:
+                self.match_node_table_radio.setChecked(True)
+            self.match_table_col.setCurrentText(self.model.attribute_match_col)
+        else:
+            self.match_no_table_radio.setChecked(True)
+        if self.model.attribute_match_input_config:
+            self.match_field_map_widget.deserialize(
+                {
+                    "attribute_match_input": self.model.attribute_match_input_config.model_dump()
+                }
             )
-        self._update_sections_enabled()
+        self.match_spatial_checkbox.setChecked(self.model.spatial_match_enabled)
+        self.search_distance.setValue(self.model.search_distance)
+        self.selected_pipes_only.setChecked(self.model.selected_pipes_only)
+        self.update_sections_enabled()

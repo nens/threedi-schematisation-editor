@@ -980,7 +980,9 @@ class SurfaceProcessor(SpatialProcessor):
         sm_feat["percentage"] = 100
         return sm_feat
 
-    def _create_surface_map_features(self, new_feat, src_feat, surface_geom, expression_context=None):
+    def _create_surface_map_features(
+        self, new_feat, src_feat, surface_geom, expression_context=None
+    ):
         """Create surface_map features linking new_feat to connection nodes.
 
         When attribute matching is configured, derives a lookup value from
@@ -996,13 +998,16 @@ class SurfaceProcessor(SpatialProcessor):
         linking = self.linking
         surface_map_feats = []
 
-        if linking.attribute_match_enabled and linking.attribute_match_table is not None:
+        if (
+            linking.attribute_match_enabled
+            and linking.attribute_match_table is not None
+        ):
             input_val = get_field_config_value(
                 linking.attribute_match_input_config,
                 src_feat,
                 expression_context,
             )
-            if linking.attribute_match_table == "connection_node":
+            if linking.attribute_match_table == dm.ConnectionNode.__tablename__:
                 matches = [
                     f
                     for f in self.node_layer.getFeatures()
@@ -1010,7 +1015,7 @@ class SurfaceProcessor(SpatialProcessor):
                 ]
                 if len(matches) == 1:
                     return [self._create_sm_feat(new_feat, surface_geom, matches[0])]
-            elif linking.attribute_match_table == "pipe":
+            elif linking.attribute_match_table == dm.Pipe.__tablename__:
                 matches = [
                     f
                     for f in self.pipe_features.values()

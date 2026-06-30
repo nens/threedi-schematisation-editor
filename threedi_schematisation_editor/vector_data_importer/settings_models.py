@@ -260,13 +260,6 @@ class SurfaceMapPercentageSettings(BaseModel):
 class SurfaceLinkingSettings(BaseModel):
     name: ClassVar[str] = "surface_linking"
     search_distance: float = Field(default=10.0, ge=0, le=1000000.0)
-    surface_map_layer_name: str = Field(
-        default_factory=lambda: dm.SurfaceMap.__layername__
-    )
-    pipe_layer_name: str = Field(default_factory=lambda: dm.Pipe.__layername__)
-    node_layer_name: str = Field(
-        default_factory=lambda: dm.ConnectionNode.__layername__
-    )
     selected_pipes_only: bool = False
     attribute_match_enabled: bool = False
     spatial_match_enabled: bool = True

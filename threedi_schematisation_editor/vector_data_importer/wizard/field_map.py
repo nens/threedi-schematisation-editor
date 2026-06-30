@@ -324,7 +324,9 @@ class FieldMapDelegate(QStyledItemDelegate):
             )
         elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.DEFAULT_VALUE:
             config = index.model().rows[index.row()].config
-            value_type = config.model_fields["default_value"].annotation.__args__[0]
+            annotation = config.model_fields["default_value"].annotation
+            args = getattr(annotation, "__args__", None)
+            value_type = args[0] if args else None
             # Dirty magic to use a combobox for bools and enums
             if value_type == bool or (
                 isinstance(value_type, type) and issubclass(value_type, Enum)
@@ -482,9 +484,10 @@ class FieldMapDelegate(QStyledItemDelegate):
 class FieldMapWidget(QWidget):
     dataChanged = pyqtSignal()
 
-    def __init__(self, row_dict, parent=None):
+    def __init__(self, row_dict, hidden_columns=None, parent=None):
         super().__init__(parent=parent)
         self.row_dict = row_dict
+        self.hidden_columns = hidden_columns or []
         self.table_model = FieldMapModel(self.row_dict)
         self.rows = self.table_model.rows
         self.setup_ui()
@@ -523,6 +526,10 @@ class FieldMapWidget(QWidget):
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         for col in range(2, self.table_model.columnCount()):
             header.setSectionResizeMode(col, QHeaderView.Stretch)
+
+        # Hide requested columns
+        for col in self.hidden_columns:
+            self.table_view.hideColumn(FieldMapColumn.to_index(col))
 
     @property
     def table_height(self) -> int:
