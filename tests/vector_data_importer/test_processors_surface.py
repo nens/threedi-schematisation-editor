@@ -353,3 +353,201 @@ def test_create_surface_map_no_pipe_warns(surface_fields, surface_map_fields):
         result = run_create_surface_map(processor, node_by_id, make_polygon_feature())
     assert result == []
     assert any(issubclass(w.category, ProcessorWarning) for w in caught)
+
+
+# ---------------------------------------------------------------------------
+# Attribute-match tests
+# ---------------------------------------------------------------------------
+
+
+def make_node_layer_with_feats(node_feats):
+    """Real in-memory node layer with id + code fields."""
+    layer = QgsVectorLayer("Point", "ConnectionNode", "memory")
+    pr = layer.dataProvider()
+    pr.addAttributes(
+        [
+            QgsField("id", QVariant.Int),
+            QgsField("code", QVariant.String),
+        ]
+    )
+    layer.updateFields()
+    pr.addFeatures(node_feats)
+    layer.updateExtents()
+    return layer
+
+
+def make_pipe_layer_with_code_feats(pipe_feats):
+    """Real in-memory pipe layer with id, sewerage_type, connection_node_ids + code."""
+    layer = QgsVectorLayer("LineString", "Pipe", "memory")
+    pr = layer.dataProvider()
+    pr.addAttributes(
+        [
+            QgsField("id", QVariant.Int),
+            QgsField("sewerage_type", QVariant.Int),
+            QgsField("connection_node_id_start", QVariant.Int),
+            QgsField("connection_node_id_end", QVariant.Int),
+            QgsField("code", QVariant.String),
+        ]
+    )
+    layer.updateFields()
+    pr.addFeatures(pipe_feats)
+    layer.updateExtents()
+    return layer
+
+
+def make_node_feat_with_code(node_id, xy, code):
+    fields = QgsFields()
+    fields.append(QgsField("id", QVariant.Int))
+    fields.append(QgsField("code", QVariant.String))
+    feat = QgsFeature(fields)
+    feat.setAttribute("id", node_id)
+    feat.setAttribute("code", code)
+    feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(*xy)))
+    return feat
+
+
+def make_pipe_feat_with_code(fid, sewerage_type, start_node_id, end_node_id, start_xy, end_xy, code):
+    fields = QgsFields()
+    for name, typ in [
+        ("id", QVariant.Int),
+        ("sewerage_type", QVariant.Int),
+        ("connection_node_id_start", QVariant.Int),
+        ("connection_node_id_end", QVariant.Int),
+        ("code", QVariant.String),
+    ]:
+        fields.append(QgsField(name, typ))
+    feat = QgsFeature(fields)
+    feat.setId(fid)
+    feat.setAttribute("id", fid)
+    feat.setAttribute("sewerage_type", sewerage_type)
+    feat.setAttribute("connection_node_id_start", start_node_id)
+    feat.setAttribute("connection_node_id_end", end_node_id)
+    feat.setAttribute("code", code)
+    feat.setGeometry(
+        QgsGeometry.fromPolylineXY([QgsPointXY(*start_xy), QgsPointXY(*end_xy)])
+    )
+    return feat
+
+
+def make_attr_match_processor(
+    surface_fields,
+    surface_map_fields,
+    match_table,
+    node_layer,
+    pipe_layer,
+):
+    """Build a SurfaceProcessor configured for attribute matching.
+
+    Includes one spatial fallback pipe+mapping (sewerage_type=0, nearby) so
+    fallback cases produce one surface_map entry for easy assertion.
+    """
+    target_layer = MagicMock()
+    target_layer.fields.return_value = surface_fields
+    target_layer.name.return_value = "Surface"
+    target_layer.featureCount.return_value = 0
+
+    surface_map_layer = MagicMock()
+    surface_map_layer.fields.return_value = surface_map_fields
+    surface_map_layer.name.return_value = "Surface map"
+    surface_map_layer.featureCount.return_value = 0
+
+    linking = sm.SurfaceLinkingSettings(
+        search_distance=100.0,
+        attribute_match_table=match_table,
+        attribute_match_col="code",
+        attribute_match_input_config=sm.FieldMapConfig(
+            method=ColumnImportMethod.ATTRIBUTE,
+            source_attribute="code",
+        ),
+    )
+    import_settings = make_import_settings(
+        sewer_type_mappings=[
+            sm.SewerTypeMapping(sewerage_type=0, percentage_column="runoff_pct")
+        ],
+        linking=linking,
+    )
+    return SurfaceProcessor(
+        target_layer,
+        surface_map_layer,
+        import_settings,
+        pipe_layer=pipe_layer,
+        node_layer=node_layer,
+    )
+
+
+@pytest.mark.parametrize(
+    "match_table, n_matches, expect_pct_100",
+    [
+        ("connection_node", 1, True),   # exact node match → attr path, 100%
+        ("pipe",           1, True),   # exact pipe match → attr path, 100%
+        ("connection_node", 0, False),  # no match → spatial fallback
+        ("pipe",           0, False),  # no match → spatial fallback
+        ("connection_node", 2, False),  # ambiguous → spatial fallback
+        ("pipe",           2, False),  # ambiguous → spatial fallback
+    ],
+)
+def test_attr_match(
+    surface_fields, surface_map_fields, match_table, n_matches, expect_pct_100
+):
+    # Codes used for attribute matching
+    match_code = "ABC"
+    other_code = "XYZ"
+
+    # Spatial fallback pipe: always present, nearby, sewerage_type=0, non-matching code
+    fallback_pipe = make_pipe_feat_with_code(1, 0, 10, 11, (5, 0), (5, 2), other_code)
+    fallback_nodes = [make_node_feat(10, (5, 0)), make_node_feat(11, (5, 2))]
+
+    # Build matching nodes/pipes according to n_matches
+
+    matching_nodes = [
+        make_node_feat_with_code(20 + i, (0, 0), match_code) for i in range(n_matches)
+    ]
+    # Always one non-matching node (sewerage-type node lookup needs real layer)
+    non_matching_node = make_node_feat_with_code(99, (5, 0), other_code)
+    all_nodes = matching_nodes + [non_matching_node]
+
+    matching_pipes = [
+        make_pipe_feat_with_code(
+            100 + i, 0, 10, 11, (5, 0), (5, 2), match_code
+        )
+        for i in range(n_matches)
+    ]
+    # Pipe layer also contains the spatial fallback pipe (no code field → use make_pipe_layer_with_feats)
+    # We build a separate pipe layer for attribute matching that includes both
+    all_pipe_feats = matching_pipes + [fallback_pipe]
+
+    node_layer = make_node_layer_with_feats(all_nodes)
+    pipe_layer = make_pipe_layer_with_code_feats(all_pipe_feats)
+
+    processor = make_attr_match_processor(
+        surface_fields, surface_map_fields, match_table, node_layer, pipe_layer
+    )
+
+    node_by_id = {f["id"]: f for f in fallback_nodes}
+    src_feat = make_polygon_feature(runoff_pct=60.0)
+    # Give source feature a code field for attribute lookup
+    src_fields = QgsFields()
+    src_fields.append(QgsField("id", QVariant.Int))
+    src_fields.append(QgsField("runoff_pct", QVariant.Double))
+    src_fields.append(QgsField("code", QVariant.String))
+    src_feat2 = QgsFeature(src_fields)
+    src_feat2.setAttribute("id", 1)
+    src_feat2.setAttribute("runoff_pct", 60.0)
+    src_feat2.setAttribute("code", match_code)
+    src_feat2.setGeometry(QgsGeometry.fromWkt("Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))"))
+
+    with patch(
+        "threedi_schematisation_editor.vector_data_importer.processors.get_feature_by_id",
+        side_effect=lambda layer, oid: node_by_id.get(oid),
+    ):
+        new_feat = QgsFeature(processor.target_fields)
+        new_feat["id"] = 1
+        geom = QgsGeometry.fromWkt("Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))")
+        new_feat.setGeometry(geom)
+        result = processor._create_surface_map_features(new_feat, src_feat2, geom)
+
+    assert len(result) == 1
+    if expect_pct_100:
+        assert result[0]["percentage"] == pytest.approx(100)
+    else:
+        assert result[0]["percentage"] == pytest.approx(60.0)
