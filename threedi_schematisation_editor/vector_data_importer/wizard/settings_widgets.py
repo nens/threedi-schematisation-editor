@@ -36,6 +36,7 @@ from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.enumerators import SewerageType
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     SourceSettings,
+    create_field_map_config,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map import (
@@ -744,24 +745,45 @@ class SurfaceMapPercentageSettingsWidget(SettingsWidget):
         self._sewer_model.set_mappings(self.model.sewer_type_mappings)
 
 
-class SurfaceConnectionSettingsWidget(SettingsWidget):
+class SurfaceConnectionSettingsWidget(FieldMapSettingsWidget):
     """Settings for linking surfaces to pipes and connection nodes."""
+
+    _MATCH_TABLE_OPTIONS = {
+        "": None,
+        "Pipe": "pipe",
+        "Connection node": "connection_node",
+    }
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.model = sm.SurfaceLinkingSettings()
-        self.setup_ui()
 
-    @property
-    def name(self) -> str:
-        return sm.SurfaceLinkingSettings.name
+        # Single FieldMapRow for the attribute-match source value
+        InputConfig = create_field_map_config(
+            allowed_methods=[
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+                ColumnImportMethod.DEFAULT,
+            ]
+        )
+        row_dict = {
+            "attribute_match_input_config": FieldMapRow(
+                label="Source value",
+                config=InputConfig(method=ColumnImportMethod.ATTRIBUTE),
+            )
+        }
 
-    @property
-    def group_name(self) -> str:
-        return "Spatial linking"
+        extra_layout = self._build_extra_layout()
+        self.setup_ui(row_dict, extra_layout)
 
-    def setup_ui(self):
+        # Cascading enable/disable: source-value row follows match_col selection
+        self._update_attr_match_enabled()
+
+        self.deserialize({})
+
+    def _build_extra_layout(self):
         layout = QGridLayout()
+        _defaults = sm.SurfaceLinkingSettings()
 
         layout.addWidget(QLabel("Surface map layer:"), 0, 0)
         self._surface_map_layer = QgsMapLayerComboBox()
@@ -788,8 +810,6 @@ class SurfaceConnectionSettingsWidget(SettingsWidget):
         self._node_layer.setCurrentText(dm.ConnectionNode.__layername__)
         layout.addWidget(self._node_layer, 2, 1)
 
-        _defaults = sm.SurfaceLinkingSettings()
-
         layout.addWidget(QLabel("Search distance (m):"), 3, 0)
         self._search_distance = QDoubleSpinBox()
         self._search_distance.setDecimals(1)
@@ -803,13 +823,60 @@ class SurfaceConnectionSettingsWidget(SettingsWidget):
         self._search_distance.setSuffix(" m")
         layout.addWidget(self._search_distance, 3, 1)
 
-        self._search_distance.valueChanged.connect(self._update_model)
+        layout.addWidget(QLabel("Attribute matching"), 4, 0, 1, 2)
+
+        layout.addWidget(QLabel("Match table:"), 5, 0)
+        self._match_table = QComboBox()
+        self._match_table.addItems(list(self._MATCH_TABLE_OPTIONS.keys()))
+        layout.addWidget(self._match_table, 5, 1)
+
+        layout.addWidget(QLabel("Match column:"), 6, 0)
+        self._match_col = QComboBox()
+        layout.addWidget(self._match_col, 6, 1)
+
+        # Signal connections
         self._surface_map_layer.layerChanged.connect(self._update_model)
         self._pipe_layer.layerChanged.connect(self._update_model)
         self._node_layer.layerChanged.connect(self._update_model)
         self._selected_pipes_only.toggled.connect(self._update_model)
-        self.setLayout(layout)
-        self.deserialize({})
+        self._search_distance.valueChanged.connect(self._update_model)
+        self._match_table.currentTextChanged.connect(self._on_match_table_changed)
+        self._match_col.currentTextChanged.connect(self._update_model)
+
+        return layout
+
+    def _on_match_table_changed(self):
+        self._repopulate_match_col()
+        self._update_attr_match_enabled()
+        self._update_model()
+
+    def _repopulate_match_col(self):
+        """Populate match column combo from the selected match table's layer."""
+        self._match_col.blockSignals(True)
+        self._match_col.clear()
+        table_key = self._match_table.currentText()
+        match_table = self._MATCH_TABLE_OPTIONS.get(table_key)
+        layer = None
+        if match_table == "pipe":
+            layer = self._pipe_layer.currentLayer()
+        elif match_table == "connection_node":
+            layer = self._node_layer.currentLayer()
+        if layer is not None:
+            self._match_col.addItem("")
+            for field in layer.fields():
+                self._match_col.addItem(field.name())
+        self._match_col.blockSignals(False)
+
+    def _update_attr_match_enabled(self):
+        """Cascading enable/disable: match_col needs a table; source value needs a col."""
+        table_selected = bool(self._match_table.currentText())
+        self._match_col.setEnabled(table_selected)
+        col_selected = table_selected and bool(self._match_col.currentText())
+        self.field_map_widget.setEnabled(col_selected)
+
+    def update_layer(self, layer):
+        super().update_layer(layer)
+        self._repopulate_match_col()
 
     def _update_model(self):
         layer_name_selector_map = {
@@ -822,12 +889,32 @@ class SurfaceConnectionSettingsWidget(SettingsWidget):
             for name, selector in layer_name_selector_map.items()
             if selector.currentLayer() is not None
         }
+        table_key = self._match_table.currentText()
+        match_table = self._MATCH_TABLE_OPTIONS.get(table_key)
+        match_col = self._match_col.currentText() or None
+        input_cfg = (
+            self.field_map_widget.get_settings().get("attribute_match_input_config")
+            if match_table and match_col
+            else None
+        )
         self.model = sm.SurfaceLinkingSettings(
             search_distance=self._search_distance.value(),
             selected_pipes_only=self._selected_pipes_only.isChecked(),
+            attribute_match_table=match_table,
+            attribute_match_col=match_col,
+            attribute_match_input_config=input_cfg,
             **layer_names,
         )
+        self._update_attr_match_enabled()
         self.dataChanged.emit()
+
+    @property
+    def name(self) -> str:
+        return sm.SurfaceLinkingSettings.name
+
+    @property
+    def group_name(self) -> str:
+        return "Surface linking"
 
     @property
     def is_valid(self) -> bool:
@@ -845,3 +932,20 @@ class SurfaceConnectionSettingsWidget(SettingsWidget):
         self._surface_map_layer.setCurrentText(self.model.surface_map_layer_name)
         self._pipe_layer.setCurrentText(self.model.pipe_layer_name)
         self._node_layer.setCurrentText(self.model.node_layer_name)
+        # Restore attribute matching controls
+        table_label = next(
+            (k for k, v in self._MATCH_TABLE_OPTIONS.items()
+             if v == self.model.attribute_match_table),
+            "",
+        )
+        self._match_table.setCurrentText(table_label)
+        self._repopulate_match_col()
+        if self.model.attribute_match_col:
+            self._match_col.setCurrentText(self.model.attribute_match_col)
+        # Restore field map row
+        if self.model.attribute_match_input_config is not None:
+            self.field_map_widget.deserialize(
+                {"attribute_match_input_config":
+                 self.model.attribute_match_input_config.model_dump()}
+            )
+        self._update_attr_match_enabled()
