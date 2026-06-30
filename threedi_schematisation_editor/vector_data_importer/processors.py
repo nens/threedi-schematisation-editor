@@ -930,6 +930,24 @@ class SurfaceProcessor(SpatialProcessor):
         return src_geom
 
     @staticmethod
+    def _choose_closer_node(surface_geom, pipe_feat, node_layer):
+        """Return whichever endpoint node of pipe_feat is closer to surface_geom.
+
+        Returns None if either node cannot be found.
+        """
+        start_node = get_feature_by_id(
+            node_layer, pipe_feat["connection_node_id_start"]
+        )
+        end_node = get_feature_by_id(node_layer, pipe_feat["connection_node_id_end"])
+        if start_node is None or end_node is None:
+            return None
+        if surface_geom.distance(start_node.geometry()) <= surface_geom.distance(
+            end_node.geometry()
+        ):
+            return start_node
+        return end_node
+
+    @staticmethod
     def _find_nearest_pipe(surface_geom, pipe_features, pipe_ids, mapping, linking):
         """Return the nearest pipe QgsFeature of the correct sewerage_type, or None.
 
@@ -950,7 +968,7 @@ class SurfaceProcessor(SpatialProcessor):
             return None
         return min(candidates, key=lambda x: x[0])[1]
 
-    def _create_surface_map_features(self, new_feat, src_feat, surface_geom):
+    def _create_surface_map_features(self, new_feat, src_feat, surface_geom, expression_context=None):
         """Create surface_map features linking new_feat to connection nodes.
 
         For each sewer type mapping with a non-zero percentage column value,
@@ -990,23 +1008,14 @@ class SurfaceProcessor(SpatialProcessor):
                 )
                 continue
 
-            start_node = get_feature_by_id(
-                self.node_layer, nearest_pipe["connection_node_id_start"]
+            node = SurfaceProcessor._choose_closer_node(
+                surface_geom, nearest_pipe, self.node_layer
             )
-            end_node = get_feature_by_id(
-                self.node_layer, nearest_pipe["connection_node_id_end"]
-            )
-            if start_node is None or end_node is None:
+            if node is None:
                 continue
 
-            if surface_geom.distance(start_node.geometry()) <= surface_geom.distance(
-                end_node.geometry()
-            ):
-                node_id = nearest_pipe["connection_node_id_start"]
-                node_geom = start_node.geometry()
-            else:
-                node_id = nearest_pipe["connection_node_id_end"]
-                node_geom = end_node.geometry()
+            node_id = node["id"]
+            node_geom = node.geometry()
 
             centroid = surface_geom.pointOnSurface()
             sm_geom = QgsGeometry.fromPolylineXY(
@@ -1042,7 +1051,9 @@ class SurfaceProcessor(SpatialProcessor):
             or ColumnImportMethod(area_config["method"]) == ColumnImportMethod.AUTO
         ):
             new_feat["area"] = new_geom.area()
+        expression_context = QgsExpressionContext()
+        expression_context.setFeature(src_feat)
         surface_map_feats = self._create_surface_map_features(
-            new_feat, src_feat, new_geom
+            new_feat, src_feat, new_geom, expression_context
         )
         return {self.target_name: [new_feat], self.surface_map_name: surface_map_feats}
