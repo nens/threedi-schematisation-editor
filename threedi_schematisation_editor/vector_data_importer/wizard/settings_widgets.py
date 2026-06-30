@@ -765,7 +765,8 @@ class SurfaceConnectionSettingsWidget(FieldMapSettingsWidget):
                 ColumnImportMethod.ATTRIBUTE,
                 ColumnImportMethod.EXPRESSION,
                 ColumnImportMethod.DEFAULT,
-            ]
+            ],
+            field_type=str,
         )
         row_dict = {
             "attribute_match_input_config": FieldMapRow(
