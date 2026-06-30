@@ -4,6 +4,7 @@ from typing import (
     Any,
     ClassVar,
     Generic,
+    Literal,
     Optional,
     Type,
     TypeVar,
@@ -267,6 +268,9 @@ class SurfaceLinkingSettings(BaseModel):
         default_factory=lambda: dm.ConnectionNode.__layername__
     )
     selected_pipes_only: bool = False
+    attribute_match_table: Optional[Literal["pipe", "connection_node"]] = None
+    attribute_match_col: Optional[str] = None
+    attribute_match_input_config: Optional[FieldMapConfig] = None
 
 
 class ImportSettings(BaseModel):
