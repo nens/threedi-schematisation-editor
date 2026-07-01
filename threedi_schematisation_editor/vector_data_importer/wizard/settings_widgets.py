@@ -602,7 +602,11 @@ class SewerTypeMappingModel(QAbstractTableModel):
         self.beginResetModel()
         self._rows = [[m.sewerage_type, m.percentage_column] for m in mappings]
         if not self._rows:
-            self._rows = [[None, None]]
+            self._rows = [
+                [SewerageType.COMBINED_SEWER, None],
+                [SewerageType.STORM_DRAIN, None],
+                [SewerageType.SANITARY_SEWER, None],
+            ]
         self.endResetModel()
 
 
@@ -686,7 +690,6 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         wide_layout.setContentsMargins(4, 4, 4, 4)
         wide_layout.setSpacing(2)
         self._sewer_model = SewerTypeMappingModel()
-        self._sewer_model.add_row()
         self._sewer_model.dataChanged.connect(self._update_model)
         self._sewer_model.rowsInserted.connect(self._update_model)
         self._sewer_model.rowsRemoved.connect(self._update_model)
@@ -706,6 +709,9 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             SewerTypeMappingModel.PERCENTAGE_COL, QHeaderView.Stretch
         )
         self._sewer_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        _row_h = self._sewer_table.verticalHeader().defaultSectionSize()
+        _header_h = self._sewer_table.horizontalHeader().sizeHint().height()
+        self._sewer_table.setMaximumHeight(_header_h + 5 * _row_h + 2)
         btn_layout = QHBoxLayout()
         btn_layout.setContentsMargins(0, 0, 0, 0)
         add_btn = QPushButton("Add row")
