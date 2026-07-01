@@ -1144,4 +1144,10 @@ class SurfaceProcessor(SpatialProcessor):
         surface_map_feats = self._create_surface_map_features(
             new_feat, src_feat, new_geom, expression_context
         )
-        return {self.target_name: [new_feat], self.surface_map_name: surface_map_feats}
+        if len(surface_map_feats) > 0:
+            return {
+                self.target_name: [new_feat],
+                self.surface_map_name: surface_map_feats,
+            }
+        else:
+            return {}

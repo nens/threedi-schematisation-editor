@@ -630,9 +630,7 @@ class ImportSurfaceWizard(VDIWizard):
 
     @cached_property
     def extra_field_map_pages(self):
-        return [
-            FieldMapPage(model_cls=dm.SurfaceMap, name="surface_map_fields")
-        ]
+        return [FieldMapPage(model_cls=dm.SurfaceMap, name="surface_map_fields")]
 
     @property
     def extra_field_map_page_ids(self):
@@ -642,7 +640,9 @@ class ImportSurfaceWizard(VDIWizard):
 
     @property
     def _is_long_format(self):
-        return self.settings_page.get_settings()["surface_linking"].data_format == "long"
+        return (
+            self.settings_page.get_settings()["surface_linking"].data_format == "long"
+        )
 
     def should_collect_page(self, page):
         if isinstance(page, FieldMapPage) and page.name == "surface_map_fields":
@@ -666,7 +666,10 @@ class ImportSurfaceWizard(VDIWizard):
         surface_handler = self.layer_manager.model_handlers[dm.Surface]
         surface_map_handler = self.layer_manager.model_handlers[dm.SurfaceMap]
         handlers = [surface_handler, surface_map_handler]
-        layers = {"surface_layer": surface_handler.layer, "surface_map_layer": None}
+        layers = {
+            "surface_layer": surface_handler.layer,
+            "surface_map_layer": surface_map_handler.layer,
+        }
         return handlers, layers
 
     def get_importer(self, import_settings: sm.ImportSettings, layer_dict):
