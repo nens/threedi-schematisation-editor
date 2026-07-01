@@ -176,6 +176,8 @@ def make_spatial_processor(
     node_feats,
     sewer_type_mappings,
     search_distance=100.0,
+    data_format="wide",
+    percentage_column=None,
 ):
     node_by_id = {f["id"]: f for f in node_feats}
 
@@ -192,6 +194,8 @@ def make_spatial_processor(
     import_settings = make_import_settings(
         sewer_type_mappings=sewer_type_mappings,
         search_distance=search_distance,
+        data_format=data_format,
+        percentage_column=percentage_column,
     )
     processor = SurfaceProcessor(
         target_layer,
@@ -264,8 +268,8 @@ def test_find_nearest_pipe(pipes_specs, expected_idx):
         surface_geom,
         pipe_features,
         list(pipe_features.keys()),
-        mapping_config,
         linking_config,
+        sewage_type_filter=mapping_config.sewerage_type,
     )
     if expected_idx is None:
         assert result is None
@@ -334,6 +338,37 @@ def test_create_surface_map_percentage(
         assert result[0]["percentage"] == pytest.approx(runoff_pct)
         assert result[0]["connection_node_id"] in (10, 11)
         assert result[0].geometry().type() == QgsWkbTypes.GeometryType.LineGeometry
+
+
+@pytest.mark.parametrize(
+    "runoff_pct, expect_entry",
+    [
+        (75.0, True),   # non-zero → one entry created
+        (0.0, False),   # zero → skipped
+    ],
+)
+def test_create_surface_map_long_data(
+    surface_fields, surface_map_fields, runoff_pct, expect_entry
+):
+    """Long data path: one surface_map row per source row with explicit percentage column."""
+    pipe = make_pipe_feat(1, 0, 10, 11, (5, 0), (5, 2))
+    nodes = [make_node_feat(10, (5, 0)), make_node_feat(11, (5, 2))]
+    processor, node_by_id = make_spatial_processor(
+        surface_fields,
+        surface_map_fields,
+        [pipe],
+        nodes,
+        sewer_type_mappings=[],
+        data_format="long",
+        percentage_column="runoff_pct",
+    )
+    result = run_create_surface_map(
+        processor, node_by_id, make_polygon_feature(runoff_pct=runoff_pct)
+    )
+    assert (len(result) == 1) == expect_entry
+    if expect_entry:
+        assert result[0]["percentage"] == pytest.approx(runoff_pct)
+        assert result[0]["connection_node_id"] in (10, 11)
 
 
 def test_create_surface_map_no_pipe_warns(surface_fields, surface_map_fields):
