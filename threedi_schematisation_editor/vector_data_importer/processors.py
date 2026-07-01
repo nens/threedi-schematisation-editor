@@ -945,37 +945,91 @@ class SurfaceProcessor(SpatialProcessor):
             return start_node
         return end_node
 
-    @staticmethod
-    def _find_nearest_pipe(
-        surface_geom, pipe_features, pipe_ids, linking, sewage_type_filter=None
-    ):
-        """Return the nearest pipe QgsFeature within search_distance, or None.
+    def _attribute_match(self, src_feat, sewage_type, expression_context):
+        """Try attribute-based pipe/node lookup. Returns a node QgsFeature or None.
 
-        If sewage_type_filter is not None, only pipes of that sewerage_type are
-        considered. Pass None to match any pipe regardless of type.
-
-        Returns None (without warning) when no pipe matches — caller decides whether
-        to warn based on context.
+        If sewage_type is not None and the match is a pipe, the pipe's sewerage_type
+        must equal sewage_type — mismatches are rejected. Multiple matches also return
+        None.
         """
+        linking = self.linking
+        if not linking.attribute_match_enabled or linking.attribute_match_table is None:
+            return None
+        input_val = get_field_config_value(
+            linking.attribute_match_input_config, src_feat, expression_context
+        )
+        if linking.attribute_match_table == dm.ConnectionNode.__tablename__:
+            matches = [
+                f
+                for f in self.node_layer.getFeatures()
+                if f[linking.attribute_match_col] == input_val
+            ]
+            if len(matches) == 1:
+                return matches[0]
+        elif linking.attribute_match_table == dm.Pipe.__tablename__:
+            matches = [
+                f
+                for f in self.pipe_features.values()
+                if f[linking.attribute_match_col] == input_val
+            ]
+            if sewage_type is not None:
+                matches = [f for f in matches if f["sewerage_type"] == sewage_type]
+            if len(matches) == 1:
+                return SurfaceProcessor._choose_closer_node(
+                    self._current_surface_geom, matches[0], self.node_layer
+                )
+        return None
+
+    def _spatial_match(self, surface_geom, sewage_type):
+        """Try spatial pipe lookup. Returns a node QgsFeature or None.
+
+        Filters candidates to sewage_type when not None; matches any pipe when None.
+        Returns None (without warning) when no pipe found — caller emits warning.
+        """
+        linking = self.linking
+        if not linking.spatial_match_enabled:
+            return None
+        surface_buffer = surface_geom.buffer(linking.search_distance, 5)
+        pipe_ids = self.pipe_index.intersects(surface_buffer.boundingBox())
         candidates = []
         for pipe_id in pipe_ids:
-            pipe_feat = pipe_features[pipe_id]
-            if (
-                sewage_type_filter is not None
-                and pipe_feat["sewerage_type"] != sewage_type_filter
-            ):
+            pipe_feat = self.pipe_features[pipe_id]
+            if sewage_type is not None and pipe_feat["sewerage_type"] != sewage_type:
                 continue
             dist = surface_geom.distance(pipe_feat.geometry())
             if dist > linking.search_distance:
                 continue
             candidates.append((dist, pipe_feat))
-
         if not candidates:
             return None
-        return min(candidates, key=lambda x: x[0])[1]
+        nearest_pipe = min(candidates, key=lambda x: x[0])[1]
+        return SurfaceProcessor._choose_closer_node(
+            surface_geom, nearest_pipe, self.node_layer
+        )
 
-    def _create_sm_feat(self, new_feat, surface_geom, node):
-        """Create a single surface_map feature linking new_feat to node."""
+    def _create_surface_map_feature(
+        self,
+        new_feat,
+        src_feat,
+        surface_geom,
+        sewage_type,
+        pct,
+        expression_context=None,
+    ):
+        # Store surface_geom for use in _attribute_match (pipe → node resolution)
+        if pct <= 0:
+            return
+        self._current_surface_geom = surface_geom
+        node = self._attribute_match(src_feat, sewage_type, expression_context)
+        if node is None:
+            node = self._spatial_match(surface_geom, sewage_type)
+        if node is None:
+            warnings.warn(
+                f"Surface {new_feat['id']}: no pipe found within "
+                f"{self.linking.search_distance}m — surface_map entry skipped",
+                ProcessorWarning,
+            )
+            return
         centroid = surface_geom.pointOnSurface()
         sm_geom = QgsGeometry.fromPolylineXY(
             [centroid.asPoint(), node.geometry().asPoint()]
@@ -983,7 +1037,7 @@ class SurfaceProcessor(SpatialProcessor):
         sm_feat = self.surface_map_manager.create_new(sm_geom, self.surface_map_fields)
         sm_feat["surface_id"] = new_feat["id"]
         sm_feat["connection_node_id"] = node["id"]
-        sm_feat["percentage"] = 100
+        sm_feat["percentage"] = pct
         return sm_feat
 
     def _create_surface_map_features(
@@ -991,142 +1045,42 @@ class SurfaceProcessor(SpatialProcessor):
     ):
         """Create surface_map features linking new_feat to connection nodes.
 
-        Branches on linking.data_format:
+        Long data: one (pct, sewage_type) pair → attribute match then spatial match
+        → 0 or 1 result.
 
-        Long data: one percentage column + optional sewage type column → exactly
-        one surface_map row per source row (or zero if no pipe found).
+        Wide data: one (pct, sewage_type) pair per sewer_type_mapping → same
+        attribute-then-spatial logic per mapping → 0..N results.
 
-        Wide data: iterates sewer_type_mappings, one row per non-zero mapping.
-
-        In both paths, spatial search always filters by sewage type when available.
-        When use_sewage_type_for_attribute_match is True, the attribute-matched pipe's
-        sewage type is verified against the expected value; mismatches are rejected.
+        For attribute matching, sewage_type is always used for verification when
+        matching a pipe. For long data, use_sewage_type_for_attribute_match gates
+        whether the sewage type column value is passed at all.
         """
         linking = self.linking
+        # Store surface_geom for use in _attribute_match (pipe → node resolution)
+        self._current_surface_geom = surface_geom
         surface_map_feats = []
 
         if linking.data_format == "long":
-            # --- Long data path ---
+            sewage_type = None
             try:
                 pct = float(src_feat[linking.percentage_column])
             except (KeyError, TypeError, ValueError):
                 return []
-            if pct <= 0:
-                return []
-
-            sewage_type = None
             if linking.sewage_type_column:
                 try:
                     sewage_type = src_feat[linking.sewage_type_column]
                 except KeyError:
-                    pass
-
-            node = None
-
-            if linking.attribute_match_enabled and linking.attribute_match_table is not None:
-                input_val = get_field_config_value(
-                    linking.attribute_match_input_config,
-                    src_feat,
-                    expression_context,
-                )
-                if linking.attribute_match_table == dm.ConnectionNode.__tablename__:
-                    matches = [
-                        f
-                        for f in self.node_layer.getFeatures()
-                        if f[linking.attribute_match_col] == input_val
-                    ]
-                    if len(matches) == 1:
-                        if linking.use_sewage_type_for_attribute_match and sewage_type is not None:
-                            pass  # node match — no sewage type to verify on node
-                        node = matches[0]
-                        sm_feat = self._create_sm_feat(new_feat, surface_geom, node)
-                        sm_feat["percentage"] = pct
-                        return [sm_feat]
-                elif linking.attribute_match_table == dm.Pipe.__tablename__:
-                    matches = [
-                        f
-                        for f in self.pipe_features.values()
-                        if f[linking.attribute_match_col] == input_val
-                    ]
-                    if len(matches) == 1:
-                        pipe = matches[0]
-                        if (
-                            linking.use_sewage_type_for_attribute_match
-                            and sewage_type is not None
-                            and pipe["sewerage_type"] != sewage_type
-                        ):
-                            pipe = None  # sewage type mismatch — reject
-                        if pipe is not None:
-                            node = SurfaceProcessor._choose_closer_node(
-                                surface_geom, pipe, self.node_layer
-                            )
-                            if node is not None:
-                                sm_feat = self._create_sm_feat(new_feat, surface_geom, node)
-                                sm_feat["percentage"] = pct
-                                return [sm_feat]
-
-            if not linking.spatial_match_enabled:
-                return []
-
-            surface_buffer = surface_geom.buffer(linking.search_distance, 5)
-            pipe_ids = self.pipe_index.intersects(surface_buffer.boundingBox())
-            nearest_pipe = SurfaceProcessor._find_nearest_pipe(
-                surface_geom,
-                self.pipe_features,
-                pipe_ids,
-                linking,
-                sewage_type_filter=sewage_type,
+                    return []
+            attr_sewage = (
+                sewage_type if linking.use_sewage_type_for_attribute_match else None
             )
-            if nearest_pipe is None:
-                warnings.warn(
-                    f"Surface {new_feat['id']}: no pipe found within "
-                    f"{linking.search_distance}m — surface_map entry skipped",
-                    ProcessorWarning,
-                )
-                return []
-            node = SurfaceProcessor._choose_closer_node(
-                surface_geom, nearest_pipe, self.node_layer
+            feat = self._create_surface_map_feature(
+                new_feat, src_feat, surface_geom, attr_sewage, pct, expression_context
             )
-            if node is None:
-                return []
-            sm_feat = self._create_sm_feat(new_feat, surface_geom, node)
-            sm_feat["percentage"] = pct
-            return [sm_feat]
+            if feat:
+                surface_map_feats.append(feat)
 
-        # --- Wide data path ---
-        if (
-            linking.attribute_match_enabled
-            and linking.attribute_match_table is not None
-        ):
-            input_val = get_field_config_value(
-                linking.attribute_match_input_config,
-                src_feat,
-                expression_context,
-            )
-            if linking.attribute_match_table == dm.ConnectionNode.__tablename__:
-                matches = [
-                    f
-                    for f in self.node_layer.getFeatures()
-                    if f[linking.attribute_match_col] == input_val
-                ]
-                if len(matches) == 1:
-                    return [self._create_sm_feat(new_feat, surface_geom, matches[0])]
-            elif linking.attribute_match_table == dm.Pipe.__tablename__:
-                matches = [
-                    f
-                    for f in self.pipe_features.values()
-                    if f[linking.attribute_match_col] == input_val
-                ]
-                if len(matches) == 1:
-                    node = SurfaceProcessor._choose_closer_node(
-                        surface_geom, matches[0], self.node_layer
-                    )
-                    if node is not None:
-                        return [self._create_sm_feat(new_feat, surface_geom, node)]
-
-        if not linking.spatial_match_enabled:
-            return surface_map_feats
-
+        # Wide data: iterate mappings
         for mapping in self.sewer_type_mappings:
             if mapping.percentage_column is None:
                 continue
@@ -1134,46 +1088,12 @@ class SurfaceProcessor(SpatialProcessor):
                 pct = float(src_feat[mapping.percentage_column])
             except (KeyError, TypeError, ValueError):
                 continue
-            if pct <= 0:
-                continue
-
-            surface_buffer = surface_geom.buffer(linking.search_distance, 5)
-            pipe_ids = self.pipe_index.intersects(surface_buffer.boundingBox())
-            nearest_pipe = SurfaceProcessor._find_nearest_pipe(
-                surface_geom,
-                self.pipe_features,
-                pipe_ids,
-                linking,
-                sewage_type_filter=mapping.sewerage_type,
+            sewage_type = mapping.sewerage_type
+            feat = self._create_surface_map_feature(
+                new_feat, src_feat, surface_geom, sewage_type, pct, expression_context
             )
-
-            if nearest_pipe is None:
-                warnings.warn(
-                    f"Surface {new_feat['id']}: no pipe of sewerage_type "
-                    f"{mapping.sewerage_type} found within {linking.search_distance}m "
-                    f"— surface_map entry skipped",
-                    ProcessorWarning,
-                )
-                continue
-
-            node = SurfaceProcessor._choose_closer_node(
-                surface_geom, nearest_pipe, self.node_layer
-            )
-            if node is None:
-                continue
-
-            centroid = surface_geom.pointOnSurface()
-            sm_geom = QgsGeometry.fromPolylineXY(
-                [centroid.asPoint(), node.geometry().asPoint()]
-            )
-            sm_feat = self.surface_map_manager.create_new(
-                sm_geom, self.surface_map_fields
-            )
-            sm_feat["surface_id"] = new_feat["id"]
-            sm_feat["connection_node_id"] = node["id"]
-            sm_feat["percentage"] = pct
-            surface_map_feats.append(sm_feat)
-
+            if feat:
+                surface_map_feats.append(feat)
         return surface_map_feats
 
     def process_feature(self, src_feat):

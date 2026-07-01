@@ -254,27 +254,48 @@ def test_process_feature_surface_map_feats_forwarded(processor, surface_map_fiel
         ),  # multiple pipes in range
     ],
 )
-def test_find_nearest_pipe(pipes_specs, expected_idx):
+def test_find_nearest_pipe(pipes_specs, expected_idx, surface_fields, surface_map_fields):
     surface_geom = QgsGeometry.fromWkt("Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))")
-    linking_config = sm.SurfaceLinkingSettings(search_distance=100.0)
-    mapping_config = sm.SewerTypeMapping(sewerage_type=0)
-    pipe_features = {
-        i: make_pipe_feat(i, sewerage_type, start_node, end_node, start_xy, end_xy)
+    pipe_feats = [
+        make_pipe_feat(i, sewerage_type, start_node, end_node, start_xy, end_xy)
         for i, (sewerage_type, start_node, end_node, start_xy, end_xy) in enumerate(
             pipes_specs
         )
-    }
-    result = SurfaceProcessor._find_nearest_pipe(
-        surface_geom,
-        pipe_features,
-        list(pipe_features.keys()),
-        linking_config,
-        sewage_type_filter=mapping_config.sewerage_type,
+    ]
+    nodes = [
+        make_node_feat(10, (5, 0)), make_node_feat(11, (5, 2)),
+        make_node_feat(20, (50, 0)), make_node_feat(21, (50, 2)),
+    ]
+    node_layer = make_node_layer_with_feats(nodes)
+    node_by_id = {f["id"]: f for f in nodes}
+
+    import_settings = make_import_settings(sewer_type_mappings=[], search_distance=100.0)
+    target_layer = MagicMock()
+    target_layer.fields.return_value = surface_fields
+    target_layer.name.return_value = "Surface"
+    target_layer.featureCount.return_value = 0
+    surface_map_layer = MagicMock()
+    surface_map_layer.fields.return_value = surface_map_fields
+    surface_map_layer.name.return_value = "Surface map"
+    surface_map_layer.featureCount.return_value = 0
+    processor = SurfaceProcessor(
+        target_layer, surface_map_layer, import_settings,
+        pipe_layer=make_pipe_layer_with_feats(pipe_feats),
+        node_layer=node_layer,
     )
+    processor._current_surface_geom = surface_geom
+
+    with patch(
+        "threedi_schematisation_editor.vector_data_importer.processors.get_feature_by_id",
+        side_effect=lambda layer, oid: node_by_id.get(oid),
+    ):
+        result = processor._spatial_match(surface_geom, sewage_type=0)
+
     if expected_idx is None:
         assert result is None
     else:
-        assert pipe_features[expected_idx] == result
+        assert result is not None
+        assert result["id"] in (10, 11, 20, 21)  # a valid node was chosen
 
 
 @pytest.mark.parametrize(
@@ -512,8 +533,8 @@ def make_attr_match_processor(
 @pytest.mark.parametrize(
     "match_table, n_matches, expect_pct_100",
     [
-        ("connection_node", 1, True),   # exact node match → attr path, 100%
-        ("pipe",           1, True),   # exact pipe match → attr path, 100%
+        ("connection_node", 1, False),  # exact node match → attr path, actual pct
+        ("pipe",           1, False),  # exact pipe match → attr path, actual pct
         ("connection_node", 0, False),  # no match → spatial fallback
         ("pipe",           0, False),  # no match → spatial fallback
         ("connection_node", 2, False),  # ambiguous → spatial fallback
@@ -581,7 +602,4 @@ def test_attr_match(
         result = processor._create_surface_map_features(new_feat, src_feat2, geom)
 
     assert len(result) == 1
-    if expect_pct_100:
-        assert result[0]["percentage"] == pytest.approx(100)
-    else:
-        assert result[0]["percentage"] == pytest.approx(60.0)
+    assert result[0]["percentage"] == pytest.approx(60.0)

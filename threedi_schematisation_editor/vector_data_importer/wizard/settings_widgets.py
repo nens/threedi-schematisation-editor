@@ -632,8 +632,7 @@ class SewerTypeMappingDelegate(QStyledItemDelegate):
         model.setData(index, editor.currentData(), Qt.EditRole)
 
 
-
-class SurfaceMapSettingsWidget(SettingsWidget):
+class SurfaceLinkingSettingsWidget(SettingsWidget):
     """Combined data format selection, column mapping, and surface linking settings."""
 
     expanding = True
@@ -700,8 +699,12 @@ class SurfaceMapSettingsWidget(SettingsWidget):
             QAbstractItemView.CurrentChanged | QAbstractItemView.SelectedClicked
         )
         header = self._sewer_table.horizontalHeader()
-        header.setSectionResizeMode(SewerTypeMappingModel.SEWERAGE_TYPE_COL, QHeaderView.Stretch)
-        header.setSectionResizeMode(SewerTypeMappingModel.PERCENTAGE_COL, QHeaderView.Stretch)
+        header.setSectionResizeMode(
+            SewerTypeMappingModel.SEWERAGE_TYPE_COL, QHeaderView.Stretch
+        )
+        header.setSectionResizeMode(
+            SewerTypeMappingModel.PERCENTAGE_COL, QHeaderView.Stretch
+        )
         self._sewer_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         btn_layout = QHBoxLayout()
         btn_layout.setContentsMargins(0, 0, 0, 0)
@@ -745,7 +748,10 @@ class SurfaceMapSettingsWidget(SettingsWidget):
         match_row.addWidget(self.match_table_col)
         linking_layout.addLayout(match_row)
         config = create_field_map_config(
-            allowed_methods=[ColumnImportMethod.ATTRIBUTE, ColumnImportMethod.EXPRESSION]
+            allowed_methods=[
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+            ]
         )
         row_dict = {
             "attribute_match_input": FieldMapRow(
@@ -759,15 +765,21 @@ class SurfaceMapSettingsWidget(SettingsWidget):
         self.match_field_map_widget.open_persistent_editors()
         linking_layout.addWidget(self.match_field_map_widget)
 
-        self.use_sewage_type_checkbox = QCheckBox("Use sewage type for attribute matching")
+        self.use_sewage_type_checkbox = QCheckBox(
+            "Use sewage type for attribute matching"
+        )
         linking_layout.addWidget(self.use_sewage_type_checkbox)
 
         spat_row = QHBoxLayout()
         self.match_spatial_checkbox = QCheckBox("Spatial matching")
         self.search_distance = QDoubleSpinBox()
         self.search_distance.setDecimals(1)
-        self.search_distance.setMinimum(sm.get_field_min(sm.SurfaceLinkingSettings, "search_distance"))
-        self.search_distance.setMaximum(sm.get_field_max(sm.SurfaceLinkingSettings, "search_distance"))
+        self.search_distance.setMinimum(
+            sm.get_field_min(sm.SurfaceLinkingSettings, "search_distance")
+        )
+        self.search_distance.setMaximum(
+            sm.get_field_max(sm.SurfaceLinkingSettings, "search_distance")
+        )
         self.search_distance.setValue(_defaults.search_distance)
         self.search_distance.setSuffix(" m")
         spat_row.addWidget(self.match_spatial_checkbox)
@@ -868,7 +880,9 @@ class SurfaceMapSettingsWidget(SettingsWidget):
         match_model = self._match_table_model()
         match_table = match_model.__tablename__ if match_model is not None else None
         match_by_table = not self.match_no_table_radio.isChecked()
-        match_col = (self.match_table_col.currentText() or None) if match_by_table else None
+        match_col = (
+            (self.match_table_col.currentText() or None) if match_by_table else None
+        )
         input_cfg = (
             self.match_field_map_widget.get_settings().get("attribute_match_input")
             if match_by_table and match_table and match_col
@@ -946,10 +960,14 @@ class SurfaceMapSettingsWidget(SettingsWidget):
             self.match_no_table_radio.setChecked(True)
         if self.model.attribute_match_input_config:
             self.match_field_map_widget.deserialize(
-                {"attribute_match_input": self.model.attribute_match_input_config.model_dump()}
+                {
+                    "attribute_match_input": self.model.attribute_match_input_config.model_dump()
+                }
             )
         self.match_spatial_checkbox.setChecked(self.model.spatial_match_enabled)
         self.search_distance.setValue(self.model.search_distance)
         self.selected_pipes_only.setChecked(self.model.selected_pipes_only)
-        self.use_sewage_type_checkbox.setChecked(self.model.use_sewage_type_for_attribute_match)
+        self.use_sewage_type_checkbox.setChecked(
+            self.model.use_sewage_type_for_attribute_match
+        )
         self._update_linking_enabled()
