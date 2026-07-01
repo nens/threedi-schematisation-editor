@@ -141,7 +141,7 @@ class VDIWizard(QWizard):
         return FieldMapPage(model_cls=self.model_cls, name="fields")
 
     @cached_property
-    def connection_node_pages(self):
+    def extra_field_map_pages(self):
         return []
 
     @cached_property
@@ -167,7 +167,7 @@ class VDIWizard(QWizard):
             self.addPage(self.settings_page)
         if self.field_map_page:
             self.addPage(self.field_map_page)
-        for page in self.connection_node_pages:
+        for page in self.extra_field_map_pages:
             self.addPage(page)
         self.addPage(self.run_page)
         # Connect import start and finish signals
@@ -357,13 +357,20 @@ class VDIWizard(QWizard):
             self.restore_draft_lenient(draft)
             self._initial_draft = self.get_draft_settings()
 
+    def should_collect_page(self, page):
+        """Return False to skip collecting settings from a FieldMapPage.
+
+        Subclasses override this to implement conditional-skip logic without
+        hardcoding page names in the base class.
+        """
+        return True
+
     def get_settings(self) -> BaseModel:
         data = {}
         for page_id in self.pageIds():
             page = self.page(page_id)
-            if isinstance(page, FieldMapPage) and page.name == "connection_node_fields":
-                if not self.settings_page.create_nodes:
-                    continue
+            if isinstance(page, FieldMapPage) and not self.should_collect_page(page):
+                continue
             if isinstance(page, (StartPage, FieldMapPage, SettingsPage)):
                 data.update(page.get_settings())
 
@@ -471,16 +478,21 @@ class VDIWizard(QWizard):
 
 class ImportWithCreateConnectionNodesWizard(VDIWizard):
     @cached_property
-    def connection_node_pages(self):
+    def extra_field_map_pages(self):
         return [
             FieldMapPage(model_cls=dm.ConnectionNode, name="connection_node_fields")
         ]
 
     @property
-    def connect_node_page_ids(self):
+    def extra_field_map_page_ids(self):
         return [
-            id for id in self.pageIds() if self.page(id) in self.connection_node_pages
+            id for id in self.pageIds() if self.page(id) in self.extra_field_map_pages
         ]
+
+    def should_collect_page(self, page):
+        if isinstance(page, FieldMapPage) and page.name == "connection_node_fields":
+            return self.settings_page.create_nodes
+        return True
 
     def nextId(self):
         next_id = super().nextId()
@@ -489,7 +501,7 @@ class ImportWithCreateConnectionNodesWizard(VDIWizard):
             return next_id
         # If no connection nodes are added, skip settings for connection nodes
         if not self.settings_page.create_nodes:
-            while next_id in self.connect_node_page_ids:
+            while next_id in self.extra_field_map_page_ids:
                 next_id += 1
         return next_id
 
