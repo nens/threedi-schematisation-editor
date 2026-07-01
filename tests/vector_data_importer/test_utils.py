@@ -454,7 +454,7 @@ def test_compute_selected_ids(selected_indices, expression, expected_indices):
 
     settings = SourceSettings(
         use_selected_features=len(selected_indices) > 0,
-        filter_expression=expression,
+        include_expression=expression,
     )
 
     result = compute_selected_ids(layer, settings)
@@ -471,7 +471,7 @@ def test_compute_selected_ids_invalid_expression_warns_and_returns_candidates():
     all_ids = [feat.id() for feat in layer.getFeatures()]
     layer.selectByIds([all_ids[0]])
     settings = SourceSettings(
-        use_selected_features=True, filter_expression="((invalid(("
+        use_selected_features=True, include_expression="((invalid(("
     )
     import warnings as stdlib_warnings
 
@@ -487,7 +487,7 @@ def test_compute_selected_ids_invalid_expression_warns_and_returns_candidates():
 def test_compute_selected_ids_unknown_field_warns_and_returns_candidates():
     layer = _make_layer_with_values([1, 2, 3])
     all_ids = [feat.id() for feat in layer.getFeatures()]
-    settings = SourceSettings(filter_expression='"nonexistent" > 1')
+    settings = SourceSettings(include_expression='"nonexistent" > 1')
     import warnings as stdlib_warnings
 
     from threedi_schematisation_editor.warnings import FeaturesImporterWarning

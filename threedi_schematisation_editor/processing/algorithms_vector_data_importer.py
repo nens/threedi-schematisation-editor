@@ -202,7 +202,7 @@ class BaseImporter(QgsProcessingAlgorithm):
         importer = self.create_importer(source_layer, target_gpkg, import_config)
 
         # The source_layer from the UI takes priority over any layer name in the config.
-        # filter_expression from the config is applied against the UI-selected layer.
+        # include_expression from the config is applied against the UI-selected layer.
         selected_ids = compute_selected_ids(source_layer, import_config.source)
         importer.import_features(context=context, selected_ids=selected_ids)
         importer.commit_pending_changes()

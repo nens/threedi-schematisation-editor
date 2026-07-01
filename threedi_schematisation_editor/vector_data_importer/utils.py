@@ -205,7 +205,7 @@ def compute_selected_ids(layer, source_settings):
     4. use_selected=True,  expression set -> selected IDs filtered by expression
     """
     use_selected = source_settings.use_selected_features
-    expression_str = source_settings.filter_expression
+    expression_str = source_settings.include_expression
 
     if use_selected:
         candidate_ids = list(layer.selectedFeatureIds())

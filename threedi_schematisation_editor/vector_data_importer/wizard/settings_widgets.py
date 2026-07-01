@@ -77,12 +77,12 @@ class LayerSettingsWidget(QWidget):
         self.layer_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.use_selected = QCheckBox("Selected features only")
         self.use_selected.setEnabled(False)
-        self.filter_expression = QgsFieldExpressionWidget()
-        self.filter_expression.setAllowEmptyFieldName(True)
-        self.filter_expression.setEnabled(False)
+        self.include_expression = QgsFieldExpressionWidget()
+        self.include_expression.setAllowEmptyFieldName(True)
+        self.include_expression.setEnabled(False)
         expr_layout = QHBoxLayout()
-        expr_layout.addWidget(QLabel("Filter expression:"))
-        expr_layout.addWidget(self.filter_expression)
+        expr_layout.addWidget(QLabel("Select features with expression:"))
+        expr_layout.addWidget(self.include_expression)
         # set up layout
         layout = QVBoxLayout(self)
         layout.addWidget(label)
@@ -91,7 +91,7 @@ class LayerSettingsWidget(QWidget):
         layout.addLayout(expr_layout)
         # Connect widgets to model updates
         self.use_selected.toggled.connect(self.update_use_selected)
-        self.filter_expression.fieldChanged.connect(self.update_filter_expression)
+        self.include_expression.fieldChanged.connect(self.update_include_expression)
 
     def update_layer(self, layer):
         if layer:
@@ -99,38 +99,38 @@ class LayerSettingsWidget(QWidget):
             self.model.selected_layer_name = layer.name()
             self.layer_changed.emit(layer.name())
             self.use_selected.setEnabled(len(layer.selectedFeatureIds()) > 0)
-            self.filter_expression.setLayer(layer)
-            self.filter_expression.setEnabled(True)
+            self.include_expression.setLayer(layer)
+            self.include_expression.setEnabled(True)
             self._clear_expression_if_invalid()
         else:
             self.selected_layer = None
             self.model.selected_layer_name = ""
             self.layer_changed.emit("")
             self.use_selected.setEnabled(False)
-            self.filter_expression.setLayer(None)
-            self.filter_expression.setEnabled(False)
+            self.include_expression.setLayer(None)
+            self.include_expression.setEnabled(False)
 
     def _clear_expression_if_invalid(self):
         """Clear the expression if it references fields not present in the current layer."""
-        expr_str = self.filter_expression.expression()
+        expr_str = self.include_expression.expression()
         if not expr_str or self.selected_layer is None:
             return
         expr = QgsExpression(expr_str)
         if expr.hasParserError():
-            self.filter_expression.setExpression("")
-            self.model.filter_expression = None
+            self.include_expression.setExpression("")
+            self.model.include_expression = None
             return
         field_names = {f.name() for f in self.selected_layer.fields()}
         unknown = expr.referencedColumns() - field_names - {"*"}
         if unknown:
-            self.filter_expression.setExpression("")
-            self.model.filter_expression = None
+            self.include_expression.setExpression("")
+            self.model.include_expression = None
 
     def update_use_selected(self, checked):
         self.model.use_selected_features = checked
 
-    def update_filter_expression(self, expression):
-        self.model.filter_expression = expression or None
+    def update_include_expression(self, expression):
+        self.model.include_expression = expression or None
 
     def get_settings(self) -> SourceSettings:
         return self.model
@@ -143,9 +143,9 @@ class LayerSettingsWidget(QWidget):
                 idx = self.layer_selector.findText(layer_name)
                 if idx >= 0:
                     self.layer_selector.setLayer(self.layer_selector.layer(idx))
-        expr = data.get("filter_expression") or ""
-        self.filter_expression.setExpression(expr)
-        self.model.filter_expression = expr or None
+        expr = data.get("include_expression") or ""
+        self.include_expression.setExpression(expr)
+        self.model.include_expression = expr or None
         self._clear_expression_if_invalid()
 
 

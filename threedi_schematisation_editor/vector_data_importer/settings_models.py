@@ -244,7 +244,7 @@ class SourceSettings(BaseModel):
     name: ClassVar[str] = "source"
     selected_layer_name: str = ""
     use_selected_features: bool = False
-    filter_expression: Optional[str] = None
+    include_expression: Optional[str] = None
 
 
 class SewerTypeMapping(BaseModel):
