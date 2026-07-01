@@ -257,7 +257,6 @@ class SurfaceLinkingSettings(BaseModel):
     # Format selection
     data_format: Literal["long", "wide"] = "wide"
     # Long data fields
-    percentage_column: Optional[str] = None
     sewage_type_column: Optional[str] = None
     # Wide data fields
     sewer_type_mappings: list[SewerTypeMapping] = []
@@ -284,3 +283,4 @@ class ImportSettings(BaseModel):
     surface_linking: SurfaceLinkingSettings = SurfaceLinkingSettings()
     fields: dict[str, FieldMapConfig] = {}
     connection_node_fields: dict[str, FieldMapConfig] = {}
+    surface_map_fields: dict[str, FieldMapConfig] = {}

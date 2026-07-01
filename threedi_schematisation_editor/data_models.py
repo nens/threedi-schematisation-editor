@@ -689,12 +689,12 @@ class SurfaceMap(ModelObject):
     __layername__ = "Surface map"
     __geometrytype__ = GeometryType.Linestring
 
-    id: int
+    id: int = field(metadata={ALLOWED_METHODS_FIELD: [ColumnImportMethod.AUTO]})
     code: Optional[str]
     display_name: Optional[str]
     percentage: float
-    surface_id: int
-    connection_node_id: int
+    surface_id: int = field(metadata={ALLOWED_METHODS_FIELD: [ColumnImportMethod.AUTO]})
+    connection_node_id: int = field(metadata={ALLOWED_METHODS_FIELD: [ColumnImportMethod.AUTO]})
     tags: Optional[str]
 
 
