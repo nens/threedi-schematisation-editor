@@ -37,8 +37,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
     IntegrationSettingsWidget,
     PointToLIneConversionSettingsWidget,
     SettingsWidget,
-    SurfaceConnectionSettingsWidget,
-    SurfaceMapPercentageSettingsWidget,
+    SurfaceMapSettingsWidget,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
     CatchThreediWarnings,
@@ -614,8 +613,7 @@ class ImportCrossSectionLocationWizard(VDIWizard):
 
 class ImportSurfaceWizard(VDIWizard):
     settings_widgets_classes = [
-        SurfaceMapPercentageSettingsWidget,
-        SurfaceConnectionSettingsWidget,
+        SurfaceMapSettingsWidget,
     ]
 
     @property

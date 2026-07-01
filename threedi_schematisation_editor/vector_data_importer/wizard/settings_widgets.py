@@ -944,3 +944,31 @@ class SurfaceConnectionSettingsWidget(SettingsWidget):
         self.search_distance.setValue(self.model.search_distance)
         self.selected_pipes_only.setChecked(self.model.selected_pipes_only)
         self.update_sections_enabled()
+
+
+class SurfaceMapSettingsWidget(SettingsWidget):
+    """Combined surface map percentage + linking settings widget. TODO: implement."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.model = sm.SurfaceLinkingSettings()
+
+    @property
+    def name(self) -> str:
+        return sm.SurfaceLinkingSettings.name
+
+    @property
+    def group_name(self) -> str:
+        return "Surface map settings"
+
+    @property
+    def is_valid(self) -> bool:
+        return True
+
+    def get_settings(self) -> sm.SurfaceLinkingSettings:
+        return self.model
+
+    def deserialize(self, data):
+        self.model = (
+            sm.SurfaceLinkingSettings(**data) if data else sm.SurfaceLinkingSettings()
+        )
