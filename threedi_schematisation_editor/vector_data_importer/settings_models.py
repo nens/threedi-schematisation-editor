@@ -262,7 +262,7 @@ class SurfaceLinkingSettings(BaseModel):
     # Wide data fields
     sewer_type_mappings: list[SewerTypeMapping] = []
     # Linking
-    search_distance: float = Field(default=10.0, ge=0, le=1000000.0)
+    search_distance: float = Field(default=40.0, ge=0, le=1000000.0)
     selected_pipes_only: bool = False
     attribute_match_enabled: bool = False
     spatial_match_enabled: bool = True
