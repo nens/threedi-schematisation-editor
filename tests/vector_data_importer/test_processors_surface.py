@@ -389,7 +389,6 @@ def test_create_surface_map_percentage(
         assert result[0].geometry().type() == QgsWkbTypes.GeometryType.LineGeometry
 
 
-@pytest.mark.skip(reason="updated in Task 2: percentage_column replaced by surface_map_fields")
 @pytest.mark.parametrize(
     "runoff_pct, expect_entry",
     [
@@ -400,7 +399,7 @@ def test_create_surface_map_percentage(
 def test_create_surface_map_long_data(
     surface_fields, surface_map_fields, runoff_pct, expect_entry
 ):
-    """Long data path: one surface_map row per source row with explicit percentage column."""
+    """Long data path: percentage driven by surface_map_fields config."""
     pipe = make_pipe_feat(1, 0, 10, 11, (5, 0), (5, 2))
     nodes = [make_node_feat(10, (5, 0)), make_node_feat(11, (5, 2))]
     processor, node_by_id = make_spatial_processor(
@@ -410,7 +409,11 @@ def test_create_surface_map_long_data(
         nodes,
         sewer_type_mappings=[],
         data_format="long",
-        percentage_column="runoff_pct",
+        surface_map_fields_config={
+            "percentage": sm.FieldMapConfig(
+                method=ColumnImportMethod.ATTRIBUTE, source_attribute="runoff_pct"
+            ),
+        },
     )
     result = run_create_surface_map(
         processor, node_by_id, make_polygon_feature(runoff_pct=runoff_pct)
@@ -419,6 +422,52 @@ def test_create_surface_map_long_data(
     if expect_entry:
         assert result[0]["percentage"] == pytest.approx(runoff_pct)
         assert result[0]["connection_node_id"] in (10, 11)
+
+
+def test_create_surface_map_long_data_no_pct_config(surface_fields, surface_map_fields):
+    """Long data: missing percentage config → no surface_map features created."""
+    pipe = make_pipe_feat(1, 0, 10, 11, (5, 0), (5, 2))
+    nodes = [make_node_feat(10, (5, 0)), make_node_feat(11, (5, 2))]
+    processor, node_by_id = make_spatial_processor(
+        surface_fields,
+        surface_map_fields,
+        [pipe],
+        nodes,
+        sewer_type_mappings=[],
+        data_format="long",
+        surface_map_fields_config={},  # no percentage key
+    )
+    result = run_create_surface_map(
+        processor, node_by_id, make_polygon_feature(runoff_pct=75.0)
+    )
+    assert result == []
+
+
+def test_create_surface_map_long_data_extra_fields(surface_fields, surface_map_fields):
+    """Extra surface_map_fields (code, tags) are applied via update_attributes."""
+    pipe = make_pipe_feat(1, 0, 10, 11, (5, 0), (5, 2))
+    nodes = [make_node_feat(10, (5, 0)), make_node_feat(11, (5, 2))]
+    processor, node_by_id = make_spatial_processor(
+        surface_fields,
+        surface_map_fields,
+        [pipe],
+        nodes,
+        sewer_type_mappings=[],
+        data_format="long",
+        surface_map_fields_config={
+            "percentage": sm.FieldMapConfig(
+                method=ColumnImportMethod.ATTRIBUTE, source_attribute="runoff_pct"
+            ),
+            "code": sm.FieldMapConfig(
+                method=ColumnImportMethod.DEFAULT, default_value="test-code"
+            ),
+        },
+    )
+    result = run_create_surface_map(
+        processor, node_by_id, make_polygon_feature(runoff_pct=50.0)
+    )
+    assert len(result) == 1
+    assert result[0]["code"] == "test-code"
 
 
 def test_create_surface_map_no_pipe_warns(surface_fields, surface_map_fields):

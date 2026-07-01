@@ -907,6 +907,7 @@ class SurfaceProcessor(SpatialProcessor):
             surface_map_layer.fields() if surface_map_layer else None
         )
         self.fields_configuration = import_settings.fields
+        self.surface_map_fields_configuration = import_settings.surface_map_fields
         self.sewer_type_mappings = import_settings.surface_linking.sewer_type_mappings
         self.linking = import_settings.surface_linking
         self.node_layer = node_layer
@@ -1049,6 +1050,12 @@ class SurfaceProcessor(SpatialProcessor):
         sm_feat["surface_id"] = new_feat["id"]
         sm_feat["connection_node_id"] = node["id"]
         sm_feat["percentage"] = pct
+        update_attributes(
+            self.surface_map_fields_configuration,
+            dm.SurfaceMap,
+            src_feat,
+            sm_feat,
+        )
         return sm_feat
 
     def _create_surface_map_features(
@@ -1073,9 +1080,14 @@ class SurfaceProcessor(SpatialProcessor):
 
         if linking.data_format == "long":
             sewage_type = None
+            pct_config = self.surface_map_fields_configuration.get("percentage")
+            if pct_config is None:
+                return []
             try:
-                pct = float(src_feat[linking.percentage_column])
-            except (KeyError, TypeError, ValueError):
+                pct = float(
+                    get_field_config_value(pct_config, src_feat, expression_context)
+                )
+            except TypeError:
                 return []
             if linking.sewage_type_column:
                 try:
