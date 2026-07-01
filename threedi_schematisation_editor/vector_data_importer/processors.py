@@ -996,6 +996,17 @@ class SurfaceProcessor(SpatialProcessor):
             pipe_feat = self.pipe_features[pipe_id]
             if sewage_type is not None and pipe_feat["sewerage_type"] != sewage_type:
                 continue
+            start_node = get_feature_by_id(
+                self.node_layer, pipe_feat["connection_node_id_start"]
+            )
+            end_node = get_feature_by_id(
+                self.node_layer, pipe_feat["connection_node_id_end"]
+            )
+            # skip outlets
+            if (start_node is None or start_node["visualisation"] == 1) or (
+                end_node is None or end_node["visualisation"] == 1
+            ):
+                continue
             dist = surface_geom.distance(pipe_feat.geometry())
             if dist > linking.search_distance:
                 continue

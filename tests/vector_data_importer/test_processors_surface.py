@@ -57,7 +57,9 @@ def surface_map_fields():
     return fields
 
 
-def make_import_settings(sewer_type_mappings=None, surface_linking=None, **surface_linking_kwargs):
+def make_import_settings(
+    sewer_type_mappings=None, surface_linking=None, **surface_linking_kwargs
+):
     if surface_linking is None:
         surface_linking = sm.SurfaceLinkingSettings(
             sewer_type_mappings=sewer_type_mappings or [],
@@ -153,11 +155,13 @@ def make_pipe_feat(fid, sewerage_type, start_node_id, end_node_id, start_xy, end
     return feat
 
 
-def make_node_feat(node_id, xy):
+def make_node_feat(node_id, xy, visualisation=0):
     fields = QgsFields()
     fields.append(QgsField("id", QVariant.Int))
+    fields.append(QgsField("visualisation", QVariant.Int))
     feat = QgsFeature(fields)
     feat.setAttribute("id", node_id)
+    feat.setAttribute("visualisation", visualisation)
     feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(*xy)))
     return feat
 
@@ -243,18 +247,35 @@ def test_process_feature_surface_map_feats_forwarded(processor, surface_map_fiel
 
 
 @pytest.mark.parametrize(
-    "pipes_specs, expected_idx",
+    "pipes_specs, outlet_node_ids, expected_idx",
     [
-        ([(0, 10, 11, (5, 0), (5, 2))], 0),  # pipe in range → returns pipe
-        ([(0, 10, 11, (500, 0), (500, 2))], None),  # pipe out of range → returns None
-        ([(1, 10, 11, (5, 0), (5, 2))], None),  # wrong sewerage type
+        ([(0, 10, 11, (5, 0), (5, 2))], set(), 0),  # pipe in range → returns pipe
+        (
+            [(0, 10, 11, (500, 0), (500, 2))],
+            set(),
+            None,
+        ),  # pipe out of range → returns None
+        ([(1, 10, 11, (5, 0), (5, 2))], set(), None),  # wrong sewerage type
         (
             [(0, 20, 21, (50, 0), (50, 2)), (0, 10, 11, (5, 0), (5, 2))],
+            set(),
             1,
         ),  # multiple pipes in range
+        (
+            [(0, 10, 11, (5, 0), (5, 2))],
+            {10},
+            None,
+        ),  # nearest pipe has outlet node → excluded
+        (
+            [(0, 20, 21, (50, 0), (50, 2)), (0, 10, 11, (5, 0), (5, 2))],
+            {10},
+            0,
+        ),  # nearest pipe excluded (outlet), farther pipe returned
     ],
 )
-def test_find_nearest_pipe(pipes_specs, expected_idx, surface_fields, surface_map_fields):
+def test_find_nearest_pipe(
+    pipes_specs, outlet_node_ids, expected_idx, surface_fields, surface_map_fields
+):
     surface_geom = QgsGeometry.fromWkt("Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))")
     pipe_feats = [
         make_pipe_feat(i, sewerage_type, start_node, end_node, start_xy, end_xy)
@@ -263,13 +284,17 @@ def test_find_nearest_pipe(pipes_specs, expected_idx, surface_fields, surface_ma
         )
     ]
     nodes = [
-        make_node_feat(10, (5, 0)), make_node_feat(11, (5, 2)),
-        make_node_feat(20, (50, 0)), make_node_feat(21, (50, 2)),
+        make_node_feat(10, (5, 0), visualisation=1 if 10 in outlet_node_ids else 0),
+        make_node_feat(11, (5, 2), visualisation=1 if 11 in outlet_node_ids else 0),
+        make_node_feat(20, (50, 0), visualisation=1 if 20 in outlet_node_ids else 0),
+        make_node_feat(21, (50, 2), visualisation=1 if 21 in outlet_node_ids else 0),
     ]
     node_layer = make_node_layer_with_feats(nodes)
     node_by_id = {f["id"]: f for f in nodes}
 
-    import_settings = make_import_settings(sewer_type_mappings=[], search_distance=100.0)
+    import_settings = make_import_settings(
+        sewer_type_mappings=[], search_distance=100.0
+    )
     target_layer = MagicMock()
     target_layer.fields.return_value = surface_fields
     target_layer.name.return_value = "Surface"
@@ -279,7 +304,9 @@ def test_find_nearest_pipe(pipes_specs, expected_idx, surface_fields, surface_ma
     surface_map_layer.name.return_value = "Surface map"
     surface_map_layer.featureCount.return_value = 0
     processor = SurfaceProcessor(
-        target_layer, surface_map_layer, import_settings,
+        target_layer,
+        surface_map_layer,
+        import_settings,
         pipe_layer=make_pipe_layer_with_feats(pipe_feats),
         node_layer=node_layer,
     )
@@ -364,8 +391,8 @@ def test_create_surface_map_percentage(
 @pytest.mark.parametrize(
     "runoff_pct, expect_entry",
     [
-        (75.0, True),   # non-zero → one entry created
-        (0.0, False),   # zero → skipped
+        (75.0, True),  # non-zero → one entry created
+        (0.0, False),  # zero → skipped
     ],
 )
 def test_create_surface_map_long_data(
@@ -424,6 +451,7 @@ def make_node_layer_with_feats(node_feats):
         [
             QgsField("id", QVariant.Int),
             QgsField("code", QVariant.String),
+            QgsField("visualisation", QVariant.Int),
         ]
     )
     layer.updateFields()
@@ -462,7 +490,9 @@ def make_node_feat_with_code(node_id, xy, code):
     return feat
 
 
-def make_pipe_feat_with_code(fid, sewerage_type, start_node_id, end_node_id, start_xy, end_xy, code):
+def make_pipe_feat_with_code(
+    fid, sewerage_type, start_node_id, end_node_id, start_xy, end_xy, code
+):
     fields = QgsFields()
     for name, typ in [
         ("id", QVariant.Int),
@@ -534,11 +564,11 @@ def make_attr_match_processor(
     "match_table, n_matches, expect_pct_100",
     [
         ("connection_node", 1, False),  # exact node match → attr path, actual pct
-        ("pipe",           1, False),  # exact pipe match → attr path, actual pct
+        ("pipe", 1, False),  # exact pipe match → attr path, actual pct
         ("connection_node", 0, False),  # no match → spatial fallback
-        ("pipe",           0, False),  # no match → spatial fallback
+        ("pipe", 0, False),  # no match → spatial fallback
         ("connection_node", 2, False),  # ambiguous → spatial fallback
-        ("pipe",           2, False),  # ambiguous → spatial fallback
+        ("pipe", 2, False),  # ambiguous → spatial fallback
     ],
 )
 def test_attr_match(
@@ -562,9 +592,7 @@ def test_attr_match(
     all_nodes = matching_nodes + [non_matching_node]
 
     matching_pipes = [
-        make_pipe_feat_with_code(
-            100 + i, 0, 10, 11, (5, 0), (5, 2), match_code
-        )
+        make_pipe_feat_with_code(100 + i, 0, 10, 11, (5, 0), (5, 2), match_code)
         for i in range(n_matches)
     ]
     # Pipe layer also contains the spatial fallback pipe (no code field → use make_pipe_layer_with_feats)
