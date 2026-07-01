@@ -639,12 +639,12 @@ class SurfaceMapPercentageSettingsWidget(SettingsWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.model = sm.SurfaceMapPercentageSettings()
+        self.model = sm.SurfaceLinkingSettings()
         self.setup_ui()
 
     @property
     def name(self) -> str:
-        return sm.SurfaceMapPercentageSettings.name
+        return sm.SurfaceLinkingSettings.name
 
     @property
     def group_name(self) -> str:
@@ -733,14 +733,14 @@ class SurfaceMapPercentageSettingsWidget(SettingsWidget):
             return reply == QMessageBox.Yes
         return True
 
-    def get_settings(self) -> sm.SurfaceMapPercentageSettings:
+    def get_settings(self) -> sm.SurfaceLinkingSettings:
         return self.model
 
     def deserialize(self, data):
         self.model = (
-            sm.SurfaceMapPercentageSettings(**data)
+            sm.SurfaceLinkingSettings(**data)
             if data
-            else sm.SurfaceMapPercentageSettings()
+            else sm.SurfaceLinkingSettings()
         )
         self._sewer_model.set_mappings(self.model.sewer_type_mappings)
 

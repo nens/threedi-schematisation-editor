@@ -907,9 +907,7 @@ class SurfaceProcessor(SpatialProcessor):
             surface_map_layer.fields() if surface_map_layer else None
         )
         self.fields_configuration = import_settings.fields
-        self.sewer_type_mappings = (
-            import_settings.surface_map_percentage.sewer_type_mappings
-        )
+        self.sewer_type_mappings = import_settings.surface_linking.sewer_type_mappings
         self.linking = import_settings.surface_linking
         self.node_layer = node_layer
         request = (

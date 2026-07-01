@@ -252,13 +252,16 @@ class SewerTypeMapping(BaseModel):
     percentage_column: Optional[str] = None  # None = skip this type
 
 
-class SurfaceMapPercentageSettings(BaseModel):
-    name: ClassVar[str] = "surface_map_percentage"
-    sewer_type_mappings: list[SewerTypeMapping] = []
-
-
 class SurfaceLinkingSettings(BaseModel):
-    name: ClassVar[str] = "surface_linking"
+    name: ClassVar[str] = "surface_map"
+    # Format selection
+    data_format: Literal["long", "wide"] = "wide"
+    # Long data fields
+    percentage_column: Optional[str] = None
+    sewage_type_column: Optional[str] = None
+    # Wide data fields
+    sewer_type_mappings: list[SewerTypeMapping] = []
+    # Linking
     search_distance: float = Field(default=10.0, ge=0, le=1000000.0)
     selected_pipes_only: bool = False
     attribute_match_enabled: bool = False
@@ -266,6 +269,7 @@ class SurfaceLinkingSettings(BaseModel):
     attribute_match_table: Optional[Literal["pipe", "connection_node"]] = None
     attribute_match_col: Optional[str] = None
     attribute_match_input_config: Optional[FieldMapConfig] = None
+    use_sewage_type_for_attribute_match: bool = False
 
 
 class ImportSettings(BaseModel):
@@ -276,9 +280,6 @@ class ImportSettings(BaseModel):
     point_to_line_conversion: PointToLineSettings = PointToLineSettings()
     cross_section_location_mapping: CrossSectionLocationSettings = (
         CrossSectionLocationSettings()
-    )
-    surface_map_percentage: SurfaceMapPercentageSettings = (
-        SurfaceMapPercentageSettings()
     )
     surface_linking: SurfaceLinkingSettings = SurfaceLinkingSettings()
     fields: dict[str, FieldMapConfig] = {}

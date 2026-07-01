@@ -57,14 +57,14 @@ def surface_map_fields():
     return fields
 
 
-def make_import_settings(**surface_kwargs):
-    sewer_type_mappings = surface_kwargs.pop("sewer_type_mappings", [])
-    linking = surface_kwargs.pop("linking", sm.SurfaceLinkingSettings())
+def make_import_settings(sewer_type_mappings=None, surface_map=None, **surface_map_kwargs):
+    if surface_map is None:
+        surface_map = sm.SurfaceLinkingSettings(
+            sewer_type_mappings=sewer_type_mappings or [],
+            **surface_map_kwargs,
+        )
     return sm.ImportSettings(
-        surface_map_percentage=sm.SurfaceMapPercentageSettings(
-            sewer_type_mappings=sewer_type_mappings
-        ),
-        surface_linking=linking,
+        surface_map=surface_map,
         fields={
             "id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO),
             "surface_parameters_id": sm.FieldMapConfig(
@@ -191,7 +191,7 @@ def make_spatial_processor(
 
     import_settings = make_import_settings(
         sewer_type_mappings=sewer_type_mappings,
-        linking=sm.SurfaceLinkingSettings(search_distance=search_distance),
+        search_distance=search_distance,
     )
     processor = SurfaceProcessor(
         target_layer,
@@ -451,7 +451,10 @@ def make_attr_match_processor(
     surface_map_layer.name.return_value = "Surface map"
     surface_map_layer.featureCount.return_value = 0
 
-    linking = sm.SurfaceLinkingSettings(
+    import_settings = make_import_settings(
+        sewer_type_mappings=[
+            sm.SewerTypeMapping(sewerage_type=0, percentage_column="runoff_pct")
+        ],
         search_distance=100.0,
         attribute_match_enabled=True,
         spatial_match_enabled=True,
@@ -461,12 +464,6 @@ def make_attr_match_processor(
             method=ColumnImportMethod.ATTRIBUTE,
             source_attribute="code",
         ),
-    )
-    import_settings = make_import_settings(
-        sewer_type_mappings=[
-            sm.SewerTypeMapping(sewerage_type=0, percentage_column="runoff_pct")
-        ],
-        linking=linking,
     )
     return SurfaceProcessor(
         target_layer,
