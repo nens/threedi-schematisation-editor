@@ -6,7 +6,7 @@ from typing import Any, Optional
 from pydantic import ValidationError
 from qgis.core import QgsVectorLayer
 from qgis.gui import QgsFieldExpressionWidget
-from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSignal
+from qgis.PyQt.QtCore import QAbstractTableModel, QEvent, QModelIndex, Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
@@ -444,9 +444,11 @@ class FieldMapDelegate(QStyledItemDelegate):
                         editor.setValue(int(current_value))
             else:
                 editor.setText(str(current_value) if current_value is not None else "")
-        # update style
+        # update style and only apply styling when widget is enabled
         style_sheet = (
-            "" if valid or not is_enabled else self.get_invalid_style_for_editor(editor)
+            ""
+            if valid or not editor.isEnabled()
+            else self.get_invalid_style_for_editor(editor)
         )
         editor.setStyleSheet(style_sheet)
 
@@ -582,6 +584,39 @@ class FieldMapWidget(QWidget):
 
         # Open persistent editors for columns with always-visible widgets
         self.open_persistent_editors()
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if event.type() == QEvent.EnabledChange:
+            # Qt has fully propagated the enabled/disabled state to all child
+            # widgets by the time changeEvent fires.  Re-apply the error
+            # highlight to every persistent editor so it matches the new state.
+            self._refresh_persistent_editor_styles()
+
+    def _refresh_persistent_editor_styles(self):
+        """Re-apply error highlighting on all persistent editors.
+
+        Called after the widget's enabled state changes so that the highlight
+        is hidden when the widget is disabled and shown again when re-enabled.
+        """
+        for row_idx in range(self.table_model.rowCount()):
+            row = self.table_model.rows[row_idx]
+            for col, field_map_column in enumerate(FieldMapColumn):
+                if field_map_column == FieldMapColumn.LABEL:
+                    continue
+                editor = self.table_view.indexWidget(
+                    self.table_model.index(row_idx, col)
+                )
+                if editor is None:
+                    continue
+                value = self.table_model.index(row_idx, col).data(Qt.EditRole)
+                valid = row.is_valid or value not in [None, ""]
+                style_sheet = (
+                    ""
+                    if valid or not editor.isEnabled()
+                    else FieldMapDelegate.get_invalid_style_for_editor(editor)
+                )
+                editor.setStyleSheet(style_sheet)
 
     def open_persistent_editors(self):
         """Open persistent editors for columns with always-visible widgets"""
