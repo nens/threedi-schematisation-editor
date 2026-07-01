@@ -628,6 +628,36 @@ class ImportSurfaceWizard(VDIWizard):
         SurfaceLinkingSettingsWidget,
     ]
 
+    @cached_property
+    def extra_field_map_pages(self):
+        return [
+            FieldMapPage(model_cls=dm.SurfaceMap, name="surface_map_fields")
+        ]
+
+    @property
+    def extra_field_map_page_ids(self):
+        return [
+            id for id in self.pageIds() if self.page(id) in self.extra_field_map_pages
+        ]
+
+    @property
+    def _is_long_format(self):
+        return self.settings_page.get_settings()["surface_linking"].data_format == "long"
+
+    def should_collect_page(self, page):
+        if isinstance(page, FieldMapPage) and page.name == "surface_map_fields":
+            return self._is_long_format
+        return True
+
+    def nextId(self):
+        next_id = super().nextId()
+        if next_id == -1:
+            return next_id
+        if not self._is_long_format:
+            while next_id in self.extra_field_map_page_ids:
+                next_id += 1
+        return next_id
+
     @property
     def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
         return QgsMapLayerProxyModel.PolygonLayer

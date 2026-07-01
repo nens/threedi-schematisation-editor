@@ -253,7 +253,7 @@ class SewerTypeMapping(BaseModel):
 
 
 class SurfaceLinkingSettings(BaseModel):
-    name: ClassVar[str] = "surface_map"
+    name: ClassVar[str] = "surface_linking"
     # Format selection
     data_format: Literal["long", "wide"] = "wide"
     # Long data fields

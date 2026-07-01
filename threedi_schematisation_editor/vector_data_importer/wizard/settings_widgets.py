@@ -676,12 +676,9 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         # --- Long data columns section ---
         self.long_group = QGroupBox("Long data columns")
         long_layout = QGridLayout(self.long_group)
-        self.percentage_col_combo = QComboBox()
         self.sewage_type_col_combo = QComboBox()
-        long_layout.addWidget(QLabel("Percentage column:"), 0, 0)
-        long_layout.addWidget(self.percentage_col_combo, 0, 1)
-        long_layout.addWidget(QLabel("Sewage type column:"), 1, 0)
-        long_layout.addWidget(self.sewage_type_col_combo, 1, 1)
+        long_layout.addWidget(QLabel("Sewage type column:"), 0, 0)
+        long_layout.addWidget(self.sewage_type_col_combo, 0, 1)
         layout.addWidget(self.long_group)
 
         # --- Wide data section ---
@@ -798,7 +795,6 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         layout.addWidget(linking_group)
         # Signal connections
         self.fmt_long_radio.toggled.connect(self._on_format_changed)
-        self.percentage_col_combo.currentTextChanged.connect(self._update_model)
         self.sewage_type_col_combo.currentTextChanged.connect(self._update_model)
         self.match_no_table_radio.toggled.connect(self._on_match_table_changed)
         self.match_pipe_table_radio.toggled.connect(self._on_match_table_changed)
@@ -869,13 +865,10 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             if layer
             else []
         )
-        for combo in (self.percentage_col_combo, self.sewage_type_col_combo):
-            combo.blockSignals(True)
-            combo.clear()
-            combo.addItems(columns)
-            combo.blockSignals(False)
         self.sewage_type_col_combo.blockSignals(True)
+        self.sewage_type_col_combo.clear()
         self.sewage_type_col_combo.insertItem(0, "")
+        self.sewage_type_col_combo.addItems(columns)
         self.sewage_type_col_combo.blockSignals(False)
         self._sewer_model.set_numeric_fields(numeric)
         self.match_field_map_widget.update_layer(layer)
@@ -896,7 +889,6 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         )
         self.model = sm.SurfaceLinkingSettings(
             data_format=data_format,
-            percentage_column=self.percentage_col_combo.currentText() or None,
             sewage_type_column=self.sewage_type_col_combo.currentText() or None,
             sewer_type_mappings=self._sewer_model.get_mappings(),
             search_distance=self.search_distance.value(),
@@ -913,10 +905,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
 
     @property
     def is_valid(self) -> bool:
-        if self.fmt_long_radio.isChecked():
-            if not self.percentage_col_combo.currentText():
-                return False
-        else:
+        if not self.fmt_long_radio.isChecked():
             if not self._sewer_model.get_mappings():
                 return False
         if not self.match_no_table_radio.isChecked():
@@ -950,8 +939,6 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self.fmt_wide_radio.setChecked(not is_long)
         self.long_group.setVisible(is_long)
         self.wide_group.setVisible(not is_long)
-        if self.model.percentage_column:
-            self.percentage_col_combo.setCurrentText(self.model.percentage_column)
         self.sewage_type_col_combo.setCurrentText(self.model.sewage_type_column or "")
         self._sewer_model.set_mappings(self.model.sewer_type_mappings)
         if self.model.attribute_match_enabled:
