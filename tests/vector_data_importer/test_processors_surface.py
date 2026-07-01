@@ -57,14 +57,14 @@ def surface_map_fields():
     return fields
 
 
-def make_import_settings(sewer_type_mappings=None, surface_map=None, **surface_map_kwargs):
-    if surface_map is None:
-        surface_map = sm.SurfaceLinkingSettings(
+def make_import_settings(sewer_type_mappings=None, surface_linking=None, **surface_linking_kwargs):
+    if surface_linking is None:
+        surface_linking = sm.SurfaceLinkingSettings(
             sewer_type_mappings=sewer_type_mappings or [],
-            **surface_map_kwargs,
+            **surface_linking_kwargs,
         )
     return sm.ImportSettings(
-        surface_map=surface_map,
+        surface_linking=surface_linking,
         fields={
             "id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO),
             "surface_parameters_id": sm.FieldMapConfig(
