@@ -947,11 +947,15 @@ class SurfaceConnectionSettingsWidget(SettingsWidget):
 
 
 class SurfaceMapSettingsWidget(SettingsWidget):
-    """Combined surface map percentage + linking settings widget. TODO: implement."""
+    """Combined data format selection, column mapping, and surface linking settings."""
+
+    expanding = True
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.model = sm.SurfaceLinkingSettings()
+        self.setup_ui()
+        self.deserialize({})
 
     @property
     def name(self) -> str:
@@ -961,8 +965,84 @@ class SurfaceMapSettingsWidget(SettingsWidget):
     def group_name(self) -> str:
         return "Surface map settings"
 
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        # --- Format selection ---
+        fmt_row = QHBoxLayout()
+        fmt_row.addWidget(QLabel("Data format:"))
+        self.fmt_long_radio = QRadioButton("Long data")
+        self.fmt_wide_radio = QRadioButton("Wide data")
+        self.fmt_wide_radio.setChecked(True)
+        fmt_group = QButtonGroup(self)
+        fmt_group.addButton(self.fmt_long_radio)
+        fmt_group.addButton(self.fmt_wide_radio)
+        fmt_row.addWidget(self.fmt_long_radio)
+        fmt_row.addWidget(self.fmt_wide_radio)
+        fmt_row.addStretch()
+        layout.addLayout(fmt_row)
+
+        # --- Long data columns section ---
+        self.long_group = QGroupBox("Long data columns")
+        long_layout = QGridLayout(self.long_group)
+        self.percentage_col_combo = QComboBox()
+        self.sewage_type_col_combo = QComboBox()
+        long_layout.addWidget(QLabel("Percentage column:"), 0, 0)
+        long_layout.addWidget(self.percentage_col_combo, 0, 1)
+        long_layout.addWidget(QLabel("Sewage type column:"), 1, 0)
+        long_layout.addWidget(self.sewage_type_col_combo, 1, 1)
+        layout.addWidget(self.long_group)
+
+        # --- Wide data section (placeholder, filled in Task 4) ---
+        self.wide_group = QGroupBox("Wide data mappings")
+        layout.addWidget(self.wide_group)
+
+        # Show/hide based on format selection
+        self.long_group.setVisible(False)
+        self.wide_group.setVisible(True)
+
+        # Signal connections
+        self.fmt_long_radio.toggled.connect(self._on_format_changed)
+        self.percentage_col_combo.currentTextChanged.connect(self._update_model)
+        self.sewage_type_col_combo.currentTextChanged.connect(self._update_model)
+
+    def _on_format_changed(self, long_checked):
+        self.long_group.setVisible(long_checked)
+        self.wide_group.setVisible(not long_checked)
+        self._update_model()
+
+    def update_layer(self, layer):
+        """Populate column dropdowns with all fields from source layer."""
+        columns = [f.name() for f in layer.fields()] if layer else []
+        for combo in (self.percentage_col_combo, self.sewage_type_col_combo):
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItems(columns)
+            combo.blockSignals(False)
+        # Sewage type column has an explicit "None" option
+        self.sewage_type_col_combo.blockSignals(True)
+        self.sewage_type_col_combo.insertItem(0, "")
+        self.sewage_type_col_combo.blockSignals(False)
+        self._update_model()
+
+    def _update_model(self):
+        data_format = "long" if self.fmt_long_radio.isChecked() else "wide"
+        sewage_col = self.sewage_type_col_combo.currentText() or None
+        self.model = sm.SurfaceLinkingSettings(
+            **{
+                **self.model.model_dump(),
+                "data_format": data_format,
+                "percentage_column": self.percentage_col_combo.currentText() or None,
+                "sewage_type_column": sewage_col,
+            }
+        )
+        self.dataChanged.emit()
+
     @property
     def is_valid(self) -> bool:
+        if self.fmt_long_radio.isChecked():
+            return bool(self.percentage_col_combo.currentText())
         return True
 
     def get_settings(self) -> sm.SurfaceLinkingSettings:
@@ -972,3 +1052,11 @@ class SurfaceMapSettingsWidget(SettingsWidget):
         self.model = (
             sm.SurfaceLinkingSettings(**data) if data else sm.SurfaceLinkingSettings()
         )
+        is_long = self.model.data_format == "long"
+        self.fmt_long_radio.setChecked(is_long)
+        self.fmt_wide_radio.setChecked(not is_long)
+        self.long_group.setVisible(is_long)
+        self.wide_group.setVisible(not is_long)
+        if self.model.percentage_column:
+            self.percentage_col_combo.setCurrentText(self.model.percentage_column)
+        self.sewage_type_col_combo.setCurrentText(self.model.sewage_type_column or "")
