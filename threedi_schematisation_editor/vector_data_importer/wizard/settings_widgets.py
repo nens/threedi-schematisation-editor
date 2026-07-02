@@ -639,7 +639,7 @@ class SewerTypeMappingDelegate(QStyledItemDelegate):
 class SurfaceLinkingSettingsWidget(SettingsWidget):
     """Combined data format selection, column mapping, and surface linking settings."""
 
-    expanding = True
+    expanding = False
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -653,39 +653,12 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
 
     @property
     def group_name(self) -> str:
-        return "Surface map settings"
+        return "Surface settings"
 
-    def setup_ui(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-
-        # --- Format selection ---
-        fmt_row = QHBoxLayout()
-        fmt_row.addWidget(QLabel("Data format:"))
-        self.fmt_long_radio = QRadioButton("Long data")
-        self.fmt_wide_radio = QRadioButton("Wide data")
-        self.fmt_wide_radio.setChecked(True)
-        fmt_group = QButtonGroup(self)
-        fmt_group.addButton(self.fmt_long_radio)
-        fmt_group.addButton(self.fmt_wide_radio)
-        fmt_row.addWidget(self.fmt_long_radio)
-        fmt_row.addWidget(self.fmt_wide_radio)
-        fmt_row.addStretch()
-        layout.addLayout(fmt_row)
-
-        # --- Long data columns section ---
-        self.long_group = QGroupBox("Long data columns")
-        long_layout = QGridLayout(self.long_group)
-        self.sewage_type_col_combo = QComboBox()
-        long_layout.addWidget(QLabel("Sewage type column:"), 0, 0)
-        long_layout.addWidget(self.sewage_type_col_combo, 0, 1)
-        layout.addWidget(self.long_group)
-
-        # --- Wide data section ---
-        self.wide_group = QGroupBox("Wide data mappings")
-        wide_layout = QVBoxLayout(self.wide_group)
-        wide_layout.setContentsMargins(4, 4, 4, 4)
-        wide_layout.setSpacing(2)
+    def _make_sewage_map_table(self):
+        layout = QVBoxLayout()
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(2)
         self._sewer_model = SewerTypeMappingModel()
         self._sewer_model.dataChanged.connect(self._on_sewer_mappings_changed)
         self._sewer_model.rowsInserted.connect(self._on_sewer_mappings_changed)
@@ -711,29 +684,49 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self._sewer_table.setMaximumHeight(_header_h + 5 * _row_h + 2)
         btn_layout = QHBoxLayout()
         btn_layout.setContentsMargins(0, 0, 0, 0)
-        add_btn = QPushButton("Add row")
-        add_btn.setIcon(QIcon.fromTheme("list-add"))
-        add_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        add_btn.clicked.connect(self._sewer_model.add_row)
-        del_btn = QPushButton("Delete row")
-        del_btn.setIcon(QIcon.fromTheme("list-remove"))
-        del_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        del_btn.clicked.connect(self._delete_sewer_rows)
-        btn_layout.addWidget(del_btn)
+        self._sewer_add_btn = QPushButton("Add row")
+        self._sewer_add_btn.setIcon(QIcon.fromTheme("list-add"))
+        self._sewer_add_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._sewer_add_btn.clicked.connect(self._sewer_model.add_row)
+        self._sewer_del_btn = QPushButton("Delete row")
+        self._sewer_del_btn.setIcon(QIcon.fromTheme("list-remove"))
+        self._sewer_del_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._sewer_del_btn.clicked.connect(self._delete_sewer_rows)
+        btn_layout.addWidget(self._sewer_del_btn)
         btn_layout.addStretch()
-        btn_layout.addWidget(add_btn)
-        wide_layout.addWidget(self._sewer_table)
-        wide_layout.addLayout(btn_layout)
-        layout.addWidget(self.wide_group)
+        btn_layout.addWidget(self._sewer_add_btn)
+        layout.addWidget(self._sewer_table)
+        layout.addLayout(btn_layout)
+        return layout
 
-        # Show/hide based on format selection
-        self.long_group.setVisible(False)
-        self.wide_group.setVisible(True)
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        # --- Format selection ---
+        self.fmt_long_radio = QRadioButton(
+            "Long data with (optional) sewage type column: "
+        )
+        self.fmt_long_radio.setChecked(True)
+        self.fmt_wide_radio = QRadioButton(
+            "Wide data with multiple percentage columns:"
+        )
+        self.sewage_type_col_combo = QComboBox()
+
+        fmt_group = QButtonGroup(self)
+        fmt_group.addButton(self.fmt_long_radio)
+        fmt_group.addButton(self.fmt_wide_radio)
+        fmt_layout = QGridLayout()
+        fmt_layout.addWidget(QLabel("Data format:"), 0, 0)
+        fmt_layout.addWidget(self.fmt_long_radio, 1, 0)
+        fmt_layout.addWidget(self.sewage_type_col_combo, 1, 1)
+        fmt_layout.addWidget(self.fmt_wide_radio, 2, 0)
+        fmt_layout.addLayout(self._make_sewage_map_table(), 3, 0, 1, 4)
+        layout.addLayout(fmt_layout)
 
         # --- Linking section ---
         linking_group = QGroupBox("Linking settings")
         linking_layout = QVBoxLayout(linking_group)
-
         _defaults = sm.SurfaceLinkingSettings()
         self.match_no_table_radio = QRadioButton("None")
         self.match_no_table_radio.setChecked(True)
@@ -795,7 +788,9 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         layout.addWidget(linking_group)
         # Signal connections
         self.fmt_long_radio.toggled.connect(self._on_format_changed)
-        self.sewage_type_col_combo.currentTextChanged.connect(self._on_sewage_type_col_changed)
+        self.sewage_type_col_combo.currentTextChanged.connect(
+            self._on_sewage_type_col_changed
+        )
         self.match_no_table_radio.toggled.connect(self._on_match_table_changed)
         self.match_pipe_table_radio.toggled.connect(self._on_match_table_changed)
         self.match_node_table_radio.toggled.connect(self._on_match_table_changed)
@@ -806,6 +801,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self.search_distance.valueChanged.connect(self._on_search_distance_changed)
         self.selected_pipes_only.toggled.connect(self._on_selected_pipes_only_changed)
 
+        self._set_wide_mapping_enabled(not self.fmt_long_radio.isChecked())
         self._update_linking_enabled()
 
     def _sewage_type_source_present(self):
@@ -822,9 +818,14 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         )
         self.search_distance.setEnabled(self.match_spatial_checkbox.isChecked())
 
+    def _set_wide_mapping_enabled(self, enabled):
+        self._sewer_table.setEnabled(enabled)
+        self._sewer_add_btn.setEnabled(enabled)
+        self._sewer_del_btn.setEnabled(enabled)
+
     def _on_format_changed(self, long_checked):
-        self.long_group.setVisible(long_checked)
-        self.wide_group.setVisible(not long_checked)
+        self.sewage_type_col_combo.setEnabled(long_checked)
+        self._set_wide_mapping_enabled(not long_checked)
         self.model.data_format = "long" if long_checked else "wide"
         self._update_linking_enabled()
         self.dataChanged.emit()
@@ -832,7 +833,9 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
     def _on_match_table_changed(self):
         match_model = self._match_table_model()
         self.model.attribute_match_enabled = not self.match_no_table_radio.isChecked()
-        self.model.attribute_match_table = match_model.__tablename__ if match_model is not None else None
+        self.model.attribute_match_table = (
+            match_model.__tablename__ if match_model is not None else None
+        )
         self._repopulate_match_col()
         self._update_linking_enabled()
         self.dataChanged.emit()
@@ -860,7 +863,9 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
     def _sync_match_input_config(self):
         input_cfg = (
             self.match_field_map_widget.get_settings().get("attribute_match_input")
-            if self.model.attribute_match_enabled and self.model.attribute_match_table and self.model.attribute_match_col
+            if self.model.attribute_match_enabled
+            and self.model.attribute_match_table
+            and self.model.attribute_match_col
             else None
         )
         self.model.attribute_match_input_config = input_cfg
@@ -988,9 +993,8 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         is_long = loaded_model.data_format == "long"
         self.fmt_long_radio.setChecked(is_long)
         self.fmt_wide_radio.setChecked(not is_long)
-        self.long_group.setVisible(is_long)
-        self.wide_group.setVisible(not is_long)
         self.sewage_type_col_combo.setCurrentText(loaded_model.sewage_type_column or "")
+        self.sewage_type_col_combo.setEnabled(is_long)
         self._sewer_model.set_mappings(loaded_model.sewer_type_mappings)
         if loaded_model.attribute_match_enabled:
             if loaded_model.attribute_match_table == dm.Pipe.__tablename__:

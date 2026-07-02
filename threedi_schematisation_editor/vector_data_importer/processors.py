@@ -919,7 +919,7 @@ class SurfaceProcessor(SpatialProcessor):
         self.pipe_features, self.pipe_index = spatial_index(pipe_layer, request=request)
 
     @staticmethod
-    def _to_polygon_geometry(src_geom):
+    def new_geometry(src_geom):
         """Convert a (Curve)Polygon geometry to a plain Polygon.
 
         Plain polygons are returned as-is. CurvePolygons are segmentized.
@@ -929,7 +929,7 @@ class SurfaceProcessor(SpatialProcessor):
         return src_geom
 
     @staticmethod
-    def _choose_closer_node(surface_geom, pipe_feat, node_layer):
+    def get_closest_node(surface_geom, pipe_feat, node_layer):
         """Return whichever endpoint node of pipe_feat is closer to surface_geom.
 
         Returns None if either node cannot be found.
@@ -946,7 +946,7 @@ class SurfaceProcessor(SpatialProcessor):
             return start_node
         return end_node
 
-    def _attribute_match(self, src_feat, sewage_type, expression_context):
+    def get_attribute_match(self, src_feat, sewage_type, expression_context):
         """Try attribute-based pipe/node lookup. Returns a node QgsFeature or None.
 
         If sewage_type is not None and the match is a pipe, the pipe's sewerage_type
@@ -976,12 +976,12 @@ class SurfaceProcessor(SpatialProcessor):
             if sewage_type is not None:
                 matches = [f for f in matches if f["sewerage_type"] == sewage_type]
             if len(matches) == 1:
-                return SurfaceProcessor._choose_closer_node(
-                    self._current_surface_geom, matches[0], self.node_layer
+                return SurfaceProcessor.get_closest_node(
+                    self.matched_surface_geom, matches[0], self.node_layer
                 )
         return None
 
-    def _spatial_match(self, surface_geom, sewage_type):
+    def get_spatial_match(self, surface_geom, sewage_type):
         """Try spatial pipe lookup. Returns a node QgsFeature or None.
 
         Filters candidates to sewage_type when not None; matches any pipe when None.
@@ -1015,11 +1015,11 @@ class SurfaceProcessor(SpatialProcessor):
         if not candidates:
             return None
         nearest_pipe = min(candidates, key=lambda x: x[0])[1]
-        return SurfaceProcessor._choose_closer_node(
+        return SurfaceProcessor.get_closest_node(
             surface_geom, nearest_pipe, self.node_layer
         )
 
-    def _create_surface_map_feature(
+    def create_surface_map_feature(
         self,
         new_feat,
         src_feat,
@@ -1031,10 +1031,10 @@ class SurfaceProcessor(SpatialProcessor):
         # Store surface_geom for use in _attribute_match (pipe → node resolution)
         if pct <= 0:
             return
-        self._current_surface_geom = surface_geom
-        node = self._attribute_match(src_feat, sewage_type, expression_context)
+        self.matched_surface_geom = surface_geom
+        node = self.get_attribute_match(src_feat, sewage_type, expression_context)
         if node is None:
-            node = self._spatial_match(surface_geom, sewage_type)
+            node = self.get_spatial_match(surface_geom, sewage_type)
         if node is None:
             warnings.warn(
                 f"Surface {new_feat['id']}: no pipe found within "
@@ -1058,7 +1058,7 @@ class SurfaceProcessor(SpatialProcessor):
         )
         return sm_feat
 
-    def _create_surface_map_features(
+    def create_surface_map_features(
         self, new_feat, src_feat, surface_geom, expression_context=None
     ):
         """Create surface_map features linking new_feat to connection nodes.
@@ -1075,7 +1075,7 @@ class SurfaceProcessor(SpatialProcessor):
         """
         linking = self.linking
         # Store surface_geom for use in _attribute_match (pipe → node resolution)
-        self._current_surface_geom = surface_geom
+        self.matched_surface_geom = surface_geom
         surface_map_feats = []
 
         if linking.data_format == "long":
@@ -1097,7 +1097,7 @@ class SurfaceProcessor(SpatialProcessor):
             attr_sewage = (
                 sewage_type if linking.use_sewage_type_for_attribute_match else None
             )
-            feat = self._create_surface_map_feature(
+            feat = self.create_surface_map_feature(
                 new_feat, src_feat, surface_geom, attr_sewage, pct, expression_context
             )
             if feat:
@@ -1112,7 +1112,7 @@ class SurfaceProcessor(SpatialProcessor):
             except (KeyError, TypeError, ValueError):
                 continue
             sewage_type = mapping.sewerage_type
-            feat = self._create_surface_map_feature(
+            feat = self.create_surface_map_feature(
                 new_feat, src_feat, surface_geom, sewage_type, pct, expression_context
             )
             if feat:
@@ -1123,7 +1123,7 @@ class SurfaceProcessor(SpatialProcessor):
         src_geom = get_src_geometry(src_feat)
         if src_geom is None:
             return {}
-        new_geom = self._to_polygon_geometry(src_geom)
+        new_geom = self.new_geometry(src_geom)
         if self.transformation:
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
@@ -1141,7 +1141,7 @@ class SurfaceProcessor(SpatialProcessor):
             new_feat["area"] = new_geom.area()
         expression_context = QgsExpressionContext()
         expression_context.setFeature(src_feat)
-        surface_map_feats = self._create_surface_map_features(
+        surface_map_feats = self.create_surface_map_features(
             new_feat, src_feat, new_geom, expression_context
         )
         if len(surface_map_feats) > 0:

@@ -58,7 +58,10 @@ def surface_map_fields():
 
 
 def make_import_settings(
-    sewer_type_mappings=None, surface_linking=None, surface_map_fields=None, **surface_linking_kwargs
+    sewer_type_mappings=None,
+    surface_linking=None,
+    surface_map_fields=None,
+    **surface_linking_kwargs,
 ):
     if surface_linking is None:
         surface_linking = sm.SurfaceLinkingSettings(
@@ -219,19 +222,31 @@ def make_spatial_processor(
         ("Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))", False),
     ],
 )
-def test_process_feature_geometry_type(processor, wkt, expect_curved):
-    processor._create_surface_map_features = MagicMock(return_value=[])
+def test_process_feature_geometry_type(
+    processor, wkt, expect_curved, surface_map_fields
+):
+    sm_feat = QgsFeature(surface_map_fields)
+    processor.create_surface_map_features = MagicMock(return_value=[sm_feat])
     feat = make_polygon_feature(wkt=wkt)
     result = processor.process_feature(feat)
     assert not QgsWkbTypes.isCurvedType(result["Surface"][0].geometry().wkbType())
 
 
-def test_process_feature_area_computed(processor):
-    processor._create_surface_map_features = MagicMock(return_value=[])
+def test_process_feature_area_computed(processor, surface_map_fields):
+    sm_feat = QgsFeature(surface_map_fields)
+    processor.create_surface_map_features = MagicMock(return_value=[sm_feat])
     result = processor.process_feature(
         make_polygon_feature(wkt="Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))")
     )
     assert result["Surface"][0]["area"] == pytest.approx(1.0)
+
+
+def test_process_feature_no_surface_map_returns_empty(processor):
+    """When no surface_map features are created, process_feature returns {} (no Surface entry)."""
+    processor.create_surface_map_features = MagicMock(return_value=[])
+    feat = make_polygon_feature(wkt="Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))")
+    result = processor.process_feature(feat)
+    assert result == {}
 
 
 def test_process_feature_null_geometry_skipped(processor):
@@ -242,7 +257,7 @@ def test_process_feature_null_geometry_skipped(processor):
 
 def test_process_feature_surface_map_feats_forwarded(processor, surface_map_fields):
     sm_feat = QgsFeature(surface_map_fields)
-    processor._create_surface_map_features = MagicMock(return_value=[sm_feat])
+    processor.create_surface_map_features = MagicMock(return_value=[sm_feat])
     result = processor.process_feature(make_polygon_feature())
     assert result["Surface map"] == [sm_feat]
 
@@ -311,13 +326,13 @@ def test_find_nearest_pipe(
         pipe_layer=make_pipe_layer_with_feats(pipe_feats),
         node_layer=node_layer,
     )
-    processor._current_surface_geom = surface_geom
+    processor.matched_surface_geom = surface_geom
 
     with patch(
         "threedi_schematisation_editor.vector_data_importer.processors.get_feature_by_id",
         side_effect=lambda layer, oid: node_by_id.get(oid),
     ):
-        result = processor._spatial_match(surface_geom, sewage_type=0)
+        result = processor.get_spatial_match(surface_geom, sewage_type=0)
 
     if expected_idx is None:
         assert result is None
@@ -347,7 +362,7 @@ def test_choose_closer_node(surface_wkt, start_xy, end_xy, expected_node_id):
         "threedi_schematisation_editor.vector_data_importer.processors.get_feature_by_id",
         side_effect=lambda layer, oid: node_by_id.get(oid),
     ):
-        result = SurfaceProcessor._choose_closer_node(surface_geom, pipe, node_layer)
+        result = SurfaceProcessor.get_closest_node(surface_geom, pipe, node_layer)
     assert result["id"] == expected_node_id
 
 
@@ -360,7 +375,7 @@ def run_create_surface_map(processor, node_by_id, surface_feat):
         "threedi_schematisation_editor.vector_data_importer.processors.get_feature_by_id",
         side_effect=lambda layer, oid: node_by_id.get(oid),
     ):
-        return processor._create_surface_map_features(new_feat, surface_feat, geom)
+        return processor.create_surface_map_features(new_feat, surface_feat, geom)
 
 
 @pytest.mark.parametrize(
@@ -678,7 +693,7 @@ def test_attr_match(
         new_feat["id"] = 1
         geom = QgsGeometry.fromWkt("Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))")
         new_feat.setGeometry(geom)
-        result = processor._create_surface_map_features(new_feat, src_feat2, geom)
+        result = processor.create_surface_map_features(new_feat, src_feat2, geom)
 
     assert len(result) == 1
     assert result[0]["percentage"] == pytest.approx(60.0)

@@ -114,8 +114,12 @@ class SettingsPage(QWizardPage):
             widget.dataChanged.connect(self.completeChanged)
             group_box = QGroupBox(widget.group_name)
             group_box.setLayout(widget.layout())
-            stretch = 1 if getattr(widget, "expanding", False) else 0
+            expanding = getattr(widget, "expanding", False)
+            stretch = 1 if expanding else 0
+            if not expanding:
+                group_box.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
             layout.addWidget(group_box, stretch)
+        layout.addStretch()
         self.setLayout(layout)
 
     def initializePage(self):
