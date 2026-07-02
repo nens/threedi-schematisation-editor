@@ -6,7 +6,6 @@ from typing import Optional
 
 from qgis.core import (
     NULL,
-    Qgis,
     QgsExpression,
     QgsExpressionContext,
     QgsFeature,
@@ -1139,6 +1138,7 @@ class SurfaceProcessor(SpatialProcessor):
             or ColumnImportMethod(area_config["method"]) == ColumnImportMethod.AUTO
         ):
             new_feat["area"] = new_geom.area()
+        new_feat["area"] = round(new_feat["area"], 2)
         expression_context = QgsExpressionContext()
         expression_context.setFeature(src_feat)
         surface_map_feats = self.create_surface_map_features(

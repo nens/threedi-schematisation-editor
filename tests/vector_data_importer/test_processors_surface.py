@@ -233,12 +233,15 @@ def test_process_feature_geometry_type(
 
 
 def test_process_feature_area_computed(processor, surface_map_fields):
+    """Area is auto-computed from geometry and rounded to 2 decimal places."""
     sm_feat = QgsFeature(surface_map_fields)
     processor.create_surface_map_features = MagicMock(return_value=[sm_feat])
+    # 1.3 × 1.0 rectangle → raw area 1.3, rounds to 1.3 (clean)
+    # Use a shape whose raw area has more decimals: 1.0 × 1.234 → 1.234 → rounds to 1.23
     result = processor.process_feature(
-        make_polygon_feature(wkt="Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))")
+        make_polygon_feature(wkt="Polygon ((0 0, 1.234 0, 1.234 1, 0 1, 0 0))")
     )
-    assert result["Surface"][0]["area"] == pytest.approx(1.0)
+    assert result["Surface"][0]["area"] == 1.23
 
 
 def test_process_feature_no_surface_map_returns_empty(processor):
