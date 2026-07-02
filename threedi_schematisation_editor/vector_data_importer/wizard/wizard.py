@@ -281,7 +281,15 @@ class VDIWizard(QWizard):
         data = {}
         for page_id in self.pageIds():
             page = self.page(page_id)
-            if isinstance(page, FieldMapPage):
+            if isinstance(page, StartPage):
+                source_settings = page.get_settings().get("source")
+                if source_settings is not None:
+                    data["source"] = (
+                        source_settings.model_dump()
+                        if hasattr(source_settings, "model_dump")
+                        else source_settings
+                    )
+            elif isinstance(page, FieldMapPage):
                 data[page.name] = {
                     key: row.config.model_dump()
                     for key, row in page.field_map_widget.row_dict.items()
