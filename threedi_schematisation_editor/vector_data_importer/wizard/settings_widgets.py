@@ -741,7 +741,9 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         match_row.addWidget(self.match_no_table_radio)
         match_row.addWidget(self.match_pipe_table_radio)
         match_row.addWidget(self.match_node_table_radio)
+        match_row.addWidget(QLabel("Column:"))
         match_row.addWidget(self.match_table_col)
+        match_row.addStretch()
         linking_layout.addLayout(match_row)
         config = create_field_map_config(
             allowed_methods=[
@@ -866,6 +868,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             if self.model.attribute_match_enabled
             and self.model.attribute_match_table
             and self.model.attribute_match_col
+            and self.match_field_map_widget.is_valid
             else None
         )
         self.model.attribute_match_input_config = input_cfg
@@ -940,7 +943,10 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         )
         input_cfg = (
             self.match_field_map_widget.get_settings().get("attribute_match_input")
-            if match_by_table and match_table and match_col
+            if match_by_table
+            and match_table
+            and match_col
+            and self.match_field_map_widget.is_valid
             else None
         )
         self.model = sm.SurfaceLinkingSettings(
