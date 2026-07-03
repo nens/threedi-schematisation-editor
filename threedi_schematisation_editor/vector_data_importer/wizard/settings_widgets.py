@@ -525,7 +525,7 @@ class SewerTypeMappingModel(QAbstractTableModel):
 
     SEWERAGE_TYPE_COL = 0
     PERCENTAGE_COL = 1
-    HEADERS = ["Sewerage type", "Percentage column"]
+    HEADERS = ["Sewerage type", "Percentage column (%)"]
 
     def __init__(self, numeric_fields=None, parent=None):
         super().__init__(parent)
@@ -655,7 +655,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
     def group_name(self) -> str:
         return "Surface settings"
 
-    def _make_sewage_map_table(self):
+    def _make_sewerage_map_table(self):
         layout = QVBoxLayout()
         layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(2)
@@ -705,23 +705,41 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
 
         # --- Format selection ---
         self.fmt_long_radio = QRadioButton(
-            "Long data with (optional) sewage type column: "
+            "One sewerage type per row, retrieved from the following fields: "
         )
         self.fmt_long_radio.setChecked(True)
         self.fmt_wide_radio = QRadioButton(
-            "Wide data with multiple percentage columns:"
+            "Multiple sewerage types per row with a percentage column for each:"
         )
-        self.sewage_type_col_combo = QComboBox()
+        sewerage_type_fm_config = create_field_map_config(
+            allowed_methods=[
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.DEFAULT,
+                ColumnImportMethod.EXPRESSION,
+            ],
+            field_type=SewerageType,
+        )
+        sewerage_type_row_dict = {
+            "sewerage_type": FieldMapRow(
+                label="Sewerage type",
+                config=sewerage_type_fm_config.model_construct(method=None),
+            )
+        }
+        self.sewerage_type_field_map_widget = FieldMapWidget(
+            sewerage_type_row_dict,
+            hidden_columns=[FieldMapColumn.LABEL],
+        )
+        self.sewerage_type_field_map_widget.open_persistent_editors()
 
         fmt_group = QButtonGroup(self)
         fmt_group.addButton(self.fmt_long_radio)
         fmt_group.addButton(self.fmt_wide_radio)
         fmt_layout = QGridLayout()
-        fmt_layout.addWidget(QLabel("Data format:"), 0, 0)
+        fmt_layout.addWidget(QLabel("Input table format:"), 0, 0)
         fmt_layout.addWidget(self.fmt_long_radio, 1, 0)
-        fmt_layout.addWidget(self.sewage_type_col_combo, 1, 1)
-        fmt_layout.addWidget(self.fmt_wide_radio, 2, 0)
-        fmt_layout.addLayout(self._make_sewage_map_table(), 3, 0, 1, 4)
+        fmt_layout.addWidget(self.sewerage_type_field_map_widget, 2, 0, 1, 4)
+        fmt_layout.addWidget(self.fmt_wide_radio, 3, 0)
+        fmt_layout.addLayout(self._make_sewerage_map_table(), 4, 0, 1, 4)
         layout.addLayout(fmt_layout)
 
         # --- Linking section ---
@@ -763,13 +781,10 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self.match_field_map_widget.open_persistent_editors()
         linking_layout.addWidget(self.match_field_map_widget)
 
-        self.use_sewage_type_checkbox = QCheckBox(
-            "Use sewage type for attribute matching"
-        )
-        linking_layout.addWidget(self.use_sewage_type_checkbox)
-
         spat_row = QHBoxLayout()
-        self.match_spatial_checkbox = QCheckBox("Spatial matching")
+        self.match_spatial_checkbox = QCheckBox(
+            "Use spatial matching with search distance:"
+        )
         self.search_distance = QDoubleSpinBox()
         self.search_distance.setDecimals(1)
         self.search_distance.setMinimum(
@@ -790,15 +805,14 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         layout.addWidget(linking_group)
         # Signal connections
         self.fmt_long_radio.toggled.connect(self._on_format_changed)
-        self.sewage_type_col_combo.currentTextChanged.connect(
-            self._on_sewage_type_col_changed
+        self.sewerage_type_field_map_widget.dataChanged.connect(
+            self._on_sewerage_type_config_changed
         )
         self.match_no_table_radio.toggled.connect(self._on_match_table_changed)
         self.match_pipe_table_radio.toggled.connect(self._on_match_table_changed)
         self.match_node_table_radio.toggled.connect(self._on_match_table_changed)
         self.match_table_col.currentTextChanged.connect(self._on_match_col_changed)
         self.match_field_map_widget.dataChanged.connect(self._on_match_input_changed)
-        self.use_sewage_type_checkbox.toggled.connect(self._on_use_sewage_type_changed)
         self.match_spatial_checkbox.toggled.connect(self._on_spatial_match_changed)
         self.search_distance.valueChanged.connect(self._on_search_distance_changed)
         self.selected_pipes_only.toggled.connect(self._on_selected_pipes_only_changed)
@@ -806,18 +820,15 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self._set_wide_mapping_enabled(not self.fmt_long_radio.isChecked())
         self._update_linking_enabled()
 
-    def _sewage_type_source_present(self):
+    def _sewerage_type_source_present(self):
         if self.fmt_long_radio.isChecked():
-            return bool(self.sewage_type_col_combo.currentText())
+            return self.sewerage_type_field_map_widget.is_valid
         return bool(self._sewer_model.get_mappings())
 
     def _update_linking_enabled(self):
         match_active = not self.match_no_table_radio.isChecked()
         for w in (self.match_table_col, self.match_field_map_widget):
             w.setEnabled(match_active)
-        self.use_sewage_type_checkbox.setEnabled(
-            match_active and self._sewage_type_source_present()
-        )
         self.search_distance.setEnabled(self.match_spatial_checkbox.isChecked())
 
     def _set_wide_mapping_enabled(self, enabled):
@@ -826,7 +837,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self._sewer_del_btn.setEnabled(enabled)
 
     def _on_format_changed(self, long_checked):
-        self.sewage_type_col_combo.setEnabled(long_checked)
+        self.sewerage_type_field_map_widget.setEnabled(long_checked)
         self._set_wide_mapping_enabled(not long_checked)
         self.model.data_format = "long" if long_checked else "wide"
         self._update_linking_enabled()
@@ -842,13 +853,22 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self._update_linking_enabled()
         self.dataChanged.emit()
 
-    def _on_sewage_type_col_changed(self, text):
-        self.model.sewage_type_column = text or None
+    def _on_sewerage_type_config_changed(self):
+        self._sync_sewerage_type_config()
         self._update_linking_enabled()
         self.dataChanged.emit()
 
+    def _sync_sewerage_type_config(self):
+        sewerage_type_cfg = (
+            self.sewerage_type_field_map_widget.get_settings().get("sewerage_type")
+            if self.fmt_long_radio.isChecked()
+            and self.sewerage_type_field_map_widget.is_valid
+            else None
+        )
+        self.model.sewerage_type_config = sewerage_type_cfg
+
     def _on_sewer_mappings_changed(self, *args):
-        self.model.sewer_type_mappings = self._sewer_model.get_mappings()
+        self.model.sewerage_type_mappings = self._sewer_model.get_mappings()
         self._update_linking_enabled()
         self.dataChanged.emit()
 
@@ -872,10 +892,6 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             else None
         )
         self.model.attribute_match_input_config = input_cfg
-
-    def _on_use_sewage_type_changed(self, checked):
-        self.model.use_sewage_type_for_attribute_match = checked
-        self.dataChanged.emit()
 
     def _on_spatial_match_changed(self, checked):
         self.model.spatial_match_enabled = checked
@@ -922,13 +938,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             if layer
             else []
         )
-        self.sewage_type_col_combo.blockSignals(True)
-        self.sewage_type_col_combo.clear()
-        self.sewage_type_col_combo.insertItem(0, "")
-        self.sewage_type_col_combo.addItems(columns)
-        if self.model.sewage_type_column:
-            self.sewage_type_col_combo.setCurrentText(self.model.sewage_type_column)
-        self.sewage_type_col_combo.blockSignals(False)
+        self.sewerage_type_field_map_widget.update_layer(layer)
         self._sewer_model.set_numeric_fields(numeric)
         self.match_field_map_widget.update_layer(layer)
         self._update_model()
@@ -949,9 +959,15 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             and self.match_field_map_widget.is_valid
             else None
         )
+        sewerage_type_cfg = (
+            self.sewerage_type_field_map_widget.get_settings().get("sewerage_type")
+            if self.fmt_long_radio.isChecked()
+            and self.sewerage_type_field_map_widget.is_valid
+            else None
+        )
         self.model = sm.SurfaceLinkingSettings(
             data_format="long" if self.fmt_long_radio.isChecked() else "wide",
-            sewage_type_column=self.sewage_type_col_combo.currentText() or None,
+            sewerage_type_config=sewerage_type_cfg,
             sewer_type_mappings=self._sewer_model.get_mappings(),
             search_distance=self.search_distance.value(),
             selected_pipes_only=self.selected_pipes_only.isChecked(),
@@ -960,14 +976,16 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             attribute_match_table=match_table,
             attribute_match_col=match_col,
             attribute_match_input_config=input_cfg,
-            use_sewage_type_for_attribute_match=self.use_sewage_type_checkbox.isChecked(),
         )
         self._update_linking_enabled()
         self.dataChanged.emit()
 
     @property
     def is_valid(self) -> bool:
-        if not self.fmt_long_radio.isChecked():
+        if self.fmt_long_radio.isChecked():
+            if not self.sewerage_type_field_map_widget.is_valid:
+                return False
+        else:
             if not self._sewer_model.get_mappings():
                 return False
         if not self.match_no_table_radio.isChecked():
@@ -999,9 +1017,12 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         is_long = loaded_model.data_format == "long"
         self.fmt_long_radio.setChecked(is_long)
         self.fmt_wide_radio.setChecked(not is_long)
-        self.sewage_type_col_combo.setCurrentText(loaded_model.sewage_type_column or "")
-        self.sewage_type_col_combo.setEnabled(is_long)
-        self._sewer_model.set_mappings(loaded_model.sewer_type_mappings)
+        if loaded_model.sewerage_type_config:
+            self.sewerage_type_field_map_widget.deserialize(
+                {"sewerage_type": loaded_model.sewerage_type_config.model_dump()}
+            )
+        self.sewerage_type_field_map_widget.setEnabled(is_long)
+        self._sewer_model.set_mappings(loaded_model.sewerage_type_mappings)
         if loaded_model.attribute_match_enabled:
             if loaded_model.attribute_match_table == dm.Pipe.__tablename__:
                 self.match_pipe_table_radio.setChecked(True)
@@ -1021,8 +1042,5 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self.match_spatial_checkbox.setChecked(loaded_model.spatial_match_enabled)
         self.search_distance.setValue(loaded_model.search_distance)
         self.selected_pipes_only.setChecked(loaded_model.selected_pipes_only)
-        self.use_sewage_type_checkbox.setChecked(
-            loaded_model.use_sewage_type_for_attribute_match
-        )
         self.model = loaded_model
         self._update_linking_enabled()

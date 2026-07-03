@@ -415,6 +415,9 @@ class VDIWizard(QWizard):
         progress_bar = self.run_page.progress_bar
         settings = self.get_settings()
         selected_feat_ids = self._compute_feature_ids(settings.source)
+        from qgis.core import Qgis, QgsMessageLog
+
+        QgsMessageLog.logMessage(f"{selected_feat_ids=}", "DEBUG", Qgis.Info)
         handlers, layers = self.prepare_import()
         for handler in handlers:
             handler.disconnect_handler_signals()

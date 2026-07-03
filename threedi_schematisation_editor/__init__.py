@@ -151,6 +151,7 @@ class ThreediSchematisationEditorPlugin:
         self.action_remove.triggered.connect(self.remove_model_from_project)
         import_features_icon_path = get_icon_path("icon_import.svg")
         import_actions_spec = [
+            ("Channels", self.import_external_channels, None),
             ("Connection nodes", self.import_external_connection_nodes, None),
             (
                 "Cross-section data",
@@ -164,10 +165,9 @@ class ThreediSchematisationEditorPlugin:
             ),
             ("Culverts", self.import_external_culverts, None),
             ("Orifices", self.import_external_orifices, None),
-            ("Weirs", self.import_external_weirs, None),
             ("Pipes", self.import_external_pipes, None),
-            ("Channels", self.import_external_channels, None),
             ("Surfaces", self.import_external_surfaces, None),
+            ("Weirs", self.import_external_weirs, None),
         ]
         self.action_import_features = self.add_multi_action_button(
             "Import schematisation objects",

@@ -257,9 +257,9 @@ class SurfaceLinkingSettings(BaseModel):
     # Format selection
     data_format: Literal["long", "wide"] = "wide"
     # Long data fields
-    sewage_type_column: Optional[str] = None
+    sewerage_type_config: Optional[FieldMapConfig] = None
     # Wide data fields
-    sewer_type_mappings: list[SewerTypeMapping] = []
+    sewerage_type_mappings: list[SewerTypeMapping] = []
     # Linking
     search_distance: float = Field(default=40.0, ge=0, le=1000000.0)
     selected_pipes_only: bool = False
@@ -268,7 +268,6 @@ class SurfaceLinkingSettings(BaseModel):
     attribute_match_table: Optional[Literal["pipe", "connection_node"]] = None
     attribute_match_col: Optional[str] = None
     attribute_match_input_config: Optional[FieldMapConfig] = None
-    use_sewage_type_for_attribute_match: bool = False
 
 
 class ImportSettings(BaseModel):

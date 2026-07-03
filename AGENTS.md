@@ -50,7 +50,7 @@ The plugin uses a signal-driven architecture for layer editing:
 
 **Run tests** (Docker required — QGIS bindings are not available on the host):
 ```bash
-docker compose run qgis-desktop make test
+docker compose run --rm qgis-desktop make test
 # equivalent to: QT_QPA_PLATFORM=offscreen pytest --cov
 ```
 

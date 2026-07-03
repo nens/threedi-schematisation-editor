@@ -58,14 +58,14 @@ def surface_map_fields():
 
 
 def make_import_settings(
-    sewer_type_mappings=None,
+    sewerage_type_mappings=None,
     surface_linking=None,
     surface_map_fields=None,
     **surface_linking_kwargs,
 ):
     if surface_linking is None:
         surface_linking = sm.SurfaceLinkingSettings(
-            sewer_type_mappings=sewer_type_mappings or [],
+            sewerage_type_mappings=sewerage_type_mappings or [],
             **surface_linking_kwargs,
         )
     return sm.ImportSettings(
@@ -182,10 +182,11 @@ def make_spatial_processor(
     surface_map_fields,
     pipe_feats,
     node_feats,
-    sewer_type_mappings,
+    sewerage_type_mappings,
     search_distance=100.0,
     data_format="wide",
     surface_map_fields_config=None,
+    **surface_linking_kwargs,
 ):
     node_by_id = {f["id"]: f for f in node_feats}
 
@@ -200,10 +201,11 @@ def make_spatial_processor(
     surface_map_layer.featureCount.return_value = 0
 
     import_settings = make_import_settings(
-        sewer_type_mappings=sewer_type_mappings,
+        sewerage_type_mappings=sewerage_type_mappings,
         search_distance=search_distance,
         data_format=data_format,
         surface_map_fields=surface_map_fields_config or {},
+        **surface_linking_kwargs,
     )
     processor = SurfaceProcessor(
         target_layer,
@@ -312,7 +314,7 @@ def test_find_nearest_pipe(
     node_by_id = {f["id"]: f for f in nodes}
 
     import_settings = make_import_settings(
-        sewer_type_mappings=[], search_distance=100.0
+        sewerage_type_mappings=[], search_distance=100.0
     )
     target_layer = MagicMock()
     target_layer.fields.return_value = surface_fields
@@ -335,7 +337,7 @@ def test_find_nearest_pipe(
         "threedi_schematisation_editor.vector_data_importer.processors.get_feature_by_id",
         side_effect=lambda layer, oid: node_by_id.get(oid),
     ):
-        result = processor.get_spatial_match(surface_geom, sewage_type=0)
+        result = processor.get_spatial_match(surface_geom, sewerage_type=0)
 
     if expected_idx is None:
         assert result is None
@@ -425,8 +427,11 @@ def test_create_surface_map_long_data(
         surface_map_fields,
         [pipe],
         nodes,
-        sewer_type_mappings=[],
+        sewerage_type_mappings=[],
         data_format="long",
+        sewerage_type_config=sm.FieldMapConfig(
+            method=ColumnImportMethod.ATTRIBUTE, source_attribute="sewerage_type"
+        ),
         surface_map_fields_config={
             "percentage": sm.FieldMapConfig(
                 method=ColumnImportMethod.ATTRIBUTE, source_attribute="runoff_pct"
@@ -451,7 +456,7 @@ def test_create_surface_map_long_data_no_pct_config(surface_fields, surface_map_
         surface_map_fields,
         [pipe],
         nodes,
-        sewer_type_mappings=[],
+        sewerage_type_mappings=[],
         data_format="long",
         surface_map_fields_config={},  # no percentage key
     )
@@ -470,8 +475,11 @@ def test_create_surface_map_long_data_extra_fields(surface_fields, surface_map_f
         surface_map_fields,
         [pipe],
         nodes,
-        sewer_type_mappings=[],
+        sewerage_type_mappings=[],
         data_format="long",
+        sewerage_type_config=sm.FieldMapConfig(
+            method=ColumnImportMethod.ATTRIBUTE, source_attribute="sewerage_type"
+        ),
         surface_map_fields_config={
             "percentage": sm.FieldMapConfig(
                 method=ColumnImportMethod.ATTRIBUTE, source_attribute="runoff_pct"
@@ -607,7 +615,7 @@ def make_attr_match_processor(
     surface_map_layer.featureCount.return_value = 0
 
     import_settings = make_import_settings(
-        sewer_type_mappings=[
+        sewerage_type_mappings=[
             sm.SewerTypeMapping(sewerage_type=0, percentage_column="runoff_pct")
         ],
         search_distance=100.0,
