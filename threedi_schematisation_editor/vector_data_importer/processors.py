@@ -1086,7 +1086,6 @@ class SurfaceProcessor(SpatialProcessor):
         # Store surface_geom for use in _attribute_match (pipe → node resolution)
         self.matched_surface_geom = surface_geom
         surface_map_feats = []
-
         if linking.data_format == "long":
             pct_config = self.surface_map_fields_configuration.get("percentage")
             if pct_config is None:
@@ -1105,21 +1104,26 @@ class SurfaceProcessor(SpatialProcessor):
             )
             if feat:
                 surface_map_feats.append(feat)
-
-        # Wide data: iterate mappings
-        for mapping in self.sewer_type_mappings:
-            if mapping.percentage_column is None:
-                continue
-            try:
-                pct = float(src_feat[mapping.percentage_column])
-            except (KeyError, TypeError, ValueError):
-                continue
-            sewerage_type = mapping.sewerage_type
-            feat = self.create_surface_map_feature(
-                new_feat, src_feat, surface_geom, sewerage_type, pct, expression_context
-            )
-            if feat:
-                surface_map_feats.append(feat)
+        else:
+            # Wide data: iterate mappings
+            for mapping in self.sewer_type_mappings:
+                if mapping.percentage_column is None:
+                    continue
+                try:
+                    pct = float(src_feat[mapping.percentage_column])
+                except (KeyError, TypeError, ValueError):
+                    continue
+                sewerage_type = mapping.sewerage_type
+                feat = self.create_surface_map_feature(
+                    new_feat,
+                    src_feat,
+                    surface_geom,
+                    sewerage_type,
+                    pct,
+                    expression_context,
+                )
+                if feat:
+                    surface_map_feats.append(feat)
         return surface_map_feats
 
     def process_feature(self, src_feat):
