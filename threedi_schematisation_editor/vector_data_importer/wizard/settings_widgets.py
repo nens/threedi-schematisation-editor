@@ -67,7 +67,6 @@ class LayerSettingsWidget(QWidget):
 
     def setup_ui(self, layer_filter):
         # create widgets
-        label = QLabel("Select layer to import:")
         self.layer_selector = QgsMapLayerComboBox()
         self.layer_selector.setAllowEmptyLayer(True)
         if layer_filter:
@@ -85,7 +84,6 @@ class LayerSettingsWidget(QWidget):
         expr_layout.addWidget(self.include_expression)
         # set up layout
         layout = QVBoxLayout(self)
-        layout.addWidget(label)
         layout.addWidget(self.layer_selector)
         layout.addWidget(self.use_selected)
         layout.addLayout(expr_layout)
