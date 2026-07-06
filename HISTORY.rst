@@ -4,7 +4,7 @@ History
 2.4.13 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Add importer for surfaces (nens/rana#3840)
 
 
 2.4.12 (2026-06-29)
