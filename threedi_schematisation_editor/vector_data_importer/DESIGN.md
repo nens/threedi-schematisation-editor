@@ -284,46 +284,44 @@ Notes:
 
 ## Surface-to-pipe linking
 
-`SurfaceProcessor` creates `surface_map` entries by spatially linking imported surface polygons to the nearest pipe of the configured sewerage type. The algorithm (implemented in _`create_surface_map_features`) runs for each imported surface and for each mapping entry in `SurfaceMapPercentageSettings.sewer_type_mappings`:
+`SurfaceProcessor` creates `surface_map` entries by linking imported surface polygons to connection nodes, using attribute matching, spatial matching, or both. The main entry point is `create_surface_map_features()`, which is called once per imported surface feature and produces zero or more `surface_map` features.
 
-1. Read the percentage value from the source feature's configured percentage column. If the value is missing or zero the mapping is skipped.
-2. Buffer the surface geometry by `SurfaceLinkingSettings.search_distance` to build a search area.
-3. Query a pre-built `QgsSpatialIndex` of pipe features for candidates whose bounding box intersects the buffer. The pipe index is constructed once during `SurfaceProcessor` initialization for performance.
-4. Among candidate pipes of the required `sewerage_type`, compute the distance from the surface geometry to each pipe geometry and discard candidates whose distance exceeds `search_distance`.
-5. Choose the pipe with the lowest adjusted distance. If no pipe is found within `search_distance` the processor emits a `ProcessorWarning` for this mapping and skips it.
-6. For the chosen pipe, compare the surface geometry's distance to the pipe's start node and end node (node features are looked up from the node layer using `get_feature_by_id` / expression queries). Select the nearer node.
-7. Create a `surface_map` feature with:
-   - `surface_id` = the new surface's id
-   - `connection_node_id` = the chosen node's id
-   - `percentage` = the percentage value from the source feature
-   - `geometry` = LINESTRING from `surface.pointOnSurface()` to the chosen node point
+### Data formats
 
-Performance notes:
-- The pipe spatial index is built once at `SurfaceProcessor` construction time to avoid repeated index builds.
-- Node lookups use expression queries on the node layer (`get_feature_by_id`) and are performed per mapping; this is acceptable for typical import sizes but can be a hotspot for very large imports.
+`SurfaceLinkingSettings.data_format` determines how the set of `(percentage, sewerage_type)` pairs is derived from each source feature:
 
-Mermaid flowchart of the surface-to-pipe linking algorithm:
+- **`wide`** (default): the source layer has one row per surface. `sewerage_type_mappings` lists one entry per sewerage type, each naming a `percentage_column` in the source feature. For each mapping where `percentage_column` is set and `pct > 0`, one `surface_map` entry is attempted. This format supports multiple `surface_map` entries per source feature (one per sewerage type).
 
-```mermaid
-flowchart TD
-  A[Start mapping entry for surface] --> B{Read percentage value}
-  B -- missing or 0 --> Z[Skip mapping]
-  B -- >0 --> C[Buffer surface by search_distance]
-  C --> D[Query pipe spatial index for bbox intersections]
-  D --> E{Any candidate pipes of matching sewerage_type?}
-  E -- No --> F[Emit ProcessorWarning and skip mapping]
-  E -- Yes --> H[For each candidate compute distance to pipe geometry]
-  H --> I[Discard candidates with distance > search_distance]
-  I --> J{Any remaining candidates?}
-  J -- No --> F
-  J -- Yes --> K[Pick pipe with lowest adjusted distance]
-  K --> L[Compare distance to pipe start node vs end node]
-  L --> M[Choose nearer node]
-  M --> N[Create surface_map feature]
-  N --> O[Done for this mapping entry]
-  Z --> O
-  F --> O
-```
+- **`long`**: the source layer has one row per `(surface, sewerage_type)` pair. The percentage is read via the `percentage` field-map config and the sewerage type via `sewerage_type_config`. Exactly 0 or 1 `surface_map` entries are produced per source feature.
+
+In both formats, each `(pct, sewerage_type)` pair is then resolved to a connection node via the node resolution strategy below.
+
+### Node resolution: attribute match then spatial match
+
+For each `(pct, sewerage_type)` pair, `create_surface_map_feature()` attempts to resolve a connection node in order:
+
+1. **Attribute match** (`get_attribute_match`, tried first when `attribute_match_enabled` is `True` and `attribute_match_table` is set):
+   - Read the lookup value from the source feature using `attribute_match_input_config`.
+   - Search `attribute_match_table` (`pipe` or `connection_node`) for features where `attribute_match_col` equals that value.
+   - If matching against a pipe and `sewerage_type` is not `None`, reject any pipe whose `sewerage_type` does not match.
+   - Exactly one match → use it. For a pipe match, resolve to its nearer endpoint node via `get_closest_node`. Zero or multiple matches → fall through to spatial.
+
+2. **Spatial match** (`get_spatial_match`, fallback when `spatial_match_enabled` is `True`):
+   - Buffer the surface geometry by `search_distance` and query the pre-built pipe spatial index.
+   - Filter candidates by `sewerage_type` when not `None`; match any pipe when `None`.
+   - Skip pipes whose start or end node has `visualisation == 1` (outlet nodes).
+   - Discard candidates whose distance to the surface exceeds `search_distance`.
+   - Pick the nearest pipe → resolve to its nearer endpoint node via `get_closest_node`.
+
+3. If both methods return no match → emit `ProcessorWarning` and skip this mapping entry.
+
+Once a node is resolved, a `surface_map` feature is created with:
+- `surface_id` = the new surface's id
+- `connection_node_id` = the resolved node's id
+- `percentage` = the percentage value
+- `geometry` = LINESTRING from `surface.pointOnSurface()` to the node point
+
+Other surface map properties are either use their own field map (long data) or use the same values as used for the surface itself (wide data).
 
 ## Integrators
 
@@ -360,18 +358,21 @@ The same importer classes can be invoked headlessly via QGIS Processing algorith
 
 The import settings are collected in `ImportSettings` (a pydantic model) which holds several submodels for connection node settings, integration settings, cross-section data remapping, point-to-line conversion, and field mappings.
 
-Surface-specific settings
 
-The surface import path has its own settings model `SurfaceSettings` which captures configuration for surface imports (filters, field mappings and auxiliary surface-map behaviour). `SurfaceSettings` contains a nested `SurfaceLinkingSettings` model that controls how imported surface polygons are spatially linked to existing schematisation pipes/nodes.
+Surface-specific settings are captured in `SurfaceLinkingSettings`, nested inside `ImportSettings`. There is no separate `SurfaceSettings` model. `SurfaceLinkingSettings` controls how imported surface polygons are spatially and/or attribute-linked to existing schematisation pipes/nodes.
 
 `SurfaceLinkingSettings` contains the following fields:
 
-- `surface_map_layer_name: str` — name of the surface-map layer to write to (defaults to the schematisation's surface map layer name).
-- `pipe_layer_name: str` — name of the pipe layer to use when finding the nearest pipe for spatial linking (defaults to the schematisation pipe layer name).
-- `node_layer_name: str` — name of the connection node layer used by some linking logic (defaults to the schematisation connection node layer name).
-- `selected_pipes_only: bool` — when true, only pipes selected in the provided pipe layer are considered as candidates for linking; when false the full pipe layer is used. Defaults to `False`.
-
-These linking settings default to the canonical schematisation layer names so that in the common case the user does not need to change them. The settings (including `SurfaceLinkingSettings`) are serialized to and from JSON with the rest of the `ImportSettings` model and are restored by the wizard when loading a saved configuration.
+- `data_format: Literal["long", "wide"]` — whether the source data is in "long" format (one row per sewerage type mapping) or "wide" format (one row per surface with multiple percentage columns).
+- `sewerage_type_config: Optional[FieldMapConfig]` — (long format only) field-map config for reading the sewerage type value from each source feature.
+- `sewerage_type_mappings: list[SewerTypeMapping]` — (wide format only) list of per-sewerage-type configurations; each `SewerTypeMapping` has a `sewerage_type: int` and an optional `percentage_column: str`.
+- `search_distance: float` — buffer around the surface geometry used to search for candidate pipes during spatial linking. Default 40 m.
+- `selected_pipes_only: bool` — when `True`, only pipes selected in the provided pipe layer are considered as candidates for linking. Defaults to `False`.
+- `spatial_match_enabled: bool` — when `True`, spatial linking (nearest-pipe search) is performed. Defaults to `True`.
+- `attribute_match_enabled: bool` — when `True`, attribute-based linking is attempted before spatial. Defaults to `False`.
+- `attribute_match_table: Optional[Literal["pipe", "connection_node"]]` — which table to look up for attribute matching (`pipe` or `connection_node`).
+- `attribute_match_col: Optional[str]` — the column in `attribute_match_table` to compare against.
+- `attribute_match_input_config: Optional[FieldMapConfig]` — field-map config for reading the lookup value from the source feature.
 
 The `FieldMapConfig` is a model designed to validate configuration that maps values from a source layer to a target layer. It has custom validations:
 * required fields based on the value of `method`;
@@ -381,3 +382,17 @@ A `FieldMapConfig` is typically related to an attribute of a data model (from `d
 * any field with the name "id" has only AUTO as an allowed method;
 * any other field has all methods from `ColumnImportMethod` as allowed method, except for AUTO;
 * if the type of field is not optional, `ColumnImportMethod` IGNORE is removed from the allowed methods.
+
+
+### Other settings models
+
+**`PointToLineSettings`** is used when importing point features that need to be converted to line features (e.g. orifices or weirs given as points). It contains:
+
+- `length: FieldMapConfig` — how to derive the line length from the source feature (ATTRIBUTE, DEFAULT, or EXPRESSION).
+- `azimuth: FieldMapConfig` — how to derive the bearing/azimuth of the generated line (default value: 90°).
+
+**`CrossSectionLocationSettings`** controls how cross-section location features are joined to conduits:
+
+- `join_field_src: FieldMapConfig` — source field used for joining.
+- `join_field_tgt: FieldMapConfig` — target field on the conduit used for joining.
+- `snap_distance: float` — snap threshold for attaching cross-section locations to their conduit geometry.

@@ -96,6 +96,8 @@ The Start page is shared by all wizard types. It contains:
 - A `QgsMapLayerComboBox` for selecting the source layer (filtered by geometry type via `layer_filter`).
 - A **Selected features only** checkbox — when checked, only the layer's currently selected features are imported.
 - A `QgsFieldExpressionWidget` for an optional filter expression. The expression is evaluated against each candidate feature; only features where it evaluates to `True` are imported. The widget is disabled when no layer is selected and its field list updates when the layer changes. If the expression references fields not present in the newly selected layer it is automatically cleared.
+ - A `QgsFieldExpressionWidget` for an optional filter expression. The expression is evaluated against each candidate feature; only features where it evaluates to `True` are imported. The widget is disabled when no layer is selected and its field list updates when the layer changes. If the expression references fields not present in the newly selected layer it is automatically cleared.
+ - A **Load import configuration from template** button — opens a file dialog to load a previously saved JSON configuration file. This is equivalent to the load action described in the [Config loading and saving](#config-loading-and-saving) section.
 
 The Start page participates in the wizard's serialize/deserialize flow via `SourceSettings` (name=`"source"`):
 - `selected_layer_name` — restored by looking up the layer by name within the combo's filtered list and calling `setLayer()`, which triggers the `layerChanged` signal.
@@ -135,6 +137,15 @@ class SettingsWidget{
 
 Upon initialization the widgets are instantiated and put in a group box using the `group_name`. The settings page holds a list of settings widgets which are all based on `SettingsWidget`. If a widget sets `expanding = True`, the settings page gives it vertical stretch so it grows to fill available space (used for table-based widgets).
 
+
+The following `SettingsWidget` subclasses exist:
+
+- `ConnectionNodeSettingsWidget` — snap distance and create-nodes option.
+- `IntegrationSettingsWidget` — integration mode (NONE/CHANNELS/PIPES), snap distance, minimum conduit length.
+- `PointToLineConversionSettingsWidget` — length and azimuth field mappings for point-to-line conversion.
+- `CrossSectionDataRemapSettingsWidget` — lowest point normalization options.
+- `CrossSectionLocationMappingSettingsWidget` — join field configuration for cross-section linking.
+- `SurfaceLinkingSettingsWidget` — sewerage type mappings, search distance, `spatial_match_enabled` (toggle spatial nearest-pipe linking), `attribute_match_enabled` (toggle attribute-based linking), and selected-pipes-only flag. Used by `ImportSurfaceWizard`.
 
 ## Serialization and deserialization
 
@@ -185,3 +196,15 @@ The `ValueMapDialog` allows users to define per-field source-to-target value rem
 
 See the [threading model section](../DESIGN.md#threading-model) in the parent DESIGN.md for details on how the import is executed on a worker thread with progress reporting and cancellation support.
 
+
+## Draft persistence
+
+In addition to explicit save/load via JSON config files, the wizard automatically persists its current settings as a draft. Drafts are saved to:
+
+```
+~/.qgis/vdi_preset_drafts/{WizardClassName}.json
+```
+
+The draft is updated whenever the user navigates through the wizard. When the wizard is shown (`showEvent()`), if a draft exists from a previous session, the user is prompted to restore it. Restoring a draft calls `deserialize()` just like loading from a config file.
+
+Drafts are a convenience feature to avoid losing partially-configured imports on accidental close; they are distinct from the explicit "Save as..." / "Load..." configuration file workflow on the Start page and Run page.
