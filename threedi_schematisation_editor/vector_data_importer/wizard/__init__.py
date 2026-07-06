@@ -4,6 +4,7 @@ from .wizard import (
     ImportCrossSectionDataWizard,
     ImportCrossSectionLocationWizard,
     ImportStructureWizard,
+    ImportSurfaceWizard,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "ImportCrossSectionLocationWizard",
     "ImportConduitWizard",
     "ImportConnectionNodesWizard",
+    "ImportSurfaceWizard",
 ]

@@ -2,9 +2,10 @@ from dataclasses import fields
 from typing import Optional, Type
 
 from pydantic import BaseModel
-from qgis.core import Qgis
-from qgis.gui import QgsMapLayerComboBox
-from qgis.PyQt.QtCore import Qt, pyqtSignal
+from qgis.core import Qgis, QgsExpression, QgsMapLayerProxyModel
+from qgis.gui import QgsFieldExpressionWidget, QgsMapLayerComboBox
+from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, pyqtSignal
+from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
     QBoxLayout,
@@ -18,8 +19,12 @@ from qgis.PyQt.QtWidgets import (
     QHeaderView,
     QLabel,
     QLineEdit,
+    QMessageBox,
+    QPushButton,
     QRadioButton,
+    QScrollArea,
     QSizePolicy,
+    QStyledItemDelegate,
     QTableView,
     QVBoxLayout,
     QWidget,
@@ -28,14 +33,16 @@ from qgis.PyQt.QtWidgets import (
 
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from threedi_schematisation_editor import data_models as dm
+from threedi_schematisation_editor.enumerators import SewerageType
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
+    SourceSettings,
+    create_field_map_config,
+)
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map import (
     FieldMapColumn,
     FieldMapRow,
     FieldMapWidget,
-)
-from threedi_schematisation_editor.vector_data_importer.wizard.models import (
-    GenericSettingsModel,
 )
 
 
@@ -54,44 +61,90 @@ class LayerSettingsWidget(QWidget):
         self, layer_filter: Optional[Qgis.LayerFilters | Qgis.LayerFilter] = None
     ):
         super().__init__()
-        self.model = GenericSettingsModel()
+        self.model = SourceSettings()
         self.setup_ui(layer_filter)
         self.selected_layer = None
 
     def setup_ui(self, layer_filter):
         # create widgets
-        label = QLabel("Select layer to import:")
-        layer_selector = QgsMapLayerComboBox()
-        layer_selector.setAllowEmptyLayer(True)
+        self.layer_selector = QgsMapLayerComboBox()
+        self.layer_selector.setAllowEmptyLayer(True)
         if layer_filter:
-            layer_selector.setFilters(layer_filter)
-        layer_selector.layerChanged.connect(self.update_layer)
-        layer_selector.setCurrentIndex(0)
-        layer_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            self.layer_selector.setFilters(layer_filter)
+        self.layer_selector.layerChanged.connect(self.update_layer)
+        self.layer_selector.setCurrentIndex(0)
+        self.layer_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.use_selected = QCheckBox("Selected features only")
         self.use_selected.setEnabled(False)
+        self.include_expression = QgsFieldExpressionWidget()
+        self.include_expression.setAllowEmptyFieldName(True)
+        self.include_expression.setEnabled(False)
+        expr_layout = QHBoxLayout()
+        expr_layout.addWidget(QLabel("Select features with expression:"))
+        expr_layout.addWidget(self.include_expression)
         # set up layout
         layout = QVBoxLayout(self)
-        layout.addWidget(label)
-        layout.addWidget(layer_selector)
+        layout.addWidget(self.layer_selector)
         layout.addWidget(self.use_selected)
+        layout.addLayout(expr_layout)
         # Connect widgets to model updates
         self.use_selected.toggled.connect(self.update_use_selected)
+        self.include_expression.fieldChanged.connect(self.update_include_expression)
 
     def update_layer(self, layer):
         if layer:
             self.selected_layer = layer
-            self.model.selected_layer = layer.name()
-            self.layer_changed.emit(layer.name())  # Emit with layer name
+            self.model.selected_layer_name = layer.name()
+            self.layer_changed.emit(layer.name())
             self.use_selected.setEnabled(len(layer.selectedFeatureIds()) > 0)
+            self.include_expression.setLayer(layer)
+            self.include_expression.setEnabled(True)
+            self._clear_expression_if_invalid()
         else:
             self.selected_layer = None
-            self.model.selected_layer = ""
+            self.model.selected_layer_name = ""
             self.layer_changed.emit("")
             self.use_selected.setEnabled(False)
+            self.include_expression.setLayer(None)
+            self.include_expression.setEnabled(False)
+
+    def _clear_expression_if_invalid(self):
+        """Clear the expression if it references fields not present in the current layer."""
+        expr_str = self.include_expression.expression()
+        if not expr_str or self.selected_layer is None:
+            return
+        expr = QgsExpression(expr_str)
+        if expr.hasParserError():
+            self.include_expression.setExpression("")
+            self.model.include_expression = None
+            return
+        field_names = {f.name() for f in self.selected_layer.fields()}
+        unknown = expr.referencedColumns() - field_names - {"*"}
+        if unknown:
+            self.include_expression.setExpression("")
+            self.model.include_expression = None
 
     def update_use_selected(self, checked):
         self.model.use_selected_features = checked
+
+    def update_include_expression(self, expression):
+        self.model.include_expression = expression or None
+
+    def get_settings(self) -> SourceSettings:
+        return self.model
+
+    def deserialize(self, data: dict):
+        self.use_selected.setChecked(data.get("use_selected_features", False))
+        if self.selected_layer is None:
+            layer_name = data.get("selected_layer_name") or ""
+            if layer_name:
+                idx = self.layer_selector.findText(layer_name)
+                if idx >= 0:
+                    self.layer_selector.setLayer(self.layer_selector.layer(idx))
+        expr = data.get("include_expression") or ""
+        self.include_expression.setExpression(expr)
+        self.model.include_expression = expr or None
+        self._clear_expression_if_invalid()
 
 
 class SettingsWidget(QWidget):
@@ -110,6 +163,9 @@ class SettingsWidget(QWidget):
     @property
     def is_valid(self) -> bool:
         return True
+
+    def validate(self) -> bool:
+        return self.is_valid
 
     def get_settings(self) -> BaseModel:
         # loudly fail when model is missing
@@ -446,3 +502,546 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
                     ColumnImportMethod.AUTO,
                     Qt.EditRole,
                 )
+
+
+_NUMERIC_QTYPES = {
+    QVariant.Int,
+    QVariant.LongLong,
+    QVariant.Double,
+    QVariant.UInt,
+    QVariant.ULongLong,
+}
+
+# Ordered list of (display_name, sewerage_type_value) for the sewerage type combobox
+_SEWERAGE_TYPE_ITEMS = [
+    (t.name.replace("_", " ").capitalize(), t.value) for t in SewerageType
+]
+
+
+class SewerageTypeMappingModel(QAbstractTableModel):
+    """Table model backing the sewerage type → percentage column mapping table."""
+
+    SEWERAGE_TYPE_COL = 0
+    PERCENTAGE_COL = 1
+    HEADERS = ["Sewerage type", "Percentage column (%)"]
+
+    def __init__(self, numeric_fields=None, parent=None):
+        super().__init__(parent)
+        self._rows = []
+        self._numeric_fields = numeric_fields or []
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self._rows)
+
+    def columnCount(self, parent=QModelIndex()):
+        return 2
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            return self.HEADERS[section]
+        return None
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid() or role not in (Qt.DisplayRole, Qt.EditRole):
+            return None
+        value = self._rows[index.row()][index.column()]
+        if index.column() == self.SEWERAGE_TYPE_COL:
+            if value is None:
+                return ""
+            return next((n for n, v in _SEWERAGE_TYPE_ITEMS if v == value), "")
+        return value or ""
+
+    def setData(self, index, value, role=Qt.EditRole):
+        if role != Qt.EditRole or not index.isValid():
+            return False
+        self._rows[index.row()][index.column()] = value
+        self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
+        return True
+
+    def flags(self, index):
+        return Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
+    def add_row(self):
+        row = len(self._rows)
+        self.beginInsertRows(QModelIndex(), row, row)
+        self._rows.append([None, None])
+        self.endInsertRows()
+
+    def remove_rows(self, rows):
+        for row in sorted(rows, reverse=True):
+            self.beginRemoveRows(QModelIndex(), row, row)
+            self._rows.pop(row)
+            self.endRemoveRows()
+
+    def set_numeric_fields(self, fields):
+        self._numeric_fields = fields
+        for row in self._rows:
+            if row[self.PERCENTAGE_COL] not in fields:
+                row[self.PERCENTAGE_COL] = None
+        if self._rows:
+            self.dataChanged.emit(
+                self.index(0, self.PERCENTAGE_COL),
+                self.index(len(self._rows) - 1, self.PERCENTAGE_COL),
+            )
+
+    def get_mappings(self):
+        result = []
+        for sewerage_type, col in self._rows:
+            if sewerage_type is not None and col:
+                result.append(
+                    sm.SewerTypeMapping(
+                        sewerage_type=sewerage_type,
+                        percentage_column=col,
+                    )
+                )
+        return result
+
+    def set_mappings(self, mappings):
+        self.beginResetModel()
+        self._rows = [[m.sewerage_type, m.percentage_column] for m in mappings]
+        if not self._rows:
+            self._rows = [
+                [SewerageType.COMBINED_SEWER, None],
+                [SewerageType.STORM_DRAIN, None],
+                [SewerageType.SANITARY_SEWER, None],
+            ]
+        self.endResetModel()
+
+
+class SewerTypeMappingDelegate(QStyledItemDelegate):
+    """Combobox delegate for both columns of the sewerage type mapping table."""
+
+    def createEditor(self, parent, option, index):
+        combo = QComboBox(parent)
+        model = index.model()
+        if index.column() == SewerageTypeMappingModel.SEWERAGE_TYPE_COL:
+            combo.addItem("", None)
+            for name, value in _SEWERAGE_TYPE_ITEMS:
+                combo.addItem(name, value)
+        else:
+            combo.addItem("", None)
+            for field_name in model._numeric_fields:
+                combo.addItem(field_name, field_name)
+        combo.currentIndexChanged.connect(lambda _: self.commitData.emit(combo))
+        return combo
+
+    def setEditorData(self, editor, index):
+        row_value = index.model()._rows[index.row()][index.column()]
+        idx = editor.findData(row_value)
+        editor.setCurrentIndex(max(idx, 0))
+
+    def setModelData(self, editor, model, index):
+        model.setData(index, editor.currentData(), Qt.EditRole)
+
+
+class SurfaceLinkingSettingsWidget(SettingsWidget):
+    """Combined data format selection, column mapping, and surface linking settings."""
+
+    expanding = False
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.model = sm.SurfaceLinkingSettings()
+        self.setup_ui()
+        self.deserialize({})
+
+    @property
+    def name(self) -> str:
+        return sm.SurfaceLinkingSettings.name
+
+    @property
+    def group_name(self) -> str:
+        return "Surface settings"
+
+    def _make_sewerage_map_table(self):
+        layout = QVBoxLayout()
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(2)
+        self._sewerage_model = SewerageTypeMappingModel()
+        self._sewerage_model.dataChanged.connect(self._on_sewerage_mappings_changed)
+        self._sewerage_model.rowsInserted.connect(self._on_sewerage_mappings_changed)
+        self._sewerage_model.rowsRemoved.connect(self._on_sewerage_mappings_changed)
+        self._sewerage_table = QTableView()
+        self._sewerage_table.setModel(self._sewerage_model)
+        self._sewerage_table.setItemDelegate(SewerTypeMappingDelegate())
+        self._sewerage_table.verticalHeader().hide()
+        self._sewerage_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self._sewerage_table.setEditTriggers(
+            QAbstractItemView.CurrentChanged | QAbstractItemView.SelectedClicked
+        )
+        header = self._sewerage_table.horizontalHeader()
+        header.setSectionResizeMode(
+            SewerageTypeMappingModel.SEWERAGE_TYPE_COL, QHeaderView.Stretch
+        )
+        header.setSectionResizeMode(
+            SewerageTypeMappingModel.PERCENTAGE_COL, QHeaderView.Stretch
+        )
+        self._sewerage_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        _row_h = self._sewerage_table.verticalHeader().defaultSectionSize()
+        _header_h = self._sewerage_table.horizontalHeader().sizeHint().height()
+        self._sewerage_table.setMaximumHeight(_header_h + 5 * _row_h + 2)
+        btn_layout = QHBoxLayout()
+        btn_layout.setContentsMargins(0, 0, 0, 0)
+        self._sewerage_add_btn = QPushButton("Add row")
+        self._sewerage_add_btn.setIcon(QIcon.fromTheme("list-add"))
+        self._sewerage_add_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._sewerage_add_btn.clicked.connect(self._sewerage_model.add_row)
+        self._sewerage_del_btn = QPushButton("Delete row")
+        self._sewerage_del_btn.setIcon(QIcon.fromTheme("list-remove"))
+        self._sewerage_del_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._sewerage_del_btn.clicked.connect(self._delete_sewerage_rows)
+        btn_layout.addWidget(self._sewerage_del_btn)
+        btn_layout.addStretch()
+        btn_layout.addWidget(self._sewerage_add_btn)
+        layout.addWidget(self._sewerage_table)
+        layout.addLayout(btn_layout)
+        return layout
+
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        # --- Format selection ---
+        self.fmt_long_radio = QRadioButton(
+            "One sewerage type per row, retrieved from the following fields: "
+        )
+        self.fmt_long_radio.setChecked(True)
+        self.fmt_wide_radio = QRadioButton(
+            "Multiple sewerage types per row with a percentage column for each:"
+        )
+        sewerage_type_fm_config = create_field_map_config(
+            allowed_methods=[
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.DEFAULT,
+                ColumnImportMethod.EXPRESSION,
+            ],
+            field_type=SewerageType,
+        )
+        sewerage_type_row_dict = {
+            "sewerage_type": FieldMapRow(
+                label="Sewerage type",
+                config=sewerage_type_fm_config.model_construct(method=None),
+            )
+        }
+        self.sewerage_type_field_map_widget = FieldMapWidget(
+            sewerage_type_row_dict,
+            hidden_columns=[FieldMapColumn.LABEL],
+        )
+        self.sewerage_type_field_map_widget.open_persistent_editors()
+
+        fmt_group = QButtonGroup(self)
+        fmt_group.addButton(self.fmt_long_radio)
+        fmt_group.addButton(self.fmt_wide_radio)
+        fmt_layout = QGridLayout()
+        fmt_layout.addWidget(QLabel("Input table format:"), 0, 0)
+        fmt_layout.addWidget(self.fmt_long_radio, 1, 0)
+        fmt_layout.addWidget(self.sewerage_type_field_map_widget, 2, 0, 1, 4)
+        fmt_layout.addWidget(self.fmt_wide_radio, 3, 0)
+        fmt_layout.addLayout(self._make_sewerage_map_table(), 4, 0, 1, 4)
+        layout.addLayout(fmt_layout)
+
+        # --- Linking section ---
+        linking_group = QGroupBox("Linking settings")
+        linking_layout = QVBoxLayout(linking_group)
+        _defaults = sm.SurfaceLinkingSettings()
+        self.match_no_table_radio = QRadioButton("None")
+        self.match_no_table_radio.setChecked(True)
+        self.match_pipe_table_radio = QRadioButton("Pipe")
+        self.match_node_table_radio = QRadioButton("Connection node")
+        match_table_group = QButtonGroup(self)
+        match_table_group.addButton(self.match_no_table_radio)
+        match_table_group.addButton(self.match_pipe_table_radio)
+        match_table_group.addButton(self.match_node_table_radio)
+        self.match_table_col = QComboBox()
+        match_row = QHBoxLayout()
+        match_row.addWidget(self.match_no_table_radio)
+        match_row.addWidget(self.match_pipe_table_radio)
+        match_row.addWidget(self.match_node_table_radio)
+        match_row.addWidget(QLabel("Column:"))
+        match_row.addWidget(self.match_table_col)
+        match_row.addStretch()
+        linking_layout.addLayout(match_row)
+        config = create_field_map_config(
+            allowed_methods=[
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+            ]
+        )
+        row_dict = {
+            "attribute_match_input": FieldMapRow(
+                label="Source value", config=config.model_construct(method=None)
+            )
+        }
+        self.match_field_map_widget = FieldMapWidget(
+            row_dict,
+            hidden_columns=[FieldMapColumn.LABEL, FieldMapColumn.DEFAULT_VALUE],
+        )
+        self.match_field_map_widget.open_persistent_editors()
+        linking_layout.addWidget(self.match_field_map_widget)
+
+        spat_row = QHBoxLayout()
+        self.match_spatial_checkbox = QCheckBox(
+            "Use spatial matching with search distance:"
+        )
+        self.search_distance = QDoubleSpinBox()
+        self.search_distance.setDecimals(1)
+        self.search_distance.setMinimum(
+            sm.get_field_min(sm.SurfaceLinkingSettings, "search_distance")
+        )
+        self.search_distance.setMaximum(
+            sm.get_field_max(sm.SurfaceLinkingSettings, "search_distance")
+        )
+        self.search_distance.setValue(_defaults.search_distance)
+        self.search_distance.setSuffix(" m")
+        spat_row.addWidget(self.match_spatial_checkbox)
+        spat_row.addWidget(self.search_distance)
+        spat_row.addStretch()
+        linking_layout.addLayout(spat_row)
+
+        self.selected_pipes_only = QCheckBox("Only match selected pipes")
+        linking_layout.addWidget(self.selected_pipes_only)
+        layout.addWidget(linking_group)
+        # Signal connections
+        self.fmt_long_radio.toggled.connect(self._on_format_changed)
+        self.sewerage_type_field_map_widget.dataChanged.connect(
+            self._on_sewerage_type_config_changed
+        )
+        self.match_no_table_radio.toggled.connect(self._on_match_table_changed)
+        self.match_pipe_table_radio.toggled.connect(self._on_match_table_changed)
+        self.match_node_table_radio.toggled.connect(self._on_match_table_changed)
+        self.match_table_col.currentTextChanged.connect(self._on_match_col_changed)
+        self.match_field_map_widget.dataChanged.connect(self._on_match_input_changed)
+        self.match_spatial_checkbox.toggled.connect(self._on_spatial_match_changed)
+        self.search_distance.valueChanged.connect(self._on_search_distance_changed)
+        self.selected_pipes_only.toggled.connect(self._on_selected_pipes_only_changed)
+
+        self._set_wide_mapping_enabled(not self.fmt_long_radio.isChecked())
+        self._update_linking_enabled()
+
+    def _sewerage_type_source_present(self):
+        if self.fmt_long_radio.isChecked():
+            return self.sewerage_type_field_map_widget.is_valid
+        return bool(self._sewerage_model.get_mappings())
+
+    def _update_linking_enabled(self):
+        match_active = not self.match_no_table_radio.isChecked()
+        for w in (self.match_table_col, self.match_field_map_widget):
+            w.setEnabled(match_active)
+        self.search_distance.setEnabled(self.match_spatial_checkbox.isChecked())
+
+    def _set_wide_mapping_enabled(self, enabled):
+        self._sewerage_table.setEnabled(enabled)
+        self._sewerage_add_btn.setEnabled(enabled)
+        self._sewerage_del_btn.setEnabled(enabled)
+
+    def _on_format_changed(self, long_checked):
+        self.sewerage_type_field_map_widget.setEnabled(long_checked)
+        self._set_wide_mapping_enabled(not long_checked)
+        self.model.data_format = "long" if long_checked else "wide"
+        self._update_linking_enabled()
+        self.dataChanged.emit()
+
+    def _on_match_table_changed(self):
+        match_model = self._match_table_model()
+        self.model.attribute_match_enabled = not self.match_no_table_radio.isChecked()
+        self.model.attribute_match_table = (
+            match_model.__tablename__ if match_model is not None else None
+        )
+        self._repopulate_match_col()
+        self._update_linking_enabled()
+        self.dataChanged.emit()
+
+    def _on_sewerage_type_config_changed(self):
+        self._sync_sewerage_type_config()
+        self._update_linking_enabled()
+        self.dataChanged.emit()
+
+    def _sync_sewerage_type_config(self):
+        sewerage_type_cfg = (
+            self.sewerage_type_field_map_widget.get_settings().get("sewerage_type")
+            if self.fmt_long_radio.isChecked()
+            and self.sewerage_type_field_map_widget.is_valid
+            else None
+        )
+        self.model.sewerage_type_config = sewerage_type_cfg
+
+    def _on_sewerage_mappings_changed(self, *args):
+        self.model.sewerage_type_mappings = self._sewerage_model.get_mappings()
+        self._update_linking_enabled()
+        self.dataChanged.emit()
+
+    def _on_match_col_changed(self, text):
+        self.model.attribute_match_col = text or None
+        self._sync_match_input_config()
+        self._update_linking_enabled()
+        self.dataChanged.emit()
+
+    def _on_match_input_changed(self):
+        self._sync_match_input_config()
+        self.dataChanged.emit()
+
+    def _sync_match_input_config(self):
+        input_cfg = (
+            self.match_field_map_widget.get_settings().get("attribute_match_input")
+            if self.model.attribute_match_enabled
+            and self.model.attribute_match_table
+            and self.model.attribute_match_col
+            and self.match_field_map_widget.is_valid
+            else None
+        )
+        self.model.attribute_match_input_config = input_cfg
+
+    def _on_spatial_match_changed(self, checked):
+        self.model.spatial_match_enabled = checked
+        self._update_linking_enabled()
+        self.dataChanged.emit()
+
+    def _on_search_distance_changed(self, value):
+        self.model.search_distance = value
+        self.dataChanged.emit()
+
+    def _on_selected_pipes_only_changed(self, checked):
+        self.model.selected_pipes_only = checked
+        self.dataChanged.emit()
+
+    def _repopulate_match_col(self):
+        self.match_table_col.blockSignals(True)
+        self.match_table_col.clear()
+        match_model = self._match_table_model()
+        if match_model is not None:
+            self.match_table_col.addItem("")
+            for f in fields(match_model):
+                self.match_table_col.addItem(f.name)
+        self.match_table_col.blockSignals(False)
+
+    def _match_table_model(self):
+        if self.match_pipe_table_radio.isChecked():
+            return dm.Pipe
+        elif self.match_node_table_radio.isChecked():
+            return dm.ConnectionNode
+        return None
+
+    def _delete_sewerage_rows(self):
+        rows = sorted(
+            {idx.row() for idx in self._sewerage_table.selectedIndexes()}, reverse=True
+        )
+        if rows:
+            self._sewerage_model.remove_rows(rows)
+
+    def update_layer(self, layer):
+        """Populate column dropdowns and wide table with fields from source layer."""
+        columns = [f.name() for f in layer.fields()] if layer else []
+        numeric = (
+            [f.name() for f in layer.fields() if f.type() in _NUMERIC_QTYPES]
+            if layer
+            else []
+        )
+        self.sewerage_type_field_map_widget.update_layer(layer)
+        self._sewerage_model.set_numeric_fields(numeric)
+        self.match_field_map_widget.update_layer(layer)
+        self._update_model()
+
+    def _update_model(self):
+        """Full model rebuild from current UI state. Called after layer changes."""
+        match_model = self._match_table_model()
+        match_table = match_model.__tablename__ if match_model is not None else None
+        match_by_table = not self.match_no_table_radio.isChecked()
+        match_col = (
+            (self.match_table_col.currentText() or None) if match_by_table else None
+        )
+        input_cfg = (
+            self.match_field_map_widget.get_settings().get("attribute_match_input")
+            if match_by_table
+            and match_table
+            and match_col
+            and self.match_field_map_widget.is_valid
+            else None
+        )
+        sewerage_type_cfg = (
+            self.sewerage_type_field_map_widget.get_settings().get("sewerage_type")
+            if self.fmt_long_radio.isChecked()
+            and self.sewerage_type_field_map_widget.is_valid
+            else None
+        )
+        self.model = sm.SurfaceLinkingSettings(
+            data_format="long" if self.fmt_long_radio.isChecked() else "wide",
+            sewerage_type_config=sewerage_type_cfg,
+            sewerage_type_mappings=self._sewerage_model.get_mappings(),
+            search_distance=self.search_distance.value(),
+            selected_pipes_only=self.selected_pipes_only.isChecked(),
+            attribute_match_enabled=match_by_table,
+            spatial_match_enabled=self.match_spatial_checkbox.isChecked(),
+            attribute_match_table=match_table,
+            attribute_match_col=match_col,
+            attribute_match_input_config=input_cfg,
+        )
+        self._update_linking_enabled()
+        self.dataChanged.emit()
+
+    @property
+    def is_valid(self) -> bool:
+        if self.fmt_long_radio.isChecked():
+            if not self.sewerage_type_field_map_widget.is_valid:
+                return False
+        else:
+            if not self._sewerage_model.get_mappings():
+                return False
+        if not self.match_no_table_radio.isChecked():
+            if not self.match_field_map_widget.is_valid:
+                return False
+        return True
+
+    def validate(self) -> bool:
+        if (
+            not self.fmt_long_radio.isChecked()
+            and not self._sewerage_model.get_mappings()
+        ):
+            reply = QMessageBox.warning(
+                self,
+                "No sewerage type mappings",
+                "No sewerage type mappings are configured. "
+                "Surfaces will be imported without any surface map entries.\n\n"
+                "Continue anyway?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            return reply == QMessageBox.Yes
+        return True
+
+    def get_settings(self) -> sm.SurfaceLinkingSettings:
+        return self.model
+
+    def deserialize(self, data):
+        loaded_model = (
+            sm.SurfaceLinkingSettings(**data) if data else sm.SurfaceLinkingSettings()
+        )
+        is_long = loaded_model.data_format == "long"
+        self.fmt_long_radio.setChecked(is_long)
+        self.fmt_wide_radio.setChecked(not is_long)
+        if loaded_model.sewerage_type_config:
+            self.sewerage_type_field_map_widget.deserialize(
+                {"sewerage_type": loaded_model.sewerage_type_config.model_dump()}
+            )
+        self.sewerage_type_field_map_widget.setEnabled(is_long)
+        self._sewerage_model.set_mappings(loaded_model.sewerage_type_mappings)
+        if loaded_model.attribute_match_enabled:
+            if loaded_model.attribute_match_table == dm.Pipe.__tablename__:
+                self.match_pipe_table_radio.setChecked(True)
+            else:
+                self.match_node_table_radio.setChecked(True)
+            self._repopulate_match_col()
+            if loaded_model.attribute_match_col:
+                self.match_table_col.setCurrentText(loaded_model.attribute_match_col)
+        else:
+            self.match_no_table_radio.setChecked(True)
+        if loaded_model.attribute_match_input_config:
+            self.match_field_map_widget.deserialize(
+                {
+                    "attribute_match_input": loaded_model.attribute_match_input_config.model_dump()
+                }
+            )
+        self.match_spatial_checkbox.setChecked(loaded_model.spatial_match_enabled)
+        self.search_distance.setValue(loaded_model.search_distance)
+        self.selected_pipes_only.setChecked(loaded_model.selected_pipes_only)
+        self.model = loaded_model
+        self._update_linking_enabled()

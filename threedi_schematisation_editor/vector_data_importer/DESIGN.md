@@ -115,12 +115,15 @@ If you need to add new layer operations during the import, keep them inside the 
 
 The `Importer` class hierarchy handles the import orchestration. Each concrete importer knows its target model class and which processor/integrator to use.
 
+`SpatialImporter` holds the `target_layer`, provides `get_transformation()` and a basic `import_features()` implementation (transform → start editing → process → add). Node-related resources and integration orchestration are scoped to `LinesImporter` because integration is only relevant for linear structures. `SurfaceImporter` is a direct child of `SpatialImporter` that additionally manages a `surface_map_layer`.
+
 ```mermaid
 classDiagram
     Importer <|-- CrossSectionDataImporter
     Importer <|-- SpatialImporter
     SpatialImporter <|-- ConnectionNodesImporter
     SpatialImporter <|-- CrossSectionLocationImporter
+    SpatialImporter <|-- SurfaceImporter
     SpatialImporter <|-- LinesImporter
     LinesImporter <|-- CulvertsImporter
     LinesImporter <|-- OrificesImporter
@@ -129,7 +132,6 @@ classDiagram
     LinesImporter <|-- ChannelsImporter
 
     class Importer {
-        +integrator = None
         +processor = None
         +external_source
         +target_gpkg
@@ -145,10 +147,9 @@ classDiagram
     }
 
     class SpatialImporter {
-        +integrator = None
-        +target_model_cls
-        +import_features()
-        +integrate_features()
+        +target_layer
+        +get_transformation()
+        +import_features()   // basic: transform -> start_editing -> process -> add
     }
 
     class ConnectionNodesImporter {
@@ -161,9 +162,16 @@ classDiagram
         +processor = CrossSectionLocationProcessor
     }
 
+    class SurfaceImporter {
+        +surface_map_layer
+        +modifiable_layers = [target_layer, surface_map_layer]
+    }
+
     class LinesImporter {
-        +processor = LineProcessor
+        +node_layer
         +integrator = LinearIntegrator
+        +modifiable_layers = [target_layer, node_layer] + integrator.layers
+        +import_features() // node_locator setup -> integrate_features() -> process -> add
     }
 
     class CulvertsImporter {
@@ -188,10 +196,14 @@ classDiagram
 
 ```
 
+- `SpatialImporter.import_features()` performs coordinate transformation, calls the processor, and adds resulting features. It puts only the `target_layer` into edit mode by default.
+- `LinesImporter.import_features()` additionally prepares the `node_locator`, initialises an `integrator` (`LinearIntegrator`), and puts the `node_layer` and any integrator-managed layers into edit mode.
+- `SurfaceImporter` produces both a target surface layer and an auxiliary `surface_map_layer`. Both are put into edit mode. The pipe layer and node layer are passed to `SurfaceProcessor` at construction time for spatial linking.
+
 
 ## Processors
 
-Processing is split into processing for connection nodes, cross section locations, points and lines, and cross section data. The base class `Processor` acts as an interface and collects shared logic. `SpatialProcessor` adds functionality for spatial data (coordinate transformation, node snapping) and manages indices of added target objects via a `target_manager` (`FeatureManager`). `StructureProcessor` adds a `node_manager` for connection node index tracking and further shared functionality for lines and points.
+Processing is split into processing for connection nodes, cross section locations, points and lines, cross section data, and surfaces. The base class `Processor` acts as an interface and collects shared logic. `SpatialProcessor` adds functionality for spatial data (coordinate transformation, node snapping) and manages indices of added target objects via a `target_manager` (`FeatureManager`). `StructureProcessor` adds a `node_manager` for connection node index tracking and further shared functionality for lines and points. `SurfaceProcessor` handles polygon surfaces: it converts curved geometries to plain polygons, computes area, applies field mapping, and creates `surface_map` entries by spatially linking each surface to the nearest pipe of the configured sewerage type.
 
 ```mermaid
 classDiagram
@@ -199,6 +211,7 @@ classDiagram
     Processor <|-- CrossSectionDataProcessor
     SpatialProcessor <|-- ConnectionNodeProcessor
     SpatialProcessor <|-- CrossSectionLocationProcessor
+    SpatialProcessor <|-- SurfaceProcessor
     SpatialProcessor <|-- StructureProcessor
     StructureProcessor <|-- PointProcessor
     StructureProcessor <|-- LineProcessor
@@ -229,6 +242,17 @@ classDiagram
         +process_feature()
     }
 
+    class SurfaceProcessor {
+        +pipe_features
+        +pipe_index
+        +node_layer
+        +surface_map_manager
+        +process_feature()
+        +_find_nearest_pipe() // static
+        +_create_surface_map_features()
+        +_to_polygon_geometry() // static
+    }
+
     class StructureProcessor {
         +node_manager
     }
@@ -242,6 +266,62 @@ classDiagram
     }
 ```
 
+
+## Connection node matching
+
+When importing point or linear structures the processors attempt to match each feature endpoint to an existing connection node according to the active connection node settings. Behaviour (applies to `PointProcessor` and `LineProcessor`):
+
+1. After transforming the geometry, `update_connection_nodes()` is called for each endpoint.
+2. For each endpoint, `get_node(point)` is used which consults a `QgsPointLocator` built from the schematisation's existing connection node layer (`node_locator`).
+3. The locator attempts to snap to the nearest existing connection node within `snap_distance` (from `ConnectionNodeSettings`.snap_distance). If `ConnectionNodeSettings.snap` is `False` the effective snap distance is effectively 0 (1e-9 m), so only exactly overlapping nodes will snap.
+4. If a node is found within snap distance: the imported feature's `connection_node_id` is set to that node's id and the feature endpoint geometry is snapped to the node's exact position.
+5. If no node is found and `ConnectionNodeSettings.create_nodes` is `True`: a new connection node is created at that point and added to the node layer immediately so subsequent endpoints can also snap to it.
+6. If no node is found and `create_nodes` is False: no connection node is assigned (the `connection_node_id` remains `NULL`).
+
+Notes:
+- For `LineProcessor` both start and end points are processed via `update_connection_nodes` and the line geometry endpoints may be moved to snap to existing nodes.
+- New nodes are added immediately to the node layer during processing so they are available for later features in the same import pass.
+
+## Surface-to-pipe linking
+
+`SurfaceProcessor` creates `surface_map` entries by linking imported surface polygons to connection nodes, using attribute matching, spatial matching, or both. The main entry point is `create_surface_map_features()`, which is called once per imported surface feature and produces zero or more `surface_map` features.
+
+### Data formats
+
+`SurfaceLinkingSettings.data_format` determines how the set of `(percentage, sewerage_type)` pairs is derived from each source feature:
+
+- **`wide`** (default): the source layer has one row per surface. `sewerage_type_mappings` lists one entry per sewerage type, each naming a `percentage_column` in the source feature. For each mapping where `percentage_column` is set and `pct > 0`, one `surface_map` entry is attempted. This format supports multiple `surface_map` entries per source feature (one per sewerage type).
+
+- **`long`**: the source layer has one row per `(surface, sewerage_type)` pair. The percentage is read via the `percentage` field-map config and the sewerage type via `sewerage_type_config`. Exactly 0 or 1 `surface_map` entries are produced per source feature.
+
+In both formats, each `(pct, sewerage_type)` pair is then resolved to a connection node via the node resolution strategy below.
+
+### Node resolution: attribute match then spatial match
+
+For each `(pct, sewerage_type)` pair, `create_surface_map_feature()` attempts to resolve a connection node in order:
+
+1. **Attribute match** (`get_attribute_match`, tried first when `attribute_match_enabled` is `True` and `attribute_match_table` is set):
+   - Read the lookup value from the source feature using `attribute_match_input_config`.
+   - Search `attribute_match_table` (`pipe` or `connection_node`) for features where `attribute_match_col` equals that value.
+   - If matching against a pipe and `sewerage_type` is not `None`, reject any pipe whose `sewerage_type` does not match.
+   - Exactly one match → use it. For a pipe match, resolve to its nearer endpoint node via `get_closest_node`. Zero or multiple matches → fall through to spatial.
+
+2. **Spatial match** (`get_spatial_match`, fallback when `spatial_match_enabled` is `True`):
+   - Buffer the surface geometry by `search_distance` and query the pre-built pipe spatial index.
+   - Filter candidates by `sewerage_type` when not `None`; match any pipe when `None`.
+   - Skip pipes whose start or end node has `visualisation == 1` (outlet nodes).
+   - Discard candidates whose distance to the surface exceeds `search_distance`.
+   - Pick the nearest pipe → resolve to its nearer endpoint node via `get_closest_node`.
+
+3. If both methods return no match → emit `ProcessorWarning` and skip this mapping entry.
+
+Once a node is resolved, a `surface_map` feature is created with:
+- `surface_id` = the new surface's id
+- `connection_node_id` = the resolved node's id
+- `percentage` = the percentage value
+- `geometry` = LINESTRING from `surface.pointOnSurface()` to the node point
+
+Other surface map properties are either use their own field map (long data) or use the same values as used for the surface itself (wide data).
 
 ## Integrators
 
@@ -278,6 +358,22 @@ The same importer classes can be invoked headlessly via QGIS Processing algorith
 
 The import settings are collected in `ImportSettings` (a pydantic model) which holds several submodels for connection node settings, integration settings, cross-section data remapping, point-to-line conversion, and field mappings.
 
+
+Surface-specific settings are captured in `SurfaceLinkingSettings`, nested inside `ImportSettings`. There is no separate `SurfaceSettings` model. `SurfaceLinkingSettings` controls how imported surface polygons are spatially and/or attribute-linked to existing schematisation pipes/nodes.
+
+`SurfaceLinkingSettings` contains the following fields:
+
+- `data_format: Literal["long", "wide"]` — whether the source data is in "long" format (one row per sewerage type mapping) or "wide" format (one row per surface with multiple percentage columns).
+- `sewerage_type_config: Optional[FieldMapConfig]` — (long format only) field-map config for reading the sewerage type value from each source feature.
+- `sewerage_type_mappings: list[SewerTypeMapping]` — (wide format only) list of per-sewerage-type configurations; each `SewerTypeMapping` has a `sewerage_type: int` and an optional `percentage_column: str`.
+- `search_distance: float` — buffer around the surface geometry used to search for candidate pipes during spatial linking. Default 40 m.
+- `selected_pipes_only: bool` — when `True`, only pipes selected in the provided pipe layer are considered as candidates for linking. Defaults to `False`.
+- `spatial_match_enabled: bool` — when `True`, spatial linking (nearest-pipe search) is performed. Defaults to `True`.
+- `attribute_match_enabled: bool` — when `True`, attribute-based linking is attempted before spatial. Defaults to `False`.
+- `attribute_match_table: Optional[Literal["pipe", "connection_node"]]` — which table to look up for attribute matching (`pipe` or `connection_node`).
+- `attribute_match_col: Optional[str]` — the column in `attribute_match_table` to compare against.
+- `attribute_match_input_config: Optional[FieldMapConfig]` — field-map config for reading the lookup value from the source feature.
+
 The `FieldMapConfig` is a model designed to validate configuration that maps values from a source layer to a target layer. It has custom validations:
 * required fields based on the value of `method`;
 * allowed methods based on the `allowed_methods` in the field metadata.
@@ -286,3 +382,17 @@ A `FieldMapConfig` is typically related to an attribute of a data model (from `d
 * any field with the name "id" has only AUTO as an allowed method;
 * any other field has all methods from `ColumnImportMethod` as allowed method, except for AUTO;
 * if the type of field is not optional, `ColumnImportMethod` IGNORE is removed from the allowed methods.
+
+
+### Other settings models
+
+**`PointToLineSettings`** is used when importing point features that need to be converted to line features (e.g. orifices or weirs given as points). It contains:
+
+- `length: FieldMapConfig` — how to derive the line length from the source feature (ATTRIBUTE, DEFAULT, or EXPRESSION).
+- `azimuth: FieldMapConfig` — how to derive the bearing/azimuth of the generated line (default value: 90°).
+
+**`CrossSectionLocationSettings`** controls how cross-section location features are joined to conduits:
+
+- `join_field_src: FieldMapConfig` — source field used for joining.
+- `join_field_tgt: FieldMapConfig` — target field on the conduit used for joining.
+- `snap_distance: float` — snap threshold for attaching cross-section locations to their conduit geometry.

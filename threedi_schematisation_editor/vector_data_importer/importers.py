@@ -4,8 +4,6 @@ from typing import Optional
 
 from qgis.core import (
     QgsCoordinateTransform,
-    QgsPointLocator,
-    QgsProcessingFeatureSource,
     QgsProject,
     QgsVectorLayer,
 )
@@ -20,8 +18,11 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionDataProcessor,
     CrossSectionLocationProcessor,
     LineProcessor,
+    SurfaceProcessor,
 )
-from threedi_schematisation_editor.vector_data_importer.utils import get_point_locator
+from threedi_schematisation_editor.vector_data_importer.utils import (
+    get_point_locator,
+)
 
 
 class Importer:
@@ -129,7 +130,6 @@ class SpatialImporter(Importer):
         import_settings,
         target_model_cls,
         target_layer=None,
-        node_layer=None,
     ):
         super().__init__(external_source, target_gpkg, import_settings)
         self.target_model_cls = target_model_cls
@@ -138,12 +138,6 @@ class SpatialImporter(Importer):
             if target_layer is None
             else target_layer
         )
-        self.node_layer = (
-            gpkg_layer(self.target_gpkg, dm.ConnectionNode.__tablename__)
-            if node_layer is None
-            else node_layer
-        )
-        self.integrator = None
         self.processor = None
 
     @cached_property
@@ -165,7 +159,57 @@ class SpatialImporter(Importer):
 
     @property
     def modifiable_layers(self):
-        """Return a list of the layers that can be modified."""
+        return [self.target_layer]
+
+    def import_features(self, context=None, selected_ids=None, progress_callback=None):
+        self.processor.transformation = self.get_transformation(context)
+        self.processor.context = context
+        self.start_editing()
+        input_feature_ids = self.get_input_feature_ids(selected_ids)
+        if progress_callback:
+            progress_callback(value=0, maximum=len(input_feature_ids))
+        new_features = self.process_features(
+            input_feature_ids, progress_callback=progress_callback
+        )
+        self.add_features_to_layers(new_features)
+
+
+class LinesImporter(SpatialImporter):
+    def __init__(
+        self,
+        external_source,
+        target_gpkg,
+        import_settings,
+        target_model_cls,
+        target_layer=None,
+        node_layer=None,
+        conduit_layer=None,
+        cross_section_location_layer=None,
+    ):
+        super().__init__(
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
+            target_model_cls=target_model_cls,
+            target_layer=target_layer,
+        )
+        self.node_layer = (
+            gpkg_layer(self.target_gpkg, dm.ConnectionNode.__tablename__)
+            if node_layer is None
+            else node_layer
+        )
+        self.processor = LineProcessor(
+            self.target_layer,
+            self.target_model_cls,
+            self.node_layer,
+            import_settings,
+        )
+        self.integrator = LinearIntegrator.get_integrator(
+            conduit_layer, cross_section_location_layer, self
+        )
+
+    @property
+    def modifiable_layers(self):
         layers = [self.target_layer, self.node_layer]
         if self.integrator:
             layers += self.integrator.modifiable_layers
@@ -188,60 +232,22 @@ class SpatialImporter(Importer):
         return new_features, input_feature_ids
 
     def import_features(self, context=None, selected_ids=None, progress_callback=None):
-        """Method responsible for the importing structures from the external feature source."""
-        # setup processor
         self.processor.transformation = self.get_transformation(context)
         self.processor.node_locator = get_point_locator(
             self.node_layer, context=context
         )
         self.processor.context = context
-        # start editing
         self.start_editing()
         input_feature_ids = self.get_input_feature_ids(selected_ids)
         if progress_callback:
             progress_callback(value=0, maximum=len(input_feature_ids))
-        # Integrate features using the integrator (if any)
-        # items that are integrated are skipped in further processing
         new_features, input_feature_ids = self.integrate_features(
             input_feature_ids, progress_callback=progress_callback
         )
-        # Process remaining features that are not integrated
         new_features = self.process_features(
             input_feature_ids, new_features, progress_callback
         )
-        # Add newly created features to layers
         self.add_features_to_layers(new_features)
-
-
-class LinesImporter(SpatialImporter):
-    def __init__(
-        self,
-        external_source,
-        target_gpkg,
-        import_settings,
-        target_model_cls,
-        target_layer=None,
-        node_layer=None,
-        conduit_layer=None,
-        cross_section_location_layer=None,
-    ):
-        super().__init__(
-            external_source=external_source,
-            target_gpkg=target_gpkg,
-            import_settings=import_settings,
-            target_model_cls=target_model_cls,
-            target_layer=target_layer,
-            node_layer=node_layer,
-        )
-        self.processor = LineProcessor(
-            self.target_layer,
-            self.target_model_cls,
-            self.node_layer,
-            import_settings,
-        )
-        self.integrator = LinearIntegrator.get_integrator(
-            conduit_layer, cross_section_location_layer, self
-        )
 
 
 class CulvertsImporter(LinesImporter):
@@ -398,3 +404,53 @@ class ConnectionNodesImporter(SpatialImporter):
             self.target_model_cls,
             self.import_settings,
         )
+
+
+class SurfaceImporter(SpatialImporter):
+    """Importer for Surface and SurfaceMap features."""
+
+    def __init__(
+        self,
+        external_source,
+        target_gpkg,
+        import_settings,
+        surface_layer=None,
+        surface_map_layer=None,
+        pipe_layer=None,
+        node_layer=None,
+        selected_pipes_only=False,
+    ):
+        super().__init__(
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
+            target_model_cls=dm.Surface,
+            target_layer=surface_layer,
+        )
+        self.surface_map_layer = (
+            gpkg_layer(self.target_gpkg, dm.SurfaceMap.__tablename__)
+            if surface_map_layer is None
+            else surface_map_layer
+        )
+        pipe_layer = (
+            gpkg_layer(self.target_gpkg, dm.Pipe.__tablename__)
+            if pipe_layer is None
+            else pipe_layer
+        )
+        node_layer = (
+            gpkg_layer(self.target_gpkg, dm.ConnectionNode.__tablename__)
+            if node_layer is None
+            else node_layer
+        )
+        self.processor = SurfaceProcessor(
+            target_layer=self.target_layer,
+            surface_map_layer=self.surface_map_layer,
+            import_settings=import_settings,
+            pipe_layer=pipe_layer,
+            node_layer=node_layer,
+            selected_pipes_only=selected_pipes_only,
+        )
+
+    @property
+    def modifiable_layers(self):
+        return [self.target_layer, self.surface_map_layer]

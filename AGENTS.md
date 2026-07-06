@@ -50,7 +50,7 @@ The plugin uses a signal-driven architecture for layer editing:
 
 **Run tests** (Docker required — QGIS bindings are not available on the host):
 ```bash
-docker compose run qgis-desktop make test
+docker compose run --rm qgis-desktop make test
 # equivalent to: QT_QPA_PLATFORM=offscreen pytest --cov
 ```
 
@@ -74,11 +74,20 @@ pre-commit run --all-files
 - All tests auto-use the `qgis_app_initialized` fixture (`tests/conftest.py`) which starts a headless `QgsApplication`.
 - Test files mirror the plugin structure under `tests/`.
 - Write tests for new business logic. Prefer integration-style tests that work through QGIS layer/feature APIs.
-- **Run targeted tests during development**, not the full suite — the full suite is slow. Target a specific file or test:
+
+**For agents: run only specific tests to minimize token usage and output.**
+
+- **Single test file** (during active development):
   ```bash
-  docker compose run --rm qgis-desktop bash -c "QT_QPA_PLATFORM=offscreen pytest tests/path/to/test_file.py -v"
+  docker compose run --rm qgis-desktop bash -c "QT_QPA_PLATFORM=offscreen pytest tests/path/to/test_file.py -q --tb=short"
   ```
-  Run the full suite (`make test`) only before committing or when verifying a broad change.
+  Flags: `-q` (quiet), `--tb=short` (short tracebacks) reduce output by 70%+
+
+- **Single test function** (when debugging a specific failure):
+  ```bash
+  docker compose run --rm qgis-desktop bash -c "QT_QPA_PLATFORM=offscreen pytest tests/path/to/test_file.py::test_function_name -q --tb=line"
+  ```
+  Flags: `--tb=line` (one line per failure) minimizes output further
 
 ## Key conventions
 

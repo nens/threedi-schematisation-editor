@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from pydantic import BaseModel, ValidationError
-from qgis.core import Qgis, QgsMapLayerProxyModel, QgsMessageLog
+from qgis.core import Qgis, QgsMapLayerProxyModel, QgsMessageLog, QgsProject
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
 from qgis.PyQt.QtGui import QPalette
 from qgis.PyQt.QtWidgets import (
@@ -20,7 +20,10 @@ from qgis.PyQt.QtWidgets import (
 import threedi_schematisation_editor.data_models as dm
 import threedi_schematisation_editor.vector_data_importer.importers as vdi_importers
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
-from threedi_schematisation_editor.vector_data_importer.utils import CancellationToken
+from threedi_schematisation_editor.vector_data_importer.utils import (
+    CancellationToken,
+    compute_selected_ids,
+)
 from threedi_schematisation_editor.vector_data_importer.wizard.pages import (
     FieldMapPage,
     RunPage,
@@ -34,6 +37,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
     IntegrationSettingsWidget,
     PointToLIneConversionSettingsWidget,
     SettingsWidget,
+    SurfaceLinkingSettingsWidget,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
     CatchThreediWarnings,
@@ -86,6 +90,7 @@ class VDIWizard(QWizard):
         dm.Pipe: vdi_importers.PipesImporter,
         dm.Channel: vdi_importers.ChannelsImporter,
         dm.CrossSectionLocation: vdi_importers.CrossSectionLocationImporter,
+        dm.Surface: vdi_importers.SurfaceImporter,
     }
     settings_widgets_classes: list[SettingsWidget] = []
     import_started = pyqtSignal()
@@ -136,7 +141,7 @@ class VDIWizard(QWizard):
         return FieldMapPage(model_cls=self.model_cls, name="fields")
 
     @cached_property
-    def connection_node_pages(self):
+    def extra_field_map_pages(self):
         return []
 
     @cached_property
@@ -156,10 +161,13 @@ class VDIWizard(QWizard):
         # add pages
         self.addPage(self.start_page)
         if len(self.settings_widgets_classes) > 0:
+            settings_page = SettingsPage(
+                settings_widgets_classes=self.settings_widgets_classes,
+            )
             self.addPage(self.settings_page)
         if self.field_map_page:
             self.addPage(self.field_map_page)
-        for page in self.connection_node_pages:
+        for page in self.extra_field_map_pages:
             self.addPage(page)
         self.addPage(self.run_page)
         # Connect import start and finish signals
@@ -273,7 +281,15 @@ class VDIWizard(QWizard):
         data = {}
         for page_id in self.pageIds():
             page = self.page(page_id)
-            if isinstance(page, FieldMapPage):
+            if isinstance(page, StartPage):
+                source_settings = page.get_settings().get("source")
+                if source_settings is not None:
+                    data["source"] = (
+                        source_settings.model_dump()
+                        if hasattr(source_settings, "model_dump")
+                        else source_settings
+                    )
+            elif isinstance(page, FieldMapPage):
                 data[page.name] = {
                     key: row.config.model_dump()
                     for key, row in page.field_map_widget.row_dict.items()
@@ -349,14 +365,21 @@ class VDIWizard(QWizard):
             self.restore_draft_lenient(draft)
             self._initial_draft = self.get_draft_settings()
 
+    def should_collect_page(self, page):
+        """Return False to skip collecting settings from a FieldMapPage.
+
+        Subclasses override this to implement conditional-skip logic without
+        hardcoding page names in the base class.
+        """
+        return True
+
     def get_settings(self) -> BaseModel:
         data = {}
         for page_id in self.pageIds():
             page = self.page(page_id)
-            if isinstance(page, FieldMapPage) and page.name == "connection_node_fields":
-                if not self.settings_page.create_nodes:
-                    continue
-            if isinstance(page, (FieldMapPage, SettingsPage)):
+            if isinstance(page, FieldMapPage) and not self.should_collect_page(page):
+                continue
+            if isinstance(page, (StartPage, FieldMapPage, SettingsPage)):
                 data.update(page.get_settings())
 
         return sm.ImportSettings(**data)
@@ -384,15 +407,14 @@ class VDIWizard(QWizard):
         for button in buttons:
             self.button(button).setEnabled(enabled)
 
+    def _compute_feature_ids(self, source_settings):
+        return compute_selected_ids(self.selected_layer, source_settings)
+
     def run_import(self):
         self.import_started.emit()
         progress_bar = self.run_page.progress_bar
         settings = self.get_settings()
-        selected_feat_ids = (
-            self.selected_layer.selectedFeatureIds()
-            if self.use_selected_features
-            else None
-        )
+        selected_feat_ids = self._compute_feature_ids(settings.source)
         handlers, layers = self.prepare_import()
         for handler in handlers:
             handler.disconnect_handler_signals()
@@ -403,7 +425,7 @@ class VDIWizard(QWizard):
         cancellation_token = CancellationToken()
         self.run_page.cancel_requested.connect(cancellation_token.cancel)
         importer.processor._cancellation_token = cancellation_token
-        if isinstance(importer, vdi_importers.SpatialImporter) and importer.integrator:
+        if isinstance(importer, vdi_importers.LinesImporter) and importer.integrator:
             importer.integrator._cancellation_token = cancellation_token
 
         # Setup worker and thread
@@ -464,16 +486,21 @@ class VDIWizard(QWizard):
 
 class ImportWithCreateConnectionNodesWizard(VDIWizard):
     @cached_property
-    def connection_node_pages(self):
+    def extra_field_map_pages(self):
         return [
             FieldMapPage(model_cls=dm.ConnectionNode, name="connection_node_fields")
         ]
 
     @property
-    def connect_node_page_ids(self):
+    def extra_field_map_page_ids(self):
         return [
-            id for id in self.pageIds() if self.page(id) in self.connection_node_pages
+            id for id in self.pageIds() if self.page(id) in self.extra_field_map_pages
         ]
+
+    def should_collect_page(self, page):
+        if isinstance(page, FieldMapPage) and page.name == "connection_node_fields":
+            return self.settings_page.create_nodes
+        return True
 
     def nextId(self):
         next_id = super().nextId()
@@ -482,7 +509,7 @@ class ImportWithCreateConnectionNodesWizard(VDIWizard):
             return next_id
         # If no connection nodes are added, skip settings for connection nodes
         if not self.settings_page.create_nodes:
-            while next_id in self.connect_node_page_ids:
+            while next_id in self.extra_field_map_page_ids:
                 next_id += 1
         return next_id
 
@@ -601,4 +628,64 @@ class ImportCrossSectionLocationWizard(VDIWizard):
             QgsMapLayerProxyModel.LineLayer
             | QgsMapLayerProxyModel.PointLayer
             | QgsMapLayerProxyModel.NoGeometry
+        )
+
+
+class ImportSurfaceWizard(VDIWizard):
+    settings_widgets_classes = [
+        SurfaceLinkingSettingsWidget,
+    ]
+
+    @cached_property
+    def extra_field_map_pages(self):
+        return [FieldMapPage(model_cls=dm.SurfaceMap, name="surface_map_fields")]
+
+    @property
+    def extra_field_map_page_ids(self):
+        return [
+            id for id in self.pageIds() if self.page(id) in self.extra_field_map_pages
+        ]
+
+    @property
+    def _is_long_format(self):
+        return (
+            self.settings_page.get_settings()["surface_linking"].data_format == "long"
+        )
+
+    def should_collect_page(self, page):
+        if isinstance(page, FieldMapPage) and page.name == "surface_map_fields":
+            return self._is_long_format
+        return True
+
+    def nextId(self):
+        next_id = super().nextId()
+        if next_id == -1:
+            return next_id
+        if not self._is_long_format:
+            while next_id in self.extra_field_map_page_ids:
+                next_id += 1
+        return next_id
+
+    @property
+    def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
+        return QgsMapLayerProxyModel.PolygonLayer
+
+    def prepare_import(self):
+        surface_handler = self.layer_manager.model_handlers[dm.Surface]
+        surface_map_handler = self.layer_manager.model_handlers[dm.SurfaceMap]
+        handlers = [surface_handler, surface_map_handler]
+        layers = {
+            "surface_layer": surface_handler.layer,
+            "surface_map_layer": surface_map_handler.layer,
+        }
+        return handlers, layers
+
+    def get_importer(self, import_settings: sm.ImportSettings, layer_dict):
+        selected_pipes_only = import_settings.surface_linking.selected_pipes_only
+        return vdi_importers.SurfaceImporter(
+            self.selected_layer,
+            self.model_gpkg,
+            import_settings,
+            selected_pipes_only=selected_pipes_only,
+            **layer_dict,
         )

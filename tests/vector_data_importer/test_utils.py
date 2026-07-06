@@ -399,3 +399,101 @@ def test_get_point_locator(use_context):
     assert locator.destinationCrs().authid() == "EPSG:28992"
     if use_context:
         assert context.project.call_count == 1
+
+
+# ---------------------------------------------------------------------------
+# compute_selected_ids
+# ---------------------------------------------------------------------------
+
+from threedi_schematisation_editor.vector_data_importer.settings_models import (
+    SourceSettings,
+)
+from threedi_schematisation_editor.vector_data_importer.utils import (
+    compute_selected_ids,
+)
+
+
+def _make_layer_with_values(values):
+    """Return a memory layer with a single integer 'value' field and one feature per entry."""
+    layer = QgsVectorLayer("NoGeometry", "test", "memory")
+    provider = layer.dataProvider()
+    provider.addAttributes([QgsField("value", QVariant.Int)])
+    layer.updateFields()
+    features = []
+    for v in values:
+        feat = QgsFeature(layer.fields())
+        feat.setAttribute("value", v)
+        features.append(feat)
+    provider.addFeatures(features)
+    return layer
+
+
+@pytest.mark.parametrize(
+    "selected_indices, expression, expected_indices",
+    [
+        # Case 1: no selection, no expression -> None (all features)
+        ([], None, None),
+        # Case 2: selected only, no expression -> selected IDs
+        ([0, 1], None, [0, 1]),
+        # Case 3: no selection, expression -> filtered by expression
+        ([], '"value" > 2', [2, 3, 4]),
+        # Case 4: selected + expression -> expression applied on selection only
+        ([0, 2, 4], '"value" > 2', [2, 4]),
+        # Expression that matches nothing
+        ([], '"value" > 99', []),
+        # Expression that matches all
+        ([], '"value" >= 1', [0, 1, 2, 3, 4]),
+    ],
+)
+def test_compute_selected_ids(selected_indices, expression, expected_indices):
+    layer = _make_layer_with_values([1, 2, 3, 4, 5])
+    all_ids = [feat.id() for feat in layer.getFeatures()]
+
+    if len(selected_indices) > 0:
+        layer.selectByIds([all_ids[i] for i in selected_indices])
+
+    settings = SourceSettings(
+        use_selected_features=len(selected_indices) > 0,
+        include_expression=expression,
+    )
+
+    result = compute_selected_ids(layer, settings)
+
+    if expected_indices is None:
+        assert result is None
+    else:
+        expected_ids = [all_ids[i] for i in expected_indices]
+        assert sorted(result) == sorted(expected_ids)
+
+
+def test_compute_selected_ids_invalid_expression_warns_and_returns_candidates():
+    layer = _make_layer_with_values([1, 2, 3])
+    all_ids = [feat.id() for feat in layer.getFeatures()]
+    layer.selectByIds([all_ids[0]])
+    settings = SourceSettings(
+        use_selected_features=True, include_expression="((invalid(("
+    )
+    import warnings as stdlib_warnings
+
+    from threedi_schematisation_editor.warnings import FeaturesImporterWarning
+
+    with stdlib_warnings.catch_warnings(record=True) as caught:
+        stdlib_warnings.simplefilter("always")
+        result = compute_selected_ids(layer, settings)
+    assert sorted(result) == [all_ids[0]]  # falls back to candidate_ids
+    assert any(issubclass(w.category, FeaturesImporterWarning) for w in caught)
+
+
+def test_compute_selected_ids_unknown_field_warns_and_returns_candidates():
+    layer = _make_layer_with_values([1, 2, 3])
+    all_ids = [feat.id() for feat in layer.getFeatures()]
+    settings = SourceSettings(include_expression='"nonexistent" > 1')
+    import warnings as stdlib_warnings
+
+    from threedi_schematisation_editor.warnings import FeaturesImporterWarning
+
+    with stdlib_warnings.catch_warnings(record=True) as caught:
+        stdlib_warnings.simplefilter("always")
+        result = compute_selected_ids(layer, settings)
+    assert result is None  # falls back to candidate_ids (None = all)
+    assert any(issubclass(w.category, FeaturesImporterWarning) for w in caught)

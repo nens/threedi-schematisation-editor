@@ -12,6 +12,7 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
     CrossSectionDataImporter,
     CrossSectionLocationImporter,
     CulvertsImporter,
+    SurfaceImporter,
     WeirsImporter,
 )
 from threedi_schematisation_editor.vector_data_importer.processors import (
@@ -20,9 +21,15 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     CrossSectionDataRemap,
     ImportSettings,
+    SewerTypeMapping,
+    SurfaceLinkingSettings,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
-from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
+from threedi_schematisation_editor.warnings import (
+    GeometryImporterWarning,
+    ProcessorWarning,
+    StructuresIntegratorWarning,
+)
 
 from .utils import *
 
@@ -357,4 +364,42 @@ def test_created_connection_nodes_attributes():
             feat["storage_area"] == default_storage_area
             for feat in layers["node_layer"].getFeatures()
         ]
+    )
+
+
+def _get_surface_layers(target_gpkg):
+    """Return surface and surface_map layers from target_gpkg (both open on same temp copy)."""
+    temp_gpkg = str(get_temp_copy(target_gpkg))
+    return (
+        gpkg_layer(temp_gpkg, "surface"),
+        gpkg_layer(temp_gpkg, "surface_map"),
+        temp_gpkg,
+    )
+
+
+@pytest.mark.parametrize("data_type", ["long", "wide"])
+def test_import_surface(data_type):
+    src_layer = get_source_layer(f"surfaces_{data_type}.gpkg", "surface")
+    import_config = get_import_config(f"import_surfaces_{data_type}")
+    target_gpkg = SCHEMATISATION_PATH.joinpath(
+        "schematisation_pipes_multi_sewerage.gpkg"
+    )
+    surface_layer, surface_map_layer, temp_gpkg = _get_surface_layers(target_gpkg)
+    importer = SurfaceImporter(
+        src_layer,
+        temp_gpkg,
+        import_config,
+        surface_layer=surface_layer,
+        surface_map_layer=surface_map_layer,
+    )
+    importer.import_features()
+    compare_results(
+        f"test_import_surfaces_{data_type}",
+        {"structure_layer": surface_layer},
+        "surface",
+    )
+    compare_results(
+        f"test_import_surfaces_{data_type}",
+        {"structure_layer": surface_map_layer},
+        "surface_map",
     )

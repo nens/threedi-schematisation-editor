@@ -4,6 +4,7 @@ from typing import (
     Any,
     ClassVar,
     Generic,
+    Literal,
     Optional,
     Type,
     TypeVar,
@@ -239,7 +240,38 @@ class CrossSectionLocationSettings(BaseModel):
     snap_distance: float = Field(default=1.0, ge=0, le=1000000.0)
 
 
+class SourceSettings(BaseModel):
+    name: ClassVar[str] = "source"
+    selected_layer_name: str = ""
+    use_selected_features: bool = False
+    include_expression: Optional[str] = None
+
+
+class SewerTypeMapping(BaseModel):
+    sewerage_type: int
+    percentage_column: Optional[str] = None  # None = skip this type
+
+
+class SurfaceLinkingSettings(BaseModel):
+    name: ClassVar[str] = "surface_linking"
+    # Format selection
+    data_format: Literal["long", "wide"] = "wide"
+    # Long data fields
+    sewerage_type_config: Optional[FieldMapConfig] = None
+    # Wide data fields
+    sewerage_type_mappings: list[SewerTypeMapping] = []
+    # Linking
+    search_distance: float = Field(default=40.0, ge=0, le=1000000.0)
+    selected_pipes_only: bool = False
+    attribute_match_enabled: bool = False
+    spatial_match_enabled: bool = True
+    attribute_match_table: Optional[Literal["pipe", "connection_node"]] = None
+    attribute_match_col: Optional[str] = None
+    attribute_match_input_config: Optional[FieldMapConfig] = None
+
+
 class ImportSettings(BaseModel):
+    source: SourceSettings = SourceSettings()
     connection_nodes: ConnectionNodeSettings = ConnectionNodeSettings()
     integration: IntegrationSettings = IntegrationSettings()
     cross_section_data_remap: CrossSectionDataRemap = CrossSectionDataRemap()
@@ -247,5 +279,7 @@ class ImportSettings(BaseModel):
     cross_section_location_mapping: CrossSectionLocationSettings = (
         CrossSectionLocationSettings()
     )
+    surface_linking: SurfaceLinkingSettings = SurfaceLinkingSettings()
     fields: dict[str, FieldMapConfig] = {}
     connection_node_fields: dict[str, FieldMapConfig] = {}
+    surface_map_fields: dict[str, FieldMapConfig] = {}

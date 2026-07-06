@@ -4,10 +4,8 @@ from collections import defaultdict
 from functools import cached_property
 from typing import Optional
 
-from PyQt5.QtCore import QVariant
 from qgis.core import (
     NULL,
-    Qgis,
     QgsExpression,
     QgsExpressionContext,
     QgsFeature,
@@ -19,12 +17,15 @@ from qgis.core import (
     QgsVectorLayer,
     QgsWkbTypes,
 )
+from qgis.PyQt.QtCore import QVariant
 from threedi_schema.domain.constants import CrossSectionShape
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
     find_connection_node,
+    get_feature_by_id,
     get_next_feature_id,
+    spatial_index,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (
     CancellationToken,
@@ -882,3 +883,279 @@ class LineProcessor(StructureProcessor):
         if new_nodes:
             self.node_locator = get_point_locator(self.node_layer, self.context)
         return {self.target_name: [new_feat]}
+
+
+class SurfaceProcessor(SpatialProcessor):
+    def __init__(
+        self,
+        target_layer,
+        surface_map_layer,
+        import_settings,
+        pipe_layer,
+        node_layer,
+        selected_pipes_only=False,
+    ):
+        super().__init__(target_layer, dm.Surface)
+        self.surface_map_name = surface_map_layer.name() if surface_map_layer else None
+        self.surface_map_manager = (
+            FeatureManager(get_next_feature_id(surface_map_layer))
+            if surface_map_layer
+            else None
+        )
+        self.surface_map_fields = (
+            surface_map_layer.fields() if surface_map_layer else None
+        )
+        self.fields_configuration = import_settings.fields
+        if import_settings.surface_linking.data_format == "long":
+            self.surface_map_fields_configuration = import_settings.surface_map_fields
+        else:
+            self.surface_map_fields_configuration = {
+                key: self.fields_configuration[key]
+                for key in ["code", "display_name", "tags"]
+            }
+        self.sewer_type_mappings = (
+            import_settings.surface_linking.sewerage_type_mappings
+        )
+        self.linking = import_settings.surface_linking
+        self.node_layer = node_layer
+        request = (
+            QgsFeatureRequest(pipe_layer.selectedFeatureIds())
+            if selected_pipes_only
+            else None
+        )
+        self.pipe_features, self.pipe_index = spatial_index(pipe_layer, request=request)
+
+    @staticmethod
+    def new_geometry(src_geom):
+        """Convert a (Curve)Polygon geometry to a plain Polygon.
+
+        Plain polygons are returned as-is. CurvePolygons are segmentized.
+        """
+        if QgsWkbTypes.isCurvedType(src_geom.wkbType()):
+            return QgsGeometry(src_geom.constGet().segmentize())
+        return src_geom
+
+    @staticmethod
+    def get_closest_node(surface_geom, pipe_feat, node_layer):
+        """Return whichever endpoint node of pipe_feat is closer to surface_geom.
+
+        Returns None if either node cannot be found.
+        """
+        start_node = get_feature_by_id(
+            node_layer, pipe_feat["connection_node_id_start"]
+        )
+        end_node = get_feature_by_id(node_layer, pipe_feat["connection_node_id_end"])
+        if start_node is None or end_node is None:
+            return None
+        if surface_geom.distance(start_node.geometry()) <= surface_geom.distance(
+            end_node.geometry()
+        ):
+            return start_node
+        return end_node
+
+    def get_attribute_match(self, src_feat, sewerage_type, expression_context):
+        """Try attribute-based pipe/node lookup. Returns a node QgsFeature or None.
+
+        If sewerage_type is not None and the match is a pipe, the pipe's sewerage_type
+        must equal sewerage_type — mismatches are rejected. Multiple matches also return
+        None.
+        """
+        linking = self.linking
+        if not linking.attribute_match_enabled or linking.attribute_match_table is None:
+            return None
+        input_val = get_field_config_value(
+            linking.attribute_match_input_config, src_feat, expression_context
+        )
+        if linking.attribute_match_table == dm.ConnectionNode.__tablename__:
+            matches = [
+                f
+                for f in self.node_layer.getFeatures()
+                if f[linking.attribute_match_col] == input_val
+            ]
+            if len(matches) == 1:
+                return matches[0]
+        elif linking.attribute_match_table == dm.Pipe.__tablename__:
+            matches = [
+                f
+                for f in self.pipe_features.values()
+                if f[linking.attribute_match_col] == input_val
+            ]
+            if sewerage_type is not None:
+                matches = [f for f in matches if f["sewerage_type"] == sewerage_type]
+            if len(matches) == 1:
+                return SurfaceProcessor.get_closest_node(
+                    self.matched_surface_geom, matches[0], self.node_layer
+                )
+        return None
+
+    def get_spatial_match(self, surface_geom, sewerage_type):
+        """Try spatial pipe lookup. Returns a node QgsFeature or None.
+
+        Filters candidates to sewerage_type when not None; matches any pipe when None.
+        Returns None (without warning) when no pipe found — caller emits warning.
+        """
+        linking = self.linking
+        if not linking.spatial_match_enabled:
+            return None
+        surface_buffer = surface_geom.buffer(linking.search_distance, 5)
+        pipe_ids = self.pipe_index.intersects(surface_buffer.boundingBox())
+        candidates = []
+        for pipe_id in pipe_ids:
+            pipe_feat = self.pipe_features[pipe_id]
+            if (
+                sewerage_type is not None
+                and pipe_feat["sewerage_type"] != sewerage_type
+            ):
+                continue
+            start_node = get_feature_by_id(
+                self.node_layer, pipe_feat["connection_node_id_start"]
+            )
+            end_node = get_feature_by_id(
+                self.node_layer, pipe_feat["connection_node_id_end"]
+            )
+            # skip outlets
+            if (start_node is None or start_node["visualisation"] == 1) or (
+                end_node is None or end_node["visualisation"] == 1
+            ):
+                continue
+            dist = surface_geom.distance(pipe_feat.geometry())
+            if dist > linking.search_distance:
+                continue
+            candidates.append((dist, pipe_feat))
+        if not candidates:
+            return None
+        nearest_pipe = min(candidates, key=lambda x: x[0])[1]
+        return SurfaceProcessor.get_closest_node(
+            surface_geom, nearest_pipe, self.node_layer
+        )
+
+    def create_surface_map_feature(
+        self,
+        new_feat,
+        src_feat,
+        surface_geom,
+        sewerage_type,
+        pct,
+        expression_context=None,
+    ):
+        # Store surface_geom for use in _attribute_match (pipe → node resolution)
+        if pct <= 0:
+            return
+        self.matched_surface_geom = surface_geom
+        node = self.get_attribute_match(src_feat, sewerage_type, expression_context)
+        if node is None:
+            node = self.get_spatial_match(surface_geom, sewerage_type)
+        if node is None:
+            warnings.warn(
+                f"Surface {new_feat['id']}: no pipe found within "
+                f"{self.linking.search_distance}m — surface_map entry skipped",
+                ProcessorWarning,
+            )
+            return
+        centroid = surface_geom.pointOnSurface()
+        sm_geom = QgsGeometry.fromPolylineXY(
+            [centroid.asPoint(), node.geometry().asPoint()]
+        )
+        sm_feat = self.surface_map_manager.create_new(sm_geom, self.surface_map_fields)
+        sm_feat["surface_id"] = new_feat["id"]
+        sm_feat["connection_node_id"] = node["id"]
+        sm_feat["percentage"] = pct
+        update_attributes(
+            self.surface_map_fields_configuration,
+            dm.SurfaceMap,
+            src_feat,
+            sm_feat,
+        )
+        return sm_feat
+
+    def create_surface_map_features(
+        self, new_feat, src_feat, surface_geom, expression_context=None
+    ):
+        """Create surface_map features linking new_feat to connection nodes.
+
+        Long data: one (pct, sewerage_type) pair → attribute match then spatial match
+        → 0 or 1 result.
+
+        Wide data: one (pct, sewerage_type) pair per sewer_type_mapping → same
+        attribute-then-spatial logic per mapping → 0..N results.
+
+        For attribute matching, sewerage_type is always used for verification when
+        matching a pipe.
+        """
+        linking = self.linking
+        # Store surface_geom for use in _attribute_match (pipe → node resolution)
+        self.matched_surface_geom = surface_geom
+        surface_map_feats = []
+        if linking.data_format == "long":
+            pct_config = self.surface_map_fields_configuration.get("percentage")
+            if pct_config is None:
+                return []
+            try:
+                pct = float(
+                    get_field_config_value(pct_config, src_feat, expression_context)
+                )
+            except TypeError:
+                return []
+            sewerage_type = get_field_config_value(
+                linking.sewerage_type_config, src_feat, expression_context
+            )
+            feat = self.create_surface_map_feature(
+                new_feat, src_feat, surface_geom, sewerage_type, pct, expression_context
+            )
+            if feat:
+                surface_map_feats.append(feat)
+        else:
+            # Wide data: iterate mappings
+            for mapping in self.sewer_type_mappings:
+                if mapping.percentage_column is None:
+                    continue
+                try:
+                    pct = float(src_feat[mapping.percentage_column])
+                except (KeyError, TypeError, ValueError):
+                    continue
+                sewerage_type = mapping.sewerage_type
+                feat = self.create_surface_map_feature(
+                    new_feat,
+                    src_feat,
+                    surface_geom,
+                    sewerage_type,
+                    pct,
+                    expression_context,
+                )
+                if feat:
+                    surface_map_feats.append(feat)
+        return surface_map_feats
+
+    def process_feature(self, src_feat):
+        src_geom = get_src_geometry(src_feat)
+        if src_geom is None:
+            return {}
+        new_geom = self.new_geometry(src_geom)
+        if self.transformation:
+            new_geom.transform(self.transformation)
+        new_feat = self.target_manager.create_new(new_geom, self.target_fields)
+        update_attributes(
+            self.fields_configuration,
+            dm.Surface,
+            src_feat,
+            new_feat,
+        )
+        area_config = self.fields_configuration.get("area")
+        if (
+            not area_config
+            or ColumnImportMethod(area_config["method"]) == ColumnImportMethod.AUTO
+        ):
+            new_feat["area"] = new_geom.area()
+        new_feat["area"] = round(new_feat["area"], 2)
+        expression_context = QgsExpressionContext()
+        expression_context.setFeature(src_feat)
+        surface_map_feats = self.create_surface_map_features(
+            new_feat, src_feat, new_geom, expression_context
+        )
+        if len(surface_map_feats) > 0:
+            return {
+                self.target_name: [new_feat],
+                self.surface_map_name: surface_map_feats,
+            }
+        else:
+            return {}

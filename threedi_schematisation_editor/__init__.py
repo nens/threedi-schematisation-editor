@@ -88,6 +88,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard import (
     ImportCrossSectionDataWizard,
     ImportCrossSectionLocationWizard,
     ImportStructureWizard,
+    ImportSurfaceWizard,
 )
 from threedi_schematisation_editor.workspace import WorkspaceContextManager
 
@@ -150,6 +151,7 @@ class ThreediSchematisationEditorPlugin:
         self.action_remove.triggered.connect(self.remove_model_from_project)
         import_features_icon_path = get_icon_path("icon_import.svg")
         import_actions_spec = [
+            ("Channels", self.import_external_channels, None),
             ("Connection nodes", self.import_external_connection_nodes, None),
             (
                 "Cross-section data",
@@ -163,9 +165,9 @@ class ThreediSchematisationEditorPlugin:
             ),
             ("Culverts", self.import_external_culverts, None),
             ("Orifices", self.import_external_orifices, None),
-            ("Weirs", self.import_external_weirs, None),
             ("Pipes", self.import_external_pipes, None),
-            ("Channels", self.import_external_channels, None),
+            ("Surfaces", self.import_external_surfaces, None),
+            ("Weirs", self.import_external_weirs, None),
         ]
         self.action_import_features = self.add_multi_action_button(
             "Import schematisation objects",
@@ -466,6 +468,9 @@ class ThreediSchematisationEditorPlugin:
 
     def import_external_channels(self):
         self.import_external(dm.Channel, ImportConduitWizard)
+
+    def import_external_surfaces(self):
+        self.import_external(dm.Surface, ImportSurfaceWizard)
 
     def on_project_close(self):
         if self.layer_manager is None:

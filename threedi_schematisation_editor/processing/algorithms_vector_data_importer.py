@@ -24,12 +24,16 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
     CulvertsImporter,
     OrificesImporter,
     PipesImporter,
+    SurfaceImporter,
     WeirsImporter,
 )
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     ImportSettings,
     IntegrationMode,
     validate_field_map,
+)
+from threedi_schematisation_editor.vector_data_importer.utils import (
+    compute_selected_ids,
 )
 
 
@@ -197,8 +201,10 @@ class BaseImporter(QgsProcessingAlgorithm):
 
         importer = self.create_importer(source_layer, target_gpkg, import_config)
 
-        # Use the right import method based on the importer type
-        importer.import_features(context=context)
+        # The source_layer from the UI takes priority over any layer name in the config.
+        # include_expression from the config is applied against the UI-selected layer.
+        selected_ids = compute_selected_ids(source_layer, import_config.source)
+        importer.import_features(context=context, selected_ids=selected_ids)
         importer.commit_pending_changes()
         return {self.TARGET_GPKG: target_gpkg}
 
@@ -317,3 +323,12 @@ class ImportCrossSectionData(SimpleImporter):
         return self.tr(
             f"""Import {self.get_feature_repr()} from the external source layer."""
         )
+
+
+class ImportSurfaces(SimpleImporter):
+    IMPORTER_CLASS = SurfaceImporter
+    FEATURE_TYPE = "surface"
+    TARGET_MODEL_CLS = dm.Surface
+
+    def get_source_layer_types(self):
+        return [QgsProcessing.TypeVectorPolygon]
