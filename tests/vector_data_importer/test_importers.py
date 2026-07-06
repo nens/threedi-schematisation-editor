@@ -1,13 +1,13 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PyQt5.QtCore import QVariant
 from qgis.core import (
     QgsFeature,
     QgsField,
     QgsFields,
     QgsGeometry,
 )
+from qgis.PyQt.QtCore import QVariant
 
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from tests.utils import get_temp_copy

@@ -2,7 +2,6 @@ import warnings as stdlib_warnings
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PyQt5.QtCore import QVariant
 from qgis.core import (
     NULL,
     QgsFeature,
@@ -13,6 +12,7 @@ from qgis.core import (
     QgsVectorLayer,
     QgsWkbTypes,
 )
+from qgis.PyQt.QtCore import QVariant
 
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from threedi_schematisation_editor.vector_data_importer.processors import (
