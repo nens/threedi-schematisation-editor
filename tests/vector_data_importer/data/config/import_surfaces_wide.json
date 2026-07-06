@@ -1,0 +1,121 @@
+{
+    "source": {
+        "selected_layer_name": "surfaces_wide \u2014 surface",
+        "use_selected_features": false,
+        "include_expression": null
+    },
+    "connection_nodes": {
+        "create_nodes": true,
+        "snap": true,
+        "snap_distance": 1.0
+    },
+    "integration": {
+        "integration_mode": "None",
+        "snap_distance": 1.0,
+        "min_length": 5.0
+    },
+    "cross_section_data_remap": {
+        "set_lowest_point_to_zero": true,
+        "use_lowest_point_as_reference": true
+    },
+    "point_to_line_conversion": {
+        "length": {
+            "method": "default",
+            "source_attribute": null,
+            "value_map": {},
+            "expression": null,
+            "default_value": 1.0
+        },
+        "azimuth": {
+            "method": "default",
+            "source_attribute": null,
+            "value_map": {},
+            "expression": null,
+            "default_value": 90.0
+        }
+    },
+    "cross_section_location_mapping": {
+        "join_field_src": {
+            "method": "auto",
+            "source_attribute": null,
+            "value_map": {},
+            "expression": null,
+            "default_value": ""
+        },
+        "join_field_tgt": {
+            "method": "auto",
+            "source_attribute": null,
+            "value_map": {},
+            "expression": null,
+            "default_value": ""
+        },
+        "snap_distance": 1.0
+    },
+    "surface_linking": {
+        "data_format": "wide",
+        "sewerage_type_config": null,
+        "sewerage_type_mappings": [
+            {
+                "sewerage_type": 0,
+                "percentage_column": "pct_combined"
+            },
+            {
+                "sewerage_type": 1,
+                "percentage_column": "pct_storm"
+            }
+        ],
+        "search_distance": 40.0,
+        "selected_pipes_only": false,
+        "attribute_match_enabled": false,
+        "spatial_match_enabled": true,
+        "attribute_match_table": null,
+        "attribute_match_col": null,
+        "attribute_match_input_config": null
+    },
+    "fields": {
+        "id": {
+            "method": "auto",
+            "source_attribute": null,
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "code": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "display_name": {
+            "method": "source_attribute",
+            "source_attribute": "expected_outcome",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "area": {
+            "method": "auto",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "surface_parameters_id": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        },
+        "tags": {
+            "method": "ignore",
+            "source_attribute": "",
+            "value_map": {},
+            "expression": null,
+            "default_value": null
+        }
+    },
+    "connection_node_fields": {},
+    "surface_map_fields": {}
+}
