@@ -520,7 +520,7 @@ _SEWERAGE_TYPE_ITEMS = [
 ]
 
 
-class SewerTypeMappingModel(QAbstractTableModel):
+class SewerageTypeMappingModel(QAbstractTableModel):
     """Table model backing the sewerage type → percentage column mapping table."""
 
     SEWERAGE_TYPE_COL = 0
@@ -616,7 +616,7 @@ class SewerTypeMappingDelegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):
         combo = QComboBox(parent)
         model = index.model()
-        if index.column() == SewerTypeMappingModel.SEWERAGE_TYPE_COL:
+        if index.column() == SewerageTypeMappingModel.SEWERAGE_TYPE_COL:
             combo.addItem("", None)
             for name, value in _SEWERAGE_TYPE_ITEMS:
                 combo.addItem(name, value)
@@ -659,43 +659,43 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(2)
-        self._sewer_model = SewerTypeMappingModel()
-        self._sewer_model.dataChanged.connect(self._on_sewer_mappings_changed)
-        self._sewer_model.rowsInserted.connect(self._on_sewer_mappings_changed)
-        self._sewer_model.rowsRemoved.connect(self._on_sewer_mappings_changed)
-        self._sewer_table = QTableView()
-        self._sewer_table.setModel(self._sewer_model)
-        self._sewer_table.setItemDelegate(SewerTypeMappingDelegate())
-        self._sewer_table.verticalHeader().hide()
-        self._sewer_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self._sewer_table.setEditTriggers(
+        self._sewerage_model = SewerageTypeMappingModel()
+        self._sewerage_model.dataChanged.connect(self._on_sewerage_mappings_changed)
+        self._sewerage_model.rowsInserted.connect(self._on_sewerage_mappings_changed)
+        self._sewerage_model.rowsRemoved.connect(self._on_sewerage_mappings_changed)
+        self._sewerage_table = QTableView()
+        self._sewerage_table.setModel(self._sewerage_model)
+        self._sewerage_table.setItemDelegate(SewerTypeMappingDelegate())
+        self._sewerage_table.verticalHeader().hide()
+        self._sewerage_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self._sewerage_table.setEditTriggers(
             QAbstractItemView.CurrentChanged | QAbstractItemView.SelectedClicked
         )
-        header = self._sewer_table.horizontalHeader()
+        header = self._sewerage_table.horizontalHeader()
         header.setSectionResizeMode(
-            SewerTypeMappingModel.SEWERAGE_TYPE_COL, QHeaderView.Stretch
+            SewerageTypeMappingModel.SEWERAGE_TYPE_COL, QHeaderView.Stretch
         )
         header.setSectionResizeMode(
-            SewerTypeMappingModel.PERCENTAGE_COL, QHeaderView.Stretch
+            SewerageTypeMappingModel.PERCENTAGE_COL, QHeaderView.Stretch
         )
-        self._sewer_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        _row_h = self._sewer_table.verticalHeader().defaultSectionSize()
-        _header_h = self._sewer_table.horizontalHeader().sizeHint().height()
-        self._sewer_table.setMaximumHeight(_header_h + 5 * _row_h + 2)
+        self._sewerage_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        _row_h = self._sewerage_table.verticalHeader().defaultSectionSize()
+        _header_h = self._sewerage_table.horizontalHeader().sizeHint().height()
+        self._sewerage_table.setMaximumHeight(_header_h + 5 * _row_h + 2)
         btn_layout = QHBoxLayout()
         btn_layout.setContentsMargins(0, 0, 0, 0)
-        self._sewer_add_btn = QPushButton("Add row")
-        self._sewer_add_btn.setIcon(QIcon.fromTheme("list-add"))
-        self._sewer_add_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self._sewer_add_btn.clicked.connect(self._sewer_model.add_row)
-        self._sewer_del_btn = QPushButton("Delete row")
-        self._sewer_del_btn.setIcon(QIcon.fromTheme("list-remove"))
-        self._sewer_del_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self._sewer_del_btn.clicked.connect(self._delete_sewer_rows)
-        btn_layout.addWidget(self._sewer_del_btn)
+        self._sewerage_add_btn = QPushButton("Add row")
+        self._sewerage_add_btn.setIcon(QIcon.fromTheme("list-add"))
+        self._sewerage_add_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._sewerage_add_btn.clicked.connect(self._sewerage_model.add_row)
+        self._sewerage_del_btn = QPushButton("Delete row")
+        self._sewerage_del_btn.setIcon(QIcon.fromTheme("list-remove"))
+        self._sewerage_del_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._sewerage_del_btn.clicked.connect(self._delete_sewerage_rows)
+        btn_layout.addWidget(self._sewerage_del_btn)
         btn_layout.addStretch()
-        btn_layout.addWidget(self._sewer_add_btn)
-        layout.addWidget(self._sewer_table)
+        btn_layout.addWidget(self._sewerage_add_btn)
+        layout.addWidget(self._sewerage_table)
         layout.addLayout(btn_layout)
         return layout
 
@@ -823,7 +823,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
     def _sewerage_type_source_present(self):
         if self.fmt_long_radio.isChecked():
             return self.sewerage_type_field_map_widget.is_valid
-        return bool(self._sewer_model.get_mappings())
+        return bool(self._sewerage_model.get_mappings())
 
     def _update_linking_enabled(self):
         match_active = not self.match_no_table_radio.isChecked()
@@ -832,9 +832,9 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self.search_distance.setEnabled(self.match_spatial_checkbox.isChecked())
 
     def _set_wide_mapping_enabled(self, enabled):
-        self._sewer_table.setEnabled(enabled)
-        self._sewer_add_btn.setEnabled(enabled)
-        self._sewer_del_btn.setEnabled(enabled)
+        self._sewerage_table.setEnabled(enabled)
+        self._sewerage_add_btn.setEnabled(enabled)
+        self._sewerage_del_btn.setEnabled(enabled)
 
     def _on_format_changed(self, long_checked):
         self.sewerage_type_field_map_widget.setEnabled(long_checked)
@@ -867,8 +867,8 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         )
         self.model.sewerage_type_config = sewerage_type_cfg
 
-    def _on_sewer_mappings_changed(self, *args):
-        self.model.sewerage_type_mappings = self._sewer_model.get_mappings()
+    def _on_sewerage_mappings_changed(self, *args):
+        self.model.sewerage_type_mappings = self._sewerage_model.get_mappings()
         self._update_linking_enabled()
         self.dataChanged.emit()
 
@@ -923,12 +923,12 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             return dm.ConnectionNode
         return None
 
-    def _delete_sewer_rows(self):
+    def _delete_sewerage_rows(self):
         rows = sorted(
-            {idx.row() for idx in self._sewer_table.selectedIndexes()}, reverse=True
+            {idx.row() for idx in self._sewerage_table.selectedIndexes()}, reverse=True
         )
         if rows:
-            self._sewer_model.remove_rows(rows)
+            self._sewerage_model.remove_rows(rows)
 
     def update_layer(self, layer):
         """Populate column dropdowns and wide table with fields from source layer."""
@@ -939,7 +939,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             else []
         )
         self.sewerage_type_field_map_widget.update_layer(layer)
-        self._sewer_model.set_numeric_fields(numeric)
+        self._sewerage_model.set_numeric_fields(numeric)
         self.match_field_map_widget.update_layer(layer)
         self._update_model()
 
@@ -968,7 +968,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self.model = sm.SurfaceLinkingSettings(
             data_format="long" if self.fmt_long_radio.isChecked() else "wide",
             sewerage_type_config=sewerage_type_cfg,
-            sewer_type_mappings=self._sewer_model.get_mappings(),
+            sewerage_type_mappings=self._sewerage_model.get_mappings(),
             search_distance=self.search_distance.value(),
             selected_pipes_only=self.selected_pipes_only.isChecked(),
             attribute_match_enabled=match_by_table,
@@ -986,7 +986,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             if not self.sewerage_type_field_map_widget.is_valid:
                 return False
         else:
-            if not self._sewer_model.get_mappings():
+            if not self._sewerage_model.get_mappings():
                 return False
         if not self.match_no_table_radio.isChecked():
             if not self.match_field_map_widget.is_valid:
@@ -994,7 +994,10 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         return True
 
     def validate(self) -> bool:
-        if not self.fmt_long_radio.isChecked() and not self._sewer_model.get_mappings():
+        if (
+            not self.fmt_long_radio.isChecked()
+            and not self._sewerage_model.get_mappings()
+        ):
             reply = QMessageBox.warning(
                 self,
                 "No sewerage type mappings",
@@ -1022,7 +1025,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
                 {"sewerage_type": loaded_model.sewerage_type_config.model_dump()}
             )
         self.sewerage_type_field_map_widget.setEnabled(is_long)
-        self._sewer_model.set_mappings(loaded_model.sewerage_type_mappings)
+        self._sewerage_model.set_mappings(loaded_model.sewerage_type_mappings)
         if loaded_model.attribute_match_enabled:
             if loaded_model.attribute_match_table == dm.Pipe.__tablename__:
                 self.match_pipe_table_radio.setChecked(True)
