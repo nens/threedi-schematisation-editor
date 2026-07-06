@@ -694,7 +694,9 @@ class SurfaceMap(ModelObject):
     display_name: Optional[str]
     percentage: float
     surface_id: int = field(metadata={ALLOWED_METHODS_FIELD: [ColumnImportMethod.AUTO]})
-    connection_node_id: int = field(metadata={ALLOWED_METHODS_FIELD: [ColumnImportMethod.AUTO]})
+    connection_node_id: int = field(
+        metadata={ALLOWED_METHODS_FIELD: [ColumnImportMethod.AUTO]}
+    )
     tags: Optional[str]
 
 
