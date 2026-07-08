@@ -72,7 +72,7 @@
               <Option type="Map" name="properties">
                 <Option type="Map" name="enabled">
                   <Option value="true" type="bool" name="active" />
-                  <Option value="coalesce(discharge_coefficient_negative, 0) = 0" type="QString" name="expression" />
+                  <Option value="coalesce(discharge_coefficient_negative, 1) = 0" type="QString" name="expression" />
                   <Option value="3" type="int" name="type" />
                 </Option>
                 <Option type="Map" name="offset">
@@ -170,7 +170,7 @@
               <Option type="Map" name="properties">
                 <Option type="Map" name="enabled">
                   <Option value="true" type="bool" name="active" />
-                  <Option value="coalesce(discharge_coefficient_positive, 0) &gt; 0&#13;&#10;AND coalesce(discharge_coefficient_negative,0) = 0" type="QString" name="expression" />
+                  <Option value="coalesce(discharge_coefficient_positive, 1) &gt; 0&#13;&#10;AND coalesce(discharge_coefficient_negative,1) = 0" type="QString" name="expression" />
                   <Option value="3" type="int" name="type" />
                 </Option>
                 <Option type="Map" name="offset">
@@ -268,7 +268,7 @@
               <Option type="Map" name="properties">
                 <Option type="Map" name="enabled">
                   <Option value="true" type="bool" name="active" />
-                  <Option value="coalesce(discharge_coefficient_positive, 0) = 0" type="QString" name="expression" />
+                  <Option value="coalesce(discharge_coefficient_positive, 1) = 0" type="QString" name="expression" />
                   <Option value="3" type="int" name="type" />
                 </Option>
                 <Option type="Map" name="offset">
@@ -366,7 +366,7 @@
               <Option type="Map" name="properties">
                 <Option type="Map" name="enabled">
                   <Option value="true" type="bool" name="active" />
-                  <Option value="coalesce(discharge_coefficient_negative, 0) &gt; 0&#13;&#10;AND coalesce(discharge_coefficient_positive, 0) = 0" type="QString" name="expression" />
+                  <Option value="coalesce(discharge_coefficient_negative, 1) &gt; 0&#13;&#10;AND coalesce(discharge_coefficient_positive, 1) = 0" type="QString" name="expression" />
                   <Option value="3" type="int" name="type" />
                 </Option>
                 <Option type="Map" name="offset">

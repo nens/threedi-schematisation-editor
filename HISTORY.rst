@@ -7,7 +7,7 @@ History
 - Add importer for surfaces (nens/rana#3840)
 - Add filter to VDI layer selector
 - Include layer setting in VDI template files
-
+- Fixed orifice styling bug (NULL discharge coefficient should not show as closed) (nens/rana#4333)
 
 2.4.12 (2026-06-29)
 -------------------
