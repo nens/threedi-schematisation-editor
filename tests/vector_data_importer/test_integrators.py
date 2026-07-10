@@ -16,6 +16,7 @@ from threedi_schematisation_editor.vector_data_importer.integrators import (
     ChannelIntegrator,
     LinearIntegrator,
     LinearIntegratorStructureData,
+    LineStructurePlacement,
 )
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 
@@ -558,7 +559,7 @@ class TestNodeManagement:
         points = {"start": (QgsPointXY(0, 0), 101), "end": (QgsPointXY(100, 0), 102)}
         start_point = QgsPointXY(0, 0)
         end_point = QgsPointXY(100, 0)
-        integrator.node_by_location = {
+        node_by_location = {
             points[name][0]: points[name][1] for name in initial_nodes
         }
 
@@ -599,6 +600,53 @@ class TestNodeManagement:
         assert result == features_to_add
         assert integrator.node_by_location[start_point] == 101
         assert integrator.node_by_location[end_point] == 102
+
+    @pytest.mark.parametrize("initial_nodes", [["start"], [], ["start", "end"]])
+    def test_update_structure_nodes(self, initial_nodes):
+        """Test update_structure_nodes (LineStructurePlacement) with different node_by_location states."""
+        points = {"start": (QgsPointXY(0, 0), 101), "end": (QgsPointXY(100, 0), 102)}
+        start_point = QgsPointXY(0, 0)
+        end_point = QgsPointXY(100, 0)
+        node_by_location = {
+            points[name][0]: points[name][1] for name in initial_nodes
+        }
+
+        node_layer_fields = QgsFields()
+        node_layer_fields.append(QgsField("id", QVariant.Int))
+        node_layer_fields.append(QgsField("name", QVariant.String))
+
+        # Create mock node features for nodes that need to be added
+        features_to_add = []
+        for name, (pt, node_id) in points.items():
+            mock_node_feature = QgsFeature(node_layer_fields)
+            mock_node_feature.setGeometry(QgsGeometry.fromPointXY(pt))
+            mock_node_feature["id"] = node_id
+            if name not in initial_nodes:
+                features_to_add.append(mock_node_feature)
+        mock_features = features_to_add.copy()
+
+        # Mock node_manager to return the mock node features and update node_by_location
+        node_manager = MagicMock()
+        def mock_create_new(geom, fields, attributes):
+            feature = mock_features.pop(0)
+            node_by_location[geom.asPoint()] = feature["id"]
+            return feature
+        node_manager.create_new.side_effect = mock_create_new
+
+        # Create a dst_feature with a line geometry
+        dst_feature = MagicMock()
+        dst_feature.geometry().asPolyline.return_value = [start_point, end_point]
+
+        # Call update_structure_nodes on a LineStructurePlacement instance
+        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
+        result = strategy.update_structure_nodes(
+            dst_feature, node_by_location, node_layer_fields, {"name": "Test Node"}, node_manager
+        )
+        assert result == features_to_add
+
+        # Assert that the node_by_location dictionary has the correct values
+        assert node_by_location[start_point] == 101
+        assert node_by_location[end_point] == 102
 
     def test_update_feature_endpoints_with_attribute_mapped_node_ids(self):
         """Test update_feature_endpoints with overwrite_node_ids=True:

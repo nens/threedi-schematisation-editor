@@ -126,9 +126,11 @@ class LinearIntegrator:
         external_source,
         target_gpkg,
         conduit_model_cls,
+        strategy,
     ):
         self.external_source = external_source
         self.conduit_model_cls = conduit_model_cls
+        self.strategy = strategy
         self.target_model_cls = target_model_cls
         self.fields_configurations = import_settings.fields
         self.point_to_line_settings = import_settings.point_to_line_conversion
@@ -517,17 +519,25 @@ class LinearIntegrator:
             warnings.warn(f"{message}", StructuresIntegratorWarning)
             return added_features
 
-        simplify_structure_geometry = self.target_model_cls != dm.Culvert
-
         # Collect structures correctly placed along the conduit
         conduit_structures = LinearIntegrator.fix_structure_placement(
             conduit_structures,
             conduit_geom,
             self.minimum_conduit_length,
         )
-        added_features[self.target_layer.name()] = self.place_structures_on_conduit(
-            conduit_structures, conduit_feat, simplify_structure_geometry
-        )
+
+        target_fields = self.layer_fields_mapping[self.target_layer.name()]
+        for cs in conduit_structures:
+            added_features[self.target_layer.name()].append(
+                self.strategy.place_structure(
+                    conduit_geom,
+                    cs,
+                    target_fields,
+                    self.target_manager,
+                    self.fields_configurations,
+                    self.target_model_cls,
+                )
+            )
 
         # Remove parts of the conduit that overlap with new structures
         added_features[self.integrate_layer.name()] = self.cut_conduit(
@@ -553,9 +563,14 @@ class LinearIntegrator:
             )
 
         # Conduit segments always need endpoint updates (they don't have attribute mapping)
+        node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
         for substring_feat in added_features[self.integrate_layer.name()]:
-            added_features[self.node_layer.name()] += self.update_feature_endpoints(
-                substring_feat, template_node_attributes=node_attributes
+            added_features[self.node_layer.name()] += self.strategy.update_structure_nodes(
+                substring_feat,
+                self.node_by_location,
+                node_layer_fields,
+                node_attributes,
+                self.node_manager,
             )
 
         return added_features
@@ -598,6 +613,10 @@ class PipeIntegrator(LinearIntegrator):
     @classmethod
     def from_importer(cls, integrate_layer, importer):
         """extract data from importer to created matching integrator"""
+        strategy = LineStructurePlacement(
+            importer.import_settings.point_to_line_conversion.length,
+            importer.target_model_cls != dm.Culvert,
+        )
         return cls(
             integrate_layer,
             importer.target_model_cls,
@@ -608,6 +627,7 @@ class PipeIntegrator(LinearIntegrator):
             importer.import_settings,
             importer.external_source,
             importer.target_gpkg,
+            strategy,
         )
 
     def integrate_features(self, input_feature_ids, progress_callback: callable = None):
@@ -625,14 +645,7 @@ class PipeIntegrator(LinearIntegrator):
             if conduit_geom is None:
                 continue
             conduit_structures = sorted(
-                (
-                    LinearIntegrator.get_conduit_structure_from_line(s, conduit_feature)
-                    if s.geometry().type() == QgsWkbTypes.GeometryType.LineGeometry
-                    else LinearIntegrator.get_conduit_structure_from_point(
-                        s, conduit_feature, self.point_to_line_settings.length
-                    )
-                    for s in structure_feats
-                ),
+                (self.strategy.get_structure_data(s, conduit_feature) for s in structure_feats),
                 key=attrgetter("m"),
             )
             if not conduit_structures:
@@ -659,6 +672,7 @@ class ChannelIntegrator(LinearIntegrator):
         external_source,
         target_gpkg,
         cross_section_layer,
+        strategy,
     ):
         self.cross_section_layer = cross_section_layer or gpkg_layer(
             target_gpkg, dm.CrossSectionLocation.__tablename__
@@ -677,11 +691,16 @@ class ChannelIntegrator(LinearIntegrator):
             external_source,
             target_gpkg,
             conduit_model_cls=dm.Channel,
+            strategy=strategy,
         )
 
     @classmethod
     def from_importer(cls, integrate_layer, cross_section_layer, importer):
         """extract data from importer to created matching integrator"""
+        strategy = LineStructurePlacement(
+            importer.import_settings.point_to_line_conversion.length,
+            importer.target_model_cls != dm.Culvert,
+        )
         return cls(
             integrate_layer,
             importer.target_model_cls,
@@ -693,6 +712,7 @@ class ChannelIntegrator(LinearIntegrator):
             importer.external_source,
             importer.target_gpkg,
             cross_section_layer,
+            strategy,
         )
 
     @property
@@ -722,14 +742,7 @@ class ChannelIntegrator(LinearIntegrator):
             if conduit_geom is None:
                 continue
             conduit_structures = sorted(
-                (
-                    LinearIntegrator.get_conduit_structure_from_line(s, conduit_feature)
-                    if s.geometry().type() == QgsWkbTypes.GeometryType.LineGeometry
-                    else LinearIntegrator.get_conduit_structure_from_point(
-                        s, conduit_feature, self.point_to_line_settings.length
-                    )
-                    for s in structure_feats
-                ),
+                (self.strategy.get_structure_data(s, conduit_feature) for s in structure_feats),
                 key=attrgetter("m"),
             )
             if not conduit_structures:
