@@ -37,6 +37,78 @@ class LinearIntegratorStructureData:
     length: float
 
 
+class StructurePlacementStrategy:
+    """Base class for structure-type-specific placement behaviour."""
+
+    def get_structure_data(self, structure_feat, conduit_feat) -> LinearIntegratorStructureData:
+        """Compute position (m) and length for structure on conduit."""
+        raise NotImplementedError
+
+    def place_structure(
+        self, conduit_geom, structure_data, target_fields, target_manager, fields_configurations, target_model_cls
+    ) -> QgsFeature:
+        """Create structure feature with correct geometry."""
+        raise NotImplementedError
+
+    def update_structure_nodes(
+        self, feature, node_by_location, node_layer_fields, node_attributes, node_manager
+    ) -> list:
+        """Assign connection node(s) and create new nodes if needed."""
+        raise NotImplementedError
+
+
+class LineStructurePlacement(StructurePlacementStrategy):
+    """Strategy for line-target structures (Weir, Orifice, Culvert)."""
+
+    def __init__(self, length_config, simplify_geometry):
+        self.length_config = length_config
+        self.simplify_geometry = simplify_geometry
+
+    def get_structure_data(self, structure_feat, conduit_feat) -> LinearIntegratorStructureData:
+        conduit_geometry = conduit_feat.geometry()
+        structure_geom = structure_feat.geometry()
+        if structure_geom.type() == QgsWkbTypes.GeometryType.LineGeometry:
+            intersection_m = conduit_geometry.lineLocatePoint(structure_geom.centroid())
+            structure_length = structure_geom.length()
+        else:
+            intersection_m = conduit_geometry.lineLocatePoint(structure_geom)
+            structure_length = get_field_config_value(self.length_config, structure_feat)
+        return LinearIntegratorStructureData(
+            conduit_feat["id"], structure_feat, intersection_m, structure_length
+        )
+
+    def place_structure(
+        self, conduit_geom, structure_data, target_fields, target_manager, fields_configurations, target_model_cls
+    ) -> QgsFeature:
+        cs = structure_data
+        substring_geom = LinearIntegrator.get_substring_geometry(
+            conduit_geom.constGet(),
+            cs.m - cs.length * 0.5,
+            cs.m + cs.length * 0.5,
+            self.simplify_geometry,
+        )
+        substring_feat = target_manager.create_new(substring_geom, target_fields)
+        update_attributes(fields_configurations, target_model_cls, cs.feature, substring_feat)
+        return substring_feat
+
+    def update_structure_nodes(
+        self, feature, node_by_location, node_layer_fields, node_attributes, node_manager
+    ) -> list:
+        new_nodes = []
+        conduit_polyline = feature.geometry().asPolyline()
+        start_node_point, end_node_point = conduit_polyline[0], conduit_polyline[-1]
+        for point in [start_node_point, end_node_point]:
+            if point not in node_by_location:
+                node_feat = node_manager.create_new(
+                    QgsGeometry.fromPointXY(point), node_layer_fields, node_attributes
+                )
+                node_by_location[point] = node_feat["id"]
+                new_nodes.append(node_feat)
+        feature["connection_node_id_start"] = node_by_location[start_node_point]
+        feature["connection_node_id_end"] = node_by_location[end_node_point]
+        return new_nodes
+
+
 class LinearIntegrator:
     """Integrate linear structures onto a conduit (channel or pipe)"""
 
