@@ -110,6 +110,42 @@ class LineStructurePlacement(StructurePlacementStrategy):
         return new_nodes
 
 
+class PointStructurePlacement(StructurePlacementStrategy):
+    """Strategy for point-target structures (Pump)."""
+
+    def get_structure_data(self, structure_feat, conduit_feat):
+        conduit_geom = conduit_feat.geometry()
+        structure_geom = structure_feat.geometry()
+        if structure_geom.type() == QgsWkbTypes.GeometryType.LineGeometry:
+            m = conduit_geom.lineLocatePoint(structure_geom.centroid())
+        else:
+            m = conduit_geom.lineLocatePoint(structure_geom)
+        return LinearIntegratorStructureData(conduit_feat["id"], structure_feat, m, 0)
+
+    def place_structure(
+        self, conduit_geom, structure_data, target_fields, target_manager, fields_configurations, target_model_cls
+    ):
+        point_geom = conduit_geom.interpolate(structure_data.m)
+        feat = target_manager.create_new(point_geom, target_fields)
+        update_attributes(fields_configurations, target_model_cls, structure_data.feature, feat)
+        return feat
+
+    def update_structure_nodes(
+        self, feature, node_by_location, node_layer_fields, node_attributes, node_manager
+    ) -> list:
+        point = feature.geometry().asPoint()
+        if point not in node_by_location:
+            node_feat = node_manager.create_new(
+                QgsGeometry.fromPointXY(point), node_layer_fields, node_attributes
+            )
+            node_by_location[point] = node_feat["id"]
+            new_nodes = [node_feat]
+        else:
+            new_nodes = []
+        feature["connection_node_id"] = node_by_location[point]
+        return new_nodes
+
+
 class LinearIntegrator:
     """Integrate linear structures onto a conduit (channel or pipe)"""
 
