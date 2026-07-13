@@ -27,6 +27,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     get_src_geometry,
     get_substring_geometry,
     update_attributes,
+    update_conduit_endpoints,
 )
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 
@@ -96,19 +97,7 @@ class LineStructurePlacement(StructurePlacementStrategy):
     def update_structure_nodes(
         self, feature, node_by_location, node_layer_fields, node_attributes, node_manager
     ) -> list:
-        new_nodes = []
-        conduit_polyline = feature.geometry().asPolyline()
-        start_node_point, end_node_point = conduit_polyline[0], conduit_polyline[-1]
-        for point in [start_node_point, end_node_point]:
-            if point not in node_by_location:
-                node_feat = node_manager.create_new(
-                    QgsGeometry.fromPointXY(point), node_layer_fields, node_attributes
-                )
-                node_by_location[point] = node_feat["id"]
-                new_nodes.append(node_feat)
-        feature["connection_node_id_start"] = node_by_location[start_node_point]
-        feature["connection_node_id_end"] = node_by_location[end_node_point]
-        return new_nodes
+        return update_conduit_endpoints(feature, node_by_location, node_layer_fields, node_attributes, node_manager)
 
 
 class PointStructurePlacement(StructurePlacementStrategy):
@@ -482,22 +471,6 @@ class LinearIntegrator:
             added_conduits.append(substring_feat)
         return added_conduits
 
-    def _update_conduit_endpoints(self, feature, node_layer_fields, node_attributes):
-        """Assign connection_node_id_start/_end for a cut conduit segment."""
-        new_nodes = []
-        conduit_polyline = feature.geometry().asPolyline()
-        start_node_point, end_node_point = conduit_polyline[0], conduit_polyline[-1]
-        for point in [start_node_point, end_node_point]:
-            if point not in self.node_by_location:
-                node_feat = self.node_manager.create_new(
-                    QgsGeometry.fromPointXY(point), node_layer_fields, node_attributes
-                )
-                self.node_by_location[point] = node_feat["id"]
-                new_nodes.append(node_feat)
-        feature["connection_node_id_start"] = self.node_by_location[start_node_point]
-        feature["connection_node_id_end"] = self.node_by_location[end_node_point]
-        return new_nodes
-
     def integrate_structure_features(
         self, conduit_feat, conduit_geom, conduit_structures
     ):
@@ -574,10 +547,8 @@ class LinearIntegrator:
             )
         # integrator handles conduit segment endpoints (always line geometry)
         for conduit_segment in added_features[self.integrate_layer.name()]:
-            added_features[self.node_layer.name()] += self._update_conduit_endpoints(
-                conduit_segment, node_layer_fields, node_attributes
-            )
-
+            added_features[self.node_layer.name()] += update_conduit_endpoints(conduit_segment, self.node_by_location, node_layer_fields, node_attributes,
+                                     self.node_manager)
         return added_features
 
     def update_feature_endpoints(
