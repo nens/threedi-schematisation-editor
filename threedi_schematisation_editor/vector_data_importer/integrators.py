@@ -220,6 +220,7 @@ class LinearIntegrator:
             in [
                 dm.Weir,
                 dm.Orifice,
+                dm.Pump,
             ]
         ):
             return PipeIntegrator.from_importer(integrate_layer, importer)
@@ -595,10 +596,13 @@ class PipeIntegrator(LinearIntegrator):
     @classmethod
     def from_importer(cls, integrate_layer, importer):
         """extract data from importer to created matching integrator"""
-        strategy = LineStructurePlacement(
-            importer.import_settings.point_to_line_conversion.length,
-            importer.target_model_cls != dm.Culvert,
-        )
+        if importer.target_model_cls == dm.Pump:
+            strategy = PointStructurePlacement()
+        else:
+            strategy = LineStructurePlacement(
+                importer.import_settings.point_to_line_conversion.length,
+                importer.target_model_cls != dm.Culvert,
+            )
         return cls(
             integrate_layer,
             importer.target_model_cls,
@@ -679,10 +683,13 @@ class ChannelIntegrator(LinearIntegrator):
     @classmethod
     def from_importer(cls, integrate_layer, cross_section_layer, importer):
         """extract data from importer to created matching integrator"""
-        strategy = LineStructurePlacement(
-            importer.import_settings.point_to_line_conversion.length,
-            importer.target_model_cls != dm.Culvert,
-        )
+        if importer.target_model_cls == dm.Pump:
+            strategy = PointStructurePlacement()
+        else:
+            strategy = LineStructurePlacement(
+                importer.import_settings.point_to_line_conversion.length,
+                importer.target_model_cls != dm.Culvert,
+            )
         return cls(
             integrate_layer,
             importer.target_model_cls,
