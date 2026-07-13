@@ -245,26 +245,6 @@ class LinearIntegrator:
             node_point = node_geom.asPoint()
             self.node_by_location[node_point] = node_feat["id"]
 
-    @staticmethod
-    def get_conduit_structure_from_line(structure_feat, conduit_feat):
-        conduit_geometry = conduit_feat.geometry()
-        structure_geom = structure_feat.geometry()
-        intersection_m = conduit_geometry.lineLocatePoint(structure_geom.centroid())
-        structure_length = structure_geom.length()
-        return LinearIntegratorStructureData(
-            conduit_feat["id"], structure_feat, intersection_m, structure_length
-        )
-
-    @staticmethod
-    def get_conduit_structure_from_point(structure_feat, conduit_feat, length_config):
-        structure_geom = structure_feat.geometry()
-        conduit_geometry = conduit_feat.geometry()
-        intersection_m = conduit_geometry.lineLocatePoint(structure_geom)
-        structure_length = get_field_config_value(length_config, structure_feat)
-        return LinearIntegratorStructureData(
-            conduit_feat["id"], structure_feat, intersection_m, structure_length
-        )
-
     def get_conduit_matches(self, selected_ids=None) -> list:
         """Return matched (conduit, [structures]) pairs for integration.
 
@@ -370,30 +350,6 @@ class LinearIntegrator:
             conduit_structures, conduit_geom.length()
         )
         return conduit_structures
-
-    def place_structures_on_conduit(
-        self, conduit_structures, conduit_feat, simplify_structure_geometry
-    ):
-        conduit_geom = conduit_feat.geometry()
-        added_features = []
-        for i, cs in enumerate(conduit_structures):
-            substring_geom = LinearIntegrator.get_substring_geometry(
-                conduit_geom.constGet(),
-                cs.m - cs.length * 0.5,
-                cs.m + cs.length * 0.5,
-                simplify_structure_geometry,
-            )
-            substring_feat = self.target_manager.create_new(
-                substring_geom, self.layer_fields_mapping[self.target_layer.name()]
-            )
-            update_attributes(
-                self.fields_configurations,
-                self.target_model_cls,
-                cs.feature,
-                substring_feat,
-            )
-            added_features.append(substring_feat)
-        return added_features
 
     @staticmethod
     def fix_structure_placement_lhs(

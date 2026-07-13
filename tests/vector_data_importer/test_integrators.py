@@ -11,6 +11,7 @@ from qgis.core import (
     QgsSpatialIndex,
 )
 
+from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.vector_data_importer import settings_models as sm
 from threedi_schematisation_editor.vector_data_importer.integrators import (
     ChannelIntegrator,
@@ -327,15 +328,14 @@ class TestChannelStructureIntegration:
     def test_get_conduit_structure_from_point(
         self, channel_feature, point_structure_feature
     ):
-        """get_conduit_structure_from_point takes no snapping_distance, returns data."""
+        """LineStructurePlacement.get_structure_data with point geometry returns correct data."""
         length_config = sm.FieldMapConfig(
             method=sm.ColumnImportMethod.ATTRIBUTE,
             source_attribute="length",
             default_value=5.0,
         )
-        result = LinearIntegrator.get_conduit_structure_from_point(
-            point_structure_feature, channel_feature, length_config
-        )
+        strategy = LineStructurePlacement(length_config=length_config, simplify_geometry=True)
+        result = strategy.get_structure_data(point_structure_feature, channel_feature)
         assert result.conduit_id == 1
         assert result.feature["id"] == 4
         assert result.m == 50.0
@@ -344,14 +344,36 @@ class TestChannelStructureIntegration:
     def test_get_conduit_structure_from_line(
         self, channel_feature, line_structure_feature
     ):
-        """get_conduit_structure_from_line takes no snapping_distance, returns data."""
-        result = LinearIntegrator.get_conduit_structure_from_line(
-            line_structure_feature, channel_feature
-        )
+        """LineStructurePlacement.get_structure_data with line geometry returns correct data."""
+        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
+        result = strategy.get_structure_data(line_structure_feature, channel_feature)
         assert result.conduit_id == 1
         assert result.feature["id"] == 3
         assert result.m == 50.0
         assert result.length == 50.0
+
+    def test_place_structure(self, channel_feature, line_structure_feature, structure_fields):
+        """LineStructurePlacement.place_structure returns a feature with correct geometry."""
+        from unittest.mock import MagicMock
+        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
+        conduit_geom = channel_feature.geometry()
+        structure_data = LinearIntegratorStructureData(
+            conduit_id=1, feature=line_structure_feature, m=50.0, length=20.0
+        )
+        target_manager = MagicMock()
+        created_feat = QgsFeature(structure_fields)
+        target_manager.create_new.return_value = created_feat
+
+        result = strategy.place_structure(
+            conduit_geom, structure_data, structure_fields, target_manager, {}, dm.Weir
+        )
+
+        assert result is created_feat
+        # manager was called with a line geometry spanning m-l/2=40 to m+l/2=60
+        call_geom = target_manager.create_new.call_args[0][0]
+        polyline = call_geom.asPolyline()
+        assert polyline[0].x() == pytest.approx(40.0)
+        assert polyline[-1].x() == pytest.approx(60.0)
 
 
 class TestCrossSectionIntegration:
