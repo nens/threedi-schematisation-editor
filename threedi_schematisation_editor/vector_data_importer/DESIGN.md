@@ -115,7 +115,7 @@ If you need to add new layer operations during the import, keep them inside the 
 
 The `Importer` class hierarchy handles the import orchestration. Each concrete importer knows its target model class and which processor/integrator to use.
 
-`SpatialImporter` holds the `target_layer`, provides `get_transformation()` and a basic `import_features()` implementation (transform → start editing → process → add). Node-related resources and integration orchestration are scoped to `LinesImporter` because integration is only relevant for linear structures. `SurfaceImporter` is a direct child of `SpatialImporter` that additionally manages a `surface_map_layer`.
+`SpatialImporter` holds the `target_layer`, provides `get_transformation()` and a basic `import_features()` implementation (transform → start editing → process → add). Node-related resources and integration orchestration are scoped to `IntegrationImporter` because integration requires both a node layer and an integrator. Concrete importers extend `IntegrationImporter` and assign their own processor. `SurfaceImporter` is a direct child of `SpatialImporter` that additionally manages a `surface_map_layer`.
 
 ```mermaid
 classDiagram
@@ -124,12 +124,13 @@ classDiagram
     SpatialImporter <|-- ConnectionNodesImporter
     SpatialImporter <|-- CrossSectionLocationImporter
     SpatialImporter <|-- SurfaceImporter
-    SpatialImporter <|-- LinesImporter
-    LinesImporter <|-- CulvertsImporter
-    LinesImporter <|-- OrificesImporter
-    LinesImporter <|-- WeirsImporter
-    LinesImporter <|-- PipesImporter
-    LinesImporter <|-- ChannelsImporter
+    SpatialImporter <|-- IntegrationImporter
+    IntegrationImporter <|-- CulvertsImporter
+    IntegrationImporter <|-- OrificesImporter
+    IntegrationImporter <|-- WeirsImporter
+    IntegrationImporter <|-- PipesImporter
+    IntegrationImporter <|-- ChannelsImporter
+    IntegrationImporter <|-- PumpsImporter
 
     class Importer {
         +processor = None
@@ -167,7 +168,7 @@ classDiagram
         +modifiable_layers = [target_layer, surface_map_layer]
     }
 
-    class LinesImporter {
+    class IntegrationImporter {
         +node_layer
         +integrator = LinearIntegrator
         +modifiable_layers = [target_layer, node_layer] + integrator.layers
@@ -176,28 +177,38 @@ classDiagram
 
     class CulvertsImporter {
         +target_model_cls=dm.Culvert
+        +processor = LineProcessor
     }
 
     class OrificesImporter {
         +target_model_cls=dm.Orifice
+        +processor = LineProcessor
     }
     
     class WeirsImporter {
         +target_model_cls=dm.Weir
+        +processor = LineProcessor
     }
     
     class PipesImporter {
         +target_model_cls=dm.Pipe
+        +processor = LineProcessor
     }    
     
     class ChannelsImporter {
         +target_model_cls=dm.Channel
-    }        
+        +processor = LineProcessor
+    }
+
+    class PumpsImporter {
+        +target_model_cls=dm.Pump
+        +processor = PointProcessor
+    }
 
 ```
 
 - `SpatialImporter.import_features()` performs coordinate transformation, calls the processor, and adds resulting features. It puts only the `target_layer` into edit mode by default.
-- `LinesImporter.import_features()` additionally prepares the `node_locator`, initialises an `integrator` (`LinearIntegrator`), and puts the `node_layer` and any integrator-managed layers into edit mode.
+- `IntegrationImporter.import_features()` additionally prepares the `node_locator`, initialises an `integrator` (`LinearIntegrator`), and puts the `node_layer` and any integrator-managed layers into edit mode. Each concrete subclass assigns its own processor after calling `super().__init__()`.
 - `SurfaceImporter` produces both a target surface layer and an auxiliary `surface_map_layer`. Both are put into edit mode. The pipe layer and node layer are passed to `SurfaceProcessor` at construction time for spatial linking.
 
 
@@ -259,6 +270,7 @@ classDiagram
 
     class PointProcessor {
         +process_feature()
+        +create_new_point_geometry()  // handles point and line input (centroid)
     }
 
     class LineProcessor {
@@ -331,6 +343,15 @@ When objects are integrated onto existing structures, an `Integrator` handles fi
 - `ChannelIntegrator` — integrates new objects onto existing channels, with additional logic for managing cross-section locations (updating references, copying cross-sections to new channel segments, removing orphaned ones).
 
 The integrator to use is determined by `IntegrationMode` and created via the factory method `LinearIntegrator.get_integrator()`.
+
+### Structure placement strategies
+
+`LinearIntegrator` delegates structure-type-specific behaviour to a `StructurePlacementStrategy` instance, injected at construction time by `PipeIntegrator.from_importer` and `ChannelIntegrator.from_importer`. The strategy is selected based on `target_model_cls.__geometrytype__`:
+
+- **`LineStructurePlacement`** — for line-geometry structures (Weir, Orifice, Culvert). Computes position and length via `lineLocatePoint`, places a `curveSubstring` on the conduit, and assigns `connection_node_id_start`/`connection_node_id_end`.
+- **`PointStructurePlacement`** — for point-geometry structures (Pump). Computes position via `lineLocatePoint` with `length=0`, places a point via `conduit_geom.interpolate(m)`, and assigns a single `connection_node_id`.
+
+Connection node assignment for cut conduit segments (always line geometry, always `connection_node_id_start`/`_end`) is handled by `LinearIntegrator._update_conduit_endpoints` independently of the strategy.
 
 ### Matching: `get_conduit_matches`
 
