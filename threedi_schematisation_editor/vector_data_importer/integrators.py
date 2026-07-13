@@ -24,6 +24,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     FeatureManager,
     get_field_config_value,
     get_src_geometry,
+    get_substring_geometry,
     update_attributes,
 )
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
@@ -81,7 +82,7 @@ class LineStructurePlacement(StructurePlacementStrategy):
         self, conduit_geom, structure_data, target_fields, target_manager, fields_configurations, target_model_cls
     ) -> QgsFeature:
         cs = structure_data
-        substring_geom = LinearIntegrator.get_substring_geometry(
+        substring_geom = get_substring_geometry(
             conduit_geom.constGet(),
             cs.m - cs.length * 0.5,
             cs.m + cs.length * 0.5,
@@ -186,17 +187,6 @@ class LinearIntegrator:
             ]
         ):
             return PipeIntegrator.from_importer(integrate_layer, importer)
-
-    @staticmethod
-    def get_substring_geometry(curve, start_distance, end_distance, simplify=False):
-        curve_substring = curve.curveSubstring(start_distance, end_distance)
-        substring_geometry = QgsGeometry(curve_substring)
-        if simplify:
-            substring_polyline = substring_geometry.asPolyline()
-            substring_geometry = QgsGeometry.fromPolylineXY(
-                [substring_polyline[0], substring_polyline[-1]]
-            )
-        return substring_geometry
 
     @property
     def map_layers(self):
@@ -327,7 +317,7 @@ class LinearIntegrator:
         """Extract part of the curve as a new structure feature."""
         substring_feat = QgsFeature(fields)
         substring_feat.setGeometry(
-            LinearIntegrator.get_substring_geometry(
+            get_substring_geometry(
                 curve, start_distance, end_distance, simplify
             )
         )

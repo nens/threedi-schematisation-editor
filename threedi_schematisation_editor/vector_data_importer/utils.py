@@ -287,3 +287,18 @@ def compute_selected_ids(layer, source_settings):
                 FeaturesImporterWarning,
             )
     return result
+
+
+def get_substring_geometry(curve, start_distance, end_distance, simplify=False):
+    """Extract a substring of a curve as a QgsGeometry.
+
+    If simplify is True, reduces the result to a 2-point line (first and last vertex).
+    """
+    curve_substring = curve.curveSubstring(start_distance, end_distance)
+    substring_geometry = QgsGeometry(curve_substring)
+    if simplify:
+        substring_polyline = substring_geometry.asPolyline()
+        substring_geometry = QgsGeometry.fromPolylineXY(
+            [substring_polyline[0], substring_polyline[-1]]
+        )
+    return substring_geometry
