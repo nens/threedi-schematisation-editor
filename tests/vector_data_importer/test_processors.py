@@ -427,6 +427,23 @@ class TestUtilityFunctions:
         assert result.type() == QgsWkbTypes.PointGeometry
         assert result.asPoint() == QgsPointXY(10, 20)
 
+    def test_create_new_point_geometry_from_line(self):
+        """create_new_point_geometry extracts centroid when source is a line."""
+        geom = QgsGeometry.fromPolylineXY([QgsPointXY(0, 0), QgsPointXY(100, 0)])
+        result = SpatialProcessor.create_new_point_geometry(geom)
+        assert isinstance(result, QgsGeometry)
+        assert result.type() == QgsWkbTypes.PointGeometry
+        assert result.asPoint().x() == pytest.approx(50.0)
+        assert result.asPoint().y() == pytest.approx(0.0)
+
+    def test_create_new_point_geometry_unsupported_type_raises(self):
+        """create_new_point_geometry raises NotImplementedError for polygon geometry."""
+        geom = QgsGeometry.fromPolygonXY([[
+            QgsPointXY(0, 0), QgsPointXY(10, 0), QgsPointXY(10, 10), QgsPointXY(0, 0)
+        ]])
+        with pytest.raises(NotImplementedError):
+            SpatialProcessor.create_new_point_geometry(geom)
+
     def test_snap_connection_node_with_node(self):
         """Test that snap_connection_node returns True when a node is found."""
         # Create a feature to snap
