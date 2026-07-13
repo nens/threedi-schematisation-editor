@@ -482,6 +482,22 @@ class LinearIntegrator:
             added_conduits.append(substring_feat)
         return added_conduits
 
+    def _update_conduit_endpoints(self, feature, node_layer_fields, node_attributes):
+        """Assign connection_node_id_start/_end for a cut conduit segment."""
+        new_nodes = []
+        conduit_polyline = feature.geometry().asPolyline()
+        start_node_point, end_node_point = conduit_polyline[0], conduit_polyline[-1]
+        for point in [start_node_point, end_node_point]:
+            if point not in self.node_by_location:
+                node_feat = self.node_manager.create_new(
+                    QgsGeometry.fromPointXY(point), node_layer_fields, node_attributes
+                )
+                self.node_by_location[point] = node_feat["id"]
+                new_nodes.append(node_feat)
+        feature["connection_node_id_start"] = self.node_by_location[start_node_point]
+        feature["connection_node_id_end"] = self.node_by_location[end_node_point]
+        return new_nodes
+
     def integrate_structure_features(
         self, conduit_feat, conduit_geom, conduit_structures
     ):
@@ -556,6 +572,11 @@ class LinearIntegrator:
                 node_attributes,
                 self.node_manager,
             )
+        # integrator handles conduit segment endpoints (always line geometry)
+        for conduit_segment in added_features[self.integrate_layer.name()]:
+            added_features[self.node_layer.name()] += self._update_conduit_endpoints(
+                conduit_segment, node_layer_fields, node_attributes
+            )
 
         return added_features
 
@@ -597,17 +618,16 @@ class PipeIntegrator(LinearIntegrator):
     @classmethod
     def from_importer(cls, integrate_layer, importer):
         """extract data from importer to created matching integrator"""
-        geom_type = importer.target_model_cls.__geometrytype__
-        if geom_type == GeometryType.Point:
+        if importer.target_model_cls.__geometrytype__ == GeometryType.Point:
             strategy = PointStructurePlacement()
-        elif geom_type == GeometryType.Linestring:
+        elif importer.target_model_cls.__geometrytype__ == GeometryType.Linestring:
             strategy = LineStructurePlacement(
                 importer.import_settings.point_to_line_conversion.length,
                 importer.target_model_cls != dm.Culvert,
             )
         else:
             raise NotImplementedError(
-                f"No placement strategy for geometry type '{geom_type}' "
+                f"No placement strategy for geometry type '{importer.target_model_cls.__geometrytype__}' "
                 f"(model: {importer.target_model_cls.__name__})"
             )
         return cls(
