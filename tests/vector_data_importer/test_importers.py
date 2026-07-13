@@ -16,7 +16,7 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
     CrossSectionDataImporter,
     CrossSectionLocationImporter,
     Importer,
-    LinesImporter,
+    IntegrationImporter,
     SpatialImporter,
     SurfaceImporter,
 )
@@ -268,7 +268,7 @@ class TestSpatialImporter:
         (sm.IntegrationMode.PIPES, dm.Culvert, False, False),
     ],
 )
-def test_lines_importer_init(
+def test_integration_importer_init(
     mock_pipe_integrator_from_importer,
     mock_channel_integrator_from_importer,
     external_source,
@@ -283,7 +283,7 @@ def test_lines_importer_init(
 ):
     """Test that the Importer initializes the correct integrator."""
     import_settings.integration.integration_mode = integration_mode
-    importer = LinesImporter(
+    importer = IntegrationImporter(
         external_source,
         target_gpkg,
         import_settings,

@@ -18,7 +18,7 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionDataProcessor,
     CrossSectionLocationProcessor,
     LineProcessor,
-    SurfaceProcessor,
+    SurfaceProcessor, PointProcessor,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (
     get_point_locator,
@@ -174,7 +174,7 @@ class SpatialImporter(Importer):
         self.add_features_to_layers(new_features)
 
 
-class LinesImporter(SpatialImporter):
+class IntegrationImporter(SpatialImporter):
     def __init__(
         self,
         external_source,
@@ -198,12 +198,7 @@ class LinesImporter(SpatialImporter):
             if node_layer is None
             else node_layer
         )
-        self.processor = LineProcessor(
-            self.target_layer,
-            self.target_model_cls,
-            self.node_layer,
-            import_settings,
-        )
+        self.processor = None
         self.integrator = LinearIntegrator.get_integrator(
             conduit_layer, cross_section_location_layer, self
         )
@@ -250,7 +245,7 @@ class LinesImporter(SpatialImporter):
         self.add_features_to_layers(new_features)
 
 
-class CulvertsImporter(LinesImporter):
+class CulvertsImporter(IntegrationImporter):
     """Class with methods responsible for the integrating culverts from the external data source."""
 
     def __init__(
@@ -273,9 +268,12 @@ class CulvertsImporter(LinesImporter):
             conduit_layer=conduit_layer,
             cross_section_location_layer=cross_section_location_layer,
         )
+        self.processor = LineProcessor(
+            self.target_layer, self.target_model_cls, self.node_layer, import_settings
+        )
 
 
-class OrificesImporter(LinesImporter):
+class OrificesImporter(IntegrationImporter):
     """Class with methods responsible for the integrating orifices from the external data source."""
 
     def __init__(
@@ -298,9 +296,12 @@ class OrificesImporter(LinesImporter):
             conduit_layer=conduit_layer,
             cross_section_location_layer=cross_section_location_layer,
         )
+        self.processor = LineProcessor(
+            self.target_layer, self.target_model_cls, self.node_layer, import_settings
+        )
 
 
-class WeirsImporter(LinesImporter):
+class WeirsImporter(IntegrationImporter):
     """Class with methods responsible for the integrating weirs from the external data source."""
 
     def __init__(
@@ -323,9 +324,12 @@ class WeirsImporter(LinesImporter):
             conduit_layer=conduit_layer,
             cross_section_location_layer=cross_section_location_layer,
         )
+        self.processor = LineProcessor(
+            self.target_layer, self.target_model_cls, self.node_layer, import_settings
+        )
 
 
-class PipesImporter(LinesImporter):
+class PipesImporter(IntegrationImporter):
     """Class with methods responsible for the importing pipes from the external data source."""
 
     def __init__(
@@ -344,9 +348,12 @@ class PipesImporter(LinesImporter):
             target_layer=structure_layer,
             node_layer=node_layer,
         )
+        self.processor = LineProcessor(
+            self.target_layer, self.target_model_cls, self.node_layer, import_settings
+        )
 
 
-class ChannelsImporter(LinesImporter):
+class ChannelsImporter(IntegrationImporter):
     """Class with methods responsible for the importing channels from the external data source."""
 
     def __init__(
@@ -364,6 +371,9 @@ class ChannelsImporter(LinesImporter):
             target_model_cls=dm.Channel,
             target_layer=structure_layer,
             node_layer=node_layer,
+        )
+        self.processor = LineProcessor(
+            self.target_layer, self.target_model_cls, self.node_layer, import_settings
         )
 
 
@@ -403,6 +413,30 @@ class ConnectionNodesImporter(SpatialImporter):
             self.target_layer,
             self.target_model_cls,
             self.import_settings,
+        )
+
+
+class PumpsImporter(IntegrationImporter):
+    def __init__(
+        self,
+        external_source,
+        target_gpkg,
+        import_settings,
+        target_layer=None,
+        node_layer=None,
+        conduit_layer=None,
+    ):
+        super().__init__(
+            external_source=external_source,
+            target_gpkg=target_gpkg,
+            import_settings=import_settings,
+            target_model_cls=dm.Pump,
+            target_layer=target_layer,
+            node_layer=node_layer,
+            conduit_layer=conduit_layer,
+        )
+        self.processor = PointProcessor(
+            self.target_layer, self.target_model_cls, self.node_layer, self.import_settings
         )
 
 
@@ -454,3 +488,5 @@ class SurfaceImporter(SpatialImporter):
     @property
     def modifiable_layers(self):
         return [self.target_layer, self.surface_map_layer]
+
+
