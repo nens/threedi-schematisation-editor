@@ -302,3 +302,20 @@ def get_substring_geometry(curve, start_distance, end_distance, simplify=False):
             [substring_polyline[0], substring_polyline[-1]]
         )
     return substring_geometry
+
+
+def update_conduit_endpoints(feature, node_by_location, node_layer_fields, node_attributes, node_manager) -> list:
+    """Assign connection_node_id_start/_end for a cut conduit segment; create missing nodes."""
+    new_nodes = []
+    conduit_polyline = feature.geometry().asPolyline()
+    start_node_point, end_node_point = conduit_polyline[0], conduit_polyline[-1]
+    for point in [start_node_point, end_node_point]:
+        if point not in node_by_location:
+            node_feat = node_manager.create_new(
+                QgsGeometry.fromPointXY(point), node_layer_fields, node_attributes
+            )
+            node_by_location[point] = node_feat["id"]
+            new_nodes.append(node_feat)
+    feature["connection_node_id_start"] = node_by_location[start_node_point]
+    feature["connection_node_id_end"] = node_by_location[end_node_point]
+    return new_nodes
