@@ -199,8 +199,13 @@ class IntegrationImporter(SpatialImporter):
             else node_layer
         )
         self.processor = None
-        self.integrator = LinearIntegrator.get_integrator(
-            conduit_layer, cross_section_location_layer, self
+        self._conduit_layer = conduit_layer
+        self._cross_section_location_layer = cross_section_location_layer
+
+    @cached_property
+    def integrator(self):
+        return LinearIntegrator.get_integrator(
+            self._conduit_layer, self._cross_section_location_layer, self
         )
 
     @property

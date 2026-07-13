@@ -291,6 +291,7 @@ def test_integration_importer_init(
         target_layer=target_layer,
         node_layer=node_layer,
     )
+    _ = importer.integrator  # trigger cached_property
     if make_channel_integrator:
         mock_channel_integrator_from_importer.assert_called_once_with(
             None, None, importer
