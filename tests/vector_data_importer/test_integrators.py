@@ -18,6 +18,7 @@ from threedi_schematisation_editor.vector_data_importer.integrators import (
     LinearIntegrator,
     LinearIntegratorStructureData,
     LineStructurePlacement,
+    PointStructurePlacement,
 )
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 
@@ -324,56 +325,6 @@ class TestChannelStructureIntegration:
         matched_conduit, matched_structures = result[0]
         assert matched_conduit.id() == conduit.id()
         assert structure in matched_structures
-
-    def test_get_conduit_structure_from_point(
-        self, channel_feature, point_structure_feature
-    ):
-        """LineStructurePlacement.get_structure_data with point geometry returns correct data."""
-        length_config = sm.FieldMapConfig(
-            method=sm.ColumnImportMethod.ATTRIBUTE,
-            source_attribute="length",
-            default_value=5.0,
-        )
-        strategy = LineStructurePlacement(length_config=length_config, simplify_geometry=True)
-        result = strategy.get_structure_data(point_structure_feature, channel_feature)
-        assert result.conduit_id == 1
-        assert result.feature["id"] == 4
-        assert result.m == 50.0
-        assert result.length == 10.0
-
-    def test_get_conduit_structure_from_line(
-        self, channel_feature, line_structure_feature
-    ):
-        """LineStructurePlacement.get_structure_data with line geometry returns correct data."""
-        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
-        result = strategy.get_structure_data(line_structure_feature, channel_feature)
-        assert result.conduit_id == 1
-        assert result.feature["id"] == 3
-        assert result.m == 50.0
-        assert result.length == 50.0
-
-    def test_place_structure(self, channel_feature, line_structure_feature, structure_fields):
-        """LineStructurePlacement.place_structure returns a feature with correct geometry."""
-        from unittest.mock import MagicMock
-        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
-        conduit_geom = channel_feature.geometry()
-        structure_data = LinearIntegratorStructureData(
-            conduit_id=1, feature=line_structure_feature, m=50.0, length=20.0
-        )
-        target_manager = MagicMock()
-        created_feat = QgsFeature(structure_fields)
-        target_manager.create_new.return_value = created_feat
-
-        result = strategy.place_structure(
-            conduit_geom, structure_data, structure_fields, target_manager, {}, dm.Weir
-        )
-
-        assert result is created_feat
-        # manager was called with a line geometry spanning m-l/2=40 to m+l/2=60
-        call_geom = target_manager.create_new.call_args[0][0]
-        polyline = call_geom.asPolyline()
-        assert polyline[0].x() == pytest.approx(40.0)
-        assert polyline[-1].x() == pytest.approx(60.0)
 
 
 class TestCrossSectionIntegration:
@@ -842,3 +793,193 @@ def test_get_channel_cuts(mids, lengths, expected_cuts):
         LinearIntegrator.get_conduit_cuts(channel_structures, channel_length)
         == expected_cuts
     )
+
+
+class TestLineStructurePlacement:
+    def test_get_structure_data_for_point(self, channel_feature, point_structure_feature):
+        """get_structure_data with point geometry returns length=0 and correct m."""
+        length_config = sm.FieldMapConfig(
+            method=sm.ColumnImportMethod.ATTRIBUTE,
+            source_attribute="length",
+            default_value=5.0,
+        )
+        strategy = LineStructurePlacement(length_config=length_config, simplify_geometry=True)
+        result = strategy.get_structure_data(point_structure_feature, channel_feature)
+        assert result.conduit_id == 1
+        assert result.feature["id"] == 4
+        assert result.m == 50.0
+        assert result.length == 10.0
+
+    def test_get_structure_data_for_line(self, channel_feature, line_structure_feature):
+        """LineStructurePlacement.get_structure_data with line geometry returns correct data."""
+        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
+        result = strategy.get_structure_data(line_structure_feature, channel_feature)
+        assert result.conduit_id == 1
+        assert result.feature["id"] == 3
+        assert result.m == 50.0
+        assert result.length == 50.0
+
+    def test_place_structure(self, channel_feature, line_structure_feature, structure_fields):
+        """LineStructurePlacement.place_structure returns a feature with correct geometry."""
+        from unittest.mock import MagicMock
+        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
+        conduit_geom = channel_feature.geometry()
+        structure_data = LinearIntegratorStructureData(
+            conduit_id=1, feature=line_structure_feature, m=50.0, length=20.0
+        )
+        target_manager = MagicMock()
+        created_feat = QgsFeature(structure_fields)
+        target_manager.create_new.return_value = created_feat
+
+        result = strategy.place_structure(
+            conduit_geom, structure_data, structure_fields, target_manager, {}, dm.Weir
+        )
+
+        assert result is created_feat
+        # manager was called with a line geometry spanning m-l/2=40 to m+l/2=60
+        call_geom = target_manager.create_new.call_args[0][0]
+        polyline = call_geom.asPolyline()
+        assert polyline[0].x() == pytest.approx(40.0)
+        assert polyline[-1].x() == pytest.approx(60.0)
+
+    @pytest.mark.parametrize("initial_nodes", [["start"], [], ["start", "end"]])
+    def test_update_structure_nodes(self, initial_nodes):
+        """update_structure_nodes assigns connection_node_id_start/_end; creates missing nodes."""
+        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
+
+        start_point = QgsPointXY(0, 0)
+        end_point = QgsPointXY(100, 0)
+        all_points = {"start": (start_point, 101), "end": (end_point, 102)}
+        node_by_location = {
+            all_points[name][0]: all_points[name][1] for name in initial_nodes
+        }
+
+        node_layer_fields = QgsFields()
+        node_layer_fields.append(QgsField("id", QVariant.Int))
+
+        # prepare mock node features for nodes that will be created
+        mock_feats = []
+        for name, (pt, node_id) in all_points.items():
+            if name not in initial_nodes:
+                feat = QgsFeature(node_layer_fields)
+                feat.setGeometry(QgsGeometry.fromPointXY(pt))
+                feat["id"] = node_id
+                mock_feats.append(feat)
+
+        node_manager = MagicMock()
+        def mock_create_new(geom, fields, attributes):
+            feat = mock_feats.pop(0)
+            node_by_location[geom.asPoint()] = feat["id"]
+            return feat
+        node_manager.create_new.side_effect = mock_create_new
+
+        line_fields = QgsFields()
+        line_fields.append(QgsField("id", QVariant.Int))
+        line_fields.append(QgsField("connection_node_id_start", QVariant.Int))
+        line_fields.append(QgsField("connection_node_id_end", QVariant.Int))
+        feature = QgsFeature(line_fields)
+        feature.setGeometry(
+            QgsGeometry.fromPolylineXY([start_point, end_point])
+        )
+
+        new_nodes = strategy.update_structure_nodes(
+            feature, node_by_location, node_layer_fields, {}, node_manager
+        )
+
+        expected_new = [
+            all_points[name][1] for name in ["start", "end"] if name not in initial_nodes
+        ]
+        assert [n["id"] for n in new_nodes] == expected_new
+        assert feature["connection_node_id_start"] == 101
+        assert feature["connection_node_id_end"] == 102
+    """Unit tests for PointStructurePlacement strategy."""
+
+    def test_get_structure_data_point(self, channel_feature, point_structure_feature):
+        """get_structure_data with point geometry returns length=0 and correct m."""
+        strategy = PointStructurePlacement()
+        result = strategy.get_structure_data(point_structure_feature, channel_feature)
+        assert result.conduit_id == 1
+        assert result.length == 0
+        assert result.m == pytest.approx(50.0)
+
+    def test_get_structure_data_line(self, channel_feature, line_structure_feature):
+        """get_structure_data with line geometry uses centroid, returns length=0."""
+        strategy = PointStructurePlacement()
+        result = strategy.get_structure_data(line_structure_feature, channel_feature)
+        assert result.conduit_id == 1
+        assert result.length == 0
+        assert result.m == pytest.approx(50.0)
+
+    def test_place_structure(self, channel_feature, point_structure_feature, structure_fields):
+        """place_structure returns a point feature at the projected position."""
+        from unittest.mock import MagicMock
+        strategy = PointStructurePlacement()
+        conduit_geom = channel_feature.geometry()
+        structure_data = LinearIntegratorStructureData(
+            conduit_id=1, feature=point_structure_feature, m=30.0, length=0
+        )
+        target_manager = MagicMock()
+        created_feat = QgsFeature(structure_fields)
+        target_manager.create_new.return_value = created_feat
+
+        result = strategy.place_structure(
+            conduit_geom, structure_data, structure_fields, target_manager, {}, dm.Pump
+        )
+
+        assert result is created_feat
+        call_geom = target_manager.create_new.call_args[0][0]
+        assert call_geom.type() == QgsWkbTypes.GeometryType.PointGeometry
+        assert call_geom.asPoint().x() == pytest.approx(30.0)
+        assert call_geom.asPoint().y() == pytest.approx(0.0)
+
+    def test_update_structure_nodes_new_node(self, structure_fields):
+        """update_structure_nodes creates a node and assigns connection_node_id."""
+        from unittest.mock import MagicMock
+        strategy = PointStructurePlacement()
+        point = QgsPointXY(50, 0)
+        node_by_location = {}
+
+        node_layer_fields = QgsFields()
+        node_layer_fields.append(QgsField("id", QVariant.Int))
+        node_feat = QgsFeature(node_layer_fields)
+        node_feat["id"] = 99
+
+        node_manager = MagicMock()
+        node_manager.create_new.return_value = node_feat
+
+        feature = QgsFeature(structure_fields)
+        feature.setGeometry(QgsGeometry.fromPointXY(point))
+        structure_fields.append(QgsField("connection_node_id", QVariant.Int))
+        feature = QgsFeature(structure_fields)
+        feature.setGeometry(QgsGeometry.fromPointXY(point))
+
+        new_nodes = strategy.update_structure_nodes(
+            feature, node_by_location, node_layer_fields, {}, node_manager
+        )
+
+        assert new_nodes == [node_feat]
+        assert feature["connection_node_id"] == 99
+        assert node_by_location[point] == 99
+
+    def test_update_structure_nodes_existing_node(self, structure_fields):
+        """update_structure_nodes reuses existing node, returns no new nodes."""
+        from unittest.mock import MagicMock
+        strategy = PointStructurePlacement()
+        point = QgsPointXY(50, 0)
+        node_by_location = {point: 42}
+
+        node_layer_fields = QgsFields()
+        node_layer_fields.append(QgsField("id", QVariant.Int))
+        node_manager = MagicMock()
+
+        structure_fields.append(QgsField("connection_node_id", QVariant.Int))
+        feature = QgsFeature(structure_fields)
+        feature.setGeometry(QgsGeometry.fromPointXY(point))
+
+        new_nodes = strategy.update_structure_nodes(
+            feature, node_by_location, node_layer_fields, {}, node_manager
+        )
+
+        assert new_nodes == []
+        assert feature["connection_node_id"] == 42
+        node_manager.create_new.assert_not_called()
