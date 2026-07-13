@@ -87,11 +87,17 @@ class SpatialProcessor(Processor):
 
     @classmethod
     def create_new_point_geometry(cls, src_geom):
-        """Create a new point feature geometry based on the source feature."""
-        src_point = src_geom.asPoint()
-        dst_point = src_point
-        dst_geometry = QgsGeometry.fromPointXY(dst_point)
-        return dst_geometry
+        """Create a new point feature geometry based on the source feature.
+
+        Accepts point or line geometry; for lines the centroid is used.
+        """
+        geometry_type = src_geom.type()
+        if geometry_type == QgsWkbTypes.GeometryType.PointGeometry:
+            return QgsGeometry.fromPointXY(src_geom.asPoint())
+        elif geometry_type == QgsWkbTypes.GeometryType.LineGeometry:
+            return QgsGeometry.fromPointXY(src_geom.centroid().asPoint())
+        else:
+            raise NotImplementedError(f"Unsupported geometry type: '{geometry_type}'")
 
 
 class CrossSectionDataProcessor(Processor):
