@@ -7,6 +7,7 @@ from typing import Optional, Type
 from qgis.core import NULL, QgsFeature, QgsGeometry, QgsWkbTypes
 
 from threedi_schematisation_editor import data_models as dm
+from threedi_schematisation_editor.enumerators import GeometryType
 from threedi_schematisation_editor.utils import (
     get_feature_by_id,
     get_features_by_expression,
@@ -596,12 +597,18 @@ class PipeIntegrator(LinearIntegrator):
     @classmethod
     def from_importer(cls, integrate_layer, importer):
         """extract data from importer to created matching integrator"""
-        if importer.target_model_cls == dm.Pump:
+        geom_type = importer.target_model_cls.__geometrytype__
+        if geom_type == GeometryType.Point:
             strategy = PointStructurePlacement()
-        else:
+        elif geom_type == GeometryType.Linestring:
             strategy = LineStructurePlacement(
                 importer.import_settings.point_to_line_conversion.length,
                 importer.target_model_cls != dm.Culvert,
+            )
+        else:
+            raise NotImplementedError(
+                f"No placement strategy for geometry type '{geom_type}' "
+                f"(model: {importer.target_model_cls.__name__})"
             )
         return cls(
             integrate_layer,
@@ -683,12 +690,18 @@ class ChannelIntegrator(LinearIntegrator):
     @classmethod
     def from_importer(cls, integrate_layer, cross_section_layer, importer):
         """extract data from importer to created matching integrator"""
-        if importer.target_model_cls == dm.Pump:
+        geom_type = importer.target_model_cls.__geometrytype__
+        if geom_type == GeometryType.Point:
             strategy = PointStructurePlacement()
-        else:
+        elif geom_type == GeometryType.Linestring:
             strategy = LineStructurePlacement(
                 importer.import_settings.point_to_line_conversion.length,
                 importer.target_model_cls != dm.Culvert,
+            )
+        else:
+            raise NotImplementedError(
+                f"No placement strategy for geometry type '{geom_type}' "
+                f"(model: {importer.target_model_cls.__name__})"
             )
         return cls(
             integrate_layer,
