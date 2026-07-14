@@ -520,27 +520,38 @@ def simple_layer():
 
 
 @pytest.mark.parametrize(
-    "config, expected_keys",
+    "config, values, expected_keys",
     [
-        [{"method": "source_attribute", "source_attribute": "code"}, ["abc", "xyz"]],
-        [{"method": "expression", "expression": '"code"'}, ["abc", "xyz"]],
-        [{"method": "source_attribute", "source_attribute": "bar"}, []],
-        [{}, []],
-        [{"method": "auto"}, []],
-        [{"method": "expression", "expression": '"code(('}, []],
+        [
+            {"method": "source_attribute", "source_attribute": "code"},
+            ["abc", "xyz"],
+            ["abc", "xyz"],
+        ],
+        [
+            {"method": "expression", "expression": '"code"'},
+            ["abc", "xyz"],
+            ["abc", "xyz"],
+        ],
+        [{"method": "source_attribute", "source_attribute": "bar"}, ["abc", "xyz"], []],
+        [{}, ["abc", "xyz"], []],
+        [{"method": "auto"}, ["abc", "xyz"], []],
+        [{"method": "expression", "expression": '"code(('}, ["abc", "xyz"], []],
+        [
+            {"method": "source_attribute", "source_attribute": "code"},
+            ["abc", "abc", "abc"],
+            [],
+        ],
     ],
 )
-def test_build_feature_mapping(config, expected_keys):
+def test_build_feature_mapping(config, values, expected_keys):
     layer = QgsVectorLayer("NoGeometry", "test", "memory")
     provider = layer.dataProvider()
     provider.addAttributes([QgsField("code", QVariant.String)])
     layer.updateFields()
-    features = {}
-    for value in ["abc", "xyz"]:
+    for value in values:
         f = QgsFeature(layer.fields())
         f.setAttribute("code", value)
-        features[value] = f
-    provider.addFeatures(features.values())
+        provider.addFeatures([f])
     result = build_feature_mapping(layer, config)
     assert set(result.keys()) == set(expected_keys)
     for feature in layer.getFeatures():

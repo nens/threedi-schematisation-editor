@@ -772,7 +772,8 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         )
         match_row_dict = {
             "attribute_match_target": FieldMapRow(
-                label="Match field in pipe", config=target_config.model_construct(method=None)
+                label="Match field in pipe",
+                config=target_config.model_construct(method=None),
             ),
             "attribute_match_input": FieldMapRow(
                 label="Source value", config=source_config.model_construct(method=None)
@@ -787,7 +788,10 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         # ("Match field in connection node") so it doesn't resize when table changes
         header = self.match_field_map_widget.table_view.horizontalHeader()
         fm = self.match_field_map_widget.table_view.fontMetrics()
-        min_width = fm.horizontalAdvance(f"Match field in {dm.ConnectionNode.__layername__}") + 16
+        min_width = (
+            fm.horizontalAdvance(f"Match field in {dm.ConnectionNode.__layername__}")
+            + 16
+        )
         header.setSectionResizeMode(0, QHeaderView.Fixed)
         self.match_field_map_widget.table_view.setColumnWidth(0, min_width)
         linking_layout.addWidget(self.match_field_map_widget)
@@ -897,12 +901,17 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self.dataChanged.emit()
 
     def _sync_match_input_config(self):
-        if not self.model.attribute_match_enabled or not self.match_field_map_widget.is_valid:
+        if (
+            not self.model.attribute_match_enabled
+            or not self.match_field_map_widget.is_valid
+        ):
             self.model.attribute_match_target_config = None
             self.model.attribute_match_input_config = None
             return
         settings = self.match_field_map_widget.get_settings()
-        self.model.attribute_match_target_config = settings.get("attribute_match_target")
+        self.model.attribute_match_target_config = settings.get(
+            "attribute_match_target"
+        )
         self.model.attribute_match_input_config = settings.get("attribute_match_input")
 
     def _on_spatial_match_changed(self, checked):
@@ -1036,9 +1045,13 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             self.match_no_table_radio.setChecked(True)
         deserialize_data = {}
         if loaded_model.attribute_match_target_config:
-            deserialize_data["attribute_match_target"] = loaded_model.attribute_match_target_config.model_dump()
+            deserialize_data["attribute_match_target"] = (
+                loaded_model.attribute_match_target_config.model_dump()
+            )
         if loaded_model.attribute_match_input_config:
-            deserialize_data["attribute_match_input"] = loaded_model.attribute_match_input_config.model_dump()
+            deserialize_data["attribute_match_input"] = (
+                loaded_model.attribute_match_input_config.model_dump()
+            )
         if deserialize_data:
             self.match_field_map_widget.deserialize(deserialize_data)
         self.match_spatial_checkbox.setChecked(loaded_model.spatial_match_enabled)
