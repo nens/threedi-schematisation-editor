@@ -58,27 +58,28 @@ def get_field_config_value(field_config, source_feat, expression_context=None):
 def build_feature_mapping(layer, field_config_dict):
     """Build a {value: feature} mapping from a layer using a FieldMapConfig dict.
 
-    Supports ATTRIBUTE and EXPRESSION methods. Returns an empty dict on
-    missing, invalid, or unsupported config.
+    Supports ATTRIBUTE (including value_map) and EXPRESSION methods.
+    Returns an empty dict on missing or unsupported config.
+    Features resolving to None or NULL are skipped.
+    Non-unique values are not detected; last match wins.
     """
+    mapping = {}
     if not field_config_dict:
-        return {}
+        return mapping
     method = field_config_dict.get("method")
-    if method == ColumnImportMethod.ATTRIBUTE.value:
-        col = field_config_dict.get(ColumnImportMethod.ATTRIBUTE.value)
-        if col:
-            return {f[col]: f for f in layer.getFeatures()}
-    elif method == ColumnImportMethod.EXPRESSION.value:
-        expression_str = field_config_dict.get(ColumnImportMethod.EXPRESSION.value)
-        expression = QgsExpression(expression_str)
-        if expression.isValid():
-            context = QgsExpressionContext()
-            mapping = {}
-            for feature in layer.getFeatures():
-                context.setFeature(feature)
-                mapping[expression.evaluate(context)] = feature
+    if method == ColumnImportMethod.EXPRESSION.value:
+        expression = QgsExpression(
+            field_config_dict.get(ColumnImportMethod.EXPRESSION.value)
+        )
+        if not expression.isValid():
             return mapping
-    return {}
+    elif method != ColumnImportMethod.ATTRIBUTE.value:
+        return mapping
+    for feature in layer.getFeatures():
+        value = get_field_config_value(field_config_dict, feature)
+        if value is not None and value != NULL:
+            mapping[value] = feature
+    return mapping
 
 
 def update_attributes(fields_config, model_cls, source_feat, *new_features):

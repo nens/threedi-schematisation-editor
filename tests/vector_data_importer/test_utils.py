@@ -511,34 +511,38 @@ def simple_layer():
     provider = layer.dataProvider()
     provider.addAttributes([QgsField("code", QVariant.String)])
     layer.updateFields()
-    f1, f2 = QgsFeature(), QgsFeature()
-    f1.setFields(layer.fields())
-    f2.setFields(layer.fields())
-    f1["code"] = "abc"
-    f2["code"] = "xyz"
+    f1 = QgsFeature(layer.fields())
+    f2 = QgsFeature(layer.fields())
+    f1.setAttribute("code", "abc")
+    f2.setAttribute("code", "xyz")
     provider.addFeatures([f1, f2])
     return layer
 
 
-class TestBuildFeatureMapping:
-    def test_attribute_method_returns_mapping(self, simple_layer):
-        config = {"method": "source_attribute", "source_attribute": "code"}
-        result = build_feature_mapping(simple_layer, config)
-        assert set(result.keys()) == {"abc", "xyz"}
-
-    def test_expression_method_returns_mapping(self, simple_layer):
-        config = {"method": "expression", "expression": '"code"'}
-        result = build_feature_mapping(simple_layer, config)
-        assert set(result.keys()) == {"abc", "xyz"}
-
-    def test_empty_config_returns_empty_dict(self, simple_layer):
-        assert build_feature_mapping(simple_layer, None) == {}
-        assert build_feature_mapping(simple_layer, {}) == {}
-
-    def test_unknown_method_returns_empty_dict(self, simple_layer):
-        config = {"method": "auto"}
-        assert build_feature_mapping(simple_layer, config) == {}
-
-    def test_invalid_expression_returns_empty_dict(self, simple_layer):
-        config = {"method": "expression", "expression": "((( invalid"}
-        assert build_feature_mapping(simple_layer, config) == {}
+@pytest.mark.parametrize(
+    "config, expected_keys",
+    [
+        [{"method": "source_attribute", "source_attribute": "code"}, ["abc", "xyz"]],
+        [{"method": "expression", "expression": '"code"'}, ["abc", "xyz"]],
+        [{"method": "source_attribute", "source_attribute": "bar"}, []],
+        [{}, []],
+        [{"method": "auto"}, []],
+        [{"method": "expression", "expression": '"code(('}, []],
+    ],
+)
+def test_build_feature_mapping(config, expected_keys):
+    layer = QgsVectorLayer("NoGeometry", "test", "memory")
+    provider = layer.dataProvider()
+    provider.addAttributes([QgsField("code", QVariant.String)])
+    layer.updateFields()
+    features = {}
+    for value in ["abc", "xyz"]:
+        f = QgsFeature(layer.fields())
+        f.setAttribute("code", value)
+        features[value] = f
+    provider.addFeatures(features.values())
+    result = build_feature_mapping(layer, config)
+    assert set(result.keys()) == set(expected_keys)
+    for feature in layer.getFeatures():
+        if feature["code"] in expected_keys:
+            assert result[feature["code"]] == feature
