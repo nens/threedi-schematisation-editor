@@ -222,14 +222,15 @@ class PointToLineSettings(BaseModel):
     )
 
 
-class PumpDirectionSettings(BaseModel):
+class PumpSettings(BaseModel):
     metadata: ClassVar[FieldMapMetadata] = FieldMapMetadata(
         allowed_methods=[
             ColumnImportMethod.ATTRIBUTE,
+            ColumnImportMethod.EXPRESSION,
             ColumnImportMethod.DEFAULT,
         ]
     )
-    name: ClassVar[str] = "pump_direction"
+    name: ClassVar[str] = "pumps"
     direction: FieldMapConfig = FieldMapConfig[int].with_metadata(metadata)(
         method=ColumnImportMethod.DEFAULT, default_value=1
     )
@@ -293,8 +294,7 @@ class ImportSettings(BaseModel):
         CrossSectionLocationSettings()
     )
     surface_linking: SurfaceLinkingSettings = SurfaceLinkingSettings()
-    pump_direction: PumpDirectionSettings = PumpDirectionSettings()
+    pump_direction: PumpSettings = PumpSettings()
     fields: dict[str, FieldMapConfig] = {}
     connection_node_fields: dict[str, FieldMapConfig] = {}
     surface_map_fields: dict[str, FieldMapConfig] = {}
-    pump_map_fields: dict[str, FieldMapConfig] = {}
