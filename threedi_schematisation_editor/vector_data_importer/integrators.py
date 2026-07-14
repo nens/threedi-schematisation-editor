@@ -653,23 +653,24 @@ class PipeIntegrator(LinearIntegrator):
     @classmethod
     def from_importer(cls, integrate_layer, importer):
         """extract data from importer to created matching integrator"""
-        if importer.target_model_cls.__geometrytype__ == GeometryType.Point:
+        model_cls = importer.integration_model_cls
+        if model_cls.__geometrytype__ == GeometryType.Point:
             strategy = PointStructurePlacement()
-        elif importer.target_model_cls.__geometrytype__ == GeometryType.Linestring:
+        elif model_cls.__geometrytype__ == GeometryType.Linestring:
             strategy = LineStructurePlacement(
                 importer.import_settings.point_to_line_conversion.length,
-                importer.target_model_cls != dm.Culvert,
+                model_cls != dm.Culvert,
             )
         else:
             raise NotImplementedError(
-                f"No placement strategy for geometry type '{importer.target_model_cls.__geometrytype__}' "
-                f"(model: {importer.target_model_cls.__name__})"
+                f"No placement strategy for geometry type '{model_cls.__geometrytype__}' "
+                f"(model: {model_cls.__name__})"
             )
         return cls(
             integrate_layer,
-            importer.target_model_cls,
-            importer.target_layer,
-            importer.processor.target_manager,
+            model_cls,
+            importer.integration_layer,
+            importer.integration_manager,
             importer.node_layer,
             importer.processor.node_manager,
             importer.import_settings,
