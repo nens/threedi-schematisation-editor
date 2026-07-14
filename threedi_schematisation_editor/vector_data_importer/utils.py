@@ -55,6 +55,32 @@ def get_field_config_value(field_config, source_feat, expression_context=None):
     return field_value
 
 
+def build_feature_mapping(layer, field_config_dict):
+    """Build a {value: feature} mapping from a layer using a FieldMapConfig dict.
+
+    Supports ATTRIBUTE and EXPRESSION methods. Returns an empty dict on
+    missing, invalid, or unsupported config.
+    """
+    if not field_config_dict:
+        return {}
+    method = field_config_dict.get("method")
+    if method == ColumnImportMethod.ATTRIBUTE.value:
+        col = field_config_dict.get(ColumnImportMethod.ATTRIBUTE.value)
+        if col:
+            return {f[col]: f for f in layer.getFeatures()}
+    elif method == ColumnImportMethod.EXPRESSION.value:
+        expression_str = field_config_dict.get(ColumnImportMethod.EXPRESSION.value)
+        expression = QgsExpression(expression_str)
+        if expression.isValid():
+            context = QgsExpressionContext()
+            mapping = {}
+            for feature in layer.getFeatures():
+                context.setFeature(feature)
+                mapping[expression.evaluate(context)] = feature
+            return mapping
+    return {}
+
+
 def update_attributes(fields_config, model_cls, source_feat, *new_features):
     expression_context = QgsExpressionContext()
     expression_context.setFeature(source_feat)

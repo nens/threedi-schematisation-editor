@@ -28,6 +28,7 @@ from shapely.testing import assert_geometries_equal
 from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
     FeatureManager,
+    build_feature_mapping,
     get_field_config_value,
     get_float_value_from_feature,
     get_point_locator,
@@ -497,3 +498,47 @@ def test_compute_selected_ids_unknown_field_warns_and_returns_candidates():
         result = compute_selected_ids(layer, settings)
     assert result is None  # falls back to candidate_ids (None = all)
     assert any(issubclass(w.category, FeaturesImporterWarning) for w in caught)
+
+
+# ---------------------------------------------------------------------------
+# build_feature_mapping
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def simple_layer():
+    layer = QgsVectorLayer("NoGeometry", "test", "memory")
+    provider = layer.dataProvider()
+    provider.addAttributes([QgsField("code", QVariant.String)])
+    layer.updateFields()
+    f1, f2 = QgsFeature(), QgsFeature()
+    f1.setFields(layer.fields())
+    f2.setFields(layer.fields())
+    f1["code"] = "abc"
+    f2["code"] = "xyz"
+    provider.addFeatures([f1, f2])
+    return layer
+
+
+class TestBuildFeatureMapping:
+    def test_attribute_method_returns_mapping(self, simple_layer):
+        config = {"method": "source_attribute", "source_attribute": "code"}
+        result = build_feature_mapping(simple_layer, config)
+        assert set(result.keys()) == {"abc", "xyz"}
+
+    def test_expression_method_returns_mapping(self, simple_layer):
+        config = {"method": "expression", "expression": '"code"'}
+        result = build_feature_mapping(simple_layer, config)
+        assert set(result.keys()) == {"abc", "xyz"}
+
+    def test_empty_config_returns_empty_dict(self, simple_layer):
+        assert build_feature_mapping(simple_layer, None) == {}
+        assert build_feature_mapping(simple_layer, {}) == {}
+
+    def test_unknown_method_returns_empty_dict(self, simple_layer):
+        config = {"method": "auto"}
+        assert build_feature_mapping(simple_layer, config) == {}
+
+    def test_invalid_expression_returns_empty_dict(self, simple_layer):
+        config = {"method": "expression", "expression": "((( invalid"}
+        assert build_feature_mapping(simple_layer, config) == {}
