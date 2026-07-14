@@ -496,7 +496,9 @@ class PumpsImporter(IntegrationImporter):
 
     @property
     def modifiable_layers(self):
-        layers = [self.target_layer, self.node_layer, self.pump_map_layer]
+        layers = [self.target_layer, self.node_layer]
+        if isinstance(self.processor, PumpLineProcessor):
+            layers.append(self.pump_map_layer)
         if self.integrator:
             layers += self.integrator.modifiable_layers
         return layers
