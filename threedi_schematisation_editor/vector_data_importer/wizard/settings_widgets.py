@@ -752,31 +752,44 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         match_table_group.addButton(self.match_no_table_radio)
         match_table_group.addButton(self.match_pipe_table_radio)
         match_table_group.addButton(self.match_node_table_radio)
-        self.match_table_col = QComboBox()
         match_row = QHBoxLayout()
         match_row.addWidget(self.match_no_table_radio)
         match_row.addWidget(self.match_pipe_table_radio)
         match_row.addWidget(self.match_node_table_radio)
-        match_row.addWidget(QLabel("Column:"))
-        match_row.addWidget(self.match_table_col)
         match_row.addStretch()
         linking_layout.addLayout(match_row)
-        config = create_field_map_config(
+        target_config = create_field_map_config(
             allowed_methods=[
                 ColumnImportMethod.ATTRIBUTE,
                 ColumnImportMethod.EXPRESSION,
             ]
         )
-        row_dict = {
+        source_config = create_field_map_config(
+            allowed_methods=[
+                ColumnImportMethod.ATTRIBUTE,
+                ColumnImportMethod.EXPRESSION,
+            ]
+        )
+        match_row_dict = {
+            "attribute_match_target": FieldMapRow(
+                label="Match field in pipe", config=target_config.model_construct(method=None)
+            ),
             "attribute_match_input": FieldMapRow(
-                label="Source value", config=config.model_construct(method=None)
-            )
+                label="Source value", config=source_config.model_construct(method=None)
+            ),
         }
         self.match_field_map_widget = FieldMapWidget(
-            row_dict,
-            hidden_columns=[FieldMapColumn.LABEL, FieldMapColumn.DEFAULT_VALUE],
+            match_row_dict,
+            hidden_columns=[FieldMapColumn.DEFAULT_VALUE],
         )
         self.match_field_map_widget.open_persistent_editors()
+        # Fix the label column width to fit the longest possible label
+        # ("Match field in connection node") so it doesn't resize when table changes
+        header = self.match_field_map_widget.table_view.horizontalHeader()
+        fm = self.match_field_map_widget.table_view.fontMetrics()
+        min_width = fm.horizontalAdvance(f"Match field in {dm.ConnectionNode.__layername__}") + 16
+        header.setSectionResizeMode(0, QHeaderView.Fixed)
+        self.match_field_map_widget.table_view.setColumnWidth(0, min_width)
         linking_layout.addWidget(self.match_field_map_widget)
 
         spat_row = QHBoxLayout()
@@ -793,8 +806,8 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         )
         self.search_distance.setValue(_defaults.search_distance)
         self.search_distance.setSuffix(" m")
-        spat_row.addWidget(self.match_spatial_checkbox)
         spat_row.addWidget(self.search_distance)
+        spat_row.addWidget(self.match_spatial_checkbox)
         spat_row.addStretch()
         linking_layout.addLayout(spat_row)
 
@@ -809,7 +822,6 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self.match_no_table_radio.toggled.connect(self._on_match_table_changed)
         self.match_pipe_table_radio.toggled.connect(self._on_match_table_changed)
         self.match_node_table_radio.toggled.connect(self._on_match_table_changed)
-        self.match_table_col.currentTextChanged.connect(self._on_match_col_changed)
         self.match_field_map_widget.dataChanged.connect(self._on_match_input_changed)
         self.match_spatial_checkbox.toggled.connect(self._on_spatial_match_changed)
         self.search_distance.valueChanged.connect(self._on_search_distance_changed)
@@ -825,8 +837,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
 
     def _update_linking_enabled(self):
         match_active = not self.match_no_table_radio.isChecked()
-        for w in (self.match_table_col, self.match_field_map_widget):
-            w.setEnabled(match_active)
+        self.match_field_map_widget.setEnabled(match_active)
         self.search_distance.setEnabled(self.match_spatial_checkbox.isChecked())
 
     def _set_wide_mapping_enabled(self, enabled):
@@ -847,9 +858,20 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self.model.attribute_match_table = (
             match_model.__tablename__ if match_model is not None else None
         )
-        self._repopulate_match_col()
+        if match_model is not None:
+            self._update_target_label(match_model)
         self._update_linking_enabled()
         self.dataChanged.emit()
+
+    def _update_target_label(self, match_model):
+        label = f"Match field in {match_model.__layername__}"
+        table_model = self.match_field_map_widget.table_model
+        table_model.attr_to_label_map["attribute_match_target"] = label
+        table_model.row_dict["attribute_match_target"].label = label
+        table_model.set_fixed_source_attributes_from_data_model(
+            "attribute_match_target", match_model
+        )
+        table_model.layoutChanged.emit()
 
     def _on_sewerage_type_config_changed(self):
         self._sync_sewerage_type_config()
@@ -870,26 +892,18 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self._update_linking_enabled()
         self.dataChanged.emit()
 
-    def _on_match_col_changed(self, text):
-        self.model.attribute_match_col = text or None
-        self._sync_match_input_config()
-        self._update_linking_enabled()
-        self.dataChanged.emit()
-
     def _on_match_input_changed(self):
         self._sync_match_input_config()
         self.dataChanged.emit()
 
     def _sync_match_input_config(self):
-        input_cfg = (
-            self.match_field_map_widget.get_settings().get("attribute_match_input")
-            if self.model.attribute_match_enabled
-            and self.model.attribute_match_table
-            and self.model.attribute_match_col
-            and self.match_field_map_widget.is_valid
-            else None
-        )
-        self.model.attribute_match_input_config = input_cfg
+        if not self.model.attribute_match_enabled or not self.match_field_map_widget.is_valid:
+            self.model.attribute_match_target_config = None
+            self.model.attribute_match_input_config = None
+            return
+        settings = self.match_field_map_widget.get_settings()
+        self.model.attribute_match_target_config = settings.get("attribute_match_target")
+        self.model.attribute_match_input_config = settings.get("attribute_match_input")
 
     def _on_spatial_match_changed(self, checked):
         self.model.spatial_match_enabled = checked
@@ -903,16 +917,6 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
     def _on_selected_pipes_only_changed(self, checked):
         self.model.selected_pipes_only = checked
         self.dataChanged.emit()
-
-    def _repopulate_match_col(self):
-        self.match_table_col.blockSignals(True)
-        self.match_table_col.clear()
-        match_model = self._match_table_model()
-        if match_model is not None:
-            self.match_table_col.addItem("")
-            for f in fields(match_model):
-                self.match_table_col.addItem(f.name)
-        self.match_table_col.blockSignals(False)
 
     def _match_table_model(self):
         if self.match_pipe_table_radio.isChecked():
@@ -946,17 +950,13 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         match_model = self._match_table_model()
         match_table = match_model.__tablename__ if match_model is not None else None
         match_by_table = not self.match_no_table_radio.isChecked()
-        match_col = (
-            (self.match_table_col.currentText() or None) if match_by_table else None
+        settings = (
+            self.match_field_map_widget.get_settings()
+            if match_by_table and self.match_field_map_widget.is_valid
+            else {}
         )
-        input_cfg = (
-            self.match_field_map_widget.get_settings().get("attribute_match_input")
-            if match_by_table
-            and match_table
-            and match_col
-            and self.match_field_map_widget.is_valid
-            else None
-        )
+        target_cfg = settings.get("attribute_match_target")
+        input_cfg = settings.get("attribute_match_input")
         sewerage_type_cfg = (
             self.sewerage_type_field_map_widget.get_settings().get("sewerage_type")
             if self.fmt_long_radio.isChecked()
@@ -972,7 +972,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             attribute_match_enabled=match_by_table,
             spatial_match_enabled=self.match_spatial_checkbox.isChecked(),
             attribute_match_table=match_table,
-            attribute_match_col=match_col,
+            attribute_match_target_config=target_cfg,
             attribute_match_input_config=input_cfg,
         )
         self._update_linking_enabled()
@@ -1027,19 +1027,20 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         if loaded_model.attribute_match_enabled:
             if loaded_model.attribute_match_table == dm.Pipe.__tablename__:
                 self.match_pipe_table_radio.setChecked(True)
+                match_model = dm.Pipe
             else:
                 self.match_node_table_radio.setChecked(True)
-            self._repopulate_match_col()
-            if loaded_model.attribute_match_col:
-                self.match_table_col.setCurrentText(loaded_model.attribute_match_col)
+                match_model = dm.ConnectionNode
+            self._update_target_label(match_model)
         else:
             self.match_no_table_radio.setChecked(True)
+        deserialize_data = {}
+        if loaded_model.attribute_match_target_config:
+            deserialize_data["attribute_match_target"] = loaded_model.attribute_match_target_config.model_dump()
         if loaded_model.attribute_match_input_config:
-            self.match_field_map_widget.deserialize(
-                {
-                    "attribute_match_input": loaded_model.attribute_match_input_config.model_dump()
-                }
-            )
+            deserialize_data["attribute_match_input"] = loaded_model.attribute_match_input_config.model_dump()
+        if deserialize_data:
+            self.match_field_map_widget.deserialize(deserialize_data)
         self.match_spatial_checkbox.setChecked(loaded_model.spatial_match_enabled)
         self.search_distance.setValue(loaded_model.search_distance)
         self.selected_pipes_only.setChecked(loaded_model.selected_pipes_only)
