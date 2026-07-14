@@ -914,6 +914,34 @@ class PumpLineProcessor(StructureProcessor):
         }
         self.direction_config = import_settings.pump_direction.direction
 
+    def update_pump_node(self, pump_feat):
+        """Snap/create connection node at pump location; update pump geometry and FK."""
+        point = pump_feat.geometry().asPoint()
+        node, snapped = self.get_node(point)
+        new_nodes = []
+        if node:
+            pump_feat["connection_node_id"] = node["id"]
+            if snapped:
+                pump_feat.setGeometry(QgsGeometry.fromPointXY(node.geometry().asPoint()))
+            else:
+                new_nodes.append(node)
+        return new_nodes
+
+    def update_pump_map_nodes(self, pump_feat, pump_map_feat):
+        """Snap/create end connection node; update pump_map geometry and FKs."""
+        polyline = pump_map_feat.geometry().asPolyline()
+        end_node, snapped = self.get_node(polyline[-1])
+        new_nodes = []
+        if end_node:
+            pump_map_feat["pump_id"] = pump_feat["id"]
+            pump_map_feat["connection_node_id_end"] = end_node["id"]
+            if snapped:
+                polyline[-1] = end_node.geometry().asPoint()
+                pump_map_feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
+            else:
+                new_nodes.append(end_node)
+        return new_nodes
+
     def process_feature(self, src_feat):
         """Process source line feature into a Pump + PumpMap."""
         src_geom = get_src_geometry(src_feat)
@@ -921,9 +949,9 @@ class PumpLineProcessor(StructureProcessor):
             return {}
         polyline = src_geom.asPolyline()
         if self.transformation:
-            transformed = QgsGeometry.fromPolylineXY(polyline)
-            transformed.transform(self.transformation)
-            polyline = transformed.asPolyline()
+            geom = QgsGeometry.fromPolylineXY(polyline)
+            geom.transform(self.transformation)
+            polyline = geom.asPolyline()
 
         direction = get_field_config_value(self.direction_config, src_feat)
         if direction == -1:
@@ -931,39 +959,19 @@ class PumpLineProcessor(StructureProcessor):
 
         start_point, end_point = polyline[0], polyline[-1]
 
-        # Pump at start of line
-        start_node, start_snapped = self.get_node(start_point)
-        new_nodes = []
-        if start_node:
-            if start_snapped:
-                start_point = start_node.geometry().asPoint()
-            else:
-                new_nodes.append(start_node)
         pump_feat = self.target_manager.create_new(
             QgsGeometry.fromPointXY(start_point), self.target_fields
         )
-        if start_node:
-            pump_feat["connection_node_id"] = start_node["id"]
         update_attributes(self.fields_configurations, dm.Pump, src_feat, pump_feat)
+        new_nodes = self.update_pump_node(pump_feat)
 
-        # ConnectionNode at end of line
-        end_node, end_snapped = self.get_node(end_point)
-        if end_node:
-            if end_snapped:
-                end_point = end_node.geometry().asPoint()
-            else:
-                new_nodes.append(end_node)
-
-        # PumpMap connecting pump to end node
         pump_map_feat = self.pump_map_manager.create_new(
             QgsGeometry.fromPolylineXY([start_point, end_point]), self.pump_map_fields
         )
-        pump_map_feat["pump_id"] = pump_feat["id"]
-        if end_node:
-            pump_map_feat["connection_node_id_end"] = end_node["id"]
         update_attributes(
             self.pump_map_fields_configuration, dm.PumpMap, src_feat, pump_map_feat
         )
+        new_nodes += self.update_pump_map_nodes(pump_feat, pump_map_feat)
 
         update_attributes(
             self.cn_fields_configurations, dm.ConnectionNode, src_feat, *new_nodes
