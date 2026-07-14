@@ -438,9 +438,16 @@ class TestUtilityFunctions:
 
     def test_create_new_point_geometry_unsupported_type_raises(self):
         """create_new_point_geometry raises NotImplementedError for polygon geometry."""
-        geom = QgsGeometry.fromPolygonXY([[
-            QgsPointXY(0, 0), QgsPointXY(10, 0), QgsPointXY(10, 10), QgsPointXY(0, 0)
-        ]])
+        geom = QgsGeometry.fromPolygonXY(
+            [
+                [
+                    QgsPointXY(0, 0),
+                    QgsPointXY(10, 0),
+                    QgsPointXY(10, 10),
+                    QgsPointXY(0, 0),
+                ]
+            ]
+        )
         with pytest.raises(NotImplementedError):
             SpatialProcessor.create_new_point_geometry(geom)
 

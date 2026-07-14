@@ -425,7 +425,10 @@ class VDIWizard(QWizard):
         cancellation_token = CancellationToken()
         self.run_page.cancel_requested.connect(cancellation_token.cancel)
         importer.processor._cancellation_token = cancellation_token
-        if isinstance(importer, vdi_importers.IntegrationImporter) and importer.integrator:
+        if (
+            isinstance(importer, vdi_importers.IntegrationImporter)
+            and importer.integrator
+        ):
             importer.integrator._cancellation_token = cancellation_token
 
         # Setup worker and thread

@@ -304,7 +304,9 @@ def get_substring_geometry(curve, start_distance, end_distance, simplify=False):
     return substring_geometry
 
 
-def update_conduit_endpoints(feature, node_by_location, node_layer_fields, node_attributes, node_manager) -> list:
+def update_conduit_endpoints(
+    feature, node_by_location, node_layer_fields, node_attributes, node_manager
+) -> list:
     """Assign connection_node_id_start/_end for a cut conduit segment; create missing nodes."""
     new_nodes = []
     conduit_polyline = feature.geometry().asPolyline()

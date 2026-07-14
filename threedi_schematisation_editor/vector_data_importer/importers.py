@@ -18,7 +18,8 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionDataProcessor,
     CrossSectionLocationProcessor,
     LineProcessor,
-    SurfaceProcessor, PointProcessor,
+    PointProcessor,
+    SurfaceProcessor,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (
     get_point_locator,
@@ -441,7 +442,10 @@ class PumpsImporter(IntegrationImporter):
             conduit_layer=conduit_layer,
         )
         self.processor = PointProcessor(
-            self.target_layer, self.target_model_cls, self.node_layer, self.import_settings
+            self.target_layer,
+            self.target_model_cls,
+            self.node_layer,
+            self.import_settings,
         )
 
 
@@ -493,5 +497,3 @@ class SurfaceImporter(SpatialImporter):
     @property
     def modifiable_layers(self):
         return [self.target_layer, self.surface_map_layer]
-
-

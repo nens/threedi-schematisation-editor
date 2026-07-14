@@ -337,6 +337,44 @@ Other surface map properties are either use their own field map (long data) or u
 
 ## Integrators
 
+```mermaid
+classDiagram
+    class LinearIntegrator {
+        +get_conduit_matches()
+        +integrate_structure_features()
+        +strategy
+        
+    }
+
+    class PipeIntegrator {
+        +from_importer()
+        +integrate_features()
+    }
+
+    class ChannelIntegrator {
+        +from_importer()
+        +update_channel_cross_section_references()
+        +get_hanging_cross_sections()
+    }    
+    
+    class StructurePlacementStrategy {
+        +get_structure_data()
+        +place_structure()
+        +update_structure_nodes()
+    }  
+    
+    class PointStructurePlacement 
+    class LineStructurePlacement
+    
+    LinearIntegrator <|-- PipeIntegrator
+    LinearIntegrator <|-- ChannelIntegrator
+    
+    StructurePlacementStrategy <|-- PointStructurePlacement
+    StructurePlacementStrategy <|-- LineStructurePlacement
+    
+    LinearIntegrator *-- StructurePlacementStrategy
+```
+
 When objects are integrated onto existing structures, an `Integrator` handles finding the overlapping structure, splitting it, and adding connection nodes as needed. `LinearIntegrator` is the base class with two concrete subclasses:
 
 - `PipeIntegrator` — integrates new objects onto existing pipes.

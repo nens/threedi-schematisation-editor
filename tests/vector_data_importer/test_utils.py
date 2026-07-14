@@ -557,7 +557,9 @@ def test_build_feature_mapping(config, values, expected_keys):
 @pytest.mark.parametrize("simplify", [True, False])
 def test_get_substring_geometry(simplify):
     """get_substring_geometry returns a QgsGeometry; simplify reduces it to 2 vertices."""
-    from threedi_schematisation_editor.vector_data_importer.utils import get_substring_geometry
+    from threedi_schematisation_editor.vector_data_importer.utils import (
+        get_substring_geometry,
+    )
 
     line_geom = QgsGeometry.fromPolylineXY(
         [QgsPointXY(0, 0), QgsPointXY(50, 0), QgsPointXY(100, 0)]
@@ -577,7 +579,10 @@ def test_get_substring_geometry(simplify):
 def test_update_conduit_endpoints(initial_nodes):
     """update_conduit_endpoints assigns connection_node_id_start/_end; creates missing nodes."""
     from unittest.mock import MagicMock
-    from threedi_schematisation_editor.vector_data_importer.utils import update_conduit_endpoints
+
+    from threedi_schematisation_editor.vector_data_importer.utils import (
+        update_conduit_endpoints,
+    )
 
     points = {"start": (QgsPointXY(0, 0), 101), "end": (QgsPointXY(100, 0), 102)}
     start_point = QgsPointXY(0, 0)
@@ -597,10 +602,12 @@ def test_update_conduit_endpoints(initial_nodes):
     mock_features = features_to_add.copy()
 
     node_manager = MagicMock()
+
     def mock_create_new(geom, fields, attributes):
         feat = mock_features.pop(0)
         node_by_location[geom.asPoint()] = feat["id"]
         return feat
+
     node_manager.create_new.side_effect = mock_create_new
 
     conduit_fields = QgsFields()
@@ -611,7 +618,11 @@ def test_update_conduit_endpoints(initial_nodes):
     feature.setGeometry(QgsGeometry.fromPolylineXY([start_point, end_point]))
 
     result = update_conduit_endpoints(
-        feature, node_by_location, node_layer_fields, {"name": "Test Node"}, node_manager
+        feature,
+        node_by_location,
+        node_layer_fields,
+        {"name": "Test Node"},
+        node_manager,
     )
 
     assert result == features_to_add
