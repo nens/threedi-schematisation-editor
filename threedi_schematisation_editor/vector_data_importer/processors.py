@@ -927,13 +927,12 @@ class PumpLineProcessor(StructureProcessor):
                 new_nodes.append(node)
         return new_nodes
 
-    def update_pump_map_nodes(self, pump_feat, pump_map_feat):
+    def update_pump_map_nodes(self, pump_map_feat):
         """Snap/create end connection node; update pump_map geometry and FKs."""
         polyline = pump_map_feat.geometry().asPolyline()
         end_node, snapped = self.get_node(polyline[-1])
         new_nodes = []
         if end_node:
-            pump_map_feat["pump_id"] = pump_feat["id"]
             pump_map_feat["connection_node_id_end"] = end_node["id"]
             if snapped:
                 polyline[-1] = end_node.geometry().asPoint()
@@ -971,7 +970,8 @@ class PumpLineProcessor(StructureProcessor):
         update_attributes(
             self.pump_map_fields_configuration, dm.PumpMap, src_feat, pump_map_feat
         )
-        new_nodes += self.update_pump_map_nodes(pump_feat, pump_map_feat)
+        pump_map_feat["pump_id"] = pump_feat["id"]
+        new_nodes += self.update_pump_map_nodes(pump_map_feat)
 
         update_attributes(
             self.cn_fields_configurations, dm.ConnectionNode, src_feat, *new_nodes
