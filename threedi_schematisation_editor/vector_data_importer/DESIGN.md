@@ -258,21 +258,18 @@ classDiagram
 
     class ConnectionNodeProcessor {
         +process_feature()
+        +new_geometry()
     }
     
     class CrossSectionLocationProcessor {
         +process_feature()
+        +new_geometry()
     }
 
     class SurfaceProcessor {
-        +pipe_features
-        +pipe_index
-        +node_layer
-        +surface_map_manager
         +process_feature()
-        +_find_nearest_pipe() // static
-        +_create_surface_map_features()
-        +_to_polygon_geometry() // static
+        +new_geometry()
+        +create_surface_map_features()
     }
 
     class StructureProcessor {
@@ -281,20 +278,18 @@ classDiagram
 
     class PointProcessor {
         +process_feature()
-        +create_new_point_geometry()  // handles point and line input (centroid)
+        +new_geometry()
     }
 
     class LineProcessor {
         +process_feature()
+        +new_geometry()
     }
 
     class PumpLineProcessor {
-        +pump_map_manager
-        +pump_map_fields_configuration
-        +direction_config
+        +process_feature() 
         +update_pump_node()
         +update_pump_map_nodes()
-        +process_feature()   // returns Pump + PumpMap features
     }
 ```
 

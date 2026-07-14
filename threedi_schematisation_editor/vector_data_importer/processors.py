@@ -85,8 +85,8 @@ class SpatialProcessor(Processor):
         else:
             return False
 
-    @classmethod
-    def create_new_point_geometry(cls, src_geom):
+    @staticmethod
+    def create_new_point_geometry(src_geom):
         """Create a new point feature geometry based on the source feature.
 
         Accepts point or line geometry; for lines the centroid is used.
@@ -695,12 +695,18 @@ class ConnectionNodeProcessor(SpatialProcessor):
         super().__init__(target_layer, target_model_cls)
         self.fields_configuration = import_settings.fields
 
+    @staticmethod
+    def new_geometry(src_feat):
+        src_geom = get_src_geometry(src_feat)
+        if not src_geom:
+            return
+        return SpatialProcessor.create_new_point_geometry(src_geom)
+
     def process_feature(self, src_feat):
         """Process source point into connection node feature."""
-        src_geom = get_src_geometry(src_feat)
-        if src_geom is None:
+        new_geom = self.new_geometry(src_feat)
+        if new_geom is None:
             return {}
-        new_geom = ConnectionNodeProcessor.create_new_point_geometry(src_geom)
         if self.transformation:
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
@@ -761,13 +767,19 @@ class PointProcessor(StructureProcessor):
                 new_nodes.append(node)
         return new_nodes
 
+    @staticmethod
+    def new_geometry(src_feat):
+        src_geom = get_src_geometry(src_feat)
+        if not src_geom:
+            return
+        return SpatialProcessor.create_new_point_geometry(src_geom)
+
     def process_feature(self, src_feat):
         """Process source point structure feature."""
         new_nodes = []
-        src_geom = get_src_geometry(src_feat)
-        if src_geom is None:
+        new_geom = self.new_geometry(src_feat)
+        if new_geom is None:
             return {}
-        new_geom = PointProcessor.create_new_point_geometry(src_geom)
         if self.transformation:
             new_geom.transform(self.transformation)
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
@@ -941,12 +953,18 @@ class PumpLineProcessor(StructureProcessor):
                 new_nodes.append(end_node)
         return new_nodes
 
+    @staticmethod
+    def new_geometry(src_feat):
+        src_geom = get_src_geometry(src_feat)
+        if not src_geom:
+            return
+        return src_geom.asPolyline()
+
     def process_feature(self, src_feat):
         """Process source line feature into a Pump + PumpMap."""
-        src_geom = get_src_geometry(src_feat)
-        if src_geom is None:
+        polyline = self.new_geometry(src_feat)
+        if not polyline:
             return {}
-        polyline = src_geom.asPolyline()
         if self.transformation:
             geom = QgsGeometry.fromPolylineXY(polyline)
             geom.transform(self.transformation)
