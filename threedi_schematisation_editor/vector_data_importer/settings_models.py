@@ -266,7 +266,7 @@ class SurfaceLinkingSettings(BaseModel):
     attribute_match_enabled: bool = False
     spatial_match_enabled: bool = True
     attribute_match_table: Optional[Literal["pipe", "connection_node"]] = None
-    attribute_match_col: Optional[str] = None
+    attribute_match_target_config: Optional[FieldMapConfig] = None
     attribute_match_input_config: Optional[FieldMapConfig] = None
 
 

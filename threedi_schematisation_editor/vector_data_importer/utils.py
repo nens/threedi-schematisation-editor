@@ -75,10 +75,17 @@ def build_feature_mapping(layer, field_config_dict):
             return mapping
     elif method != ColumnImportMethod.ATTRIBUTE.value:
         return mapping
+    uniques = set()
     for feature in layer.getFeatures():
         value = get_field_config_value(field_config_dict, feature)
-        if value is not None and value != NULL:
+        if value is None or value == NULL:
+            continue
+        # only add unique values, and remove ambiguous matches
+        if value not in uniques:
             mapping[value] = feature
+            uniques.add(value)
+        elif value in mapping:
+            mapping.pop(value)
     return mapping
 
 
