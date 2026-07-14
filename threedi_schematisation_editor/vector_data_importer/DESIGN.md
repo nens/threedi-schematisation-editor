@@ -171,6 +171,9 @@ classDiagram
     class IntegrationImporter {
         +node_layer
         +integrator = LinearIntegrator
+        +integration_model_cls  // default: target_model_cls
+        +integration_layer      // default: target_layer
+        +integration_manager    // default: processor.target_manager
         +modifiable_layers = [target_layer, node_layer] + integrator.layers
         +import_features() // node_locator setup -> integrate_features() -> process -> add
     }
@@ -202,13 +205,20 @@ classDiagram
 
     class PumpsImporter {
         +target_model_cls=dm.Pump
-        +processor = PointProcessor
+        +pump_map_layer
+        +processor = PointProcessor (point source)
+        +processor = PumpLineProcessor (line source)
+        +integration_model_cls  // dm.PumpMap in line mode
+        +integration_layer      // pump_map_layer in line mode
+        +integration_manager    // pump_map_manager in line mode
+        +modifiable_layers = [target_layer, node_layer, pump_map_layer*]
     }
 
 ```
 
 - `SpatialImporter.import_features()` performs coordinate transformation, calls the processor, and adds resulting features. It puts only the `target_layer` into edit mode by default.
 - `IntegrationImporter.import_features()` additionally prepares the `node_locator`, initialises an `integrator` (`LinearIntegrator`), and puts the `node_layer` and any integrator-managed layers into edit mode. Each concrete subclass assigns its own processor after calling `super().__init__()`.
+- `IntegrationImporter` exposes three integration-target properties — `integration_model_cls`, `integration_layer`, and `integration_manager` — which default to the target equivalents (`target_model_cls`, `target_layer`, `processor.target_manager`). Subclasses can override these to redirect the integrator to a different layer than the primary import target. `PumpsImporter` does this in line mode to point the integrator at `pump_map_layer` instead of `target_layer`.
 - `SurfaceImporter` produces both a target surface layer and an auxiliary `surface_map_layer`. Both are put into edit mode. The pipe layer and node layer are passed to `SurfaceProcessor` at construction time for spatial linking.
 
 
@@ -226,6 +236,7 @@ classDiagram
     SpatialProcessor <|-- StructureProcessor
     StructureProcessor <|-- PointProcessor
     StructureProcessor <|-- LineProcessor
+    StructureProcessor <|-- PumpLineProcessor
 
     class Processor {
         +process_features()
@@ -276,12 +287,21 @@ classDiagram
     class LineProcessor {
         +process_feature()
     }
+
+    class PumpLineProcessor {
+        +pump_map_manager
+        +pump_map_fields_configuration
+        +direction_config
+        +update_pump_node()
+        +update_pump_map_nodes()
+        +process_feature()   // returns Pump + PumpMap features
+    }
 ```
 
 
 ## Connection node matching
 
-When importing point or linear structures the processors attempt to match each feature endpoint to an existing connection node according to the active connection node settings. Behaviour (applies to `PointProcessor` and `LineProcessor`):
+When importing point or linear structures the processors attempt to match each feature endpoint to an existing connection node according to the active connection node settings. Behaviour (applies to `PointProcessor`, `LineProcessor`, and `PumpLineProcessor`):
 
 1. After transforming the geometry, `update_connection_nodes()` is called for each endpoint.
 2. For each endpoint, `get_node(point)` is used which consults a `QgsPointLocator` built from the schematisation's existing connection node layer (`node_locator`).
@@ -384,7 +404,7 @@ The integrator to use is determined by `IntegrationMode` and created via the fac
 
 ### Structure placement strategies
 
-`LinearIntegrator` delegates structure-type-specific behaviour to a `StructurePlacementStrategy` instance, injected at construction time by `PipeIntegrator.from_importer` and `ChannelIntegrator.from_importer`. The strategy is selected based on `target_model_cls.__geometrytype__`:
+`LinearIntegrator` delegates structure-type-specific behaviour to a `StructurePlacementStrategy` instance, injected at construction time by `PipeIntegrator.from_importer` and `ChannelIntegrator.from_importer`. The strategy is selected based on `importer.integration_model_cls.__geometrytype__` (which defaults to `target_model_cls.__geometrytype__` for all importers except `PumpsImporter` in line mode, where it resolves to `dm.PumpMap`):
 
 - **`LineStructurePlacement`** — for line-geometry structures (Weir, Orifice, Culvert). Computes position and length via `lineLocatePoint`, places a `curveSubstring` on the conduit, and assigns `connection_node_id_start`/`connection_node_id_end`.
 - **`PointStructurePlacement`** — for point-geometry structures (Pump). Computes position via `lineLocatePoint` with `length=0`, places a point via `conduit_geom.interpolate(m)`, and assigns a single `connection_node_id`.
@@ -449,6 +469,10 @@ A `FieldMapConfig` is typically related to an attribute of a data model (from `d
 
 - `length: FieldMapConfig` — how to derive the line length from the source feature (ATTRIBUTE, DEFAULT, or EXPRESSION).
 - `azimuth: FieldMapConfig` — how to derive the bearing/azimuth of the generated line (default value: 90°).
+
+**`PumpSettings`** controls pump-specific import options:
+
+- `direction: FieldMapConfig[int]` — determines the direction of the source line when importing HyDaMo pump_map lines. Default value `1` (positive, line used as-is). Value `-1` reverses the line before processing (swapping pump and connection node ends). Allowed methods: ATTRIBUTE, EXPRESSION, DEFAULT.
 
 **`CrossSectionLocationSettings`** controls how cross-section location features are joined to conduits:
 
