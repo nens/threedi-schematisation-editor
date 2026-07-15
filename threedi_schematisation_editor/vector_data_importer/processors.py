@@ -626,7 +626,7 @@ class CrossSectionLocationProcessor(SpatialProcessor):
             return channel_match["id"]
 
     @staticmethod
-    def get_new_geom(src_geom, ref_channel):
+    def new_geometry(src_geom, ref_channel):
         channel_geom = ref_channel.geometry() if ref_channel else None
         geometry_type = src_geom.type()
         if src_geom.isEmpty():
@@ -670,7 +670,7 @@ class CrossSectionLocationProcessor(SpatialProcessor):
             ),
             None,
         )
-        new_geom = CrossSectionLocationProcessor.get_new_geom(src_geom, ref_channel)
+        new_geom = CrossSectionLocationProcessor.new_geometry(src_geom, ref_channel)
         if new_geom is None or new_geom.isEmpty():
             return {self.target_name: []}
         new_feat = self.target_manager.create_new(new_geom, self.target_fields)
@@ -934,7 +934,9 @@ class PumpLineProcessor(StructureProcessor):
         if node:
             pump_feat["connection_node_id"] = node["id"]
             if snapped:
-                pump_feat.setGeometry(QgsGeometry.fromPointXY(node.geometry().asPoint()))
+                pump_feat.setGeometry(
+                    QgsGeometry.fromPointXY(node.geometry().asPoint())
+                )
             else:
                 new_nodes.append(node)
         return new_nodes

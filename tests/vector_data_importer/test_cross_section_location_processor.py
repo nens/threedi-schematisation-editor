@@ -189,7 +189,7 @@ def test_get_matching_channel_join_and_geom(
         ),  # no ref channel; use original position
     ],
 )
-def test_get_new_geom_point(processor, point, ref_channel_id, expected_geom):
+def test_new_geometry_point(processor, point, ref_channel_id, expected_geom):
     ref_channel = (
         processor.channel_layer.getFeature(ref_channel_id)
         if ref_channel_id is not None
@@ -211,7 +211,7 @@ def test_get_new_geom_point(processor, point, ref_channel_id, expected_geom):
         # no channel, return center of line
     ],
 )
-def test_get_new_geom_line(processor, line, ref_channel_id, expected_geom):
+def test_new_geometry_line(processor, line, ref_channel_id, expected_geom):
     ref_channel = (
         processor.channel_layer.getFeature(ref_channel_id)
         if ref_channel_id is not None
@@ -227,7 +227,7 @@ def test_get_new_geom_line(processor, line, ref_channel_id, expected_geom):
 @pytest.mark.parametrize(
     "ref_channel_id, expected_geom", [(1, QgsPointXY(15, 25)), (None, None)]
 )
-def test_get_new_geom_no_geometry(processor, ref_channel_id, expected_geom):
+def test_new_geometry_no_geometry(processor, ref_channel_id, expected_geom):
     ref_channel = (
         processor.channel_layer.getFeature(ref_channel_id)
         if ref_channel_id is not None
