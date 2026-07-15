@@ -810,8 +810,8 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         )
         self.search_distance.setValue(_defaults.search_distance)
         self.search_distance.setSuffix(" m")
-        spat_row.addWidget(self.search_distance)
         spat_row.addWidget(self.match_spatial_checkbox)
+        spat_row.addWidget(self.search_distance)
         spat_row.addStretch()
         linking_layout.addLayout(spat_row)
 
