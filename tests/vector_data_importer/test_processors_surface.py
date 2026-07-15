@@ -622,7 +622,10 @@ def make_attr_match_processor(
         attribute_match_enabled=True,
         spatial_match_enabled=True,
         attribute_match_table=match_table,
-        attribute_match_col="code",
+        attribute_match_target_config=sm.FieldMapConfig(
+            method=ColumnImportMethod.ATTRIBUTE,
+            source_attribute="code",
+        ),
         attribute_match_input_config=sm.FieldMapConfig(
             method=ColumnImportMethod.ATTRIBUTE,
             source_attribute="code",

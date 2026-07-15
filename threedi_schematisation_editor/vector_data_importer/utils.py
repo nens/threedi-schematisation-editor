@@ -55,6 +55,40 @@ def get_field_config_value(field_config, source_feat, expression_context=None):
     return field_value
 
 
+def build_feature_mapping(features, field_config_dict):
+    """Build a {value: feature} mapping from a feature iterable using a FieldMapConfig dict.
+
+    Supports ATTRIBUTE (including value_map) and EXPRESSION methods.
+    Returns an empty dict on missing or unsupported config.
+    Features resolving to None or NULL are skipped.
+    Non-unique values are ambiguous and are excluded from the mapping.
+    """
+    mapping = {}
+    if not field_config_dict:
+        return mapping
+    method = field_config_dict.get("method")
+    if method == ColumnImportMethod.EXPRESSION.value:
+        expression = QgsExpression(
+            field_config_dict.get(ColumnImportMethod.EXPRESSION.value)
+        )
+        if not expression.isValid():
+            return mapping
+    elif method != ColumnImportMethod.ATTRIBUTE.value:
+        return mapping
+    uniques = set()
+    for feature in features:
+        value = get_field_config_value(field_config_dict, feature)
+        if value is None or value == NULL:
+            continue
+        # only add unique values, and remove ambiguous matches
+        if value not in uniques:
+            mapping[value] = feature
+            uniques.add(value)
+        elif value in mapping:
+            mapping.pop(value)
+    return mapping
+
+
 def update_attributes(fields_config, model_cls, source_feat, *new_features):
     expression_context = QgsExpressionContext()
     expression_context.setFeature(source_feat)

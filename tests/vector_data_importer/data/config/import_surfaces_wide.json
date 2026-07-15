@@ -69,7 +69,7 @@
         "attribute_match_enabled": false,
         "spatial_match_enabled": true,
         "attribute_match_table": null,
-        "attribute_match_col": null,
+        "attribute_match_target_config": null,
         "attribute_match_input_config": null
     },
     "fields": {

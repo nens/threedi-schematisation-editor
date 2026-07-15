@@ -31,6 +31,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     CancellationToken,
     ColumnImportMethod,
     FeatureManager,
+    build_feature_mapping,
     get_field_config_value,
     get_point_locator,
     get_src_geometry,
@@ -551,26 +552,9 @@ class CrossSectionLocationProcessor(SpatialProcessor):
 
     @cached_property
     def channel_mapping(self):
-        if self.join_field_tgt.get("method") == ColumnImportMethod.ATTRIBUTE.value:
-            col = self.join_field_tgt.get(ColumnImportMethod.ATTRIBUTE.value)
-            if col:
-                return {
-                    feature[col]: feature
-                    for feature in self.channel_layer.getFeatures()
-                }
-        elif self.join_field_tgt.get("method") == ColumnImportMethod.EXPRESSION.value:
-            expression_str = self.join_field_tgt.get(
-                ColumnImportMethod.EXPRESSION.value
-            )
-            expression = QgsExpression(expression_str)
-            if expression.isValid():
-                context = QgsExpressionContext()
-                expr_map = {}
-                for feature in self.channel_layer.getFeatures():
-                    context.setFeature(feature)
-                    expr_map[expression.evaluate(context)] = feature
-                return expr_map
-        return {}
+        return build_feature_mapping(
+            self.channel_layer.getFeatures(), self.join_field_tgt
+        )
 
     @cached_property
     def join_field_src(self):
@@ -918,12 +902,14 @@ class SurfaceProcessor(SpatialProcessor):
         )
         self.linking = import_settings.surface_linking
         self.node_layer = node_layer
+        self.pipe_layer = pipe_layer
         request = (
             QgsFeatureRequest(pipe_layer.selectedFeatureIds())
             if selected_pipes_only
             else None
         )
         self.pipe_features, self.pipe_index = spatial_index(pipe_layer, request=request)
+        self.selected_pipes_only = selected_pipes_only
 
     @staticmethod
     def new_geometry(src_geom):
@@ -953,39 +939,43 @@ class SurfaceProcessor(SpatialProcessor):
             return start_node
         return end_node
 
+    @cached_property
+    def linking_attribute_mapping(self):
+        target_config = self.linking.attribute_match_target_config.model_dump()
+        if self.linking.attribute_match_table == dm.ConnectionNode.__tablename__:
+            return build_feature_mapping(self.node_layer.getFeatures(), target_config)
+        if self.linking.attribute_match_table == dm.Pipe.__tablename__:
+            pipe_features = (
+                self.pipe_features.values()
+                if self.selected_pipes_only
+                else self.pipe_layer.getFeatures()
+            )
+            return build_feature_mapping(pipe_features, target_config)
+        return {}
+
     def get_attribute_match(self, src_feat, sewerage_type, expression_context):
         """Try attribute-based pipe/node lookup. Returns a node QgsFeature or None.
 
-        If sewerage_type is not None and the match is a pipe, the pipe's sewerage_type
-        must equal sewerage_type — mismatches are rejected. Multiple matches also return
-        None.
+        Looks up src_feat's input value in the precomputed linking_attribute_mapping.
+        For node matches, returns the matched node directly. For pipe matches, returns
+        the pipe endpoint node closest to the surface geometry. Ambiguous (non-unique)
+        input values are excluded from the mapping and return None.
         """
         linking = self.linking
         if not linking.attribute_match_enabled or linking.attribute_match_table is None:
             return None
+        if linking.attribute_match_target_config is None:
+            return None
         input_val = get_field_config_value(
             linking.attribute_match_input_config, src_feat, expression_context
         )
+        match = self.linking_attribute_mapping.get(input_val)
         if linking.attribute_match_table == dm.ConnectionNode.__tablename__:
-            matches = [
-                f
-                for f in self.node_layer.getFeatures()
-                if f[linking.attribute_match_col] == input_val
-            ]
-            if len(matches) == 1:
-                return matches[0]
-        elif linking.attribute_match_table == dm.Pipe.__tablename__:
-            matches = [
-                f
-                for f in self.pipe_features.values()
-                if f[linking.attribute_match_col] == input_val
-            ]
-            if sewerage_type is not None:
-                matches = [f for f in matches if f["sewerage_type"] == sewerage_type]
-            if len(matches) == 1:
-                return SurfaceProcessor.get_closest_node(
-                    self.matched_surface_geom, matches[0], self.node_layer
-                )
+            return match
+        elif linking.attribute_match_table == dm.Pipe.__tablename__ and match:
+            return SurfaceProcessor.get_closest_node(
+                self.matched_surface_geom, match, self.node_layer
+            )
         return None
 
     def get_spatial_match(self, surface_geom, sewerage_type):

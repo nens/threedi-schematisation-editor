@@ -28,6 +28,7 @@ from shapely.testing import assert_geometries_equal
 from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
     FeatureManager,
+    build_feature_mapping,
     get_field_config_value,
     get_float_value_from_feature,
     get_point_locator,
@@ -497,3 +498,62 @@ def test_compute_selected_ids_unknown_field_warns_and_returns_candidates():
         result = compute_selected_ids(layer, settings)
     assert result is None  # falls back to candidate_ids (None = all)
     assert any(issubclass(w.category, FeaturesImporterWarning) for w in caught)
+
+
+# ---------------------------------------------------------------------------
+# build_feature_mapping
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def simple_layer():
+    layer = QgsVectorLayer("NoGeometry", "test", "memory")
+    provider = layer.dataProvider()
+    provider.addAttributes([QgsField("code", QVariant.String)])
+    layer.updateFields()
+    f1 = QgsFeature(layer.fields())
+    f2 = QgsFeature(layer.fields())
+    f1.setAttribute("code", "abc")
+    f2.setAttribute("code", "xyz")
+    provider.addFeatures([f1, f2])
+    return layer
+
+
+@pytest.mark.parametrize(
+    "config, values, expected_keys",
+    [
+        [
+            {"method": "source_attribute", "source_attribute": "code"},
+            ["abc", "xyz"],
+            ["abc", "xyz"],
+        ],
+        [
+            {"method": "expression", "expression": '"code"'},
+            ["abc", "xyz"],
+            ["abc", "xyz"],
+        ],
+        [{"method": "source_attribute", "source_attribute": "bar"}, ["abc", "xyz"], []],
+        [{}, ["abc", "xyz"], []],
+        [{"method": "auto"}, ["abc", "xyz"], []],
+        [{"method": "expression", "expression": '"code(('}, ["abc", "xyz"], []],
+        [
+            {"method": "source_attribute", "source_attribute": "code"},
+            ["abc", "abc", "abc"],
+            [],
+        ],
+    ],
+)
+def test_build_feature_mapping(config, values, expected_keys):
+    layer = QgsVectorLayer("NoGeometry", "test", "memory")
+    provider = layer.dataProvider()
+    provider.addAttributes([QgsField("code", QVariant.String)])
+    layer.updateFields()
+    for value in values:
+        f = QgsFeature(layer.fields())
+        f.setAttribute("code", value)
+        provider.addFeatures([f])
+    result = build_feature_mapping(layer.getFeatures(), config)
+    assert set(result.keys()) == set(expected_keys)
+    for feature in layer.getFeatures():
+        if feature["code"] in expected_keys:
+            assert result[feature["code"]] == feature
