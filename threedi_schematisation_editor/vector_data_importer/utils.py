@@ -55,13 +55,13 @@ def get_field_config_value(field_config, source_feat, expression_context=None):
     return field_value
 
 
-def build_feature_mapping(layer, field_config_dict):
-    """Build a {value: feature} mapping from a layer using a FieldMapConfig dict.
+def build_feature_mapping(features, field_config_dict):
+    """Build a {value: feature} mapping from a feature iterable using a FieldMapConfig dict.
 
     Supports ATTRIBUTE (including value_map) and EXPRESSION methods.
     Returns an empty dict on missing or unsupported config.
     Features resolving to None or NULL are skipped.
-    Non-unique values are not detected; last match wins.
+    Non-unique values are ambiguous and are excluded from the mapping.
     """
     mapping = {}
     if not field_config_dict:
@@ -76,7 +76,7 @@ def build_feature_mapping(layer, field_config_dict):
     elif method != ColumnImportMethod.ATTRIBUTE.value:
         return mapping
     uniques = set()
-    for feature in layer.getFeatures():
+    for feature in features:
         value = get_field_config_value(field_config_dict, feature)
         if value is None or value == NULL:
             continue

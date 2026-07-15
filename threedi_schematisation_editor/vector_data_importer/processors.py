@@ -552,7 +552,9 @@ class CrossSectionLocationProcessor(SpatialProcessor):
 
     @cached_property
     def channel_mapping(self):
-        return build_feature_mapping(self.channel_layer, self.join_field_tgt)
+        return build_feature_mapping(
+            self.channel_layer.getFeatures(), self.join_field_tgt
+        )
 
     @cached_property
     def join_field_src(self):
@@ -907,6 +909,7 @@ class SurfaceProcessor(SpatialProcessor):
             else None
         )
         self.pipe_features, self.pipe_index = spatial_index(pipe_layer, request=request)
+        self.selected_pipes_only = selected_pipes_only
 
     @staticmethod
     def new_geometry(src_geom):
@@ -940,17 +943,23 @@ class SurfaceProcessor(SpatialProcessor):
     def linking_attribute_mapping(self):
         target_config = self.linking.attribute_match_target_config.model_dump()
         if self.linking.attribute_match_table == dm.ConnectionNode.__tablename__:
-            return build_feature_mapping(self.node_layer, target_config)
+            return build_feature_mapping(self.node_layer.getFeatures(), target_config)
         if self.linking.attribute_match_table == dm.Pipe.__tablename__:
-            return build_feature_mapping(self.pipe_layer, target_config)
+            pipe_features = (
+                self.pipe_features.values()
+                if self.selected_pipes_only
+                else self.pipe_layer.getFeatures()
+            )
+            return build_feature_mapping(pipe_features, target_config)
         return {}
 
     def get_attribute_match(self, src_feat, sewerage_type, expression_context):
         """Try attribute-based pipe/node lookup. Returns a node QgsFeature or None.
 
-        If sewerage_type is not None and the match is a pipe, the pipe's sewerage_type
-        must equal sewerage_type — mismatches are rejected. Multiple matches also return
-        None.
+        Looks up src_feat's input value in the precomputed linking_attribute_mapping.
+        For node matches, returns the matched node directly. For pipe matches, returns
+        the pipe endpoint node closest to the surface geometry. Ambiguous (non-unique)
+        input values are excluded from the mapping and return None.
         """
         linking = self.linking
         if not linking.attribute_match_enabled or linking.attribute_match_table is None:

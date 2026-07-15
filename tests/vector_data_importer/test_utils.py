@@ -552,7 +552,7 @@ def test_build_feature_mapping(config, values, expected_keys):
         f = QgsFeature(layer.fields())
         f.setAttribute("code", value)
         provider.addFeatures([f])
-    result = build_feature_mapping(layer, config)
+    result = build_feature_mapping(layer.getFeatures(), config)
     assert set(result.keys()) == set(expected_keys)
     for feature in layer.getFeatures():
         if feature["code"] in expected_keys:
