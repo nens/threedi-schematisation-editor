@@ -273,7 +273,7 @@ class CulvertsImporter(IntegrationImporter):
         external_source,
         target_gpkg,
         import_settings,
-        structure_layer=None,
+        target_layer=None,
         node_layer=None,
         conduit_layer=None,
         cross_section_location_layer=None,
@@ -283,7 +283,7 @@ class CulvertsImporter(IntegrationImporter):
             target_gpkg=target_gpkg,
             import_settings=import_settings,
             target_model_cls=dm.Culvert,
-            target_layer=structure_layer,
+            target_layer=target_layer,
             node_layer=node_layer,
             conduit_layer=conduit_layer,
             cross_section_location_layer=cross_section_location_layer,
@@ -301,7 +301,7 @@ class OrificesImporter(IntegrationImporter):
         external_source,
         target_gpkg,
         import_settings,
-        structure_layer=None,
+        target_layer=None,
         node_layer=None,
         conduit_layer=None,
         cross_section_location_layer=None,
@@ -311,7 +311,7 @@ class OrificesImporter(IntegrationImporter):
             target_gpkg=target_gpkg,
             import_settings=import_settings,
             target_model_cls=dm.Orifice,
-            target_layer=structure_layer,
+            target_layer=target_layer,
             node_layer=node_layer,
             conduit_layer=conduit_layer,
             cross_section_location_layer=cross_section_location_layer,
@@ -329,7 +329,7 @@ class WeirsImporter(IntegrationImporter):
         external_source,
         target_gpkg,
         import_settings,
-        structure_layer=None,
+        target_layer=None,
         node_layer=None,
         conduit_layer=None,
         cross_section_location_layer=None,
@@ -339,7 +339,7 @@ class WeirsImporter(IntegrationImporter):
             target_gpkg=target_gpkg,
             import_settings=import_settings,
             target_model_cls=dm.Weir,
-            target_layer=structure_layer,
+            target_layer=target_layer,
             node_layer=node_layer,
             conduit_layer=conduit_layer,
             cross_section_location_layer=cross_section_location_layer,
@@ -357,7 +357,7 @@ class PipesImporter(IntegrationImporter):
         external_source,
         target_gpkg,
         import_settings,
-        structure_layer=None,
+        target_layer=None,
         node_layer=None,
     ):
         super().__init__(
@@ -365,7 +365,7 @@ class PipesImporter(IntegrationImporter):
             target_gpkg=target_gpkg,
             import_settings=import_settings,
             target_model_cls=dm.Pipe,
-            target_layer=structure_layer,
+            target_layer=target_layer,
             node_layer=node_layer,
         )
         self.processor = LineProcessor(
@@ -381,7 +381,7 @@ class ChannelsImporter(IntegrationImporter):
         external_source,
         target_gpkg,
         import_settings,
-        structure_layer=None,
+        target_layer=None,
         node_layer=None,
     ):
         super().__init__(
@@ -389,7 +389,7 @@ class ChannelsImporter(IntegrationImporter):
             target_gpkg=target_gpkg,
             import_settings=import_settings,
             target_model_cls=dm.Channel,
-            target_layer=structure_layer,
+            target_layer=target_layer,
             node_layer=node_layer,
         )
         self.processor = LineProcessor(

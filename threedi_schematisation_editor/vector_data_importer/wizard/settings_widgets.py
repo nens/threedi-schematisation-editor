@@ -1,8 +1,7 @@
-from dataclasses import fields
 from typing import Optional, Type
 
 from pydantic import BaseModel
-from qgis.core import Qgis, QgsExpression, QgsMapLayerProxyModel
+from qgis.core import Qgis, QgsExpression, QgsWkbTypes
 from qgis.gui import QgsFieldExpressionWidget, QgsMapLayerComboBox
 from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, pyqtSignal
 from qgis.PyQt.QtGui import QIcon
@@ -150,6 +149,7 @@ class LayerSettingsWidget(QWidget):
 class SettingsWidget(QWidget):
     dataChanged = pyqtSignal()
     model = None
+    group_box = None  # Set by SettingsPage.setup_ui when the widget is added to a page
 
     @property
     def name(self) -> str:
@@ -171,6 +171,10 @@ class SettingsWidget(QWidget):
         # loudly fail when model is missing
         assert self.model is not None
         return self.model
+
+    def should_show(self, layer) -> bool:
+        """Return False to hide this widget's group box for the given source layer. Default: always show."""
+        return True
 
 
 class ConnectionNodeSettingsWidget(SettingsWidget):
@@ -295,9 +299,8 @@ class IntegrationSettingsWidget(SettingsWidget):
     def setup_integration_settings(self, settings_container):
         grid_layout = QGridLayout()
         grid_layout.addWidget(QLabel("Snap to channel/pipe within"), 0, 0)
-        grid_layout.addWidget(
-            QLabel("Minimum length of a channel/pipe after edit"), 1, 0
-        )
+        self.min_length_label = QLabel("Minimum length of a channel/pipe after edit")
+        grid_layout.addWidget(self.min_length_label, 1, 0)
         self.snap_distance = QDoubleSpinBox()
         self.snap_distance.setMinimum(sm.get_field_min(self.model, "snap_distance"))
         self.snap_distance.setMaximum(sm.get_field_max(self.model, "snap_distance"))
@@ -332,6 +335,14 @@ class IntegrationSettingsWidget(SettingsWidget):
         self.integration_mode_map[self.model.integration_mode].setChecked(True)
         self.snap_distance.setValue(self.model.snap_distance)
         self.min_length.setValue(self.model.min_length)
+
+    def update_layer(self, layer):
+        """Hide min_length for point sources — PointStructurePlacement always produces length 0."""
+        is_point = (
+            layer and layer.geometryType() == QgsWkbTypes.GeometryType.PointGeometry
+        )
+        self.min_length_label.setVisible(not is_point)
+        self.min_length.setVisible(not is_point)
 
 
 class CrossSectionDataRemapSettingsWidget(SettingsWidget):
@@ -429,6 +440,26 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
     @property
     def group_name(self):
         return "Point to line conversion settings"
+
+
+class PumpDirectionSettingsWidget(FieldMapSettingsWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.model = sm.PumpSettings()
+        row_dict = {
+            "direction": FieldMapRow(
+                label="Pump direction", config=self.model.direction
+            ),
+        }
+        self.setup_ui(row_dict)
+
+    @property
+    def group_name(self):
+        return "Pump direction settings"
+
+    def should_show(self, layer) -> bool:
+        """Only relevant for line geometry sources."""
+        return layer and layer.geometryType() == QgsWkbTypes.GeometryType.LineGeometry
 
 
 class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):

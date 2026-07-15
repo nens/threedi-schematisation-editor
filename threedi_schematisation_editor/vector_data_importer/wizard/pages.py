@@ -114,6 +114,7 @@ class SettingsPage(QWizardPage):
             widget.dataChanged.connect(self.completeChanged)
             group_box = QGroupBox(widget.group_name)
             group_box.setLayout(widget.layout())
+            widget.group_box = group_box
             expanding = getattr(widget, "expanding", False)
             stretch = 1 if expanding else 0
             if not expanding:
@@ -123,11 +124,12 @@ class SettingsPage(QWizardPage):
         self.setLayout(layout)
 
     def initializePage(self):
-        # update layers just before showing
+        # update layers and visibility just before showing
         layer = self.wizard().selected_layer
         for widget in self.settings_widgets:
             if hasattr(widget, "update_layer"):
                 widget.update_layer(layer)
+            widget.group_box.setVisible(widget.should_show(layer))
 
     @property
     def create_nodes(self):
@@ -139,8 +141,12 @@ class SettingsPage(QWizardPage):
         return False
 
     def get_settings(self) -> dict[str, BaseModel]:
-        # return non-serialized settings
-        return {widget.name: widget.get_settings() for widget in self.settings_widgets}
+        # return non-serialized settings, skipping hidden widgets
+        return {
+            widget.name: widget.get_settings()
+            for widget in self.settings_widgets
+            if widget.group_box.isVisible()
+        }
 
     def deserialize(self, data):
         """Load settings from serialized data"""
@@ -153,6 +159,8 @@ class SettingsPage(QWizardPage):
 
     def isComplete(self) -> bool:
         for widget in self.settings_widgets:
+            if not widget.group_box.isVisible():
+                continue
             if not widget.is_valid:
                 return False
         return True

@@ -18,6 +18,7 @@ The actual page flow varies per wizard type:
 | `ImportCrossSectionLocationWizard` | Start -> Settings -> Field Map -> Run |
 | `ImportConduitWizard` | Start -> Settings -> Field Map -> [CN Field Map] -> Run |
 | `ImportStructureWizard` | Start -> Settings -> Field Map -> [CN Field Map] -> Run |
+| `ImportPumpWizard` | Start -> Settings -> Field Map -> [CN Field Map] -> Run |
 | `ImportSurfaceWizard` | Start -> Settings -> Field Map -> Run |
 
 Wizards are created for different kinds of importers, all based on `VDIWizard` which handles most of the work such as building the UI, loading and saving config files and running the actual import. Subclasses provide importer-specific settings and modifications: 
@@ -30,6 +31,7 @@ classDiagram
     VDIWizard <|-- ImportWithCreateConnectionNodesWizard
     ImportWithCreateConnectionNodesWizard <|-- ImportConduitWizard
     ImportWithCreateConnectionNodesWizard <|-- ImportStructureWizard
+    ImportWithCreateConnectionNodesWizard <|-- ImportPumpWizard
     VDIWizard <|-- ImportSurfaceWizard
     
     class VDIWizard {
@@ -74,6 +76,12 @@ classDiagram
     }
 
     class ImportStructureWizard { 
+        +settings_widgets_classes
+        +layer_filter
+        +prepare_import()
+    }
+
+    class ImportPumpWizard {
         +settings_widgets_classes
         +layer_filter
         +prepare_import()
@@ -126,23 +134,30 @@ class SettingsWidget{
     <<interface>>
     +dataChanged = pyqtSignal()
     +model = None
+    +group_box = None
     +expanding = False
     +name() str
     +is_valid() bool
     +validate() bool
     +get_settings() BaseModel
+    +should_show(layer) bool
     *group_name() str
 }
 ```
 
-Upon initialization the widgets are instantiated and put in a group box using the `group_name`. The settings page holds a list of settings widgets which are all based on `SettingsWidget`. If a widget sets `expanding = True`, the settings page gives it vertical stretch so it grows to fill available space (used for table-based widgets).
+Upon initialization the widgets are instantiated and put in a group box using the `group_name`. The reference to that group box is stored on the widget as `group_box`. The settings page holds a list of settings widgets which are all based on `SettingsWidget`. If a widget sets `expanding = True`, the settings page gives it vertical stretch so it grows to fill available space (used for table-based widgets).
+
+Widgets can be conditionally hidden by overriding `should_show(layer)` — called in `SettingsPage.initializePage()` to toggle the group box visibility based on the selected source layer. The default implementation returns `True` (always shown). Hidden widgets are skipped in `isComplete()` and `get_settings()`.
+
+Some widgets also implement `update_layer(layer)`, called in `initializePage()` to refresh layer-dependent UI state (e.g. populating attribute dropdowns, or hiding sub-fields irrelevant for the selected geometry type).
 
 
 The following `SettingsWidget` subclasses exist:
 
 - `ConnectionNodeSettingsWidget` — snap distance and create-nodes option.
-- `IntegrationSettingsWidget` — integration mode (NONE/CHANNELS/PIPES), snap distance, minimum conduit length.
+- `IntegrationSettingsWidget` — integration mode (NONE/CHANNELS/PIPES), snap distance, minimum conduit length. Implements `update_layer(layer)` to hide the minimum conduit length field for point sources (where `PointStructurePlacement` always produces length 0).
 - `PointToLineConversionSettingsWidget` — length and azimuth field mappings for point-to-line conversion.
+- `PumpDirectionSettingsWidget` — pump direction field mapping. Overrides `should_show(layer)` to return `True` only for line geometry sources, since direction is only used by `PumpLineProcessor`.
 - `CrossSectionDataRemapSettingsWidget` — lowest point normalization options.
 - `CrossSectionLocationMappingSettingsWidget` — join field configuration for cross-section linking.
 - `SurfaceLinkingSettingsWidget` — sewerage type mappings, search distance, `spatial_match_enabled` (toggle spatial nearest-pipe linking), `attribute_match_enabled` (toggle attribute-based linking), and selected-pipes-only flag. Used by `ImportSurfaceWizard`.

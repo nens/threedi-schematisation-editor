@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from pydantic import BaseModel, ValidationError
-from qgis.core import Qgis, QgsMapLayerProxyModel, QgsMessageLog, QgsProject
+from qgis.core import Qgis, QgsMapLayerProxyModel, QgsMessageLog, QgsWkbTypes
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
 from qgis.PyQt.QtGui import QPalette
 from qgis.PyQt.QtWidgets import (
@@ -36,6 +36,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
     CrossSectionLocationMappingSettingsWidget,
     IntegrationSettingsWidget,
     PointToLIneConversionSettingsWidget,
+    PumpDirectionSettingsWidget,
     SettingsWidget,
     SurfaceLinkingSettingsWidget,
 )
@@ -91,6 +92,7 @@ class VDIWizard(QWizard):
         dm.Channel: vdi_importers.ChannelsImporter,
         dm.CrossSectionLocation: vdi_importers.CrossSectionLocationImporter,
         dm.Surface: vdi_importers.SurfaceImporter,
+        dm.Pump: vdi_importers.PumpsImporter,
     }
     settings_widgets_classes: list[SettingsWidget] = []
     import_started = pyqtSignal()
@@ -521,7 +523,7 @@ class ImportWithCreateConnectionNodesWizard(VDIWizard):
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         processed_handlers = [structures_handler, node_handler]
         processed_layers = {
-            "structure_layer": structures_handler.layer,
+            "target_layer": structures_handler.layer,
             "node_layer": node_handler.layer,
         }
         return processed_handlers, processed_layers
@@ -692,3 +694,36 @@ class ImportSurfaceWizard(VDIWizard):
             selected_pipes_only=selected_pipes_only,
             **layer_dict,
         )
+
+
+class ImportPumpWizard(ImportWithCreateConnectionNodesWizard):
+    settings_widgets_classes = [
+        ConnectionNodeSettingsWidget,
+        PumpDirectionSettingsWidget,
+        IntegrationSettingsWidget,
+    ]
+
+    @property
+    def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
+        return QgsMapLayerProxyModel.LineLayer | QgsMapLayerProxyModel.PointLayer
+
+    def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
+        processed_handlers, processed_layers = super().prepare_import()
+        # PumpMap layer — only needed for line sources
+        if self.selected_layer.geometryType() == QgsWkbTypes.GeometryType.LineGeometry:
+            pump_map_handler = self.layer_manager.model_handlers[dm.PumpMap]
+            processed_handlers.append(pump_map_handler)
+            processed_layers["pump_map_layer"] = pump_map_handler.layer
+        # Conduit layer — based on integration mode
+        integration_settings = self.get_settings().integration
+        if integration_settings.integration_mode == sm.IntegrationMode.CHANNELS:
+            conduit_handler = self.layer_manager.model_handlers[dm.Channel]
+            xsec_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
+            processed_handlers += [conduit_handler, xsec_handler]
+            processed_layers["conduit_layer"] = conduit_handler.layer
+            processed_layers["cross_section_location_layer"] = xsec_handler.layer
+        elif integration_settings.integration_mode == sm.IntegrationMode.PIPES:
+            conduit_handler = self.layer_manager.model_handlers[dm.Pipe]
+            processed_handlers.append(conduit_handler)
+            processed_layers["conduit_layer"] = conduit_handler.layer
+        return processed_handlers, processed_layers

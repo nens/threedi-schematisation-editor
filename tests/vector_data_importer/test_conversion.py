@@ -37,7 +37,7 @@ from .utils import *
 def get_schematisation_layers(target_gpkg, target_object, conduit_layer_name="channel"):
     temp_gpkg = str(get_temp_copy(target_gpkg))
     return {
-        "structure_layer": gpkg_layer(temp_gpkg, target_object),
+        "target_layer": gpkg_layer(temp_gpkg, target_object),
         "conduit_layer": gpkg_layer(temp_gpkg, conduit_layer_name),
         "node_layer": gpkg_layer(temp_gpkg, "connection_node"),
         "cross_section_location_layer": gpkg_layer(temp_gpkg, "cross_section_location"),
@@ -126,7 +126,7 @@ def test_integrate_weir_too_long():
     with pytest.warns(StructuresIntegratorWarning):
         importer.import_features()
     # the total length of the weirs to import is longer than the channel so nothing should be imported
-    assert len([item for item in layers["structure_layer"].getFeatures()]) == 0
+    assert len([item for item in layers["target_layer"].getFeatures()]) == 0
 
 
 def test_integrate_isolated_weir():
@@ -395,11 +395,11 @@ def test_import_surface(data_type):
     importer.import_features()
     compare_results(
         f"test_import_surfaces_{data_type}",
-        {"structure_layer": surface_layer},
+        {"target_layer": surface_layer},
         "surface",
     )
     compare_results(
         f"test_import_surfaces_{data_type}",
-        {"structure_layer": surface_map_layer},
+        {"target_layer": surface_map_layer},
         "surface_map",
     )

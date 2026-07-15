@@ -87,6 +87,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard import (
     ImportConnectionNodesWizard,
     ImportCrossSectionDataWizard,
     ImportCrossSectionLocationWizard,
+    ImportPumpWizard,
     ImportStructureWizard,
     ImportSurfaceWizard,
 )
@@ -166,6 +167,7 @@ class ThreediSchematisationEditorPlugin:
             ("Culverts", self.import_external_culverts, None),
             ("Orifices", self.import_external_orifices, None),
             ("Pipes", self.import_external_pipes, None),
+            ("Pumps", self.import_external_pumps, None),
             ("Surfaces", self.import_external_surfaces, None),
             ("Weirs", self.import_external_weirs, None),
         ]
@@ -465,6 +467,9 @@ class ThreediSchematisationEditorPlugin:
 
     def import_external_pipes(self):
         self.import_external(dm.Pipe, ImportConduitWizard)
+
+    def import_external_pumps(self):
+        self.import_external(dm.Pump, ImportPumpWizard)
 
     def import_external_channels(self):
         self.import_external(dm.Channel, ImportConduitWizard)
