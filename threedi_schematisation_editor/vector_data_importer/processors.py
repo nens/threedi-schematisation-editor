@@ -817,21 +817,40 @@ class LineProcessor(StructureProcessor):
         return dst_geometry
 
     def update_connection_nodes(self, new_feat):
+        """Update feature to match connection nodes
+
+        For each endpoint where the connection_node_id was set via attribute mapping,
+        look up the referenced node and snap the geometry to it.
+        For endpoints where it was not mapped, use the normal snapping logic.
+
+        Returns list of newly created nodes (from non-mapped endpoints).
+        """
+
         new_nodes = []
         polyline = new_feat.geometry().asPolyline()
-        for idx, name in [
+        endpoints = [
             (0, "connection_node_id_start"),
             (-1, "connection_node_id_end"),
-        ]:
-            node, snapped = self.get_node(polyline[idx])
+        ]
 
-            if node:
-                new_feat[name] = node["id"]
-                if snapped:
-                    polyline[idx] = node.geometry().asPoint()
+        for idx, field_name in endpoints:
+            node_id = new_feat[field_name]
+            if node_id is not None and node_id is not NULL:
+                # Attribute mapping set this node ID - look up the node and snap to it
+                node_feat = get_feature_by_id(self.node_layer, node_id)
+                if node_feat is not None:
+                    polyline[idx] = node_feat.geometry().asPoint()
                     new_feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
-                if not snapped:
-                    new_nodes.append(node)
+            else:
+                # No attribute mapping - use spatial snapping (existing behavior)
+                node, snapped = self.get_node(polyline[idx])
+                if node:
+                    new_feat[field_name] = node["id"]
+                    if snapped:
+                        polyline[idx] = node.geometry().asPoint()
+                        new_feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
+                    if not snapped:
+                        new_nodes.append(node)
         return new_nodes
 
     def process_feature(self, src_feat):
@@ -854,6 +873,7 @@ class LineProcessor(StructureProcessor):
             src_feat,
             new_feat,
         )
+        # Use attribute-mapped node IDs when available, otherwise snap spatially
         new_nodes = self.update_connection_nodes(new_feat)
         update_attributes(
             self.cn_fields_configurations,
