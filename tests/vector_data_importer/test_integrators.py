@@ -636,7 +636,7 @@ class TestNodeManagement:
         dst_feature["connection_node_id_end"] = 102
 
         result = LinearIntegrator.update_feature_endpoints(
-            integrator, dst_feature, {}, overwrite_node_ids=True
+            integrator, dst_feature, {}, respect_mapped_node_ids=True
         )
 
         assert result == []

@@ -835,7 +835,7 @@ class LineProcessor(StructureProcessor):
 
         for idx, field_name in endpoints:
             node_id = new_feat[field_name]
-            if node_id is not None and node_id != NULL:
+            if node_id is not None and node_id is not NULL:
                 # Attribute mapping set this node ID - look up the node and snap to it
                 node_feat = get_feature_by_id(self.node_layer, node_id)
                 if node_feat is not None:

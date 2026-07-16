@@ -477,7 +477,7 @@ class LinearIntegrator:
 
         for substring_feat in added_features[self.target_layer.name()]:
             added_features[self.node_layer.name()] += self.update_feature_endpoints(
-                substring_feat, node_attributes, overwrite_node_ids=True
+                substring_feat, node_attributes, respect_mapped_node_ids=True
             )
 
         # Conduit segments always need endpoint updates (they don't have attribute mapping)
@@ -489,7 +489,7 @@ class LinearIntegrator:
         return added_features
 
     def update_feature_endpoints(
-        self, feat, template_node_attributes, overwrite_node_ids=False
+        self, feat, template_node_attributes, respect_mapped_node_ids=False
     ):
         """Snap geometry endpoints to attribute-mapped nodes, create nodes for non-mapped endpoints."""
         new_nodes = []
@@ -501,7 +501,7 @@ class LinearIntegrator:
             (-1, "connection_node_id_end"),
         ]:
             node_id = feat[field_name]
-            if node_id is not None and node_id is not NULL and overwrite_node_ids:
+            if node_id is not None and node_id is not NULL and respect_mapped_node_ids:
                 node_feat = get_feature_by_id(self.node_layer, node_id)
                 if node_feat is not None:
                     polyline[idx] = node_feat.geometry().asPoint()
