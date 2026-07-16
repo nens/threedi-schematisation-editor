@@ -488,18 +488,6 @@ class LinearIntegrator:
 
         return added_features
 
-    def _has_attribute_mapped_node(self, field_name):
-        """Check if a connection node field was explicitly attribute-mapped (not AUTO)."""
-        from threedi_schematisation_editor.vector_data_importer.utils import (
-            ColumnImportMethod,
-        )
-
-        try:
-            field_config = self.fields_configurations[field_name]
-        except KeyError:
-            return False
-        return ColumnImportMethod(field_config["method"]) != ColumnImportMethod.AUTO
-
     def update_feature_endpoints(
         self, feat, template_node_attributes, overwrite_node_ids=False
     ):
