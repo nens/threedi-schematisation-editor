@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from PyQt5.QtCore import QVariant
@@ -9,7 +9,6 @@ from qgis.core import (
     QgsGeometry,
     QgsPointXY,
     QgsSpatialIndex,
-    QgsWkbTypes,
 )
 
 from threedi_schematisation_editor.vector_data_importer import settings_models as sm
