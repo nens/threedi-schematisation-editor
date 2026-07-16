@@ -9,6 +9,7 @@ from qgis.core import (
     QgsGeometry,
     QgsPointXY,
     QgsSpatialIndex,
+    QgsWkbTypes,
 )
 
 from threedi_schematisation_editor import data_models as dm
@@ -532,9 +533,7 @@ class TestNodeManagement:
         points = {"start": (QgsPointXY(0, 0), 101), "end": (QgsPointXY(100, 0), 102)}
         start_point = QgsPointXY(0, 0)
         end_point = QgsPointXY(100, 0)
-        node_by_location = {
-            points[name][0]: points[name][1] for name in initial_nodes
-        }
+        node_by_location = {points[name][0]: points[name][1] for name in initial_nodes}
 
         node_layer_fields = QgsFields()
         node_layer_fields.append(QgsField("id", QVariant.Int))
@@ -543,6 +542,7 @@ class TestNodeManagement:
         mock_node_layer = MagicMock()
         mock_node_layer.name.return_value = "connection_nodes"
         integrator.node_layer = mock_node_layer
+        integrator.node_by_location = node_by_location
         integrator.layer_fields_mapping = {"connection_nodes": node_layer_fields}
 
         features_to_add = []
@@ -580,9 +580,7 @@ class TestNodeManagement:
         points = {"start": (QgsPointXY(0, 0), 101), "end": (QgsPointXY(100, 0), 102)}
         start_point = QgsPointXY(0, 0)
         end_point = QgsPointXY(100, 0)
-        node_by_location = {
-            points[name][0]: points[name][1] for name in initial_nodes
-        }
+        node_by_location = {points[name][0]: points[name][1] for name in initial_nodes}
 
         node_layer_fields = QgsFields()
         node_layer_fields.append(QgsField("id", QVariant.Int))
@@ -600,10 +598,12 @@ class TestNodeManagement:
 
         # Mock node_manager to return the mock node features and update node_by_location
         node_manager = MagicMock()
+
         def mock_create_new(geom, fields, attributes):
             feature = mock_features.pop(0)
             node_by_location[geom.asPoint()] = feature["id"]
             return feature
+
         node_manager.create_new.side_effect = mock_create_new
 
         # Create a dst_feature with a line geometry
@@ -613,7 +613,11 @@ class TestNodeManagement:
         # Call update_structure_nodes on a LineStructurePlacement instance
         strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
         result = strategy.update_structure_nodes(
-            dst_feature, node_by_location, node_layer_fields, {"name": "Test Node"}, node_manager
+            dst_feature,
+            node_by_location,
+            node_layer_fields,
+            {"name": "Test Node"},
+            node_manager,
         )
         assert result == features_to_add
 
@@ -667,7 +671,6 @@ class TestNodeManagement:
         polyline = dst_feature.geometry().asPolyline()
         assert polyline[0] == start_point
         assert polyline[-1] == end_point
-
 
 
 class TestFixPositions:
