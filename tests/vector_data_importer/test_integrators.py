@@ -551,11 +551,10 @@ class TestNodeManagement:
 
     @pytest.mark.parametrize("initial_nodes", [["start"], [], ["start", "end"]])
     def test_update_feature_endpoints(self, initial_nodes):
-        """Test update_feature_endpoints with different node_by_location states."""
-        # Create a mock LinearIntegrator instance
+        """Test update_feature_endpoints: connection_node_id fields are unset →
+        nodes are created/found spatially via node_by_location."""
         integrator = MagicMock(spec=LinearIntegrator)
 
-        # Set up the test data
         points = {"start": (QgsPointXY(0, 0), 101), "end": (QgsPointXY(100, 0), 102)}
         start_point = QgsPointXY(0, 0)
         end_point = QgsPointXY(100, 0)
@@ -563,28 +562,24 @@ class TestNodeManagement:
             points[name][0]: points[name][1] for name in initial_nodes
         }
 
-        # Create node_layer_fields with necessary fields
         node_layer_fields = QgsFields()
         node_layer_fields.append(QgsField("id", QVariant.Int))
         node_layer_fields.append(QgsField("name", QVariant.String))
 
-        # Set up the layer_fields_mapping attribute
         mock_node_layer = MagicMock()
         mock_node_layer.name.return_value = "connection_nodes"
         integrator.node_layer = mock_node_layer
-        integrator.layer_fields_mapping = {mock_node_layer.name(): node_layer_fields}
+        integrator.layer_fields_mapping = {"connection_nodes": node_layer_fields}
 
-        # Create mock node features
         features_to_add = []
-        for name, (pt, id) in points.items():
+        for name, (pt, node_id) in points.items():
             mock_node_feature = QgsFeature(node_layer_fields)
             mock_node_feature.setGeometry(QgsGeometry.fromPointXY(pt))
-            mock_node_feature["id"] = id
+            mock_node_feature["id"] = node_id
             if name not in initial_nodes:
                 features_to_add.append(mock_node_feature)
         mock_features = features_to_add.copy()
 
-        # Mock the add_node method to return the mock node features and update node_by_location
         def mock_add_node(point, fields, attributes):
             feature = mock_features.pop(0)
             integrator.node_by_location[point] = feature["id"]
@@ -592,19 +587,65 @@ class TestNodeManagement:
 
         integrator.add_node.side_effect = mock_add_node
 
-        # Create a dst_feature with a geometry
-        dst_feature = MagicMock()
-        dst_feature.geometry().asPolyline.return_value = [start_point, end_point]
+        dst_fields = QgsFields()
+        dst_fields.append(QgsField("connection_node_id_start", QVariant.Int))
+        dst_fields.append(QgsField("connection_node_id_end", QVariant.Int))
+        dst_feature = QgsFeature(dst_fields)
+        dst_feature.setGeometry(QgsGeometry.fromPolylineXY([start_point, end_point]))
 
-        # Call the update_feature_endpoints method
         result = LinearIntegrator.update_feature_endpoints(
-            integrator, dst_feature, name="Test Node"
+            integrator, dst_feature, {"name": "Test Node"}
         )
         assert result == features_to_add
-
-        # Assert that the node_by_location dictionary has the correct values
         assert integrator.node_by_location[start_point] == 101
         assert integrator.node_by_location[end_point] == 102
+
+    def test_update_feature_endpoints_with_attribute_mapped_node_ids(self):
+        """Test update_feature_endpoints with overwrite_node_ids=True:
+        connection_node_id fields are pre-set → look up node by ID, snap geometry,
+        add_node is never called."""
+        from qgis.core import QgsVectorLayer
+
+        integrator = MagicMock(spec=LinearIntegrator)
+
+        start_point = QgsPointXY(0, 0)
+        end_point = QgsPointXY(100, 0)
+
+        node_layer = QgsVectorLayer("Point?crs=EPSG:4326", "connection_nodes", "memory")
+        node_layer.dataProvider().addAttributes(
+            [QgsField("id", QVariant.Int), QgsField("name", QVariant.String)]
+        )
+        node_layer.updateFields()
+        for node_id, pt in [(101, start_point), (102, end_point)]:
+            feat = QgsFeature(node_layer.fields())
+            feat.setGeometry(QgsGeometry.fromPointXY(pt))
+            feat.setAttribute("id", node_id)
+            node_layer.dataProvider().addFeatures([feat])
+
+        node_layer_fields = node_layer.fields()
+        integrator.node_layer = node_layer
+        integrator.node_by_location = {}
+        integrator.layer_fields_mapping = {"connection_nodes": node_layer_fields}
+
+        dst_fields = QgsFields()
+        dst_fields.append(QgsField("connection_node_id_start", QVariant.Int))
+        dst_fields.append(QgsField("connection_node_id_end", QVariant.Int))
+        dst_feature = QgsFeature(dst_fields)
+        dst_feature.setGeometry(QgsGeometry.fromPolylineXY([start_point, end_point]))
+        dst_feature["connection_node_id_start"] = 101
+        dst_feature["connection_node_id_end"] = 102
+
+        result = LinearIntegrator.update_feature_endpoints(
+            integrator, dst_feature, {}, overwrite_node_ids=True
+        )
+
+        assert result == []
+        integrator.add_node.assert_not_called()
+        assert dst_feature["connection_node_id_start"] == 101
+        assert dst_feature["connection_node_id_end"] == 102
+        polyline = dst_feature.geometry().asPolyline()
+        assert polyline[0] == start_point
+        assert polyline[-1] == end_point
 
 
 @pytest.mark.parametrize("simplify", [True, False])

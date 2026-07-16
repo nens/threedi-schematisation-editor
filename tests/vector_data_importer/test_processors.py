@@ -215,28 +215,62 @@ class TestLineProcessor:
             },
         )
 
+    @pytest.mark.parametrize("mapped_start_node_id", [None, 42])
     def test_update_connection_nodes(
-        self, source_line_feature, target_fields, node_fields, import_settings
+        self,
+        source_line_feature,
+        target_fields,
+        node_fields,
+        import_settings,
+        mapped_start_node_id,
     ):
+        """Test update_connection_nodes for two cases:
+        - mapped_start_node_id=None: connection_node_id_start is unset → spatial snapping via get_node
+        - mapped_start_node_id=42:  connection_node_id_start is pre-set → look up node by ID, snap geometry
+        """
+
+        if mapped_start_node_id is not None:
+            # Replace mock with a real memory layer so get_feature_by_id works
+            from qgis.core import QgsVectorLayer
+
+            node_layer = QgsVectorLayer(
+                "Point?crs=EPSG:4326", "connection_nodes", "memory"
+            )
+            node_layer.dataProvider().addAttributes([QgsField("id", QVariant.Int)])
+            node_layer.updateFields()
+            node_feat = QgsFeature(node_layer.fields())
+            node_feat.setAttribute("id", 42)
+            node_feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(11, 21)))
+            node_layer.dataProvider().addFeatures([node_feat])
+            source_line_feature.setAttribute("connection_node_id_start", 42)
+        else:
+            node_layer = MagicMock()
+            node_layer.fields.return_value = node_fields
+            node_layer.name.return_value = "connection_nodes"
         target_layer = MagicMock()
         target_layer.fields.return_value = target_fields
         target_layer.name.return_value = "pipes"
-        node_layer = MagicMock()
-        node_layer.fields.return_value = node_fields
-        node_layer.name.return_value = "connection_nodes"
         processor = LineProcessor(target_layer, dm.Pipe, node_layer, import_settings)
-        # Mock the get_node method to return new node features
+
+        # Mock the get_node method to return new node features for spatial snapping
         start_node = QgsFeature(node_fields)
         start_node.setAttribute("id", 42)
         start_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(11, 21)))
         end_node = QgsFeature(node_fields)
         end_node.setAttribute("id", 43)
         end_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(30, 40)))
-        processor.get_node = MagicMock(
-            side_effect=[(start_node, True), (end_node, False)]
-        )
-        # Run update_connection_nodes and check results
+
+        if mapped_start_node_id is None:
+            # Both endpoints use spatial snapping
+            processor.get_node = MagicMock(
+                side_effect=[(start_node, True), (end_node, False)]
+            )
+        else:
+            # Start is attribute-mapped: get_node should only be called for end
+            processor.get_node = MagicMock(return_value=(end_node, False))
+
         new_nodes = processor.update_connection_nodes(source_line_feature)
+
         assert source_line_feature["connection_node_id_start"] == 42
         assert source_line_feature["connection_node_id_end"] == 43
         assert source_line_feature.geometry().asPolyline() == [
@@ -244,6 +278,10 @@ class TestLineProcessor:
             QgsPointXY(30, 40),
         ]
         assert new_nodes[0] == end_node
+
+        if mapped_start_node_id is not None:
+            # get_node was only called once (for the end endpoint)
+            assert processor.get_node.call_count == 1
 
     def test_process_feature(
         self, source_line_feature, target_fields, node_fields, import_settings

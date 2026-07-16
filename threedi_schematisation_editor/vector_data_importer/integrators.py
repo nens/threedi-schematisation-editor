@@ -4,10 +4,11 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Optional, Type
 
-from qgis.core import QgsFeature, QgsGeometry, QgsVectorLayerUtils, QgsWkbTypes
+from qgis.core import NULL, QgsFeature, QgsGeometry, QgsWkbTypes
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
+    get_feature_by_id,
     get_features_by_expression,
     get_next_feature_id,
     gpkg_layer,
@@ -265,24 +266,6 @@ class LinearIntegrator:
         self.node_by_location[point] = node_feat["id"]
         return node_feat
 
-    def update_feature_endpoints(self, dst_feature, **template_node_attributes):
-        """Update feature endpoint references."""
-        new_nodes = []
-        conduit_polyline = dst_feature.geometry().asPolyline()
-        start_node_point, end_node_point = conduit_polyline[0], conduit_polyline[-1]
-        node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
-        for point in [start_node_point, end_node_point]:
-            if point not in self.node_by_location:
-                node_feat = self.add_node(
-                    point, node_layer_fields, template_node_attributes
-                )
-                new_nodes.append(node_feat)
-        dst_feature["connection_node_id_start"] = self.node_by_location[
-            start_node_point
-        ]
-        dst_feature["connection_node_id_end"] = self.node_by_location[end_node_point]
-        return new_nodes
-
     @staticmethod
     def substring_feature(
         curve, start_distance, end_distance, fields, simplify=False, **attributes
@@ -492,30 +475,15 @@ class LinearIntegrator:
             for field_name in self.layer_field_names_mapping[self.node_layer.name()]
         }
 
-        # Determine if connection node IDs are attribute-mapped
-        has_mapped_start = self._has_attribute_mapped_node("connection_node_id_start")
-        has_mapped_end = self._has_attribute_mapped_node("connection_node_id_end")
-
         for substring_feat in added_features[self.target_layer.name()]:
-            if has_mapped_start or has_mapped_end:
-                # Snap geometry to attribute-mapped nodes instead of overwriting IDs
-                added_features[self.node_layer.name()] += (
-                    self._snap_geometry_to_mapped_nodes(
-                        substring_feat,
-                        has_mapped_start,
-                        has_mapped_end,
-                        node_attributes,
-                    )
-                )
-            else:
-                added_features[self.node_layer.name()] += self.update_feature_endpoints(
-                    substring_feat, **node_attributes
-                )
+            added_features[self.node_layer.name()] += self.update_feature_endpoints(
+                substring_feat, node_attributes, overwrite_node_ids=True
+            )
 
         # Conduit segments always need endpoint updates (they don't have attribute mapping)
         for substring_feat in added_features[self.integrate_layer.name()]:
             added_features[self.node_layer.name()] += self.update_feature_endpoints(
-                substring_feat, **node_attributes
+                substring_feat, template_node_attributes=node_attributes
             )
 
         return added_features
@@ -532,28 +500,24 @@ class LinearIntegrator:
             return False
         return ColumnImportMethod(field_config["method"]) != ColumnImportMethod.AUTO
 
-    def _snap_geometry_to_mapped_nodes(
-        self, feat, has_mapped_start, has_mapped_end, template_node_attributes
+    def update_feature_endpoints(
+        self, feat, template_node_attributes, overwrite_node_ids=False
     ):
         """Snap geometry endpoints to attribute-mapped nodes, create nodes for non-mapped endpoints."""
-        from threedi_schematisation_editor.utils import get_feature_by_id
-
         new_nodes = []
         polyline = feat.geometry().asPolyline()
         node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
 
-        for idx, field_name, has_mapped in [
-            (0, "connection_node_id_start", has_mapped_start),
-            (-1, "connection_node_id_end", has_mapped_end),
+        for idx, field_name in [
+            (0, "connection_node_id_start"),
+            (-1, "connection_node_id_end"),
         ]:
-            if has_mapped:
-                # Look up node by the attribute-mapped ID and snap geometry to it
-                node_id = feat[field_name]
-                if node_id is not None:
-                    node_feat = get_feature_by_id(self.node_layer, node_id)
-                    if node_feat is not None:
-                        polyline[idx] = node_feat.geometry().asPoint()
-                        feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
+            node_id = feat[field_name]
+            if node_id is not None and node_id is not NULL and overwrite_node_ids:
+                node_feat = get_feature_by_id(self.node_layer, node_id)
+                if node_feat is not None:
+                    polyline[idx] = node_feat.geometry().asPoint()
+                    feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
             else:
                 # Non-mapped: create/find node at geometry endpoint (existing behavior)
                 point = polyline[idx]

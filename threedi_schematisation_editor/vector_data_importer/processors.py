@@ -816,16 +816,8 @@ class LineProcessor(StructureProcessor):
             raise NotImplementedError(f"Unsupported geometry type: '{geometry_type}'")
         return dst_geometry
 
-    def _has_attribute_mapped_node(self, field_name):
-        """Check if a connection node field was explicitly attribute-mapped (not AUTO)."""
-        try:
-            field_config = self.fields_configurations[field_name]
-        except KeyError:
-            return False
-        return ColumnImportMethod(field_config["method"]) != ColumnImportMethod.AUTO
-
-    def _snap_geometry_to_mapped_nodes(self, new_feat):
-        """Snap geometry endpoints to nodes referenced by attribute-mapped connection_node_id fields.
+    def update_connection_nodes(self, new_feat):
+        """Update feature to match connection nodes
 
         For each endpoint where the connection_node_id was set via attribute mapping,
         look up the referenced node and snap the geometry to it.
@@ -833,7 +825,6 @@ class LineProcessor(StructureProcessor):
 
         Returns list of newly created nodes (from non-mapped endpoints).
         """
-        from threedi_schematisation_editor.utils import get_feature_by_id
 
         new_nodes = []
         polyline = new_feat.geometry().asPolyline()
@@ -843,14 +834,13 @@ class LineProcessor(StructureProcessor):
         ]
 
         for idx, field_name in endpoints:
-            if self._has_attribute_mapped_node(field_name):
+            node_id = new_feat[field_name]
+            if node_id is not None and node_id != NULL:
                 # Attribute mapping set this node ID - look up the node and snap to it
-                node_id = new_feat[field_name]
-                if node_id is not None and node_id != NULL:
-                    node_feat = get_feature_by_id(self.node_layer, node_id)
-                    if node_feat is not None:
-                        polyline[idx] = node_feat.geometry().asPoint()
-                        new_feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
+                node_feat = get_feature_by_id(self.node_layer, node_id)
+                if node_feat is not None:
+                    polyline[idx] = node_feat.geometry().asPoint()
+                    new_feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
             else:
                 # No attribute mapping - use spatial snapping (existing behavior)
                 node, snapped = self.get_node(polyline[idx])
@@ -861,24 +851,6 @@ class LineProcessor(StructureProcessor):
                         new_feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
                     if not snapped:
                         new_nodes.append(node)
-        return new_nodes
-
-    def update_connection_nodes(self, new_feat):
-        new_nodes = []
-        polyline = new_feat.geometry().asPolyline()
-        for idx, name in [
-            (0, "connection_node_id_start"),
-            (-1, "connection_node_id_end"),
-        ]:
-            node, snapped = self.get_node(polyline[idx])
-
-            if node:
-                new_feat[name] = node["id"]
-                if snapped:
-                    polyline[idx] = node.geometry().asPoint()
-                    new_feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
-                if not snapped:
-                    new_nodes.append(node)
         return new_nodes
 
     def process_feature(self, src_feat):
@@ -902,12 +874,7 @@ class LineProcessor(StructureProcessor):
             new_feat,
         )
         # Use attribute-mapped node IDs when available, otherwise snap spatially
-        has_mapped_start = self._has_attribute_mapped_node("connection_node_id_start")
-        has_mapped_end = self._has_attribute_mapped_node("connection_node_id_end")
-        if has_mapped_start or has_mapped_end:
-            new_nodes = self._snap_geometry_to_mapped_nodes(new_feat)
-        else:
-            new_nodes = self.update_connection_nodes(new_feat)
+        new_nodes = self.update_connection_nodes(new_feat)
         update_attributes(
             self.cn_fields_configurations,
             dm.ConnectionNode,
