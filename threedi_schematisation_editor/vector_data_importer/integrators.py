@@ -479,7 +479,7 @@ class LinearIntegrator:
             conduit_feat, conduit_structures
         )
 
-        # update connection nodes for modified featurees
+        # update connection nodes for modified features
         # Get attributes of the first node to use for newly added nodes
         first_node_feat = next(
             get_features_by_expression(
@@ -491,15 +491,80 @@ class LinearIntegrator:
             field_name: first_node_feat[field_name]
             for field_name in self.layer_field_names_mapping[self.node_layer.name()]
         }
-        for substring_feat in (
-            added_features[self.target_layer.name()]
-            + added_features[self.integrate_layer.name()]
-        ):
+
+        # Determine if connection node IDs are attribute-mapped
+        has_mapped_start = self._has_attribute_mapped_node("connection_node_id_start")
+        has_mapped_end = self._has_attribute_mapped_node("connection_node_id_end")
+
+        for substring_feat in added_features[self.target_layer.name()]:
+            if has_mapped_start or has_mapped_end:
+                # Snap geometry to attribute-mapped nodes instead of overwriting IDs
+                added_features[self.node_layer.name()] += (
+                    self._snap_geometry_to_mapped_nodes(
+                        substring_feat,
+                        has_mapped_start,
+                        has_mapped_end,
+                        node_attributes,
+                    )
+                )
+            else:
+                added_features[self.node_layer.name()] += self.update_feature_endpoints(
+                    substring_feat, **node_attributes
+                )
+
+        # Conduit segments always need endpoint updates (they don't have attribute mapping)
+        for substring_feat in added_features[self.integrate_layer.name()]:
             added_features[self.node_layer.name()] += self.update_feature_endpoints(
                 substring_feat, **node_attributes
             )
 
         return added_features
+
+    def _has_attribute_mapped_node(self, field_name):
+        """Check if a connection node field was explicitly attribute-mapped (not AUTO)."""
+        from threedi_schematisation_editor.vector_data_importer.utils import (
+            ColumnImportMethod,
+        )
+
+        try:
+            field_config = self.fields_configurations[field_name]
+        except KeyError:
+            return False
+        return ColumnImportMethod(field_config["method"]) != ColumnImportMethod.AUTO
+
+    def _snap_geometry_to_mapped_nodes(
+        self, feat, has_mapped_start, has_mapped_end, template_node_attributes
+    ):
+        """Snap geometry endpoints to attribute-mapped nodes, create nodes for non-mapped endpoints."""
+        from threedi_schematisation_editor.utils import get_feature_by_id
+
+        new_nodes = []
+        polyline = feat.geometry().asPolyline()
+        node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
+
+        for idx, field_name, has_mapped in [
+            (0, "connection_node_id_start", has_mapped_start),
+            (-1, "connection_node_id_end", has_mapped_end),
+        ]:
+            if has_mapped:
+                # Look up node by the attribute-mapped ID and snap geometry to it
+                node_id = feat[field_name]
+                if node_id is not None:
+                    node_feat = get_feature_by_id(self.node_layer, node_id)
+                    if node_feat is not None:
+                        polyline[idx] = node_feat.geometry().asPoint()
+                        feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
+            else:
+                # Non-mapped: create/find node at geometry endpoint (existing behavior)
+                point = polyline[idx]
+                if point not in self.node_by_location:
+                    node_feat = self.add_node(
+                        point, node_layer_fields, template_node_attributes
+                    )
+                    new_nodes.append(node_feat)
+                feat[field_name] = self.node_by_location[point]
+
+        return new_nodes
 
 
 class PipeIntegrator(LinearIntegrator):

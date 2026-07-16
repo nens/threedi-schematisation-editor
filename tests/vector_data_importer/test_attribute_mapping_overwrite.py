@@ -2,7 +2,14 @@ from unittest.mock import MagicMock
 
 import pytest
 from PyQt5.QtCore import QVariant
-from qgis.core import QgsFeature, QgsField, QgsFields, QgsGeometry, QgsPointXY
+from qgis.core import (
+    QgsFeature,
+    QgsField,
+    QgsFields,
+    QgsGeometry,
+    QgsPointXY,
+    QgsVectorLayer,
+)
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.vector_data_importer import settings_models as sm
@@ -11,7 +18,31 @@ from threedi_schematisation_editor.vector_data_importer.integrators import (
     LinearIntegratorStructureData,
 )
 from threedi_schematisation_editor.vector_data_importer.processors import LineProcessor
-from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
+from threedi_schematisation_editor.vector_data_importer.utils import (
+    ColumnImportMethod,
+    FeatureManager,
+)
+
+
+@pytest.fixture
+def node_layer_with_nodes():
+    """Create a memory layer with nodes A (id=100) and B (id=200) at known locations."""
+    layer = QgsVectorLayer("Point?crs=EPSG:4326", "Connection node", "memory")
+    provider = layer.dataProvider()
+    provider.addAttributes([QgsField("id", QVariant.Int)])
+    layer.updateFields()
+
+    node_a = QgsFeature(layer.fields())
+    node_a.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(5, 5)))
+    node_a.setAttribute("id", 100)
+
+    node_b = QgsFeature(layer.fields())
+    node_b.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 50)))
+    node_b.setAttribute("id", 200)
+
+    provider.addFeatures([node_a, node_b])
+    layer.updateExtents()
+    return layer
 
 
 class TestLineProcessorAttributeMappingOverwrite:
@@ -70,59 +101,39 @@ class TestLineProcessorAttributeMappingOverwrite:
         fields.append(QgsField("connection_node_id_end", QVariant.Int))
         return fields
 
-    @pytest.fixture
-    def node_fields(self):
-        fields = QgsFields()
-        fields.append(QgsField("id", QVariant.Int))
-        return fields
-
     def test_process_feature_preserves_attribute_mapped_node_ids(
         self,
         source_line_feature_with_node_ids,
         target_fields,
-        node_fields,
         import_settings_with_node_mapping,
+        node_layer_with_nodes,
     ):
         """When connection_node_id_start/end are explicitly attribute-mapped,
-        process_feature should preserve those values instead of overwriting
-        them with spatially snapped node IDs.
-
-        This test currently FAILS, demonstrating the bug.
+        process_feature should preserve those values and snap geometry to the
+        referenced nodes.
         """
         target_layer = MagicMock()
         target_layer.fields.return_value = target_fields
         target_layer.name.return_value = "weirs"
-        node_layer = MagicMock()
-        node_layer.fields.return_value = node_fields
-        node_layer.name.return_value = "connection_nodes"
 
         processor = LineProcessor(
             target_layer,
             dm.Weir,
-            node_layer,
+            node_layer_with_nodes,
             import_settings_with_node_mapping,
         )
 
-        # Spatially snapped nodes C (id=42) and D (id=43)
-        snapped_start_node = QgsFeature(node_fields)
-        snapped_start_node.setAttribute("id", 42)
-        snapped_start_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(11, 21)))
-        snapped_end_node = QgsFeature(node_fields)
-        snapped_end_node.setAttribute("id", 43)
-        snapped_end_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(31, 41)))
+        # Mock get_node (should NOT be called when attribute mapping is used)
         processor.get_node = MagicMock(
-            side_effect=[
-                (snapped_start_node, True),
-                (snapped_end_node, True),
-            ]
+            side_effect=AssertionError(
+                "get_node should not be called for mapped fields"
+            )
         )
 
         result = processor.process_feature(source_line_feature_with_node_ids)
         new_weir = result["weirs"][0]
 
-        # Attribute mapping set these to 100 (A) and 200 (B).
-        # Snapping found nodes 42 (C) and 43 (D).
-        # The attribute-mapped values should be preserved.
+        # Attribute mapping should preserve node IDs A=100, B=200
         assert new_weir["connection_node_id_start"] == 100, (
             f"Expected attribute-mapped node A (100), got {new_weir['connection_node_id_start']}. "
             "Spatial snapping overwrote the attribute-mapped connection_node_id_start."
@@ -130,6 +141,15 @@ class TestLineProcessorAttributeMappingOverwrite:
         assert new_weir["connection_node_id_end"] == 200, (
             f"Expected attribute-mapped node B (200), got {new_weir['connection_node_id_end']}. "
             "Spatial snapping overwrote the attribute-mapped connection_node_id_end."
+        )
+
+        # Geometry should be snapped to nodes A (5,5) and B (50,50)
+        polyline = new_weir.geometry().asPolyline()
+        assert polyline[0] == QgsPointXY(5, 5), (
+            f"Geometry start should be snapped to node A at (5,5), got {polyline[0]}"
+        )
+        assert polyline[-1] == QgsPointXY(50, 50), (
+            f"Geometry end should be snapped to node B at (50,50), got {polyline[-1]}"
         )
 
 
@@ -146,24 +166,14 @@ class TestIntegrationAttributeMappingOverwrite:
     - Actual (bug): update_feature_endpoints overwrites with C/D node IDs
     """
 
-    def test_integrate_structure_preserves_attribute_mapped_node_ids(self):
+    def test_integrate_structure_preserves_attribute_mapped_node_ids(
+        self, node_layer_with_nodes
+    ):
         """When connection_node_id_start/end are explicitly attribute-mapped,
-        integrate_structure_features should preserve those values.
-
-        This test currently FAILS, demonstrating the bug.
+        _snap_geometry_to_mapped_nodes should preserve those values and snap
+        geometry to the referenced nodes.
         """
-        from threedi_schematisation_editor import data_models as dm
-        from threedi_schematisation_editor.vector_data_importer.utils import (
-            ColumnImportMethod,
-            FeatureManager,
-        )
-
         # Set up fields
-        channel_fields = QgsFields()
-        channel_fields.append(QgsField("id", QVariant.Int))
-        channel_fields.append(QgsField("connection_node_id_start", QVariant.Int))
-        channel_fields.append(QgsField("connection_node_id_end", QVariant.Int))
-
         weir_fields = QgsFields()
         weir_fields.append(QgsField("id", QVariant.Int))
         weir_fields.append(QgsField("connection_node_id_start", QVariant.Int))
@@ -172,7 +182,12 @@ class TestIntegrationAttributeMappingOverwrite:
         node_fields = QgsFields()
         node_fields.append(QgsField("id", QVariant.Int))
 
-        # Create a channel from (0,0) to (100,0) with existing nodes 1 and 2
+        # Create a channel from (0,0) to (100,0)
+        channel_fields = QgsFields()
+        channel_fields.append(QgsField("id", QVariant.Int))
+        channel_fields.append(QgsField("connection_node_id_start", QVariant.Int))
+        channel_fields.append(QgsField("connection_node_id_end", QVariant.Int))
+
         channel_feat = QgsFeature(channel_fields)
         channel_feat.setGeometry(
             QgsGeometry.fromPolylineXY([QgsPointXY(0, 0), QgsPointXY(100, 0)])
@@ -180,15 +195,6 @@ class TestIntegrationAttributeMappingOverwrite:
         channel_feat.setAttribute("id", 1)
         channel_feat.setAttribute("connection_node_id_start", 1)
         channel_feat.setAttribute("connection_node_id_end", 2)
-
-        # Create existing nodes at channel endpoints
-        node_1 = QgsFeature(node_fields)
-        node_1.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(0, 0)))
-        node_1.setAttribute("id", 1)
-
-        node_2 = QgsFeature(node_fields)
-        node_2.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(100, 0)))
-        node_2.setAttribute("id", 2)
 
         # Create source weir feature with attribute-mapped node IDs A=100, B=200
         src_weir_fields = QgsFields()
@@ -204,7 +210,6 @@ class TestIntegrationAttributeMappingOverwrite:
         src_weir.setAttribute("connection_node_id_end", 200)  # Node B
         src_weir.setAttribute("length", 10.0)
 
-        # Create a conduit structure data for the weir at m=50 with length=10
         conduit_structure = LinearIntegratorStructureData(
             conduit_id=1,
             feature=src_weir,
@@ -253,8 +258,7 @@ class TestIntegrationAttributeMappingOverwrite:
         integrator.target_layer.name.return_value = "Weir"
         integrator.integrate_layer = MagicMock()
         integrator.integrate_layer.name.return_value = "Channel"
-        integrator.node_layer = MagicMock()
-        integrator.node_layer.name.return_value = "Connection node"
+        integrator.node_layer = node_layer_with_nodes
 
         # Call place_structures_on_conduit (which calls update_attributes)
         placed_features = LinearIntegrator.place_structures_on_conduit(
@@ -268,46 +272,29 @@ class TestIntegrationAttributeMappingOverwrite:
         weir_feat = placed_features[0]
 
         # After place_structures_on_conduit, attribute mapping should have set A=100, B=200
-        assert weir_feat["connection_node_id_start"] == 100, (
-            "Attribute mapping should set connection_node_id_start to 100 (node A)"
+        assert weir_feat["connection_node_id_start"] == 100
+        assert weir_feat["connection_node_id_end"] == 200
+
+        # Now call _snap_geometry_to_mapped_nodes (the fix)
+        new_nodes = LinearIntegrator._snap_geometry_to_mapped_nodes(
+            integrator, weir_feat, True, True, {}
         )
-        assert weir_feat["connection_node_id_end"] == 200, (
-            "Attribute mapping should set connection_node_id_end to 200 (node B)"
-        )
 
-        # Now simulate what integrate_structure_features does next:
-        # It calls update_feature_endpoints which creates/finds nodes at the
-        # structure's geometry endpoints and overwrites connection_node_id_start/end.
-        # The weir geometry after placement is a substring of the channel at m=45..55.
-        weir_polyline = weir_feat.geometry().asPolyline()
-        start_point = weir_polyline[0]
-        end_point = weir_polyline[-1]
-
-        # These points are NOT in node_by_location yet, so update_feature_endpoints
-        # will create new nodes (C and D) via add_node.
-        # Set up add_node to create nodes with IDs 50 and 51 and update node_by_location.
-        node_id_counter = [50]
-
-        def mock_add_node(point, fields, attributes):
-            node_feat = QgsFeature(node_fields)
-            node_feat.setGeometry(QgsGeometry.fromPointXY(point))
-            node_feat.setAttribute("id", node_id_counter[0])
-            integrator.node_by_location[point] = node_id_counter[0]
-            node_id_counter[0] += 1
-            return node_feat
-
-        integrator.add_node = mock_add_node
-
-        new_nodes = LinearIntegrator.update_feature_endpoints(integrator, weir_feat)
-
-        # After update_feature_endpoints, the values should STILL be A=100, B=200
-        # (attribute mapping should take priority over spatial snapping)
-        # This assertion currently FAILS - demonstrating the bug
+        # Connection node IDs should STILL be 100 and 200
         assert weir_feat["connection_node_id_start"] == 100, (
             f"Expected attribute-mapped node A (100), got {weir_feat['connection_node_id_start']}. "
-            "update_feature_endpoints overwrote the attribute-mapped connection_node_id_start."
+            "Integration overwrote the attribute-mapped connection_node_id_start."
         )
         assert weir_feat["connection_node_id_end"] == 200, (
             f"Expected attribute-mapped node B (200), got {weir_feat['connection_node_id_end']}. "
-            "update_feature_endpoints overwrote the attribute-mapped connection_node_id_end."
+            "Integration overwrote the attribute-mapped connection_node_id_end."
+        )
+
+        # Geometry should be snapped to nodes A (5,5) and B (50,50)
+        polyline = weir_feat.geometry().asPolyline()
+        assert polyline[0] == QgsPointXY(5, 5), (
+            f"Geometry start should be snapped to node A at (5,5), got {polyline[0]}"
+        )
+        assert polyline[-1] == QgsPointXY(50, 50), (
+            f"Geometry end should be snapped to node B at (50,50), got {polyline[-1]}"
         )
