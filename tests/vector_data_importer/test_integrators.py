@@ -20,6 +20,7 @@ from threedi_schematisation_editor.vector_data_importer.integrators import (
     LinearIntegratorStructureData,
     LineStructurePlacement,
     PointStructurePlacement,
+    StructureNodeHandler,
 )
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 
@@ -526,10 +527,8 @@ class TestNodeManagement:
 
     @pytest.mark.parametrize("initial_nodes", [["start"], [], ["start", "end"]])
     def test_update_feature_endpoints(self, initial_nodes):
-        """Test update_feature_endpoints: connection_node_id fields are unset →
+        """Test StructureNodeHandler.update_nodes: connection_node_id fields are unset →
         nodes are created/found spatially via node_by_location."""
-        integrator = MagicMock(spec=LinearIntegrator)
-
         points = {"start": (QgsPointXY(0, 0), 101), "end": (QgsPointXY(100, 0), 102)}
         start_point = QgsPointXY(0, 0)
         end_point = QgsPointXY(100, 0)
@@ -541,9 +540,6 @@ class TestNodeManagement:
 
         mock_node_layer = MagicMock()
         mock_node_layer.name.return_value = "connection_nodes"
-        integrator.node_layer = mock_node_layer
-        integrator.node_by_location = node_by_location
-        integrator.layer_fields_mapping = {"connection_nodes": node_layer_fields}
 
         features_to_add = []
         for name, (pt, node_id) in points.items():
@@ -554,12 +550,19 @@ class TestNodeManagement:
                 features_to_add.append(mock_node_feature)
         mock_features = features_to_add.copy()
 
-        def mock_add_node(point, fields, attributes):
+        node_manager = MagicMock()
+
+        def mock_create_new(geom, fields, attributes):
             feature = mock_features.pop(0)
-            integrator.node_by_location[point] = feature["id"]
+            node_by_location[geom.asPoint()] = feature["id"]
             return feature
 
-        integrator.add_node.side_effect = mock_add_node
+        node_manager.create_new.side_effect = mock_create_new
+
+        layer_fields_mapping = {"connection_nodes": node_layer_fields}
+        handler = StructureNodeHandler(
+            mock_node_layer, node_by_location, node_manager, layer_fields_mapping
+        )
 
         dst_fields = QgsFields()
         dst_fields.append(QgsField("connection_node_id_start", QVariant.Int))
@@ -567,12 +570,10 @@ class TestNodeManagement:
         dst_feature = QgsFeature(dst_fields)
         dst_feature.setGeometry(QgsGeometry.fromPolylineXY([start_point, end_point]))
 
-        result = LinearIntegrator.update_feature_endpoints(
-            integrator, dst_feature, {"name": "Test Node"}
-        )
+        result = handler.update_nodes(dst_feature, {"name": "Test Node"})
         assert result == features_to_add
-        assert integrator.node_by_location[start_point] == 101
-        assert integrator.node_by_location[end_point] == 102
+        assert node_by_location[start_point] == 101
+        assert node_by_location[end_point] == 102
 
     @pytest.mark.parametrize("initial_nodes", [["start"], [], ["start", "end"]])
     def test_update_structure_nodes(self, initial_nodes):
@@ -626,12 +627,10 @@ class TestNodeManagement:
         assert node_by_location[end_point] == 102
 
     def test_update_feature_endpoints_with_attribute_mapped_node_ids(self):
-        """Test update_feature_endpoints with overwrite_node_ids=True:
+        """Test StructureNodeHandler.update_nodes with respect_mapped_node_ids=True:
         connection_node_id fields are pre-set → look up node by ID, snap geometry,
-        add_node is never called."""
+        node_manager.create_new is never called."""
         from qgis.core import QgsVectorLayer
-
-        integrator = MagicMock(spec=LinearIntegrator)
 
         start_point = QgsPointXY(0, 0)
         end_point = QgsPointXY(100, 0)
@@ -648,9 +647,13 @@ class TestNodeManagement:
             node_layer.dataProvider().addFeatures([feat])
 
         node_layer_fields = node_layer.fields()
-        integrator.node_layer = node_layer
-        integrator.node_by_location = {}
-        integrator.layer_fields_mapping = {"connection_nodes": node_layer_fields}
+        node_by_location = {}
+        layer_fields_mapping = {"connection_nodes": node_layer_fields}
+        node_manager = MagicMock()
+
+        handler = StructureNodeHandler(
+            node_layer, node_by_location, node_manager, layer_fields_mapping
+        )
 
         dst_fields = QgsFields()
         dst_fields.append(QgsField("connection_node_id_start", QVariant.Int))
@@ -660,12 +663,10 @@ class TestNodeManagement:
         dst_feature["connection_node_id_start"] = 101
         dst_feature["connection_node_id_end"] = 102
 
-        result = LinearIntegrator.update_feature_endpoints(
-            integrator, dst_feature, {}, respect_mapped_node_ids=True
-        )
+        result = handler.update_nodes(dst_feature, {}, respect_mapped_node_ids=True)
 
         assert result == []
-        integrator.add_node.assert_not_called()
+        node_manager.create_new.assert_not_called()
         assert dst_feature["connection_node_id_start"] == 101
         assert dst_feature["connection_node_id_end"] == 102
         polyline = dst_feature.geometry().asPolyline()

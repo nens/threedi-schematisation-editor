@@ -181,6 +181,49 @@ class PointStructurePlacement(StructurePlacementStrategy):
         return new_nodes
 
 
+class StructureNodeHandler:
+    """Handles node assignment for standard two-endpoint line structures.
+
+    Extracted from LinearIntegrator.update_feature_endpoints so that
+    LinearIntegrator can delegate to either this handler or PumpMapNodeHandler
+    via the same interface.
+    """
+
+    def __init__(self, node_layer, node_by_location, node_manager, layer_fields_mapping):
+        self.node_layer = node_layer
+        self.node_by_location = node_by_location
+        self.node_manager = node_manager
+        self.layer_fields_mapping = layer_fields_mapping
+
+    def update_nodes(self, feat, node_attributes, respect_mapped_node_ids=False):
+        """Snap geometry endpoints to attribute-mapped nodes, create nodes for non-mapped endpoints."""
+        new_nodes = []
+        polyline = feat.geometry().asPolyline()
+        node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
+
+        for idx, field_name in [
+            (0, "connection_node_id_start"),
+            (-1, "connection_node_id_end"),
+        ]:
+            node_id = feat[field_name]
+            if node_id is not None and node_id is not NULL and respect_mapped_node_ids:
+                node_feat = get_feature_by_id(self.node_layer, node_id)
+                if node_feat is not None:
+                    polyline[idx] = node_feat.geometry().asPoint()
+                    feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
+            else:
+                point = polyline[idx]
+                if point not in self.node_by_location:
+                    node_feat = self.node_manager.create_new(
+                        QgsGeometry.fromPointXY(point), node_layer_fields, node_attributes
+                    )
+                    self.node_by_location[point] = node_feat["id"]
+                    new_nodes.append(node_feat)
+                feat[field_name] = self.node_by_location[point]
+
+        return new_nodes
+
+
 class LinearIntegrator:
     """Integrate linear structures onto a conduit (channel or pipe)"""
 
@@ -199,6 +242,7 @@ class LinearIntegrator:
         target_gpkg,
         conduit_model_cls,
         strategy,
+        node_handler=None,
     ):
         self.external_source = external_source
         self.conduit_model_cls = conduit_model_cls
@@ -239,6 +283,12 @@ class LinearIntegrator:
         self.setup_fields_map()
         self.setup_spatial_indexes()
         self.setup_node_by_location()
+        self.node_handler = node_handler or StructureNodeHandler(
+            self.node_layer,
+            self.node_by_location,
+            self.node_manager,
+            self.layer_fields_mapping,
+        )
 
     @staticmethod
     def get_integrator(
@@ -574,7 +624,7 @@ class LinearIntegrator:
         }
 
         for substring_feat in added_features[self.target_layer.name()]:
-            added_features[self.node_layer.name()] += self.update_feature_endpoints(
+            added_features[self.node_layer.name()] += self.node_handler.update_nodes(
                 substring_feat, node_attributes, respect_mapped_node_ids=True
             )
 
@@ -590,36 +640,6 @@ class LinearIntegrator:
                 self.node_manager,
             )
         return added_features
-
-    def update_feature_endpoints(
-        self, feat, template_node_attributes, respect_mapped_node_ids=False
-    ):
-        """Snap geometry endpoints to attribute-mapped nodes, create nodes for non-mapped endpoints."""
-        new_nodes = []
-        polyline = feat.geometry().asPolyline()
-        node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
-
-        for idx, field_name in [
-            (0, "connection_node_id_start"),
-            (-1, "connection_node_id_end"),
-        ]:
-            node_id = feat[field_name]
-            if node_id is not None and node_id is not NULL and respect_mapped_node_ids:
-                node_feat = get_feature_by_id(self.node_layer, node_id)
-                if node_feat is not None:
-                    polyline[idx] = node_feat.geometry().asPoint()
-                    feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
-            else:
-                # Non-mapped: create/find node at geometry endpoint (existing behavior)
-                point = polyline[idx]
-                if point not in self.node_by_location:
-                    node_feat = self.add_node(
-                        point, node_layer_fields, template_node_attributes
-                    )
-                    new_nodes.append(node_feat)
-                feat[field_name] = self.node_by_location[point]
-
-        return new_nodes
 
 
 class PipeIntegrator(LinearIntegrator):
