@@ -335,6 +335,9 @@ class ImportPumps(StructureImporter):
     TARGET_MODEL_CLS = dm.Pump
     CONNECTION_NODE_MODEL_CLS = dm.ConnectionNode
 
+    def get_source_layer_types(self):
+        return [QgsProcessing.TypeVectorPoint]
+
 
 class ImportSurfaces(SimpleImporter):
     IMPORTER_CLASS = SurfaceImporter
