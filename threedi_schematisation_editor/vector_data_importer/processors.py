@@ -907,6 +907,103 @@ class LineProcessor(StructureProcessor):
         return {self.target_name: [new_feat]}
 
 
+class PumpProcessor(StructureProcessor):
+    """Processes point source features into Pump + optional PumpMap.
+
+    End point resolution priority:
+    1. Attribute mapping via pump_linking.connection_node_id_end (if not AUTO):
+       look up the mapped connection node ID in the node layer, use its location.
+       If the node ID does not exist, emit a ProcessorWarning and fall through.
+    2. point_to_line: project end point from start using length + azimuth settings.
+    If neither resolves an end point, only a pump is created (no pump_map).
+    """
+
+    def __init__(self, target_layer, pump_map_layer, node_layer, import_settings):
+        super().__init__(target_layer, dm.Pump, node_layer, import_settings)
+        self.pump_map_name = pump_map_layer.name()
+        self.pump_map_manager = FeatureManager(get_next_feature_id(pump_map_layer))
+        self.pump_map_fields = pump_map_layer.fields()
+        self.pump_linking_settings = import_settings.pump_linking
+
+    def resolve_end_point(self, src_feat, start_point):
+        """Resolve end point for pump_map, or return None if not possible."""
+        cn_id_end_config = self.pump_linking_settings.connection_node_id_end
+        if cn_id_end_config.method != ColumnImportMethod.AUTO:
+            node_id = get_field_config_value(cn_id_end_config, src_feat)
+            if node_id is not None:
+                node_feat = get_feature_by_id(self.node_layer, node_id)
+                if node_feat is not None:
+                    return node_feat.geometry().asPoint()
+                warnings.warn(
+                    f"pump_linking.connection_node_id_end: connection node {node_id} "
+                    f"not found for source feature {src_feat.id()}; "
+                    f"falling through to point_to_line.",
+                    ProcessorWarning,
+                )
+
+        # Fallback: point_to_line
+        length = get_field_config_value(
+            self.point_to_line_conversion_settings.length, src_feat
+        )
+        azimuth = get_field_config_value(
+            self.point_to_line_conversion_settings.azimuth, src_feat
+        )
+        if length is not None and azimuth is not None:
+            return start_point.project(length, azimuth)
+
+        return None
+
+    def process_feature(self, src_feat):
+        """Process source point feature into a Pump + optional PumpMap."""
+        src_geom = get_src_geometry(src_feat)
+        if src_geom is None:
+            return {}
+        start_point = SpatialProcessor.create_new_point_geometry(src_geom).asPoint()
+        if self.transformation:
+            geom = QgsGeometry.fromPointXY(start_point)
+            geom.transform(self.transformation)
+            start_point = geom.asPoint()
+
+        pump_feat = self.target_manager.create_new(
+            QgsGeometry.fromPointXY(start_point), self.target_fields
+        )
+        update_attributes(self.fields_configurations, dm.Pump, src_feat, pump_feat)
+        new_nodes = self.update_connection_nodes(pump_feat)
+        update_attributes(
+            self.cn_fields_configurations, dm.ConnectionNode, src_feat, *new_nodes
+        )
+        for node in new_nodes:
+            self.node_layer.addFeature(node)
+        if new_nodes:
+            self.node_locator = get_point_locator(self.node_layer, self.context)
+
+        end_point = self.resolve_end_point(src_feat, start_point)
+        if end_point is None:
+            return {self.target_name: [pump_feat]}
+
+        end_node, end_snapped = self.get_node(end_point)
+        if end_node is None:
+            return {self.target_name: [pump_feat]}
+        if not end_snapped:
+            update_attributes(
+                self.cn_fields_configurations, dm.ConnectionNode, src_feat, end_node
+            )
+            self.node_layer.addFeature(end_node)
+            self.node_locator = get_point_locator(self.node_layer, self.context)
+
+        pump_map_feat = self.pump_map_manager.create_new(
+            QgsGeometry.fromPolylineXY([start_point, end_node.geometry().asPoint()]),
+            self.pump_map_fields,
+        )
+        pump_map_feat["pump_id"] = pump_feat["id"]
+        pump_map_feat["connection_node_id_end"] = end_node["id"]
+
+        return {
+            self.target_name: [pump_feat],
+            self.pump_map_name: [pump_map_feat],
+        }
+
+
 class PumpLineProcessor(StructureProcessor):
     def __init__(
         self,

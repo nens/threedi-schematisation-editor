@@ -284,6 +284,20 @@ class SurfaceLinkingSettings(BaseModel):
     attribute_match_input_config: Optional[FieldMapConfig] = None
 
 
+class PumpLinkingSettings(BaseModel):
+    metadata: ClassVar[FieldMapMetadata] = FieldMapMetadata(
+        allowed_methods=[
+            ColumnImportMethod.AUTO,
+            ColumnImportMethod.ATTRIBUTE,
+            ColumnImportMethod.EXPRESSION,
+        ]
+    )
+    name: ClassVar[str] = "pump_linking"
+    connection_node_id_end: FieldMapConfig = FieldMapConfig.with_metadata(metadata)(
+        method=ColumnImportMethod.AUTO
+    )
+
+
 class ImportSettings(BaseModel):
     source: SourceSettings = SourceSettings()
     connection_nodes: ConnectionNodeSettings = ConnectionNodeSettings()
@@ -295,6 +309,7 @@ class ImportSettings(BaseModel):
     )
     surface_linking: SurfaceLinkingSettings = SurfaceLinkingSettings()
     pump_direction: PumpSettings = PumpSettings()
+    pump_linking: PumpLinkingSettings = PumpLinkingSettings()
     fields: dict[str, FieldMapConfig] = {}
     connection_node_fields: dict[str, FieldMapConfig] = {}
     surface_map_fields: dict[str, FieldMapConfig] = {}
