@@ -968,7 +968,17 @@ class PumpProcessor(StructureProcessor):
             QgsGeometry.fromPointXY(start_point), self.target_fields
         )
         update_attributes(self.fields_configurations, dm.Pump, src_feat, pump_feat)
-        new_nodes = self.update_connection_nodes(pump_feat)
+
+        # Snap/create connection node at pump location
+        new_nodes = []
+        node, snapped = self.get_node(start_point)
+        if node:
+            pump_feat["connection_node_id"] = node["id"]
+            if snapped:
+                pump_feat.setGeometry(QgsGeometry.fromPointXY(node.geometry().asPoint()))
+            else:
+                new_nodes.append(node)
+
         update_attributes(
             self.cn_fields_configurations, dm.ConnectionNode, src_feat, *new_nodes
         )

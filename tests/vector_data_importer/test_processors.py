@@ -17,6 +17,7 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
     LineProcessor,
     PointProcessor,
+    PumpProcessor,
     SpatialProcessor,
     StructureProcessor,
 )
@@ -508,3 +509,165 @@ class TestUtilityFunctions:
 
             # Check that the result is False
             assert result is False
+
+
+def _make_pump_processor(target_layer, pump_map_layer, node_layer, pump_linking=None):
+    """Build a PumpProcessor with minimal import_settings."""
+    settings = sm.ImportSettings(
+        fields={"id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)},
+        connection_node_fields={"id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)},
+        point_to_line_conversion={
+            "length": {"method": "default", "default_value": 50.0},
+            "azimuth": {"method": "default", "default_value": 90.0},
+        },
+    )
+    if pump_linking is not None:
+        settings.pump_linking = pump_linking
+    return PumpProcessor(target_layer, pump_map_layer, node_layer, settings)
+
+
+class TestPumpProcessor:
+    def _make_layers(self):
+        from qgis.core import QgsVectorLayer
+        pump_layer = QgsVectorLayer("Point?crs=EPSG:28992", "pump", "memory")
+        pump_layer.dataProvider().addAttributes([
+            QgsField("id", QVariant.Int),
+            QgsField("connection_node_id", QVariant.Int),
+        ])
+        pump_layer.updateFields()
+
+        pump_map_layer = QgsVectorLayer("LineString?crs=EPSG:28992", "pump_map", "memory")
+        pump_map_layer.dataProvider().addAttributes([
+            QgsField("id", QVariant.Int),
+            QgsField("pump_id", QVariant.Int),
+            QgsField("connection_node_id_end", QVariant.Int),
+        ])
+        pump_map_layer.updateFields()
+
+        node_layer = QgsVectorLayer("Point?crs=EPSG:28992", "connection_nodes", "memory")
+        node_layer.dataProvider().addAttributes([
+            QgsField("id", QVariant.Int),
+        ])
+        node_layer.updateFields()
+        return pump_layer, pump_map_layer, node_layer
+
+    def _make_src_feat(self, x=0.0, y=0.0):
+        fields = QgsFields()
+        fields.append(QgsField("id", QVariant.Int))
+        feat = QgsFeature(fields)
+        feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(x, y)))
+        feat.setAttribute("id", 1)
+        return feat
+
+    def test_pump_only_when_no_end_point(self):
+        """No pump_map created when end node cannot be snapped or created."""
+        pump_layer, pump_map_layer, node_layer = self._make_layers()
+        processor = _make_pump_processor(pump_layer, pump_map_layer, node_layer)
+        processor.node_locator = MagicMock()
+
+        start_node = QgsFeature(node_layer.fields())
+        start_node["id"] = 1
+        start_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(0, 0)))
+        # end node snap returns None → no pump_map
+        processor.get_node = MagicMock(side_effect=[
+            (start_node, True),
+            (None, False),
+        ])
+
+        result = processor.process_feature(self._make_src_feat())
+
+        assert "pump" in result
+        assert "pump_map" not in result
+
+    def test_point_to_line_creates_pump_and_pump_map(self):
+        """point_to_line fallback creates pump + pump_map when end node snaps."""
+        pump_layer, pump_map_layer, node_layer = self._make_layers()
+        processor = _make_pump_processor(pump_layer, pump_map_layer, node_layer)
+        processor.node_locator = MagicMock()
+
+        start_node = QgsFeature(node_layer.fields())
+        start_node["id"] = 10
+        start_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(0, 0)))
+
+        end_node = QgsFeature(node_layer.fields())
+        end_node["id"] = 20
+        end_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 0)))
+
+        processor.get_node = MagicMock(side_effect=[
+            (start_node, True),  # start node for pump
+            (end_node, True),    # end node for pump_map
+        ])
+
+        result = processor.process_feature(self._make_src_feat())
+
+        assert "pump" in result
+        assert "pump_map" in result
+        pump_map = result["pump_map"][0]
+        assert pump_map["pump_id"] == result["pump"][0]["id"]
+        assert pump_map["connection_node_id_end"] == 20
+
+    def test_attribute_mapping_takes_priority_over_point_to_line(self):
+        """Attribute mapping takes priority: mapped node used, point_to_line not consulted."""
+        from qgis.core import QgsVectorLayer
+        pump_layer, pump_map_layer, node_layer = self._make_layers()
+
+        # Add a node to the node layer to map to
+        mapped_node = QgsFeature(node_layer.fields())
+        mapped_node["id"] = 99
+        mapped_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(200, 200)))
+        node_layer.dataProvider().addFeatures([mapped_node])
+
+        pump_linking = sm.PumpLinkingSettings(
+            connection_node_id_end=sm.FieldMapConfig(
+                method=ColumnImportMethod.ATTRIBUTE,
+                source_attribute="id",  # maps src feat id=1 -> node id=1 (won't exist, fallthrough)
+            )
+        )
+        # Use a source feature whose id matches the mapped node
+        fields = QgsFields()
+        fields.append(QgsField("id", QVariant.Int))
+        src_feat = QgsFeature(fields)
+        src_feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(0, 0)))
+        src_feat.setAttribute("id", 99)  # maps to node id=99
+
+        processor = _make_pump_processor(pump_layer, pump_map_layer, node_layer, pump_linking)
+        processor.node_locator = MagicMock()
+
+        start_node = QgsFeature(node_layer.fields())
+        start_node["id"] = 10
+        start_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(0, 0)))
+        end_node = QgsFeature(node_layer.fields())
+        end_node["id"] = 99
+        end_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(200, 200)))
+
+        processor.get_node = MagicMock(side_effect=[
+            (start_node, True),
+            (end_node, True),
+        ])
+
+        result = processor.process_feature(src_feat)
+
+        assert "pump" in result
+        assert "pump_map" in result
+        assert result["pump_map"][0]["connection_node_id_end"] == 99
+
+    def test_pump_map_skipped_when_end_node_not_found(self):
+        """No pump_map created when end node cannot be found/created."""
+        pump_layer, pump_map_layer, node_layer = self._make_layers()
+        processor = _make_pump_processor(pump_layer, pump_map_layer, node_layer)
+        processor.node_locator = MagicMock()
+
+        start_node = QgsFeature(node_layer.fields())
+        start_node["id"] = 10
+        start_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(0, 0)))
+
+        # end node snap fails (returns None)
+        processor.get_node = MagicMock(side_effect=[
+            (start_node, True),
+            (None, False),
+        ])
+
+        result = processor.process_feature(self._make_src_feat())
+
+        assert "pump" in result
+        assert "pump_map" not in result

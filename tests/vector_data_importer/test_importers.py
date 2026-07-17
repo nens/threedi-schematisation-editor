@@ -6,6 +6,8 @@ from qgis.core import (
     QgsField,
     QgsFields,
     QgsGeometry,
+    QgsPointXY,
+    QgsVectorLayer,
     QgsWkbTypes,
 )
 from qgis.PyQt.QtCore import QVariant
@@ -22,11 +24,10 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
     SpatialImporter,
     SurfaceImporter,
 )
-from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
-
 from threedi_schematisation_editor.vector_data_importer.processors import (
     PumpProcessor,
 )
+from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 
 from .utils import SCHEMATISATION_PATH
 
@@ -360,3 +361,63 @@ def test_cross_section_location_auto_layers(import_settings):
         None, str(gpkg), import_settings, target_layer=None
     )
     assert importer.processor.channel_layer.isValid()
+
+
+class TestPumpsImporter:
+    def _make_point_source(self, x=0.0, y=0.0, crs="EPSG:28992"):
+        layer = QgsVectorLayer(f"Point?crs={crs}", "pumps_src", "memory")
+        layer.dataProvider().addAttributes([QgsField("id", QVariant.Int)])
+        layer.updateFields()
+        feat = QgsFeature(layer.fields())
+        feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(x, y)))
+        feat.setAttribute("id", 1)
+        layer.dataProvider().addFeatures([feat])
+        return layer
+
+    def test_pump_only_import(self):
+        """Pump-only import: no point_to_line defaults → only pumps added."""
+        gpkg = get_temp_copy(SCHEMATISATION_PATH.joinpath("empty.gpkg"))
+        source = self._make_point_source(x=100.0, y=100.0)
+        settings = sm.ImportSettings(
+            connection_nodes=sm.ConnectionNodeSettings(snap=False, create_nodes=False),
+            fields={"id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)},
+            connection_node_fields={
+                "id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)
+            },
+        )
+        importer = PumpsImporter(
+            external_source=source,
+            target_gpkg=str(gpkg),
+            import_settings=settings,
+        )
+        pump_layer = importer.target_layer
+        pump_map_layer = importer.pump_map_layer
+        pump_count_before = pump_layer.featureCount()
+        pump_map_count_before = pump_map_layer.featureCount()
+
+        importer.import_features()
+
+        assert pump_layer.featureCount() == pump_count_before + 1
+        assert pump_map_layer.featureCount() == pump_map_count_before
+
+    def test_point_to_line_creates_pump_and_pump_map(self, import_settings):
+        """point_to_line configured → pump + pump_map created."""
+        gpkg = get_temp_copy(SCHEMATISATION_PATH.joinpath("empty.gpkg"))
+        source = self._make_point_source(x=100.0, y=100.0)
+        import_settings.point_to_line_conversion.length = sm.FieldMapConfig(
+            method=ColumnImportMethod.DEFAULT, default_value=10.0
+        )
+        import_settings.point_to_line_conversion.azimuth = sm.FieldMapConfig(
+            method=ColumnImportMethod.DEFAULT, default_value=90.0
+        )
+        importer = PumpsImporter(
+            external_source=source,
+            target_gpkg=str(gpkg),
+            import_settings=import_settings,
+        )
+        pump_map_layer = importer.pump_map_layer
+        pump_map_count_before = pump_map_layer.featureCount()
+
+        importer.import_features()
+
+        assert pump_map_layer.featureCount() == pump_map_count_before + 1
