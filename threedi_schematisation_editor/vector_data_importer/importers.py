@@ -4,15 +4,21 @@ from typing import Optional
 
 from qgis.core import (
     QgsCoordinateTransform,
+    QgsFeature,
+    QgsGeometry,
     QgsProject,
     QgsVectorLayer,
     QgsWkbTypes,
 )
 
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.utils import gpkg_layer
+from threedi_schematisation_editor.utils import get_next_feature_id, gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.integrators import (
     LinearIntegrator,
+    LineStructurePlacement,
+    PointStructurePlacement,
+    PumpMapNodeHandler,
+    StructureNodeHandler,
 )
 from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
@@ -20,9 +26,13 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionLocationProcessor,
     LineProcessor,
     PointProcessor,
+    PumpProcessor,
     SurfaceProcessor,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (
+    ColumnImportMethod,
+    FeatureManager,
+    get_field_config_value,
     get_point_locator,
 )
 
@@ -481,10 +491,180 @@ class PumpsImporter(IntegrationImporter):
 
     @property
     def modifiable_layers(self):
-        layers = [self.target_layer, self.node_layer]
+        layers = [self.target_layer, self.pump_map_layer, self.node_layer]
         if self.integrator:
             layers += self.integrator.modifiable_layers
         return layers
+
+    def build_pump_map_source_layer(self, context=None):
+        """Build an in-memory LineString layer of resolved pump_map lines.
+
+        For each source feature, tries attribute mapping then point_to_line to
+        resolve an end point. Features with an end point become line features
+        (all source fields copied — required for PumpMapNodeHandler attribute mapping).
+        Returns (in_memory_layer, without_map_fids).
+        """
+        crs = self.target_layer.crs().authid()
+        mem_layer = QgsVectorLayer(
+            f"LineString?crs={crs}", "pump_map_source", "memory"
+        )
+        mem_layer.dataProvider().addAttributes(
+            self.external_source.fields().toList()
+        )
+        mem_layer.updateFields()
+
+        transformation = self.get_transformation(context)
+        cn_id_end_config = self.import_settings.pump_linking.connection_node_id_end
+        ptl = self.import_settings.point_to_line_conversion
+        without_map_fids = []
+
+        for src_feat in self.external_source.getFeatures():
+            src_geom = src_feat.geometry()
+            if transformation:
+                src_geom.transform(transformation)
+            start_point = src_geom.asPoint()
+
+            end_point = None
+            if cn_id_end_config.method != ColumnImportMethod.AUTO:
+                node_id = get_field_config_value(cn_id_end_config, src_feat)
+                if node_id is not None:
+                    node_feat = next(
+                        (
+                            f for f in self.node_layer.getFeatures()
+                            if f["id"] == node_id
+                        ),
+                        None,
+                    )
+                    if node_feat is not None:
+                        end_point = node_feat.geometry().asPoint()
+
+            if end_point is None:
+                length = get_field_config_value(ptl.length, src_feat)
+                azimuth = get_field_config_value(ptl.azimuth, src_feat)
+                if length is not None and azimuth is not None:
+                    end_point = start_point.project(length, azimuth)
+
+            if end_point is not None:
+                line_feat = QgsFeature(mem_layer.fields())
+                line_feat.setGeometry(
+                    QgsGeometry.fromPolylineXY([start_point, end_point])
+                )
+                # Copy all source fields so PumpMapNodeHandler can map pump attributes
+                for field in self.external_source.fields():
+                    line_feat[field.name()] = src_feat[field.name()]
+                mem_layer.dataProvider().addFeature(line_feat)
+            else:
+                without_map_fids.append(src_feat.id())
+
+        return mem_layer, without_map_fids
+
+    def import_features(self, context=None, selected_ids=None, progress_callback=None):
+        self.start_editing()
+        all_features = defaultdict(list)
+
+        # Phase A: pump_maps
+        pump_map_source, without_map_fids = self.build_pump_map_source_layer(context)
+        pump_map_source_fids = [f.id() for f in pump_map_source.getFeatures()]
+
+        if pump_map_source_fids:
+            pump_manager = FeatureManager(get_next_feature_id(self.target_layer))
+            node_by_location = {
+                f.geometry().asPoint(): f["id"]
+                for f in self.node_layer.getFeatures()
+            }
+            pump_map_node_handler = PumpMapNodeHandler(
+                pump_layer=self.target_layer,
+                pump_manager=pump_manager,
+                node_layer=self.node_layer,
+                node_by_location=node_by_location,
+                node_manager=FeatureManager(get_next_feature_id(self.node_layer)),
+                layer_fields_mapping={
+                    self.node_layer.name(): self.node_layer.fields(),
+                    self.target_layer.name(): self.target_layer.fields(),
+                },
+                import_settings=self.import_settings,
+            )
+
+            integrated_fids = []
+            integration_mode = self.import_settings.integration.integration_mode
+            if integration_mode.value != "None" and self._conduit_layer is not None:
+                length_config = self.import_settings.point_to_line_conversion.length
+                strategy = LineStructurePlacement(length_config, simplify_geometry=True)
+                integrator = LinearIntegrator(
+                    conduit_layer=self._conduit_layer,
+                    target_model_cls=dm.PumpMap,
+                    target_layer=self.pump_map_layer,
+                    target_manager=FeatureManager(get_next_feature_id(self.pump_map_layer)),
+                    node_layer=self.node_layer,
+                    node_manager=pump_map_node_handler.node_manager,
+                    import_settings=self.import_settings,
+                    external_source=pump_map_source,
+                    target_gpkg=self.target_gpkg,
+                    conduit_model_cls=dm.Pipe,
+                    strategy=strategy,
+                    node_handler=pump_map_node_handler,
+                )
+                integrated_features, integrated_fids = integrator.integrate_features(
+                    pump_map_source_fids
+                )
+                for layer_name, feats in integrated_features.items():
+                    all_features[layer_name] += feats
+
+            # Remaining pump_maps: use PumpProcessor on the original source features
+            remaining_fids = [
+                fid for fid in pump_map_source_fids if fid not in integrated_fids
+            ]
+            if remaining_fids:
+                pump_processor = PumpProcessor(
+                    self.target_layer,
+                    self.pump_map_layer,
+                    self.node_layer,
+                    self.import_settings,
+                )
+                pump_processor.transformation = self.get_transformation(context)
+                pump_processor.node_locator = get_point_locator(self.node_layer, context)
+                pump_processor.context = context
+                # Map back from in-memory fids to original source features by field values
+                remaining_src_feats = []
+                for fid in remaining_fids:
+                    mem_feat = pump_map_source.getFeature(fid)
+                    for src_feat in self.external_source.getFeatures():
+                        if all(
+                            src_feat[f.name()] == mem_feat[f.name()]
+                            for f in self.external_source.fields()
+                        ):
+                            remaining_src_feats.append(src_feat)
+                            break
+                processed = pump_processor.process_features(remaining_src_feats)
+                for layer_name, feats in processed.items():
+                    all_features[layer_name] += feats
+
+        # Phase B: pumps without maps
+        if without_map_fids:
+            input_fids = without_map_fids
+            if selected_ids:
+                input_fids = [fid for fid in input_fids if fid in selected_ids]
+
+            self.processor.transformation = self.get_transformation(context)
+            self.processor.node_locator = get_point_locator(self.node_layer, context)
+            self.processor.context = context
+
+            if self.integrator:
+                if self.processor.transformation:
+                    self.integrator.set_transformed_spatial_index(
+                        transform=self.processor.transformation
+                    )
+                integrated_features, input_fids = self.integrator.integrate_features(
+                    input_fids
+                )
+                for layer_name, feats in integrated_features.items():
+                    all_features[layer_name] += feats
+
+            processed = self.process_features(input_fids)
+            for layer_name, feats in processed.items():
+                all_features[layer_name] += feats
+
+        self.add_features_to_layers(all_features)
 
 
 class SurfaceImporter(SpatialImporter):
