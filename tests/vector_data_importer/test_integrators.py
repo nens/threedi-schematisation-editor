@@ -574,7 +574,7 @@ class TestNodeManagement:
         dst_feature.setGeometry(QgsGeometry.fromPolylineXY([start_point, end_point]))
 
         result = handler.update_nodes(dst_feature, {"name": "Test Node"})
-        assert result == features_to_add
+        assert result == {"connection_nodes": features_to_add}
         assert node_by_location[start_point] == 101
         assert node_by_location[end_point] == 102
 
@@ -670,7 +670,7 @@ class TestNodeManagement:
 
         result = handler.update_nodes(dst_feature, {}, respect_mapped_node_ids=True)
 
-        assert result == []
+        assert result == {"connection_nodes": []}
         node_manager.create_new.assert_not_called()
         assert dst_feature["connection_node_id_start"] == 101
         assert dst_feature["connection_node_id_end"] == 102
@@ -743,7 +743,7 @@ class TestPumpMapNodeHandler:
         # Pre-seed end node so only start triggers create
         node_by_location[end_pt] = 20
 
-        handler.update_nodes(feat, {})
+        result = handler.update_nodes(feat, {})
 
         node_manager.create_new.assert_called_once()
         call_geom = node_manager.create_new.call_args[0][0]
@@ -752,7 +752,7 @@ class TestPumpMapNodeHandler:
         pump_manager.create_new.assert_called_once()
         assert pump_feat["connection_node_id"] == 10
         assert feat["pump_id"] == 1
-        assert handler.created_pumps == [pump_feat]
+        assert result == {"connection_nodes": [node_feat], "pump": [pump_feat]}
 
     def test_end_node_created_and_connection_node_id_end_set(self):
         """End node created, pump_map.connection_node_id_end set correctly."""
@@ -818,10 +818,10 @@ class TestPumpMapNodeHandler:
 
         handler = make_pump_map_handler(pump_layer, pump_manager, node_layer, node_by_location, node_manager)
         feat = self._make_pump_map_feat(start_pt, end_pt)
-        new_nodes = handler.update_nodes(feat, {})
+        result = handler.update_nodes(feat, {})
 
         node_manager.create_new.assert_not_called()
-        assert new_nodes == []
+        assert result == {"connection_nodes": [], "pump": [pump_feat]}
 
 
 class TestFixPositions:

@@ -204,7 +204,10 @@ class StructureNodeHandler(NodeHandler):
         self.cn_fields_configurations = import_settings.connection_node_fields
 
     def update_nodes(self, feat, node_attributes, respect_mapped_node_ids=False):
-        """Snap geometry endpoints to attribute-mapped nodes, create nodes for non-mapped endpoints."""
+        """Snap geometry endpoints to attribute-mapped nodes, create nodes for non-mapped endpoints.
+
+        Returns a dict keyed by layer name → list of created features.
+        """
         new_nodes = []
         polyline = feat.geometry().asPolyline()
         node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
@@ -232,7 +235,7 @@ class StructureNodeHandler(NodeHandler):
         if new_nodes:
             update_attributes(self.cn_fields_configurations, dm.ConnectionNode, feat, *new_nodes)
 
-        return new_nodes
+        return {self.node_layer.name(): new_nodes}
 
 
 class PumpMapNodeHandler(NodeHandler):
@@ -264,7 +267,6 @@ class PumpMapNodeHandler(NodeHandler):
         self.layer_fields_mapping = layer_fields_mapping
         self.fields_configurations = import_settings.fields
         self.cn_fields_configurations = import_settings.connection_node_fields
-        self.created_pumps = []
 
     def _find_or_create_node(self, point, node_layer_fields, node_attributes, src_feat):
         if point not in self.node_by_location:
@@ -278,7 +280,10 @@ class PumpMapNodeHandler(NodeHandler):
         return None
 
     def update_nodes(self, feat, node_attributes, respect_mapped_node_ids=False):
-        """Create pump at start node, assign connection nodes to both endpoints."""
+        """Create pump at start node, assign connection nodes to both endpoints.
+
+        Returns a dict keyed by layer name → list of created features.
+        """
         new_nodes = []
         polyline = feat.geometry().asPolyline()
         node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
@@ -289,26 +294,26 @@ class PumpMapNodeHandler(NodeHandler):
         if new_node is not None:
             new_nodes.append(new_node)
         start_node_id = self.node_by_location[start_point]
-        start_node_geom = QgsGeometry.fromPointXY(start_point)
 
-        pump_feat = self.pump_manager.create_new(start_node_geom, self.pump_fields)
+        pump_feat = self.pump_manager.create_new(QgsGeometry.fromPointXY(start_point), self.pump_fields)
         pump_feat["connection_node_id"] = start_node_id
         update_attributes(self.fields_configurations, dm.Pump, feat, pump_feat)
         feat["pump_id"] = pump_feat["id"]
-        self.created_pumps.append(pump_feat)
 
         # End point: find/create node, set connection_node_id_end on pump_map
         end_point = polyline[-1]
         new_node = self._find_or_create_node(end_point, node_layer_fields, node_attributes, feat)
         if new_node is not None:
             new_nodes.append(new_node)
-        end_node_id = self.node_by_location[end_point]
-        feat["connection_node_id_end"] = end_node_id
+        feat["connection_node_id_end"] = self.node_by_location[end_point]
 
         # Adjust pump_map geometry to line between actual node locations
         feat.setGeometry(QgsGeometry.fromPolylineXY([start_point, end_point]))
 
-        return new_nodes
+        return {
+            self.node_layer.name(): new_nodes,
+            self.pump_layer.name(): [pump_feat],
+        }
 
 
 class LinearIntegrator:
@@ -713,9 +718,10 @@ class LinearIntegrator:
         }
 
         for substring_feat in added_features[self.target_layer.name()]:
-            added_features[self.node_layer.name()] += self.node_handler.update_nodes(
+            for layer_name, feats in self.node_handler.update_nodes(
                 substring_feat, node_attributes, respect_mapped_node_ids=True
-            )
+            ).items():
+                added_features[layer_name] += feats
 
         # Conduit segments always need endpoint updates (they don't have attribute mapping)
         node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
