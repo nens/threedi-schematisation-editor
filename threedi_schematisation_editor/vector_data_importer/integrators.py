@@ -181,7 +181,14 @@ class PointStructurePlacement(StructurePlacementStrategy):
         return new_nodes
 
 
-class StructureNodeHandler:
+class NodeHandler:
+    """Base class for node assignment handlers used by LinearIntegrator."""
+
+    def update_nodes(self, feat, node_attributes, respect_mapped_node_ids=False):
+        raise NotImplementedError
+
+
+class StructureNodeHandler(NodeHandler):
     """Handles node assignment for standard two-endpoint line structures.
 
     Extracted from LinearIntegrator.update_feature_endpoints so that
@@ -189,11 +196,12 @@ class StructureNodeHandler:
     via the same interface.
     """
 
-    def __init__(self, node_layer, node_by_location, node_manager, layer_fields_mapping):
+    def __init__(self, node_layer, node_by_location, node_manager, layer_fields_mapping, import_settings):
         self.node_layer = node_layer
         self.node_by_location = node_by_location
         self.node_manager = node_manager
         self.layer_fields_mapping = layer_fields_mapping
+        self.cn_fields_configurations = import_settings.connection_node_fields
 
     def update_nodes(self, feat, node_attributes, respect_mapped_node_ids=False):
         """Snap geometry endpoints to attribute-mapped nodes, create nodes for non-mapped endpoints."""
@@ -220,6 +228,85 @@ class StructureNodeHandler:
                     self.node_by_location[point] = node_feat["id"]
                     new_nodes.append(node_feat)
                 feat[field_name] = self.node_by_location[point]
+
+        if new_nodes:
+            update_attributes(self.cn_fields_configurations, dm.ConnectionNode, feat, *new_nodes)
+
+        return new_nodes
+
+
+class PumpMapNodeHandler(NodeHandler):
+    """Handles node assignment and pump creation for integrated pump_map features.
+
+    For each placed pump_map feature (after fix_structure_placement):
+    - Start point: find/create node, create pump (geometry + connection_node_id +
+      mapped attributes), set pump_map.pump_id.
+    - End point: find/create node, set pump_map.connection_node_id_end.
+    - Adjust pump_map geometry to line between start and end nodes.
+    """
+
+    def __init__(
+        self,
+        pump_layer,
+        pump_manager,
+        node_layer,
+        node_by_location,
+        node_manager,
+        layer_fields_mapping,
+        import_settings,
+    ):
+        self.pump_layer = pump_layer
+        self.pump_fields = pump_layer.fields()
+        self.pump_manager = pump_manager
+        self.node_layer = node_layer
+        self.node_by_location = node_by_location
+        self.node_manager = node_manager
+        self.layer_fields_mapping = layer_fields_mapping
+        self.fields_configurations = import_settings.fields
+        self.cn_fields_configurations = import_settings.connection_node_fields
+        self.created_pumps = []
+
+    def _find_or_create_node(self, point, node_layer_fields, node_attributes, src_feat):
+        if point not in self.node_by_location:
+            node_feat = self.node_manager.create_new(
+                QgsGeometry.fromPointXY(point), node_layer_fields, node_attributes
+            )
+            self.node_by_location[point] = node_feat["id"]
+            if self.cn_fields_configurations:
+                update_attributes(self.cn_fields_configurations, dm.ConnectionNode, src_feat, node_feat)
+            return node_feat
+        return None
+
+    def update_nodes(self, feat, node_attributes, respect_mapped_node_ids=False):
+        """Create pump at start node, assign connection nodes to both endpoints."""
+        new_nodes = []
+        polyline = feat.geometry().asPolyline()
+        node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
+
+        # Start point: find/create node, create pump
+        start_point = polyline[0]
+        new_node = self._find_or_create_node(start_point, node_layer_fields, node_attributes, feat)
+        if new_node is not None:
+            new_nodes.append(new_node)
+        start_node_id = self.node_by_location[start_point]
+        start_node_geom = QgsGeometry.fromPointXY(start_point)
+
+        pump_feat = self.pump_manager.create_new(start_node_geom, self.pump_fields)
+        pump_feat["connection_node_id"] = start_node_id
+        update_attributes(self.fields_configurations, dm.Pump, feat, pump_feat)
+        feat["pump_id"] = pump_feat["id"]
+        self.created_pumps.append(pump_feat)
+
+        # End point: find/create node, set connection_node_id_end on pump_map
+        end_point = polyline[-1]
+        new_node = self._find_or_create_node(end_point, node_layer_fields, node_attributes, feat)
+        if new_node is not None:
+            new_nodes.append(new_node)
+        end_node_id = self.node_by_location[end_point]
+        feat["connection_node_id_end"] = end_node_id
+
+        # Adjust pump_map geometry to line between actual node locations
+        feat.setGeometry(QgsGeometry.fromPolylineXY([start_point, end_point]))
 
         return new_nodes
 
@@ -280,6 +367,7 @@ class LinearIntegrator:
             get_next_feature_id(self.integrate_layer)
         )
         # initialize mappings and indices
+        self.import_settings = import_settings
         self.setup_fields_map()
         self.setup_spatial_indexes()
         self.setup_node_by_location()
@@ -288,6 +376,7 @@ class LinearIntegrator:
             self.node_by_location,
             self.node_manager,
             self.layer_fields_mapping,
+            import_settings,
         )
 
     @staticmethod

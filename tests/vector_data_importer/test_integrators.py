@@ -20,6 +20,7 @@ from threedi_schematisation_editor.vector_data_importer.integrators import (
     LinearIntegratorStructureData,
     LineStructurePlacement,
     PointStructurePlacement,
+    PumpMapNodeHandler,
     StructureNodeHandler,
 )
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
@@ -560,8 +561,10 @@ class TestNodeManagement:
         node_manager.create_new.side_effect = mock_create_new
 
         layer_fields_mapping = {"connection_nodes": node_layer_fields}
+        mock_import_settings = MagicMock()
+        mock_import_settings.connection_node_fields = {}
         handler = StructureNodeHandler(
-            mock_node_layer, node_by_location, node_manager, layer_fields_mapping
+            mock_node_layer, node_by_location, node_manager, layer_fields_mapping, mock_import_settings
         )
 
         dst_fields = QgsFields()
@@ -651,8 +654,10 @@ class TestNodeManagement:
         layer_fields_mapping = {"connection_nodes": node_layer_fields}
         node_manager = MagicMock()
 
+        mock_import_settings = MagicMock()
+        mock_import_settings.connection_node_fields = {}
         handler = StructureNodeHandler(
-            node_layer, node_by_location, node_manager, layer_fields_mapping
+            node_layer, node_by_location, node_manager, layer_fields_mapping, mock_import_settings
         )
 
         dst_fields = QgsFields()
@@ -672,6 +677,151 @@ class TestNodeManagement:
         polyline = dst_feature.geometry().asPolyline()
         assert polyline[0] == start_point
         assert polyline[-1] == end_point
+
+
+def make_pump_map_handler(pump_layer, pump_manager, node_layer, node_by_location, node_manager, fields_configurations=None, cn_fields_configurations=None):
+    """Helper: build a PumpMapNodeHandler with minimal mock import_settings."""
+    import_settings = MagicMock()
+    import_settings.fields = fields_configurations or {}
+    import_settings.connection_node_fields = cn_fields_configurations or {}
+    layer_fields_mapping = {node_layer.name(): node_layer.fields()}
+    return PumpMapNodeHandler(
+        pump_layer, pump_manager, node_layer, node_by_location, node_manager,
+        layer_fields_mapping, import_settings,
+    )
+
+
+class TestPumpMapNodeHandler:
+    def _make_layers(self):
+        from qgis.core import QgsVectorLayer
+        node_layer = QgsVectorLayer("Point?crs=EPSG:28992", "connection_nodes", "memory")
+        node_layer.dataProvider().addAttributes([
+            QgsField("id", QVariant.Int),
+            QgsField("code", QVariant.String),
+        ])
+        node_layer.updateFields()
+
+        pump_layer = QgsVectorLayer("Point?crs=EPSG:28992", "pump", "memory")
+        pump_layer.dataProvider().addAttributes([
+            QgsField("id", QVariant.Int),
+            QgsField("connection_node_id", QVariant.Int),
+        ])
+        pump_layer.updateFields()
+        return node_layer, pump_layer
+
+    def _make_pump_map_feat(self, start_point, end_point):
+        fields = QgsFields()
+        fields.append(QgsField("id", QVariant.Int))
+        fields.append(QgsField("pump_id", QVariant.Int))
+        fields.append(QgsField("connection_node_id_end", QVariant.Int))
+        feat = QgsFeature(fields)
+        feat.setGeometry(QgsGeometry.fromPolylineXY([start_point, end_point]))
+        return feat
+
+    def test_start_node_created_and_pump_created(self):
+        """Start node created, pump gets correct geometry and connection_node_id."""
+        node_layer, pump_layer = self._make_layers()
+        node_by_location = {}
+        node_manager = MagicMock()
+        pump_manager = MagicMock()
+
+        start_pt = QgsPointXY(0, 0)
+        end_pt = QgsPointXY(100, 0)
+
+        node_feat = QgsFeature(node_layer.fields())
+        node_feat.setGeometry(QgsGeometry.fromPointXY(start_pt))
+        node_feat["id"] = 10
+        node_manager.create_new.return_value = node_feat
+
+        pump_feat = QgsFeature(pump_layer.fields())
+        pump_feat["id"] = 1
+        pump_manager.create_new.return_value = pump_feat
+
+        handler = make_pump_map_handler(pump_layer, pump_manager, node_layer, node_by_location, node_manager)
+        feat = self._make_pump_map_feat(start_pt, end_pt)
+
+        # Pre-seed end node so only start triggers create
+        node_by_location[end_pt] = 20
+
+        handler.update_nodes(feat, {})
+
+        node_manager.create_new.assert_called_once()
+        call_geom = node_manager.create_new.call_args[0][0]
+        assert call_geom.asPoint() == start_pt
+        assert node_by_location[start_pt] == 10
+        pump_manager.create_new.assert_called_once()
+        assert pump_feat["connection_node_id"] == 10
+        assert feat["pump_id"] == 1
+        assert handler.created_pumps == [pump_feat]
+
+    def test_end_node_created_and_connection_node_id_end_set(self):
+        """End node created, pump_map.connection_node_id_end set correctly."""
+        node_layer, pump_layer = self._make_layers()
+        node_by_location = {}
+        node_manager = MagicMock()
+        pump_manager = MagicMock()
+
+        start_pt = QgsPointXY(0, 0)
+        end_pt = QgsPointXY(100, 0)
+
+        def create_node(geom, fields, attrs):
+            nf = QgsFeature(node_layer.fields())
+            nf.setGeometry(geom)
+            nf["id"] = 10 if geom.asPoint() == start_pt else 20
+            node_by_location[geom.asPoint()] = nf["id"]
+            return nf
+
+        node_manager.create_new.side_effect = create_node
+        pump_feat = QgsFeature(pump_layer.fields())
+        pump_feat["id"] = 1
+        pump_manager.create_new.return_value = pump_feat
+
+        handler = make_pump_map_handler(pump_layer, pump_manager, node_layer, node_by_location, node_manager)
+        feat = self._make_pump_map_feat(start_pt, end_pt)
+        handler.update_nodes(feat, {})
+
+        assert feat["connection_node_id_end"] == 20
+        assert node_by_location[end_pt] == 20
+
+    def test_pump_map_geometry_adjusted_to_node_locations(self):
+        """pump_map geometry is set to the line between start and end node locations."""
+        node_layer, pump_layer = self._make_layers()
+        start_pt = QgsPointXY(0, 0)
+        end_pt = QgsPointXY(100, 0)
+        # Both nodes already exist at the exact geometry points
+        node_by_location = {start_pt: 10, end_pt: 20}
+        node_manager = MagicMock()
+        pump_feat = QgsFeature(pump_layer.fields())
+        pump_feat["id"] = 1
+        pump_manager = MagicMock()
+        pump_manager.create_new.return_value = pump_feat
+
+        handler = make_pump_map_handler(pump_layer, pump_manager, node_layer, node_by_location, node_manager)
+        feat = self._make_pump_map_feat(start_pt, end_pt)
+        handler.update_nodes(feat, {})
+
+        polyline = feat.geometry().asPolyline()
+        assert polyline[0] == start_pt
+        assert polyline[-1] == end_pt
+
+    def test_existing_nodes_not_recreated(self):
+        """No new nodes created when both endpoints already exist in node_by_location."""
+        node_layer, pump_layer = self._make_layers()
+        start_pt = QgsPointXY(0, 0)
+        end_pt = QgsPointXY(100, 0)
+        node_by_location = {start_pt: 10, end_pt: 20}
+        node_manager = MagicMock()
+        pump_feat = QgsFeature(pump_layer.fields())
+        pump_feat["id"] = 1
+        pump_manager = MagicMock()
+        pump_manager.create_new.return_value = pump_feat
+
+        handler = make_pump_map_handler(pump_layer, pump_manager, node_layer, node_by_location, node_manager)
+        feat = self._make_pump_map_feat(start_pt, end_pt)
+        new_nodes = handler.update_nodes(feat, {})
+
+        node_manager.create_new.assert_not_called()
+        assert new_nodes == []
 
 
 class TestFixPositions:
