@@ -25,7 +25,7 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 
 from threedi_schematisation_editor.vector_data_importer.processors import (
-    PointProcessor,
+    PumpProcessor,
 )
 
 from .utils import SCHEMATISATION_PATH
