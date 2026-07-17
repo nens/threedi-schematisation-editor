@@ -36,7 +36,6 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
     CrossSectionLocationMappingSettingsWidget,
     IntegrationSettingsWidget,
     PointToLIneConversionSettingsWidget,
-    PumpDirectionSettingsWidget,
     SettingsWidget,
     SurfaceLinkingSettingsWidget,
 )
@@ -699,7 +698,6 @@ class ImportSurfaceWizard(VDIWizard):
 class ImportPumpWizard(ImportWithCreateConnectionNodesWizard):
     settings_widgets_classes = [
         ConnectionNodeSettingsWidget,
-        PumpDirectionSettingsWidget,
         IntegrationSettingsWidget,
     ]
 

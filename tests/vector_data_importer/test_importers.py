@@ -26,7 +26,6 @@ from threedi_schematisation_editor.vector_data_importer.utils import ColumnImpor
 
 from threedi_schematisation_editor.vector_data_importer.processors import (
     PointProcessor,
-    PumpLineProcessor,
 )
 
 from .utils import SCHEMATISATION_PATH
@@ -49,42 +48,6 @@ def _make_pump_source(geometry_type):
     source.sourceCrs.return_value = MagicMock()
     source.geometryType.return_value = geometry_type
     return source
-
-
-def test_pumps_importer_point_source_uses_point_processor(
-    import_settings, target_layer, node_layer, pump_map_layer
-):
-    source = _make_pump_source(QgsWkbTypes.GeometryType.PointGeometry)
-    importer = PumpsImporter(
-        external_source=source,
-        target_gpkg=None,
-        import_settings=import_settings,
-        target_layer=target_layer,
-        node_layer=node_layer,
-        pump_map_layer=pump_map_layer,
-    )
-    assert isinstance(importer.processor, PointProcessor)
-    assert importer.integration_model_cls == dm.Pump
-    assert importer.integration_layer is importer.target_layer
-    assert importer.integration_manager is importer.processor.target_manager
-
-
-def test_pumps_importer_line_source_uses_pump_line_processor(
-    import_settings, target_layer, node_layer, pump_map_layer
-):
-    source = _make_pump_source(QgsWkbTypes.GeometryType.LineGeometry)
-    importer = PumpsImporter(
-        external_source=source,
-        target_gpkg=None,
-        import_settings=import_settings,
-        target_layer=target_layer,
-        node_layer=node_layer,
-        pump_map_layer=pump_map_layer,
-    )
-    assert isinstance(importer.processor, PumpLineProcessor)
-    assert importer.integration_model_cls == dm.PumpMap
-    assert importer.integration_layer is pump_map_layer
-    assert importer.integration_manager is importer.processor.pump_map_manager
 
 
 @pytest.fixture

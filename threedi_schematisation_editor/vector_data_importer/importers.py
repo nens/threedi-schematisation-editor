@@ -20,7 +20,6 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionLocationProcessor,
     LineProcessor,
     PointProcessor,
-    PumpLineProcessor,
     SurfaceProcessor,
 )
 from threedi_schematisation_editor.vector_data_importer.utils import (
@@ -461,44 +460,28 @@ class PumpsImporter(IntegrationImporter):
             if pump_map_layer is None
             else pump_map_layer
         )
-        if external_source.geometryType() == QgsWkbTypes.GeometryType.LineGeometry:
-            self.processor = PumpLineProcessor(
-                self.target_layer,
-                self.pump_map_layer,
-                self.node_layer,
-                self.import_settings,
-            )
-        else:
-            self.processor = PointProcessor(
-                self.target_layer,
-                self.target_model_cls,
-                self.node_layer,
-                self.import_settings,
-            )
+        self.processor = PointProcessor(
+            self.target_layer,
+            self.target_model_cls,
+            self.node_layer,
+            self.import_settings,
+        )
 
     @property
     def integration_model_cls(self):
-        if isinstance(self.processor, PumpLineProcessor):
-            return dm.PumpMap
         return self.target_model_cls
 
     @property
     def integration_layer(self):
-        if isinstance(self.processor, PumpLineProcessor):
-            return self.pump_map_layer
         return self.target_layer
 
     @property
     def integration_manager(self):
-        if isinstance(self.processor, PumpLineProcessor):
-            return self.processor.pump_map_manager
         return self.processor.target_manager
 
     @property
     def modifiable_layers(self):
         layers = [self.target_layer, self.node_layer]
-        if isinstance(self.processor, PumpLineProcessor):
-            layers.append(self.pump_map_layer)
         if self.integrator:
             layers += self.integrator.modifiable_layers
         return layers

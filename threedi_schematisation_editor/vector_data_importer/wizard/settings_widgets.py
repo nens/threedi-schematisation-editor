@@ -442,26 +442,6 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
         return "Point to line conversion settings"
 
 
-class PumpDirectionSettingsWidget(FieldMapSettingsWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
-        self.model = sm.PumpSettings()
-        row_dict = {
-            "direction": FieldMapRow(
-                label="Pump direction", config=self.model.direction
-            ),
-        }
-        self.setup_ui(row_dict)
-
-    @property
-    def group_name(self):
-        return "Pump direction settings"
-
-    def should_show(self, layer) -> bool:
-        """Only relevant for line geometry sources."""
-        return layer and layer.geometryType() == QgsWkbTypes.GeometryType.LineGeometry
-
-
 class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
