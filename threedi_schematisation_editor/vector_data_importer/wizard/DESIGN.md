@@ -31,7 +31,7 @@ classDiagram
     VDIWizard <|-- ImportWithCreateConnectionNodesWizard
     ImportWithCreateConnectionNodesWizard <|-- ImportConduitWizard
     ImportWithCreateConnectionNodesWizard <|-- ImportStructureWizard
-    ImportWithCreateConnectionNodesWizard <|-- ImportPumpWizard
+    ImportStructureWizard <|-- ImportPumpWizard
     VDIWizard <|-- ImportSurfaceWizard
     
     class VDIWizard {
@@ -140,16 +140,13 @@ class SettingsWidget{
     +is_valid() bool
     +validate() bool
     +get_settings() BaseModel
-    +should_show(layer) bool
     *group_name() str
 }
 ```
 
 Upon initialization the widgets are instantiated and put in a group box using the `group_name`. The reference to that group box is stored on the widget as `group_box`. The settings page holds a list of settings widgets which are all based on `SettingsWidget`. If a widget sets `expanding = True`, the settings page gives it vertical stretch so it grows to fill available space (used for table-based widgets).
 
-Widgets can be conditionally hidden by overriding `should_show(layer)` — called in `SettingsPage.initializePage()` to toggle the group box visibility based on the selected source layer. The default implementation returns `True` (always shown). Hidden widgets are skipped in `isComplete()` and `get_settings()`.
-
-Some widgets also implement `update_layer(layer)`, called in `initializePage()` to refresh layer-dependent UI state (e.g. populating attribute dropdowns, or hiding sub-fields irrelevant for the selected geometry type).
+Some widgets implement `update_layer(layer)`, called in `initializePage()` to refresh layer-dependent UI state (e.g. populating attribute dropdowns, or hiding sub-fields irrelevant for the selected geometry type).
 
 
 The following `SettingsWidget` subclasses exist:
@@ -157,7 +154,7 @@ The following `SettingsWidget` subclasses exist:
 - `ConnectionNodeSettingsWidget` — snap distance and create-nodes option.
 - `IntegrationSettingsWidget` — integration mode (NONE/CHANNELS/PIPES), snap distance, minimum conduit length. Implements `update_layer(layer)` to hide the minimum conduit length field for point sources (where `PointStructurePlacement` always produces length 0).
 - `PointToLineConversionSettingsWidget` — length and azimuth field mappings for point-to-line conversion.
-- `PumpDirectionSettingsWidget` — pump direction field mapping. Overrides `should_show(layer)` to return `True` only for line geometry sources, since direction is only used by `PumpLineProcessor`.
+- `PumpLinkingSettingsWidget` — field mapping for `connection_node_id_end`, used by `ImportPumpWizard` to resolve the pump_map end node by attribute or expression. Default method is AUTO (no mapping).
 - `CrossSectionDataRemapSettingsWidget` — lowest point normalization options.
 - `CrossSectionLocationMappingSettingsWidget` — join field configuration for cross-section linking.
 - `SurfaceLinkingSettingsWidget` — sewerage type mappings, search distance, `spatial_match_enabled` (toggle spatial nearest-pipe linking), `attribute_match_enabled` (toggle attribute-based linking), and selected-pipes-only flag. Used by `ImportSurfaceWizard`.

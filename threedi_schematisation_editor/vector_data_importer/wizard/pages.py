@@ -129,7 +129,6 @@ class SettingsPage(QWizardPage):
         for widget in self.settings_widgets:
             if hasattr(widget, "update_layer"):
                 widget.update_layer(layer)
-            widget.group_box.setVisible(widget.should_show(layer))
 
     @property
     def create_nodes(self):

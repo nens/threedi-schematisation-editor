@@ -36,6 +36,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
     CrossSectionLocationMappingSettingsWidget,
     IntegrationSettingsWidget,
     PointToLIneConversionSettingsWidget,
+    PumpLinkingSettingsWidget,
     SettingsWidget,
     SurfaceLinkingSettingsWidget,
 )
@@ -695,33 +696,21 @@ class ImportSurfaceWizard(VDIWizard):
         )
 
 
-class ImportPumpWizard(ImportWithCreateConnectionNodesWizard):
+class ImportPumpWizard(ImportStructureWizard):
     settings_widgets_classes = [
+        PumpLinkingSettingsWidget,
         ConnectionNodeSettingsWidget,
+        PointToLIneConversionSettingsWidget,
         IntegrationSettingsWidget,
     ]
 
     @property
     def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
-        return QgsMapLayerProxyModel.LineLayer | QgsMapLayerProxyModel.PointLayer
+        return QgsMapLayerProxyModel.PointLayer
 
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         processed_handlers, processed_layers = super().prepare_import()
-        # PumpMap layer — only needed for line sources
-        if self.selected_layer.geometryType() == QgsWkbTypes.GeometryType.LineGeometry:
-            pump_map_handler = self.layer_manager.model_handlers[dm.PumpMap]
-            processed_handlers.append(pump_map_handler)
-            processed_layers["pump_map_layer"] = pump_map_handler.layer
-        # Conduit layer — based on integration mode
-        integration_settings = self.get_settings().integration
-        if integration_settings.integration_mode == sm.IntegrationMode.CHANNELS:
-            conduit_handler = self.layer_manager.model_handlers[dm.Channel]
-            xsec_handler = self.layer_manager.model_handlers[dm.CrossSectionLocation]
-            processed_handlers += [conduit_handler, xsec_handler]
-            processed_layers["conduit_layer"] = conduit_handler.layer
-            processed_layers["cross_section_location_layer"] = xsec_handler.layer
-        elif integration_settings.integration_mode == sm.IntegrationMode.PIPES:
-            conduit_handler = self.layer_manager.model_handlers[dm.Pipe]
-            processed_handlers.append(conduit_handler)
-            processed_layers["conduit_layer"] = conduit_handler.layer
+        pump_map_handler = self.layer_manager.model_handlers[dm.PumpMap]
+        processed_handlers.append(pump_map_handler)
+        processed_layers["pump_map_layer"] = pump_map_handler.layer
         return processed_handlers, processed_layers

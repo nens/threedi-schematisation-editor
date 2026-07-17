@@ -172,10 +172,6 @@ class SettingsWidget(QWidget):
         assert self.model is not None
         return self.model
 
-    def should_show(self, layer) -> bool:
-        """Return False to hide this widget's group box for the given source layer. Default: always show."""
-        return True
-
 
 class ConnectionNodeSettingsWidget(SettingsWidget):
     def __init__(self, parent=None):
@@ -440,6 +436,23 @@ class PointToLIneConversionSettingsWidget(FieldMapSettingsWidget):
     @property
     def group_name(self):
         return "Point to line conversion settings"
+
+
+class PumpLinkingSettingsWidget(FieldMapSettingsWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.model = sm.PumpLinkingSettings()
+        row_dict = {
+            "connection_node_id_end": FieldMapRow(
+                label="Connection node ID end",
+                config=self.model.connection_node_id_end,
+            ),
+        }
+        self.setup_ui(row_dict)
+
+    @property
+    def group_name(self):
+        return "Pump to Pump Map linking settings"
 
 
 class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
