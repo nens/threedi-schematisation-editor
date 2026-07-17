@@ -26,7 +26,6 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     CrossSectionDataProcessor,
     CrossSectionLocationProcessor,
     LineProcessor,
-    PointProcessor,
     PumpProcessor,
     SurfaceProcessor,
 )

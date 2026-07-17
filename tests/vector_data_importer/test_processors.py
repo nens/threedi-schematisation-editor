@@ -16,7 +16,6 @@ from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
     LineProcessor,
-    PointProcessor,
     PumpProcessor,
     SpatialProcessor,
     StructureProcessor,
@@ -97,47 +96,6 @@ class TestConnectionNodeProcessor:
         # Check that the result is a dictionary with the expected keys
         assert list(result.keys()) == ["connection_nodes"]
         assert len(result["connection_nodes"]) == 1
-
-
-class TestPointProcessor:
-    """Tests for the PointProcessor class."""
-
-    def test_process_feature(self, source_feature, target_fields, node_fields):
-        """Test that process_feature returns the expected dictionary and calls update_attributes."""
-        # Create mock layers
-        target_layer = MagicMock()
-        target_layer.fields.return_value = target_fields
-        target_layer.name.return_value = "pumps"
-
-        node_layer = MagicMock()
-        node_layer.fields.return_value = node_fields
-        node_layer.name.return_value = "connection_nodes"
-
-        # Create mock fields configurations
-        import_settings = sm.ImportSettings(
-            fields={"id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)},
-            connection_node_fields={
-                "id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)
-            },
-        )
-
-        # Create a processor
-        processor = PointProcessor(target_layer, dm.Pump, node_layer, import_settings)
-
-        # Mock the add_node method to return a new node feature
-        new_node = QgsFeature(node_fields)
-        new_node.setAttribute("id", 42)
-        new_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(11, 21)))
-        processor.get_node = MagicMock(return_value=(new_node, True))
-
-        result = processor.process_feature(source_feature)
-
-        # Check that the result is a dictionary with the expected keys
-        assert sorted(result.keys()) == ["pumps"]
-        assert len(result["pumps"]) == 1
-        new_pump = result["pumps"][0]
-        assert new_pump["connection_node_id"] == 42
-        assert new_pump.geometry().asPoint() == QgsPointXY(11, 21)
 
 
 class TestStructureProcessor:

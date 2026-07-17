@@ -755,55 +755,6 @@ class StructureProcessor(SpatialProcessor, ABC):
         return node, snapped
 
 
-class PointProcessor(StructureProcessor):
-    def update_connection_nodes(self, new_feat):
-        node, snapped = self.get_node(new_feat.geometry().asPoint())
-        new_nodes = []
-        if node:
-            new_feat["connection_node_id"] = node["id"]
-            if snapped:
-                new_feat.setGeometry(QgsGeometry.fromPointXY(node.geometry().asPoint()))
-            if not snapped:
-                new_nodes.append(node)
-        return new_nodes
-
-    @staticmethod
-    def new_geometry(src_feat):
-        src_geom = get_src_geometry(src_feat)
-        if not src_geom:
-            return
-        return SpatialProcessor.create_new_point_geometry(src_geom)
-
-    def process_feature(self, src_feat):
-        """Process source point structure feature."""
-        new_nodes = []
-        new_geom = self.new_geometry(src_feat)
-        if new_geom is None:
-            return {}
-        if self.transformation:
-            new_geom.transform(self.transformation)
-        new_feat = self.target_manager.create_new(new_geom, self.target_fields)
-        update_attributes(
-            self.cn_fields_configurations,
-            dm.ConnectionNode,
-            src_feat,
-            *new_nodes,
-        )
-        new_nodes = self.update_connection_nodes(new_feat)
-        update_attributes(
-            self.fields_configurations,
-            self.target_model_cls,
-            src_feat,
-            new_feat,
-        )
-        # Add here so the next feature can also use these nodes
-        for node in new_nodes:
-            self.node_layer.addFeature(node)
-        if new_nodes:
-            self.node_locator = get_point_locator(self.node_layer, self.context)
-        return {self.target_name: [new_feat]}
-
-
 class LineProcessor(StructureProcessor):
     @staticmethod
     def new_geometry(
@@ -925,6 +876,18 @@ class PumpProcessor(StructureProcessor):
         self.pump_map_fields = pump_map_layer.fields()
         self.pump_linking_settings = import_settings.pump_linking
 
+    def update_connection_nodes(self, pump_feat):
+        """Snap/create connection node at pump location; update pump geometry and FK."""
+        node, snapped = self.get_node(pump_feat.geometry().asPoint())
+        new_nodes = []
+        if node:
+            pump_feat["connection_node_id"] = node["id"]
+            if snapped:
+                pump_feat.setGeometry(QgsGeometry.fromPointXY(node.geometry().asPoint()))
+            else:
+                new_nodes.append(node)
+        return new_nodes
+
     def resolve_end_point(self, src_feat, start_point):
         """Resolve end point for pump_map, or return None if not possible."""
         cn_id_end_config = self.pump_linking_settings.connection_node_id_end
@@ -968,17 +931,7 @@ class PumpProcessor(StructureProcessor):
             QgsGeometry.fromPointXY(start_point), self.target_fields
         )
         update_attributes(self.fields_configurations, dm.Pump, src_feat, pump_feat)
-
-        # Snap/create connection node at pump location
-        new_nodes = []
-        node, snapped = self.get_node(start_point)
-        if node:
-            pump_feat["connection_node_id"] = node["id"]
-            if snapped:
-                pump_feat.setGeometry(QgsGeometry.fromPointXY(node.geometry().asPoint()))
-            else:
-                new_nodes.append(node)
-
+        new_nodes = self.update_connection_nodes(pump_feat)
         update_attributes(
             self.cn_fields_configurations, dm.ConnectionNode, src_feat, *new_nodes
         )
