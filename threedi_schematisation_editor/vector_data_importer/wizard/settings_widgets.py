@@ -456,24 +456,24 @@ class PumpLinkingSettingsWidget(FieldMapSettingsWidget):
         )
         self._on_enabled_toggled(self.model.enabled)
 
-     def _on_enabled_toggled(self, checked):
-         self.model.enabled = checked
-         self.field_map_widget.setEnabled(checked)
-         # Swap allowed methods and rebuild persistent editors so the method dropdown
-         # shows only ATTRIBUTE/EXPRESSION when enabled, and is never visible when disabled.
-         metadata = (
-             sm.PumpLinkingSettings.metadata_enabled
-             if checked
-             else sm.PumpLinkingSettings.metadata_disabled
-         )
-         self.field_map_widget.close_persistent_editors()
-         self.field_map_widget.table_delegate.clear_editors()
-         for field_name in ("join_field_src", "join_field_tgt"):
-             config = getattr(self.model, field_name)
-             config._metadata = metadata
-             config.method = metadata.allowed_methods[0]
-         self.field_map_widget.open_persistent_editors()
-         self.dataChanged.emit()
+    def _on_enabled_toggled(self, checked):
+        self.model.enabled = checked
+        self.field_map_widget.setEnabled(checked)
+        # Swap allowed methods and rebuild persistent editors so the method dropdown
+        # shows only ATTRIBUTE/EXPRESSION when enabled, and is never visible when disabled.
+        metadata = (
+            sm.PumpLinkingSettings.metadata_enabled
+            if checked
+            else sm.PumpLinkingSettings.metadata_disabled
+        )
+        self.field_map_widget.close_persistent_editors()
+        self.field_map_widget.table_delegate.clear_editors()
+        for field_name in ("join_field_src", "join_field_tgt"):
+            config = getattr(self.model, field_name)
+            config._metadata = metadata
+            config.method = metadata.allowed_methods[0]
+        self.field_map_widget.open_persistent_editors()
+        self.dataChanged.emit()
 
     @property
     def is_valid(self):
