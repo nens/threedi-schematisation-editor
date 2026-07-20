@@ -1,5 +1,8 @@
 """Debug script to inspect the wide import result."""
-import shutil, sys, warnings
+
+import shutil
+import sys
+import warnings
 from pathlib import Path
 
 PLUGIN_ROOT = Path(
@@ -12,22 +15,27 @@ SCHEMATA = DATA / "schematisations"
 
 sys.path.insert(0, str(PLUGIN_ROOT.parent))
 
-from qgis.core import QgsApplication, QgsFeatureRequest
-from qgis.analysis import QgsNativeAlgorithms
 from processing.core.Processing import Processing
+from qgis.analysis import QgsNativeAlgorithms
+from qgis.core import QgsApplication, QgsFeatureRequest
 
 app = QgsApplication([], False)
 app.initQgis()
 Processing.initialize()
 QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
 
+import os
+import tempfile
+
 from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.importers import SurfaceImporter
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
-    ImportSettings, SewerTypeMapping, SurfaceLinkingSettings, SourceSettings,
+    ImportSettings,
+    SewerTypeMapping,
+    SourceSettings,
+    SurfaceLinkingSettings,
 )
 
-import tempfile, os
 
 def make_temp_copy(src):
     suffix = Path(src).suffix
@@ -35,6 +43,7 @@ def make_temp_copy(src):
     os.close(fd)
     shutil.copy(src, tgt)
     return tgt
+
 
 # Check source layer feature count
 wide_src_path = make_temp_copy(SOURCE / "surfaces_wide.gpkg")
@@ -44,7 +53,9 @@ for feat in wide_src.getFeatures():
     maaiveld = feat["maaiveld"]
     open_water = feat["open_water"]
     total = (maaiveld or 0) + (open_water or 0)
-    print(f"  id={feat['id']} desc={feat['description']!r} maaiveld={maaiveld} open_water={open_water} sum={total}")
+    print(
+        f"  id={feat['id']} desc={feat['description']!r} maaiveld={maaiveld} open_water={open_water} sum={total}"
+    )
 
 print()
 
@@ -62,7 +73,10 @@ import_config = ImportSettings(
     fields={
         "id": {"method": "auto"},
         "area": {"method": "auto"},
-        "surface_parameters_id": {"method": "source_attribute", "source_attribute": "surface_parameters_id"},
+        "surface_parameters_id": {
+            "method": "source_attribute",
+            "source_attribute": "surface_parameters_id",
+        },
         "code": {"method": "ignore"},
         "display_name": {"method": "ignore"},
         "tags": {"method": "ignore"},

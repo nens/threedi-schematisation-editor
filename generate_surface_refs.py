@@ -3,10 +3,11 @@
 Run inside the Docker container:
   QT_QPA_PLATFORM=offscreen python3 generate_surface_refs.py
 """
+
+import os
 import shutil
 import sys
 import tempfile
-import os
 import warnings
 from pathlib import Path
 
@@ -21,9 +22,9 @@ REF = DATA / "ref"
 
 sys.path.insert(0, str(PLUGIN_ROOT.parent))
 
-from qgis.core import QgsApplication
-from qgis.analysis import QgsNativeAlgorithms
 from processing.core.Processing import Processing
+from qgis.analysis import QgsNativeAlgorithms
+from qgis.core import QgsApplication
 
 app = QgsApplication([], False)
 app.initQgis()
@@ -100,9 +101,11 @@ print(f"  surface_map rows: {surface_map_count} (expected 7)")
 
 print("  surface_map details:")
 for feat in sorted(wide_surface_map.getFeatures(), key=lambda f: f["id"]):
-    print(f"    id={feat['id']} surface_id={feat['surface_id']} "
-          f"connection_node_id={feat['connection_node_id']} "
-          f"percentage={feat['percentage']}")
+    print(
+        f"    id={feat['id']} surface_id={feat['surface_id']} "
+        f"connection_node_id={feat['connection_node_id']} "
+        f"percentage={feat['percentage']}"
+    )
 
 assert surface_count == 7, f"Expected 7 surface rows, got {surface_count}"
 assert surface_map_count == 7, f"Expected 7 surface_map rows, got {surface_map_count}"
@@ -156,7 +159,9 @@ long_config = ImportSettings(
     },
 )
 
-long_schematisation = make_temp_copy(SCHEMATA / "schematisation_surface_attr_match.gpkg")
+long_schematisation = make_temp_copy(
+    SCHEMATA / "schematisation_surface_attr_match.gpkg"
+)
 long_src = gpkg_layer(
     str(make_temp_copy(SOURCE / "surfaces_long_attr_match.gpkg")), "surface"
 )
@@ -190,9 +195,11 @@ for feat in sorted(long_surface.getFeatures(), key=lambda f: f["id"]):
 
 print("  surface_map:")
 for feat in sorted(long_surface_map.getFeatures(), key=lambda f: f["id"]):
-    print(f"    id={feat['id']} surface_id={feat['surface_id']} "
-          f"connection_node_id={feat['connection_node_id']} "
-          f"percentage={feat['percentage']} display_name={feat['display_name']!r}")
+    print(
+        f"    id={feat['id']} surface_id={feat['surface_id']} "
+        f"connection_node_id={feat['connection_node_id']} "
+        f"percentage={feat['percentage']} display_name={feat['display_name']!r}"
+    )
 
 # Expected per README:
 # 6 surfaces (all 7 source features create a surface row — including zero_pct)
