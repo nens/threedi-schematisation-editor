@@ -14,7 +14,6 @@ from qgis.core import (
 
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
-    get_feature_by_id,
     get_next_feature_id,
     gpkg_layer,
 )
@@ -515,7 +514,7 @@ class PumpsImporter(IntegrationImporter):
         self.pump_map_src_feat_map = {}
 
         transformation = self.get_transformation(context)
-        cn_id_end_config = self.import_settings.pump_linking.connection_node_id_end
+        pump_linking = self.import_settings.pump_linking
         ptl = self.import_settings.point_to_line_conversion
 
         for src_feat in self.external_source.getFeatures():
@@ -527,11 +526,14 @@ class PumpsImporter(IntegrationImporter):
             start_point = src_geom.asPoint()
 
             end_point = None
-            node_id = get_field_config_value(cn_id_end_config, src_feat)
-            if node_id is not None and node_id is not NULL:
-                node_feat = get_feature_by_id(self.node_layer, node_id)
-                if node_feat is not None:
-                    end_point = node_feat.geometry().asPoint()
+            if pump_linking.enabled:
+                src_value = get_field_config_value(
+                    pump_linking.join_field_src.model_dump(), src_feat
+                )
+                if src_value is not None and src_value is not NULL:
+                    node_feat = self.processor.node_mapping.get(src_value)
+                    if node_feat is not None:
+                        end_point = node_feat.geometry().asPoint()
 
             if end_point is None:
                 length = get_field_config_value(ptl.length, src_feat)

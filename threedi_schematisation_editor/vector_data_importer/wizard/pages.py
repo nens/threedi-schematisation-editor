@@ -141,11 +141,7 @@ class SettingsPage(QWizardPage):
 
     def get_settings(self) -> dict[str, BaseModel]:
         # return non-serialized settings, skipping hidden widgets
-        return {
-            widget.name: widget.get_settings()
-            for widget in self.settings_widgets
-            if widget.group_box.isVisible()
-        }
+        return {widget.name: widget.get_settings() for widget in self.settings_widgets}
 
     def deserialize(self, data):
         """Load settings from serialized data"""
@@ -158,8 +154,6 @@ class SettingsPage(QWizardPage):
 
     def isComplete(self) -> bool:
         for widget in self.settings_widgets:
-            if not widget.group_box.isVisible():
-                continue
             if not widget.is_valid:
                 return False
         return True

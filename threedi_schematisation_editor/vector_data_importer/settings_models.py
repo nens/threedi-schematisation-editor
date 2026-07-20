@@ -271,16 +271,24 @@ class SurfaceLinkingSettings(BaseModel):
 
 
 class PumpLinkingSettings(BaseModel):
-    metadata: ClassVar[FieldMapMetadata] = FieldMapMetadata(
+    metadata_disabled: ClassVar[FieldMapMetadata] = FieldMapMetadata(
         allowed_methods=[
-            ColumnImportMethod.AUTO,
+            ColumnImportMethod.IGNORE,
+        ]
+    )
+    metadata_enabled: ClassVar[FieldMapMetadata] = FieldMapMetadata(
+        allowed_methods=[
             ColumnImportMethod.ATTRIBUTE,
             ColumnImportMethod.EXPRESSION,
         ]
     )
     name: ClassVar[str] = "pump_linking"
-    connection_node_id_end: FieldMapConfig = FieldMapConfig.with_metadata(metadata)(
-        method=ColumnImportMethod.AUTO
+    enabled: bool = Field(default=True)
+    join_field_src: FieldMapConfig = FieldMapConfig.with_metadata(metadata_disabled)(
+        method=ColumnImportMethod.IGNORE, default_value=""
+    )
+    join_field_tgt: FieldMapConfig = FieldMapConfig.with_metadata(metadata_disabled)(
+        method=ColumnImportMethod.IGNORE, default_value=""
     )
 
 

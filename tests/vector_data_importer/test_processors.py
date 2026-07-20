@@ -583,8 +583,6 @@ class TestPumpProcessor:
 
     def test_attribute_mapping_takes_priority_over_point_to_line(self):
         """Attribute mapping takes priority: mapped node used, point_to_line not consulted."""
-        from qgis.core import QgsVectorLayer
-
         pump_layer, pump_map_layer, node_layer = self._make_layers()
 
         # Add a node to the node layer to map to
@@ -593,18 +591,24 @@ class TestPumpProcessor:
         mapped_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(200, 200)))
         node_layer.dataProvider().addFeatures([mapped_node])
 
+        # join: src_feat["id"] -> node["id"]
         pump_linking = sm.PumpLinkingSettings(
-            connection_node_id_end=sm.FieldMapConfig(
+            enabled=True,
+            join_field_src=sm.FieldMapConfig(
                 method=ColumnImportMethod.ATTRIBUTE,
-                source_attribute="id",  # maps src feat id=1 -> node id=1 (won't exist, fallthrough)
-            )
+                source_attribute="id",
+            ),
+            join_field_tgt=sm.FieldMapConfig(
+                method=ColumnImportMethod.ATTRIBUTE,
+                source_attribute="id",
+            ),
         )
-        # Use a source feature whose id matches the mapped node
+        # Source feature whose id=99 matches node id=99
         fields = QgsFields()
         fields.append(QgsField("id", QVariant.Int))
         src_feat = QgsFeature(fields)
         src_feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(0, 0)))
-        src_feat.setAttribute("id", 99)  # maps to node id=99
+        src_feat.setAttribute("id", 99)
 
         processor = _make_pump_processor(
             pump_layer, pump_map_layer, node_layer, pump_linking

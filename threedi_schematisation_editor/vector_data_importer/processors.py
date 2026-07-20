@@ -862,9 +862,9 @@ class PumpProcessor(StructureProcessor):
     """Processes point source features into Pump + optional PumpMap.
 
     End point resolution priority:
-    1. Attribute mapping via pump_linking.connection_node_id_end (if not AUTO):
-       look up the mapped connection node ID in the node layer, use its location.
-       If the node ID does not exist, emit a ProcessorWarning and fall through.
+    1. Attribute mapping via pump_linking (if enabled): join source feature value
+       (join_field_src) to connection node attribute (join_field_tgt), use matched
+       node location. If no match, emit a ProcessorWarning and fall through.
     2. point_to_line: project end point from start using length + azimuth settings.
     If neither resolves an end point, only a pump is created (no pump_map).
     """
@@ -890,18 +890,33 @@ class PumpProcessor(StructureProcessor):
                 new_nodes.append(node)
         return new_nodes
 
+    @cached_property
+    def node_mapping(self):
+        """Build {value: feature} mapping from connection node layer using join_field_tgt.
+
+        Returns an empty dict when pump_linking is disabled, so the mapping is never
+        built unnecessarily.
+        """
+        if not self.pump_linking_settings.enabled:
+            return {}
+        return build_feature_mapping(
+            self.node_layer.getFeatures(),
+            self.pump_linking_settings.join_field_tgt.model_dump(),
+        )
+
     def resolve_end_point(self, src_feat, start_point):
         """Resolve end point for pump_map, or return None if not possible."""
-        cn_id_end_config = self.pump_linking_settings.connection_node_id_end
-        if cn_id_end_config.method != ColumnImportMethod.AUTO:
-            node_id = get_field_config_value(cn_id_end_config, src_feat)
-            if node_id is not None:
-                node_feat = get_feature_by_id(self.node_layer, node_id)
+        if self.pump_linking_settings.enabled:
+            src_value = get_field_config_value(
+                self.pump_linking_settings.join_field_src.model_dump(), src_feat
+            )
+            if src_value is not None and src_value is not NULL:
+                node_feat = self.node_mapping.get(src_value)
                 if node_feat is not None:
                     return node_feat.geometry().asPoint()
                 warnings.warn(
-                    f"pump_linking.connection_node_id_end: connection node {node_id} "
-                    f"not found for source feature {src_feat.id()}; "
+                    f"pump_linking: no connection node found for source value "
+                    f"'{src_value}' (feature {src_feat.id()}); "
                     f"falling through to point_to_line.",
                     ProcessorWarning,
                 )

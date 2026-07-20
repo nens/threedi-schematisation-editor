@@ -443,16 +443,55 @@ class PumpLinkingSettingsWidget(FieldMapSettingsWidget):
         super().__init__(parent=parent)
         self.model = sm.PumpLinkingSettings()
         row_dict = {
-            "connection_node_id_end": FieldMapRow(
-                label="Connection node ID end",
-                config=self.model.connection_node_id_end,
+            "join_field_src": FieldMapRow(
+                label="Join field in import layer",
+                config=self.model.join_field_src,
+            ),
+            "join_field_tgt": FieldMapRow(
+                label="Join field in connection node layer",
+                config=self.model.join_field_tgt,
             ),
         }
         self.setup_ui(row_dict)
+        # Insert checkbox above the field map table
+        self.enabled_checkbox = QCheckBox("Enable connection node mapping by attribute")
+        self.enabled_checkbox.setChecked(self.model.enabled)
+        self.enabled_checkbox.toggled.connect(self._on_enabled_toggled)
+        self.layout().insertWidget(0, self.enabled_checkbox)
+        # Populate join_field_tgt attribute dropdown from connection node layer
+        self.field_map_widget.table_model.set_fixed_source_attributes_from_data_model(
+            "join_field_tgt", dm.ConnectionNode
+        )
+        self._on_enabled_toggled(self.model.enabled)
+
+    def _on_enabled_toggled(self, checked):
+        self.model.enabled = checked
+        self.field_map_widget.setEnabled(checked)
+        # Swap allowed methods and rebuild persistent editors so the method dropdown
+        # shows only ATTRIBUTE/EXPRESSION when enabled, and is never visible when disabled.
+        metadata = (
+            sm.PumpLinkingSettings.metadata_enabled
+            if checked
+            else sm.PumpLinkingSettings.metadata_disabled
+        )
+        self.field_map_widget.close_persistent_editors()
+        self.field_map_widget.table_delegate.clear_editors()
+        for field_name in ("join_field_src", "join_field_tgt"):
+            config = getattr(self.model, field_name)
+            config.__class__._metadata = metadata
+            config.method = metadata.allowed_methods[0]
+        self.field_map_widget.open_persistent_editors()
+        self.dataChanged.emit()
+
+    @property
+    def is_valid(self):
+        if not self.model.enabled:
+            return True
+        return self.field_map_widget.is_valid
 
     @property
     def group_name(self):
-        return "Pump to Pump Map linking settings"
+        return "Pump to Connection Node linking settings"
 
 
 class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
