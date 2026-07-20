@@ -1,0 +1,38 @@
+{
+  "connection_nodes": {
+    "snap": true,
+    "snap_distance": 1.0,
+    "create_nodes": true
+  },
+  "point_to_line_conversion": {
+    "length": {
+      "method": "source_attribute",
+      "source_attribute": "ptl_length"
+    },
+    "azimuth": {
+      "method": "source_attribute",
+      "source_attribute": "ptl_azimuth"
+    }
+  },
+  "pump_linking": {
+    "enabled": true,
+    "join_field_src": {
+      "method": "source_attribute",
+      "source_attribute": "cn_id_end"
+    },
+    "join_field_tgt": {
+      "method": "source_attribute",
+      "source_attribute": "id"
+    }
+  },
+  "integration": {
+    "integration_mode": "pipes"
+  },
+  "fields": {
+    "id": {"method": "auto"},
+    "capacity": {"method": "source_attribute", "source_attribute": "capacity"}
+  },
+  "connection_node_fields": {
+    "id": {"method": "auto"}
+  }
+}
