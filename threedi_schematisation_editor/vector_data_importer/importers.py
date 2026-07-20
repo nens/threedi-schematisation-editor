@@ -15,8 +15,10 @@ from qgis.core import (
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import get_next_feature_id, gpkg_layer, get_feature_by_id
 from threedi_schematisation_editor.vector_data_importer.integrators import (
+    ChannelIntegrator,
     LinearIntegrator,
     LineStructurePlacement,
+    PipeIntegrator,
     PointStructurePlacement,
     PumpMapNodeHandler,
     StructureNodeHandler,
@@ -544,6 +546,43 @@ class PumpsImporter(IntegrationImporter):
                 self.pump_map_source.dataProvider().addFeature(line_feat)
                 self.pump_map_src_feat_map[line_feat.id()] = src_feat
 
+    def get_pump_map_integrator(self, pump_map_node_handler):
+        """Build integrator for pump_map features using the same type as self.integrator."""
+        if self.integrator is None:
+            return None
+        length_config = self.import_settings.point_to_line_conversion.length
+        strategy = LineStructurePlacement(length_config, simplify_geometry=True)
+        if isinstance(self.integrator, ChannelIntegrator):
+            integrator = ChannelIntegrator(
+                conduit_layer=self.integrator.integrate_layer,
+                target_model_cls=dm.PumpMap,
+                target_layer=self.pump_map_layer,
+                target_manager=self.processor.pump_map_manager,
+                node_layer=self.node_layer,
+                node_manager=pump_map_node_handler.node_manager,
+                import_settings=self.import_settings,
+                external_source=self.pump_map_source,
+                target_gpkg=self.target_gpkg,
+                cross_section_layer=self.integrator.cross_section_layer,
+                strategy=strategy,
+            )
+        else:
+            integrator = PipeIntegrator(
+                conduit_layer=self.integrator.integrate_layer,
+                target_model_cls=dm.PumpMap,
+                target_layer=self.pump_map_layer,
+                target_manager=self.processor.pump_map_manager,
+                node_layer=self.node_layer,
+                node_manager=pump_map_node_handler.node_manager,
+                import_settings=self.import_settings,
+                external_source=self.pump_map_source,
+                target_gpkg=self.target_gpkg,
+                strategy=strategy,
+            )
+        integrator.node_handler = pump_map_node_handler
+        integrator.node_by_location = pump_map_node_handler.node_by_location
+        return integrator
+
     def import_features(self, context=None, selected_ids=None, progress_callback=None):
         # Set processor state once upfront, matching IntegrationImporter convention.
         # The pump_map integrator (Phase A) does not need set_transformed_spatial_index
@@ -566,8 +605,10 @@ class PumpsImporter(IntegrationImporter):
         processed_source_fids = set()
 
         # Phase A: pump_maps
-        if self.pump_map_source.featureCount() > 0 and ():
-            pump_manager = FeatureManager(get_next_feature_id(self.target_layer))
+        if self.pump_map_source.featureCount() > 0:
+            # Reuse the processor's pump and node managers so that Phase A and Phase B
+            # allocate IDs from a single shared sequence, avoiding duplicates.
+            pump_manager = self.processor.target_manager
             node_by_location = {
                 f.geometry().asPoint(): f["id"]
                 for f in self.node_layer.getFeatures()
@@ -577,40 +618,23 @@ class PumpsImporter(IntegrationImporter):
                 pump_manager=pump_manager,
                 node_layer=self.node_layer,
                 node_by_location=node_by_location,
-                node_manager=FeatureManager(get_next_feature_id(self.node_layer)),
+                node_manager=self.processor.node_manager,
                 layer_fields_mapping={
                     self.node_layer.name(): self.node_layer.fields(),
                     self.target_layer.name(): self.target_layer.fields(),
                 },
                 import_settings=self.import_settings,
             )
-
             pump_map_src_fids = set(self.pump_map_src_feat_map.keys())
             remaining_pump_map_src_fids = pump_map_src_fids
-            integration_mode = self.import_settings.integration.integration_mode
-            if integration_mode.value != "None" and self._conduit_layer is not None:
-                length_config = self.import_settings.point_to_line_conversion.length
-                strategy = LineStructurePlacement(length_config, simplify_geometry=True)
-                integrator = LinearIntegrator(
-                    conduit_layer=self._conduit_layer,
-                    target_model_cls=dm.PumpMap,
-                    target_layer=self.pump_map_layer,
-                    target_manager=FeatureManager(get_next_feature_id(self.pump_map_layer)),
-                    node_layer=self.node_layer,
-                    node_manager=pump_map_node_handler.node_manager,
-                    import_settings=self.import_settings,
-                    external_source=self.pump_map_source,
-                    target_gpkg=self.target_gpkg,
-                    conduit_model_cls=dm.Pipe,
-                    strategy=strategy,
-                    node_handler=pump_map_node_handler,
-                )
+            integrator = self.get_pump_map_integrator(pump_map_node_handler)
+            if integrator is not None:
                 integrated_features, integrated_mem_fids = integrator.integrate_features(
                     pump_map_src_fids
                 )
                 for layer_name, feats in integrated_features.items():
                     all_features[layer_name] += feats
-                remaining_pump_map_src_fids = remaining_pump_map_src_fids - integrated_mem_fids
+                remaining_pump_map_src_fids = remaining_pump_map_src_fids - set(integrated_mem_fids)
                 processed_source_fids |= {self.pump_map_src_feat_map[mem_fid].id() for mem_fid in integrated_mem_fids}
 
             # Remaining pump_maps: use PumpProcessor on the original source features
