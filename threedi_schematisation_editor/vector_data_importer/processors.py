@@ -883,7 +883,9 @@ class PumpProcessor(StructureProcessor):
         if node:
             pump_feat["connection_node_id"] = node["id"]
             if snapped:
-                pump_feat.setGeometry(QgsGeometry.fromPointXY(node.geometry().asPoint()))
+                pump_feat.setGeometry(
+                    QgsGeometry.fromPointXY(node.geometry().asPoint())
+                )
             else:
                 new_nodes.append(node)
         return new_nodes
@@ -965,6 +967,7 @@ class PumpProcessor(StructureProcessor):
             self.target_name: [pump_feat],
             self.pump_map_name: [pump_map_feat],
         }
+
 
 class SurfaceProcessor(SpatialProcessor):
     def __init__(

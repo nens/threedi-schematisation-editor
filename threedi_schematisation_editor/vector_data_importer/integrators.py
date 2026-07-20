@@ -196,7 +196,14 @@ class StructureNodeHandler(NodeHandler):
     via the same interface.
     """
 
-    def __init__(self, node_layer, node_by_location, node_manager, layer_fields_mapping, import_settings):
+    def __init__(
+        self,
+        node_layer,
+        node_by_location,
+        node_manager,
+        layer_fields_mapping,
+        import_settings,
+    ):
         self.node_layer = node_layer
         self.node_by_location = node_by_location
         self.node_manager = node_manager
@@ -226,14 +233,18 @@ class StructureNodeHandler(NodeHandler):
                 point = polyline[idx]
                 if point not in self.node_by_location:
                     node_feat = self.node_manager.create_new(
-                        QgsGeometry.fromPointXY(point), node_layer_fields, node_attributes
+                        QgsGeometry.fromPointXY(point),
+                        node_layer_fields,
+                        node_attributes,
                     )
                     self.node_by_location[point] = node_feat["id"]
                     new_nodes.append(node_feat)
                 feat[field_name] = self.node_by_location[point]
 
         if new_nodes:
-            update_attributes(self.cn_fields_configurations, dm.ConnectionNode, feat, *new_nodes)
+            update_attributes(
+                self.cn_fields_configurations, dm.ConnectionNode, feat, *new_nodes
+            )
 
         return {self.node_layer.name(): new_nodes}
 
@@ -275,7 +286,12 @@ class PumpMapNodeHandler(NodeHandler):
             )
             self.node_by_location[point] = node_feat["id"]
             if self.cn_fields_configurations:
-                update_attributes(self.cn_fields_configurations, dm.ConnectionNode, src_feat, node_feat)
+                update_attributes(
+                    self.cn_fields_configurations,
+                    dm.ConnectionNode,
+                    src_feat,
+                    node_feat,
+                )
             return node_feat
         return None
 
@@ -290,19 +306,25 @@ class PumpMapNodeHandler(NodeHandler):
 
         # Start point: find/create node, create pump
         start_point = polyline[0]
-        new_node = self._find_or_create_node(start_point, node_layer_fields, node_attributes, feat)
+        new_node = self._find_or_create_node(
+            start_point, node_layer_fields, node_attributes, feat
+        )
         if new_node is not None:
             new_nodes.append(new_node)
         start_node_id = self.node_by_location[start_point]
 
-        pump_feat = self.pump_manager.create_new(QgsGeometry.fromPointXY(start_point), self.pump_fields)
+        pump_feat = self.pump_manager.create_new(
+            QgsGeometry.fromPointXY(start_point), self.pump_fields
+        )
         pump_feat["connection_node_id"] = start_node_id
         update_attributes(self.fields_configurations, dm.Pump, feat, pump_feat)
         feat["pump_id"] = pump_feat["id"]
 
         # End point: find/create node, set connection_node_id_end on pump_map
         end_point = polyline[-1]
-        new_node = self._find_or_create_node(end_point, node_layer_fields, node_attributes, feat)
+        new_node = self._find_or_create_node(
+            end_point, node_layer_fields, node_attributes, feat
+        )
         if new_node is not None:
             new_nodes.append(new_node)
         feat["connection_node_id_end"] = self.node_by_location[end_point]

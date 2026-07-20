@@ -500,7 +500,6 @@ def test_compute_selected_ids_unknown_field_warns_and_returns_candidates():
     assert any(issubclass(w.category, FeaturesImporterWarning) for w in caught)
 
 
-
 @pytest.fixture
 def simple_layer():
     layer = QgsVectorLayer("NoGeometry", "test", "memory")
@@ -553,6 +552,7 @@ def test_build_feature_mapping(config, values, expected_keys):
     for feature in layer.getFeatures():
         if feature["code"] in expected_keys:
             assert result[feature["code"]] == feature
+
 
 @pytest.mark.parametrize("simplify", [True, False])
 def test_get_substring_geometry(simplify):

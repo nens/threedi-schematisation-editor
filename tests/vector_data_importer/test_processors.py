@@ -473,7 +473,9 @@ def _make_pump_processor(target_layer, pump_map_layer, node_layer, pump_linking=
     """Build a PumpProcessor with minimal import_settings."""
     settings = sm.ImportSettings(
         fields={"id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)},
-        connection_node_fields={"id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)},
+        connection_node_fields={
+            "id": sm.FieldMapConfig(method=ColumnImportMethod.AUTO)
+        },
         point_to_line_conversion={
             "length": {"method": "default", "default_value": 50.0},
             "azimuth": {"method": "default", "default_value": 90.0},
@@ -487,25 +489,36 @@ def _make_pump_processor(target_layer, pump_map_layer, node_layer, pump_linking=
 class TestPumpProcessor:
     def _make_layers(self):
         from qgis.core import QgsVectorLayer
+
         pump_layer = QgsVectorLayer("Point?crs=EPSG:28992", "pump", "memory")
-        pump_layer.dataProvider().addAttributes([
-            QgsField("id", QVariant.Int),
-            QgsField("connection_node_id", QVariant.Int),
-        ])
+        pump_layer.dataProvider().addAttributes(
+            [
+                QgsField("id", QVariant.Int),
+                QgsField("connection_node_id", QVariant.Int),
+            ]
+        )
         pump_layer.updateFields()
 
-        pump_map_layer = QgsVectorLayer("LineString?crs=EPSG:28992", "pump_map", "memory")
-        pump_map_layer.dataProvider().addAttributes([
-            QgsField("id", QVariant.Int),
-            QgsField("pump_id", QVariant.Int),
-            QgsField("connection_node_id_end", QVariant.Int),
-        ])
+        pump_map_layer = QgsVectorLayer(
+            "LineString?crs=EPSG:28992", "pump_map", "memory"
+        )
+        pump_map_layer.dataProvider().addAttributes(
+            [
+                QgsField("id", QVariant.Int),
+                QgsField("pump_id", QVariant.Int),
+                QgsField("connection_node_id_end", QVariant.Int),
+            ]
+        )
         pump_map_layer.updateFields()
 
-        node_layer = QgsVectorLayer("Point?crs=EPSG:28992", "connection_nodes", "memory")
-        node_layer.dataProvider().addAttributes([
-            QgsField("id", QVariant.Int),
-        ])
+        node_layer = QgsVectorLayer(
+            "Point?crs=EPSG:28992", "connection_nodes", "memory"
+        )
+        node_layer.dataProvider().addAttributes(
+            [
+                QgsField("id", QVariant.Int),
+            ]
+        )
         node_layer.updateFields()
         return pump_layer, pump_map_layer, node_layer
 
@@ -527,10 +540,12 @@ class TestPumpProcessor:
         start_node["id"] = 1
         start_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(0, 0)))
         # end node snap returns None → no pump_map
-        processor.get_node = MagicMock(side_effect=[
-            (start_node, True),
-            (None, False),
-        ])
+        processor.get_node = MagicMock(
+            side_effect=[
+                (start_node, True),
+                (None, False),
+            ]
+        )
 
         result = processor.process_feature(self._make_src_feat())
 
@@ -551,10 +566,12 @@ class TestPumpProcessor:
         end_node["id"] = 20
         end_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(50, 0)))
 
-        processor.get_node = MagicMock(side_effect=[
-            (start_node, True),  # start node for pump
-            (end_node, True),    # end node for pump_map
-        ])
+        processor.get_node = MagicMock(
+            side_effect=[
+                (start_node, True),  # start node for pump
+                (end_node, True),  # end node for pump_map
+            ]
+        )
 
         result = processor.process_feature(self._make_src_feat())
 
@@ -567,6 +584,7 @@ class TestPumpProcessor:
     def test_attribute_mapping_takes_priority_over_point_to_line(self):
         """Attribute mapping takes priority: mapped node used, point_to_line not consulted."""
         from qgis.core import QgsVectorLayer
+
         pump_layer, pump_map_layer, node_layer = self._make_layers()
 
         # Add a node to the node layer to map to
@@ -588,7 +606,9 @@ class TestPumpProcessor:
         src_feat.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(0, 0)))
         src_feat.setAttribute("id", 99)  # maps to node id=99
 
-        processor = _make_pump_processor(pump_layer, pump_map_layer, node_layer, pump_linking)
+        processor = _make_pump_processor(
+            pump_layer, pump_map_layer, node_layer, pump_linking
+        )
         processor.node_locator = MagicMock()
 
         start_node = QgsFeature(node_layer.fields())
@@ -598,10 +618,12 @@ class TestPumpProcessor:
         end_node["id"] = 99
         end_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(200, 200)))
 
-        processor.get_node = MagicMock(side_effect=[
-            (start_node, True),
-            (end_node, True),
-        ])
+        processor.get_node = MagicMock(
+            side_effect=[
+                (start_node, True),
+                (end_node, True),
+            ]
+        )
 
         result = processor.process_feature(src_feat)
 
@@ -620,10 +642,12 @@ class TestPumpProcessor:
         start_node.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(0, 0)))
 
         # end node snap fails (returns None)
-        processor.get_node = MagicMock(side_effect=[
-            (start_node, True),
-            (None, False),
-        ])
+        processor.get_node = MagicMock(
+            side_effect=[
+                (start_node, True),
+                (None, False),
+            ]
+        )
 
         result = processor.process_feature(self._make_src_feat())
 

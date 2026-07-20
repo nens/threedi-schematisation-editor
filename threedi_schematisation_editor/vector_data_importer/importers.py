@@ -3,17 +3,21 @@ from functools import cached_property
 from typing import Optional
 
 from qgis.core import (
+    NULL,
     QgsCoordinateTransform,
     QgsFeature,
     QgsGeometry,
     QgsProject,
     QgsVectorLayer,
     QgsWkbTypes,
-    NULL
 )
 
 from threedi_schematisation_editor import data_models as dm
-from threedi_schematisation_editor.utils import get_next_feature_id, gpkg_layer, get_feature_by_id
+from threedi_schematisation_editor.utils import (
+    get_feature_by_id,
+    get_next_feature_id,
+    gpkg_layer,
+)
 from threedi_schematisation_editor.vector_data_importer.integrators import (
     ChannelIntegrator,
     LinearIntegrator,
@@ -36,7 +40,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     FeatureManager,
     get_field_config_value,
     get_point_locator,
-    update_attributes
+    update_attributes,
 )
 
 
@@ -591,15 +595,15 @@ class PumpsImporter(IntegrationImporter):
         # The standalone pump integrator (Phase B, self.integrator) uses the original
         # external_source and may need the transformed index, handled below.
         self.processor.transformation = self.get_transformation(context)
-        self.processor.node_locator = get_point_locator(self.node_layer, context=context)
+        self.processor.node_locator = get_point_locator(
+            self.node_layer, context=context
+        )
         self.processor.context = context
         self.start_editing()
         all_features = defaultdict(list)
 
         self.build_pump_map_source_layer(context=context, selected_ids=selected_ids)
-        all_source_fids = set(
-            f.id() for f in self.external_source.getFeatures()
-        )
+        all_source_fids = set(f.id() for f in self.external_source.getFeatures())
         if selected_ids:
             all_source_fids = [fid for fid in all_source_fids if fid in selected_ids]
         processed_source_fids = set()
@@ -610,8 +614,7 @@ class PumpsImporter(IntegrationImporter):
             # allocate IDs from a single shared sequence, avoiding duplicates.
             pump_manager = self.processor.target_manager
             node_by_location = {
-                f.geometry().asPoint(): f["id"]
-                for f in self.node_layer.getFeatures()
+                f.geometry().asPoint(): f["id"] for f in self.node_layer.getFeatures()
             }
             pump_map_node_handler = PumpMapNodeHandler(
                 pump_layer=self.target_layer,
@@ -629,13 +632,18 @@ class PumpsImporter(IntegrationImporter):
             remaining_pump_map_src_fids = pump_map_src_fids
             integrator = self.get_pump_map_integrator(pump_map_node_handler)
             if integrator is not None:
-                integrated_features, integrated_mem_fids = integrator.integrate_features(
-                    pump_map_src_fids
+                integrated_features, integrated_mem_fids = (
+                    integrator.integrate_features(pump_map_src_fids)
                 )
                 for layer_name, feats in integrated_features.items():
                     all_features[layer_name] += feats
-                remaining_pump_map_src_fids = remaining_pump_map_src_fids - set(integrated_mem_fids)
-                processed_source_fids |= {self.pump_map_src_feat_map[mem_fid].id() for mem_fid in integrated_mem_fids}
+                remaining_pump_map_src_fids = remaining_pump_map_src_fids - set(
+                    integrated_mem_fids
+                )
+                processed_source_fids |= {
+                    self.pump_map_src_feat_map[mem_fid].id()
+                    for mem_fid in integrated_mem_fids
+                }
 
             # Remaining pump_maps: use PumpProcessor on the original source features
             if remaining_pump_map_src_fids:
@@ -656,12 +664,14 @@ class PumpsImporter(IntegrationImporter):
                     self.integrator.set_transformed_spatial_index(
                         transform=self.processor.transformation
                     )
-                integrated_features, integrated_feature_ids = self.integrator.integrate_features(
-                    remaining_feat_ids
+                integrated_features, integrated_feature_ids = (
+                    self.integrator.integrate_features(remaining_feat_ids)
                 )
                 for layer_name, feats in integrated_features.items():
                     all_features[layer_name] += feats
-                remaining_feat_ids = list(set(remaining_feat_ids) - set(integrated_feature_ids))
+                remaining_feat_ids = list(
+                    set(remaining_feat_ids) - set(integrated_feature_ids)
+                )
             processed = self.process_features(remaining_feat_ids)
             for layer_name, feats in processed.items():
                 all_features[layer_name] += feats

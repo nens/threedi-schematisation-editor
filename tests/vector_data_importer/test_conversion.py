@@ -12,6 +12,7 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
     CrossSectionDataImporter,
     CrossSectionLocationImporter,
     CulvertsImporter,
+    PumpsImporter,
     SurfaceImporter,
     WeirsImporter,
 )
@@ -34,14 +35,19 @@ from threedi_schematisation_editor.warnings import (
 from .utils import *
 
 
-def get_schematisation_layers(target_gpkg, target_object, conduit_layer_name="channel"):
+def get_schematisation_layers(
+    target_gpkg, target_object, conduit_layer_name="channel", extra_layers=None
+):
     temp_gpkg = str(get_temp_copy(target_gpkg))
-    return {
+    result = {
         "target_layer": gpkg_layer(temp_gpkg, target_object),
         "conduit_layer": gpkg_layer(temp_gpkg, conduit_layer_name),
         "node_layer": gpkg_layer(temp_gpkg, "connection_node"),
         "cross_section_location_layer": gpkg_layer(temp_gpkg, "cross_section_location"),
     }
+    for key, layer_name in (extra_layers or {}).items():
+        result[key] = gpkg_layer(temp_gpkg, layer_name)
+    return result
 
 
 def get_source_layer(name, layername):
@@ -403,3 +409,43 @@ def test_import_surface(data_type):
         {"target_layer": surface_map_layer},
         "surface_map",
     )
+
+
+def test_import_pumps():
+    """Integration test for PumpsImporter with pump_map and pipe integration.
+
+    Source data contains 4 pump features:
+      - id=1 (case a): end node resolved by attribute mapping (cn_id_end=2 → existing node)
+                       → Phase A integrated pump_map
+      - id=2 (case b): end point resolved by point_to_line, snaps to existing node 4
+                       → Phase A integrated pump_map
+      - id=3 (case c): end point resolved by point_to_line, doesn't snap to any pipe
+                       → Phase A fallback to PumpProcessor: pump + pump_map, not integrated
+      - id=4 (case d): no cn_id_end, no point_to_line, no nearby node
+                       → Phase B: standalone pump, no pump_map
+    """
+    import_config = get_import_config("import_pumps")
+    src_layer = get_source_layer("pumps", "pumps")
+    target_gpkg = SCHEMATISATION_PATH.joinpath("schematisation_2_pipes.gpkg")
+    layers = get_schematisation_layers(
+        target_gpkg,
+        "pump",
+        conduit_layer_name="pipe",
+        extra_layers={"pump_map_layer": "pump_map"},
+    )
+    layers.pop("cross_section_location_layer")
+    importer = PumpsImporter(src_layer, target_gpkg, import_config, **layers)
+    importer.import_features()
+
+    assert layers["target_layer"].featureCount() == 4
+    assert layers["pump_map_layer"].featureCount() == 3
+
+    ref_gpkg = DATA_PATH.joinpath("ref", "test_import_pumps.gpkg")
+    ref_layers = get_schematisation_layers(
+        ref_gpkg,
+        "pump",
+        conduit_layer_name="pipe",
+        extra_layers={"pump_map_layer": "pump_map"},
+    )
+    for name in ["target_layer", "pump_map_layer", "node_layer"]:
+        compare_layer_geom(layers[name], ref_layers[name])

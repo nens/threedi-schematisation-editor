@@ -564,7 +564,11 @@ class TestNodeManagement:
         mock_import_settings = MagicMock()
         mock_import_settings.connection_node_fields = {}
         handler = StructureNodeHandler(
-            mock_node_layer, node_by_location, node_manager, layer_fields_mapping, mock_import_settings
+            mock_node_layer,
+            node_by_location,
+            node_manager,
+            layer_fields_mapping,
+            mock_import_settings,
         )
 
         dst_fields = QgsFields()
@@ -657,7 +661,11 @@ class TestNodeManagement:
         mock_import_settings = MagicMock()
         mock_import_settings.connection_node_fields = {}
         handler = StructureNodeHandler(
-            node_layer, node_by_location, node_manager, layer_fields_mapping, mock_import_settings
+            node_layer,
+            node_by_location,
+            node_manager,
+            layer_fields_mapping,
+            mock_import_settings,
         )
 
         dst_fields = QgsFields()
@@ -679,33 +687,53 @@ class TestNodeManagement:
         assert polyline[-1] == end_point
 
 
-def make_pump_map_handler(pump_layer, pump_manager, node_layer, node_by_location, node_manager, fields_configurations=None, cn_fields_configurations=None):
+def make_pump_map_handler(
+    pump_layer,
+    pump_manager,
+    node_layer,
+    node_by_location,
+    node_manager,
+    fields_configurations=None,
+    cn_fields_configurations=None,
+):
     """Helper: build a PumpMapNodeHandler with minimal mock import_settings."""
     import_settings = MagicMock()
     import_settings.fields = fields_configurations or {}
     import_settings.connection_node_fields = cn_fields_configurations or {}
     layer_fields_mapping = {node_layer.name(): node_layer.fields()}
     return PumpMapNodeHandler(
-        pump_layer, pump_manager, node_layer, node_by_location, node_manager,
-        layer_fields_mapping, import_settings,
+        pump_layer,
+        pump_manager,
+        node_layer,
+        node_by_location,
+        node_manager,
+        layer_fields_mapping,
+        import_settings,
     )
 
 
 class TestPumpMapNodeHandler:
     def _make_layers(self):
         from qgis.core import QgsVectorLayer
-        node_layer = QgsVectorLayer("Point?crs=EPSG:28992", "connection_nodes", "memory")
-        node_layer.dataProvider().addAttributes([
-            QgsField("id", QVariant.Int),
-            QgsField("code", QVariant.String),
-        ])
+
+        node_layer = QgsVectorLayer(
+            "Point?crs=EPSG:28992", "connection_nodes", "memory"
+        )
+        node_layer.dataProvider().addAttributes(
+            [
+                QgsField("id", QVariant.Int),
+                QgsField("code", QVariant.String),
+            ]
+        )
         node_layer.updateFields()
 
         pump_layer = QgsVectorLayer("Point?crs=EPSG:28992", "pump", "memory")
-        pump_layer.dataProvider().addAttributes([
-            QgsField("id", QVariant.Int),
-            QgsField("connection_node_id", QVariant.Int),
-        ])
+        pump_layer.dataProvider().addAttributes(
+            [
+                QgsField("id", QVariant.Int),
+                QgsField("connection_node_id", QVariant.Int),
+            ]
+        )
         pump_layer.updateFields()
         return node_layer, pump_layer
 
@@ -737,7 +765,9 @@ class TestPumpMapNodeHandler:
         pump_feat["id"] = 1
         pump_manager.create_new.return_value = pump_feat
 
-        handler = make_pump_map_handler(pump_layer, pump_manager, node_layer, node_by_location, node_manager)
+        handler = make_pump_map_handler(
+            pump_layer, pump_manager, node_layer, node_by_location, node_manager
+        )
         feat = self._make_pump_map_feat(start_pt, end_pt)
 
         # Pre-seed end node so only start triggers create
@@ -776,7 +806,9 @@ class TestPumpMapNodeHandler:
         pump_feat["id"] = 1
         pump_manager.create_new.return_value = pump_feat
 
-        handler = make_pump_map_handler(pump_layer, pump_manager, node_layer, node_by_location, node_manager)
+        handler = make_pump_map_handler(
+            pump_layer, pump_manager, node_layer, node_by_location, node_manager
+        )
         feat = self._make_pump_map_feat(start_pt, end_pt)
         handler.update_nodes(feat, {})
 
@@ -796,7 +828,9 @@ class TestPumpMapNodeHandler:
         pump_manager = MagicMock()
         pump_manager.create_new.return_value = pump_feat
 
-        handler = make_pump_map_handler(pump_layer, pump_manager, node_layer, node_by_location, node_manager)
+        handler = make_pump_map_handler(
+            pump_layer, pump_manager, node_layer, node_by_location, node_manager
+        )
         feat = self._make_pump_map_feat(start_pt, end_pt)
         handler.update_nodes(feat, {})
 
@@ -816,7 +850,9 @@ class TestPumpMapNodeHandler:
         pump_manager = MagicMock()
         pump_manager.create_new.return_value = pump_feat
 
-        handler = make_pump_map_handler(pump_layer, pump_manager, node_layer, node_by_location, node_manager)
+        handler = make_pump_map_handler(
+            pump_layer, pump_manager, node_layer, node_by_location, node_manager
+        )
         feat = self._make_pump_map_feat(start_pt, end_pt)
         result = handler.update_nodes(feat, {})
 
