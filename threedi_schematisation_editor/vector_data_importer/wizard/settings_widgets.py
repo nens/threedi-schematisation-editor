@@ -332,14 +332,6 @@ class IntegrationSettingsWidget(SettingsWidget):
         self.snap_distance.setValue(self.model.snap_distance)
         self.min_length.setValue(self.model.min_length)
 
-    def update_layer(self, layer):
-        """Hide min_length for point sources — PointStructurePlacement always produces length 0."""
-        is_point = (
-            layer and layer.geometryType() == QgsWkbTypes.GeometryType.PointGeometry
-        )
-        self.min_length_label.setVisible(not is_point)
-        self.min_length.setVisible(not is_point)
-
 
 class CrossSectionDataRemapSettingsWidget(SettingsWidget):
     def __init__(self, parent=None):
