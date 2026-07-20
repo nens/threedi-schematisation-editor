@@ -607,7 +607,7 @@ class PumpsImporter(IntegrationImporter):
         self.build_pump_map_source_layer(context=context, selected_ids=selected_ids)
         all_source_fids = set(f.id() for f in self.external_source.getFeatures())
         if selected_ids:
-            all_source_fids = [fid for fid in all_source_fids if fid in selected_ids]
+            all_source_fids = {fid for fid in all_source_fids if fid in selected_ids}
         processed_source_fids = set()
 
         # Phase A: pump_maps
