@@ -500,11 +500,6 @@ def test_compute_selected_ids_unknown_field_warns_and_returns_candidates():
     assert any(issubclass(w.category, FeaturesImporterWarning) for w in caught)
 
 
-# ---------------------------------------------------------------------------
-# build_feature_mapping
-# ---------------------------------------------------------------------------
-
-
 @pytest.fixture
 def simple_layer():
     layer = QgsVectorLayer("NoGeometry", "test", "memory")
@@ -557,3 +552,81 @@ def test_build_feature_mapping(config, values, expected_keys):
     for feature in layer.getFeatures():
         if feature["code"] in expected_keys:
             assert result[feature["code"]] == feature
+
+
+@pytest.mark.parametrize("simplify", [True, False])
+def test_get_substring_geometry(simplify):
+    """get_substring_geometry returns a QgsGeometry; simplify reduces it to 2 vertices."""
+    from threedi_schematisation_editor.vector_data_importer.utils import (
+        get_substring_geometry,
+    )
+
+    line_geom = QgsGeometry.fromPolylineXY(
+        [QgsPointXY(0, 0), QgsPointXY(50, 0), QgsPointXY(100, 0)]
+    )
+    curve = line_geom.constGet()
+    result = get_substring_geometry(curve, 25.0, 75.0, simplify=simplify)
+
+    assert isinstance(result, QgsGeometry)
+    assert result.length() == pytest.approx(50.0)
+    if simplify:
+        assert len(result.asPolyline()) == 2
+    else:
+        assert len(result.asPolyline()) >= 2
+
+
+@pytest.mark.parametrize("initial_nodes", [["start"], [], ["start", "end"]])
+def test_update_conduit_endpoints(initial_nodes):
+    """update_conduit_endpoints assigns connection_node_id_start/_end; creates missing nodes."""
+    from unittest.mock import MagicMock
+
+    from threedi_schematisation_editor.vector_data_importer.utils import (
+        update_conduit_endpoints,
+    )
+
+    points = {"start": (QgsPointXY(0, 0), 101), "end": (QgsPointXY(100, 0), 102)}
+    start_point = QgsPointXY(0, 0)
+    end_point = QgsPointXY(100, 0)
+    node_by_location = {points[name][0]: points[name][1] for name in initial_nodes}
+
+    node_layer_fields = QgsFields()
+    node_layer_fields.append(QgsField("id", QVariant.Int))
+
+    features_to_add = []
+    for name, (pt, node_id) in points.items():
+        if name not in initial_nodes:
+            feat = QgsFeature(node_layer_fields)
+            feat.setGeometry(QgsGeometry.fromPointXY(pt))
+            feat["id"] = node_id
+            features_to_add.append(feat)
+    mock_features = features_to_add.copy()
+
+    node_manager = MagicMock()
+
+    def mock_create_new(geom, fields, attributes):
+        feat = mock_features.pop(0)
+        node_by_location[geom.asPoint()] = feat["id"]
+        return feat
+
+    node_manager.create_new.side_effect = mock_create_new
+
+    conduit_fields = QgsFields()
+    conduit_fields.append(QgsField("id", QVariant.Int))
+    conduit_fields.append(QgsField("connection_node_id_start", QVariant.Int))
+    conduit_fields.append(QgsField("connection_node_id_end", QVariant.Int))
+    feature = QgsFeature(conduit_fields)
+    feature.setGeometry(QgsGeometry.fromPolylineXY([start_point, end_point]))
+
+    result = update_conduit_endpoints(
+        feature,
+        node_by_location,
+        node_layer_fields,
+        {"name": "Test Node"},
+        node_manager,
+    )
+
+    assert result == features_to_add
+    assert node_by_location[start_point] == 101
+    assert node_by_location[end_point] == 102
+    assert feature["connection_node_id_start"] == 101
+    assert feature["connection_node_id_end"] == 102

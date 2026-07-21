@@ -28,6 +28,7 @@ from threedi_schematisation_editor.processing.algorithms_vector_data_importer im
     ImportCulverts,
     ImportOrifices,
     ImportPipes,
+    ImportPumps,
     ImportSurfaces,
     ImportWeirs,
 )
@@ -73,6 +74,7 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
             ImportCulverts(),
             ImportOrifices(),
             ImportWeirs(),
+            ImportPumps(),
             ImportPipes(),
             ImportChannels(),
             ImportSurfaces(),

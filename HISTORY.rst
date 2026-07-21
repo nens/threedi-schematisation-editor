@@ -4,6 +4,7 @@ History
 2.4.13 (unreleased)
 -------------------
 
+- Add importer for pipes (nens/threedi-schematisation-editor#392)
 - Add importer for surfaces (nens/rana#3840)
 - Add filter to VDI layer selector
 - Include layer setting in VDI template files

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from pydantic import BaseModel, ValidationError
-from qgis.core import Qgis, QgsMapLayerProxyModel, QgsMessageLog, QgsProject
+from qgis.core import Qgis, QgsMapLayerProxyModel, QgsMessageLog, QgsWkbTypes
 from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
 from qgis.PyQt.QtGui import QPalette
 from qgis.PyQt.QtWidgets import (
@@ -36,6 +36,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard.settings_widgets 
     CrossSectionLocationMappingSettingsWidget,
     IntegrationSettingsWidget,
     PointToLIneConversionSettingsWidget,
+    PumpLinkingSettingsWidget,
     SettingsWidget,
     SurfaceLinkingSettingsWidget,
 )
@@ -91,6 +92,7 @@ class VDIWizard(QWizard):
         dm.Channel: vdi_importers.ChannelsImporter,
         dm.CrossSectionLocation: vdi_importers.CrossSectionLocationImporter,
         dm.Surface: vdi_importers.SurfaceImporter,
+        dm.Pump: vdi_importers.PumpsImporter,
     }
     settings_widgets_classes: list[SettingsWidget] = []
     import_started = pyqtSignal()
@@ -425,7 +427,10 @@ class VDIWizard(QWizard):
         cancellation_token = CancellationToken()
         self.run_page.cancel_requested.connect(cancellation_token.cancel)
         importer.processor._cancellation_token = cancellation_token
-        if isinstance(importer, vdi_importers.LinesImporter) and importer.integrator:
+        if (
+            isinstance(importer, vdi_importers.IntegrationImporter)
+            and importer.integrator
+        ):
             importer.integrator._cancellation_token = cancellation_token
 
         # Setup worker and thread
@@ -518,7 +523,7 @@ class ImportWithCreateConnectionNodesWizard(VDIWizard):
         node_handler = self.layer_manager.model_handlers[dm.ConnectionNode]
         processed_handlers = [structures_handler, node_handler]
         processed_layers = {
-            "structure_layer": structures_handler.layer,
+            "target_layer": structures_handler.layer,
             "node_layer": node_handler.layer,
         }
         return processed_handlers, processed_layers
@@ -689,3 +694,23 @@ class ImportSurfaceWizard(VDIWizard):
             selected_pipes_only=selected_pipes_only,
             **layer_dict,
         )
+
+
+class ImportPumpWizard(ImportStructureWizard):
+    settings_widgets_classes = [
+        PumpLinkingSettingsWidget,
+        ConnectionNodeSettingsWidget,
+        PointToLIneConversionSettingsWidget,
+        IntegrationSettingsWidget,
+    ]
+
+    @property
+    def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
+        return QgsMapLayerProxyModel.PointLayer
+
+    def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
+        processed_handlers, processed_layers = super().prepare_import()
+        pump_map_handler = self.layer_manager.model_handlers[dm.PumpMap]
+        processed_handlers.append(pump_map_handler)
+        processed_layers["pump_map_layer"] = pump_map_handler.layer
+        return processed_handlers, processed_layers

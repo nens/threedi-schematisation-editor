@@ -9,13 +9,19 @@ from qgis.core import (
     QgsGeometry,
     QgsPointXY,
     QgsSpatialIndex,
+    QgsWkbTypes,
 )
 
+from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.vector_data_importer import settings_models as sm
 from threedi_schematisation_editor.vector_data_importer.integrators import (
     ChannelIntegrator,
     LinearIntegrator,
     LinearIntegratorStructureData,
+    LineStructurePlacement,
+    PointStructurePlacement,
+    PumpMapNodeHandler,
+    StructureNodeHandler,
 )
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 
@@ -323,35 +329,6 @@ class TestChannelStructureIntegration:
         assert matched_conduit.id() == conduit.id()
         assert structure in matched_structures
 
-    def test_get_conduit_structure_from_point(
-        self, channel_feature, point_structure_feature
-    ):
-        """get_conduit_structure_from_point takes no snapping_distance, returns data."""
-        length_config = sm.FieldMapConfig(
-            method=sm.ColumnImportMethod.ATTRIBUTE,
-            source_attribute="length",
-            default_value=5.0,
-        )
-        result = LinearIntegrator.get_conduit_structure_from_point(
-            point_structure_feature, channel_feature, length_config
-        )
-        assert result.conduit_id == 1
-        assert result.feature["id"] == 4
-        assert result.m == 50.0
-        assert result.length == 10.0
-
-    def test_get_conduit_structure_from_line(
-        self, channel_feature, line_structure_feature
-    ):
-        """get_conduit_structure_from_line takes no snapping_distance, returns data."""
-        result = LinearIntegrator.get_conduit_structure_from_line(
-            line_structure_feature, channel_feature
-        )
-        assert result.conduit_id == 1
-        assert result.feature["id"] == 3
-        assert result.m == 50.0
-        assert result.length == 50.0
-
 
 class TestCrossSectionIntegration:
     """Tests for cross section integration methods of the LinearIntegrator class."""
@@ -551,16 +528,12 @@ class TestNodeManagement:
 
     @pytest.mark.parametrize("initial_nodes", [["start"], [], ["start", "end"]])
     def test_update_feature_endpoints(self, initial_nodes):
-        """Test update_feature_endpoints: connection_node_id fields are unset →
+        """Test StructureNodeHandler.update_nodes: connection_node_id fields are unset →
         nodes are created/found spatially via node_by_location."""
-        integrator = MagicMock(spec=LinearIntegrator)
-
         points = {"start": (QgsPointXY(0, 0), 101), "end": (QgsPointXY(100, 0), 102)}
         start_point = QgsPointXY(0, 0)
         end_point = QgsPointXY(100, 0)
-        integrator.node_by_location = {
-            points[name][0]: points[name][1] for name in initial_nodes
-        }
+        node_by_location = {points[name][0]: points[name][1] for name in initial_nodes}
 
         node_layer_fields = QgsFields()
         node_layer_fields.append(QgsField("id", QVariant.Int))
@@ -568,8 +541,6 @@ class TestNodeManagement:
 
         mock_node_layer = MagicMock()
         mock_node_layer.name.return_value = "connection_nodes"
-        integrator.node_layer = mock_node_layer
-        integrator.layer_fields_mapping = {"connection_nodes": node_layer_fields}
 
         features_to_add = []
         for name, (pt, node_id) in points.items():
@@ -580,12 +551,25 @@ class TestNodeManagement:
                 features_to_add.append(mock_node_feature)
         mock_features = features_to_add.copy()
 
-        def mock_add_node(point, fields, attributes):
+        node_manager = MagicMock()
+
+        def mock_create_new(geom, fields, attributes):
             feature = mock_features.pop(0)
-            integrator.node_by_location[point] = feature["id"]
+            node_by_location[geom.asPoint()] = feature["id"]
             return feature
 
-        integrator.add_node.side_effect = mock_add_node
+        node_manager.create_new.side_effect = mock_create_new
+
+        layer_fields_mapping = {"connection_nodes": node_layer_fields}
+        mock_import_settings = MagicMock()
+        mock_import_settings.connection_node_fields = {}
+        handler = StructureNodeHandler(
+            mock_node_layer,
+            node_by_location,
+            node_manager,
+            layer_fields_mapping,
+            mock_import_settings,
+        )
 
         dst_fields = QgsFields()
         dst_fields.append(QgsField("connection_node_id_start", QVariant.Int))
@@ -593,20 +577,67 @@ class TestNodeManagement:
         dst_feature = QgsFeature(dst_fields)
         dst_feature.setGeometry(QgsGeometry.fromPolylineXY([start_point, end_point]))
 
-        result = LinearIntegrator.update_feature_endpoints(
-            integrator, dst_feature, {"name": "Test Node"}
+        result = handler.update_nodes(dst_feature, {"name": "Test Node"})
+        assert result == {"connection_nodes": features_to_add}
+        assert node_by_location[start_point] == 101
+        assert node_by_location[end_point] == 102
+
+    @pytest.mark.parametrize("initial_nodes", [["start"], [], ["start", "end"]])
+    def test_update_structure_nodes(self, initial_nodes):
+        """Test update_structure_nodes (LineStructurePlacement) with different node_by_location states."""
+        points = {"start": (QgsPointXY(0, 0), 101), "end": (QgsPointXY(100, 0), 102)}
+        start_point = QgsPointXY(0, 0)
+        end_point = QgsPointXY(100, 0)
+        node_by_location = {points[name][0]: points[name][1] for name in initial_nodes}
+
+        node_layer_fields = QgsFields()
+        node_layer_fields.append(QgsField("id", QVariant.Int))
+        node_layer_fields.append(QgsField("name", QVariant.String))
+
+        # Create mock node features for nodes that need to be added
+        features_to_add = []
+        for name, (pt, node_id) in points.items():
+            mock_node_feature = QgsFeature(node_layer_fields)
+            mock_node_feature.setGeometry(QgsGeometry.fromPointXY(pt))
+            mock_node_feature["id"] = node_id
+            if name not in initial_nodes:
+                features_to_add.append(mock_node_feature)
+        mock_features = features_to_add.copy()
+
+        # Mock node_manager to return the mock node features and update node_by_location
+        node_manager = MagicMock()
+
+        def mock_create_new(geom, fields, attributes):
+            feature = mock_features.pop(0)
+            node_by_location[geom.asPoint()] = feature["id"]
+            return feature
+
+        node_manager.create_new.side_effect = mock_create_new
+
+        # Create a dst_feature with a line geometry
+        dst_feature = MagicMock()
+        dst_feature.geometry().asPolyline.return_value = [start_point, end_point]
+
+        # Call update_structure_nodes on a LineStructurePlacement instance
+        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
+        result = strategy.update_structure_nodes(
+            dst_feature,
+            node_by_location,
+            node_layer_fields,
+            {"name": "Test Node"},
+            node_manager,
         )
         assert result == features_to_add
-        assert integrator.node_by_location[start_point] == 101
-        assert integrator.node_by_location[end_point] == 102
+
+        # Assert that the node_by_location dictionary has the correct values
+        assert node_by_location[start_point] == 101
+        assert node_by_location[end_point] == 102
 
     def test_update_feature_endpoints_with_attribute_mapped_node_ids(self):
-        """Test update_feature_endpoints with overwrite_node_ids=True:
+        """Test StructureNodeHandler.update_nodes with respect_mapped_node_ids=True:
         connection_node_id fields are pre-set → look up node by ID, snap geometry,
-        add_node is never called."""
+        node_manager.create_new is never called."""
         from qgis.core import QgsVectorLayer
-
-        integrator = MagicMock(spec=LinearIntegrator)
 
         start_point = QgsPointXY(0, 0)
         end_point = QgsPointXY(100, 0)
@@ -623,9 +654,19 @@ class TestNodeManagement:
             node_layer.dataProvider().addFeatures([feat])
 
         node_layer_fields = node_layer.fields()
-        integrator.node_layer = node_layer
-        integrator.node_by_location = {}
-        integrator.layer_fields_mapping = {"connection_nodes": node_layer_fields}
+        node_by_location = {}
+        layer_fields_mapping = {"connection_nodes": node_layer_fields}
+        node_manager = MagicMock()
+
+        mock_import_settings = MagicMock()
+        mock_import_settings.connection_node_fields = {}
+        handler = StructureNodeHandler(
+            node_layer,
+            node_by_location,
+            node_manager,
+            layer_fields_mapping,
+            mock_import_settings,
+        )
 
         dst_fields = QgsFields()
         dst_fields.append(QgsField("connection_node_id_start", QVariant.Int))
@@ -635,12 +676,10 @@ class TestNodeManagement:
         dst_feature["connection_node_id_start"] = 101
         dst_feature["connection_node_id_end"] = 102
 
-        result = LinearIntegrator.update_feature_endpoints(
-            integrator, dst_feature, {}, respect_mapped_node_ids=True
-        )
+        result = handler.update_nodes(dst_feature, {}, respect_mapped_node_ids=True)
 
-        assert result == []
-        integrator.add_node.assert_not_called()
+        assert result == {"connection_nodes": []}
+        node_manager.create_new.assert_not_called()
         assert dst_feature["connection_node_id_start"] == 101
         assert dst_feature["connection_node_id_end"] == 102
         polyline = dst_feature.geometry().asPolyline()
@@ -648,35 +687,177 @@ class TestNodeManagement:
         assert polyline[-1] == end_point
 
 
-@pytest.mark.parametrize("simplify", [True, False])
-def test_get_substring_geometry_argument_processing(simplify):
-    """Test that get_substring_geometry processes the simplify argument correctly."""
-    # Create a simple line geometry for testing
-    line_geom = QgsGeometry.fromPolylineXY(
-        [QgsPointXY(0, 0), QgsPointXY(50, 0), QgsPointXY(100, 0)]
+def make_pump_map_handler(
+    pump_layer,
+    pump_manager,
+    node_layer,
+    node_by_location,
+    node_manager,
+    fields_configurations=None,
+    cn_fields_configurations=None,
+):
+    """Helper: build a PumpMapNodeHandler with minimal mock import_settings."""
+    import_settings = MagicMock()
+    import_settings.fields = fields_configurations or {}
+    import_settings.connection_node_fields = cn_fields_configurations or {}
+    layer_fields_mapping = {node_layer.name(): node_layer.fields()}
+    return PumpMapNodeHandler(
+        pump_layer,
+        pump_manager,
+        node_layer,
+        node_by_location,
+        node_manager,
+        layer_fields_mapping,
+        import_settings,
     )
 
-    # Get the underlying curve object
-    curve = line_geom.constGet()
 
-    # Test parameters
-    start_distance = 25.0
-    end_distance = 75.0
+class TestPumpMapNodeHandler:
+    def _make_layers(self):
+        from qgis.core import QgsVectorLayer
 
-    # Call the function with simplify=False
-    result = LinearIntegrator.get_substring_geometry(
-        curve, start_distance, end_distance, simplify=simplify
-    )
+        node_layer = QgsVectorLayer(
+            "Point?crs=EPSG:28992", "connection_nodes", "memory"
+        )
+        node_layer.dataProvider().addAttributes(
+            [
+                QgsField("id", QVariant.Int),
+                QgsField("code", QVariant.String),
+            ]
+        )
+        node_layer.updateFields()
 
-    # Verify that both calls return a QgsGeometry object
-    assert isinstance(result, QgsGeometry)
+        pump_layer = QgsVectorLayer("Point?crs=EPSG:28992", "pump", "memory")
+        pump_layer.dataProvider().addAttributes(
+            [
+                QgsField("id", QVariant.Int),
+                QgsField("connection_node_id", QVariant.Int),
+            ]
+        )
+        pump_layer.updateFields()
+        return node_layer, pump_layer
 
-    if simplify:
-        assert len(result.asPolyline()) == 2
-    else:
-        assert len(result.asPolyline()) >= 2
+    def _make_pump_map_feat(self, start_point, end_point):
+        fields = QgsFields()
+        fields.append(QgsField("id", QVariant.Int))
+        fields.append(QgsField("pump_id", QVariant.Int))
+        fields.append(QgsField("connection_node_id_end", QVariant.Int))
+        feat = QgsFeature(fields)
+        feat.setGeometry(QgsGeometry.fromPolylineXY([start_point, end_point]))
+        return feat
 
-    assert result.length() == end_distance - start_distance
+    def test_start_node_created_and_pump_created(self):
+        """Start node created, pump gets correct geometry and connection_node_id."""
+        node_layer, pump_layer = self._make_layers()
+        node_by_location = {}
+        node_manager = MagicMock()
+        pump_manager = MagicMock()
+
+        start_pt = QgsPointXY(0, 0)
+        end_pt = QgsPointXY(100, 0)
+
+        node_feat = QgsFeature(node_layer.fields())
+        node_feat.setGeometry(QgsGeometry.fromPointXY(start_pt))
+        node_feat["id"] = 10
+        node_manager.create_new.return_value = node_feat
+
+        pump_feat = QgsFeature(pump_layer.fields())
+        pump_feat["id"] = 1
+        pump_manager.create_new.return_value = pump_feat
+
+        handler = make_pump_map_handler(
+            pump_layer, pump_manager, node_layer, node_by_location, node_manager
+        )
+        feat = self._make_pump_map_feat(start_pt, end_pt)
+
+        # Pre-seed end node so only start triggers create
+        node_by_location[end_pt] = 20
+
+        result = handler.update_nodes(feat, {})
+
+        node_manager.create_new.assert_called_once()
+        call_geom = node_manager.create_new.call_args[0][0]
+        assert call_geom.asPoint() == start_pt
+        assert node_by_location[start_pt] == 10
+        pump_manager.create_new.assert_called_once()
+        assert pump_feat["connection_node_id"] == 10
+        assert feat["pump_id"] == 1
+        assert result == {"connection_nodes": [node_feat], "pump": [pump_feat]}
+
+    def test_end_node_created_and_connection_node_id_end_set(self):
+        """End node created, pump_map.connection_node_id_end set correctly."""
+        node_layer, pump_layer = self._make_layers()
+        node_by_location = {}
+        node_manager = MagicMock()
+        pump_manager = MagicMock()
+
+        start_pt = QgsPointXY(0, 0)
+        end_pt = QgsPointXY(100, 0)
+
+        def create_node(geom, fields, attrs):
+            nf = QgsFeature(node_layer.fields())
+            nf.setGeometry(geom)
+            nf["id"] = 10 if geom.asPoint() == start_pt else 20
+            node_by_location[geom.asPoint()] = nf["id"]
+            return nf
+
+        node_manager.create_new.side_effect = create_node
+        pump_feat = QgsFeature(pump_layer.fields())
+        pump_feat["id"] = 1
+        pump_manager.create_new.return_value = pump_feat
+
+        handler = make_pump_map_handler(
+            pump_layer, pump_manager, node_layer, node_by_location, node_manager
+        )
+        feat = self._make_pump_map_feat(start_pt, end_pt)
+        handler.update_nodes(feat, {})
+
+        assert feat["connection_node_id_end"] == 20
+        assert node_by_location[end_pt] == 20
+
+    def test_pump_map_geometry_adjusted_to_node_locations(self):
+        """pump_map geometry is set to the line between start and end node locations."""
+        node_layer, pump_layer = self._make_layers()
+        start_pt = QgsPointXY(0, 0)
+        end_pt = QgsPointXY(100, 0)
+        # Both nodes already exist at the exact geometry points
+        node_by_location = {start_pt: 10, end_pt: 20}
+        node_manager = MagicMock()
+        pump_feat = QgsFeature(pump_layer.fields())
+        pump_feat["id"] = 1
+        pump_manager = MagicMock()
+        pump_manager.create_new.return_value = pump_feat
+
+        handler = make_pump_map_handler(
+            pump_layer, pump_manager, node_layer, node_by_location, node_manager
+        )
+        feat = self._make_pump_map_feat(start_pt, end_pt)
+        handler.update_nodes(feat, {})
+
+        polyline = feat.geometry().asPolyline()
+        assert polyline[0] == start_pt
+        assert polyline[-1] == end_pt
+
+    def test_existing_nodes_not_recreated(self):
+        """No new nodes created when both endpoints already exist in node_by_location."""
+        node_layer, pump_layer = self._make_layers()
+        start_pt = QgsPointXY(0, 0)
+        end_pt = QgsPointXY(100, 0)
+        node_by_location = {start_pt: 10, end_pt: 20}
+        node_manager = MagicMock()
+        pump_feat = QgsFeature(pump_layer.fields())
+        pump_feat["id"] = 1
+        pump_manager = MagicMock()
+        pump_manager.create_new.return_value = pump_feat
+
+        handler = make_pump_map_handler(
+            pump_layer, pump_manager, node_layer, node_by_location, node_manager
+        )
+        feat = self._make_pump_map_feat(start_pt, end_pt)
+        result = handler.update_nodes(feat, {})
+
+        node_manager.create_new.assert_not_called()
+        assert result == {"connection_nodes": [], "pump": [pump_feat]}
 
 
 class TestFixPositions:
@@ -803,3 +984,208 @@ def test_get_channel_cuts(mids, lengths, expected_cuts):
         LinearIntegrator.get_conduit_cuts(channel_structures, channel_length)
         == expected_cuts
     )
+
+
+class TestLineStructurePlacement:
+    def test_get_structure_data_for_point(
+        self, channel_feature, point_structure_feature
+    ):
+        """get_structure_data with point geometry returns length=0 and correct m."""
+        length_config = sm.FieldMapConfig(
+            method=sm.ColumnImportMethod.ATTRIBUTE,
+            source_attribute="length",
+            default_value=5.0,
+        )
+        strategy = LineStructurePlacement(
+            length_config=length_config, simplify_geometry=True
+        )
+        result = strategy.get_structure_data(point_structure_feature, channel_feature)
+        assert result.conduit_id == 1
+        assert result.feature["id"] == 4
+        assert result.m == 50.0
+        assert result.length == 10.0
+
+    def test_get_structure_data_for_line(self, channel_feature, line_structure_feature):
+        """LineStructurePlacement.get_structure_data with line geometry returns correct data."""
+        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
+        result = strategy.get_structure_data(line_structure_feature, channel_feature)
+        assert result.conduit_id == 1
+        assert result.feature["id"] == 3
+        assert result.m == 50.0
+        assert result.length == 50.0
+
+    def test_place_structure(
+        self, channel_feature, line_structure_feature, structure_fields
+    ):
+        """LineStructurePlacement.place_structure returns a feature with correct geometry."""
+        from unittest.mock import MagicMock
+
+        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
+        conduit_geom = channel_feature.geometry()
+        structure_data = LinearIntegratorStructureData(
+            conduit_id=1, feature=line_structure_feature, m=50.0, length=20.0
+        )
+        target_manager = MagicMock()
+        created_feat = QgsFeature(structure_fields)
+        target_manager.create_new.return_value = created_feat
+
+        result = strategy.place_structure(
+            conduit_geom, structure_data, structure_fields, target_manager, {}, dm.Weir
+        )
+
+        assert result is created_feat
+        # manager was called with a line geometry spanning m-l/2=40 to m+l/2=60
+        call_geom = target_manager.create_new.call_args[0][0]
+        polyline = call_geom.asPolyline()
+        assert polyline[0].x() == pytest.approx(40.0)
+        assert polyline[-1].x() == pytest.approx(60.0)
+
+    @pytest.mark.parametrize("initial_nodes", [["start"], [], ["start", "end"]])
+    def test_update_structure_nodes(self, initial_nodes):
+        """update_structure_nodes assigns connection_node_id_start/_end; creates missing nodes."""
+        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
+
+        start_point = QgsPointXY(0, 0)
+        end_point = QgsPointXY(100, 0)
+        all_points = {"start": (start_point, 101), "end": (end_point, 102)}
+        node_by_location = {
+            all_points[name][0]: all_points[name][1] for name in initial_nodes
+        }
+
+        node_layer_fields = QgsFields()
+        node_layer_fields.append(QgsField("id", QVariant.Int))
+
+        # prepare mock node features for nodes that will be created
+        mock_feats = []
+        for name, (pt, node_id) in all_points.items():
+            if name not in initial_nodes:
+                feat = QgsFeature(node_layer_fields)
+                feat.setGeometry(QgsGeometry.fromPointXY(pt))
+                feat["id"] = node_id
+                mock_feats.append(feat)
+
+        node_manager = MagicMock()
+
+        def mock_create_new(geom, fields, attributes):
+            feat = mock_feats.pop(0)
+            node_by_location[geom.asPoint()] = feat["id"]
+            return feat
+
+        node_manager.create_new.side_effect = mock_create_new
+
+        line_fields = QgsFields()
+        line_fields.append(QgsField("id", QVariant.Int))
+        line_fields.append(QgsField("connection_node_id_start", QVariant.Int))
+        line_fields.append(QgsField("connection_node_id_end", QVariant.Int))
+        feature = QgsFeature(line_fields)
+        feature.setGeometry(QgsGeometry.fromPolylineXY([start_point, end_point]))
+
+        new_nodes = strategy.update_structure_nodes(
+            feature, node_by_location, node_layer_fields, {}, node_manager
+        )
+
+        expected_new = [
+            all_points[name][1]
+            for name in ["start", "end"]
+            if name not in initial_nodes
+        ]
+        assert [n["id"] for n in new_nodes] == expected_new
+        assert feature["connection_node_id_start"] == 101
+        assert feature["connection_node_id_end"] == 102
+
+    """Unit tests for PointStructurePlacement strategy."""
+
+    def test_get_structure_data_point(self, channel_feature, point_structure_feature):
+        """get_structure_data with point geometry returns length=0 and correct m."""
+        strategy = PointStructurePlacement()
+        result = strategy.get_structure_data(point_structure_feature, channel_feature)
+        assert result.conduit_id == 1
+        assert result.length == 0
+        assert result.m == pytest.approx(50.0)
+
+    def test_get_structure_data_line(self, channel_feature, line_structure_feature):
+        """get_structure_data with line geometry uses centroid, returns length=0."""
+        strategy = PointStructurePlacement()
+        result = strategy.get_structure_data(line_structure_feature, channel_feature)
+        assert result.conduit_id == 1
+        assert result.length == 0
+        assert result.m == pytest.approx(50.0)
+
+    def test_place_structure(
+        self, channel_feature, point_structure_feature, structure_fields
+    ):
+        """place_structure returns a point feature at the projected position."""
+        from unittest.mock import MagicMock
+
+        strategy = PointStructurePlacement()
+        conduit_geom = channel_feature.geometry()
+        structure_data = LinearIntegratorStructureData(
+            conduit_id=1, feature=point_structure_feature, m=30.0, length=0
+        )
+        target_manager = MagicMock()
+        created_feat = QgsFeature(structure_fields)
+        target_manager.create_new.return_value = created_feat
+
+        result = strategy.place_structure(
+            conduit_geom, structure_data, structure_fields, target_manager, {}, dm.Pump
+        )
+
+        assert result is created_feat
+        call_geom = target_manager.create_new.call_args[0][0]
+        assert call_geom.type() == QgsWkbTypes.GeometryType.PointGeometry
+        assert call_geom.asPoint().x() == pytest.approx(30.0)
+        assert call_geom.asPoint().y() == pytest.approx(0.0)
+
+    def test_update_structure_nodes_new_node(self, structure_fields):
+        """update_structure_nodes creates a node and assigns connection_node_id."""
+        from unittest.mock import MagicMock
+
+        strategy = PointStructurePlacement()
+        point = QgsPointXY(50, 0)
+        node_by_location = {}
+
+        node_layer_fields = QgsFields()
+        node_layer_fields.append(QgsField("id", QVariant.Int))
+        node_feat = QgsFeature(node_layer_fields)
+        node_feat["id"] = 99
+
+        node_manager = MagicMock()
+        node_manager.create_new.return_value = node_feat
+
+        feature = QgsFeature(structure_fields)
+        feature.setGeometry(QgsGeometry.fromPointXY(point))
+        structure_fields.append(QgsField("connection_node_id", QVariant.Int))
+        feature = QgsFeature(structure_fields)
+        feature.setGeometry(QgsGeometry.fromPointXY(point))
+
+        new_nodes = strategy.update_structure_nodes(
+            feature, node_by_location, node_layer_fields, {}, node_manager
+        )
+
+        assert new_nodes == [node_feat]
+        assert feature["connection_node_id"] == 99
+        assert node_by_location[point] == 99
+
+    def test_update_structure_nodes_existing_node(self, structure_fields):
+        """update_structure_nodes reuses existing node, returns no new nodes."""
+        from unittest.mock import MagicMock
+
+        strategy = PointStructurePlacement()
+        point = QgsPointXY(50, 0)
+        node_by_location = {point: 42}
+
+        node_layer_fields = QgsFields()
+        node_layer_fields.append(QgsField("id", QVariant.Int))
+        node_manager = MagicMock()
+
+        structure_fields.append(QgsField("connection_node_id", QVariant.Int))
+        feature = QgsFeature(structure_fields)
+        feature.setGeometry(QgsGeometry.fromPointXY(point))
+
+        new_nodes = strategy.update_structure_nodes(
+            feature, node_by_location, node_layer_fields, {}, node_manager
+        )
+
+        assert new_nodes == []
+        assert feature["connection_node_id"] == 42
+        node_manager.create_new.assert_not_called()

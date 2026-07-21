@@ -202,13 +202,21 @@ class Pump(ModelObject):
     id: int
     code: Optional[str]
     display_name: Optional[str]
-    start_level: float
-    lower_stop_level: float
+    start_level: Optional[float]
+    lower_stop_level: Optional[float]
     upper_stop_level: Optional[float]
-    capacity: float
-    type: PumpType
+    capacity: Optional[float]
+    type: Optional[PumpType]
     sewerage: Optional[bool]
-    connection_node_id: int
+    connection_node_id: int = field(
+        metadata={
+            DISPLAY_NAME_FIELD: "Connection node ID",
+            ALLOWED_METHODS_FIELD: [
+                ColumnImportMethod.AUTO,
+                ColumnImportMethod.ATTRIBUTE,
+            ],
+        }
+    )
     tags: Optional[str]
 
 

@@ -24,6 +24,7 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
     CulvertsImporter,
     OrificesImporter,
     PipesImporter,
+    PumpsImporter,
     SurfaceImporter,
     WeirsImporter,
 )
@@ -323,6 +324,19 @@ class ImportCrossSectionData(SimpleImporter):
         return self.tr(
             f"""Import {self.get_feature_repr()} from the external source layer."""
         )
+
+
+class ImportPumps(StructureImporter):
+    """Import pumps."""
+
+    FEATURE_TYPE = "pump"
+    IMPORTER_CLASS = PumpsImporter
+    INTEGRATOR_CLASS = PumpsImporter
+    TARGET_MODEL_CLS = dm.Pump
+    CONNECTION_NODE_MODEL_CLS = dm.ConnectionNode
+
+    def get_source_layer_types(self):
+        return [QgsProcessing.TypeVectorPoint]
 
 
 class ImportSurfaces(SimpleImporter):

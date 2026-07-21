@@ -7,6 +7,7 @@ from typing import Optional, Type
 from qgis.core import NULL, QgsFeature, QgsGeometry, QgsWkbTypes
 
 from threedi_schematisation_editor import data_models as dm
+from threedi_schematisation_editor.enumerators import GeometryType
 from threedi_schematisation_editor.utils import (
     get_feature_by_id,
     get_features_by_expression,
@@ -24,7 +25,9 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     FeatureManager,
     get_field_config_value,
     get_src_geometry,
+    get_substring_geometry,
     update_attributes,
+    update_conduit_endpoints,
 )
 from threedi_schematisation_editor.warnings import StructuresIntegratorWarning
 
@@ -35,6 +38,304 @@ class LinearIntegratorStructureData:
     feature: QgsFeature
     m: float
     length: float
+
+
+class StructurePlacementStrategy:
+    """Base class for structure-type-specific placement behaviour."""
+
+    def get_structure_data(
+        self, structure_feat, conduit_feat
+    ) -> LinearIntegratorStructureData:
+        """Compute position (m) and length for structure on conduit."""
+        raise NotImplementedError
+
+    def place_structure(
+        self,
+        conduit_geom,
+        structure_data,
+        target_fields,
+        target_manager,
+        fields_configurations,
+        target_model_cls,
+    ) -> QgsFeature:
+        """Create structure feature with correct geometry."""
+        raise NotImplementedError
+
+    def update_structure_nodes(
+        self,
+        feature,
+        node_by_location,
+        node_layer_fields,
+        node_attributes,
+        node_manager,
+    ) -> list:
+        """Assign connection node(s) and create new nodes if needed."""
+        raise NotImplementedError
+
+
+class LineStructurePlacement(StructurePlacementStrategy):
+    """Strategy for line-target structures (Weir, Orifice, Culvert)."""
+
+    def __init__(self, length_config, simplify_geometry):
+        self.length_config = length_config
+        self.simplify_geometry = simplify_geometry
+
+    def get_structure_data(
+        self, structure_feat, conduit_feat
+    ) -> LinearIntegratorStructureData:
+        conduit_geometry = conduit_feat.geometry()
+        structure_geom = structure_feat.geometry()
+        if structure_geom.type() == QgsWkbTypes.GeometryType.LineGeometry:
+            intersection_m = conduit_geometry.lineLocatePoint(structure_geom.centroid())
+            structure_length = structure_geom.length()
+        else:
+            intersection_m = conduit_geometry.lineLocatePoint(structure_geom)
+            structure_length = get_field_config_value(
+                self.length_config, structure_feat
+            )
+        return LinearIntegratorStructureData(
+            conduit_feat["id"], structure_feat, intersection_m, structure_length
+        )
+
+    def place_structure(
+        self,
+        conduit_geom,
+        structure_data,
+        target_fields,
+        target_manager,
+        fields_configurations,
+        target_model_cls,
+    ) -> QgsFeature:
+        cs = structure_data
+        substring_geom = get_substring_geometry(
+            conduit_geom.constGet(),
+            cs.m - cs.length * 0.5,
+            cs.m + cs.length * 0.5,
+            self.simplify_geometry,
+        )
+        substring_feat = target_manager.create_new(substring_geom, target_fields)
+        update_attributes(
+            fields_configurations, target_model_cls, cs.feature, substring_feat
+        )
+        return substring_feat
+
+    def update_structure_nodes(
+        self,
+        feature,
+        node_by_location,
+        node_layer_fields,
+        node_attributes,
+        node_manager,
+    ) -> list:
+        return update_conduit_endpoints(
+            feature, node_by_location, node_layer_fields, node_attributes, node_manager
+        )
+
+
+class PointStructurePlacement(StructurePlacementStrategy):
+    """Strategy for point-target structures (Pump)."""
+
+    def get_structure_data(self, structure_feat, conduit_feat):
+        conduit_geom = conduit_feat.geometry()
+        structure_geom = structure_feat.geometry()
+        if structure_geom.type() == QgsWkbTypes.GeometryType.LineGeometry:
+            m = conduit_geom.lineLocatePoint(structure_geom.centroid())
+        else:
+            m = conduit_geom.lineLocatePoint(structure_geom)
+        return LinearIntegratorStructureData(conduit_feat["id"], structure_feat, m, 0)
+
+    def place_structure(
+        self,
+        conduit_geom,
+        structure_data,
+        target_fields,
+        target_manager,
+        fields_configurations,
+        target_model_cls,
+    ):
+        point_geom = conduit_geom.interpolate(structure_data.m)
+        feat = target_manager.create_new(point_geom, target_fields)
+        update_attributes(
+            fields_configurations, target_model_cls, structure_data.feature, feat
+        )
+        return feat
+
+    def update_structure_nodes(
+        self,
+        feature,
+        node_by_location,
+        node_layer_fields,
+        node_attributes,
+        node_manager,
+    ) -> list:
+        point = feature.geometry().asPoint()
+        if point not in node_by_location:
+            node_feat = node_manager.create_new(
+                QgsGeometry.fromPointXY(point), node_layer_fields, node_attributes
+            )
+            node_by_location[point] = node_feat["id"]
+            new_nodes = [node_feat]
+        else:
+            new_nodes = []
+        feature["connection_node_id"] = node_by_location[point]
+        return new_nodes
+
+
+class NodeHandler:
+    """Base class for node assignment handlers used by LinearIntegrator."""
+
+    def update_nodes(self, feat, node_attributes, respect_mapped_node_ids=False):
+        raise NotImplementedError
+
+
+class StructureNodeHandler(NodeHandler):
+    """Handles node assignment for standard two-endpoint line structures.
+
+    Extracted from LinearIntegrator.update_feature_endpoints so that
+    LinearIntegrator can delegate to either this handler or PumpMapNodeHandler
+    via the same interface.
+    """
+
+    def __init__(
+        self,
+        node_layer,
+        node_by_location,
+        node_manager,
+        layer_fields_mapping,
+        import_settings,
+    ):
+        self.node_layer = node_layer
+        self.node_by_location = node_by_location
+        self.node_manager = node_manager
+        self.layer_fields_mapping = layer_fields_mapping
+        self.cn_fields_configurations = import_settings.connection_node_fields
+
+    def update_nodes(self, feat, node_attributes, respect_mapped_node_ids=False):
+        """Snap geometry endpoints to attribute-mapped nodes, create nodes for non-mapped endpoints.
+
+        Returns a dict keyed by layer name → list of created features.
+        """
+        new_nodes = []
+        polyline = feat.geometry().asPolyline()
+        node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
+
+        for idx, field_name in [
+            (0, "connection_node_id_start"),
+            (-1, "connection_node_id_end"),
+        ]:
+            node_id = feat[field_name]
+            if node_id is not None and node_id is not NULL and respect_mapped_node_ids:
+                node_feat = get_feature_by_id(self.node_layer, node_id)
+                if node_feat is not None:
+                    polyline[idx] = node_feat.geometry().asPoint()
+                    feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
+            else:
+                point = polyline[idx]
+                if point not in self.node_by_location:
+                    node_feat = self.node_manager.create_new(
+                        QgsGeometry.fromPointXY(point),
+                        node_layer_fields,
+                        node_attributes,
+                    )
+                    self.node_by_location[point] = node_feat["id"]
+                    new_nodes.append(node_feat)
+                feat[field_name] = self.node_by_location[point]
+
+        if new_nodes:
+            update_attributes(
+                self.cn_fields_configurations, dm.ConnectionNode, feat, *new_nodes
+            )
+
+        return {self.node_layer.name(): new_nodes}
+
+
+class PumpMapNodeHandler(NodeHandler):
+    """Handles node assignment and pump creation for integrated pump_map features.
+
+    For each placed pump_map feature (after fix_structure_placement):
+    - Start point: find/create node, create pump (geometry + connection_node_id +
+      mapped attributes), set pump_map.pump_id.
+    - End point: find/create node, set pump_map.connection_node_id_end.
+    - Adjust pump_map geometry to line between start and end nodes.
+    """
+
+    def __init__(
+        self,
+        pump_layer,
+        pump_manager,
+        node_layer,
+        node_by_location,
+        node_manager,
+        layer_fields_mapping,
+        import_settings,
+    ):
+        self.pump_layer = pump_layer
+        self.pump_fields = pump_layer.fields()
+        self.pump_manager = pump_manager
+        self.node_layer = node_layer
+        self.node_by_location = node_by_location
+        self.node_manager = node_manager
+        self.layer_fields_mapping = layer_fields_mapping
+        self.fields_configurations = import_settings.fields
+        self.cn_fields_configurations = import_settings.connection_node_fields
+
+    def _find_or_create_node(self, point, node_layer_fields, node_attributes, src_feat):
+        if point not in self.node_by_location:
+            node_feat = self.node_manager.create_new(
+                QgsGeometry.fromPointXY(point), node_layer_fields, node_attributes
+            )
+            self.node_by_location[point] = node_feat["id"]
+            if self.cn_fields_configurations:
+                update_attributes(
+                    self.cn_fields_configurations,
+                    dm.ConnectionNode,
+                    src_feat,
+                    node_feat,
+                )
+            return node_feat
+        return None
+
+    def update_nodes(self, feat, node_attributes, respect_mapped_node_ids=False):
+        """Create pump at start node, assign connection nodes to both endpoints.
+
+        Returns a dict keyed by layer name → list of created features.
+        """
+        new_nodes = []
+        polyline = feat.geometry().asPolyline()
+        node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
+
+        # Start point: find/create node, create pump
+        start_point = polyline[0]
+        new_node = self._find_or_create_node(
+            start_point, node_layer_fields, node_attributes, feat
+        )
+        if new_node is not None:
+            new_nodes.append(new_node)
+        start_node_id = self.node_by_location[start_point]
+
+        pump_feat = self.pump_manager.create_new(
+            QgsGeometry.fromPointXY(start_point), self.pump_fields
+        )
+        pump_feat["connection_node_id"] = start_node_id
+        update_attributes(self.fields_configurations, dm.Pump, feat, pump_feat)
+        feat["pump_id"] = pump_feat["id"]
+
+        # End point: find/create node, set connection_node_id_end on pump_map
+        end_point = polyline[-1]
+        new_node = self._find_or_create_node(
+            end_point, node_layer_fields, node_attributes, feat
+        )
+        if new_node is not None:
+            new_nodes.append(new_node)
+        feat["connection_node_id_end"] = self.node_by_location[end_point]
+
+        # Adjust pump_map geometry to line between actual node locations
+        feat.setGeometry(QgsGeometry.fromPolylineXY([start_point, end_point]))
+
+        return {
+            self.node_layer.name(): new_nodes,
+            self.pump_layer.name(): [pump_feat],
+        }
 
 
 class LinearIntegrator:
@@ -54,9 +355,12 @@ class LinearIntegrator:
         external_source,
         target_gpkg,
         conduit_model_cls,
+        strategy,
+        node_handler=None,
     ):
         self.external_source = external_source
         self.conduit_model_cls = conduit_model_cls
+        self.strategy = strategy
         self.target_model_cls = target_model_cls
         self.fields_configurations = import_settings.fields
         self.point_to_line_settings = import_settings.point_to_line_conversion
@@ -90,9 +394,17 @@ class LinearIntegrator:
             get_next_feature_id(self.integrate_layer)
         )
         # initialize mappings and indices
+        self.import_settings = import_settings
         self.setup_fields_map()
         self.setup_spatial_indexes()
         self.setup_node_by_location()
+        self.node_handler = node_handler or StructureNodeHandler(
+            self.node_layer,
+            self.node_by_location,
+            self.node_manager,
+            self.layer_fields_mapping,
+            import_settings,
+        )
 
     @staticmethod
     def get_integrator(
@@ -109,20 +421,10 @@ class LinearIntegrator:
             in [
                 dm.Weir,
                 dm.Orifice,
+                dm.Pump,
             ]
         ):
             return PipeIntegrator.from_importer(integrate_layer, importer)
-
-    @staticmethod
-    def get_substring_geometry(curve, start_distance, end_distance, simplify=False):
-        curve_substring = curve.curveSubstring(start_distance, end_distance)
-        substring_geometry = QgsGeometry(curve_substring)
-        if simplify:
-            substring_polyline = substring_geometry.asPolyline()
-            substring_geometry = QgsGeometry.fromPolylineXY(
-                [substring_polyline[0], substring_polyline[-1]]
-            )
-        return substring_geometry
 
     @property
     def map_layers(self):
@@ -170,26 +472,6 @@ class LinearIntegrator:
             node_geom = node_feat.geometry()
             node_point = node_geom.asPoint()
             self.node_by_location[node_point] = node_feat["id"]
-
-    @staticmethod
-    def get_conduit_structure_from_line(structure_feat, conduit_feat):
-        conduit_geometry = conduit_feat.geometry()
-        structure_geom = structure_feat.geometry()
-        intersection_m = conduit_geometry.lineLocatePoint(structure_geom.centroid())
-        structure_length = structure_geom.length()
-        return LinearIntegratorStructureData(
-            conduit_feat["id"], structure_feat, intersection_m, structure_length
-        )
-
-    @staticmethod
-    def get_conduit_structure_from_point(structure_feat, conduit_feat, length_config):
-        structure_geom = structure_feat.geometry()
-        conduit_geometry = conduit_feat.geometry()
-        intersection_m = conduit_geometry.lineLocatePoint(structure_geom)
-        structure_length = get_field_config_value(length_config, structure_feat)
-        return LinearIntegratorStructureData(
-            conduit_feat["id"], structure_feat, intersection_m, structure_length
-        )
 
     def get_conduit_matches(self, selected_ids=None) -> list:
         """Return matched (conduit, [structures]) pairs for integration.
@@ -273,9 +555,7 @@ class LinearIntegrator:
         """Extract part of the curve as a new structure feature."""
         substring_feat = QgsFeature(fields)
         substring_feat.setGeometry(
-            LinearIntegrator.get_substring_geometry(
-                curve, start_distance, end_distance, simplify
-            )
+            get_substring_geometry(curve, start_distance, end_distance, simplify)
         )
         for field_name, field_value in attributes.items():
             substring_feat[field_name] = field_value
@@ -296,30 +576,6 @@ class LinearIntegrator:
             conduit_structures, conduit_geom.length()
         )
         return conduit_structures
-
-    def place_structures_on_conduit(
-        self, conduit_structures, conduit_feat, simplify_structure_geometry
-    ):
-        conduit_geom = conduit_feat.geometry()
-        added_features = []
-        for i, cs in enumerate(conduit_structures):
-            substring_geom = LinearIntegrator.get_substring_geometry(
-                conduit_geom.constGet(),
-                cs.m - cs.length * 0.5,
-                cs.m + cs.length * 0.5,
-                simplify_structure_geometry,
-            )
-            substring_feat = self.target_manager.create_new(
-                substring_geom, self.layer_fields_mapping[self.target_layer.name()]
-            )
-            update_attributes(
-                self.fields_configurations,
-                self.target_model_cls,
-                cs.feature,
-                substring_feat,
-            )
-            added_features.append(substring_feat)
-        return added_features
 
     @staticmethod
     def fix_structure_placement_lhs(
@@ -445,17 +701,25 @@ class LinearIntegrator:
             warnings.warn(f"{message}", StructuresIntegratorWarning)
             return added_features
 
-        simplify_structure_geometry = self.target_model_cls != dm.Culvert
-
         # Collect structures correctly placed along the conduit
         conduit_structures = LinearIntegrator.fix_structure_placement(
             conduit_structures,
             conduit_geom,
             self.minimum_conduit_length,
         )
-        added_features[self.target_layer.name()] = self.place_structures_on_conduit(
-            conduit_structures, conduit_feat, simplify_structure_geometry
-        )
+
+        target_fields = self.layer_fields_mapping[self.target_layer.name()]
+        for cs in conduit_structures:
+            added_features[self.target_layer.name()].append(
+                self.strategy.place_structure(
+                    conduit_geom,
+                    cs,
+                    target_fields,
+                    self.target_manager,
+                    self.fields_configurations,
+                    self.target_model_cls,
+                )
+            )
 
         # Remove parts of the conduit that overlap with new structures
         added_features[self.integrate_layer.name()] = self.cut_conduit(
@@ -476,66 +740,80 @@ class LinearIntegrator:
         }
 
         for substring_feat in added_features[self.target_layer.name()]:
-            added_features[self.node_layer.name()] += self.update_feature_endpoints(
+            for layer_name, feats in self.node_handler.update_nodes(
                 substring_feat, node_attributes, respect_mapped_node_ids=True
-            )
+            ).items():
+                added_features[layer_name] += feats
 
         # Conduit segments always need endpoint updates (they don't have attribute mapping)
-        for substring_feat in added_features[self.integrate_layer.name()]:
-            added_features[self.node_layer.name()] += self.update_feature_endpoints(
-                substring_feat, template_node_attributes=node_attributes
-            )
-
-        return added_features
-
-    def update_feature_endpoints(
-        self, feat, template_node_attributes, respect_mapped_node_ids=False
-    ):
-        """Snap geometry endpoints to attribute-mapped nodes, create nodes for non-mapped endpoints."""
-        new_nodes = []
-        polyline = feat.geometry().asPolyline()
         node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
-
-        for idx, field_name in [
-            (0, "connection_node_id_start"),
-            (-1, "connection_node_id_end"),
-        ]:
-            node_id = feat[field_name]
-            if node_id is not None and node_id is not NULL and respect_mapped_node_ids:
-                node_feat = get_feature_by_id(self.node_layer, node_id)
-                if node_feat is not None:
-                    polyline[idx] = node_feat.geometry().asPoint()
-                    feat.setGeometry(QgsGeometry.fromPolylineXY(polyline))
-            else:
-                # Non-mapped: create/find node at geometry endpoint (existing behavior)
-                point = polyline[idx]
-                if point not in self.node_by_location:
-                    node_feat = self.add_node(
-                        point, node_layer_fields, template_node_attributes
-                    )
-                    new_nodes.append(node_feat)
-                feat[field_name] = self.node_by_location[point]
-
-        return new_nodes
+        # integrator handles conduit segment endpoints (always line geometry)
+        for conduit_segment in added_features[self.integrate_layer.name()]:
+            added_features[self.node_layer.name()] += update_conduit_endpoints(
+                conduit_segment,
+                self.node_by_location,
+                node_layer_fields,
+                node_attributes,
+                self.node_manager,
+            )
+        return added_features
 
 
 class PipeIntegrator(LinearIntegrator):
-    def __init__(self, *args):
-        super().__init__(*args, conduit_model_cls=dm.Pipe)
+    def __init__(
+        self,
+        conduit_layer,
+        target_model_cls,
+        target_layer,
+        target_manager,
+        node_layer,
+        node_manager,
+        import_settings,
+        external_source,
+        target_gpkg,
+        strategy,
+    ):
+        super().__init__(
+            conduit_layer,
+            target_model_cls,
+            target_layer,
+            target_manager,
+            node_layer,
+            node_manager,
+            import_settings,
+            external_source,
+            target_gpkg,
+            conduit_model_cls=dm.Pipe,
+            strategy=strategy,
+        )
 
     @classmethod
     def from_importer(cls, integrate_layer, importer):
         """extract data from importer to created matching integrator"""
+        model_cls = importer.integration_model_cls
+        if model_cls.__geometrytype__ == GeometryType.Point:
+            strategy = PointStructurePlacement()
+        elif model_cls.__geometrytype__ == GeometryType.Linestring:
+            strategy = LineStructurePlacement(
+                importer.import_settings.point_to_line_conversion.length,
+                model_cls != dm.Culvert,
+            )
+        else:
+            raise NotImplementedError(
+                f"No placement strategy for geometry type '{model_cls.__geometrytype__}' "
+                f"(model: {model_cls.__name__})"
+            )
         return cls(
             integrate_layer,
-            importer.target_model_cls,
-            importer.target_layer,
-            importer.processor.target_manager,
+            model_cls,
+            importer.integration_layer,
+            importer.integration_manager,
             importer.node_layer,
             importer.processor.node_manager,
             importer.import_settings,
             importer.external_source,
             importer.target_gpkg,
+            strategy,
         )
 
     def integrate_features(self, input_feature_ids, progress_callback: callable = None):
@@ -554,11 +832,7 @@ class PipeIntegrator(LinearIntegrator):
                 continue
             conduit_structures = sorted(
                 (
-                    LinearIntegrator.get_conduit_structure_from_line(s, conduit_feature)
-                    if s.geometry().type() == QgsWkbTypes.GeometryType.LineGeometry
-                    else LinearIntegrator.get_conduit_structure_from_point(
-                        s, conduit_feature, self.point_to_line_settings.length
-                    )
+                    self.strategy.get_structure_data(s, conduit_feature)
                     for s in structure_feats
                 ),
                 key=attrgetter("m"),
@@ -587,6 +861,7 @@ class ChannelIntegrator(LinearIntegrator):
         external_source,
         target_gpkg,
         cross_section_layer,
+        strategy,
     ):
         self.cross_section_layer = cross_section_layer or gpkg_layer(
             target_gpkg, dm.CrossSectionLocation.__tablename__
@@ -605,11 +880,25 @@ class ChannelIntegrator(LinearIntegrator):
             external_source,
             target_gpkg,
             conduit_model_cls=dm.Channel,
+            strategy=strategy,
         )
 
     @classmethod
     def from_importer(cls, integrate_layer, cross_section_layer, importer):
         """extract data from importer to created matching integrator"""
+        geom_type = importer.target_model_cls.__geometrytype__
+        if geom_type == GeometryType.Point:
+            strategy = PointStructurePlacement()
+        elif geom_type == GeometryType.Linestring:
+            strategy = LineStructurePlacement(
+                importer.import_settings.point_to_line_conversion.length,
+                importer.target_model_cls != dm.Culvert,
+            )
+        else:
+            raise NotImplementedError(
+                f"No placement strategy for geometry type '{geom_type}' "
+                f"(model: {importer.target_model_cls.__name__})"
+            )
         return cls(
             integrate_layer,
             importer.target_model_cls,
@@ -621,6 +910,7 @@ class ChannelIntegrator(LinearIntegrator):
             importer.external_source,
             importer.target_gpkg,
             cross_section_layer,
+            strategy,
         )
 
     @property
@@ -651,11 +941,7 @@ class ChannelIntegrator(LinearIntegrator):
                 continue
             conduit_structures = sorted(
                 (
-                    LinearIntegrator.get_conduit_structure_from_line(s, conduit_feature)
-                    if s.geometry().type() == QgsWkbTypes.GeometryType.LineGeometry
-                    else LinearIntegrator.get_conduit_structure_from_point(
-                        s, conduit_feature, self.point_to_line_settings.length
-                    )
+                    self.strategy.get_structure_data(s, conduit_feature)
                     for s in structure_feats
                 ),
                 key=attrgetter("m"),
