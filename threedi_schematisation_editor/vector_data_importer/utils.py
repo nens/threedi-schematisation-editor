@@ -33,6 +33,10 @@ class FeatureIDConflict(Exception):
     pass
 
 
+class FeatureIDInvalid(Exception):
+    pass
+
+
 def get_field_config_value(field_config, source_feat, expression_context=None):
     method = ColumnImportMethod(field_config["method"])
     field_value = NULL
@@ -93,6 +97,34 @@ def build_feature_mapping(features, field_config_dict):
     return mapping
 
 
+def resolve_id(fields_configuration, src_feat, expression_context=None):
+    """Resolve the id field config for a source feature.
+
+    Returns None if the method is AUTO (caller should let FeatureManager assign the id).
+    Returns the resolved integer id for non-AUTO methods.
+    Raises FeatureIDInvalid (after emitting a FeaturesImporterWarning) if the id cannot
+    be resolved or converted to int.
+    """
+    id_config = fields_configuration.get("id")
+    if id_config is None or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO:
+        return None
+    resolved = get_field_config_value(id_config, src_feat, expression_context)
+    if resolved is None or resolved == NULL:
+        warnings.warn(
+            f"Feature skipped: id value '{resolved}' is None or NULL.", FeaturesImporterWarning
+        )
+        raise FeatureIDInvalid
+    try:
+        explicit_id = convert_to_type(resolved, int)
+    except TypeConversionError as e:
+        warnings.warn(
+            f"Feature skipped: id value '{resolved}' could not be converted to int. {e}",
+            FeaturesImporterWarning,
+        )
+        raise FeatureIDInvalid
+    return explicit_id
+
+
 def update_attributes(fields_config, model_cls, source_feat, *new_features):
     expression_context = QgsExpressionContext()
     expression_context.setFeature(source_feat)
@@ -103,6 +135,8 @@ def update_attributes(fields_config, model_cls, source_feat, *new_features):
                 field_config = fields_config[field_name]
             except KeyError:
                 continue
+            if field_name == "id":
+                continue  # id is always set before create_new, never via update_attributes
             if ColumnImportMethod(field_config["method"]) == ColumnImportMethod.AUTO:
                 continue
             field_value = get_field_config_value(

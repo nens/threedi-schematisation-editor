@@ -28,11 +28,13 @@ from shapely.testing import assert_geometries_equal
 from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
     FeatureManager,
+    FeatureIDInvalid,
     build_feature_mapping,
     get_field_config_value,
     get_float_value_from_feature,
     get_point_locator,
     get_src_geometry,
+    resolve_id,
     update_attributes,
 )
 from threedi_schematisation_editor.warnings import (
@@ -130,6 +132,38 @@ class TestModel:
     missing_field: str
 
 
+@pytest.mark.parametrize(
+    "fields_config,explicit_id_valid",
+    [
+        ({"id": {"method": ColumnImportMethod.AUTO.value}}, False),
+        ({}, False),
+        ({"id": {"method": ColumnImportMethod.ATTRIBUTE.value, "source_attribute": "id"}}, True),
+    ],
+)
+def test_resolve_id(fields_config, explicit_id_valid):
+    id_val = 5
+    src_feat = create_feature_with_fields("id")
+    src_feat.setAttribute("id", id_val)
+    explicit_id = resolve_id(fields_config, src_feat)
+    if explicit_id_valid:
+        assert explicit_id == id_val
+    else:
+        assert explicit_id is None
+
+
+@pytest.mark.parametrize(
+    "fields_config",
+    [{"id": {"method": ColumnImportMethod.ATTRIBUTE.value, "source_attribute": "id"}},
+     {"id": {"method": ColumnImportMethod.DEFAULT.value, "default_value": "foo"}},
+    ],
+)
+def test_resolve_id_invalid(fields_config):
+    src_feat = create_feature_with_fields("id")
+    src_feat.setAttribute("id", "foo")
+    with pytest.raises(FeatureIDInvalid):
+        resolve_id(fields_config, src_feat)
+
+
 def create_feature_with_fields(*field_names):
     """Helper function to create a feature with the specified fields."""
     fields = QgsFields()
@@ -143,10 +177,11 @@ def create_feature_with_fields(*field_names):
     "field_config,source_val,new_val,expected_val",
     [
         ({"method": ColumnImportMethod.AUTO.value}, 1, 2, 2),
-        ({"method": ColumnImportMethod.DEFAULT.value, "default_value": 42}, 1, 2, 42),
+        ({"method": ColumnImportMethod.DEFAULT.value, "default_value": 42}, 1, 2, 2),
     ],
 )
 def test_update_attributes(field_config, source_val, new_val, expected_val):
+    """id field is always skipped by update_attributes regardless of method."""
     fields_config = {"id": field_config}
     source_feat = create_feature_with_fields("id", "foo")
     source_feat.setAttribute("id", source_val)
@@ -221,9 +256,10 @@ def test_update_attributes_missing_field():
     assert new_feat["missing_field"] == "original_value"
 
 
-def test_update_attributes_type_conversion_error():
+def test_update_attributes_id_always_skipped():
+    """id field is always skipped by update_attributes, even with a type conversion error."""
     fields_config = {
-        "id": {"method": ColumnImportMethod.DEFAULT.value, "default_value": "no_an_int"}
+        "id": {"method": ColumnImportMethod.DEFAULT.value, "default_value": "not_an_int"}
     }
     source_feat = create_feature_with_fields("id")
     source_feat.setAttribute("id", 1)
@@ -231,12 +267,9 @@ def test_update_attributes_type_conversion_error():
     new_feat = create_feature_with_fields("id")
     new_feat.setAttribute("id", 1)
 
-    # Execute
-    with pytest.warns(UserWarning):
-        update_attributes(fields_config, TestModel, source_feat, new_feat)
-
-    # Assert
-    assert new_feat["id"] == NULL
+    # No warning, no change — id is handled before create_new, never via update_attributes
+    update_attributes(fields_config, TestModel, source_feat, new_feat)
+    assert new_feat["id"] == 1
 
 
 @pytest.fixture

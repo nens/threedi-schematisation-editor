@@ -89,12 +89,20 @@ class TestGetAllowedMethodsForModelClassField:
     @pytest.mark.parametrize(
         "allowed_methods, expected_methods",
         [
-            (None, [ColumnImportMethod.AUTO]),
+            (
+                None,
+                [
+                    ColumnImportMethod.AUTO,
+                    ColumnImportMethod.ATTRIBUTE,
+                    ColumnImportMethod.DEFAULT,
+                    ColumnImportMethod.EXPRESSION,
+                ],
+            ),
             ([ColumnImportMethod.ATTRIBUTE], [ColumnImportMethod.ATTRIBUTE]),
         ],
     )
     def test_id(self, allowed_methods, expected_methods):
-        # ID fields without allowed methods only have an AUTO method as return
+        # ID fields without allowed methods allow all methods except IGNORE
         @dataclass
         class Test:
             id: str = field(metadata=self.get_metadata(allowed_methods))
