@@ -984,6 +984,41 @@ class PumpProcessor(StructureProcessor):
         }
 
 
+class GenericProcessor(SpatialProcessor):
+    """Processor that copies features from any source to any target with field mapping only.
+
+    Geometry is coerced (linearized, flattened, single-part) and CRS-transformed when
+    needed. When the target has no geometry column, source geometry is silently skipped.
+    """
+
+    def __init__(self, target_layer, target_model_cls, import_settings):
+        super().__init__(target_layer, target_model_cls)
+        self.fields_configuration = import_settings.fields
+        self.target_geom_type = (
+            target_layer.geometryType()
+            if target_layer
+            else QgsWkbTypes.GeometryType.NullGeometry
+        )
+
+    @staticmethod
+    def new_geometry(src_feat):
+        """Return coerced source geometry, or None for non-spatial features."""
+        return get_src_geometry(src_feat, none_ok=True)
+
+    def process_feature(self, src_feat):
+        new_geom = self.new_geometry(src_feat)
+        if self.target_geom_type == QgsWkbTypes.GeometryType.NullGeometry:
+            new_geom = None  # non-spatial target: skip geometry
+        elif new_geom is not None and self.transformation:
+            new_geom.transform(self.transformation)
+        new_feat = self.target_manager.create_new(new_geom, self.target_fields)
+        update_attributes(
+            self.fields_configuration, self.target_model_cls, src_feat, new_feat
+        )
+        print(f'add new feature: {new_feat["id"]=}')
+        return {self.target_name: [new_feat]}
+
+
 class SurfaceProcessor(SpatialProcessor):
     def __init__(
         self,

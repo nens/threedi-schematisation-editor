@@ -5,6 +5,7 @@ import shapely
 from shapely.testing import assert_geometries_equal
 
 from tests.utils import get_temp_copy
+from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.importers import (
     ChannelsImporter,
@@ -12,6 +13,7 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
     CrossSectionDataImporter,
     CrossSectionLocationImporter,
     CulvertsImporter,
+    GenericImporter,
     PumpsImporter,
     SurfaceImporter,
     WeirsImporter,
@@ -449,3 +451,87 @@ def test_import_pumps():
     )
     for name in ["target_layer", "pump_map_layer", "node_layer"]:
         compare_layer_geom(layers[name], ref_layers[name])
+
+
+def test_generic_importer_line():
+    """GenericImporter copies channel features (line geometry) into an empty schematisation."""
+    src_gpkg = str(
+        get_temp_copy(SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg"))
+    )
+    src_layer = gpkg_layer(src_gpkg, "channel")
+    target_gpkg = SCHEMATISATION_PATH.joinpath("empty.gpkg")
+    target_layer = gpkg_layer(str(get_temp_copy(target_gpkg)), "channel")
+
+    import_settings = ImportSettings(
+        fields={
+            "id": {"method": ColumnImportMethod.AUTO},
+            "code": {
+                "method": ColumnImportMethod.ATTRIBUTE,
+                "source_attribute": "code",
+            },
+            "display_name": {
+                "method": ColumnImportMethod.ATTRIBUTE,
+                "source_attribute": "display_name",
+            },
+        }
+    )
+    importer = GenericImporter(
+        external_source=src_layer,
+        target_gpkg=str(target_layer.source().split("|")[0]),
+        import_settings=import_settings,
+        target_model_cls=dm.Channel,
+        target_layer=target_layer,
+    )
+    importer.import_features()
+
+    imported = list(target_layer.getFeatures())
+    src_features = list(src_layer.getFeatures())
+    assert len(imported) == len(src_features)
+
+    # check geometry matches source (ids differ due to auto-assignment)
+    imported_geoms = [shapely.wkt.loads(f.geometry().asWkt()) for f in imported]
+    src_geoms = [shapely.wkt.loads(f.geometry().asWkt()) for f in src_features]
+    assert_geometries_equal(imported_geoms, src_geoms, 1e-5)
+
+    # check mapped attributes (empty string may round-trip as NULL)
+    src_feat = src_features[0]
+    imp_feat = imported[0]
+    assert imp_feat["code"] == src_feat["code"]
+    assert (imp_feat["display_name"] or "") == (src_feat["display_name"] or "")
+
+
+def test_generic_importer_no_geom_target():
+    """GenericImporter copies channel features (line geometry) into an empty schematisation."""
+    src_gpkg = str(
+        get_temp_copy(SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg"))
+    )
+    src_layer = gpkg_layer(src_gpkg, "channel")
+    target_gpkg = SCHEMATISATION_PATH.joinpath("empty.gpkg")
+    target_layer = gpkg_layer(
+        str(get_temp_copy(target_gpkg)), "simulation_template_settings"
+    )
+
+    import_settings = ImportSettings(
+        fields={
+            "id": {"method": ColumnImportMethod.AUTO},
+            "name": {
+                "method": ColumnImportMethod.DEFAULT,
+                "default_value": "default_name",
+            },
+        }
+    )
+    importer = GenericImporter(
+        external_source=src_layer,
+        target_gpkg=str(target_layer.source().split("|")[0]),
+        import_settings=import_settings,
+        target_model_cls=dm.SimulationTemplateSettings,
+        target_layer=target_layer,
+    )
+    importer.import_features()
+
+    # Check if mapped name is correct
+    # Note that the target already has a row in simulation template settings so we need to find the correct row
+    imp_feat = next(
+        (item for item in target_layer.getFeatures() if item["id"] == 2), None
+    )
+    assert imp_feat["name"] == "default_name"

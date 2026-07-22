@@ -30,6 +30,7 @@ from threedi_schematisation_editor.vector_data_importer.processors import (
     ConnectionNodeProcessor,
     CrossSectionDataProcessor,
     CrossSectionLocationProcessor,
+    GenericProcessor,
     LineProcessor,
     PumpProcessor,
     SurfaceProcessor,
@@ -729,3 +730,53 @@ class SurfaceImporter(SpatialImporter):
     @property
     def modifiable_layers(self):
         return [self.target_layer, self.surface_map_layer]
+
+
+class GenericImporter(SpatialImporter):
+    """Importer that copies features from any source to any target using a field map only.
+
+    No connection nodes, no integration logic. Geometry is coerced and CRS-transformed.
+    Non-spatial target layers are supported.
+    """
+
+    def __init__(
+        self,
+        external_source,
+        target_gpkg,
+        import_settings,
+        target_model_cls,
+        target_layer=None,
+    ):
+        super().__init__(
+            external_source,
+            target_gpkg,
+            import_settings,
+            target_model_cls,
+            target_layer,
+        )
+        self.processor = GenericProcessor(
+            self.target_layer, target_model_cls, import_settings
+        )
+
+    def validate_geometry_compatibility(self):
+        """Raise ValueError if source and target geometry types are incompatible.
+
+        Non-spatial targets (NullGeometry) accept any source.
+        Spatial targets require source geometry of the same base type.
+        """
+        src_geom_type = self.external_source.geometryType()
+        tgt_geom_type = self.target_layer.geometryType()
+        # Importing data with a geometry into a model without is fine; geometry should be skipped
+        if tgt_geom_type == QgsWkbTypes.GeometryType.NullGeometry:
+            return
+        if src_geom_type == QgsWkbTypes.GeometryType.NullGeometry:
+            raise ValueError("Source has no geometry but target layer expects geometry")
+        if src_geom_type != tgt_geom_type:
+            raise ValueError(
+                f"Geometry type mismatch: source is {src_geom_type}, "
+                f"target is {tgt_geom_type}"
+            )
+
+    def import_features(self, context=None, selected_ids=None, progress_callback=None):
+        self.validate_geometry_compatibility()
+        super().import_features(context, selected_ids, progress_callback)
