@@ -1,7 +1,12 @@
 from typing import Optional, Type
 
 from pydantic import BaseModel
-from qgis.core import QgsApplication, QgsMapLayerProxyModel, QgsProject, QgsWkbTypes
+from qgis.core import (
+    QgsApplication,
+    QgsMapLayerProxyModel,
+    QgsProject,
+    QgsWkbTypes,
+)
 from qgis.gui import QgsMapLayerComboBox
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor, QIcon, QPalette, QTextBlockFormat, QTextCharFormat
@@ -411,7 +416,11 @@ class GenericStartPage(QWizardPage):
                 QgsMapLayerProxyModel.VectorLayer
             )
         else:
-            self._target_model_cls = dm.LAYERNAME_TO_MODEL_CLS.get(layer.name())
+            source = layer.source()
+            table_name = (
+                source.split("|layername=")[1] if "|layername=" in source else ""
+            )
+            self._target_model_cls = dm.TABLENAME_TO_MODEL_CLS.get(table_name)
             geom_type = layer.geometryType()
             proxy_filter = QGIS_GEOMTYPE_TO_PROXY_FILTER.get(geom_type)
             if proxy_filter is None or proxy_filter == QgsMapLayerProxyModel.NoGeometry:

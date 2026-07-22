@@ -52,7 +52,6 @@ def get_field_config_value(field_config, source_feat, expression_context=None):
         field_value = expression.evaluate(expression_context)
     elif method == ColumnImportMethod.DEFAULT:
         field_value = field_config["default_value"]
-    print(f"field_value: {field_value}")
     return field_value
 
 

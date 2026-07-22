@@ -366,10 +366,10 @@ class ImportGeneric(BaseImporter):
         return f"threedi_import_{self.FEATURE_TYPE}"
 
     def displayName(self):
-        return self.tr(f"Generic import")
+        return self.tr("Generic import")
 
     def shortHelpString(self):
-        return self.tr(f"""Import to any layer from the external source layer.""")
+        return self.tr("""Import to any layer from the external source layer.""")
 
     def get_source_layer_types(self):
         return [QgsProcessing.TypeVector]

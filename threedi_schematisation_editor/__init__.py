@@ -153,6 +153,8 @@ class ThreediSchematisationEditorPlugin:
         self.action_remove.triggered.connect(self.remove_model_from_project)
         import_features_icon_path = get_icon_path("icon_import.svg")
         import_actions_spec = [
+            ("Generic", self.import_external_generic, None),
+            (None, None, None),  # Separator
             ("Channels", self.import_external_channels, None),
             ("Connection nodes", self.import_external_connection_nodes, None),
             (
@@ -171,7 +173,6 @@ class ThreediSchematisationEditorPlugin:
             ("Pumps", self.import_external_pumps, None),
             ("Surfaces", self.import_external_surfaces, None),
             ("Weirs", self.import_external_weirs, None),
-            ("Generic...", self.import_external_generic, None),
         ]
         self.action_import_features = self.add_multi_action_button(
             "Import schematisation objects",
@@ -298,6 +299,10 @@ class ThreediSchematisationEditorPlugin:
             sub_action_callback,
             sub_icon_path,
         ) in actions_specification:
+            # Allow None as action name to insert a separator
+            if sub_action_name is None:
+                menu.addSeparator()
+                continue
             sub_action_arguments = [sub_action_name, parent_window]
             if sub_icon_path:
                 sub_icon = QIcon(sub_icon_path)

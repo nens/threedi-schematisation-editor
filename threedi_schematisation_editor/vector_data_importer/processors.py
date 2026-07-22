@@ -1015,7 +1015,6 @@ class GenericProcessor(SpatialProcessor):
         update_attributes(
             self.fields_configuration, self.target_model_cls, src_feat, new_feat
         )
-        print(f'add new feature: {new_feat["id"]=}')
         return {self.target_name: [new_feat]}
 
 

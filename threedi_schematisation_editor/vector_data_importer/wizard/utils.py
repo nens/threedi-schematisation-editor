@@ -122,23 +122,3 @@ def delete_draft(wizard_class_name):
         path.unlink()
     except FileNotFoundError:
         pass
-
-
-class SchematisationLayerProxyModel(QgsMapLayerProxyModel):
-    """Filters a QgsMapLayerComboBox to show only layers loaded from a specific
-    GeoPackage that correspond to a schematisation model class (dm.ALL_MODELS)."""
-
-    def __init__(self, model_gpkg, parent=None):
-        super().__init__(parent)
-        self._model_gpkg = model_gpkg
-        self._tablenames = set(dm.TABLENAME_TO_MODEL_CLS)
-
-    def filterAcceptsRow(self, source_row, source_parent):
-        if not super().filterAcceptsRow(source_row, source_parent):
-            return False
-        index = self.sourceModel().index(source_row, 0, source_parent)
-        layer = self.sourceModel().data(index, QgsMapLayerModel.LayerRole)
-        if layer is None:
-            # Allow the empty-layer row through (for setAllowEmptyLayer)
-            return True
-        return self._model_gpkg in layer.source() and layer.name() in self._tablenames
