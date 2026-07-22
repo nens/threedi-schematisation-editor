@@ -7,6 +7,7 @@ from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingException,
     QgsProcessingOutputFile,
+    QgsProcessingParameterEnum,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterFile,
     QgsProject,
@@ -22,6 +23,7 @@ from threedi_schematisation_editor.vector_data_importer.importers import (
     CrossSectionDataImporter,
     CrossSectionLocationImporter,
     CulvertsImporter,
+    GenericImporter,
     OrificesImporter,
     PipesImporter,
     PumpsImporter,
@@ -346,3 +348,52 @@ class ImportSurfaces(SimpleImporter):
 
     def get_source_layer_types(self):
         return [QgsProcessing.TypeVectorPolygon]
+
+
+class ImportGeneric(BaseImporter):
+    """Import features from any source layer into any target layer using a field map."""
+
+    FEATURE_TYPE = "generic"
+    TARGET_LAYER = "TARGET_LAYER"
+    # TARGET_MODEL_CLS is intentionally None: resolved at runtime from the enum selection.
+
+    _MODEL_OPTIONS = sorted(
+        [(cls.__layername__, cls) for cls in dm.ALL_MODELS if cls.__layername__],
+        key=lambda x: x[0],
+    )
+
+    def name(self):
+        return f"threedi_import_{self.FEATURE_TYPE}"
+
+    def displayName(self):
+        return self.tr("Generic import")
+
+    def shortHelpString(self):
+        return self.tr("""Import to any layer from the external source layer.""")
+
+    def get_source_layer_types(self):
+        return [QgsProcessing.TypeVector]
+
+    def initAlgorithm(self, config=None):
+        super().initAlgorithm(config)
+        self.addParameter(
+            QgsProcessingParameterEnum(
+                self.TARGET_LAYER,
+                self.tr("Target layer"),
+                options=[name for name, _ in self._MODEL_OPTIONS],
+            )
+        )
+
+    def processAlgorithm(self, parameters, context, feedback):
+        idx = self.parameterAsEnum(parameters, self.TARGET_LAYER, context)
+        self._resolved_model_cls = self._MODEL_OPTIONS[idx][1]
+        return super().processAlgorithm(parameters, context, feedback)
+
+    def create_importer(self, source_layer, target_gpkg, import_config):
+        try:
+            validate_field_map(import_config.fields, self._resolved_model_cls)
+        except ValidationError as e:
+            raise QgsProcessingException(f"Invalid field map (fields): {e}") from e
+        return GenericImporter(
+            source_layer, target_gpkg, import_config, self._resolved_model_cls
+        )

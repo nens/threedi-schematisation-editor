@@ -3,9 +3,10 @@ import json
 import warnings
 from pathlib import Path
 
-from qgis.core import QgsApplication
+from qgis.core import QgsApplication, QgsMapLayerModel, QgsMapLayerProxyModel
 from qgis.PyQt.QtCore import QSettings
 
+import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor import warnings as threedi_warnings
 
 VDI_DRAFTS_FOLDER = "vdi_preset_drafts"

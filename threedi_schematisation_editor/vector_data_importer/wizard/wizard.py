@@ -26,6 +26,7 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.pages import (
     FieldMapPage,
+    GenericStartPage,
     RunPage,
     SettingsPage,
     StartPage,
@@ -283,15 +284,7 @@ class VDIWizard(QWizard):
         data = {}
         for page_id in self.pageIds():
             page = self.page(page_id)
-            if isinstance(page, StartPage):
-                source_settings = page.get_settings().get("source")
-                if source_settings is not None:
-                    data["source"] = (
-                        source_settings.model_dump()
-                        if hasattr(source_settings, "model_dump")
-                        else source_settings
-                    )
-            elif isinstance(page, FieldMapPage):
+            if isinstance(page, FieldMapPage):
                 data[page.name] = {
                     key: row.config.model_dump()
                     for key, row in page.field_map_widget.row_dict.items()
@@ -302,6 +295,24 @@ class VDIWizard(QWizard):
                     data[key] = (
                         value.model_dump() if hasattr(value, "model_dump") else value
                     )
+            elif hasattr(page, "get_settings"):
+                # Covers StartPage and GenericStartPage (and any future start page).
+                # Use get_settings_with_target when available (e.g. GenericStartPage
+                # stores the target layer name for draft persistence).
+                page_settings = (
+                    page.get_settings_with_target()
+                    if hasattr(page, "get_settings_with_target")
+                    else page.get_settings()
+                )
+                source_settings = page_settings.get("source")
+                if source_settings is not None:
+                    data["source"] = (
+                        source_settings.model_dump()
+                        if hasattr(source_settings, "model_dump")
+                        else source_settings
+                    )
+                if "target_layer_name" in page_settings:
+                    data["target_layer_name"] = page_settings["target_layer_name"]
         return data
 
     @property
@@ -381,7 +392,10 @@ class VDIWizard(QWizard):
             page = self.page(page_id)
             if isinstance(page, FieldMapPage) and not self.should_collect_page(page):
                 continue
-            if isinstance(page, (StartPage, FieldMapPage, SettingsPage)):
+            if isinstance(page, (FieldMapPage, SettingsPage)):
+                data.update(page.get_settings())
+            elif hasattr(page, "get_settings"):
+                # Covers StartPage, GenericStartPage, and any future start page.
                 data.update(page.get_settings())
 
         return sm.ImportSettings(**data)
@@ -714,3 +728,51 @@ class ImportPumpWizard(ImportStructureWizard):
         processed_handlers.append(pump_map_handler)
         processed_layers["pump_map_layer"] = pump_map_handler.layer
         return processed_handlers, processed_layers
+
+
+class ImportGenericWizard(VDIWizard):
+    """Wizard for importing any source layer into any schematisation target layer.
+
+    Unlike other wizards the target model class is not fixed at construction time;
+    the user picks both source and target on the first page.
+    """
+
+    def __init__(self, model_gpkg, layer_manager, parent=None):
+        # model_cls=None; wizard_title and field_map_page are overridden so it is
+        # never used directly.
+        super().__init__(None, model_gpkg, layer_manager, parent)
+
+    @property
+    def wizard_title(self):
+        return "Generic import"
+
+    @cached_property
+    def start_page(self):
+        page = GenericStartPage(self.model_gpkg)
+        page.target_layer_changed.connect(self.field_map_page.rebuild)
+        return page
+
+    @cached_property
+    def field_map_page(self):
+        return FieldMapPage(model_cls=None, name="fields")
+
+    @property
+    def selected_layer(self):
+        return self.start_page.selected_layer
+
+    @property
+    def target_model_cls(self):
+        return self.start_page.target_model_cls
+
+    def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
+        handler = self.layer_manager.model_handlers[self.target_model_cls]
+        return [handler], {"target_layer": handler.layer}
+
+    def get_importer(self, import_settings, layer_dict):
+        return vdi_importers.GenericImporter(
+            self.selected_layer,
+            self.model_gpkg,
+            import_settings,
+            self.target_model_cls,
+            **layer_dict,
+        )

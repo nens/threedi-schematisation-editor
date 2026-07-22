@@ -87,6 +87,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard import (
     ImportConnectionNodesWizard,
     ImportCrossSectionDataWizard,
     ImportCrossSectionLocationWizard,
+    ImportGenericWizard,
     ImportPumpWizard,
     ImportStructureWizard,
     ImportSurfaceWizard,
@@ -152,6 +153,8 @@ class ThreediSchematisationEditorPlugin:
         self.action_remove.triggered.connect(self.remove_model_from_project)
         import_features_icon_path = get_icon_path("icon_import.svg")
         import_actions_spec = [
+            ("Generic", self.import_external_generic, None),
+            (None, None, None),  # Separator
             ("Channels", self.import_external_channels, None),
             ("Connection nodes", self.import_external_connection_nodes, None),
             (
@@ -296,6 +299,10 @@ class ThreediSchematisationEditorPlugin:
             sub_action_callback,
             sub_icon_path,
         ) in actions_specification:
+            # Allow None as action name to insert a separator
+            if sub_action_name is None:
+                menu.addSeparator()
+                continue
             sub_action_arguments = [sub_action_name, parent_window]
             if sub_icon_path:
                 sub_icon = QIcon(sub_icon_path)
@@ -476,6 +483,12 @@ class ThreediSchematisationEditorPlugin:
 
     def import_external_surfaces(self):
         self.import_external(dm.Surface, ImportSurfaceWizard)
+
+    def import_external_generic(self):
+        if not self.model_gpkg:
+            return
+        import_dlg = ImportGenericWizard(self.model_gpkg, self.layer_manager)
+        import_dlg.exec_()
 
     def on_project_close(self):
         if self.layer_manager is None:

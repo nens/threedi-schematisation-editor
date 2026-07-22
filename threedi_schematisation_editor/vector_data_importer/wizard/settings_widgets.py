@@ -1,7 +1,8 @@
+from pathlib import Path
 from typing import Optional, Type
 
 from pydantic import BaseModel
-from qgis.core import Qgis, QgsExpression, QgsWkbTypes
+from qgis.core import Qgis, QgsExpression, QgsMapLayerModel, QgsWkbTypes
 from qgis.gui import QgsFieldExpressionWidget, QgsMapLayerComboBox
 from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, pyqtSignal
 from qgis.PyQt.QtGui import QIcon
@@ -53,6 +54,41 @@ def get_wizard(widget) -> Optional["QWizard"]:
     return None
 
 
+class DisambiguatingLayerDelegate(QStyledItemDelegate):
+    """Item delegate for QgsMapLayerComboBox that prepends the gpkg filename
+    to layer names when multiple layers share the same name."""
+
+    def __init__(self, combo):
+        super().__init__(combo)
+        self._combo = combo
+
+    def display_text(self, index):
+        proxy = self._combo.model()
+        src_model = proxy.sourceModel()
+        src_idx = proxy.mapToSource(index)
+        layer = src_model.data(src_idx, QgsMapLayerModel.LayerRole)
+        if layer is None:
+            return index.data(Qt.DisplayRole) or ""
+        name = layer.name()
+        # Count how many loaded layers share this name
+        duplicate_count = 0
+        for i in range(src_model.rowCount()):
+            other = src_model.data(src_model.index(i, 0), QgsMapLayerModel.LayerRole)
+            if other is not None and other.name() == name:
+                duplicate_count += 1
+        if duplicate_count > 1:
+            raw_source = layer.source().split("|")[0]
+            # Only use the stem when the source looks like a file path
+            if "/" in raw_source or "\\" in raw_source:
+                stem = Path(raw_source).stem
+                return f"{name} \u2013 {stem}"
+        return name
+
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+        option.text = self.display_text(index)
+
+
 class LayerSettingsWidget(QWidget):
     layer_changed = pyqtSignal(str)  # Add this signal
 
@@ -70,6 +106,9 @@ class LayerSettingsWidget(QWidget):
         self.layer_selector.setAllowEmptyLayer(True)
         if layer_filter:
             self.layer_selector.setFilters(layer_filter)
+        self.layer_selector.setItemDelegate(
+            DisambiguatingLayerDelegate(self.layer_selector)
+        )
         self.layer_selector.layerChanged.connect(self.update_layer)
         self.layer_selector.setCurrentIndex(0)
         self.layer_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)

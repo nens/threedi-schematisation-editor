@@ -18,6 +18,7 @@ from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.vector_data_importer.importers import (
     CrossSectionDataImporter,
     CrossSectionLocationImporter,
+    GenericImporter,
     Importer,
     IntegrationImporter,
     PumpsImporter,
@@ -421,3 +422,34 @@ class TestPumpsImporter:
         importer.import_features()
 
         assert pump_map_layer.featureCount() == pump_map_count_before + 1
+
+
+@pytest.mark.parametrize(
+    "src_geom_type, tgt_geom_type, valid",
+    [
+        (QgsWkbTypes.LineGeometry, QgsWkbTypes.LineGeometry, True),
+        (QgsWkbTypes.PointGeometry, QgsWkbTypes.LineGeometry, False),
+        (QgsWkbTypes.NullGeometry, QgsWkbTypes.LineGeometry, False),
+        (QgsWkbTypes.NullGeometry, QgsWkbTypes.NullGeometry, True),
+        (QgsWkbTypes.PointGeometry, QgsWkbTypes.NullGeometry, True),
+    ],
+)
+def test_generic_importer_validate_geometry_compatibility(
+    src_geom_type, tgt_geom_type, valid
+):
+    src_layer = MagicMock()
+    src_layer.geometryType.return_value = src_geom_type
+    tgt_layer = MagicMock()
+    tgt_layer.geometryType.return_value = tgt_geom_type
+    importer = GenericImporter(
+        external_source=src_layer,
+        target_gpkg="/fake/path.gpkg",
+        import_settings=sm.ImportSettings(fields={}),
+        target_model_cls=None,
+        target_layer=tgt_layer,
+    )
+    if valid:
+        importer.validate_geometry_compatibility()
+    else:
+        with pytest.raises(ValueError):
+            importer.validate_geometry_compatibility()
