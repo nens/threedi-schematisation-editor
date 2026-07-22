@@ -3,6 +3,7 @@ from .wizard import (
     ImportConnectionNodesWizard,
     ImportCrossSectionDataWizard,
     ImportCrossSectionLocationWizard,
+    ImportGenericWizard,
     ImportPumpWizard,
     ImportStructureWizard,
     ImportSurfaceWizard,
@@ -16,4 +17,5 @@ __all__ = [
     "ImportConnectionNodesWizard",
     "ImportPumpWizard",
     "ImportSurfaceWizard",
+    "ImportGenericWizard",
 ]

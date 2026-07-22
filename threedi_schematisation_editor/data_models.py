@@ -1190,6 +1190,12 @@ ALL_MODELS = (
 )
 ALL_MODELS = ALL_MODELS + (CrossSectionDefinition,)
 ALL_MODELS = ALL_MODELS + HIDDEN_ELEMENTS
+TABLENAME_TO_MODEL_CLS = {
+    cls.__tablename__: cls for cls in ALL_MODELS if cls.__tablename__
+}
+LAYERNAME_TO_MODEL_CLS = {
+    cls.__layername__: cls for cls in ALL_MODELS if cls.__layername__
+}
 ELEMENTS_WITH_XS_DEF = (
     Weir,
     Culvert,

@@ -87,6 +87,7 @@ from threedi_schematisation_editor.vector_data_importer.wizard import (
     ImportConnectionNodesWizard,
     ImportCrossSectionDataWizard,
     ImportCrossSectionLocationWizard,
+    ImportGenericWizard,
     ImportPumpWizard,
     ImportStructureWizard,
     ImportSurfaceWizard,
@@ -170,6 +171,7 @@ class ThreediSchematisationEditorPlugin:
             ("Pumps", self.import_external_pumps, None),
             ("Surfaces", self.import_external_surfaces, None),
             ("Weirs", self.import_external_weirs, None),
+            ("Generic...", self.import_external_generic, None),
         ]
         self.action_import_features = self.add_multi_action_button(
             "Import schematisation objects",
@@ -476,6 +478,12 @@ class ThreediSchematisationEditorPlugin:
 
     def import_external_surfaces(self):
         self.import_external(dm.Surface, ImportSurfaceWizard)
+
+    def import_external_generic(self):
+        if not self.model_gpkg:
+            return
+        import_dlg = ImportGenericWizard(self.model_gpkg, self.layer_manager)
+        import_dlg.exec_()
 
     def on_project_close(self):
         if self.layer_manager is None:

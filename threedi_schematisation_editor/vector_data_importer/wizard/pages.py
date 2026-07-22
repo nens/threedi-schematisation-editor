@@ -1,7 +1,8 @@
 from typing import Optional, Type
 
 from pydantic import BaseModel
-from qgis.core import QgsApplication
+from qgis.core import QgsApplication, QgsMapLayerProxyModel, QgsProject, QgsWkbTypes
+from qgis.gui import QgsMapLayerComboBox
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor, QIcon, QPalette, QTextBlockFormat, QTextCharFormat
 from qgis.PyQt.QtWidgets import (
@@ -24,6 +25,7 @@ from qgis.PyQt.QtWidgets import (
 )
 from threedi_mi_utils.ui import ColoredProgressBar
 
+import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
     get_field_map_config_for_model_class_field,
 )
@@ -171,12 +173,16 @@ class FieldMapPage(QWizardPage):
         super().__init__()
         self.row_dict = self.create_rows(model_cls)
         self.title_suffix = (
-            title_suffix if title_suffix else f"{model_cls.__layername__.lower()}s"
+            title_suffix
+            if title_suffix
+            else (model_cls.__layername__.lower() + "s" if model_cls else "")
         )
         self.setup_ui()
         self.name = name
 
     def create_rows(self, model_cls):
+        if model_cls is None:
+            return {}
         row_dict = {}
         for field_name, display_name in model_cls.fields_display_names().items():
             config_class = get_field_map_config_for_model_class_field(
@@ -198,10 +204,16 @@ class FieldMapPage(QWizardPage):
         layer = self.wizard().selected_layer
         if layer:
             self.field_map_widget.update_layer(layer)
-        self.setTitle(
-            f"Map {self.wizard().selected_layer.name()} fields to {self.title_suffix}"
-        )
+        if layer and self.title_suffix:
+            self.setTitle(f"Map {layer.name()} fields to {self.title_suffix}")
         super().initializePage()
+
+    def rebuild(self, model_cls):
+        """Replace field map rows for a new target model class."""
+        self.title_suffix = model_cls.__layername__.lower() + "s" if model_cls else ""
+        self.row_dict = self.create_rows(model_cls)
+        self.field_map_widget.set_rows(self.row_dict)
+        self.completeChanged.emit()
 
     def deserialize(self, data):
         return self.field_map_widget.deserialize(data[self.name])
@@ -332,3 +344,139 @@ class LogPanel(QWidget):
     def copy_log(self) -> None:
         self.text.selectAll()
         self.text.copy()
+
+
+QGIS_GEOMTYPE_TO_PROXY_FILTER = {
+    QgsWkbTypes.GeometryType.PointGeometry: QgsMapLayerProxyModel.PointLayer,
+    QgsWkbTypes.GeometryType.LineGeometry: QgsMapLayerProxyModel.LineLayer,
+    QgsWkbTypes.GeometryType.PolygonGeometry: QgsMapLayerProxyModel.PolygonLayer,
+    QgsWkbTypes.GeometryType.NullGeometry: QgsMapLayerProxyModel.NoGeometry,
+}
+
+
+class GenericStartPage(QWizardPage):
+    """Start page for the generic importer wizard.
+
+    Contains a target layer selector (schematisation layers only) and a source
+    layer selector (any layer, filtered to matching geometry type once a target
+    is selected). The two selectors cross-filter each other.
+    """
+
+    target_layer_changed = pyqtSignal(object)  # emits model_cls or None
+    layer_changed = pyqtSignal()
+
+    def __init__(self, model_gpkg):
+        super().__init__()
+        self.setTitle("Source and target layer")
+        self._model_gpkg = model_gpkg
+        self._target_model_cls = None
+        self.setup_ui()
+
+    def setup_ui(self):
+        # --- Target selector ---
+        self.target_selector = QgsMapLayerComboBox()
+        self.target_selector.setAllowEmptyLayer(True)
+        self.target_selector.setFilters(QgsMapLayerProxyModel.VectorLayer)
+        excepted = [
+            layer
+            for layer in QgsProject.instance().mapLayers().values()
+            if self._model_gpkg not in layer.source()
+        ]
+        self.target_selector.setExceptedLayerList(excepted)
+        # Start with the empty layer selected (index 0 is the empty row).
+        self.target_selector.setCurrentIndex(0)
+        self.target_selector.layerChanged.connect(self.on_target_changed)
+
+        target_box = QGroupBox("Target layer (schematisation)")
+        target_layout = QVBoxLayout()
+        target_layout.addWidget(self.target_selector)
+        target_box.setLayout(target_layout)
+
+        # --- Source selector ---
+        self.source_widget = LayerSettingsWidget(layer_filter=None)
+        self.source_widget.layer_changed.connect(self.on_source_changed)
+
+        source_box = QGroupBox("Source layer to import")
+        source_box.setLayout(self.source_widget.layout())
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(target_box)
+        layout.addWidget(source_box)
+
+    def on_target_changed(self, layer):
+        """Update source filter and emit target_layer_changed."""
+        if layer is None:
+            self._target_model_cls = None
+            self.source_widget.layer_selector.setFilters(
+                QgsMapLayerProxyModel.VectorLayer
+            )
+        else:
+            self._target_model_cls = dm.LAYERNAME_TO_MODEL_CLS.get(layer.name())
+            geom_type = layer.geometryType()
+            proxy_filter = QGIS_GEOMTYPE_TO_PROXY_FILTER.get(geom_type)
+            if proxy_filter is None or proxy_filter == QgsMapLayerProxyModel.NoGeometry:
+                # non-spatial target: any source allowed
+                self.source_widget.layer_selector.setFilters(
+                    QgsMapLayerProxyModel.VectorLayer
+                )
+            else:
+                self.source_widget.layer_selector.setFilters(proxy_filter)
+        self.target_layer_changed.emit(self._target_model_cls)
+        self.layer_changed.emit()
+        self.completeChanged.emit()
+
+    def on_source_changed(self, layer_name):
+        """Update target filter based on selected source geometry type."""
+        source_layer = self.source_widget.selected_layer
+        if source_layer is None:
+            self.target_selector.setFilters(QgsMapLayerProxyModel.VectorLayer)
+        else:
+            geom_type = source_layer.geometryType()
+            proxy_filter = QGIS_GEOMTYPE_TO_PROXY_FILTER.get(
+                geom_type, QgsMapLayerProxyModel.VectorLayer
+            )
+            # Always include non-spatial targets
+            self.target_selector.setFilters(
+                proxy_filter | QgsMapLayerProxyModel.NoGeometry
+            )
+        self.layer_changed.emit()
+        self.completeChanged.emit()
+
+    @property
+    def target_model_cls(self):
+        return self._target_model_cls
+
+    @property
+    def selected_layer(self):
+        return self.source_widget.selected_layer
+
+    @property
+    def use_selected_features(self):
+        return self.source_widget.model.use_selected_features
+
+    def isComplete(self):
+        return self._target_model_cls is not None and self.selected_layer is not None
+
+    def get_settings(self):
+        return {"source": self.source_widget.get_settings()}
+
+    def deserialize(self, data):
+        # Restore target layer first so field_map_page.rebuild fires before
+        # FieldMapPage.deserialize runs on the next page.
+        target_layer_name = data.get("target_layer_name")
+        if target_layer_name:
+            from qgis.core import QgsProject
+
+            layers = QgsProject.instance().mapLayersByName(target_layer_name)
+            if layers:
+                self.target_selector.setLayer(layers[0])
+        source_data = data.get("source", {})
+        if source_data:
+            self.source_widget.deserialize(source_data)
+
+    def get_settings_with_target(self):
+        """Extended settings including target layer name for draft persistence."""
+        settings = self.get_settings()
+        if self._target_model_cls:
+            settings["target_layer_name"] = self._target_model_cls.__tablename__
+        return settings

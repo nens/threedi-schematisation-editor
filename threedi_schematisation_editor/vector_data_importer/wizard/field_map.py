@@ -488,18 +488,12 @@ class FieldMapWidget(QWidget):
 
     def __init__(self, row_dict, hidden_columns=None, parent=None):
         super().__init__(parent=parent)
-        self.row_dict = row_dict
         self.hidden_columns = hidden_columns or []
-        self.table_model = FieldMapModel(self.row_dict)
-        self.rows = self.table_model.rows
         self.setup_ui()
+        self.set_rows(row_dict)
 
     def setup_ui(self):
         self.table_view = QTableView()
-        self.table_view.setModel(self.table_model)
-
-        # emit dataChanged signal when model data changes
-        self.table_model.dataChanged.connect(self.dataChanged.emit)
 
         # Delegate for handling custom widget editing
         self.table_delegate = FieldMapDelegate()
@@ -508,30 +502,37 @@ class FieldMapWidget(QWidget):
         self.table_view.verticalHeader().setVisible(False)
 
         # Put table in scroll area
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.table_view)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setWidget(self.table_view)
         # Set size policy for the scroll area itself
-        scroll_area.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        # Set maximum height for scroll area
-        scroll_area.setMaximumHeight(self.table_height)
-        scroll_area.setMinimumHeight(self.table_height)
+        self.scroll_area.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(scroll_area)
+        layout.addWidget(self.scroll_area)
         self.setLayout(layout)
 
-        # Set column widths such that label and method always fit, and stretch the rest
-        self.table_view.resizeColumnsToContents()
-        header = self.table_view.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        for col in range(2, self.table_model.columnCount()):
-            header.setSectionResizeMode(col, QHeaderView.Stretch)
-
-        # Hide requested columns
+    def set_rows(self, row_dict):
+        """Replace the row data with a new row_dict and refresh the view."""
+        self.close_persistent_editors()
+        self.row_dict = row_dict
+        self.table_model = FieldMapModel(self.row_dict)
+        self.rows = self.table_model.rows
+        self.table_view.setModel(self.table_model)
+        self.table_model.dataChanged.connect(self.dataChanged.emit)
+        # Set column widths (must be done after model is set)
+        if self.table_model.columnCount() >= 2:
+            header = self.table_view.horizontalHeader()
+            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+            for col in range(2, self.table_model.columnCount()):
+                header.setSectionResizeMode(col, QHeaderView.Stretch)
+        # Hide requested columns (must be done after model is set)
         for col in self.hidden_columns:
             self.table_view.hideColumn(FieldMapColumn.to_index(col))
+        height = self.table_height
+        self.scroll_area.setMaximumHeight(height)
+        self.scroll_area.setMinimumHeight(height)
 
     @property
     def table_height(self) -> int:
@@ -550,8 +551,8 @@ class FieldMapWidget(QWidget):
         return content_height
 
     def set_maximum_table_height(self, height: int):
-        """Set the maximum height of the table view"""
-        self.table_view.setMaximumHeight(height)
+        """Set the maximum height of the scroll area"""
+        self.scroll_area.setMaximumHeight(height)
 
     def update_layer(self, layer):
         """Update the layer and update the table view"""
@@ -636,6 +637,8 @@ class FieldMapWidget(QWidget):
 
     def close_persistent_editors(self):
         """Close all persistent editors in the table"""
+        if not hasattr(self, "table_model"):
+            return
         for row in range(self.table_model.rowCount()):
             for col, field_map_column in enumerate(FieldMapColumn):
                 if field_map_column == FieldMapColumn.LABEL:
