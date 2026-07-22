@@ -470,7 +470,7 @@ class PumpLinkingSettingsWidget(FieldMapSettingsWidget):
         self.field_map_widget.table_delegate.clear_editors()
         for field_name in ("join_field_src", "join_field_tgt"):
             config = getattr(self.model, field_name)
-            config._metadata = metadata
+            type(config)._metadata = metadata
             config.method = metadata.allowed_methods[0]
         self.field_map_widget.open_persistent_editors()
         self.dataChanged.emit()

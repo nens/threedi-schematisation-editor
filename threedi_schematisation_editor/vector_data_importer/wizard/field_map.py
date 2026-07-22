@@ -324,7 +324,7 @@ class FieldMapDelegate(QStyledItemDelegate):
             )
         elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.DEFAULT_VALUE:
             config = index.model().rows[index.row()].config
-            annotation = config.model_fields["default_value"].annotation
+            annotation = type(config).model_fields["default_value"].annotation
             args = getattr(annotation, "__args__", None)
             value_type = args[0] if args else None
             # Dirty magic to use a combobox for bools and enums
