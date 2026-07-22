@@ -29,6 +29,10 @@ DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
 DEFAULT_MINIMUM_CHANNEL_LENGTH = 5
 
 
+class FeatureIDConflict(Exception):
+    pass
+
+
 def get_field_config_value(field_config, source_feat, expression_context=None):
     method = ColumnImportMethod(field_config["method"])
     field_value = NULL
@@ -128,23 +132,47 @@ def get_float_value_from_feature(feature, field_name, fallback_value):
 
 
 class FeatureManager:
-    def __init__(self, next_id=1):
+    def __init__(self, auto_id=True, next_id=1, existing_ids=None):
+        self.auto_id = auto_id
         self.next_id = next_id
+        self.used_ids = set(existing_ids) if existing_ids else set()
 
-    def create_new(self, geom, fields, attributes=None, set_id=True):
+    def create_new(self, geom, fields, attributes=None, set_id=True, explicit_id=None):
         new_feat = QgsFeature(fields)
-        self.add_feature(new_feat, geom, attributes, set_id)
+        try:
+            self.add_feature(
+                new_feat, geom, attributes, set_id=set_id, explicit_id=explicit_id
+            )
+        except FeatureIDConflict:
+            return None
         return new_feat
 
-    def add_feature(self, new_feat, geom=None, attributes=None, set_id=True):
+    def add_feature(
+        self, new_feat, geom=None, attributes=None, set_id=True, explicit_id=None
+    ):
         if geom:
             new_feat.setGeometry(geom)
         if attributes:
             for field_name, field_value in attributes.items():
                 new_feat[field_name] = field_value
         if set_id:
-            new_feat["id"] = self.next_id
-            self.next_id += 1
+            if explicit_id is not None:
+                if self.auto_id:
+                    raise ValueError("Cannot use explicit_id when auto_id is True")
+                if explicit_id in self.used_ids:
+                    warnings.warn(
+                        f"Feature with id {explicit_id} skipped: id already exists in "
+                        f"target layer or was already assigned in this import.",
+                        FeaturesImporterWarning,
+                    )
+                    raise FeatureIDConflict
+                new_feat["id"] = explicit_id
+                self.used_ids.add(explicit_id)
+            else:
+                if not self.auto_id:
+                    raise ValueError("Cannot use auto increment when auto_id is False")
+                new_feat["id"] = self.next_id
+                self.next_id += 1
 
 
 class ColumnImportMethod(str, Enum):

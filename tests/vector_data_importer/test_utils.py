@@ -35,7 +35,10 @@ from threedi_schematisation_editor.vector_data_importer.utils import (
     get_src_geometry,
     update_attributes,
 )
-from threedi_schematisation_editor.warnings import GeometryImporterWarning
+from threedi_schematisation_editor.warnings import (
+    FeaturesImporterWarning,
+    GeometryImporterWarning,
+)
 
 
 @pytest.fixture
@@ -58,7 +61,7 @@ def node_geom(node_point):
 
 @pytest.mark.parametrize("next_id", [1, 100])
 def test_feature_manager_increment_id(next_id, node_geom, node_fields):
-    manager = FeatureManager(next_id)
+    manager = FeatureManager(auto_id=True, next_id=next_id)
     assert manager.next_id == next_id
     node_feat = manager.create_new(node_geom, node_fields)
     assert node_feat["id"] == next_id
@@ -82,6 +85,43 @@ def test_feature_manager_create_new_with_attributes(node_geom, node_fields):
     manager = FeatureManager()
     node_feat = manager.create_new(node_geom, node_fields, attributes={"foo": "bar"})
     assert node_feat["foo"] == "bar"
+
+
+@pytest.mark.parametrize("auto_id, kwargs", [(True, {"explicit_id": 42}), (False, {})])
+def test_feature_manager_auto_id_clash(node_geom, node_fields, auto_id, kwargs):
+    manager = FeatureManager(auto_id=auto_id)
+    with pytest.raises(ValueError):
+        manager.create_new(node_geom, node_fields, **kwargs)
+
+
+def test_feature_manager_explicit_id(node_geom, node_fields):
+    """explicit_id sets the ID and does not advance next_id."""
+    manager = FeatureManager(auto_id=False)
+    node_feat = manager.create_new(node_geom, node_fields, explicit_id=42)
+    assert node_feat["id"] == 42
+    assert manager.next_id == 1  # next_id must not advance
+    assert 42 in manager.used_ids
+
+
+@pytest.mark.parametrize(
+    "auto_id, explicit_id, existing_ids, conflict, expected_id",
+    [
+        (False, 42, {1, 2, 3}, False, 42),
+        (False, 5, {5, 10}, True, None),
+        (True, None, {1, 2, 3}, False, 1),
+    ],
+)
+def test_feature_manager_explicit_id(
+    node_geom, node_fields, auto_id, explicit_id, existing_ids, conflict, expected_id
+):
+    manager = FeatureManager(auto_id=auto_id, existing_ids=existing_ids)
+    if conflict:
+        with pytest.warns(FeaturesImporterWarning):
+            result = manager.create_new(node_geom, node_fields, explicit_id=explicit_id)
+        assert result is None
+    else:
+        result = manager.create_new(node_geom, node_fields, explicit_id=explicit_id)
+        assert result["id"] == expected_id
 
 
 @dataclass
@@ -215,15 +255,6 @@ def node_point():
 @pytest.fixture
 def node_geom(node_point):
     return QgsGeometry.fromPointXY(node_point)
-
-
-@pytest.mark.parametrize("next_id", [1, 100])
-def test_feature_manager_increment_id(next_id, node_geom, node_fields):
-    manager = FeatureManager(next_id)
-    assert manager.next_id == next_id
-    node_feat = manager.create_new(node_geom, node_fields)
-    assert node_feat["id"] == next_id
-    assert manager.next_id == next_id + 1
 
 
 def test_feature_manager_create_new(node_geom, node_fields):

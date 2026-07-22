@@ -66,7 +66,9 @@ class SpatialProcessor(Processor):
         self.target_fields = target_layer.fields() if target_layer else []
         self.target_name = target_layer.name() if target_layer else None
         self.target_manager = (
-            FeatureManager(get_next_feature_id(target_layer)) if target_layer else None
+            FeatureManager(next_id=get_next_feature_id(target_layer))
+            if target_layer
+            else None
         )
         self.target_model_cls = target_model_cls
         self.transformation = None
@@ -731,7 +733,7 @@ class StructureProcessor(SpatialProcessor, ABC):
         self.node_fields = node_layer.fields()
         self.node_name = node_layer.name()
         self.node_layer = node_layer
-        self.node_manager = FeatureManager(get_next_feature_id(node_layer))
+        self.node_manager = FeatureManager(next_id=get_next_feature_id(node_layer))
         self.fields_configurations = import_settings.fields
         self.cn_fields_configurations = import_settings.connection_node_fields
         self.connection_nodes_settings = import_settings.connection_nodes
@@ -872,7 +874,9 @@ class PumpProcessor(StructureProcessor):
     def __init__(self, target_layer, pump_map_layer, node_layer, import_settings):
         super().__init__(target_layer, dm.Pump, node_layer, import_settings)
         self.pump_map_name = pump_map_layer.name()
-        self.pump_map_manager = FeatureManager(get_next_feature_id(pump_map_layer))
+        self.pump_map_manager = FeatureManager(
+            next_id=get_next_feature_id(pump_map_layer)
+        )
         self.pump_map_fields = pump_map_layer.fields()
         self.pump_linking_settings = import_settings.pump_linking
 
@@ -1031,7 +1035,7 @@ class SurfaceProcessor(SpatialProcessor):
         super().__init__(target_layer, dm.Surface)
         self.surface_map_name = surface_map_layer.name() if surface_map_layer else None
         self.surface_map_manager = (
-            FeatureManager(get_next_feature_id(surface_map_layer))
+            FeatureManager(next_id=get_next_feature_id(surface_map_layer))
             if surface_map_layer
             else None
         )

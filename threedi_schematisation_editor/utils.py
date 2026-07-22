@@ -649,6 +649,12 @@ def get_next_feature_id(layer):
     return next_id
 
 
+def get_existing_ids(layer):
+    """Return set of all existing id values in a layer."""
+    id_idx = layer.fields().indexFromName("id")
+    return set(layer.uniqueValues(id_idx))
+
+
 def get_features_by_expression(layer, expression_text, with_geometry=False):
     """Return iterator of the layer features matching to the given expression."""
     expression = QgsExpression(expression_text)

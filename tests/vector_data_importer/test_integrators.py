@@ -498,7 +498,7 @@ class TestNodeManagement:
             FeatureManager,
         )
 
-        integrator.node_manager = FeatureManager(42)  # Start with ID 42
+        integrator.node_manager = FeatureManager(next_id=42)  # Start with ID 42
 
         # Create a point, node_layer_fields, and node_attributes
         point = QgsPointXY(10, 20)

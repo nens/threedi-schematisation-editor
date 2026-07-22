@@ -384,6 +384,8 @@ class LinearIntegrator:
         )
         # feature managers that handle id's for added features
         # for target features and nodes a manager can be supplied such that they match the associated importer
+        # TODO: remove or fix this ternary!!
+        # FeatureManager cannot be initalized like this!
         self.target_manager = (
             target_manager if target_manager else FeatureManager(self.target_model_cls)
         )
@@ -391,7 +393,7 @@ class LinearIntegrator:
             node_manager if node_manager else FeatureManager(dm.ConnectionNode)
         )
         self.integrate_manager = FeatureManager(
-            get_next_feature_id(self.integrate_layer)
+            next_id=get_next_feature_id(self.integrate_layer)
         )
         # initialize mappings and indices
         self.import_settings = import_settings
@@ -867,7 +869,7 @@ class ChannelIntegrator(LinearIntegrator):
             target_gpkg, dm.CrossSectionLocation.__tablename__
         )
         self.cross_section_manager = FeatureManager(
-            get_next_feature_id(self.cross_section_layer)
+            next_id=get_next_feature_id(self.cross_section_layer)
         )
         super().__init__(
             conduit_layer,
