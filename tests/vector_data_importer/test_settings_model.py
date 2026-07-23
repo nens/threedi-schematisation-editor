@@ -94,7 +94,6 @@ class TestGetAllowedMethodsForModelClassField:
                 [
                     ColumnImportMethod.AUTO,
                     ColumnImportMethod.ATTRIBUTE,
-                    ColumnImportMethod.DEFAULT,
                     ColumnImportMethod.EXPRESSION,
                 ],
             ),

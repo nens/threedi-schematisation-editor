@@ -186,7 +186,9 @@ def get_allowed_methods_for_model_class_field(
     if not allowed_methods:
         if model_field.name == "id":
             allowed_methods = [
-                m for m in ColumnImportMethod if m != ColumnImportMethod.IGNORE
+                m
+                for m in ColumnImportMethod
+                if m not in (ColumnImportMethod.IGNORE, ColumnImportMethod.DEFAULT)
             ]
         else:
             allowed_methods = [
