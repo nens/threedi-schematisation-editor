@@ -70,9 +70,11 @@ def load_import_settings(file_path, model_cls, connection_node_model_cls=None):
     if connection_node_model_cls is not None:
         try:
             validate_field_map(
-                import_config.connection_node_fields, connection_node_model_cls
+                import_config.connection_node_fields,
+                connection_node_model_cls,
+                allow_non_auto_id=False,
             )
-        except ValidationError as e:
+        except (ValidationError, ValueError) as e:
             raise QgsProcessingException(
                 f"Invalid field map (connection_node_fields): {e}"
             ) from e

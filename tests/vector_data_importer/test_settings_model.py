@@ -172,3 +172,28 @@ def test_field_map_config_method_validation():
         )
 
     assert exc_info.value.errors()[0]["type"] == "value_error.invalid"
+
+
+@pytest.mark.parametrize(
+    "field_map",
+    [
+        {
+            "id": sm.FieldMapConfig(
+                method=ColumnImportMethod.ATTRIBUTE, source_attribute="src_id"
+            )
+        },
+        {
+            "id": sm.FieldMapConfig(
+                method=ColumnImportMethod.EXPRESSION, expression="to_int('1')"
+            )
+        },
+        {
+            "id": sm.FieldMapConfig(
+                method=ColumnImportMethod.DEFAULT, default_value="foo"
+            )
+        },
+    ],
+)
+def test_validate_id_method_invalid(field_map):
+    with pytest.raises(ValueError, match="AUTO method"):
+        sm.validate_id_method(field_map)
