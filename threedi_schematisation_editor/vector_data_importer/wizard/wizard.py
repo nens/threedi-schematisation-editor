@@ -507,7 +507,11 @@ class ImportWithCreateConnectionNodesWizard(VDIWizard):
     @cached_property
     def extra_field_map_pages(self):
         return [
-            FieldMapPage(model_cls=dm.ConnectionNode, name="connection_node_fields", restrict_id_to_auto=True)
+            FieldMapPage(
+                model_cls=dm.ConnectionNode,
+                name="connection_node_fields",
+                restrict_id_to_auto=True,
+            )
         ]
 
     @property
