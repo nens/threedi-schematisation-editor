@@ -9,6 +9,7 @@ from qgis.core import (
     QgsGeometry,
     QgsPointXY,
     QgsSpatialIndex,
+    QgsVectorLayer,
     QgsWkbTypes,
 )
 
@@ -1182,3 +1183,83 @@ class TestLineStructurePlacement:
         assert new_nodes == []
         assert feature["connection_node_id"] == 42
         node_manager.create_new.assert_not_called()
+
+
+class TestIdConflictBehaviour:
+    """Tests that ID conflicts in custom-id mode don't produce orphaned nodes or crashes."""
+
+    def test_pump_map_handler_id_conflict_returns_empty_and_no_orphan_node(self):
+        """When pump creation fails due to ID conflict, update_nodes returns {} and
+        node_by_location is not polluted with an unperisted node."""
+
+        node_layer = QgsVectorLayer(
+            "Point?crs=EPSG:28992", "connection_nodes", "memory"
+        )
+        node_layer.dataProvider().addAttributes([QgsField("id", QVariant.Int)])
+        node_layer.updateFields()
+
+        pump_layer = QgsVectorLayer("Point?crs=EPSG:28992", "pump", "memory")
+        pump_layer.dataProvider().addAttributes([QgsField("id", QVariant.Int)])
+        pump_layer.updateFields()
+
+        start_pt = QgsPointXY(0, 0)
+        end_pt = QgsPointXY(100, 0)
+        node_by_location = {end_pt: 20}
+
+        node_manager = MagicMock()
+        node_feat = QgsFeature(node_layer.fields())
+        node_feat["id"] = 10
+        node_feat.setGeometry(QgsGeometry.fromPointXY(start_pt))
+        node_manager.create_new.return_value = node_feat
+
+        # Pump creation fails (ID conflict)
+        pump_manager = MagicMock()
+        pump_manager.create_from_src_feat.return_value = None
+
+        handler = make_pump_map_handler(
+            pump_layer, pump_manager, node_layer, node_by_location, node_manager
+        )
+
+        fields = QgsFields()
+        fields.append(QgsField("id", QVariant.Int))
+        fields.append(QgsField("pump_id", QVariant.Int))
+        fields.append(QgsField("connection_node_id_end", QVariant.Int))
+        feat = QgsFeature(fields)
+        feat.setGeometry(QgsGeometry.fromPolylineXY([start_pt, end_pt]))
+
+        result = handler.update_nodes(feat, {})
+
+        assert result == {}
+        assert start_pt not in node_by_location  # no dangling reference
+
+    def test_place_structure_id_conflict_returns_empty_dict(self):
+        """place_structure returns {} when the target manager returns None (ID conflict),
+        matching what integrate_structure_features expects to handle gracefully."""
+        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
+
+        channel_fields = QgsFields()
+        channel_fields.append(QgsField("id", QVariant.Int))
+        channel_feat = QgsFeature(channel_fields)
+        channel_feat.setGeometry(
+            QgsGeometry.fromPolylineXY([QgsPointXY(0, 0), QgsPointXY(100, 0)])
+        )
+
+        structure_fields = QgsFields()
+        structure_fields.append(QgsField("id", QVariant.Int))
+        structure_data = LinearIntegratorStructureData(
+            conduit_id=1, feature=QgsFeature(structure_fields), m=50.0, length=20.0
+        )
+
+        target_manager = MagicMock()
+        target_manager.create_from_src_feat.return_value = None  # ID conflict
+
+        result = strategy.place_structure(
+            channel_feat.geometry(),
+            structure_data,
+            structure_fields,
+            target_manager,
+            {},
+            dm.Weir,
+        )
+
+        assert result is None

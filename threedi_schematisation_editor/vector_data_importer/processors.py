@@ -782,8 +782,6 @@ class StructureProcessor(SpatialProcessor, ABC):
         )
         node = find_connection_node(point, self.node_locator, snap_distance)
         snapped = node is not None
-        # TODO: new connection nodes cannot use id from fields because multiple id's per feature is feasible
-        # This should somehow be included in the settings/UI
         if self.connection_nodes_settings.create_nodes and not snapped:
             node = self.node_manager.create_new(
                 QgsGeometry.fromPointXY(point), self.node_fields

@@ -117,7 +117,7 @@ class LineStructurePlacement(StructurePlacementStrategy):
             substring_geom, target_fields, cs.feature, fields_configurations
         )
         if substring_feat is None:
-            return {}
+            return
         update_attributes(
             fields_configurations, target_model_cls, cs.feature, substring_feat
         )
@@ -162,7 +162,7 @@ class PointStructurePlacement(StructurePlacementStrategy):
             point_geom, target_fields, structure_data.feature, fields_configurations
         )
         if feat is None:
-            return {}
+            return
         update_attributes(
             fields_configurations, target_model_cls, structure_data.feature, feat
         )
@@ -312,14 +312,9 @@ class PumpMapNodeHandler(NodeHandler):
         polyline = feat.geometry().asPolyline()
         node_layer_fields = self.layer_fields_mapping[self.node_layer.name()]
 
-        # Start point: find/create node, create pump
+        # Create pump first: if it fails due to ID conflict we return early without
+        # registering any nodes, avoiding dangling entries in node_by_location.
         start_point = polyline[0]
-        new_node = self._find_or_create_node(
-            start_point, node_layer_fields, node_attributes, feat
-        )
-        if new_node is not None:
-            new_nodes.append(new_node)
-        start_node_id = self.node_by_location[start_point]
         pump_feat = self.pump_manager.create_from_src_feat(
             QgsGeometry.fromPointXY(start_point),
             self.pump_fields,
@@ -328,6 +323,14 @@ class PumpMapNodeHandler(NodeHandler):
         )
         if pump_feat is None:
             return {}
+
+        # Start point: find/create node, link pump to it
+        new_node = self._find_or_create_node(
+            start_point, node_layer_fields, node_attributes, feat
+        )
+        if new_node is not None:
+            new_nodes.append(new_node)
+        start_node_id = self.node_by_location[start_point]
         pump_feat["connection_node_id"] = start_node_id
         update_attributes(self.fields_configurations, dm.Pump, feat, pump_feat)
         feat["pump_id"] = pump_feat["id"]
@@ -724,16 +727,16 @@ class LinearIntegrator:
 
         target_fields = self.layer_fields_mapping[self.target_layer.name()]
         for cs in conduit_structures:
-            added_features[self.target_layer.name()].append(
-                self.strategy.place_structure(
-                    conduit_geom,
-                    cs,
-                    target_fields,
-                    self.target_manager,
-                    self.fields_configurations,
-                    self.target_model_cls,
-                )
+            placed_structure = self.strategy.place_structure(
+                conduit_geom,
+                cs,
+                target_fields,
+                self.target_manager,
+                self.fields_configurations,
+                self.target_model_cls,
             )
+            if placed_structure:
+                added_features[self.target_layer.name()].append(placed_structure)
 
         # Remove parts of the conduit that overlap with new structures
         added_features[self.integrate_layer.name()] = self.cut_conduit(
