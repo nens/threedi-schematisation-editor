@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 
 import mock
@@ -371,12 +372,27 @@ class TestGetSrcGeometry:
             QgsGeometry.fromPointXY(QgsPointXY(10, 20)),
         ],
     )
-    def test_multipart(self, geom):
+    def test_multipart_returns_single_part(self, geom):
         feature = QgsFeature()
         feature.setGeometry(geom)
         feat_geom = get_src_geometry(feature)
         assert not feat_geom.isMultipart()
         assert feat_geom.asPoint() == QgsPointXY(10, 20)
+
+    def test_multipart_warns(self):
+        geom = QgsGeometry.fromMultiPointXY([QgsPointXY(10, 20), QgsPointXY(100, 40)])
+        feature = QgsFeature()
+        feature.setGeometry(geom)
+        with pytest.warns(GeometryImporterWarning, match="multi-part"):
+            get_src_geometry(feature)
+
+    def test_multipart_single_item_no_warn(self):
+        geom = QgsGeometry.fromMultiPointXY([QgsPointXY(10, 20)])
+        feature = QgsFeature()
+        feature.setGeometry(geom)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", GeometryImporterWarning)
+            get_src_geometry(feature)  # should not raise
 
     @pytest.mark.parametrize(
         "geom",
