@@ -106,12 +106,16 @@ def resolve_id(fields_configuration, src_feat, expression_context=None):
     be resolved or converted to int.
     """
     id_config = fields_configuration.get("id")
-    if id_config is None or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO:
+    if (
+        id_config is None
+        or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
+    ):
         return None
     resolved = get_field_config_value(id_config, src_feat, expression_context)
     if resolved is None or resolved == NULL:
         warnings.warn(
-            f"Feature skipped: id value '{resolved}' is None or NULL.", FeaturesImporterWarning
+            f"Feature skipped: id value '{resolved}' is None or NULL.",
+            FeaturesImporterWarning,
         )
         raise FeatureIDInvalid
     try:
@@ -170,6 +174,17 @@ class FeatureManager:
         self.auto_id = auto_id
         self.next_id = next_id
         self.used_ids = set(existing_ids) if existing_ids else set()
+
+    def create_from_src_feat(
+        self, new_geom, target_fields, src_feat, target_fields_config
+    ):
+        explicit_id = None
+        if not self.auto_id:
+            try:
+                explicit_id = resolve_id(target_fields_config, src_feat)
+            except FeatureIDInvalid:
+                return None
+        return self.create_new(new_geom, target_fields, explicit_id=explicit_id)
 
     def create_new(self, geom, fields, attributes=None, set_id=True, explicit_id=None):
         new_feat = QgsFeature(fields)

@@ -23,6 +23,7 @@ from threedi_schema.domain.constants import CrossSectionShape
 from threedi_schematisation_editor import data_models as dm
 from threedi_schematisation_editor.utils import (
     find_connection_node,
+    get_existing_ids,
     get_feature_by_id,
     get_next_feature_id,
     spatial_index,
@@ -30,11 +31,13 @@ from threedi_schematisation_editor.utils import (
 from threedi_schematisation_editor.vector_data_importer.utils import (
     CancellationToken,
     ColumnImportMethod,
+    FeatureIDInvalid,
     FeatureManager,
     build_feature_mapping,
     get_field_config_value,
     get_point_locator,
     get_src_geometry,
+    resolve_id,
     update_attributes,
 )
 from threedi_schematisation_editor.warnings import ProcessorWarning
@@ -66,7 +69,10 @@ class SpatialProcessor(Processor):
         self.target_fields = target_layer.fields() if target_layer else []
         self.target_name = target_layer.name() if target_layer else None
         self.target_manager = (
-            FeatureManager(next_id=get_next_feature_id(target_layer))
+            FeatureManager(
+                next_id=get_next_feature_id(target_layer),
+                existing_ids=get_existing_ids(target_layer),
+            )
             if target_layer
             else None
         )
@@ -557,6 +563,12 @@ class CrossSectionLocationProcessor(SpatialProcessor):
             import_settings.cross_section_location_mapping.snap_distance
         )
         self.target_fields_config = import_settings.fields
+        if self.target_manager:
+            id_config = self.target_fields_config.get("id")
+            self.target_manager.auto_id = (
+                id_config is None
+                or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
+            )
 
     @cached_property
     def channel_mapping(self):
@@ -675,7 +687,11 @@ class CrossSectionLocationProcessor(SpatialProcessor):
         new_geom = CrossSectionLocationProcessor.new_geometry(src_geom, ref_channel)
         if new_geom is None or new_geom.isEmpty():
             return {self.target_name: []}
-        new_feat = self.target_manager.create_new(new_geom, self.target_fields)
+        new_feat = self.target_manager.create_from_src_feat(
+            new_geom, self.target_fields, src_feat, self.target_fields_config
+        )
+        if new_feat is None:
+            return {}
         update_attributes(
             self.target_fields_config,
             self.target_model_cls,
@@ -696,6 +712,12 @@ class ConnectionNodeProcessor(SpatialProcessor):
     ):
         super().__init__(target_layer, target_model_cls)
         self.fields_configuration = import_settings.fields
+        if self.target_manager:
+            id_config = self.fields_configuration.get("id")
+            self.target_manager.auto_id = (
+                id_config is None
+                or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
+            )
 
     @staticmethod
     def new_geometry(src_feat):
@@ -711,7 +733,11 @@ class ConnectionNodeProcessor(SpatialProcessor):
             return {}
         if self.transformation:
             new_geom.transform(self.transformation)
-        new_feat = self.target_manager.create_new(new_geom, self.target_fields)
+        new_feat = self.target_manager.create_from_src_feat(
+            new_geom, self.target_fields, src_feat, self.fields_configuration
+        )
+        if new_feat is None:
+            return {}
         update_attributes(
             self.fields_configuration,
             dm.ConnectionNode,
@@ -736,6 +762,12 @@ class StructureProcessor(SpatialProcessor, ABC):
         self.node_manager = FeatureManager(next_id=get_next_feature_id(node_layer))
         self.fields_configurations = import_settings.fields
         self.cn_fields_configurations = import_settings.connection_node_fields
+        if self.target_manager:
+            id_config = self.fields_configurations.get("id")
+            self.target_manager.auto_id = (
+                id_config is None
+                or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
+            )
         self.connection_nodes_settings = import_settings.connection_nodes
         self.point_to_line_conversion_settings = (
             import_settings.point_to_line_conversion
@@ -750,6 +782,8 @@ class StructureProcessor(SpatialProcessor, ABC):
         )
         node = find_connection_node(point, self.node_locator, snap_distance)
         snapped = node is not None
+        # TODO: new connection nodes cannot use id from fields because multiple id's per feature is feasible
+        # This should somehow be included in the settings/UI
         if self.connection_nodes_settings.create_nodes and not snapped:
             node = self.node_manager.create_new(
                 QgsGeometry.fromPointXY(point), self.node_fields
@@ -837,7 +871,11 @@ class LineProcessor(StructureProcessor):
         )
         if self.transformation:
             new_geom.transform(self.transformation)
-        new_feat = self.target_manager.create_new(new_geom, self.target_fields)
+        new_feat = self.target_manager.create_from_src_feat(
+            new_geom, self.target_fields, src_feat, self.fields_configurations
+        )
+        if not new_feat:
+            return {}
         update_attributes(
             self.fields_configurations,
             self.target_model_cls,
@@ -947,10 +985,14 @@ class PumpProcessor(StructureProcessor):
             geom = QgsGeometry.fromPointXY(start_point)
             geom.transform(self.transformation)
             start_point = geom.asPoint()
-
-        pump_feat = self.target_manager.create_new(
-            QgsGeometry.fromPointXY(start_point), self.target_fields
+        pump_feat = self.target_manager.create_from_src_feat(
+            QgsGeometry.fromPointXY(start_point),
+            self.target_fields,
+            src_feat,
+            self.fields_configurations,
         )
+        if pump_feat is None:
+            return {}
         update_attributes(self.fields_configurations, dm.Pump, src_feat, pump_feat)
         new_nodes = self.update_connection_nodes(pump_feat)
         update_attributes(
@@ -974,7 +1016,6 @@ class PumpProcessor(StructureProcessor):
             )
             self.node_layer.addFeature(end_node)
             self.node_locator = get_point_locator(self.node_layer, self.context)
-
         pump_map_feat = self.pump_map_manager.create_new(
             QgsGeometry.fromPolylineXY([start_point, end_node.geometry().asPoint()]),
             self.pump_map_fields,
@@ -998,6 +1039,12 @@ class GenericProcessor(SpatialProcessor):
     def __init__(self, target_layer, target_model_cls, import_settings):
         super().__init__(target_layer, target_model_cls)
         self.fields_configuration = import_settings.fields
+        if self.target_manager:
+            id_config = self.fields_configuration.get("id")
+            self.target_manager.auto_id = (
+                id_config is None
+                or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
+            )
         self.target_geom_type = (
             target_layer.geometryType()
             if target_layer
@@ -1015,7 +1062,11 @@ class GenericProcessor(SpatialProcessor):
             new_geom = None  # non-spatial target: skip geometry
         elif new_geom is not None and self.transformation:
             new_geom.transform(self.transformation)
-        new_feat = self.target_manager.create_new(new_geom, self.target_fields)
+        new_feat = self.target_manager.create_from_src_feat(
+            new_geom, self.target_fields, src_feat, self.fields_configuration
+        )
+        if new_feat is None:
+            return {}
         update_attributes(
             self.fields_configuration, self.target_model_cls, src_feat, new_feat
         )
@@ -1043,6 +1094,12 @@ class SurfaceProcessor(SpatialProcessor):
             surface_map_layer.fields() if surface_map_layer else None
         )
         self.fields_configuration = import_settings.fields
+        if self.target_manager:
+            id_config = self.fields_configuration.get("id")
+            self.target_manager.auto_id = (
+                id_config is None
+                or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
+            )
         if import_settings.surface_linking.data_format == "long":
             self.surface_map_fields_configuration = import_settings.surface_map_fields
         else:
@@ -1199,8 +1256,14 @@ class SurfaceProcessor(SpatialProcessor):
         sm_geom = QgsGeometry.fromPolylineXY(
             [centroid.asPoint(), node.geometry().asPoint()]
         )
-        sm_feat = self.surface_map_manager.create_new(sm_geom, self.surface_map_fields)
-        sm_feat["surface_id"] = new_feat["id"]
+        sm_feat = self.surface_map_manager.create_from_src_feat(
+            sm_geom,
+            self.surface_map_fields,
+            src_feat,
+            self.surface_map_fields_configuration,
+        )
+        if sm_feat is None:
+            return
         sm_feat["connection_node_id"] = node["id"]
         sm_feat["percentage"] = pct
         update_attributes(
@@ -1276,7 +1339,11 @@ class SurfaceProcessor(SpatialProcessor):
         new_geom = self.new_geometry(src_geom)
         if self.transformation:
             new_geom.transform(self.transformation)
-        new_feat = self.target_manager.create_new(new_geom, self.target_fields)
+        new_feat = self.target_manager.create_from_src_feat(
+            new_geom, self.target_fields, src_feat, self.fields_configuration
+        )
+        if new_feat is None:
+            return {}
         update_attributes(
             self.fields_configuration,
             dm.Surface,

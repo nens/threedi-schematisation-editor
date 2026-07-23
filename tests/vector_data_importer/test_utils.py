@@ -27,8 +27,8 @@ from shapely.testing import assert_geometries_equal
 
 from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
-    FeatureManager,
     FeatureIDInvalid,
+    FeatureManager,
     build_feature_mapping,
     get_field_config_value,
     get_float_value_from_feature,
@@ -137,7 +137,15 @@ class TestModel:
     [
         ({"id": {"method": ColumnImportMethod.AUTO.value}}, False),
         ({}, False),
-        ({"id": {"method": ColumnImportMethod.ATTRIBUTE.value, "source_attribute": "id"}}, True),
+        (
+            {
+                "id": {
+                    "method": ColumnImportMethod.ATTRIBUTE.value,
+                    "source_attribute": "id",
+                }
+            },
+            True,
+        ),
     ],
 )
 def test_resolve_id(fields_config, explicit_id_valid):
@@ -153,8 +161,14 @@ def test_resolve_id(fields_config, explicit_id_valid):
 
 @pytest.mark.parametrize(
     "fields_config",
-    [{"id": {"method": ColumnImportMethod.ATTRIBUTE.value, "source_attribute": "id"}},
-     {"id": {"method": ColumnImportMethod.DEFAULT.value, "default_value": "foo"}},
+    [
+        {
+            "id": {
+                "method": ColumnImportMethod.ATTRIBUTE.value,
+                "source_attribute": "id",
+            }
+        },
+        {"id": {"method": ColumnImportMethod.DEFAULT.value, "default_value": "foo"}},
     ],
 )
 def test_resolve_id_invalid(fields_config):
@@ -259,7 +273,10 @@ def test_update_attributes_missing_field():
 def test_update_attributes_id_always_skipped():
     """id field is always skipped by update_attributes, even with a type conversion error."""
     fields_config = {
-        "id": {"method": ColumnImportMethod.DEFAULT.value, "default_value": "not_an_int"}
+        "id": {
+            "method": ColumnImportMethod.DEFAULT.value,
+            "default_value": "not_an_int",
+        }
     }
     source_feat = create_feature_with_fields("id")
     source_feat.setAttribute("id", 1)

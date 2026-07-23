@@ -65,22 +65,14 @@ def test_threedi_import_structure(qgis_application_with_processor):
 @pytest.mark.parametrize(
     "config_patch,expected_match",
     [
-        # Disallowed method for a 'fields' entry (id only allows AUTO)
+        # Disallowed method for a 'fields' entry (id never allows ignore)
         (
-            {
-                "fields": {
-                    "id": {"method": "source_attribute", "source_attribute": "id"}
-                }
-            },
+            {"fields": {"id": {"method": "ignore"}}},
             "Invalid field map \\(fields\\)",
         ),
         # Disallowed method for a 'connection_node_fields' entry (id only allows AUTO)
         (
-            {
-                "connection_node_fields": {
-                    "id": {"method": "source_attribute", "source_attribute": "id"}
-                }
-            },
+            {"connection_node_fields": {"id": {"method": "ignore"}}},
             "Invalid field map \\(connection_node_fields\\)",
         ),
         # Invalid ImportSettings schema: snap_distance must be a float

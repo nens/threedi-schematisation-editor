@@ -763,7 +763,7 @@ class TestPumpMapNodeHandler:
 
         pump_feat = QgsFeature(pump_layer.fields())
         pump_feat["id"] = 1
-        pump_manager.create_new.return_value = pump_feat
+        pump_manager.create_from_src_feat.return_value = pump_feat
 
         handler = make_pump_map_handler(
             pump_layer, pump_manager, node_layer, node_by_location, node_manager
@@ -779,7 +779,7 @@ class TestPumpMapNodeHandler:
         call_geom = node_manager.create_new.call_args[0][0]
         assert call_geom.asPoint() == start_pt
         assert node_by_location[start_pt] == 10
-        pump_manager.create_new.assert_called_once()
+        pump_manager.create_from_src_feat.assert_called_once()
         assert pump_feat["connection_node_id"] == 10
         assert feat["pump_id"] == 1
         assert result == {"connection_nodes": [node_feat], "pump": [pump_feat]}
@@ -848,7 +848,7 @@ class TestPumpMapNodeHandler:
         pump_feat = QgsFeature(pump_layer.fields())
         pump_feat["id"] = 1
         pump_manager = MagicMock()
-        pump_manager.create_new.return_value = pump_feat
+        pump_manager.create_from_src_feat.return_value = pump_feat
 
         handler = make_pump_map_handler(
             pump_layer, pump_manager, node_layer, node_by_location, node_manager
@@ -1018,7 +1018,6 @@ class TestLineStructurePlacement:
         self, channel_feature, line_structure_feature, structure_fields
     ):
         """LineStructurePlacement.place_structure returns a feature with correct geometry."""
-        from unittest.mock import MagicMock
 
         strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
         conduit_geom = channel_feature.geometry()
@@ -1027,7 +1026,7 @@ class TestLineStructurePlacement:
         )
         target_manager = MagicMock()
         created_feat = QgsFeature(structure_fields)
-        target_manager.create_new.return_value = created_feat
+        target_manager.create_from_src_feat.return_value = created_feat
 
         result = strategy.place_structure(
             conduit_geom, structure_data, structure_fields, target_manager, {}, dm.Weir
@@ -1035,7 +1034,7 @@ class TestLineStructurePlacement:
 
         assert result is created_feat
         # manager was called with a line geometry spanning m-l/2=40 to m+l/2=60
-        call_geom = target_manager.create_new.call_args[0][0]
+        call_geom = target_manager.create_from_src_feat.call_args[0][0]
         polyline = call_geom.asPolyline()
         assert polyline[0].x() == pytest.approx(40.0)
         assert polyline[-1].x() == pytest.approx(60.0)
@@ -1115,8 +1114,6 @@ class TestLineStructurePlacement:
         self, channel_feature, point_structure_feature, structure_fields
     ):
         """place_structure returns a point feature at the projected position."""
-        from unittest.mock import MagicMock
-
         strategy = PointStructurePlacement()
         conduit_geom = channel_feature.geometry()
         structure_data = LinearIntegratorStructureData(
@@ -1124,22 +1121,20 @@ class TestLineStructurePlacement:
         )
         target_manager = MagicMock()
         created_feat = QgsFeature(structure_fields)
-        target_manager.create_new.return_value = created_feat
+        target_manager.create_from_src_feat.return_value = created_feat
 
         result = strategy.place_structure(
             conduit_geom, structure_data, structure_fields, target_manager, {}, dm.Pump
         )
 
         assert result is created_feat
-        call_geom = target_manager.create_new.call_args[0][0]
+        call_geom = target_manager.create_from_src_feat.call_args[0][0]
         assert call_geom.type() == QgsWkbTypes.GeometryType.PointGeometry
         assert call_geom.asPoint().x() == pytest.approx(30.0)
         assert call_geom.asPoint().y() == pytest.approx(0.0)
 
     def test_update_structure_nodes_new_node(self, structure_fields):
         """update_structure_nodes creates a node and assigns connection_node_id."""
-        from unittest.mock import MagicMock
-
         strategy = PointStructurePlacement()
         point = QgsPointXY(50, 0)
         node_by_location = {}
@@ -1168,8 +1163,6 @@ class TestLineStructurePlacement:
 
     def test_update_structure_nodes_existing_node(self, structure_fields):
         """update_structure_nodes reuses existing node, returns no new nodes."""
-        from unittest.mock import MagicMock
-
         strategy = PointStructurePlacement()
         point = QgsPointXY(50, 0)
         node_by_location = {point: 42}

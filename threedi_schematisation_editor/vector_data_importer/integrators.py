@@ -113,7 +113,11 @@ class LineStructurePlacement(StructurePlacementStrategy):
             cs.m + cs.length * 0.5,
             self.simplify_geometry,
         )
-        substring_feat = target_manager.create_new(substring_geom, target_fields)
+        substring_feat = target_manager.create_from_src_feat(
+            substring_geom, target_fields, cs.feature, fields_configurations
+        )
+        if substring_feat is None:
+            return {}
         update_attributes(
             fields_configurations, target_model_cls, cs.feature, substring_feat
         )
@@ -154,7 +158,11 @@ class PointStructurePlacement(StructurePlacementStrategy):
         target_model_cls,
     ):
         point_geom = conduit_geom.interpolate(structure_data.m)
-        feat = target_manager.create_new(point_geom, target_fields)
+        feat = target_manager.create_from_src_feat(
+            point_geom, target_fields, structure_data.feature, fields_configurations
+        )
+        if feat is None:
+            return {}
         update_attributes(
             fields_configurations, target_model_cls, structure_data.feature, feat
         )
@@ -312,10 +320,14 @@ class PumpMapNodeHandler(NodeHandler):
         if new_node is not None:
             new_nodes.append(new_node)
         start_node_id = self.node_by_location[start_point]
-
-        pump_feat = self.pump_manager.create_new(
-            QgsGeometry.fromPointXY(start_point), self.pump_fields
+        pump_feat = self.pump_manager.create_from_src_feat(
+            QgsGeometry.fromPointXY(start_point),
+            self.pump_fields,
+            feat,
+            self.fields_configurations,
         )
+        if pump_feat is None:
+            return {}
         pump_feat["connection_node_id"] = start_node_id
         update_attributes(self.fields_configurations, dm.Pump, feat, pump_feat)
         feat["pump_id"] = pump_feat["id"]
