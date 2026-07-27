@@ -66,15 +66,11 @@ class Processor:
 
 class SpatialProcessor(Processor):
     def __init__(self, target_layer, target_model_cls):
-        self.target_fields = target_layer.fields() if target_layer else []
-        self.target_name = target_layer.name() if target_layer else None
-        self.target_manager = (
-            FeatureManager(
-                next_id=get_next_feature_id(target_layer),
-                existing_ids=get_existing_ids(target_layer),
-            )
-            if target_layer
-            else None
+        self.target_fields = target_layer.fields()
+        self.target_name = target_layer.name()
+        self.target_manager = FeatureManager(
+            next_id=get_next_feature_id(target_layer),
+            existing_ids=get_existing_ids(target_layer),
         )
         self.target_model_cls = target_model_cls
         self.transformation = None
@@ -563,12 +559,11 @@ class CrossSectionLocationProcessor(SpatialProcessor):
             import_settings.cross_section_location_mapping.snap_distance
         )
         self.target_fields_config = import_settings.fields
-        if self.target_manager:
-            id_config = self.target_fields_config.get("id")
-            self.target_manager.auto_id = (
-                id_config is None
-                or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
-            )
+        id_config = self.target_fields_config.get("id")
+        self.target_manager.auto_id = (
+            id_config is None
+            or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
+        )
 
     @cached_property
     def channel_mapping(self):
@@ -712,12 +707,11 @@ class ConnectionNodeProcessor(SpatialProcessor):
     ):
         super().__init__(target_layer, target_model_cls)
         self.fields_configuration = import_settings.fields
-        if self.target_manager:
-            id_config = self.fields_configuration.get("id")
-            self.target_manager.auto_id = (
-                id_config is None
-                or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
-            )
+        id_config = self.fields_configuration.get("id")
+        self.target_manager.auto_id = (
+            id_config is None
+            or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
+        )
 
     @staticmethod
     def new_geometry(src_feat):
@@ -762,12 +756,11 @@ class StructureProcessor(SpatialProcessor, ABC):
         self.node_manager = FeatureManager(next_id=get_next_feature_id(node_layer))
         self.fields_configurations = import_settings.fields
         self.cn_fields_configurations = import_settings.connection_node_fields
-        if self.target_manager:
-            id_config = self.fields_configurations.get("id")
-            self.target_manager.auto_id = (
-                id_config is None
-                or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
-            )
+        id_config = self.fields_configurations.get("id")
+        self.target_manager.auto_id = (
+            id_config is None
+            or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
+        )
         self.connection_nodes_settings = import_settings.connection_nodes
         self.point_to_line_conversion_settings = (
             import_settings.point_to_line_conversion
@@ -1037,17 +1030,12 @@ class GenericProcessor(SpatialProcessor):
     def __init__(self, target_layer, target_model_cls, import_settings):
         super().__init__(target_layer, target_model_cls)
         self.fields_configuration = import_settings.fields
-        if self.target_manager:
-            id_config = self.fields_configuration.get("id")
-            self.target_manager.auto_id = (
-                id_config is None
-                or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
-            )
-        self.target_geom_type = (
-            target_layer.geometryType()
-            if target_layer
-            else QgsWkbTypes.GeometryType.NullGeometry
+        id_config = self.fields_configuration.get("id")
+        self.target_manager.auto_id = (
+            id_config is None
+            or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
         )
+        self.target_geom_type = target_layer.geometryType()
 
     @staticmethod
     def new_geometry(src_feat):
@@ -1092,12 +1080,11 @@ class SurfaceProcessor(SpatialProcessor):
             surface_map_layer.fields() if surface_map_layer else None
         )
         self.fields_configuration = import_settings.fields
-        if self.target_manager:
-            id_config = self.fields_configuration.get("id")
-            self.target_manager.auto_id = (
-                id_config is None
-                or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
-            )
+        id_config = self.fields_configuration.get("id")
+        self.target_manager.auto_id = (
+            id_config is None
+            or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
+        )
         if import_settings.surface_linking.data_format == "long":
             self.surface_map_fields_configuration = import_settings.surface_map_fields
         else:

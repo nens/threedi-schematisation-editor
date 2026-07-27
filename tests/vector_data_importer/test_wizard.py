@@ -56,9 +56,16 @@ def test_wizard_run():
     wizard.deserialize(json_settings)
     # set selected layer
     wizard.start_page.layer_settings_widget.selected_layer = src_layer
-    # patch prepare import to return the correct target layer and don't bother with handlers
-    with patch.object(ImportConnectionNodesWizard, "prepare_import") as mock_prepare:
+    # patch prepare_import and get_importer to avoid layer handler and layer validity requirements
+    with (
+        patch.object(ImportConnectionNodesWizard, "prepare_import") as mock_prepare,
+        patch.object(ImportConnectionNodesWizard, "get_importer") as mock_get_importer,
+    ):
         mock_prepare.return_value = ([], {"target_layer": tgt_layer})
+        mock_importer = mock_get_importer.return_value
+        mock_importer.processor._cancellation_token = None
+        mock_importer.integrator = None
+        mock_importer.import_features.return_value = None
         wizard.run_import()
     # note that there is no nice assert here because the functionality of the reporter is already tested
     # if run_import is broken, this test will crash

@@ -399,13 +399,15 @@ class LinearIntegrator:
         )
         # feature managers that handle id's for added features
         # for target features and nodes a manager can be supplied such that they match the associated importer
-        # TODO: remove or fix this ternary!!
-        # FeatureManager cannot be initalized like this!
         self.target_manager = (
-            target_manager if target_manager else FeatureManager(self.target_model_cls)
+            target_manager
+            if target_manager
+            else FeatureManager(next_id=get_next_feature_id(self.target_layer))
         )
         self.node_manager = (
-            node_manager if node_manager else FeatureManager(dm.ConnectionNode)
+            node_manager
+            if node_manager
+            else FeatureManager(next_id=get_next_feature_id(self.node_layer))
         )
         self.integrate_manager = FeatureManager(
             next_id=get_next_feature_id(self.integrate_layer)
