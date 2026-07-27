@@ -261,6 +261,11 @@ def get_src_geometry(feature: QgsFeature, none_ok=False) -> QgsGeometry:
     desired_type = QgsWkbTypes.linearType(
         QgsWkbTypes.singleType(QgsWkbTypes.flatType(geom.wkbType()))
     )
+    if QgsWkbTypes.isMultiType(geom.wkbType()) and geom.constGet().numGeometries() > 1:
+        warnings.warn(
+            f"{warning_base} is a multi-part geometry; only the first part will be imported.",
+            GeometryImporterWarning,
+        )
     # convert the source geometry to the desired type
     try:
         return geom.coerceToType(desired_type)[0]
