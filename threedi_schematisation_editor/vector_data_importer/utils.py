@@ -29,6 +29,14 @@ DEFAULT_INTERSECTION_BUFFER_SEGMENTS = 5
 DEFAULT_MINIMUM_CHANNEL_LENGTH = 5
 
 
+class FeatureIDConflict(Exception):
+    pass
+
+
+class FeatureIDInvalid(Exception):
+    pass
+
+
 def get_field_config_value(field_config, source_feat, expression_context=None):
     method = ColumnImportMethod(field_config["method"])
     field_value = NULL
@@ -89,6 +97,38 @@ def build_feature_mapping(features, field_config_dict):
     return mapping
 
 
+def resolve_id(fields_configuration, src_feat, expression_context=None):
+    """Resolve the id field config for a source feature.
+
+    Returns None if the method is AUTO (caller should let FeatureManager assign the id).
+    Returns the resolved integer id for non-AUTO methods.
+    Raises FeatureIDInvalid (after emitting a FeaturesImporterWarning) if the id cannot
+    be resolved or converted to int.
+    """
+    id_config = fields_configuration.get("id")
+    if (
+        id_config is None
+        or ColumnImportMethod(id_config["method"]) == ColumnImportMethod.AUTO
+    ):
+        return None
+    resolved = get_field_config_value(id_config, src_feat, expression_context)
+    if resolved is None or resolved == NULL:
+        warnings.warn(
+            f"Feature skipped: id value '{resolved}' is None or NULL.",
+            FeaturesImporterWarning,
+        )
+        raise FeatureIDInvalid
+    try:
+        explicit_id = convert_to_type(resolved, int)
+    except TypeConversionError as e:
+        warnings.warn(
+            f"Feature skipped: id value '{resolved}' could not be converted to int. {e}",
+            FeaturesImporterWarning,
+        )
+        raise FeatureIDInvalid
+    return explicit_id
+
+
 def update_attributes(fields_config, model_cls, source_feat, *new_features):
     expression_context = QgsExpressionContext()
     expression_context.setFeature(source_feat)
@@ -99,6 +139,8 @@ def update_attributes(fields_config, model_cls, source_feat, *new_features):
                 field_config = fields_config[field_name]
             except KeyError:
                 continue
+            if field_name == "id":
+                continue  # id is always set before create_new, never via update_attributes
             if ColumnImportMethod(field_config["method"]) == ColumnImportMethod.AUTO:
                 continue
             field_value = get_field_config_value(
@@ -128,23 +170,58 @@ def get_float_value_from_feature(feature, field_name, fallback_value):
 
 
 class FeatureManager:
-    def __init__(self, next_id=1):
+    def __init__(self, auto_id=True, next_id=1, existing_ids=None):
+        self.auto_id = auto_id
         self.next_id = next_id
+        self.used_ids = set(existing_ids) if existing_ids else set()
 
-    def create_new(self, geom, fields, attributes=None, set_id=True):
+    def create_from_src_feat(
+        self, new_geom, target_fields, src_feat, target_fields_config
+    ):
+        explicit_id = None
+        if not self.auto_id:
+            try:
+                explicit_id = resolve_id(target_fields_config, src_feat)
+            except FeatureIDInvalid:
+                return None
+        return self.create_new(new_geom, target_fields, explicit_id=explicit_id)
+
+    def create_new(self, geom, fields, attributes=None, set_id=True, explicit_id=None):
         new_feat = QgsFeature(fields)
-        self.add_feature(new_feat, geom, attributes, set_id)
+        try:
+            self.add_feature(
+                new_feat, geom, attributes, set_id=set_id, explicit_id=explicit_id
+            )
+        except FeatureIDConflict:
+            return None
         return new_feat
 
-    def add_feature(self, new_feat, geom=None, attributes=None, set_id=True):
+    def add_feature(
+        self, new_feat, geom=None, attributes=None, set_id=True, explicit_id=None
+    ):
         if geom:
             new_feat.setGeometry(geom)
         if attributes:
             for field_name, field_value in attributes.items():
                 new_feat[field_name] = field_value
         if set_id:
-            new_feat["id"] = self.next_id
-            self.next_id += 1
+            if explicit_id is not None:
+                if self.auto_id:
+                    raise ValueError("Cannot use explicit_id when auto_id is True")
+                if explicit_id in self.used_ids:
+                    warnings.warn(
+                        f"Feature with id {explicit_id} skipped: id already exists in "
+                        f"target layer or was already assigned in this import.",
+                        FeaturesImporterWarning,
+                    )
+                    raise FeatureIDConflict
+                new_feat["id"] = explicit_id
+                self.used_ids.add(explicit_id)
+            else:
+                if not self.auto_id:
+                    raise ValueError("Cannot use auto increment when auto_id is False")
+                new_feat["id"] = self.next_id
+                self.next_id += 1
 
 
 class ColumnImportMethod(str, Enum):

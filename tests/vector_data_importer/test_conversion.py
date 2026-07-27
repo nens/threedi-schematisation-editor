@@ -29,6 +29,7 @@ from threedi_schematisation_editor.vector_data_importer.settings_models import (
 )
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.warnings import (
+    FeaturesImporterWarning,
     GeometryImporterWarning,
     ProcessorWarning,
     StructuresIntegratorWarning,
@@ -535,3 +536,101 @@ def test_generic_importer_no_geom_target():
         (item for item in target_layer.getFeatures() if item["id"] == 2), None
     )
     assert imp_feat["name"] == "default_name"
+
+
+def test_generic_importer_attribute_id_no_conflict():
+    """ATTRIBUTE id method: imported features receive IDs from the source field."""
+    src_gpkg = str(
+        get_temp_copy(SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg"))
+    )
+    src_layer = gpkg_layer(src_gpkg, "channel")
+    target_layer = gpkg_layer(
+        str(get_temp_copy(SCHEMATISATION_PATH.joinpath("empty.gpkg"))), "channel"
+    )
+
+    import_settings = ImportSettings(
+        fields={
+            "id": {"method": ColumnImportMethod.ATTRIBUTE, "source_attribute": "id"},
+        }
+    )
+    importer = GenericImporter(
+        external_source=src_layer,
+        target_gpkg=str(target_layer.source().split("|")[0]),
+        import_settings=import_settings,
+        target_model_cls=dm.Channel,
+        target_layer=target_layer,
+    )
+    importer.import_features()
+
+    src_ids = sorted(f["id"] for f in src_layer.getFeatures())
+    imported_ids = sorted(f["id"] for f in target_layer.getFeatures())
+    assert imported_ids == src_ids
+
+
+def test_generic_importer_attribute_id_all_conflict():
+    """ATTRIBUTE id method: all source IDs already in target — all skipped with warnings."""
+    src_gpkg = str(
+        get_temp_copy(SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg"))
+    )
+    src_layer = gpkg_layer(src_gpkg, "channel")
+    # Target is a copy of the same schematisation — channel IDs already present
+    target_gpkg = str(
+        get_temp_copy(SCHEMATISATION_PATH.joinpath("schematisation_channel.gpkg"))
+    )
+    target_layer = gpkg_layer(target_gpkg, "channel")
+    count_before = target_layer.featureCount()
+
+    import_settings = ImportSettings(
+        fields={
+            "id": {"method": ColumnImportMethod.ATTRIBUTE, "source_attribute": "id"},
+        }
+    )
+    importer = GenericImporter(
+        external_source=src_layer,
+        target_gpkg=target_gpkg,
+        import_settings=import_settings,
+        target_model_cls=dm.Channel,
+        target_layer=target_layer,
+    )
+    with pytest.warns(FeaturesImporterWarning):
+        importer.import_features()
+
+    assert target_layer.featureCount() == count_before
+
+
+def test_generic_importer_expression_id_intra_batch_conflict():
+    """EXPRESSION id method resolving to constant: first feature imported, rest skipped."""
+    src_gpkg = str(
+        get_temp_copy(
+            SCHEMATISATION_PATH.joinpath("schematisation_channel_with_weir.gpkg")
+        )
+    )
+    src_layer = gpkg_layer(src_gpkg, "channel")
+    # Source must have at least 2 features for intra-batch conflict to occur
+    assert src_layer.featureCount() >= 2
+
+    target_layer = gpkg_layer(
+        str(get_temp_copy(SCHEMATISATION_PATH.joinpath("empty.gpkg"))), "channel"
+    )
+
+    import_settings = ImportSettings(
+        fields={
+            "id": {
+                "method": ColumnImportMethod.EXPRESSION,
+                "expression": "to_int('42')",
+            },
+        }
+    )
+    importer = GenericImporter(
+        external_source=src_layer,
+        target_gpkg=str(target_layer.source().split("|")[0]),
+        import_settings=import_settings,
+        target_model_cls=dm.Channel,
+        target_layer=target_layer,
+    )
+    with pytest.warns(FeaturesImporterWarning):
+        importer.import_features()
+
+    imported = list(target_layer.getFeatures())
+    assert len(imported) == 1
+    assert imported[0]["id"] == 42

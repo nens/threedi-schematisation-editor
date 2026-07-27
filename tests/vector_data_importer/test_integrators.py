@@ -9,6 +9,7 @@ from qgis.core import (
     QgsGeometry,
     QgsPointXY,
     QgsSpatialIndex,
+    QgsVectorLayer,
     QgsWkbTypes,
 )
 
@@ -498,7 +499,7 @@ class TestNodeManagement:
             FeatureManager,
         )
 
-        integrator.node_manager = FeatureManager(42)  # Start with ID 42
+        integrator.node_manager = FeatureManager(next_id=42)  # Start with ID 42
 
         # Create a point, node_layer_fields, and node_attributes
         point = QgsPointXY(10, 20)
@@ -763,7 +764,7 @@ class TestPumpMapNodeHandler:
 
         pump_feat = QgsFeature(pump_layer.fields())
         pump_feat["id"] = 1
-        pump_manager.create_new.return_value = pump_feat
+        pump_manager.create_from_src_feat.return_value = pump_feat
 
         handler = make_pump_map_handler(
             pump_layer, pump_manager, node_layer, node_by_location, node_manager
@@ -779,7 +780,7 @@ class TestPumpMapNodeHandler:
         call_geom = node_manager.create_new.call_args[0][0]
         assert call_geom.asPoint() == start_pt
         assert node_by_location[start_pt] == 10
-        pump_manager.create_new.assert_called_once()
+        pump_manager.create_from_src_feat.assert_called_once()
         assert pump_feat["connection_node_id"] == 10
         assert feat["pump_id"] == 1
         assert result == {"connection_nodes": [node_feat], "pump": [pump_feat]}
@@ -848,7 +849,7 @@ class TestPumpMapNodeHandler:
         pump_feat = QgsFeature(pump_layer.fields())
         pump_feat["id"] = 1
         pump_manager = MagicMock()
-        pump_manager.create_new.return_value = pump_feat
+        pump_manager.create_from_src_feat.return_value = pump_feat
 
         handler = make_pump_map_handler(
             pump_layer, pump_manager, node_layer, node_by_location, node_manager
@@ -1018,7 +1019,6 @@ class TestLineStructurePlacement:
         self, channel_feature, line_structure_feature, structure_fields
     ):
         """LineStructurePlacement.place_structure returns a feature with correct geometry."""
-        from unittest.mock import MagicMock
 
         strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
         conduit_geom = channel_feature.geometry()
@@ -1027,7 +1027,7 @@ class TestLineStructurePlacement:
         )
         target_manager = MagicMock()
         created_feat = QgsFeature(structure_fields)
-        target_manager.create_new.return_value = created_feat
+        target_manager.create_from_src_feat.return_value = created_feat
 
         result = strategy.place_structure(
             conduit_geom, structure_data, structure_fields, target_manager, {}, dm.Weir
@@ -1035,7 +1035,7 @@ class TestLineStructurePlacement:
 
         assert result is created_feat
         # manager was called with a line geometry spanning m-l/2=40 to m+l/2=60
-        call_geom = target_manager.create_new.call_args[0][0]
+        call_geom = target_manager.create_from_src_feat.call_args[0][0]
         polyline = call_geom.asPolyline()
         assert polyline[0].x() == pytest.approx(40.0)
         assert polyline[-1].x() == pytest.approx(60.0)
@@ -1115,8 +1115,6 @@ class TestLineStructurePlacement:
         self, channel_feature, point_structure_feature, structure_fields
     ):
         """place_structure returns a point feature at the projected position."""
-        from unittest.mock import MagicMock
-
         strategy = PointStructurePlacement()
         conduit_geom = channel_feature.geometry()
         structure_data = LinearIntegratorStructureData(
@@ -1124,22 +1122,20 @@ class TestLineStructurePlacement:
         )
         target_manager = MagicMock()
         created_feat = QgsFeature(structure_fields)
-        target_manager.create_new.return_value = created_feat
+        target_manager.create_from_src_feat.return_value = created_feat
 
         result = strategy.place_structure(
             conduit_geom, structure_data, structure_fields, target_manager, {}, dm.Pump
         )
 
         assert result is created_feat
-        call_geom = target_manager.create_new.call_args[0][0]
+        call_geom = target_manager.create_from_src_feat.call_args[0][0]
         assert call_geom.type() == QgsWkbTypes.GeometryType.PointGeometry
         assert call_geom.asPoint().x() == pytest.approx(30.0)
         assert call_geom.asPoint().y() == pytest.approx(0.0)
 
     def test_update_structure_nodes_new_node(self, structure_fields):
         """update_structure_nodes creates a node and assigns connection_node_id."""
-        from unittest.mock import MagicMock
-
         strategy = PointStructurePlacement()
         point = QgsPointXY(50, 0)
         node_by_location = {}
@@ -1168,8 +1164,6 @@ class TestLineStructurePlacement:
 
     def test_update_structure_nodes_existing_node(self, structure_fields):
         """update_structure_nodes reuses existing node, returns no new nodes."""
-        from unittest.mock import MagicMock
-
         strategy = PointStructurePlacement()
         point = QgsPointXY(50, 0)
         node_by_location = {point: 42}
@@ -1189,3 +1183,83 @@ class TestLineStructurePlacement:
         assert new_nodes == []
         assert feature["connection_node_id"] == 42
         node_manager.create_new.assert_not_called()
+
+
+class TestIdConflictBehaviour:
+    """Tests that ID conflicts in custom-id mode don't produce orphaned nodes or crashes."""
+
+    def test_pump_map_handler_id_conflict_returns_empty_and_no_orphan_node(self):
+        """When pump creation fails due to ID conflict, update_nodes returns {} and
+        node_by_location is not polluted with an unperisted node."""
+
+        node_layer = QgsVectorLayer(
+            "Point?crs=EPSG:28992", "connection_nodes", "memory"
+        )
+        node_layer.dataProvider().addAttributes([QgsField("id", QVariant.Int)])
+        node_layer.updateFields()
+
+        pump_layer = QgsVectorLayer("Point?crs=EPSG:28992", "pump", "memory")
+        pump_layer.dataProvider().addAttributes([QgsField("id", QVariant.Int)])
+        pump_layer.updateFields()
+
+        start_pt = QgsPointXY(0, 0)
+        end_pt = QgsPointXY(100, 0)
+        node_by_location = {end_pt: 20}
+
+        node_manager = MagicMock()
+        node_feat = QgsFeature(node_layer.fields())
+        node_feat["id"] = 10
+        node_feat.setGeometry(QgsGeometry.fromPointXY(start_pt))
+        node_manager.create_new.return_value = node_feat
+
+        # Pump creation fails (ID conflict)
+        pump_manager = MagicMock()
+        pump_manager.create_from_src_feat.return_value = None
+
+        handler = make_pump_map_handler(
+            pump_layer, pump_manager, node_layer, node_by_location, node_manager
+        )
+
+        fields = QgsFields()
+        fields.append(QgsField("id", QVariant.Int))
+        fields.append(QgsField("pump_id", QVariant.Int))
+        fields.append(QgsField("connection_node_id_end", QVariant.Int))
+        feat = QgsFeature(fields)
+        feat.setGeometry(QgsGeometry.fromPolylineXY([start_pt, end_pt]))
+
+        result = handler.update_nodes(feat, {})
+
+        assert result == {}
+        assert start_pt not in node_by_location  # no dangling reference
+
+    def test_place_structure_id_conflict_returns_empty_dict(self):
+        """place_structure returns {} when the target manager returns None (ID conflict),
+        matching what integrate_structure_features expects to handle gracefully."""
+        strategy = LineStructurePlacement(length_config=None, simplify_geometry=True)
+
+        channel_fields = QgsFields()
+        channel_fields.append(QgsField("id", QVariant.Int))
+        channel_feat = QgsFeature(channel_fields)
+        channel_feat.setGeometry(
+            QgsGeometry.fromPolylineXY([QgsPointXY(0, 0), QgsPointXY(100, 0)])
+        )
+
+        structure_fields = QgsFields()
+        structure_fields.append(QgsField("id", QVariant.Int))
+        structure_data = LinearIntegratorStructureData(
+            conduit_id=1, feature=QgsFeature(structure_fields), m=50.0, length=20.0
+        )
+
+        target_manager = MagicMock()
+        target_manager.create_from_src_feat.return_value = None  # ID conflict
+
+        result = strategy.place_structure(
+            channel_feat.geometry(),
+            structure_data,
+            structure_fields,
+            target_manager,
+            {},
+            dm.Weir,
+        )
+
+        assert result is None

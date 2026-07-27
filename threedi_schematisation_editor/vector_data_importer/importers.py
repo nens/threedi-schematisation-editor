@@ -157,6 +157,11 @@ class SpatialImporter(Importer):
             if target_layer is None
             else target_layer
         )
+        if self.target_layer is None or not self.target_layer.isValid():
+            raise ValueError(
+                f"Could not load target layer '{target_model_cls.__tablename__}' "
+                f"from GeoPackage '{self.target_gpkg}'"
+            )
         self.processor = None
 
     @cached_property

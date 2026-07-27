@@ -32,8 +32,10 @@ from threedi_mi_utils.ui import ColoredProgressBar
 
 import threedi_schematisation_editor.data_models as dm
 from threedi_schematisation_editor.vector_data_importer.settings_models import (
+    create_field_map_config,
     get_field_map_config_for_model_class_field,
 )
+from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard.field_map import (
     FieldMapRow,
     FieldMapWidget,
@@ -174,8 +176,9 @@ class SettingsPage(QWizardPage):
 
 
 class FieldMapPage(QWizardPage):
-    def __init__(self, model_cls, name, title_suffix=None):
+    def __init__(self, model_cls, name, title_suffix=None, restrict_id_to_auto=False):
         super().__init__()
+        self.restrict_id_to_auto = restrict_id_to_auto
         self.row_dict = self.create_rows(model_cls)
         self.title_suffix = (
             title_suffix
@@ -193,6 +196,10 @@ class FieldMapPage(QWizardPage):
             config_class = get_field_map_config_for_model_class_field(
                 field_name, model_cls
             )
+            if self.restrict_id_to_auto and field_name == "id":
+                config_class = create_field_map_config(
+                    [ColumnImportMethod.AUTO], field_type=int
+                )
             row_dict[field_name] = FieldMapRow(
                 label=display_name, config=config_class.model_construct(method=None)
             )

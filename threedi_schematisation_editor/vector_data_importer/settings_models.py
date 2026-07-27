@@ -158,14 +158,36 @@ def get_field_map_config_for_model_class_field(
     )
 
 
-def validate_field_map(field_map: dict, model_cls: Type) -> None:
+def validate_id_method(field_map: dict) -> None:
+    """Raise ValueError if the 'id' entry uses a method other than AUTO.
+
+    field_map values are always dicts at this point (deserialised from JSON via
+    ImportSettings). Used to guard connection_node_fields where custom id
+    assignment is not supported.
+    """
+    method = field_map["id"].get("method")
+    if method not in (None, ColumnImportMethod.AUTO):
+        raise ValueError(
+            "The 'id' field in connection_node_fields must use AUTO method."
+        )
+
+
+def validate_field_map(
+    field_map: dict, model_cls: Type, allow_non_auto_id: bool = True
+) -> None:
     """Validate a field map dict against a target data model class.
 
     Re-validates each entry using the custom FieldMapConfig subclass for that
     field, which enforces the correct allowed methods and required fields.
     Fields not present on the model class are silently skipped.
     Raises ValidationError if any entry is invalid.
+
+    If allow_non_auto_id is False, raises ValueError when the 'id' field is
+    present with a method other than AUTO. Use this for connection_node_fields,
+    where custom id assignment is not supported.
     """
+    if not allow_non_auto_id and "id" in field_map:
+        validate_id_method(field_map)
     model_field_names = {f.name for f in fields(model_cls)}
     for field_name, field_data in field_map.items():
         if field_name not in model_field_names:
@@ -185,7 +207,11 @@ def get_allowed_methods_for_model_class_field(
     # Use defaults if not defined
     if not allowed_methods:
         if model_field.name == "id":
-            allowed_methods = [ColumnImportMethod.AUTO]
+            allowed_methods = [
+                m
+                for m in ColumnImportMethod
+                if m not in (ColumnImportMethod.IGNORE, ColumnImportMethod.DEFAULT)
+            ]
         else:
             allowed_methods = [
                 method

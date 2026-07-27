@@ -89,12 +89,19 @@ class TestGetAllowedMethodsForModelClassField:
     @pytest.mark.parametrize(
         "allowed_methods, expected_methods",
         [
-            (None, [ColumnImportMethod.AUTO]),
+            (
+                None,
+                [
+                    ColumnImportMethod.AUTO,
+                    ColumnImportMethod.ATTRIBUTE,
+                    ColumnImportMethod.EXPRESSION,
+                ],
+            ),
             ([ColumnImportMethod.ATTRIBUTE], [ColumnImportMethod.ATTRIBUTE]),
         ],
     )
     def test_id(self, allowed_methods, expected_methods):
-        # ID fields without allowed methods only have an AUTO method as return
+        # ID fields without allowed methods allow all methods except IGNORE
         @dataclass
         class Test:
             id: str = field(metadata=self.get_metadata(allowed_methods))
@@ -165,3 +172,28 @@ def test_field_map_config_method_validation():
         )
 
     assert exc_info.value.errors()[0]["type"] == "value_error.invalid"
+
+
+@pytest.mark.parametrize(
+    "field_map",
+    [
+        {
+            "id": sm.FieldMapConfig(
+                method=ColumnImportMethod.ATTRIBUTE, source_attribute="src_id"
+            )
+        },
+        {
+            "id": sm.FieldMapConfig(
+                method=ColumnImportMethod.EXPRESSION, expression="to_int('1')"
+            )
+        },
+        {
+            "id": sm.FieldMapConfig(
+                method=ColumnImportMethod.DEFAULT, default_value="foo"
+            )
+        },
+    ],
+)
+def test_validate_id_method_invalid(field_map):
+    with pytest.raises(ValueError, match="AUTO method"):
+        sm.validate_id_method(field_map)

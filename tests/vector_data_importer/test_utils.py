@@ -28,15 +28,20 @@ from shapely.testing import assert_geometries_equal
 
 from threedi_schematisation_editor.vector_data_importer.utils import (
     ColumnImportMethod,
+    FeatureIDInvalid,
     FeatureManager,
     build_feature_mapping,
     get_field_config_value,
     get_float_value_from_feature,
     get_point_locator,
     get_src_geometry,
+    resolve_id,
     update_attributes,
 )
-from threedi_schematisation_editor.warnings import GeometryImporterWarning
+from threedi_schematisation_editor.warnings import (
+    FeaturesImporterWarning,
+    GeometryImporterWarning,
+)
 
 
 @pytest.fixture
@@ -59,7 +64,7 @@ def node_geom(node_point):
 
 @pytest.mark.parametrize("next_id", [1, 100])
 def test_feature_manager_increment_id(next_id, node_geom, node_fields):
-    manager = FeatureManager(next_id)
+    manager = FeatureManager(auto_id=True, next_id=next_id)
     assert manager.next_id == next_id
     node_feat = manager.create_new(node_geom, node_fields)
     assert node_feat["id"] == next_id
@@ -85,10 +90,93 @@ def test_feature_manager_create_new_with_attributes(node_geom, node_fields):
     assert node_feat["foo"] == "bar"
 
 
+@pytest.mark.parametrize("auto_id, kwargs", [(True, {"explicit_id": 42}), (False, {})])
+def test_feature_manager_auto_id_clash(node_geom, node_fields, auto_id, kwargs):
+    manager = FeatureManager(auto_id=auto_id)
+    with pytest.raises(ValueError):
+        manager.create_new(node_geom, node_fields, **kwargs)
+
+
+def test_feature_manager_explicit_id(node_geom, node_fields):
+    """explicit_id sets the ID and does not advance next_id."""
+    manager = FeatureManager(auto_id=False)
+    node_feat = manager.create_new(node_geom, node_fields, explicit_id=42)
+    assert node_feat["id"] == 42
+    assert manager.next_id == 1  # next_id must not advance
+    assert 42 in manager.used_ids
+
+
+@pytest.mark.parametrize(
+    "auto_id, explicit_id, existing_ids, conflict, expected_id",
+    [
+        (False, 42, {1, 2, 3}, False, 42),
+        (False, 5, {5, 10}, True, None),
+        (True, None, {1, 2, 3}, False, 1),
+    ],
+)
+def test_feature_manager_explicit_id(
+    node_geom, node_fields, auto_id, explicit_id, existing_ids, conflict, expected_id
+):
+    manager = FeatureManager(auto_id=auto_id, existing_ids=existing_ids)
+    if conflict:
+        with pytest.warns(FeaturesImporterWarning):
+            result = manager.create_new(node_geom, node_fields, explicit_id=explicit_id)
+        assert result is None
+    else:
+        result = manager.create_new(node_geom, node_fields, explicit_id=explicit_id)
+        assert result["id"] == expected_id
+
+
 @dataclass
 class TestModel:
     id: int
     missing_field: str
+
+
+@pytest.mark.parametrize(
+    "fields_config,explicit_id_valid",
+    [
+        ({"id": {"method": ColumnImportMethod.AUTO.value}}, False),
+        ({}, False),
+        (
+            {
+                "id": {
+                    "method": ColumnImportMethod.ATTRIBUTE.value,
+                    "source_attribute": "id",
+                }
+            },
+            True,
+        ),
+    ],
+)
+def test_resolve_id(fields_config, explicit_id_valid):
+    id_val = 5
+    src_feat = create_feature_with_fields("id")
+    src_feat.setAttribute("id", id_val)
+    explicit_id = resolve_id(fields_config, src_feat)
+    if explicit_id_valid:
+        assert explicit_id == id_val
+    else:
+        assert explicit_id is None
+
+
+@pytest.mark.parametrize(
+    "fields_config",
+    [
+        {
+            "id": {
+                "method": ColumnImportMethod.ATTRIBUTE.value,
+                "source_attribute": "id",
+            }
+        },
+        {"id": {"method": ColumnImportMethod.DEFAULT.value, "default_value": "foo"}},
+    ],
+)
+def test_resolve_id_invalid(fields_config):
+    src_feat = create_feature_with_fields("id")
+    src_feat.setAttribute("id", "foo")
+    with pytest.raises(FeatureIDInvalid):
+        resolve_id(fields_config, src_feat)
 
 
 def create_feature_with_fields(*field_names):
@@ -104,10 +192,11 @@ def create_feature_with_fields(*field_names):
     "field_config,source_val,new_val,expected_val",
     [
         ({"method": ColumnImportMethod.AUTO.value}, 1, 2, 2),
-        ({"method": ColumnImportMethod.DEFAULT.value, "default_value": 42}, 1, 2, 42),
+        ({"method": ColumnImportMethod.DEFAULT.value, "default_value": 42}, 1, 2, 2),
     ],
 )
 def test_update_attributes(field_config, source_val, new_val, expected_val):
+    """id field is always skipped by update_attributes regardless of method."""
     fields_config = {"id": field_config}
     source_feat = create_feature_with_fields("id", "foo")
     source_feat.setAttribute("id", source_val)
@@ -182,9 +271,13 @@ def test_update_attributes_missing_field():
     assert new_feat["missing_field"] == "original_value"
 
 
-def test_update_attributes_type_conversion_error():
+def test_update_attributes_id_always_skipped():
+    """id field is always skipped by update_attributes, even with a type conversion error."""
     fields_config = {
-        "id": {"method": ColumnImportMethod.DEFAULT.value, "default_value": "no_an_int"}
+        "id": {
+            "method": ColumnImportMethod.DEFAULT.value,
+            "default_value": "not_an_int",
+        }
     }
     source_feat = create_feature_with_fields("id")
     source_feat.setAttribute("id", 1)
@@ -192,12 +285,9 @@ def test_update_attributes_type_conversion_error():
     new_feat = create_feature_with_fields("id")
     new_feat.setAttribute("id", 1)
 
-    # Execute
-    with pytest.warns(UserWarning):
-        update_attributes(fields_config, TestModel, source_feat, new_feat)
-
-    # Assert
-    assert new_feat["id"] == NULL
+    # No warning, no change — id is handled before create_new, never via update_attributes
+    update_attributes(fields_config, TestModel, source_feat, new_feat)
+    assert new_feat["id"] == 1
 
 
 @pytest.fixture
@@ -216,15 +306,6 @@ def node_point():
 @pytest.fixture
 def node_geom(node_point):
     return QgsGeometry.fromPointXY(node_point)
-
-
-@pytest.mark.parametrize("next_id", [1, 100])
-def test_feature_manager_increment_id(next_id, node_geom, node_fields):
-    manager = FeatureManager(next_id)
-    assert manager.next_id == next_id
-    node_feat = manager.create_new(node_geom, node_fields)
-    assert node_feat["id"] == next_id
-    assert manager.next_id == next_id + 1
 
 
 def test_feature_manager_create_new(node_geom, node_fields):
