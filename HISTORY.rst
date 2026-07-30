@@ -1,7 +1,7 @@
 History
 =======
 
-2.4.13 (unreleased)
+2.4.13 (2026-07-30)
 -------------------
 
 - Add generic importer (nens/threedi-schematisation-editor#282)
