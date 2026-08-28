@@ -22,14 +22,15 @@ from qgis.utils import isPluginLoaded, startPlugin
 
 def check_dependency_loader():
     required_plugin = "nens_dependency_loader"
+    required_plugin_str = "Rana Dependency Loader"
     if not isPluginLoaded(required_plugin):
         if (
             QMessageBox.question(
                 None,
-                "N&S Dependency Loader",
-                "N&S Dependency Loader is required, but not loaded. Would you like to load it?",
+                required_plugin_str,
+                f"{required_plugin_str} is required, but not loaded. Would you like to load it?",
             )
-            == QMessageBox.Yes
+            == QMessageBox.StandardButton.Yes
         ):
             try:  # This is basically what qgis.utils.loadPlugin() does, but that also shows errors, so we need to do it explicitly
                 __import__(required_plugin)
@@ -41,8 +42,8 @@ def check_dependency_loader():
                 if not startPlugin(required_plugin):
                     QMessageBox.warning(
                         None,
-                        "N&S Dependency Loader",
-                        "Unable to start N&S Dependency Loader, please enable the plugin manually",
+                        required_plugin_str,
+                        f"Unable to start {required_plugin_str}, please enable the plugin manually",
                     )
                     return
             else:
