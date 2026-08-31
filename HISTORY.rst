@@ -17,6 +17,7 @@ History
 - Fixed setting tag in attribute form (nens/rana#4909)
 - Prevent import from layer in editting mode (nens/rana#5117)
 - Run import in main thread to prevent unexplained crashes (nens/rana#5117)
+- Upgrade to QGIS4 (#440)
 
 
 2.4.14 (2026-09-04)
