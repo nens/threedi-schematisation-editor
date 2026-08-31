@@ -188,12 +188,12 @@ class VDIWizard(QWizard):
         # Use the same background as standard widgets
         palette = self.palette()
         base_color = palette.color(
-            QPalette.Window
+            QPalette.ColorRole.Window
         )  # This matches other widgets' gray background
-        palette.setColor(QPalette.Base, base_color)
+        palette.setColor(QPalette.ColorRole.Base, base_color)
         self.setPalette(palette)
         # Explicitly set wizard style
-        self.setWizardStyle(QWizard.ClassicStyle)
+        self.setWizardStyle(QWizard.WizardStyle.ClassicStyle)
 
     @property
     def selected_layer(self):
@@ -220,7 +220,7 @@ class VDIWizard(QWizard):
                     QgsMessageLog.logMessage(
                         f"Cannot read file {file_path}: {e}",
                         "Warning",
-                        Qgis.Warning,
+                        Qgis.MessageLevel.Warning,
                     )
                     return
             update_last_config_dir(file_path)
@@ -243,13 +243,15 @@ class VDIWizard(QWizard):
                     if error["type"] != "missing":
                         field_info += f" = {error['input']}"
                     msg += f"\n{error['msg']}: {field_info}"
-                    QgsMessageLog.logMessage(f"{e}", "Warning", Qgis.Warning)
+                    QgsMessageLog.logMessage(
+                        f"{e}", "Warning", Qgis.MessageLevel.Warning
+                    )
                 QMessageBox.critical(self, "Error", msg)
             except Exception as e:
                 QMessageBox.critical(
                     self, "Error", f"Could not load settings from {file_path}"
                 )
-                QgsMessageLog.logMessage(f"{e}", "Warning", Qgis.Warning)
+                QgsMessageLog.logMessage(f"{e}", "Warning", Qgis.MessageLevel.Warning)
 
     def deserialize(self, data):
         for page_id in self.pageIds():
@@ -341,14 +343,16 @@ class VDIWizard(QWizard):
             "You have unsaved import settings. Do you want to save them as draft to reuse in a later import of the same type?"
         )
         msg.setStandardButtons(
-            QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel
+            QMessageBox.StandardButton.Save
+            | QMessageBox.StandardButton.Discard
+            | QMessageBox.StandardButton.Cancel
         )
-        msg.button(QMessageBox.Save).setText("Save draft")
-        result = msg.exec_()
-        if result == QMessageBox.Save:
+        msg.button(QMessageBox.StandardButton.Save).setText("Save draft")
+        result = msg.exec()
+        if result == QMessageBox.StandardButton.Save:
             save_draft(type(self).__name__, self.get_draft_settings())
             super().reject()
-        elif result == QMessageBox.Discard:
+        elif result == QMessageBox.StandardButton.Discard:
             super().reject()
         # Cancel: do nothing, wizard stays open
 
@@ -370,11 +374,14 @@ class VDIWizard(QWizard):
         msg.setText(
             "A previous import configuration was found for this import type. Do you want to restore these settings?"
         )
-        msg.setStandardButtons(QMessageBox.RestoreDefaults | QMessageBox.Cancel)
-        msg.button(QMessageBox.RestoreDefaults).setText("Restore draft")
-        msg.button(QMessageBox.Cancel).setText("Start fresh")
-        result = msg.exec_()
-        if result == QMessageBox.RestoreDefaults:
+        msg.setStandardButtons(
+            QMessageBox.StandardButton.RestoreDefaults
+            | QMessageBox.StandardButton.Cancel
+        )
+        msg.button(QMessageBox.StandardButton.RestoreDefaults).setText("Restore draft")
+        msg.button(QMessageBox.StandardButton.Cancel).setText("Start fresh")
+        result = msg.exec()
+        if result == QMessageBox.StandardButton.RestoreDefaults:
             self.restore_draft_lenient(draft)
             self._initial_draft = self.get_draft_settings()
 
@@ -550,7 +557,7 @@ class ImportWithCreateConnectionNodesWizard(VDIWizard):
 class ImportConnectionNodesWizard(VDIWizard):
     @property
     def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
-        return QgsMapLayerProxyModel.PointLayer
+        return QgsMapLayerProxyModel.Filter.PointLayer
 
 
 class ImportConduitWizard(ImportWithCreateConnectionNodesWizard):
@@ -560,9 +567,10 @@ class ImportConduitWizard(ImportWithCreateConnectionNodesWizard):
     def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
         """Set the filter for the source layer combo box based on the model's geometry type."""
         return (
-            QgsMapLayerProxyModel.PointLayer
+            QgsMapLayerProxyModel.Filter.PointLayer
             if self.model_cls.__geometrytype__ == dm.GeometryType.Point
-            else QgsMapLayerProxyModel.LineLayer | QgsMapLayerProxyModel.PointLayer
+            else QgsMapLayerProxyModel.Filter.LineLayer
+            | QgsMapLayerProxyModel.Filter.PointLayer
         )
 
 
@@ -596,9 +604,10 @@ class ImportStructureWizard(ImportWithCreateConnectionNodesWizard):
     def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
         """Set the filter for the source layer combo box based on the model's geometry type."""
         return (
-            QgsMapLayerProxyModel.PointLayer
+            QgsMapLayerProxyModel.Filter.PointLayer
             if self.model_cls.__geometrytype__ == dm.GeometryType.Point
-            else QgsMapLayerProxyModel.LineLayer | QgsMapLayerProxyModel.PointLayer
+            else QgsMapLayerProxyModel.Filter.LineLayer
+            | QgsMapLayerProxyModel.Filter.PointLayer
         )
 
 
@@ -636,9 +645,9 @@ class ImportCrossSectionDataWizard(VDIWizard):
     @property
     def layer_filter(self) -> Optional[QgsMapLayerProxyModel]:
         return (
-            QgsMapLayerProxyModel.LineLayer
-            | QgsMapLayerProxyModel.PointLayer
-            | QgsMapLayerProxyModel.NoGeometry
+            QgsMapLayerProxyModel.Filter.LineLayer
+            | QgsMapLayerProxyModel.Filter.PointLayer
+            | QgsMapLayerProxyModel.Filter.NoGeometry
         )
 
 
@@ -648,9 +657,9 @@ class ImportCrossSectionLocationWizard(VDIWizard):
     @property
     def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
         return (
-            QgsMapLayerProxyModel.LineLayer
-            | QgsMapLayerProxyModel.PointLayer
-            | QgsMapLayerProxyModel.NoGeometry
+            QgsMapLayerProxyModel.Filter.LineLayer
+            | QgsMapLayerProxyModel.Filter.PointLayer
+            | QgsMapLayerProxyModel.Filter.NoGeometry
         )
 
 
@@ -691,7 +700,7 @@ class ImportSurfaceWizard(VDIWizard):
 
     @property
     def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
-        return QgsMapLayerProxyModel.PolygonLayer
+        return QgsMapLayerProxyModel.Filter.PolygonLayer
 
     def prepare_import(self):
         surface_handler = self.layer_manager.model_handlers[dm.Surface]
@@ -724,7 +733,7 @@ class ImportPumpWizard(ImportStructureWizard):
 
     @property
     def layer_filter(self) -> QgsMapLayerProxyModel.Filter:
-        return QgsMapLayerProxyModel.PointLayer
+        return QgsMapLayerProxyModel.Filter.PointLayer
 
     def prepare_import(self) -> Tuple[List[Any], Dict[str, Any]]:
         processed_handlers, processed_layers = super().prepare_import()

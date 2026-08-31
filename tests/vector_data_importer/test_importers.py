@@ -427,11 +427,31 @@ class TestPumpsImporter:
 @pytest.mark.parametrize(
     "src_geom_type, tgt_geom_type, valid",
     [
-        (QgsWkbTypes.LineGeometry, QgsWkbTypes.LineGeometry, True),
-        (QgsWkbTypes.PointGeometry, QgsWkbTypes.LineGeometry, False),
-        (QgsWkbTypes.NullGeometry, QgsWkbTypes.LineGeometry, False),
-        (QgsWkbTypes.NullGeometry, QgsWkbTypes.NullGeometry, True),
-        (QgsWkbTypes.PointGeometry, QgsWkbTypes.NullGeometry, True),
+        (
+            QgsWkbTypes.GeometryType.LineGeometry,
+            QgsWkbTypes.GeometryType.LineGeometry,
+            True,
+        ),
+        (
+            QgsWkbTypes.GeometryType.PointGeometry,
+            QgsWkbTypes.GeometryType.LineGeometry,
+            False,
+        ),
+        (
+            QgsWkbTypes.GeometryType.NullGeometry,
+            QgsWkbTypes.GeometryType.LineGeometry,
+            False,
+        ),
+        (
+            QgsWkbTypes.GeometryType.NullGeometry,
+            QgsWkbTypes.GeometryType.NullGeometry,
+            True,
+        ),
+        (
+            QgsWkbTypes.GeometryType.PointGeometry,
+            QgsWkbTypes.GeometryType.NullGeometry,
+            True,
+        ),
     ],
 )
 def test_generic_importer_validate_geometry_compatibility(

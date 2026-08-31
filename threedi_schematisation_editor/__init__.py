@@ -29,7 +29,7 @@ def check_dependency_loader():
                 "N&S Dependency Loader",
                 "N&S Dependency Loader is required, but not loaded. Would you like to load it?",
             )
-            == QMessageBox.Yes
+            == QMessageBox.StandardButton.Yes
         ):
             try:  # This is basically what qgis.utils.loadPlugin() does, but that also shows errors, so we need to do it explicitly
                 __import__(required_plugin)
@@ -380,8 +380,8 @@ class ThreediSchematisationEditorPlugin:
         """
         if not model_gpkg:
             schematisation_loader = LoadSchematisationDialog(self.uc)
-            result = schematisation_loader.exec_()
-            if result != QDialog.Accepted:
+            result = schematisation_loader.exec()
+            if result != QDialog.DialogCode.Accepted:
                 return
             schematisation_filepath = (
                 schematisation_loader.selected_schematisation_filepath
@@ -412,7 +412,7 @@ class ThreediSchematisationEditorPlugin:
         if len(migration_feedback_msg) > 0 and migration_succeed:
             self.uc.show_info(migration_feedback_msg)
             QgsMessageLog.logMessage(
-                migration_feedback_msg, level=Qgis.Warning, tag="Messages"
+                migration_feedback_msg, level=Qgis.MessageLevel.Warning, tag="Messages"
             )
         elif not migration_succeed:
             self.uc.clear_message_bar()
@@ -452,7 +452,7 @@ class ThreediSchematisationEditorPlugin:
             return
         # import_dlg = dialog_cls(model_cls)
         import_dlg = dialog_cls(model_cls, self.model_gpkg, self.layer_manager)
-        import_dlg.exec_()
+        import_dlg.exec()
 
     def import_external_connection_nodes(self):
         self.import_external(dm.ConnectionNode, ImportConnectionNodesWizard)
@@ -488,7 +488,7 @@ class ThreediSchematisationEditorPlugin:
         if not self.model_gpkg:
             return
         import_dlg = ImportGenericWizard(self.model_gpkg, self.layer_manager)
-        import_dlg.exec_()
+        import_dlg.exec()
 
     def on_project_close(self):
         if self.layer_manager is None:

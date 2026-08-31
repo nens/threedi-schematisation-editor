@@ -66,14 +66,16 @@ class DisambiguatingLayerDelegate(QStyledItemDelegate):
         proxy = self._combo.model()
         src_model = proxy.sourceModel()
         src_idx = proxy.mapToSource(index)
-        layer = src_model.data(src_idx, QgsMapLayerModel.LayerRole)
+        layer = src_model.data(src_idx, QgsMapLayerModel.CustomRole.LayerRole)
         if layer is None:
-            return index.data(Qt.DisplayRole) or ""
+            return index.data(Qt.ItemDataRole.DisplayRole) or ""
         name = layer.name()
         # Count how many loaded layers share this name
         duplicate_count = 0
         for i in range(src_model.rowCount()):
-            other = src_model.data(src_model.index(i, 0), QgsMapLayerModel.LayerRole)
+            other = src_model.data(
+                src_model.index(i, 0), QgsMapLayerModel.CustomRole.LayerRole
+            )
             if other is not None and other.name() == name:
                 duplicate_count += 1
         if duplicate_count > 1:
@@ -93,7 +95,7 @@ class LayerSettingsWidget(QWidget):
     layer_changed = pyqtSignal(str)  # Add this signal
 
     def __init__(
-        self, layer_filter: Optional[Qgis.LayerFilters | Qgis.LayerFilter] = None
+        self, layer_filter: "Optional[Qgis.LayerFilters | Qgis.LayerFilter]" = None
     ):
         super().__init__()
         self.model = SourceSettings()
@@ -111,7 +113,9 @@ class LayerSettingsWidget(QWidget):
         )
         self.layer_selector.layerChanged.connect(self.update_layer)
         self.layer_selector.setCurrentIndex(0)
-        self.layer_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.layer_selector.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         self.use_selected = QCheckBox("Selected features only")
         self.use_selected.setEnabled(False)
         self.include_expression = QgsFieldExpressionWidget()
@@ -576,15 +580,16 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
 
     def _sync_auto_methods(self, top_left, bottom_right, roles):
         table_model = self.field_map_widget.table_model
-        if not roles or Qt.EditRole in roles:
+        if not roles or Qt.ItemDataRole.EditRole in roles:
             row_idx = top_left.row()
             other_row_idx = 0 if top_left.row() == 1 else 1
             method_column = FieldMapColumn.to_index(FieldMapColumn.METHOD)
             method = table_model.data(
-                table_model.index(row_idx, method_column), Qt.EditRole
+                table_model.index(row_idx, method_column), Qt.ItemDataRole.EditRole
             )
             other_method = table_model.data(
-                table_model.index(other_row_idx, method_column), Qt.EditRole
+                table_model.index(other_row_idx, method_column),
+                Qt.ItemDataRole.EditRole,
             )
             # check if this call was caused by changing the method to auto and if so set other method to auto
             if (
@@ -594,7 +599,7 @@ class CrossSectionLocationMappingSettingsWidget(FieldMapSettingsWidget):
                 table_model.setData(
                     table_model.index(other_row_idx, method_column),
                     ColumnImportMethod.AUTO,
-                    Qt.EditRole,
+                    Qt.ItemDataRole.EditRole,
                 )
 
 
@@ -630,13 +635,19 @@ class SewerageTypeMappingModel(QAbstractTableModel):
     def columnCount(self, parent=QModelIndex()):
         return 2
 
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+    def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
+        if (
+            role == Qt.ItemDataRole.DisplayRole
+            and orientation == Qt.Orientation.Horizontal
+        ):
             return self.HEADERS[section]
         return None
 
-    def data(self, index, role=Qt.DisplayRole):
-        if not index.isValid() or role not in (Qt.DisplayRole, Qt.EditRole):
+    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
+        if not index.isValid() or role not in (
+            Qt.ItemDataRole.DisplayRole,
+            Qt.ItemDataRole.EditRole,
+        ):
             return None
         value = self._rows[index.row()][index.column()]
         if index.column() == self.SEWERAGE_TYPE_COL:
@@ -645,15 +656,21 @@ class SewerageTypeMappingModel(QAbstractTableModel):
             return next((n for n, v in _SEWERAGE_TYPE_ITEMS if v == value), "")
         return value or ""
 
-    def setData(self, index, value, role=Qt.EditRole):
-        if role != Qt.EditRole or not index.isValid():
+    def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
+        if role != Qt.ItemDataRole.EditRole or not index.isValid():
             return False
         self._rows[index.row()][index.column()] = value
-        self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
+        self.dataChanged.emit(
+            index, index, [Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole]
+        )
         return True
 
     def flags(self, index):
-        return Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        return (
+            Qt.ItemFlag.ItemIsEditable
+            | Qt.ItemFlag.ItemIsEnabled
+            | Qt.ItemFlag.ItemIsSelectable
+        )
 
     def add_row(self):
         row = len(self._rows)
@@ -725,7 +742,7 @@ class SewerTypeMappingDelegate(QStyledItemDelegate):
         editor.setCurrentIndex(max(idx, 0))
 
     def setModelData(self, editor, model, index):
-        model.setData(index, editor.currentData(), Qt.EditRole)
+        model.setData(index, editor.currentData(), Qt.ItemDataRole.EditRole)
 
 
 class SurfaceLinkingSettingsWidget(SettingsWidget):
@@ -759,18 +776,23 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         self._sewerage_table.setModel(self._sewerage_model)
         self._sewerage_table.setItemDelegate(SewerTypeMappingDelegate())
         self._sewerage_table.verticalHeader().hide()
-        self._sewerage_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self._sewerage_table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
         self._sewerage_table.setEditTriggers(
-            QAbstractItemView.CurrentChanged | QAbstractItemView.SelectedClicked
+            QAbstractItemView.EditTrigger.CurrentChanged
+            | QAbstractItemView.EditTrigger.SelectedClicked
         )
         header = self._sewerage_table.horizontalHeader()
         header.setSectionResizeMode(
-            SewerageTypeMappingModel.SEWERAGE_TYPE_COL, QHeaderView.Stretch
+            SewerageTypeMappingModel.SEWERAGE_TYPE_COL, QHeaderView.ResizeMode.Stretch
         )
         header.setSectionResizeMode(
-            SewerageTypeMappingModel.PERCENTAGE_COL, QHeaderView.Stretch
+            SewerageTypeMappingModel.PERCENTAGE_COL, QHeaderView.ResizeMode.Stretch
         )
-        self._sewerage_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self._sewerage_table.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
         _row_h = self._sewerage_table.verticalHeader().defaultSectionSize()
         _header_h = self._sewerage_table.horizontalHeader().sizeHint().height()
         self._sewerage_table.setMaximumHeight(_header_h + 5 * _row_h + 2)
@@ -778,11 +800,15 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
         btn_layout.setContentsMargins(0, 0, 0, 0)
         self._sewerage_add_btn = QPushButton("Add row")
         self._sewerage_add_btn.setIcon(QIcon.fromTheme("list-add"))
-        self._sewerage_add_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._sewerage_add_btn.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
         self._sewerage_add_btn.clicked.connect(self._sewerage_model.add_row)
         self._sewerage_del_btn = QPushButton("Delete row")
         self._sewerage_del_btn.setIcon(QIcon.fromTheme("list-remove"))
-        self._sewerage_del_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._sewerage_del_btn.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
         self._sewerage_del_btn.clicked.connect(self._delete_sewerage_rows)
         btn_layout.addWidget(self._sewerage_del_btn)
         btn_layout.addStretch()
@@ -886,7 +912,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             fm.horizontalAdvance(f"Match field in {dm.ConnectionNode.__layername__}")
             + 16
         )
-        header.setSectionResizeMode(0, QHeaderView.Fixed)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
         self.match_field_map_widget.table_view.setColumnWidth(0, min_width)
         linking_layout.addWidget(self.match_field_map_widget)
 
@@ -1105,10 +1131,10 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
                 "No sewerage type mappings are configured. "
                 "Surfaces will be imported without any surface map entries.\n\n"
                 "Continue anyway?",
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
             )
-            return reply == QMessageBox.Yes
+            return reply == QMessageBox.StandardButton.Yes
         return True
 
     def get_settings(self) -> sm.SurfaceLinkingSettings:

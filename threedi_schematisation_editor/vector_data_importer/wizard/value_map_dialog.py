@@ -33,8 +33,11 @@ class ValueMapModel(QAbstractTableModel):
     def columnCount(self, parent=None):
         return 2
 
-    def data(self, index, role=Qt.DisplayRole):
-        if not index.isValid() or role not in (Qt.DisplayRole, Qt.EditRole):
+    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
+        if not index.isValid() or role not in (
+            Qt.ItemDataRole.DisplayRole,
+            Qt.ItemDataRole.EditRole,
+        ):
             return None
         row = index.row()
         if index.column() == 0:
@@ -42,8 +45,8 @@ class ValueMapModel(QAbstractTableModel):
         else:
             return self._targets[row]
 
-    def setData(self, index, value, role=Qt.EditRole):
-        if role != Qt.EditRole:
+    def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
+        if role != Qt.ItemDataRole.EditRole:
             return False
         row = index.row()
         col = index.column()
@@ -59,15 +62,19 @@ class ValueMapModel(QAbstractTableModel):
         self.dataChanged.emit(index, index)
         return True
 
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if role != Qt.DisplayRole:
+    def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
+        if role != Qt.ItemDataRole.DisplayRole:
             return None
-        if orientation == Qt.Horizontal:
+        if orientation == Qt.Orientation.Horizontal:
             return ["Source attribute value", "Target attribute value"][section]
         return str(section + 1)
 
     def flags(self, index):
-        return Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        return (
+            Qt.ItemFlag.ItemIsEditable
+            | Qt.ItemFlag.ItemIsEnabled
+            | Qt.ItemFlag.ItemIsSelectable
+        )
 
     def add_row(self, source="", target=""):
         row = len(self._sources)
@@ -111,7 +118,7 @@ class ValueMapDialog(QDialog):
             self,
             "Invalid Value",
             f"Source attribute value '{value}' is already used",
-            QMessageBox.Ok,
+            QMessageBox.StandardButton.Ok,
         )
 
     def sizeHint(self):
@@ -134,8 +141,8 @@ class ValueMapDialog(QDialog):
 
         # Set table columns to stretch
         header = self.table.horizontalHeader()
-        header.setSectionResizeMode(self.SRC_COLUMN_IDX, QHeaderView.Stretch)
-        header.setSectionResizeMode(self.TGT_COLUMN_IDX, QHeaderView.Stretch)
+        header.setSectionResizeMode(self.SRC_COLUMN_IDX, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(self.TGT_COLUMN_IDX, QHeaderView.ResizeMode.Stretch)
 
         # Create buttons for table interaction
         button_layout = QHBoxLayout()
@@ -144,18 +151,26 @@ class ValueMapDialog(QDialog):
         self.add_button.setToolTip(
             "Add a new after selected row(s) or at the end of the table"
         )
-        self.add_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.add_button.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
 
         self.delete_button = QPushButton("Delete row")
         self.delete_button.setIcon(QIcon.fromTheme("list-remove"))
         self.delete_button.setToolTip("Delete selected rows")
-        self.delete_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.delete_button.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
 
         self.load_layer_button = QPushButton("Load from source layer")
-        self.load_layer_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.load_layer_button.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
 
         button_layout.addWidget(self.delete_button)
-        spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        spacer = QSpacerItem(
+            40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
+        )
         button_layout.addItem(spacer)
         button_layout.addWidget(self.load_layer_button)
         button_layout.addWidget(self.add_button)
@@ -167,11 +182,13 @@ class ValueMapDialog(QDialog):
 
         # Create buttons for accepting / closing
         dialog_buttons = QDialogButtonBox(
-            QDialogButtonBox.Ok,
-            Qt.Horizontal,
+            QDialogButtonBox.StandardButton.Ok,
+            Qt.Orientation.Horizontal,
             self,
         )
-        dialog_buttons.button(QDialogButtonBox.Ok).setText("Save changes")
+        dialog_buttons.button(QDialogButtonBox.StandardButton.Ok).setText(
+            "Save changes"
+        )
         dialog_buttons.accepted.connect(self.accept)
 
         # Main layout

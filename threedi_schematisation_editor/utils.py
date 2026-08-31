@@ -134,9 +134,9 @@ def layer_to_gpkg(layer, gpkg_filename, overwrite=False, driver_name="GPKG"):
     transform_context = QgsProject.instance().transformContext()
     options = QgsVectorFileWriter.SaveVectorOptions()
     options.actionOnExistingFile = (
-        QgsVectorFileWriter.CreateOrOverwriteLayer
+        QgsVectorFileWriter.ActionOnExistingFile.CreateOrOverwriteLayer
         if overwrite is False
-        else QgsVectorFileWriter.CreateOrOverwriteFile
+        else QgsVectorFileWriter.ActionOnExistingFile.CreateOrOverwriteFile
     )
     fields = layer.fields()
     valid_indexes = [fields.lookupField(fname) for fname in fields.names()]
@@ -423,7 +423,9 @@ def set_initial_layer_configuration(layer, model_cls):
             continue
     attr_table_config.setColumns(columns)
     layer.setAttributeTableConfig(attr_table_config)
-    layer.setFlags(QgsMapLayer.Searchable | QgsMapLayer.Identifiable)
+    layer.setFlags(
+        QgsMapLayer.LayerFlag.Searchable | QgsMapLayer.LayerFlag.Identifiable
+    )
 
 
 def set_field_default_value(
@@ -660,7 +662,7 @@ def get_features_by_expression(layer, expression_text, with_geometry=False):
     expression = QgsExpression(expression_text)
     request = QgsFeatureRequest(expression)
     if not with_geometry:
-        request.setFlags(QgsFeatureRequest.NoGeometry)
+        request.setFlags(QgsFeatureRequest.Flag.NoGeometry)
     feat_iterator = layer.getFeatures(request)
     return feat_iterator
 
@@ -771,7 +773,9 @@ def hillshade_layer(
     )
     renderer.setOpacity(opacity)
     hillshade_raster_layer.setRenderer(renderer)
-    hillshade_raster_layer.setBlendMode(QPainter.CompositionMode_Multiply)
+    hillshade_raster_layer.setBlendMode(
+        QPainter.CompositionMode.CompositionMode_Multiply
+    )
     hillshade_raster_layer.resampleFilter().setZoomedInResampler(
         QgsBilinearRasterResampler()
     )
@@ -780,8 +784,8 @@ def hillshade_layer(
 
 def modify_raster_style(
     raster_layer,
-    limits=QgsRasterMinMaxOrigin.MinMax,
-    extent=QgsRasterMinMaxOrigin.UpdatedCanvas,
+    limits=QgsRasterMinMaxOrigin.Limits.MinMax,
+    extent=QgsRasterMinMaxOrigin.Extent.UpdatedCanvas,
 ):
     """Improve predefined raster styling."""
     renderer = raster_layer.renderer().clone()
@@ -1202,7 +1206,7 @@ class NumericItemDelegate(QItemDelegate):
         editor = QLineEdit(parent)
         validator = QDoubleValidator(editor)
         validator.setDecimals(3)
-        validator.setNotation(QDoubleValidator.StandardNotation)
+        validator.setNotation(QDoubleValidator.Notation.StandardNotation)
         editor.setValidator(validator)
         return editor
 
