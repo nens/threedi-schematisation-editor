@@ -5,6 +5,12 @@ from pydantic import BaseModel
 from qgis.core import Qgis, QgsExpression, QgsMapLayerModel, QgsWkbTypes
 from qgis.gui import QgsFieldExpressionWidget, QgsMapLayerComboBox
 from qgis.PyQt.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, pyqtSignal
+
+try:
+    _LayerRole = QgsMapLayerModel.CustomRole.Layer
+except AttributeError:
+    _LayerRole = QgsMapLayerModel.LayerRole
+
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
@@ -66,16 +72,14 @@ class DisambiguatingLayerDelegate(QStyledItemDelegate):
         proxy = self._combo.model()
         src_model = proxy.sourceModel()
         src_idx = proxy.mapToSource(index)
-        layer = src_model.data(src_idx, QgsMapLayerModel.CustomRole.LayerRole)
+        layer = src_model.data(src_idx, _LayerRole)
         if layer is None:
             return index.data(Qt.ItemDataRole.DisplayRole) or ""
         name = layer.name()
         # Count how many loaded layers share this name
         duplicate_count = 0
         for i in range(src_model.rowCount()):
-            other = src_model.data(
-                src_model.index(i, 0), QgsMapLayerModel.CustomRole.LayerRole
-            )
+            other = src_model.data(src_model.index(i, 0), _LayerRole)
             if other is not None and other.name() == name:
                 duplicate_count += 1
         if duplicate_count > 1:
