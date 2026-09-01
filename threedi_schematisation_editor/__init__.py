@@ -434,6 +434,7 @@ class ThreediSchematisationEditorPlugin:
         self.toggle_active_project_actions()
         if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
             add_gpkg_connection(self.model_gpkg, self.iface)
+        return lm.main_group
 
     def remove_model_from_project(self):
         if not self.model_gpkg:
