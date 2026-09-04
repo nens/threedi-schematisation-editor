@@ -74,6 +74,7 @@ from threedi_schematisation_editor.utils import (
     can_write_in_dir,
     check_enable_embedded_python_option,
     check_enable_macros_option,
+    check_execution_behavior,
     check_wal_for_sqlite,
     get_filepath,
     get_icon_path,
@@ -331,12 +332,20 @@ class ThreediSchematisationEditorPlugin:
                     "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable macros)."
                 )
                 self.uc.bar_warn(msg, dur=10)
-        else:
+        elif Qgis.QGIS_VERSION_INT < 40200:
             embedded_python_status = check_enable_embedded_python_option()
             if embedded_python_status != "Always":
                 msg = (
                     f"Required 'Embedded Python code enabled' option is set to '{embedded_python_status}'. "
                     "Please change it to 'Always' before making edits (Settings -> Options -> General -> Enable project’s embedded Python code)."
+                )
+                self.uc.bar_warn(msg, dur=10)
+        else:
+            embedded_python_status = check_execution_behavior()
+            if embedded_python_status != "Always":
+                msg = (
+                    f"Required 'Embedded Python code enabled' option is set to '{embedded_python_status}'. "
+                    "Please change it to 'Always Execute' before making edits (Settings -> Options -> General -> Behavior for embedded scripts within projects with undetermined thrust)."
                 )
                 self.uc.bar_warn(msg, dur=10)
 

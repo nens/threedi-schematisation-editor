@@ -621,6 +621,15 @@ def check_enable_embedded_python_option():
     return option
 
 
+def check_execution_behavior():
+    """Check whether embedded scripts within project is trusted (QGIS > 4.2)"""
+    settings = QgsSettings()
+    option = settings.value(
+        "/core/code-execution-behavior-undetermined-projects", type=str
+    )
+    return option
+
+
 def check_wal_for_sqlite():
     """Check if WAL for the SQLite is enabled."""
     settings = QgsSettings()
