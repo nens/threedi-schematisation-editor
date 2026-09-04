@@ -537,7 +537,9 @@ class AbstractFormWithTag(AbstractBaseForm):
         for tag_id, tag_description in self.all_tags_data.items():
             tag_text = f"{tag_id}: {tag_description}"
             check_state = (
-                Qt.Checked if tag_id in self.assigned_tag_ids else Qt.Unchecked
+                Qt.CheckState.Checked
+                if tag_id in self.assigned_tag_ids
+                else Qt.CheckState.Unchecked
             )
             self.tags_widget.addItemWithCheckState(
                 text=tag_text, state=check_state, userData=tag_id

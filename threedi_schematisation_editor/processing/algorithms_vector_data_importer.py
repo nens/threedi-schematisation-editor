@@ -131,14 +131,14 @@ class BaseImporter(QgsProcessingAlgorithm):
             self.IMPORT_CONFIG,
             self.tr(f"{self.get_feature_repr().title()} import configuration file"),
             extension="json",
-            behavior=QgsProcessingParameterFile.File,
+            behavior=QgsProcessingParameterFile.Behavior.File,
         )
         self.addParameter(import_config_file)
         target_gpkg = QgsProcessingParameterFile(
             self.TARGET_GPKG,
             self.tr("Target schematisation database"),
             extension="gpkg",
-            behavior=QgsProcessingParameterFile.File,
+            behavior=QgsProcessingParameterFile.Behavior.File,
         )
         self.addParameter(target_gpkg)
 
@@ -149,7 +149,10 @@ class BaseImporter(QgsProcessingAlgorithm):
 
     def get_source_layer_types(self):
         # Default is both line and point, overridden in connection nodes
-        return [QgsProcessing.TypeVectorLine, QgsProcessing.TypeVectorPoint]
+        return [
+            QgsProcessing.SourceType.TypeVectorLine,
+            QgsProcessing.SourceType.TypeVectorPoint,
+        ]
 
     def postProcessAlgorithm(self, context, feedback):
         for layer in QgsProject.instance().mapLayers().values():
@@ -229,7 +232,7 @@ class ImportConnectionNodes(SimpleImporter):
     TARGET_MODEL_CLS = dm.ConnectionNode
 
     def get_source_layer_types(self):
-        return [QgsProcessing.TypeVectorPoint]
+        return [QgsProcessing.SourceType.TypeVectorPoint]
 
 
 class ImportPipes(SimpleImporter):
@@ -299,9 +302,9 @@ class ImportCrossSectionLocation(SimpleImporter):
 
     def get_source_layer_types(self):
         return [
-            QgsProcessing.TypeVectorPoint,
-            QgsProcessing.TypeVectorLine,
-            QgsProcessing.TypeVector,
+            QgsProcessing.SourceType.TypeVectorPoint,
+            QgsProcessing.SourceType.TypeVectorLine,
+            QgsProcessing.SourceType.TypeVector,
         ]
 
 
@@ -313,9 +316,9 @@ class ImportCrossSectionData(SimpleImporter):
 
     def get_source_layer_types(self):
         return [
-            QgsProcessing.TypeVectorPoint,
-            QgsProcessing.TypeVectorLine,
-            QgsProcessing.TypeVector,
+            QgsProcessing.SourceType.TypeVectorPoint,
+            QgsProcessing.SourceType.TypeVectorLine,
+            QgsProcessing.SourceType.TypeVector,
         ]
 
     def name(self):
@@ -340,7 +343,7 @@ class ImportPumps(StructureImporter):
     CONNECTION_NODE_MODEL_CLS = dm.ConnectionNode
 
     def get_source_layer_types(self):
-        return [QgsProcessing.TypeVectorPoint]
+        return [QgsProcessing.SourceType.TypeVectorPoint]
 
 
 class ImportSurfaces(SimpleImporter):
@@ -349,7 +352,7 @@ class ImportSurfaces(SimpleImporter):
     TARGET_MODEL_CLS = dm.Surface
 
     def get_source_layer_types(self):
-        return [QgsProcessing.TypeVectorPolygon]
+        return [QgsProcessing.SourceType.TypeVectorPolygon]
 
 
 class ImportGeneric(BaseImporter):
@@ -374,7 +377,7 @@ class ImportGeneric(BaseImporter):
         return self.tr("""Import to any layer from the external source layer.""")
 
     def get_source_layer_types(self):
-        return [QgsProcessing.TypeVector]
+        return [QgsProcessing.SourceType.TypeVector]
 
     def initAlgorithm(self, config=None):
         super().initAlgorithm(config)

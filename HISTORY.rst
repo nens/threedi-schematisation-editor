@@ -4,7 +4,7 @@ History
 2.4.14 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Upgrade to QGIS4 (#440)
 
 
 2.4.13 (2026-07-30)

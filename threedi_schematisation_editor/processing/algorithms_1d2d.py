@@ -62,7 +62,7 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.INPUT_CHANNELS,
                 self.tr("Input channel layer"),
-                [QgsProcessing.TypeVectorLine],
+                [QgsProcessing.SourceType.TypeVectorLine],
                 defaultValue="Channel",
             )
         )
@@ -70,7 +70,7 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
         offset_param = QgsProcessingParameterNumber(
             self.OFFSET_DISTANCE,
             self.tr("Distance (m)"),
-            type=QgsProcessingParameterNumber.Double,
+            type=QgsProcessingParameterNumber.Type.Double,
         )
         offset_param.setMetadata({"widget_wrapper": {"decimals": 3}})
         self.addParameter(offset_param)
@@ -78,7 +78,7 @@ class GenerateExchangeLines(QgsProcessingAlgorithm):
             QgsProcessingParameterVectorLayer(
                 self.EXCHANGE_LINES,
                 self.tr("Exchange lines layer"),
-                [QgsProcessing.TypeVectorLine],
+                [QgsProcessing.SourceType.TypeVectorLine],
                 defaultValue="Exchange line",
             )
         )

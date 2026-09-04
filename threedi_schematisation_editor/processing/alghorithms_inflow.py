@@ -92,7 +92,7 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterVectorLayer(
                 self.POLYGON_LAYER,
                 self.parameter_names[self.POLYGON_LAYER],
-                [QgsProcessing.TypeVectorPolygon],
+                [QgsProcessing.SourceType.TypeVectorPolygon],
                 defaultValue=self.default_values[self.POLYGON_LAYER],
             )
         )
@@ -106,7 +106,7 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterVectorLayer(
                 self.MAP_LAYER,
                 self.parameter_names[self.MAP_LAYER],
-                [QgsProcessing.TypeVectorLine],
+                [QgsProcessing.SourceType.TypeVectorLine],
                 defaultValue=self.default_values[self.MAP_LAYER],
             )
         )
@@ -114,7 +114,7 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterVectorLayer(
                 self.PIPE_LAYER,
                 "Pipe layer",
-                [QgsProcessing.TypeVectorLine],
+                [QgsProcessing.SourceType.TypeVectorLine],
                 defaultValue="Pipe",
             )
         )
@@ -128,7 +128,7 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterVectorLayer(
                 self.NODE_LAYER,
                 "Connection node layer",
-                [QgsProcessing.TypeVectorPoint],
+                [QgsProcessing.SourceType.TypeVectorPoint],
                 defaultValue="Connection node",
             )
         )
@@ -144,7 +144,7 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
         storm_pref = QgsProcessingParameterNumber(
             self.STORMWATER_SEWER_PREFERENCE,
             "Stormwater sewer preference [m]",
-            type=QgsProcessingParameterNumber.Double,
+            type=QgsProcessingParameterNumber.Type.Double,
             defaultValue=0.0,
         )
         storm_pref.setMinimum(0.0)
@@ -153,7 +153,7 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
         sanitary_pref = QgsProcessingParameterNumber(
             self.SANITARY_SEWER_PREFERENCE,
             "Sanitary sewer preference [m]",
-            type=QgsProcessingParameterNumber.Double,
+            type=QgsProcessingParameterNumber.Type.Double,
             defaultValue=0.0,
         )
         sanitary_pref.setMinimum(0.0)
@@ -162,7 +162,7 @@ class LinkToConnectionNodesAlgorithm(QgsProcessingAlgorithm):
         search_distance = QgsProcessingParameterNumber(
             self.SEARCH_DISTANCE,
             "Search distance",
-            type=QgsProcessingParameterNumber.Double,
+            type=QgsProcessingParameterNumber.Type.Double,
             defaultValue=10.0,
         )
         search_distance.setMinimum(0.01)
@@ -482,7 +482,7 @@ class AddNWRWSurfaceParameters(QgsProcessingAlgorithm):
             nwrw_parameters = json.load(f)
 
         # Get the existing IDs from the target layer
-        request = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)
+        request = QgsFeatureRequest().setFlags(QgsFeatureRequest.Flag.NoGeometry)
         existing_ids = set(
             [
                 feature["id"]

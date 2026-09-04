@@ -65,7 +65,7 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
                 schematisation_name_item = QStandardItem(local_schematisation_name)
                 revision_number_str = f"{wip_revision.number} (work in progress)"
                 revision_number_item = QStandardItem(revision_number_str)
-                revision_number_item.setData(wip_revision_db, Qt.UserRole)
+                revision_number_item.setData(wip_revision_db, Qt.ItemDataRole.UserRole)
                 self.schematisation_model.appendRow(
                     [schematisation_name_item, revision_number_item]
                 )
@@ -82,7 +82,7 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
                     continue
                 schematisation_name_item = QStandardItem(local_schematisation_name)
                 revision_number_item = QStandardItem(str(revision.number))
-                revision_number_item.setData(revision_db, Qt.UserRole)
+                revision_number_item.setData(revision_db, Qt.ItemDataRole.UserRole)
                 self.schematisation_model.appendRow(
                     [schematisation_name_item, revision_number_item]
                 )
@@ -97,7 +97,8 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
                 last_used_schematisation_row_number, 0
             )
             self.schematisation_tv.selectionModel().setCurrentIndex(
-                last_used_schematisation_row_idx, QItemSelectionModel.ClearAndSelect
+                last_used_schematisation_row_idx,
+                QItemSelectionModel.SelectionFlag.ClearAndSelect,
             )
             self.schematisation_tv.scrollTo(last_used_schematisation_row_idx)
 
@@ -113,7 +114,7 @@ class LoadSchematisationDialog(load_basecls, load_uicls):
                 return
             current_row = index.row()
             revision_item = self.schematisation_model.item(current_row, 1)
-            revision_db = revision_item.data(Qt.UserRole)
+            revision_db = revision_item.data(Qt.ItemDataRole.UserRole)
             self.selected_schematisation_filepath = revision_db
         else:
             selected_filepath = self.file_browse_widget.filePath()
