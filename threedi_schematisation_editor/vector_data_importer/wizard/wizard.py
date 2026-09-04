@@ -179,10 +179,10 @@ class VDIWizard(QWizard):
         self.import_finished.connect(self.run_page.on_run_finish)
         self.import_finished.connect(lambda: self.set_enabled_nav(True))
         # Rename buttons
-        self.setButtonText(self.CancelButton, "Close")
-        self.setButtonText(self.FinishButton, "Run import")
+        self.setButtonText(QWizard.WizardButton.CancelButton, "Close")
+        self.setButtonText(QWizard.WizardButton.FinishButton, "Run import")
         # set up button to run import
-        self.finish_button = self.button(self.FinishButton)
+        self.finish_button = self.button(QWizard.WizardButton.FinishButton)
         self.finish_button.clicked.disconnect()
         self.finish_button.clicked.connect(self.run_import)
         # Use the same background as standard widgets
@@ -422,10 +422,10 @@ class VDIWizard(QWizard):
 
     def set_enabled_nav(self, enabled):
         buttons = [
-            self.NextButton,
-            self.BackButton,
-            self.CancelButton,
-            self.FinishButton,
+            QWizard.WizardButton.NextButton,
+            QWizard.WizardButton.BackButton,
+            QWizard.WizardButton.CancelButton,
+            QWizard.WizardButton.FinishButton,
         ]
         for button in buttons:
             self.button(button).setEnabled(enabled)
@@ -502,7 +502,7 @@ class VDIWizard(QWizard):
                 handler.layer.triggerRepaint()
             self.import_finished.emit()
             if success:
-                self.button(self.CancelButton).setFocus()
+                self.button(QWizard.WizardButton.CancelButton).setFocus()
 
         self.worker.finished.connect(handle_finished)
 
