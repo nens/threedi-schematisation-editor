@@ -16,6 +16,9 @@ from threedi_schematisation_editor.processing.algorithms_1d import BottomLevelCa
 from threedi_schematisation_editor.processing.algorithms_1d2d import (
     GenerateExchangeLines,
 )
+from threedi_schematisation_editor.processing.algorithms_dwf import (
+    DWFCalculatorAlgorithm,
+)
 from threedi_schematisation_editor.processing.algorithms_import_utils import (
     ExtractLayerByNameAlgorithm,
     GetConfigFileAlgorithm,
@@ -84,6 +87,7 @@ class ThreediSchematisationEditorProcessingProvider(QgsProcessingProvider):
             RasterizeChannelsAlgorithm(),
             ExtractLayerByNameAlgorithm(),
             GetConfigFileAlgorithm(),
+            DWFCalculatorAlgorithm(),
         ]
         for alg in self.algorithms_list:
             self.addAlgorithm(alg)

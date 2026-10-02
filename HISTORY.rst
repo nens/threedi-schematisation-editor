@@ -4,7 +4,7 @@ History
 2.4.15 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Added DWF Calculator processing algorithm (nens/rana#4731).
 
 
 2.4.14 (2026-09-04)
