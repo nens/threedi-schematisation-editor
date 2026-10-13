@@ -52,6 +52,12 @@ from threedi_schematisation_editor.utils import (
     zoom_to_layer,
 )
 
+SCHEMATISATION_GPKG_PATH_KEY = "threedi_schematisation_editor/model_gpkg_path"
+SCHEMATISATION_IS_MODEL_GROUP_KEY = "threedi_schematisation_editor/is_model_group"
+SCHEMATISATION_DISPLAY_NAME_OVERRIDE_KEY = (
+    "threedi_schematisation_editor/display_name_override"
+)
+
 
 class LayersManager:
     """Class with methods and attributes used for managing 3Di User Layers."""
@@ -89,10 +95,13 @@ class LayersManager:
         }
     )
 
-    def __init__(self, iface, user_communication, model_gpkg_path, parents=None):
+    def __init__(
+        self, iface, user_communication, model_gpkg_path, parents=None, group_name=None
+    ):
         self.iface = iface
         self.uc = user_communication
         self.model_gpkg_path = os.path.normpath(model_gpkg_path)
+        self.group_name_override = group_name
         self.form_factory = LayerEditFormFactory(self)
         self.model_handlers = {}
         self.layer_handlers = {}
@@ -291,6 +300,8 @@ class LayersManager:
     @cached_property
     def detailed_model_name(self):
         """Detailed model name."""
+        if self.group_name_override is not None:
+            return self.group_name_override
         try:
             if self.model_revision is not None:
                 from threedi_mi_utils import WIPRevision
@@ -308,6 +319,8 @@ class LayersManager:
     @property
     def main_group(self):
         """Main model group."""
+        if self.group_name_override is not None:
+            return self.group_name_override
         if self.model_revision is not None:
             model_group_name = f"Rana schematisation: {self.detailed_model_name}"
         else:
@@ -417,6 +430,12 @@ class LayersManager:
         """Creating all User Layers groups."""
         self.remove_groups()
         main_group = create_tree_group(self.main_group, root=self.root)
+        main_group.setCustomProperty(SCHEMATISATION_GPKG_PATH_KEY, self.model_gpkg_path)
+        main_group.setCustomProperty(SCHEMATISATION_IS_MODEL_GROUP_KEY, True)
+        if self.group_name_override is not None:
+            main_group.setCustomProperty(
+                SCHEMATISATION_DISPLAY_NAME_OVERRIDE_KEY, self.group_name_override
+            )
         for group_name in self.group_names:
             grp = create_tree_group(group_name, root=main_group)
             grp.setExpanded(False)
@@ -425,7 +444,15 @@ class LayersManager:
     def register_groups(self):
         """Registering all User Layers groups."""
         groups_registered = False
-        main_group = self.root.findGroup(self.main_group)
+        main_group = self._find_group_by_model_path()
+        if main_group is not None:
+            saved_name = main_group.customProperty(
+                SCHEMATISATION_DISPLAY_NAME_OVERRIDE_KEY
+            )
+            if saved_name is not None:
+                self.group_name_override = saved_name
+        else:
+            main_group = self.root.findGroup(self.main_group)
         if not main_group:
             return groups_registered
         for group_name in self.group_names:
@@ -436,10 +463,28 @@ class LayersManager:
         groups_registered = True
         return groups_registered
 
+    def _find_group_by_model_path(self, node=None):
+        """Find this model's main group by its persisted GeoPackage path."""
+        node = QgsProject.instance().layerTreeRoot() if node is None else node
+        for child in node.children():
+            if child.nodeType() != QgsLayerTreeNode.NodeType.NodeGroup:
+                continue
+            group_path = child.customProperty(SCHEMATISATION_GPKG_PATH_KEY)
+            if group_path and os.path.normpath(group_path) == self.model_gpkg_path:
+                return child
+            group = self._find_group_by_model_path(child)
+            if group is not None:
+                return group
+        return None
+
     def remove_groups(self):
         """Removing all User Layers groups."""
         self.remove_loaded_layers()
-        remove_group_with_children(self.main_group, self.root)
+        main_group = self._find_group_by_model_path()
+        if main_group is not None:
+            main_group.parent().removeChildNode(main_group)
+        else:
+            remove_group_with_children(self.main_group, self.root)
         self.clear_root()
         self.spawned_groups.clear()
 
