@@ -225,7 +225,7 @@ class UserLayerHandler:
         visited_features.add(feature_unique_key)
         handler = self.layer_manager.model_handlers[model_cls]
         request = QgsFeatureRequest(fid)
-        request.setFlags(QgsFeatureRequest.NoGeometry)
+        request.setFlags(QgsFeatureRequest.Flag.NoGeometry)
         try:
             feat_real = next(handler.layer_dt.getFeatures(request))
         except StopIteration:  # Feature not committed

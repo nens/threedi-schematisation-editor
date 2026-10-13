@@ -191,7 +191,7 @@ class LayersManager:
         project = QgsProject.instance()
         project.setTopologicalEditing(use_topological_editing)
         snap_config = project.snappingConfig()
-        snap_config.setMode(QgsSnappingConfig.AdvancedConfiguration)
+        snap_config.setMode(QgsSnappingConfig.SnappingMode.AdvancedConfiguration)
         snap_config.setIntersectionSnapping(True)
         individual_configs = snap_config.individualLayerSettings()
         vertex_segment_snapping_models = {
@@ -209,9 +209,10 @@ class LayersManager:
         except AttributeError:
             # Backward compatibility for QGIS versions before introducing `Qgis.SnappingTypes`
             snap_type = (
-                QgsSnappingConfig.VertexFlag | QgsSnappingConfig.SegmentFlag
+                QgsSnappingConfig.SnappingTypes.VertexFlag
+                | QgsSnappingConfig.SnappingTypes.SegmentFlag
                 if layer_model in vertex_segment_snapping_models
-                else QgsSnappingConfig.VertexFlag
+                else QgsSnappingConfig.SnappingTypes.VertexFlag
             )
         for linked_model in self.snapping_groups[layer_model]:
             handler = self.model_handlers.get(linked_model)
@@ -224,7 +225,7 @@ class LayersManager:
                 continue
             iconf.setTolerance(10)
             iconf.setTypeFlag(snap_type)
-            iconf.setUnits(QgsTolerance.Pixels)
+            iconf.setUnits(QgsTolerance.UnitType.Pixels)
             iconf.setEnabled(True)
             snap_config.setIndividualLayerSettings(layer, iconf)
         if snap_config.enabled() is False:
@@ -499,7 +500,7 @@ class LayersManager:
                     )
                 except AttributeError:
                     default_edit_form_config.setInitCodeSource(
-                        QgsEditFormConfig.CodeSourceDialog
+                        QgsEditFormConfig.PythonInitCodeSource.CodeSourceDialog
                     )
             default_edit_form_config.setInitFunction("open_edit_form")
             default_edit_form_config.setInitCode(
@@ -515,7 +516,9 @@ class LayersManager:
             for idx in fields_indexes:
                 # We need to remove NotNull constraint for layers with the custom UI forms.
                 # It is required to prevent QGIS messing with background validation stylesheet.
-                layer.removeFieldConstraint(idx, QgsFieldConstraints.ConstraintNotNull)
+                layer.removeFieldConstraint(
+                    idx, QgsFieldConstraints.Constraint.ConstraintNotNull
+                )
         else:
             set_field_default_value(
                 layer, "id", "to_int(if (maximum(id) is null, 1, maximum(id) + 1))"
@@ -569,7 +572,9 @@ class LayersManager:
                     layer = present_layers_sources[layer_uri]
                 except KeyError:
                     QgsMessageLog.logMessage(
-                        f"Cannot read layer {layer_uri}", "Messages", Qgis.Warning
+                        f"Cannot read layer {layer_uri}",
+                        "Messages",
+                        Qgis.MessageLevel.Warning,
                     )
                     continue
                 handler_cls = MODEL_HANDLERS[model_cls]

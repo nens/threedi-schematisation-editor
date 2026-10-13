@@ -86,7 +86,7 @@ class GetConfigFileAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterFile(
                 self.CONFIG_DIR,
                 description="Directory containing config JSON files",
-                behavior=QgsProcessingParameterFile.Folder,
+                behavior=QgsProcessingParameterFile.Behavior.Folder,
             )
         )
 
