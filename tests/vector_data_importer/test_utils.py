@@ -4,7 +4,6 @@ from dataclasses import dataclass
 import mock
 import pytest
 import shapely
-from PyQt5.QtCore import QVariant
 from qgis.core import (
     NULL,
     QgsCoordinateReferenceSystem,
@@ -24,6 +23,7 @@ from qgis.core import (
     QgsVectorLayer,
     QgsWkbTypes,
 )
+from qgis.PyQt.QtCore import QVariant
 from shapely.testing import assert_geometries_equal
 
 from threedi_schematisation_editor.vector_data_importer.utils import (
@@ -405,7 +405,7 @@ class TestGetSrcGeometry:
         feature = QgsFeature()
         feature.setGeometry(geom)
         feat_geom = get_src_geometry(feature)
-        assert feat_geom.wkbType() == QgsWkbTypes.Point
+        assert feat_geom.wkbType() == QgsWkbTypes.Type.Point
         assert feat_geom.asPoint() == QgsPointXY(0, 0)
 
     @pytest.mark.parametrize(
@@ -419,7 +419,7 @@ class TestGetSrcGeometry:
         feature = QgsFeature()
         feature.setGeometry(geom)
         feat_geom = get_src_geometry(feature)
-        assert feat_geom.wkbType() == QgsWkbTypes.LineString
+        assert feat_geom.wkbType() == QgsWkbTypes.Type.LineString
         assert feat_geom.asPolyline() == [QgsPointXY(0, 0), QgsPointXY(10, 10)]
 
     @pytest.mark.parametrize(
@@ -438,7 +438,7 @@ class TestGetSrcGeometry:
         feature = QgsFeature()
         feature.setGeometry(QgsGeometry(polygon))
         feat_geom = get_src_geometry(feature)
-        assert feat_geom.wkbType() == QgsWkbTypes.Polygon
+        assert feat_geom.wkbType() == QgsWkbTypes.Type.Polygon
         assert feat_geom.asPolygon() == [
             [QgsPointXY(0, 0), QgsPointXY(10, 10), QgsPointXY(0, 0)]
         ]
@@ -452,7 +452,7 @@ class TestGetSrcGeometry:
         feature = QgsFeature()
         feature.setGeometry(QgsGeometry(curve))
         feat_geom = get_src_geometry(feature)
-        assert feat_geom.wkbType() == QgsWkbTypes.Polygon
+        assert feat_geom.wkbType() == QgsWkbTypes.Type.Polygon
         assert feat_geom.asPolygon() == [
             [QgsPointXY(0, 0), QgsPointXY(10, 10), QgsPointXY(0, 0)]
         ]

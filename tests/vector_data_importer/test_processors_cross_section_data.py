@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field, fields
 
 import pytest
-from PyQt5.QtCore import QVariant
 from qgis.core import (
     NULL,
     QgsFeature,
@@ -15,6 +14,7 @@ from qgis.core import (
     QgsVectorLayer,
     QgsWkbTypes,
 )
+from qgis.PyQt.QtCore import QVariant
 from threedi_schema.domain.constants import CrossSectionShape
 
 import threedi_schematisation_editor.data_models as dm

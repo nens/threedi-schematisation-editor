@@ -194,23 +194,23 @@ class FieldMapModel(QAbstractTableModel):
     def columnCount(self, parent=QModelIndex()):
         return len(self.rows[0].field_names) + 1 if self.rows else 0
 
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole:
-            if orientation == Qt.Horizontal:
+    def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
+        if role == Qt.ItemDataRole.DisplayRole:
+            if orientation == Qt.Orientation.Horizontal:
                 return FieldMapRow.header()[section]
-            elif orientation == Qt.Vertical:
+            elif orientation == Qt.Orientation.Vertical:
                 return str(section + 1)
         return None
 
-    def data(self, index, role=Qt.DisplayRole):
+    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         row = self.rows[index.row()]
         value = row.get_value(index.column())
-        if role == Qt.EditRole or role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.EditRole or role == Qt.ItemDataRole.DisplayRole:
             return value
         return None
 
-    def setData(self, index, value, role=Qt.EditRole):
-        if role == Qt.EditRole:
+    def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
+        if role == Qt.ItemDataRole.EditRole:
             row = self.rows[index.row()]
             row.set_value(value, index.column())
             leftIndex = self.index(index.row(), 0)
@@ -222,9 +222,13 @@ class FieldMapModel(QAbstractTableModel):
     def flags(self, index):
         row = self.rows[index.row()]
         if row.is_editable(index.column()):
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return (
+                Qt.ItemFlag.ItemIsEnabled
+                | Qt.ItemFlag.ItemIsSelectable
+                | Qt.ItemFlag.ItemIsEditable
+            )
         else:
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
     def set_current_layer(self, layer: QgsVectorLayer):
         """Update list of available attributes based on the current layer."""
@@ -303,7 +307,9 @@ class FieldMapDelegate(QStyledItemDelegate):
         elif FieldMapColumn.from_index(index.column()) == FieldMapColumn.VALUE_MAP:
             editor = QPushButton(parent)
             current_value_map = (
-                index.data(Qt.EditRole) if index.data(Qt.EditRole) else ""
+                index.data(Qt.ItemDataRole.EditRole)
+                if index.data(Qt.ItemDataRole.EditRole)
+                else ""
             )
             editor.setText(
                 str(current_value_map)
@@ -388,12 +394,12 @@ class FieldMapDelegate(QStyledItemDelegate):
             source_attribute=config.source_attribute,
             parent=button,
         )
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             new_value_map = dialog.get_value_map()
             button.setText(
                 str(new_value_map) if len(new_value_map) > 0 else "Set Value Map..."
             )
-            index.model().setData(index, new_value_map, Qt.EditRole)
+            index.model().setData(index, new_value_map, Qt.ItemDataRole.EditRole)
 
     def commitExpressionData(self, index, widget):
         """Commit expression widget data"""
@@ -411,7 +417,7 @@ class FieldMapDelegate(QStyledItemDelegate):
     def setEditorData(self, editor, index):
         # Retrieve info from the model
         row = index.model().rows[index.row()]
-        value = index.data(Qt.EditRole)
+        value = index.data(Qt.ItemDataRole.EditRole)
         has_layer = len(index.model().get_valid_source_attributes(index.row())) > 0
         column = FieldMapColumn.from_index(index.column())
         valid = row.is_valid or value not in [None, ""]
@@ -470,7 +476,7 @@ class FieldMapDelegate(QStyledItemDelegate):
             else:
                 value = editor.text()
         if value is not None:
-            model.setData(index, value, Qt.EditRole)
+            model.setData(index, value, Qt.ItemDataRole.EditRole)
 
     def destroyEditor(self, editor, index):
         key = (index.row(), index.column())
@@ -498,7 +504,7 @@ class FieldMapWidget(QWidget):
         # Delegate for handling custom widget editing
         self.table_delegate = FieldMapDelegate()
         self.table_view.setItemDelegate(self.table_delegate)
-        self.table_view.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.table_view.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
         self.table_view.verticalHeader().setVisible(False)
 
         # Put table in scroll area
@@ -506,7 +512,9 @@ class FieldMapWidget(QWidget):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setWidget(self.table_view)
         # Set size policy for the scroll area itself
-        self.scroll_area.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.scroll_area.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+        )
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.scroll_area)
@@ -523,10 +531,10 @@ class FieldMapWidget(QWidget):
         # Set column widths (must be done after model is set)
         if self.table_model.columnCount() >= 2:
             header = self.table_view.horizontalHeader()
-            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-            header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
             for col in range(2, self.table_model.columnCount()):
-                header.setSectionResizeMode(col, QHeaderView.Stretch)
+                header.setSectionResizeMode(col, QHeaderView.ResizeMode.Stretch)
         # Hide requested columns (must be done after model is set)
         for col in self.hidden_columns:
             self.table_view.hideColumn(FieldMapColumn.to_index(col))
@@ -588,7 +596,7 @@ class FieldMapWidget(QWidget):
 
     def changeEvent(self, event):
         super().changeEvent(event)
-        if event.type() == QEvent.EnabledChange:
+        if event.type() == QEvent.Type.EnabledChange:
             # Qt has fully propagated the enabled/disabled state to all child
             # widgets by the time changeEvent fires.  Re-apply the error
             # highlight to every persistent editor so it matches the new state.
@@ -610,7 +618,9 @@ class FieldMapWidget(QWidget):
                 )
                 if editor is None:
                     continue
-                value = self.table_model.index(row_idx, col).data(Qt.EditRole)
+                value = self.table_model.index(row_idx, col).data(
+                    Qt.ItemDataRole.EditRole
+                )
                 valid = row.is_valid or value not in [None, ""]
                 style_sheet = (
                     ""

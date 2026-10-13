@@ -63,7 +63,9 @@ class StartPage(QWizardPage):
         layer_box.setLayout(self.layer_settings_widget.layout())
         load_box = QGroupBox("Load import configuration from template (optional)")
         load_settings_button = QPushButton("Choose file...")
-        load_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        load_settings_button.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
         load_settings_button.clicked.connect(self.on_load_button_clicked)
         self.loaded_status = QLabel("No import configuration loaded")
         layout = QVBoxLayout()
@@ -127,7 +129,9 @@ class SettingsPage(QWizardPage):
             expanding = getattr(widget, "expanding", False)
             stretch = 1 if expanding else 0
             if not expanding:
-                group_box.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+                group_box.setSizePolicy(
+                    QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum
+                )
             layout.addWidget(group_box, stretch)
         layout.addStretch()
         self.setLayout(layout)
@@ -269,7 +273,9 @@ class RunPage(QWizardPage):
 
         # Save to template
         self.save_settings_button = QPushButton("Save as...")
-        self.save_settings_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.save_settings_button.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
         self.save_settings_button.clicked.connect(self.on_save_button_clicked)
         self.saved_status = QLabel("Import configuration not saved")
         save_box = QGroupBox("Save import configuration to template (optional)")
@@ -323,8 +329,8 @@ class LogPanel(QWidget):
         self.text.setReadOnly(True)
 
         palette = self.palette()
-        palette.setColor(QPalette.Base, QColor("white"))
-        palette.setColor(QPalette.Text, QColor("black"))
+        palette.setColor(QPalette.ColorRole.Base, QColor("white"))
+        palette.setColor(QPalette.ColorRole.Text, QColor("black"))
         self.setPalette(palette)
 
         # --- Copy Button ---
@@ -359,10 +365,10 @@ class LogPanel(QWidget):
 
 
 QGIS_GEOMTYPE_TO_PROXY_FILTER = {
-    QgsWkbTypes.GeometryType.PointGeometry: QgsMapLayerProxyModel.PointLayer,
-    QgsWkbTypes.GeometryType.LineGeometry: QgsMapLayerProxyModel.LineLayer,
-    QgsWkbTypes.GeometryType.PolygonGeometry: QgsMapLayerProxyModel.PolygonLayer,
-    QgsWkbTypes.GeometryType.NullGeometry: QgsMapLayerProxyModel.NoGeometry,
+    QgsWkbTypes.GeometryType.PointGeometry: QgsMapLayerProxyModel.Filter.PointLayer,
+    QgsWkbTypes.GeometryType.LineGeometry: QgsMapLayerProxyModel.Filter.LineLayer,
+    QgsWkbTypes.GeometryType.PolygonGeometry: QgsMapLayerProxyModel.Filter.PolygonLayer,
+    QgsWkbTypes.GeometryType.NullGeometry: QgsMapLayerProxyModel.Filter.NoGeometry,
 }
 
 
@@ -388,7 +394,7 @@ class GenericStartPage(QWizardPage):
         # --- Target selector ---
         self.target_selector = QgsMapLayerComboBox()
         self.target_selector.setAllowEmptyLayer(True)
-        self.target_selector.setFilters(QgsMapLayerProxyModel.VectorLayer)
+        self.target_selector.setFilters(QgsMapLayerProxyModel.Filter.VectorLayer)
         excepted = [
             layer
             for layer in QgsProject.instance().mapLayers().values()
@@ -420,7 +426,7 @@ class GenericStartPage(QWizardPage):
         if layer is None:
             self._target_model_cls = None
             self.source_widget.layer_selector.setFilters(
-                QgsMapLayerProxyModel.VectorLayer
+                QgsMapLayerProxyModel.Filter.VectorLayer
             )
         else:
             source = layer.source()
@@ -430,10 +436,13 @@ class GenericStartPage(QWizardPage):
             self._target_model_cls = dm.TABLENAME_TO_MODEL_CLS.get(table_name)
             geom_type = layer.geometryType()
             proxy_filter = QGIS_GEOMTYPE_TO_PROXY_FILTER.get(geom_type)
-            if proxy_filter is None or proxy_filter == QgsMapLayerProxyModel.NoGeometry:
+            if (
+                proxy_filter is None
+                or proxy_filter == QgsMapLayerProxyModel.Filter.NoGeometry
+            ):
                 # non-spatial target: any source allowed
                 self.source_widget.layer_selector.setFilters(
-                    QgsMapLayerProxyModel.VectorLayer
+                    QgsMapLayerProxyModel.Filter.VectorLayer
                 )
             else:
                 self.source_widget.layer_selector.setFilters(proxy_filter)
@@ -445,15 +454,15 @@ class GenericStartPage(QWizardPage):
         """Update target filter based on selected source geometry type."""
         source_layer = self.source_widget.selected_layer
         if source_layer is None:
-            self.target_selector.setFilters(QgsMapLayerProxyModel.VectorLayer)
+            self.target_selector.setFilters(QgsMapLayerProxyModel.Filter.VectorLayer)
         else:
             geom_type = source_layer.geometryType()
             proxy_filter = QGIS_GEOMTYPE_TO_PROXY_FILTER.get(
-                geom_type, QgsMapLayerProxyModel.VectorLayer
+                geom_type, QgsMapLayerProxyModel.Filter.VectorLayer
             )
             # Always include non-spatial targets
             self.target_selector.setFilters(
-                proxy_filter | QgsMapLayerProxyModel.NoGeometry
+                proxy_filter | QgsMapLayerProxyModel.Filter.NoGeometry
             )
         self.layer_changed.emit()
         self.completeChanged.emit()

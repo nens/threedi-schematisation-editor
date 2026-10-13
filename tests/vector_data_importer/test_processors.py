@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PyQt5.QtCore import QVariant
 from qgis.core import (
     QgsFeature,
     QgsField,
@@ -10,6 +9,7 @@ from qgis.core import (
     QgsPointXY,
     QgsWkbTypes,
 )
+from qgis.PyQt.QtCore import QVariant
 
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm
 from threedi_schematisation_editor import data_models as dm
@@ -327,7 +327,7 @@ class TestLineProcessor:
         )
         # Verify that the full line is returned
         assert result.asPolyline() == line.asPolyline()
-        assert result.type() == QgsWkbTypes.LineGeometry
+        assert result.type() == QgsWkbTypes.GeometryType.LineGeometry
 
     def test_new_geometry_simplified_line(
         self, source_feature, point_to_line_conversion_settings
@@ -343,7 +343,7 @@ class TestLineProcessor:
         )
         # Verify that only the start and end point are returned
         assert result.asPolyline() == [line.asPolyline()[0], line.asPolyline()[-1]]
-        assert result.type() == QgsWkbTypes.LineGeometry
+        assert result.type() == QgsWkbTypes.GeometryType.LineGeometry
 
     @pytest.mark.parametrize(
         "feature_fields, expected_points",
@@ -371,7 +371,7 @@ class TestLineProcessor:
         result = LineProcessor.new_geometry(
             feature, geom, point_to_line_conversion_settings, dm.Weir
         )
-        assert result.type() == QgsWkbTypes.LineGeometry
+        assert result.type() == QgsWkbTypes.GeometryType.LineGeometry
         assert result.asPolyline() == expected_points
 
 
@@ -383,7 +383,7 @@ class TestUtilityFunctions:
         geom = QgsGeometry.fromPointXY(QgsPointXY(10, 20))
         result = SpatialProcessor.create_new_point_geometry(geom)
         assert isinstance(result, QgsGeometry)
-        assert result.type() == QgsWkbTypes.PointGeometry
+        assert result.type() == QgsWkbTypes.GeometryType.PointGeometry
         assert result.asPoint() == QgsPointXY(10, 20)
 
     def test_create_new_point_geometry_from_line(self):
@@ -391,7 +391,7 @@ class TestUtilityFunctions:
         geom = QgsGeometry.fromPolylineXY([QgsPointXY(0, 0), QgsPointXY(100, 0)])
         result = SpatialProcessor.create_new_point_geometry(geom)
         assert isinstance(result, QgsGeometry)
-        assert result.type() == QgsWkbTypes.PointGeometry
+        assert result.type() == QgsWkbTypes.GeometryType.PointGeometry
         assert result.asPoint().x() == pytest.approx(50.0)
         assert result.asPoint().y() == pytest.approx(0.0)
 

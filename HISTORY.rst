@@ -1,10 +1,16 @@
 History
 =======
 
-2.4.14 (unreleased)
+2.4.15 (unreleased)
 -------------------
 
 - Nothing changed yet.
+
+
+2.4.14 (2026-09-04)
+-------------------
+
+- Upgrade to QGIS4 (#440)
 
 
 2.4.13 (2026-07-30)

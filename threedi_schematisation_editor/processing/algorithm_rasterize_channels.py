@@ -176,7 +176,7 @@ def rasterize(
                 point_feature.setAttribute(0, i)
                 point_feature.setAttribute(1, point_idx)
                 point_feature.setGeometry(qgs_point)
-                points_sink.addFeature(point_feature, QgsFeatureSink.FastInsert)
+                points_sink.addFeature(point_feature, QgsFeatureSink.Flag.FastInsert)
 
         # create temporary mesh file
         provider_meta = QgsProviderRegistry.instance().providerMetadata("mdal")
@@ -212,7 +212,7 @@ def rasterize(
                     triangle_geometry.fromWkb(triangle.geometry.wkb)
                     triangle_feature.setGeometry(triangle_geometry)
                     triangles_sink.addFeature(
-                        triangle_feature, QgsFeatureSink.FastInsert
+                        triangle_feature, QgsFeatureSink.Flag.FastInsert
                     )
                 outline_feature = QgsFeature()
                 outline_feature.setFields(outline_fields)
@@ -220,7 +220,7 @@ def rasterize(
                 outline_geometry = QgsGeometry()
                 outline_geometry.fromWkb(channel.outline.wkb)
                 outline_feature.setGeometry(outline_geometry)
-                outline_sink.addFeature(outline_feature, QgsFeatureSink.FastInsert)
+                outline_sink.addFeature(outline_feature, QgsFeatureSink.Flag.FastInsert)
 
             total_triangles = len(triangles_dict)
             faces_added = 0
@@ -386,7 +386,7 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.INPUT_CHANNELS,
                 self.tr("Channels"),
-                [QgsProcessing.TypeVectorLine],
+                [QgsProcessing.SourceType.TypeVectorLine],
                 defaultValue="Channel",
             )
         )
@@ -395,7 +395,7 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterFeatureSource(
                 self.INPUT_CROSS_SECTION_LOCATIONS,
                 self.tr("Cross-section locations"),
-                [QgsProcessing.TypeVectorPoint],
+                [QgsProcessing.SourceType.TypeVectorPoint],
                 defaultValue="Cross section location",
             )
         )
@@ -409,7 +409,7 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
         pixel_size_param = QgsProcessingParameterNumber(
             self.INPUT_PIXEL_SIZE,
             self.tr("Pixel size"),
-            type=QgsProcessingParameterNumber.Double,
+            type=QgsProcessingParameterNumber.Type.Double,
             optional=True,
         )
         pixel_size_param.setMetadata({"widget_wrapper": {"decimals": 2}})
@@ -472,7 +472,7 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
                 self.OUTLINE_OUTPUT,
                 context,
                 outline_fields,
-                QgsWkbTypes.PolygonZ,
+                QgsWkbTypes.Type.PolygonZ,
                 cross_section_location_features.sourceCrs(),
             )
 
@@ -484,7 +484,7 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
                 self.TRIANGLE_OUTPUT,
                 context,
                 triangles_fields,
-                QgsWkbTypes.PolygonZ,
+                QgsWkbTypes.Type.PolygonZ,
                 cross_section_location_features.sourceCrs(),
             )
 
@@ -496,7 +496,7 @@ class RasterizeChannelsAlgorithm(QgsProcessingAlgorithm):
                 self.POINTS_OUTPUT,
                 context,
                 points_fields,
-                QgsWkbTypes.PointZ,
+                QgsWkbTypes.Type.PointZ,
                 cross_section_location_features.sourceCrs(),
             )
 

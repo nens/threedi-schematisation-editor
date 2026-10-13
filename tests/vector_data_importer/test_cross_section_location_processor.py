@@ -1,6 +1,5 @@
 import pytest
 import shapely
-from PyQt5.QtCore import QVariant
 from qgis.core import (
     QgsFeature,
     QgsField,
@@ -10,6 +9,7 @@ from qgis.core import (
     QgsPointXY,
     QgsVectorLayer,
 )
+from qgis.PyQt.QtCore import QVariant
 from shapely.testing import assert_geometries_equal
 
 import threedi_schematisation_editor.vector_data_importer.settings_models as sm

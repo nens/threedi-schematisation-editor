@@ -66,7 +66,7 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
             QgsProcessingParameterVectorLayer(
                 self.CONNECTION_NODE_LAYER,
                 self.tr("Connection node layer"),
-                [QgsProcessing.TypeVectorPoint],
+                [QgsProcessing.SourceType.TypeVectorPoint],
                 defaultValue="Connection node",
             )
         )
@@ -80,7 +80,7 @@ class BottomLevelCalculator(QgsProcessingAlgorithm):
             QgsProcessingParameterVectorLayer(
                 self.PIPE_LAYER,
                 self.tr("Pipe layer"),
-                [QgsProcessing.TypeVectorLine],
+                [QgsProcessing.SourceType.TypeVectorLine],
                 defaultValue="Pipe",
             )
         )
