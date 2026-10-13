@@ -32,6 +32,7 @@ principle.
 - **Acceptance:** Both naming properties use the explicit name when supplied
   and preserve their current values/behavior when it is absent.
 - **Evidence:** Focused tests for explicit and absent overrides.
+- [x] Task 1: Add the optional display-name override
 
 #### Task 2: Expose the override through `load_schematisation()` and UI message
 - **Estimate:** ~15 lines
@@ -46,6 +47,7 @@ principle.
   direct calls that omit it remain compatible.
 - **Evidence:** Focused test or manual Python-console call with and without
   `group_name`.
+- [x] Task 2: Expose the override through `load_schematisation()` and UI message
 
 #### Task 3: Preserve group discovery and workspace switching
 - **Estimate:** ~20 lines
@@ -59,6 +61,7 @@ principle.
   are detected for workspace-context switching.
 - **Evidence:** Focused test of group discovery; manual click on layers in
   both group types confirms context switching.
+- [x] Task 3: Preserve group discovery and workspace switching
 
 #### Task 4: Persist and use stable group identity
 - **Estimate:** ~50 lines
@@ -76,6 +79,7 @@ principle.
   name-based path.
 - **Evidence:** Focused tests for property lookup and fallback; manual
   save/reopen test verifies forms/snapping and removal.
+- [x] Task 4: Persist and use stable group identity
 
 ### Integration & Verification
 
@@ -89,3 +93,6 @@ principle.
 - **Acceptance:** All manual paths pass and the relevant automated tests pass.
 - **Evidence:** Focused pytest command output and manual test notes; full test
   suite via `docker compose run --rm qgis-desktop make test` when practical.
+- [ ] Task 5: Complete manual QGIS load, context-switch, project-reopen, and removal checks
+- Automated focused tests pass. QGIS GUI/manual load, context-switch, and
+  project-reopen checks remain to be performed.

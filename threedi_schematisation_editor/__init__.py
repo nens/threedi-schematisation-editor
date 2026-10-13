@@ -66,7 +66,10 @@ from threedi_schematisation_editor.load_schematisation.load_schematisation impor
 from threedi_schematisation_editor.processing import (
     ThreediSchematisationEditorProcessingProvider,
 )
-from threedi_schematisation_editor.user_layer_manager import LayersManager
+from threedi_schematisation_editor.user_layer_manager import (
+    SCHEMATISATION_IS_MODEL_GROUP_KEY,
+    LayersManager,
+)
 from threedi_schematisation_editor.utils import (
     ConversionError,
     add_gpkg_connection,
@@ -217,7 +220,9 @@ class ThreediSchematisationEditorPlugin:
         for child in node.children():
             if child.nodeType() != QgsLayerTreeNode.NodeType.NodeGroup:
                 continue
-            if child.name().startswith("Rana schematisation:"):
+            if child.customProperty(
+                SCHEMATISATION_IS_MODEL_GROUP_KEY, False
+            ) or child.name().startswith("Rana schematisation:"):
                 results.append(child)
             else:
                 results.extend(
@@ -382,10 +387,13 @@ class ThreediSchematisationEditorPlugin:
                 {self.THREEDI_GPKG_VAR_NAMES: project_model_gpkgs_str}
             )
 
-    def load_schematisation(self, model_gpkg=None, parents: Optional[list[str]] = None):
+    def load_schematisation(
+        self, model_gpkg=None, parents: Optional[list[str]] = None, group_name=None
+    ):
         """
         :param model_gpkg: path to schematisation; if omitted the user can select via the UI
         :param parents: parent groups that are used to create the root for the schematisation in the layers view
+        :param group_name: optional display name for the schematisation group
         """
         if not model_gpkg:
             schematisation_loader = LoadSchematisationDialog(self.uc)
@@ -429,7 +437,9 @@ class ThreediSchematisationEditorPlugin:
             return
         if model_gpkg.endswith(".sqlite"):
             model_gpkg = model_gpkg.rsplit(".", 1)[0] + ".gpkg"
-        lm = LayersManager(self.iface, self.uc, model_gpkg, parents=parents)
+        lm = LayersManager(
+            self.iface, self.uc, model_gpkg, parents=parents, group_name=group_name
+        )
         if lm in self.workspace_context_manager:
             self.uc.clear_message_bar()
             warn_msg = "Selected schematisation is already loaded. Loading canceled."
@@ -438,7 +448,10 @@ class ThreediSchematisationEditorPlugin:
         lm.load_all_layers()
         self.workspace_context_manager.register_layer_manager(lm)
         self.uc.clear_message_bar()
-        self.uc.bar_info(f"Schematisation {lm.model_name} loaded!")
+        display_name = (
+            lm.detailed_model_name if group_name is not None else lm.model_name
+        )
+        self.uc.bar_info(f"Schematisation {display_name} loaded!")
         self.check_embedded_python_status()
         self.toggle_active_project_actions()
         if self.model_gpkg and not is_gpkg_connection_exists(self.model_gpkg):
