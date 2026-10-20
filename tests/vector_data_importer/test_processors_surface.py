@@ -409,6 +409,31 @@ def test_create_surface_map_percentage(
         assert result[0].geometry().type() == QgsWkbTypes.GeometryType.LineGeometry
 
 
+def test_process_feature_links_surface_and_surface_map(
+    surface_fields, surface_map_fields
+):
+    """The created surface_map feature refers to its created surface."""
+    pipe = make_pipe_feat(1, 0, 10, 11, (5, 0), (5, 2))
+    nodes = [make_node_feat(10, (5, 0)), make_node_feat(11, (5, 2))]
+    mappings = [sm.SewerTypeMapping(sewerage_type=0, percentage_column="runoff_pct")]
+    processor, node_by_id = make_spatial_processor(
+        surface_fields, surface_map_fields, [pipe], nodes, mappings
+    )
+
+    with patch(
+        "threedi_schematisation_editor.vector_data_importer.processors.get_feature_by_id",
+        side_effect=lambda layer, oid: node_by_id.get(oid),
+    ):
+        result = processor.process_feature(make_polygon_feature(runoff_pct=60.0))
+
+    assert "Surface" in result
+    assert "Surface map" in result
+    surface = result["Surface"][0]
+    surface_map = result["Surface map"][0]
+    assert surface_map["surface_id"] == surface["id"]
+    assert surface_map["connection_node_id"] in (10, 11)
+
+
 @pytest.mark.parametrize(
     "runoff_pct, expect_entry",
     [
