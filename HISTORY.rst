@@ -7,6 +7,8 @@ History
 - Fix surface importer: set surface_id for created surface_map (nens/rana#5130)
 - Fix surface importer UI: fix attributes dropdown in linking settings table (nens/rana#5107)
 - Extend allowed methods for many fields in the generic importer (nens/rana#5199)
+- Prevent import from layer in editting mode (nens/rana#5117)
+- Run import in main thread to prevent unexplained crashes (nens/rana#5117)
 
 
 2.4.14 (2026-09-04)

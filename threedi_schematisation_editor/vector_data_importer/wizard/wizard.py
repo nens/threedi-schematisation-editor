@@ -199,6 +199,31 @@ class VDIWizard(QWizard):
     def selected_layer(self):
         return self.start_page.layer_settings_widget.selected_layer
 
+    def check_source_layer_not_editing(self) -> bool:
+        layer = self.selected_layer
+        if layer is None or not layer.isEditable():
+            return True
+
+        uc = self.layer_manager.uc
+        choice = uc.custom_ask(
+            self,
+            "Source layer is being edited",
+            f"The source layer '{layer.name()}' is currently in edit mode. "
+            "Save its changes and stop editing before continuing the import?",
+            "Save and continue",
+            "Cancel",
+        )
+        if choice != "Save and continue":
+            return False
+
+        if not layer.commitChanges(stopEditing=True):
+            errors = "\n".join(layer.commitErrors())
+            uc.show_error(
+                f"Could not save changes to '{layer.name()}':\n{errors}", parent=self
+            )
+            return False
+        return True
+
     @property
     def use_selected_features(self) -> bool:
         return self.start_page.use_selected_features

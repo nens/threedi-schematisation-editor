@@ -77,7 +77,8 @@ class Importer:
     def start_editing(self):
         # start editing in all layers to support changes during import
         for layer in self.modifiable_layers:
-            layer.startEditing()
+            if not layer.isEditable():
+                layer.startEditing()
 
     def get_input_feature_ids(self, selected_ids):
         input_feature_ids = [feat.id() for feat in self.external_source.getFeatures()]
