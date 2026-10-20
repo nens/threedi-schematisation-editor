@@ -4,7 +4,7 @@ History
 2.4.15 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Fix surface importer: set surface_id for created surface_map (nens/rana#5130)
 
 
 2.4.14 (2026-09-04)

@@ -1251,6 +1251,7 @@ class SurfaceProcessor(SpatialProcessor):
             return
         sm_feat["connection_node_id"] = node["id"]
         sm_feat["percentage"] = pct
+        sm_feat["surface_id"] = new_feat["id"]
         update_attributes(
             self.surface_map_fields_configuration,
             dm.SurfaceMap,
