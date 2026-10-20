@@ -13,7 +13,7 @@ Shapely
 h5netcdf
 threedi-mi-utils
 hydxlib
-pydantic
-pydantic_core
+pydantic==2.11.10
+pydantic_core==2.33.2
 typing_inspection
 annotated_types
