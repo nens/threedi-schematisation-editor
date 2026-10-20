@@ -84,6 +84,9 @@ class StartPage(QWizardPage):
     def isComplete(self) -> bool:
         return self.layer_settings_widget.selected_layer not in [None, ""]
 
+    def validatePage(self) -> bool:
+        return self.wizard().check_source_layer_not_editing()
+
     def get_settings(self) -> dict:
         return {"source": self.layer_settings_widget.get_settings()}
 
@@ -491,6 +494,9 @@ class GenericStartPage(QWizardPage):
 
     def isComplete(self):
         return self._target_model_cls is not None and self.selected_layer is not None
+
+    def validatePage(self) -> bool:
+        return self.wizard().check_source_layer_not_editing()
 
     def get_settings(self):
         return {"source": self.source_widget.get_settings()}
