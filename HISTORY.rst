@@ -5,6 +5,7 @@ History
 -------------------
 
 - Fix surface importer: set surface_id for created surface_map (nens/rana#5130)
+- Fix surface importer UI: fix attributes dropdown in linking settings table (nens/rana#5107)
 
 
 2.4.14 (2026-09-04)

@@ -1,4 +1,5 @@
 import json
+from dataclasses import fields
 from unittest.mock import patch
 
 import pytest
@@ -561,3 +562,21 @@ class TestFieldMapModelDeserialize:
         assert model.row_dict["good"].config.method == ColumnImportMethod.AUTO
         # bad row left at its default (method=None), not raised
         assert model.row_dict["bad"].config.method is None
+
+
+def test_surface_linking_target_fields_refresh_with_persistent_editor():
+    widget = settings_widgets.SurfaceLinkingSettingsWidget()
+    source_attribute_column = list(field_map.FieldMapColumn).index(
+        field_map.FieldMapColumn.SOURCE_ATTRIBUTE
+    )
+    index = widget.match_field_map_widget.table_model.index(0, source_attribute_column)
+
+    widget._update_match_target(dm.Pipe)
+    editor = widget.match_field_map_widget.table_view.indexWidget(index)
+    pipe_attributes = [model_field.name for model_field in fields(dm.Pipe)]
+    assert [editor.itemText(i) for i in range(editor.count())] == [""] + pipe_attributes
+
+    widget._update_match_target(dm.ConnectionNode)
+    editor = widget.match_field_map_widget.table_view.indexWidget(index)
+    node_attributes = [model_field.name for model_field in fields(dm.ConnectionNode)]
+    assert [editor.itemText(i) for i in range(editor.count())] == [""] + node_attributes
