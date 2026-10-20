@@ -987,12 +987,15 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             match_model.__tablename__ if match_model is not None else None
         )
         if match_model is not None:
-            self._update_target_label(match_model)
+            self._update_match_target(match_model)
         self._update_linking_enabled()
         self.dataChanged.emit()
 
-    def _update_target_label(self, match_model):
+    def _update_match_target(self, match_model):
         label = f"Match field in {match_model.__layername__}"
+        field_map_widget = self.match_field_map_widget
+        field_map_widget.close_persistent_editors()
+        field_map_widget.table_delegate.clear_editors()
         table_model = self.match_field_map_widget.table_model
         table_model.attr_to_label_map["attribute_match_target"] = label
         table_model.row_dict["attribute_match_target"].label = label
@@ -1000,6 +1003,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             "attribute_match_target", match_model
         )
         table_model.layoutChanged.emit()
+        field_map_widget.open_persistent_editors()
 
     def _on_sewerage_type_config_changed(self):
         self._sync_sewerage_type_config()
@@ -1164,7 +1168,7 @@ class SurfaceLinkingSettingsWidget(SettingsWidget):
             else:
                 self.match_node_table_radio.setChecked(True)
                 match_model = dm.ConnectionNode
-            self._update_target_label(match_model)
+            self._update_match_target(match_model)
         else:
             self.match_no_table_radio.setChecked(True)
         deserialize_data = {}
