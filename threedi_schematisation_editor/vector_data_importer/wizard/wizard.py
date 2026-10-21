@@ -1,4 +1,5 @@
 import json
+import time
 import traceback
 from functools import cached_property
 from pathlib import Path
@@ -6,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 
 from pydantic import BaseModel, ValidationError
 from qgis.core import Qgis, QgsMapLayerProxyModel, QgsMessageLog, QgsWkbTypes
-from qgis.PyQt.QtCore import QObject, QThread, pyqtSignal
+from qgis.PyQt.QtCore import QCoreApplication, pyqtSignal
 from qgis.PyQt.QtGui import QPalette
 from qgis.PyQt.QtWidgets import (
     QFileDialog,
@@ -51,36 +52,11 @@ from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
     update_last_config_dir,
 )
 
-
-class ImportWorker(QObject):
-    progress = pyqtSignal(dict)
-    finished = pyqtSignal(bool, str, str, str)  # message, success
-
-    def __init__(self, callable_func, cancellation_token):
-        super().__init__()
-        self.callable_func = callable_func
-        self.cancellation_token = cancellation_token
-
-    def handle_progress(self, value=None, add=None, maximum=None):
-        self.progress.emit({"value": value, "add": add, "maximum": maximum})
-
-    def run(self):
-        error_msg = ""
-        try:
-            with CatchThreediWarnings() as warnings_catcher:
-                # Import features with warning catching
-                self.callable_func(progress_callback=self.handle_progress)
-            if self.cancellation_token.was_interrupted:
-                status_msg = "Import was cancelled.\n"
-            else:
-                status_msg = "Import completed successfully.\n"
-            success = True
-        except Exception as e:
-            status_msg = "Import failed with traceback:"
-            error_msg = f"{traceback.format_exc()}"
-            success = False
-        warning_msg = warnings_catcher.warnings_msg
-        self.finished.emit(success, status_msg, warning_msg, error_msg)
+# Minimum time between QCoreApplication.processEvents() calls while importing,
+# in seconds. The import runs synchronously on the main thread (see
+# VDIWizard.run_import / DESIGN.md "Threading model"); processEvents() keeps
+# the progress bar repainting and the Cancel button responsive.
+PROGRESS_EVENTS_MIN_INTERVAL = 0.05
 
 
 class VDIWizard(QWizard):
@@ -198,6 +174,31 @@ class VDIWizard(QWizard):
     @property
     def selected_layer(self):
         return self.start_page.layer_settings_widget.selected_layer
+
+    def check_source_layer_not_editing(self) -> bool:
+        layer = self.selected_layer
+        if layer is None or not layer.isEditable():
+            return True
+
+        uc = self.layer_manager.uc
+        choice = uc.custom_ask(
+            self,
+            "Source layer is being edited",
+            f"The source layer '{layer.name()}' is currently in edit mode. "
+            "Save its changes and stop editing before continuing the import?",
+            "Save and continue",
+            "Cancel",
+        )
+        if choice != "Save and continue":
+            return False
+
+        if not layer.commitChanges(stopEditing=True):
+            errors = "\n".join(layer.commitErrors())
+            uc.show_error(
+                f"Could not save changes to '{layer.name()}':\n{errors}", parent=self
+            )
+            return False
+        return True
 
     @property
     def use_selected_features(self) -> bool:
@@ -433,7 +434,24 @@ class VDIWizard(QWizard):
     def _compute_feature_ids(self, source_settings):
         return compute_selected_ids(self.selected_layer, source_settings)
 
+    def _map_canvas(self):
+        """Return the main map canvas, if this wizard has access to one.
+
+        `layer_manager` (and therefore `iface`) can be None in some tests /
+        standalone usage, so this is best-effort.
+        """
+        iface = getattr(self.layer_manager, "iface", None)
+        if iface is None:
+            return None
+        return iface.mapCanvas()
+
     def run_import(self):
+        """Run the import synchronously on the main thread.
+
+        Progress reporting and Cancel-button responsiveness are provided by
+        periodically calling QCoreApplication.processEvents() from the
+        progress callback (see DESIGN.md "Threading model").
+        """
         self.import_started.emit()
         progress_bar = self.run_page.progress_bar
         settings = self.get_settings()
@@ -454,60 +472,73 @@ class VDIWizard(QWizard):
         ):
             importer.integrator._cancellation_token = cancellation_token
 
-        # Setup worker and thread
-        import_callable = lambda progress_callback: importer.import_features(
-            selected_ids=selected_feat_ids, progress_callback=progress_callback
+        # Avoid the canvas (or anything else) trying to render these layers
+        # while we're mutating their edit buffers.
+        canvas = self._map_canvas()
+        if canvas is not None:
+            canvas.setRenderFlag(False)
+
+        last_processed_at = 0.0
+
+        def update_progress(value=None, add=None, maximum=None):
+            if maximum is not None:
+                progress_bar.setMaximum(maximum)
+            if value is not None:
+                progress_bar.setValue(value)
+            elif add:
+                progress_bar.setValue(progress_bar.value() + add)
+            # Keep the progress bar/log repainting and the Cancel button
+            # clickable while the import runs.
+            nonlocal last_processed_at
+            now = time.monotonic()
+            if now - last_processed_at >= PROGRESS_EVENTS_MIN_INTERVAL:
+                QCoreApplication.processEvents()
+                last_processed_at = now
+
+        error_msg = ""
+        try:
+            with CatchThreediWarnings() as warnings_catcher:
+                importer.import_features(
+                    selected_ids=selected_feat_ids,
+                    progress_callback=update_progress,
+                )
+            if cancellation_token.was_interrupted:
+                status_msg = "Import was cancelled.\n"
+            else:
+                status_msg = "Import completed successfully.\n"
+            success = True
+        except Exception:
+            status_msg = "Import failed with traceback:"
+            error_msg = f"{traceback.format_exc()}"
+            success = False
+        warning_msg = warnings_catcher.warnings_msg
+
+        self.run_page.cancel_requested.disconnect(cancellation_token.cancel)
+        if canvas is not None:
+            canvas.setRenderFlag(True)
+
+        self._import_succeeded = success
+        if not success:
+            progress_bar.set_failed()
+        error_color = "#FF0000"
+        warning_color = "#FFA500"
+        self.run_page.update_log(
+            status_msg, fg_color=error_color if not success else None
         )
-        self.thread = QThread()
-        self.worker = ImportWorker(import_callable, cancellation_token)
-        self.worker.moveToThread(self.thread)
-
-        # Connect signals
-        self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-
-        # Connect progress updates
-        def update_progress(progress_dict):
-            if progress_dict["maximum"] is not None:
-                progress_bar.setMaximum(progress_dict["maximum"])
-            if progress_dict["value"] is not None:
-                progress_bar.setValue(progress_dict["value"])
-            elif progress_dict["add"]:
-                progress_bar.setValue(progress_bar.value() + progress_dict["add"])
-
-        self.worker.progress.connect(update_progress)
-
-        # Connect finish handling
-        def handle_finished(success, status_msg, warning_msg, error_msg):
-            self._import_succeeded = success
-            if not success:
-                progress_bar.set_failed()
-            error_color = "#FF0000"
-            warning_color = "#FFA500"
-            self.run_page.update_log(
-                status_msg, fg_color=error_color if not success else None
-            )
-            self.run_page.update_log(error_msg)
-            self.run_page.update_log(warning_msg, fg_color=warning_color)
-            final_msg = (
-                "\nThe layers to which data has been added are still in editing mode, "
-                "so you can review the changes before saving them to the layers."
-            )
-            self.run_page.update_log(final_msg)
-            self.run_page.cancel_button.setEnabled(False)
-            for handler in handlers:
-                handler.connect_handler_signals()
-                handler.layer.triggerRepaint()
-            self.import_finished.emit()
-            if success:
-                self.button(QWizard.WizardButton.CancelButton).setFocus()
-
-        self.worker.finished.connect(handle_finished)
-
-        # Start thread
-        self.thread.start()
+        self.run_page.update_log(error_msg)
+        self.run_page.update_log(warning_msg, fg_color=warning_color)
+        final_msg = (
+            "\nThe layers to which data has been added are still in editing mode, "
+            "so you can review the changes before saving them to the layers."
+        )
+        self.run_page.update_log(final_msg)
+        self.run_page.cancel_button.setEnabled(False)
+        for handler in handlers:
+            handler.connect_handler_signals()
+            handler.layer.triggerRepaint()
+        self.import_finished.emit()
+        if success:
+            self.button(QWizard.WizardButton.CancelButton).setFocus()
 
 
 class ImportWithCreateConnectionNodesWizard(VDIWizard):
