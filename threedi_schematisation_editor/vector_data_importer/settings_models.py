@@ -146,14 +146,16 @@ def create_field_map_config(
 
 
 def get_field_map_config_for_model_class_field(
-    field_name: str, model_class: Type
+    field_name: str, model_class: Type, use_generic_allowed_methods: bool = False
 ) -> Type[FieldMapConfig]:
     """Creates FieldMapConfig class for a specific field of a data model"""
     class_field = next((f for f in fields(model_class) if f.name == field_name), None)
     if not class_field:
         raise ValueError(f"Field {field_name} not found in {model_class.__name__}")
     return create_field_map_config(
-        get_allowed_methods_for_model_class_field(class_field),
+        get_allowed_methods_for_model_class_field(
+            class_field, use_generic_allowed_methods=use_generic_allowed_methods
+        ),
         field_type=class_field.type,
     )
 
@@ -173,7 +175,10 @@ def validate_id_method(field_map: dict) -> None:
 
 
 def validate_field_map(
-    field_map: dict, model_cls: Type, allow_non_auto_id: bool = True
+    field_map: dict,
+    model_cls: Type,
+    allow_non_auto_id: bool = True,
+    use_generic_allowed_methods: bool = False,
 ) -> None:
     """Validate a field map dict against a target data model class.
 
@@ -193,31 +198,30 @@ def validate_field_map(
         if field_name not in model_field_names:
             continue
         field_cfg_cls = get_field_map_config_for_model_class_field(
-            field_name, model_cls
+            field_name,
+            model_cls,
+            use_generic_allowed_methods=use_generic_allowed_methods,
         )
         kwargs = field_data if isinstance(field_data, dict) else field_data.model_dump()
         field_cfg_cls(**kwargs)
 
 
 def get_allowed_methods_for_model_class_field(
-    model_field,
+    model_field, use_generic_allowed_methods: bool = False
 ) -> list[ColumnImportMethod]:
-    # Try to find allowed_methods from metadata
-    allowed_methods = model_field.metadata.get(dm.ALLOWED_METHODS_FIELD)
-    # Use defaults if not defined
-    if not allowed_methods:
+    allowed_methods = []
+    # Retrieve allowed_methods from metadata
+    if not use_generic_allowed_methods:
+        allowed_methods = model_field.metadata.get(dm.ALLOWED_METHODS_FIELD, []).copy()
+    # Use generic set of allowed methods if not specified or metadata is explicitly ignored
+    if use_generic_allowed_methods or not allowed_methods:
+        allowed_methods = ColumnImportMethod.all()
+        # ID field can never use default
         if model_field.name == "id":
-            allowed_methods = [
-                m
-                for m in ColumnImportMethod
-                if m not in (ColumnImportMethod.IGNORE, ColumnImportMethod.DEFAULT)
-            ]
+            allowed_methods.remove(ColumnImportMethod.DEFAULT)
+        # any non-id field can never use auto
         else:
-            allowed_methods = [
-                method
-                for method in ColumnImportMethod
-                if method != ColumnImportMethod.AUTO
-            ]
+            allowed_methods.remove(ColumnImportMethod.AUTO)
     # check if field type is optional and if so add it to the excluded_methods
     type_constructor = get_origin(model_field.type)
     # Optional fields have type Union[T, None]

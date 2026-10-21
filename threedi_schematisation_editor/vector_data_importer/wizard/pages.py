@@ -180,9 +180,17 @@ class SettingsPage(QWizardPage):
 
 
 class FieldMapPage(QWizardPage):
-    def __init__(self, model_cls, name, title_suffix=None, restrict_id_to_auto=False):
+    def __init__(
+        self,
+        model_cls,
+        name,
+        title_suffix=None,
+        restrict_id_to_auto=False,
+        use_generic_allowed_methods=False,
+    ):
         super().__init__()
         self.restrict_id_to_auto = restrict_id_to_auto
+        self.use_generic_allowed_methods = use_generic_allowed_methods
         self.row_dict = self.create_rows(model_cls)
         self.title_suffix = (
             title_suffix
@@ -198,7 +206,9 @@ class FieldMapPage(QWizardPage):
         row_dict = {}
         for field_name, display_name in model_cls.fields_display_names().items():
             config_class = get_field_map_config_for_model_class_field(
-                field_name, model_cls
+                field_name,
+                model_cls,
+                use_generic_allowed_methods=self.use_generic_allowed_methods,
             )
             if self.restrict_id_to_auto and field_name == "id":
                 config_class = create_field_map_config(
