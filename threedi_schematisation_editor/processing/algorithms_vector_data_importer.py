@@ -396,7 +396,11 @@ class ImportGeneric(BaseImporter):
 
     def create_importer(self, source_layer, target_gpkg, import_config):
         try:
-            validate_field_map(import_config.fields, self._resolved_model_cls)
+            validate_field_map(
+                import_config.fields,
+                self._resolved_model_cls,
+                use_generic_allowed_methods=True,
+            )
         except ValidationError as e:
             raise QgsProcessingException(f"Invalid field map (fields): {e}") from e
         return GenericImporter(

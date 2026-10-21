@@ -1,4 +1,4 @@
-from dataclasses import MISSING, Field, dataclass, field, fields
+from dataclasses import dataclass, field, fields, make_dataclass
 from typing import Optional
 
 import pytest
@@ -124,19 +124,71 @@ class TestGetAllowedMethodsForModelClassField:
             == default_allowed
         )
 
-    def test_allowed(self):
+    @pytest.mark.parametrize(
+        "optional, is_id",
+        [
+            (True, False),
+            (False, False),
+            (False, True),
+        ],
+    )
+    def test_allowed(self, optional, is_id):
         allowed_methods = [ColumnImportMethod.ATTRIBUTE]
         metadata = self.get_metadata(allowed_methods=allowed_methods)
-
-        @dataclass
-        # test with optional so excluded methods is not modified
-        class Test:
-            foo: Optional[str] = field(metadata=metadata)
-
+        expected_allowed_methods = allowed_methods.copy()
+        if optional:
+            expected_allowed_methods.append(ColumnImportMethod.IGNORE)
+        Test = make_dataclass(
+            "Test",
+            [
+                (
+                    "id" if is_id else "foo",
+                    Optional[str] if optional else str,
+                    field(metadata=metadata),
+                )
+            ],
+        )
+        print(f"{optional=}, {is_id=}")
+        print(f"{expected_allowed_methods=}")
+        print(sm.get_allowed_methods_for_model_class_field(fields(Test)[0]))
         assert (
             sm.get_allowed_methods_for_model_class_field(fields(Test)[0])
-            == allowed_methods
+            == expected_allowed_methods
         )
+
+    @pytest.mark.parametrize(
+        "optional, is_id",
+        [
+            (True, False),
+            (False, False),
+            (False, True),
+        ],
+    )
+    def test_allowed_use_generic_allowed_methods(self, optional, is_id):
+        metadata = self.get_metadata(allowed_methods=[ColumnImportMethod.ATTRIBUTE])
+        expected_allowed_methods = ColumnImportMethod.all()
+        if not is_id:
+            expected_allowed_methods.remove(ColumnImportMethod.AUTO)
+        if (not optional) or is_id:
+            expected_allowed_methods.remove(ColumnImportMethod.IGNORE)
+        if is_id:
+            expected_allowed_methods.remove(ColumnImportMethod.DEFAULT)
+        Test = make_dataclass(
+            "Test",
+            [
+                (
+                    "id" if is_id else "foo",
+                    Optional[str] if optional else str,
+                    field(metadata=metadata),
+                )
+            ],
+        )
+        allowed = sorted(
+            sm.get_allowed_methods_for_model_class_field(
+                fields(Test)[0], use_generic_allowed_methods=True
+            )
+        )
+        assert allowed == sorted(expected_allowed_methods)
 
 
 def test_get_settings_model():
@@ -197,3 +249,25 @@ def test_field_map_config_method_validation():
 def test_validate_id_method_invalid(field_map):
     with pytest.raises(ValueError, match="AUTO method"):
         sm.validate_id_method(field_map)
+
+
+def test_validate_field_map_generic_methods_ignore_model_metadata():
+    field_map = {
+        "id": {
+            "method": ColumnImportMethod.ATTRIBUTE,
+            "source_attribute": "source_id",
+        },
+        "surface_id": {
+            "method": ColumnImportMethod.ATTRIBUTE,
+            "source_attribute": "source_surface_id",
+        },
+        "connection_node_id": {
+            "method": ColumnImportMethod.EXPRESSION,
+            "expression": 'to_int("node_id")',
+        },
+    }
+
+    with pytest.raises(ValidationError):
+        sm.validate_field_map(field_map, dm.SurfaceMap)
+
+    sm.validate_field_map(field_map, dm.SurfaceMap, use_generic_allowed_methods=True)

@@ -767,7 +767,9 @@ class ImportGenericWizard(VDIWizard):
 
     @cached_property
     def field_map_page(self):
-        return FieldMapPage(model_cls=None, name="fields")
+        return FieldMapPage(
+            model_cls=None, name="fields", use_generic_allowed_methods=True
+        )
 
     @property
     def selected_layer(self):
