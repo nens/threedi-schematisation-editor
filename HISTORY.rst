@@ -7,6 +7,7 @@ History
 - Fix surface importer: set surface_id for created surface_map (nens/rana#5130)
 - Fix surface importer UI: fix attributes dropdown in linking settings table (nens/rana#5107)
 - Extend allowed methods for many fields in the generic importer (nens/rana#5199)
+- Users can now set conveyance in cross sections for yz profiles, tabulated rectangle, and tabulated trapezium (nens/rana#5248)
 
 
 2.4.14 (2026-09-04)
