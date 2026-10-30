@@ -1044,6 +1044,49 @@ def setup_cross_section_widgets(custom_form, cross_section_shape_widget, prefix=
             pass
 
 
+def update_friction_type_options(
+    custom_form, cross_section_shape_widget, friction_widget, prefix=""
+):
+    """Update friction type combobox items based on the selected cross-section shape.
+
+    For YZ profiles, Tabulated rectangle, and Tabulated trapezium shapes,
+    all four friction types are available (including Conveyance variants).
+    For other shapes, only the basic friction types are available.
+    """
+    if friction_widget is None or not hasattr(friction_widget, "clear"):
+        return
+
+    cross_section_shape = custom_form.get_widget_value(cross_section_shape_widget)
+    current_value = custom_form.get_widget_value(friction_widget)
+
+    friction_widget.blockSignals(True)
+    friction_widget.clear()
+
+    tabulated_shapes = {
+        en.CrossSectionShape.YZ.value,
+        en.CrossSectionShape.TABULATED_RECTANGLE.value,
+        en.CrossSectionShape.TABULATED_TRAPEZIUM.value,
+    }
+
+    if cross_section_shape in tabulated_shapes:
+        friction_types = en.FrictionTypeExtended
+    else:
+        friction_types = en.FrictionType
+
+    friction_widget.addItem("", None)
+    for friction_type in friction_types:
+        friction_widget.addItem(
+            friction_type.name.capitalize().replace("_", " "), friction_type.value
+        )
+
+    if current_value is not None:
+        index = friction_widget.findData(current_value)
+        if index >= 0:
+            friction_widget.setCurrentIndex(index)
+
+    friction_widget.blockSignals(False)
+
+
 def setup_friction_and_vegetation_widgets(
     custom_form, cross_section_shape_widget, friction_widget, prefix=""
 ):

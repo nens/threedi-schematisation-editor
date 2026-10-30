@@ -40,6 +40,7 @@ from threedi_schematisation_editor.utils import (
     setup_cross_section_definition_widgets,
     setup_cross_section_widgets,
     setup_friction_and_vegetation_widgets,
+    update_friction_type_options,
 )
 
 field_types_widgets = MappingProxyType(
@@ -1118,6 +1119,9 @@ class AbstractFormWithXSTable(AbstractBaseForm):
             QObject, f"{self.cross_section_prefix}friction_type"
         )
         if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
+            update_friction_type_options(
+                self, self.cross_section_shape, friction_type, self.cross_section_prefix
+            )
             setup_friction_and_vegetation_widgets(
                 self, self.cross_section_shape, friction_type, self.cross_section_prefix
             )
@@ -1265,6 +1269,32 @@ class AbstractFormWithXSTable(AbstractBaseForm):
             )
             self.cross_section_friction_copy_slot = cross_section_friction_copy_slot
             self.cross_section_vegetation_copy_slot = cross_section_vegetation_copy_slot
+
+            shape_change_signal = self.cross_section_shape.currentIndexChanged
+            shape_change_slot = self.on_cross_section_shape_changed
+            connect_signal(shape_change_signal, shape_change_slot)
+            self.dialog.active_form_signals.add(
+                (shape_change_signal, shape_change_slot)
+            )
+
+    def on_cross_section_shape_changed(self):
+        """Handle cross-section shape change to update friction type options."""
+        friction_widget = self.dialog.findChild(
+            QObject, f"{self.cross_section_prefix}friction_type"
+        )
+        if self.MODEL in [dm.CrossSectionLocation, dm.Channel]:
+            update_friction_type_options(
+                self,
+                self.cross_section_shape,
+                friction_widget,
+                self.cross_section_prefix,
+            )
+            setup_friction_and_vegetation_widgets(
+                self,
+                self.cross_section_shape,
+                friction_widget,
+                self.cross_section_prefix,
+            )
 
     def get_cross_section_table_header(self, table_field_name):
         """Get the proper cross-section table header."""
