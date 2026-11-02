@@ -17,14 +17,13 @@ The `IntegrationMode` enum (`NONE`, `CHANNELS`, `PIPES`) in `settings_models.py`
 
 ## Threading model
 
-When invoked from the wizard, the import runs on a separate `QThread` to keep the UI responsive. The Processing algorithm version runs synchronously on the main thread.
+The import runs **synchronously on the main thread**, both from the wizard and from the Processing algorithm. UI responsiveness (progress bar repainting, Cancel button clicks) is achieved by periodically calling `QCoreApplication.processEvents()` from the progress callback.
 
 ### Sequence diagram
 
 ```mermaid
 sequenceDiagram
     participant UI as Main Thread (UI)
-    participant Worker as Worker Thread
     participant Importer
     participant Processor
     participant Integrator
@@ -32,10 +31,9 @@ sequenceDiagram
     UI->>UI: disconnect handler signals
     UI->>UI: create Importer, CancellationToken
     UI->>UI: inject token into processor & integrator
-    UI->>Worker: thread.start()
+    UI->>UI: freeze map canvas (setRenderFlag(False))
 
-    activate Worker
-    Worker->>Importer: import_features(progress_cb)
+    UI->>Importer: import_features(progress_cb)
     activate Importer
     Importer->>Importer: start_editing() [all layers]
 
@@ -44,7 +42,7 @@ sequenceDiagram
         activate Integrator
         loop per overlapping feature
             Integrator-->>Integrator: check cancellation_token
-            Integrator-->>UI: progress signal (queued)
+            Integrator-->>UI: progress_cb(add=1) -> update bar + processEvents()
             Note right of Integrator: deleteFeature, changeAttributeValue
         end
         Integrator-->>Importer: remaining feature IDs + new features
@@ -55,7 +53,7 @@ sequenceDiagram
     activate Processor
     loop per feature
         Processor-->>Processor: check cancellation_token
-        Processor-->>UI: progress signal (queued)
+        Processor-->>UI: progress_cb(add=1) -> update bar + processEvents()
         Note right of Processor: addFeature (nodes), transform geometry
     end
     Processor-->>Importer: new features
@@ -64,9 +62,7 @@ sequenceDiagram
     Importer->>Importer: add_features_to_layers()
     deactivate Importer
 
-    Worker-->>UI: finished signal (queued)
-    deactivate Worker
-
+    UI->>UI: unfreeze map canvas (setRenderFlag(True))
     UI->>UI: reconnect handler signals
     UI->>UI: triggerRepaint() on layers
 ```
@@ -78,37 +74,26 @@ sequenceDiagram
     participant User
     participant UI as Main Thread
     participant Token as CancellationToken
-    participant Worker as Worker Thread
 
-    User->>UI: clicks Cancel button
+    User->>UI: clicks Cancel button (handled during a processEvents() pump)
     UI->>Token: cancel() [sets threading.Event]
-    Worker->>Token: is_cancelled? [polls in loop]
-    Token-->>Worker: True
-    Worker->>Worker: break from loop, call interrupt()
-    Worker-->>UI: finished(success=True, status="Cancelled")
+    UI->>Token: is_cancelled? [polled in loop, same thread]
+    Token-->>UI: True
+    UI->>UI: break from loop, call interrupt()
 ```
 
-`CancellationToken` wraps a `threading.Event` (thread-safe). The main thread sets it; the processor/integrator poll it in their per-feature loops.
+`CancellationToken` wraps a `threading.Event`. The processor/integrator poll `is_cancelled` once per feature in their loops; the Cancel button sets it during a `processEvents()` pump.
 
 ### Key design decisions
 
 - **Handler signals are disconnected** before the import starts and reconnected after. This prevents signal-driven side effects (validation, multi-editing) during the import.
 - **No `commitChanges()` from the wizard** — layers stay in editing mode so the user can review and roll back. The Processing algorithm version *does* commit.
-- **No repaint until after the thread finishes** — `triggerRepaint()` is called on the main thread in `handle_finished`.
-- **Layer edits happen on the worker thread.** This includes `addFeature`, `deleteFeature`, `changeAttributeValue`, etc. This is not officially safe per QGIS documentation, but works in practice because handler signals are disconnected and no rendering occurs during the import.
+- **No repaint until the import finishes** — `triggerRepaint()` is called after the import completes. The map canvas is also frozen (`setRenderFlag(False)`) for the duration of the import and unfrozen afterwards, so nothing tries to render the layers mid-import.
+- **All layer edits happen on the main thread**, interleaved with `QCoreApplication.processEvents()` calls (throttled to roughly every 50ms, see `PROGRESS_EVENTS_MIN_INTERVAL` in `wizard.py`) so the UI stays responsive. Layer mutation must stay on the main thread — QGIS layer objects are not thread-safe, so do not introduce a background thread for `startEditing`/`addFeatures`/`deleteFeature`/etc. If a future change needs responsiveness during a long-running step, extend the existing `progress_callback` / `processEvents()` pattern instead.
 
 ### Progress reporting
 
-The importer calls a `progress_callback(value=, add=, maximum=)` function. `ImportWorker` wraps this into a `pyqtSignal(dict)` which crosses the thread boundary via Qt's queued connection mechanism, updating the progress bar on the main thread.
-
-### Thread safety notes
-
-All QGIS layer operations (`startEditing`, `addFeatures`, `deleteFeature`, etc.) run on the worker thread. This is technically unsafe per QGIS docs. It works because:
-- Handler signals are disconnected (no reentrant edits).
-- Changes stay in the edit buffer (no disk writes).
-- No rendering happens until after the thread finishes.
-
-If you need to add new layer operations during the import, keep them inside the existing `import_features()` call tree — do not introduce additional thread crossings or main-thread layer access during the import.
+The importer calls a `progress_callback(value=, add=, maximum=)` function once per feature. The wizard's `run_import()` uses this callback to update the progress bar directly and to call `QCoreApplication.processEvents()` when enough time has elapsed since the last call.
 
 
 ## Importers

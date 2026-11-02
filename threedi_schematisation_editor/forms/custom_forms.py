@@ -1781,6 +1781,7 @@ class AbstractNodeToSurfaceMapForm(AbstractFormWithTag):
             self.surface_feature = self.select_start_surface()
             self.fill_related_attributes()
         self.populate_widgets()
+        self.populate_tag_widgets()
 
     def select_start_surface(self):
         """Selecting start surface"""
@@ -2056,6 +2057,11 @@ class PumpForm(AbstractFormWithNode, AbstractFormWithTag):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        super().populate_with_extra_widgets()
+        self.populate_tag_widgets()
 
 
 class PumpMapForm(AbstractFormWithTag):
@@ -2369,7 +2375,7 @@ class ChannelForm(AbstractFormWithStartEndNode, AbstractFormWithTag):
         self.populate_tag_widgets()
 
 
-class CrossSectionLocationForm(AbstractFormWithXSTable):
+class CrossSectionLocationForm(AbstractFormWithXSTable, AbstractFormWithTag):
     """Cross-section location user layer edit form logic."""
 
     MODEL = dm.CrossSectionLocation
@@ -2518,6 +2524,11 @@ class CrossSectionLocationForm(AbstractFormWithXSTable):
             self.feature["friction_type"] = global_settings_feat["friction_type"]
         except StopIteration:
             pass
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        super().populate_with_extra_widgets()
+        self.populate_tag_widgets()
 
 
 class PotentialBreachForm(AbstractFormWithTag):
@@ -2678,6 +2689,11 @@ class MeasureLocation(AbstractFormWithNode, AbstractFormWithTag):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
 
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        super().populate_with_extra_widgets()
+        self.populate_tag_widgets()
+
 
 def map_action_type_to_labels(action_type_str: str):
     if (
@@ -2715,6 +2731,11 @@ class MemoryControl(AbstractFormWithTargetStructure, AbstractFormWithTag):
         action_type_widget.currentIndexChanged.connect(self.update_actions)
         self.dialog.active_form_signals.add((action_type_widget, self.update_actions))
         self.update_actions()
+
+    def populate_with_extra_widgets(self):
+        """Populate basic and extra widgets for the given custom form."""
+        super().populate_with_extra_widgets()
+        self.populate_tag_widgets()
 
     def update_actions(self):
         action_type_widget = self.dialog.findChild(QComboBox, "action_type")

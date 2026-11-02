@@ -1,6 +1,6 @@
 import json
 from dataclasses import fields
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from qgis.core import QgsField, QgsVectorLayer
@@ -15,6 +15,7 @@ from threedi_schematisation_editor.utils import gpkg_layer
 from threedi_schematisation_editor.vector_data_importer.utils import ColumnImportMethod
 from threedi_schematisation_editor.vector_data_importer.wizard import (
     ImportConnectionNodesWizard,
+    ImportGenericWizard,
     ImportStructureWizard,
 )
 from threedi_schematisation_editor.vector_data_importer.wizard.utils import (
@@ -40,6 +41,71 @@ def test_wizard_settings():
     wizard.deserialize(json_settings)
     serialized_settings = wizard.serialize()
     assert wizard.get_settings().model_dump() == serialized_settings
+
+
+def test_start_page_prompts_to_save_editing_source_layer():
+    model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
+    uc = MagicMock()
+    uc.custom_ask.return_value = "Save and continue"
+    wizard = ImportConnectionNodesWizard(
+        dm.ConnectionNode, model_gpkg, MagicMock(uc=uc)
+    )
+    source_layer = MagicMock()
+    source_layer.isEditable.return_value = True
+    source_layer.name.return_value = "source"
+    source_layer.commitChanges.return_value = True
+    wizard.start_page.layer_settings_widget.selected_layer = source_layer
+
+    assert wizard.start_page.validatePage()
+
+    uc.custom_ask.assert_called_once()
+    source_layer.commitChanges.assert_called_once_with(stopEditing=True)
+
+
+def test_start_page_stays_open_if_save_is_cancelled():
+    model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
+    uc = MagicMock()
+    uc.custom_ask.return_value = "Cancel"
+    wizard = ImportConnectionNodesWizard(
+        dm.ConnectionNode, model_gpkg, MagicMock(uc=uc)
+    )
+    source_layer = MagicMock()
+    source_layer.isEditable.return_value = True
+    source_layer.name.return_value = "source"
+    wizard.start_page.layer_settings_widget.selected_layer = source_layer
+
+    assert not wizard.start_page.validatePage()
+
+    source_layer.commitChanges.assert_not_called()
+
+
+def test_start_page_stays_open_if_source_layer_cannot_be_saved():
+    model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
+    uc = MagicMock()
+    uc.custom_ask.return_value = "Save and continue"
+    wizard = ImportConnectionNodesWizard(
+        dm.ConnectionNode, model_gpkg, MagicMock(uc=uc)
+    )
+    source_layer = MagicMock()
+    source_layer.isEditable.return_value = True
+    source_layer.name.return_value = "source"
+    source_layer.commitChanges.return_value = False
+    source_layer.commitErrors.return_value = ["save error"]
+    wizard.start_page.layer_settings_widget.selected_layer = source_layer
+
+    assert not wizard.start_page.validatePage()
+
+    uc.show_error.assert_called_once()
+
+
+def test_generic_start_page_uses_source_layer_edit_guard():
+    model_gpkg = str(SOURCE_PATH.joinpath("empty.gpkg").with_suffix(".gpkg"))
+    wizard = ImportGenericWizard(str(model_gpkg), MagicMock())
+    wizard.check_source_layer_not_editing = MagicMock(return_value=False)
+
+    assert not wizard.start_page.validatePage()
+
+    wizard.check_source_layer_not_editing.assert_called_once_with()
 
 
 def test_wizard_run():
