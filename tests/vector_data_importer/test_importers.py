@@ -279,6 +279,24 @@ class TestSpatialImporter:
         spatial_importer.commit_pending_changes()
         target_layer.commitChanges.assert_called_once()
 
+    def test_start_editing_skips_layers_already_editable(
+        self, spatial_importer, target_layer
+    ):
+        target_layer.isEditable.return_value = True
+
+        spatial_importer.start_editing()
+
+        target_layer.startEditing.assert_not_called()
+
+    def test_start_editing_starts_non_editable_layers(
+        self, spatial_importer, target_layer
+    ):
+        target_layer.isEditable.return_value = False
+
+        spatial_importer.start_editing()
+
+        target_layer.startEditing.assert_called_once_with()
+
 
 @patch(
     "threedi_schematisation_editor.vector_data_importer.integrators.ChannelIntegrator.from_importer"
