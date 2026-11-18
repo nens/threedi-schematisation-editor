@@ -4,17 +4,17 @@ qgisMinimumVersion=3.28
 qgisMaximumVersion=4.99
 description=Rana Schematisation Editor
 version=2.4.16
-author=Nelen & Schuurmans
-email=servicedesk@nelen-schuurmans.nl
+author=Rana Water Intelligence
+email=support@ranawaterintelligence.com
 about=View and edit Rana schematisations in the Rana Desktop Client.
 
     For questions on Rana or the use of this plugin please contact us via
-    servicedesk@nelen-schuurmans.nl
+    support@ranawaterintelligence.com
 
 tracker=https://github.com/nens/threedi-schematisation-editor/issues
 repository=https://github.com/nens/threedi-schematisation-editor/issues
 
-changelog=https://docs.3di.live/a_releasenotes_3di_mi.html
+changelog=https://docs.ranawaterintelligence.com/a_releasenotes_rana_rdc.html
 
 # Tags are comma separated with spaces allowed
 tags=Rana, edit, 1D, 2D, hydraulics
