@@ -4,7 +4,7 @@ History
 2.4.16 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Refer to Rana Water Intelligence in metadata.
 
 
 2.4.15 (2026-11-12)
